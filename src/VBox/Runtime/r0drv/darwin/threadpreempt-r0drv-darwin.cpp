@@ -36,6 +36,7 @@
 # include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/assert.h>
+#include <iprt/cpuset.h>
 #include <iprt/err.h>
 #include <iprt/mp.h>
 
@@ -56,7 +57,7 @@ typedef RTDARWINPREEMPTHACK *PRTDARWINPREEMPTHACK;
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-static RTDARWINPREEMPTHACK  g_aPreemptHacks[16]; /* see MAX_CPUS in i386/mp.h */
+static RTDARWINPREEMPTHACK  g_aPreemptHacks[RTCPUSET_MAX_CPUS];
 
 
 /**
