@@ -149,13 +149,82 @@ typedef struct VBOXUSBFLT_LOCK
 #define VBOXUSBFLT_LOCK_RELEASE() \
     KeReleaseSpinLock(&g_VBoxUsbFltGlobals.Lock.Lock, g_VBoxUsbFltGlobals.Lock.OldIrql);
 
+
+typedef struct VBOXUSBFLT_BLDEV
+{
+    LIST_ENTRY ListEntry;
+    uint16_t   idVendor;
+    uint16_t   idProduct;
+    uint16_t   bcdDevice;
+} VBOXUSBFLT_BLDEV, *PVBOXUSBFLT_BLDEV;
+
+#define PVBOXUSBFLT_BLDEV_FROM_LE(_pLe) ( (PVBOXUSBFLT_BLDEV)( ((uint8_t*)(_pLe)) - RT_OFFSETOF(VBOXUSBFLT_BLDEV, ListEntry) ) )
+
 typedef struct VBOXUSBFLTGLOBALS
 {
     LIST_ENTRY DeviceList;
     LIST_ENTRY ContextList;
+    /* devices known to misbehave */
+    LIST_ENTRY BlackDeviceList;
     VBOXUSBFLT_LOCK Lock;
 } VBOXUSBFLTGLOBALS, *PVBOXUSBFLTGLOBALS;
 static VBOXUSBFLTGLOBALS g_VBoxUsbFltGlobals;
+
+static bool vboxUsbFltBlDevMatchLocked(uint16_t idVendor, uint16_t idProduct, uint16_t bcdDevice)
+{
+    for (PLIST_ENTRY pEntry = g_VBoxUsbFltGlobals.BlackDeviceList.Flink;
+            pEntry != &g_VBoxUsbFltGlobals.BlackDeviceList;
+            pEntry = pEntry->Flink)
+    {
+        PVBOXUSBFLT_BLDEV pDev = PVBOXUSBFLT_BLDEV_FROM_LE(pEntry);
+        if (pDev->idVendor != idVendor)
+            continue;
+        if (pDev->idProduct != idProduct)
+            continue;
+        if (pDev->bcdDevice != bcdDevice)
+            continue;
+
+        return true;
+    }
+    return false;
+}
+
+static NTSTATUS vboxUsbFltBlDevAddLocked(uint16_t idVendor, uint16_t idProduct, uint16_t bcdDevice)
+{
+    if (vboxUsbFltBlDevMatchLocked(idVendor, idProduct, bcdDevice))
+        return STATUS_SUCCESS;
+    PVBOXUSBFLT_BLDEV pDev = (PVBOXUSBFLT_BLDEV)VBoxUsbMonMemAllocZ(sizeof (*pDev));
+    if (!pDev)
+    {
+        AssertFailed();
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    pDev->idVendor = idVendor;
+    pDev->idProduct = idProduct;
+    pDev->bcdDevice = bcdDevice;
+    InsertHeadList(&g_VBoxUsbFltGlobals.BlackDeviceList, &pDev->ListEntry);
+    return STATUS_SUCCESS;
+}
+
+static void vboxUsbFltBlDevClearLocked()
+{
+    PLIST_ENTRY pNext;
+    for (PLIST_ENTRY pEntry = g_VBoxUsbFltGlobals.BlackDeviceList.Flink;
+            pEntry != &g_VBoxUsbFltGlobals.BlackDeviceList;
+            pEntry = pNext)
+    {
+        pNext = pEntry->Flink;
+        VBoxUsbMonMemFree(pEntry);
+    }
+}
+
+static void vboxUsbFltBlDevPopulateWithKnownLocked()
+{
+    /* this one halts when trying to get string descriptors from it */
+    vboxUsbFltBlDevAddLocked(0x5ac, 0x921c, 0x115);
+}
+
 
 DECLINLINE(void) vboxUsbFltDevRetain(PVBOXUSBFLT_DEVICE pDevice)
 {
@@ -216,7 +285,7 @@ static void vboxUsbFltDevOwnerUpdateLocked(PVBOXUSBFLT_DEVICE pDevice, PVBOXUSBF
 
 static PVBOXUSBFLT_DEVICE vboxUsbFltDevGetLocked(PDEVICE_OBJECT pPdo)
 {
-#ifdef DEBUG_mista
+#ifdef DEBUG_misha
     for (PLIST_ENTRY pEntry = g_VBoxUsbFltGlobals.DeviceList.Flink;
             pEntry != &g_VBoxUsbFltGlobals.DeviceList;
             pEntry = pEntry->Flink)
@@ -314,6 +383,8 @@ static bool vboxUsbFltDevStateIsFiltered(PVBOXUSBFLT_DEVICE pDevice)
     return pDevice->enmState >= VBOXUSBFLT_DEVSTATE_CAPTURING;
 }
 
+#define VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS 10000
+
 static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT pDo /*, BOOLEAN bPopulateNonFilterProps*/)
 {
     NTSTATUS Status;
@@ -330,10 +401,20 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
 
     do
     {
-        Status = VBoxUsbToolGetDescriptor(pDo, pDevDr, sizeof(*pDevDr), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0);
+        Status = VBoxUsbToolGetDescriptor(pDo, pDevDr, sizeof(*pDevDr), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
         if (!NT_SUCCESS(Status))
         {
-            LogRel(("VBoxUSBGetDeviceDescription: getting device descriptor failed\n"));
+            LogRel((__FUNCTION__": getting device descriptor failed\n"));
+            break;
+        }
+
+        if (vboxUsbFltBlDevMatchLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice))
+        {
+            LogRel((__FUNCTION__": found a known black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
+#ifdef DEBUG_misha
+            AssertFailed();
+#endif
+            Status = STATUS_UNSUCCESSFUL;
             break;
         }
 
@@ -353,39 +434,63 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
         {
             int             langId;
 
-            Status = VBoxUsbToolGetLangID(pDo, &langId);
+            Status = VBoxUsbToolGetLangID(pDo, &langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
             if (!NT_SUCCESS(Status))
             {
                 AssertMsgFailed((__FUNCTION__": reading language ID failed\n"));
+                if (Status == STATUS_CANCELLED)
+                {
+                    AssertMsgFailed((__FUNCTION__": found a new black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
+                    vboxUsbFltBlDevAddLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice);
+                    Status = STATUS_UNSUCCESSFUL;
+                }
                 break;
             }
 
             if (pDevDr->iSerialNumber)
             {
-                Status = VBoxUsbToolGetStringDescriptorA(pDo, pDevice->szSerial, sizeof (pDevice->szSerial), pDevDr->iSerialNumber, langId);
+                Status = VBoxUsbToolGetStringDescriptorA(pDo, pDevice->szSerial, sizeof (pDevice->szSerial), pDevDr->iSerialNumber, langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
                 if (!NT_SUCCESS(Status))
                 {
                     AssertMsgFailed((__FUNCTION__": reading serial number failed\n"));
+                    if (Status == STATUS_CANCELLED)
+                    {
+                        AssertMsgFailed((__FUNCTION__": found a new black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
+                        vboxUsbFltBlDevAddLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice);
+                        Status = STATUS_UNSUCCESSFUL;
+                    }
                     break;
                 }
             }
 
             if (pDevDr->iManufacturer)
             {
-                Status = VBoxUsbToolGetStringDescriptorA(pDo, pDevice->szMfgName, sizeof (pDevice->szMfgName), pDevDr->iManufacturer, langId);
+                Status = VBoxUsbToolGetStringDescriptorA(pDo, pDevice->szMfgName, sizeof (pDevice->szMfgName), pDevDr->iManufacturer, langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
                 if (!NT_SUCCESS(Status))
                 {
                     AssertMsgFailed((__FUNCTION__": reading manufacturer name failed\n"));
+                    if (Status == STATUS_CANCELLED)
+                    {
+                        AssertMsgFailed((__FUNCTION__": found a new black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
+                        vboxUsbFltBlDevAddLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice);
+                        Status = STATUS_UNSUCCESSFUL;
+                    }
                     break;
                 }
             }
 
             if (pDevDr->iProduct)
             {
-                Status = VBoxUsbToolGetStringDescriptorA(pDo, pDevice->szProduct, sizeof (pDevice->szProduct), pDevDr->iProduct, langId);
+                Status = VBoxUsbToolGetStringDescriptorA(pDo, pDevice->szProduct, sizeof (pDevice->szProduct), pDevDr->iProduct, langId, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
                 if (!NT_SUCCESS(Status))
                 {
                     AssertMsgFailed((__FUNCTION__": reading product name failed\n"));
+                    if (Status == STATUS_CANCELLED)
+                    {
+                        AssertMsgFailed((__FUNCTION__": found a new black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
+                        vboxUsbFltBlDevAddLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice);
+                        Status = STATUS_UNSUCCESSFUL;
+                    }
                     break;
                 }
             }
@@ -1217,6 +1322,8 @@ NTSTATUS VBoxUsbFltInit()
     memset(&g_VBoxUsbFltGlobals, 0, sizeof (g_VBoxUsbFltGlobals));
     InitializeListHead(&g_VBoxUsbFltGlobals.DeviceList);
     InitializeListHead(&g_VBoxUsbFltGlobals.ContextList);
+    InitializeListHead(&g_VBoxUsbFltGlobals.BlackDeviceList);
+    vboxUsbFltBlDevPopulateWithKnownLocked();
     VBOXUSBFLT_LOCK_INIT();
     return STATUS_SUCCESS;
 }
@@ -1268,6 +1375,9 @@ NTSTATUS VBoxUsbFltTerm()
         pDevice->enmState = VBOXUSBFLT_DEVSTATE_REMOVED;
         vboxUsbFltDevRelease(pDevice);
     }
+
+    vboxUsbFltBlDevClearLocked();
+
     VBOXUSBFLT_LOCK_TERM();
 
     VBoxUSBFilterTerm();

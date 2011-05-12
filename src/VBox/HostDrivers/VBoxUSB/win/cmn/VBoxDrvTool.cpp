@@ -131,6 +131,50 @@ VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolIoPostSync(PDEVICE_OBJECT pDevObj, PIRP pI
     return Status;
 }
 
+/* !!!NOTE: the caller MUST be the IRP owner!!! *
+ * !! one can not post threaded IRPs this way!! */
+VBOXDRVTOOL_DECL(NTSTATUS) VBoxDrvToolIoPostSyncWithTimeout(PDEVICE_OBJECT pDevObj, PIRP pIrp, ULONG dwTimeoutMs)
+{
+    KEVENT Event;
+    KeInitializeEvent(&Event, NotificationEvent, FALSE);
+    NTSTATUS Status = VBoxDrvToolIoPostAsync(pDevObj, pIrp, &Event);
+    if (Status == STATUS_PENDING)
+    {
+        LARGE_INTEGER Interval;
+        PLARGE_INTEGER pInterval = NULL;
+        if (dwTimeoutMs != RT_INDEFINITE_WAIT)
+        {
+            Interval.QuadPart = -(int64_t) dwTimeoutMs /* ms */ * 10000;
+            pInterval = &Interval;
+        }
+
+        Status = KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, pInterval);
+        if (Status == STATUS_TIMEOUT)
+        {
+#ifdef DEBUG_misha
+            /* debugging only */
+            AssertFailed();
+#endif
+            if (!IoCancelIrp(pIrp))
+            {
+                /* this may happen, but this is something the caller with timeout is not expecting */
+                AssertFailed();
+            }
+
+            /* wait for the IRP to complete */
+            KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
+        }
+        else
+        {
+            Assert(Status == STATUS_SUCCESS);
+        }
+
+        /* by this time the IRP is completed */
+        Status = pIrp->IoStatus.Status;
+    }
+    return Status;
+}
+
 VBOXDRVTOOL_DECL(VOID) VBoxDrvToolRefWaitEqual(PVBOXDRVTOOL_REF pRef, uint32_t u32Val)
 {
     LARGE_INTEGER Interval;

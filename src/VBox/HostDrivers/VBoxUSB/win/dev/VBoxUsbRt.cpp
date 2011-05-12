@@ -300,7 +300,7 @@ static NTSTATUS vboxUsbRtCacheDescriptors(PVBOXUSBDEV_EXT pDevExt)
     if (pDevExt->Rt.devdescr)
     {
         memset(pDevExt->Rt.devdescr, 0, sizeof (USB_DEVICE_DESCRIPTOR));
-        Status = VBoxUsbToolGetDescriptor(pDevExt->pLowerDO, pDevExt->Rt.devdescr, sizeof (USB_DEVICE_DESCRIPTOR), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0);
+        Status = VBoxUsbToolGetDescriptor(pDevExt->pLowerDO, pDevExt->Rt.devdescr, sizeof (USB_DEVICE_DESCRIPTOR), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, RT_INDEFINITE_WAIT);
         if (NT_SUCCESS(Status))
         {
             Assert(pDevExt->Rt.devdescr->bNumConfigurations > 0);
@@ -311,7 +311,7 @@ static NTSTATUS vboxUsbRtCacheDescriptors(PVBOXUSBDEV_EXT pDevExt)
                 UCHAR i = 0;
                 for (; i < pDevExt->Rt.devdescr->bNumConfigurations; ++i)
                 {
-                    Status = VBoxUsbToolGetDescriptor(pDevExt->pLowerDO, pDr, sizeof (USB_CONFIGURATION_DESCRIPTOR), USB_CONFIGURATION_DESCRIPTOR_TYPE, i, 0);
+                    Status = VBoxUsbToolGetDescriptor(pDevExt->pLowerDO, pDr, sizeof (USB_CONFIGURATION_DESCRIPTOR), USB_CONFIGURATION_DESCRIPTOR_TYPE, i, 0, RT_INDEFINITE_WAIT);
                     if (!NT_SUCCESS(Status))
                     {
                         break;
@@ -325,7 +325,7 @@ static NTSTATUS vboxUsbRtCacheDescriptors(PVBOXUSBDEV_EXT pDevExt)
                         break;
                     }
 
-                    Status = VBoxUsbToolGetDescriptor(pDevExt->pLowerDO, pDevExt->Rt.cfgdescr[i], uTotalLength, USB_CONFIGURATION_DESCRIPTOR_TYPE, i, 0);
+                    Status = VBoxUsbToolGetDescriptor(pDevExt->pLowerDO, pDevExt->Rt.cfgdescr[i], uTotalLength, USB_CONFIGURATION_DESCRIPTOR_TYPE, i, 0, RT_INDEFINITE_WAIT);
                     if (!NT_SUCCESS(Status))
                     {
                         break;
@@ -427,7 +427,7 @@ static NTSTATUS vboxUsbRtGetDeviceDescription(PVBOXUSBDEV_EXT pDevExt)
     PUSB_DEVICE_DESCRIPTOR pDr = (PUSB_DEVICE_DESCRIPTOR)vboxUsbMemAllocZ(sizeof (USB_DEVICE_DESCRIPTOR));
     if (pDr)
     {
-        Status = VBoxUsbToolGetDescriptor(pDevExt->pLowerDO, pDr, sizeof(*pDr), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0);
+        Status = VBoxUsbToolGetDescriptor(pDevExt->pLowerDO, pDr, sizeof(*pDr), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, RT_INDEFINITE_WAIT);
         if (NT_SUCCESS(Status))
         {
             pDevExt->Rt.idVendor    = pDr->idVendor;
@@ -442,10 +442,10 @@ static NTSTATUS vboxUsbRtGetDeviceDescription(PVBOXUSBDEV_EXT pDevExt)
                )
             {
                 int langId;
-                Status = VBoxUsbToolGetLangID(pDevExt->pLowerDO, &langId);
+                Status = VBoxUsbToolGetLangID(pDevExt->pLowerDO, &langId, RT_INDEFINITE_WAIT);
                 if (NT_SUCCESS(Status))
                 {
-                    Status = VBoxUsbToolGetStringDescriptorA(pDevExt->pLowerDO, pDevExt->Rt.szSerial, sizeof (pDevExt->Rt.szSerial), pDr->iSerialNumber, langId);
+                    Status = VBoxUsbToolGetStringDescriptorA(pDevExt->pLowerDO, pDevExt->Rt.szSerial, sizeof (pDevExt->Rt.szSerial), pDr->iSerialNumber, langId, RT_INDEFINITE_WAIT);
                 }
                 else
                 {
@@ -571,7 +571,7 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
 
         pUrb->UrbSelectConfiguration.ConfigurationDescriptor = NULL;
 
-        Status = VBoxUsbToolUrbPost(pDevExt->pLowerDO, pUrb);
+        Status = VBoxUsbToolUrbPost(pDevExt->pLowerDO, pUrb, RT_INDEFINITE_WAIT);
         if(NT_SUCCESS(Status) && USBD_SUCCESS(pUrb->UrbHeader.Status))
         {
             pDevExt->Rt.hConfiguration = pUrb->UrbSelectConfiguration.ConfigurationHandle;
@@ -617,7 +617,7 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
         pUrb = USBD_CreateConfigurationRequestEx(pCfgDr, pIfLe);
         if (pUrb)
         {
-            Status = VBoxUsbToolUrbPost(pDevExt->pLowerDO, pUrb);
+            Status = VBoxUsbToolUrbPost(pDevExt->pLowerDO, pUrb, RT_INDEFINITE_WAIT);
             if (NT_SUCCESS(Status) && USBD_SUCCESS(pUrb->UrbHeader.Status))
             {
                 vboxUsbRtFreeInterfaces(pDevExt, FALSE);
@@ -814,7 +814,7 @@ static NTSTATUS vboxUsbRtSetInterface(PVBOXUSBDEV_EXT pDevExt, uint32_t Interfac
             UsbBuildSelectInterfaceRequest(pUrb, uUrbSize, pDevExt->Rt.hConfiguration, InterfaceNumber, AlternateSetting);
             pUrb->UrbSelectInterface.Interface.Length = GET_USBD_INTERFACE_SIZE(pIfDr->bNumEndpoints);
 
-            Status = VBoxUsbToolUrbPost(pDevExt->pLowerDO, pUrb);
+            Status = VBoxUsbToolUrbPost(pDevExt->pLowerDO, pUrb, RT_INDEFINITE_WAIT);
             if (NT_SUCCESS(Status) && USBD_SUCCESS(pUrb->UrbHeader.Status))
             {
                 USBD_INTERFACE_INFORMATION *pIfInfo = &pUrb->UrbSelectInterface.Interface;
