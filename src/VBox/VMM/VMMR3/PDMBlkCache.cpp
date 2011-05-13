@@ -2568,6 +2568,8 @@ VMMR3DECL(int) PDMR3BlkCacheSuspend(PPDMBLKCACHE pBlkCache)
 
     AssertPtrReturn(pBlkCache, VERR_INVALID_POINTER);
 
+    if (!ASMAtomicReadBool(&pBlkCache->pCache->fIoErrorVmSuspended))
+        pdmBlkCacheCommit(pBlkCache); /* Can issue new I/O requests. */
     ASMAtomicXchgBool(&pBlkCache->fSuspended, true);
 
     /* Wait for all I/O to complete. */
