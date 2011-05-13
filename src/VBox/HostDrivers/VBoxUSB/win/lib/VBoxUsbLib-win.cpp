@@ -353,7 +353,7 @@ static int usbLibDevStrDriverKeyGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
     *plpszName = NULL;
     if (!DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_DRIVERKEY_NAME, &Name, sizeof (Name), &Name, sizeof (Name), &cbReturned, NULL))
     {
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         DWORD winEr = GetLastError();
         AssertMsgFailed((__FUNCTION__": DeviceIoControl 1 fail winEr (%d)\n", winEr));
 #endif
@@ -484,7 +484,7 @@ static int usbLibDevCfgDrGet(HANDLE hHub, ULONG iPort, ULONG iDr, PUSB_CONFIGURA
     {
         DWORD winEr = GetLastError();
         LogRel((__FUNCTION__": DeviceIoControl 1 fail winEr (%d)\n", winEr));
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         AssertFailed();
 #endif
         return VERR_GENERAL_FAILURE;
@@ -521,7 +521,7 @@ static int usbLibDevCfgDrGet(HANDLE hHub, ULONG iPort, ULONG iDr, PUSB_CONFIGURA
         {
             DWORD winEr = GetLastError();
             LogRel((__FUNCTION__": DeviceIoControl 2 fail winEr (%d)\n", winEr));
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
             AssertFailed();
 #endif
             break;
@@ -571,7 +571,7 @@ static int usbLibDevStrDrEntryGet(HANDLE hHub, ULONG iPort, ULONG iDr, USHORT id
     {
         DWORD winEr = GetLastError();
         LogRel((__FUNCTION__": DeviceIoControl 1 fail winEr (%d)\n", winEr));
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
             AssertFailed();
 #endif
         return VERR_GENERAL_FAILURE;
@@ -643,7 +643,9 @@ static int usbLibDevStrDrEntryGetForLangs(HANDLE hHub, ULONG iPort, ULONG iDr, U
 static int usbLibDevStrDrEntryGetAll(HANDLE hHub, ULONG iPort, PUSB_DEVICE_DESCRIPTOR pDevDr, PUSB_CONFIGURATION_DESCRIPTOR pCfgDr, PVBOXUSB_STRING_DR_ENTRY *ppList)
 {
     int rc = usbLibDevStrDrEntryGet(hHub, iPort, 0, 0, ppList);
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
     AssertRC(rc);
+#endif
     if (RT_FAILURE(rc))
         return rc;
 
@@ -778,7 +780,9 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
     if (pCfgDr)
     {
         rc = usbLibDevStrDrEntryGetAll(hHub, iPort, &pConInfo->DeviceDescriptor, pCfgDr, &pList);
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         AssertRC(rc);
+#endif
     }
 
     PUSBDEVICE pDev = (PUSBDEVICE)RTMemAllocZ(sizeof (*pDev));
@@ -922,7 +926,7 @@ static int usbLibMonDevicesUpdate(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE pDevs,
             {
                  DWORD winEr = GetLastError();
                  /* ERROR_DEVICE_NOT_CONNECTED -> device was removed just now */
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
                  AssertMsg(winEr == ERROR_DEVICE_NOT_CONNECTED, (__FUNCTION__": DeviceIoControl failed winEr (%d)\n", winEr));
 #endif
                  Log(("SUPUSB_IOCTL_GET_DEVICE: DeviceIoControl no longer connected\n"));
@@ -964,7 +968,7 @@ static int usbLibMonDevicesUpdate(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE pDevs,
                 pDevs->pszAltAddress = (char*)pDevs->pszAddress;
                 pDevs->pszAddress = RTStrDup(pDevInfos->szName);
             }
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
             else
             {
                 /* dbg breakpoint */
@@ -1075,7 +1079,7 @@ USBLIB_DECL(void *) USBLibAddFilter(PCUSBFILTER pFilter)
 
     if (g_VBoxUsbGlobal.hMonitor == INVALID_HANDLE_VALUE)
     {
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         AssertFailed();
 #endif
         return NULL;
@@ -1112,7 +1116,7 @@ USBLIB_DECL(void) USBLibRemoveFilter(void *pvId)
 
     if (g_VBoxUsbGlobal.hMonitor == INVALID_HANDLE_VALUE)
     {
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         AssertFailed();
 #endif
         return;
@@ -1424,7 +1428,7 @@ USBLIB_DECL(int) USBLibInit(void)
             else
             {
                 LogRel((__FUNCTION__": USB Service not found\n"));
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
                 AssertFailed();
 #endif
                 rc = VERR_FILE_NOT_FOUND;
@@ -1465,7 +1469,7 @@ USBLIB_DECL(int) USBLibTerm(void)
 {
     if (g_VBoxUsbGlobal.hMonitor == INVALID_HANDLE_VALUE)
     {
-#ifdef DEBUG_misha
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         AssertFailed();
 #endif
         return VINF_ALREADY_INITIALIZED;
