@@ -739,7 +739,7 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
                                   &cbReturned, NULL))
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": DeviceIoControl failed winEr (%d)\n", winEr));
+        AssertMsg(winEr == ERROR_DEVICE_NOT_CONNECTED, (__FUNCTION__": DeviceIoControl failed winEr (%d)\n", winEr));
         return VERR_GENERAL_FAILURE;
     }
 
