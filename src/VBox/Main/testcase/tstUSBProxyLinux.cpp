@@ -178,18 +178,20 @@ static struct
     { { NULL }, { NULL }, "/dev/vboxusb", true, false },
     /* /proc/bus/usb available but empty -> usbfs method available (we can't
      * really check in this case) */
-    { { NULL }, { NULL }, "/proc/bus/usb", false, true },
+    { { NULL }, { "/proc/bus/usb" }, "/proc/bus/usb", false, true },
+    /* /proc/bus/usb not available or not accessible -> usbfs method not available */
+    { { NULL }, { NULL }, "/proc/bus/usb", false, false },
     /* /proc/bus/usb available, one inaccessible device -> usbfs method not
      * available */
-    { { "/proc/bus/usb/001/001" }, { NULL }, "/proc/bus/usb", false, false },
+    { { "/proc/bus/usb/001/001" }, { "/proc/bus/usb" }, "/proc/bus/usb", false, false },
     /* /proc/bus/usb available, one device of two inaccessible -> usbfs method
      * not available */
     { { "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
-      { "/proc/bus/usb/001/001" }, "/proc/bus/usb", false, false },
+      { "/proc/bus/usb", "/proc/bus/usb/001/001" }, "/proc/bus/usb", false, false },
     /* /proc/bus/usb available, two accessible devices -> usbfs method
      * available */
     { { "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
-      { "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
+      { "/proc/bus/usb", "/proc/bus/usb/001/001", "/proc/bus/usb/002/002" },
       "/proc/bus/usb", false, true }
 };
 
