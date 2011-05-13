@@ -27,8 +27,69 @@
 #ifndef ___VBox_com_list_h
 #define ___VBox_com_list_h
 
+#include <VBox/com/ptr.h>
 #include <VBox/com/string.h>
 #include <iprt/cpp/list.h>
+
+/**
+ * Specialized list class for using with com::ComPtr<C>
+ *
+ * @note: This is necessary cause ComPtr<IFACE> has a size of 8.
+ */
+template <typename C>
+class RTCList< ComPtr<C> >: public RTCListBase< ComPtr<C>, ComPtr<C>*, false>
+{
+    /* Traits */
+    typedef ComPtr<C>                 T;
+    typedef T                        *ITYPE;
+    static const bool                 MT = false;
+    typedef RTCListBase<T, ITYPE, MT> BASE;
+
+public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
+    RTCList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+};
+
+/**
+ * Specialized list class for using with com::ComObjPtr<C>
+ *
+ * @note: This is necessary cause ComObjPtr<IFACE> has a size of 8.
+ */
+template <typename C>
+class RTCList< ComObjPtr<C> >: public RTCListBase< ComObjPtr<C>, ComObjPtr<C>*, false>
+{
+    /* Traits */
+    typedef ComObjPtr<C>              T;
+    typedef T                        *ITYPE;
+    static const bool                 MT = false;
+    typedef RTCListBase<T, ITYPE, MT> BASE;
+
+public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
+    RTCList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+};
 
 /**
  * Specialized list class for using with com::Utf8Str.
