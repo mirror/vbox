@@ -237,7 +237,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDeviceSpeed(PDEVICE_OBJECT pDevObj, BOO
     pIrp->IoStatus.Status = STATUS_NOT_SUPPORTED;
 
     NTSTATUS Status = VBoxDrvToolIoPostSync(pDevObj, pIrp);
-    Assert(NT_SUCCESS(Status));
+    Assert(NT_SUCCESS(Status) || Status == STATUS_NOT_SUPPORTED);
     if (NT_SUCCESS(Status))
     {
         *pbIsHigh = BusIf.IsDeviceHighSpeed(BusIf.BusContext);
