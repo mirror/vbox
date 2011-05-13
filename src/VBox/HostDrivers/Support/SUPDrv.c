@@ -4998,7 +4998,7 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
  *
  * @returns Index of the CPU in the cache set.
  */
-static inline uint32_t supdrvGipCpuIndexFromCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
+DECLINLINE(uint32_t) supdrvGipCpuIndexFromCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
 {
     uint32_t i = 0;
 
