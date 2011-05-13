@@ -247,7 +247,7 @@
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
-        <translation>Mašinai nusiųsti klavišų kombinaciją Vald+Alt+Šalinti(Delete)</translation>
+        <translation>Mašinai nusiųsti klavišų kombinaciją Vald(Ctrl)+Alt+Šalinti(Delete)</translation>
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
@@ -255,7 +255,7 @@
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Mašinai nusiųsti klavišų kombinaciją Vald+Alt+Naikinti(Backspace)</translation>
+        <translation>Mašinai nusiųsti klavišų kombinaciją Vald(Ctrl)+Alt+Naikinti(Backspace)</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
@@ -3372,7 +3372,7 @@
     <name>UIMachineWindowNormal</name>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Rodo pasirinktą pagrindinį klavišą. &lt;br&gt;Pavieniui nuspaustas, šis klavišas perjungia įvedimo klaviatūra veikseną. Jis taip pat gali būti naudojamas kartu su kitais klavišais norint greitai įvykdyti pagrindinio meniu komandas.</translation>
+        <translation>Rodo pasirinktą pagrindinio kompiuterio klavišą. &lt;br&gt;Pavieniui nuspaustas, šis klavišas perjungia įvedimo klaviatūra veikseną. Jis taip pat gali būti naudojamas kartu su kitais klavišais norint greitai įvykdyti pagrindinio meniu komandas.</translation>
     </message>
 </context>
 <context>
@@ -3726,7 +3726,7 @@
     </message>
     <message>
         <source>Protocol</source>
-        <translation>Protolkolas</translation>
+        <translation>Protokolas</translation>
     </message>
     <message>
         <source>Host IP</source>
@@ -7390,7 +7390,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuali mašina pranešė, kad svečio OS nepalaiko &lt;b&gt;pelės žymeklio integravimo&lt;/b&gt; šioje vaizdo veiksenoje. Jei norite, kad virtuali mašina reaguotų į pelę, spragtelėkite pele svečio OS lange arba nuspauskite pagrindinį kompiuterio klavišą (host).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Virtuali mašina pranešė, kad svečio OS nepalaiko &lt;b&gt;pelės žymeklio integravimo&lt;/b&gt; šioje vaizdo veiksenoje. Jei norite, kad virtuali mašina reaguotų į pelę, spragtelėkite pele svečio OS lange arba nuspauskite pagrindinio kompiuterio klavišą.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -7596,7 +7596,7 @@ IPv6.</translation>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
         <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;Šiuo metu pagrindinis kompiuterio klavišas yra &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Šiuo metu pagrindinio kompiuterio klavišas yra &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Capture</source>
@@ -7661,11 +7661,11 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Spragtelėjote pele&lt;/b&gt; virtualios mašinos lange arba nuspaudėte kompiuterio &lt;b&gt;pagrindinį klavišą (Host)&lt;/b&gt;. Todėl virtuali mašina ims &lt;b&gt;reaguoti&lt;/b&gt; į pagrindinio kompiuterio pelės žymeklį (tik jei svečio operacinė sistema nepalaiko pelės žymeklio integravimo) ir į klaviatūrą; į pelę ir klaiviatūrą nebereaguos jokios kitos pagrindinio kompiuterio programos.&lt;/p&gt;&lt;p&gt;Nuspaudus kompiuterio &lt;b&gt;pagrindinį klavišą (host)&lt;/b&gt; bus &lt;b&gt;nebereaguojama&lt;/b&gt; automatiškai į pelę ir klaviatūrą (jei buvo reaguojama) ir darbas vyks įprastu būdu. Šiuo metu kaip pagrindnis klavišas yra naudojamas tas, kuris rodomas virtualios mašinos lango apatiniame kampe ties&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ženkliuku. Šis ir pelės ženkliukas rodo reagavimo į klaviatūrą ir pelę būseną.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;Spragtelėjote pele&lt;/b&gt; virtualios mašinos lange arba nuspaudėte &lt;b&gt;pagrindinio kompiuterio klavišą&lt;/b&gt;. Todėl virtuali mašina ims &lt;b&gt;reaguoti&lt;/b&gt; į pagrindinio kompiuterio pelės žymeklį (tik jei svečio operacinė sistema nepalaiko pelės žymeklio integravimo) ir į klaviatūrą; į pelę ir klaiviatūrą nebereaguos jokios kitos pagrindinio kompiuterio programos.&lt;/p&gt;&lt;p&gt;Nuspaudus &lt;b&gt;pagrindinio kompiuterio klavišą&lt;/b&gt; bus &lt;b&gt;nebereaguojama&lt;/b&gt; automatiškai į pelę ir klaviatūrą (jei buvo reaguojama) ir darbas vyks įprastu būdu. Šiuo metu pagrindinio kompiuterio klavišas yra tas, kuris rodomas virtualios mašinos lango apatiniame kampe ties&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ženkliuku. Šis ir pelės ženkliukas rodo reagavimo į klaviatūrą ir pelę būseną.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Įgalinta &lt;b&gt;Automatinio reagavimo į klaviatūrą&lt;/b&gt; parinktis. Todėl virtuali mašina automatiškai &lt;b&gt;reaguos&lt;/b&gt; į klaviatūros paspaudimus, jei virtualios mašinos langas bus aktyvus; tuomet į klaviatūrą nereaguos jokios kitos pagrindiniame kompiuteryje paleistos programos; netgi dauguma sparčiųjų klavišų (įskaitant Alt+Tab) bus tiesiogiai perduoti virtualiai mašinai.&lt;/p&gt;&lt;p&gt;Nuspaudus kompiuterio &lt;b&gt;pagrindinį klavišą&lt;/b&gt; bus &lt;b&gt;nebereaguojama&lt;/b&gt; automatiškai į pelę ir klaviatūrą (jei buvo reaguojama) ir darbas vyks įprastu būdu. Šiuo metu kaip pagrindnis klavišas yra naudojamas tas, kuris rodomas virtualios mašinos lango apatiniame kampe ties&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ženkliuku. Šis ir pelės ženkliukas rodo reagavimo į klaviatūrą ir pelę būseną.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Įgalinta &lt;b&gt;Automatinio reagavimo į klaviatūrą&lt;/b&gt; parinktis. Todėl virtuali mašina automatiškai &lt;b&gt;reaguos&lt;/b&gt; į klaviatūros paspaudimus, jei virtualios mašinos langas bus aktyvus; tuomet į klaviatūrą nereaguos jokios kitos pagrindiniame kompiuteryje paleistos programos; netgi dauguma sparčiųjų klavišų (įskaitant Alt+Tab) bus tiesiogiai perduoti virtualiai mašinai.&lt;/p&gt;&lt;p&gt;Nuspaudus &lt;b&gt;pagrindinio kompiuterio klavišą&lt;/b&gt; bus &lt;b&gt;nebereaguojama&lt;/b&gt; automatiškai į pelę ir klaviatūrą (jei buvo reaguojama) ir darbas vyks įprastu būdu. Šiuo metu pagrindinio kompiuterio klavišas yra tas, kuris rodomas virtualios mašinos lango apatiniame kampe ties&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ženkliuku. Šis ir pelės ženkliukas rodo reagavimo į klaviatūrą ir pelę būseną.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -8439,15 +8439,15 @@ IPv6.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;viso ekrano&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;Pagrindinis&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, viso ekrano veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;Pagrindinis + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;viso ekrano&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, viso ekrano veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klavišas) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;integruoto darbalaukio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;Pagrindinis&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, integruotoje veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;Pagrindinis+Prad&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;integruoto darbalaukio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, integruotoje veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klav.) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;keičiamo lango dydžio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;Pagrindinis&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, keičiamo lango dydžio veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;Pagrindinis + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;keičiamo lango dydžio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, keičiamo lango dydžio veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klav.) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Switch</source>
@@ -8811,7 +8811,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Darbalaukyje sukuriama šaukinio rinkmeną į VirtualBox mašinos apibrėžties rinkmeną.</translation>
+        <translation>Darbalaukyje sukuriama šaukinio rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
     </message>
     <message>
         <source>Show in File Manager</source>
