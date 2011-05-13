@@ -50,6 +50,7 @@ static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser
 static DECLCALLBACK(void) hwaccmR0InitCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static bool               hwaccmR0IsSubjectToVmxPreemptionTimerErratum(void);
 static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser);
+static DECLCALLBACK(void) hwaccmR0CpuCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -497,6 +498,9 @@ VMMR0DECL(int) HWACCMR0Init(void)
 
     if (!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
     {
+        rc = RTMpNotificationRegister(hwaccmR0CpuCallback, 0);
+        AssertRC(rc);
+
         rc = RTPowerNotificationRegister(hwaccmR0PowerCallback, 0);
         AssertRC(rc);
     }
@@ -574,6 +578,9 @@ VMMR0DECL(int) HWACCMR0Term(void)
         Assert(!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx);
         if (!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
         {
+            /* Doesn't really matter if this fails. */
+            rc = RTMpNotificationDeregister(hwaccmR0CpuCallback, 0);
+            AssertRC(rc);
             rc = RTPowerNotificationDeregister(hwaccmR0PowerCallback, 0);
             AssertRC(rc);
         }
@@ -731,8 +738,7 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
             {
                 Assert(!HWACCMR0Globals.aCpuInfo[i].pMemObj);
 
-                /** @todo this is rather dangerous if cpus can be taken offline; we don't care for now */
-                if (RTMpIsCpuOnline(i))
+                if (RTMpIsCpuPossible(RTMpCpuId()))
                 {
                     rc = RTR0MemObjAllocCont(&HWACCMR0Globals.aCpuInfo[i].pMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
                     AssertRC(rc);
@@ -747,6 +753,7 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
                     SUPR0Printf("address %x phys %x\n", pvR0, (uint32_t)RTR0MemObjGetPagePhysAddr(HWACCMR0Globals.aCpuInfo[i].pMemObj, 0));
 #endif
                 }
+                HWACCMR0Globals.aCpuInfo[i].fConfigured = false;
             }
             if (HWACCMR0Globals.fGlobalInit)
             {
@@ -797,6 +804,7 @@ static int hwaccmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     /* Should never happen */
     if (!pCpu->pMemObj)
     {
+        LogRel(("HWACCMR0: hwaccmR0EnableCpu failed idCpu=%d.\n", idCpu));
         AssertFailed();
         return VERR_INTERNAL_ERROR;
     }
@@ -882,6 +890,37 @@ static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser
     AssertReturnVoid(HWACCMR0Globals.fGlobalInit);
     hwaccmR0FirstRcSetStatus(pFirstRc, hwaccmR0DisableCpu(idCpu));
 }
+
+
+/**
+ * Callback function invoked when a cpu goes online or offline.
+ *
+ * @param   enmEvent            The Mp event.
+ * @param   idCpu               The identifier for the CPU the function is called on.
+ * @param   pvData              Opaque data (PVM pointer).
+ */
+static DECLCALLBACK(void) hwaccmR0CpuCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData)
+{
+    /*
+     * We only care about uninitializing a CPU that is going offline. When a
+     * CPU comes online, the initialization is done lazily in HWACCMR0Enter().
+     */
+    AssertRelease(idCpu == RTMpCpuId());
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    switch (enmEvent)
+    {
+        case RTMPEVENT_OFFLINE:
+        {
+            int rc = hwaccmR0DisableCpu(idCpu);
+            AssertRC(rc);
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
 
 /**
  * Called whenever a system power state change occurs.
@@ -1128,8 +1167,8 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
  * Enters the VT-x or AMD-V session
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu      VMCPUD id.
+ * @param   pVM        The VM to operate on.
+ * @param   pVCpu      VMCPU handle.
  */
 VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
 {
@@ -1162,8 +1201,9 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     else
         pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFF);
 
-    /* Enable VT-x or AMD-V if local init is required. */
-    if (!HWACCMR0Globals.fGlobalInit)
+    /* Enable VT-x or AMD-V if local init is required, or enable if it's a freshly onlined CPU. */
+    if (   !pCpu->fConfigured
+        || !HWACCMR0Globals.fGlobalInit)
     {
         rc = hwaccmR0EnableCpu(pVM, idCpu);
         AssertRCReturn(rc, rc);
@@ -1197,8 +1237,8 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
  * Leaves the VT-x or AMD-V session
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- * @param   pVCpu      VMCPUD id.
+ * @param   pVM        The VM to operate on.
+ * @param   pVCpu      VMCPU handle.
  */
 VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
 {
