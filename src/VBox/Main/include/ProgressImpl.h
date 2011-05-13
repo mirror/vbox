@@ -241,6 +241,7 @@ public:
     // IProgress methods
     STDMETHOD(WaitForCompletion)(LONG aTimeout);
     STDMETHOD(WaitForOperationCompletion)(ULONG aOperation, LONG aTimeout);
+    STDMETHOD(WaitForAsyncProgressCompletion)(IProgress *pProgressAsync);
     STDMETHOD(Cancel)();
 
     STDMETHOD(SetCurrentOperationProgress)(ULONG aPercent);

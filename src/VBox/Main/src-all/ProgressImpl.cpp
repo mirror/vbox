@@ -915,6 +915,89 @@ STDMETHODIMP Progress::WaitForOperationCompletion(ULONG aOperation, LONG aTimeou
     return S_OK;
 }
 
+STDMETHODIMP Progress::WaitForAsyncProgressCompletion(IProgress *pProgressAsync)
+{
+    LogFlowThisFuncEnter();
+
+    CheckComArgNotNull(pProgressAsync);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Note: we don't lock here, cause we just using public methods. */
+
+    HRESULT rc           = S_OK;
+    BOOL fCancelable     = FALSE;
+    BOOL fCompleted      = FALSE;
+    BOOL fCanceled       = FALSE;
+    ULONG currentPercent = 0;
+    ULONG cOp            = 0;
+    /* Is the async process cancelable? */
+    rc = pProgressAsync->COMGETTER(Cancelable)(&fCancelable);
+    if (FAILED(rc)) return rc;
+    /* Loop as long as the sync process isn't completed. */
+    while (SUCCEEDED(pProgressAsync->COMGETTER(Completed(&fCompleted))))
+    {
+        /* We can forward any cancel request to the async process only when
+         * it is cancelable. */
+        if (fCancelable)
+        {
+            rc = COMGETTER(Canceled)(&fCanceled);
+            if (FAILED(rc)) return rc;
+            if (fCanceled)
+            {
+                rc = pProgressAsync->Cancel();
+                if (FAILED(rc)) return rc;
+            }
+        }
+        /* Even if the user canceled the process, we have to wait until the
+           async task has finished his work (cleanup and such). Otherwise there
+           will be sync trouble (still wrong state, dead locks, ...) on the
+           used objects. So just do nothing, but wait for the complete
+           notification. */
+        if (!fCanceled)
+        {
+            /* Check if the current operation has changed. It is also possible that
+             * in the meantime more than one async operation was finished. So we
+             * have to loop as long as we reached the same operation count. */
+            ULONG curOp;
+            for(;;)
+            {
+                rc = pProgressAsync->COMGETTER(Operation(&curOp));
+                if (FAILED(rc)) return rc;
+                if (cOp != curOp)
+                {
+                    Bstr bstr;
+                    ULONG currentWeight;
+                    rc = pProgressAsync->COMGETTER(OperationDescription(bstr.asOutParam()));
+                    if (FAILED(rc)) return rc;
+                    rc = pProgressAsync->COMGETTER(OperationWeight(&currentWeight));
+                    if (FAILED(rc)) return rc;
+                    rc = SetNextOperation(bstr.raw(), currentWeight);
+                    if (FAILED(rc)) return rc;
+                    ++cOp;
+                }else
+                    break;
+            }
+
+            rc = pProgressAsync->COMGETTER(OperationPercent(&currentPercent));
+            if (FAILED(rc)) return rc;
+            rc = SetCurrentOperationProgress(currentPercent);
+            if (FAILED(rc)) return rc;
+        }
+        if (fCompleted)
+            break;
+
+        /* Make sure the loop is not too tight */
+        rc = pProgressAsync->WaitForCompletion(100);
+        if (FAILED(rc)) return rc;
+    }
+
+    LogFlowThisFuncLeave();
+
+    return rc;
+}
+
 STDMETHODIMP Progress::Cancel()
 {
     AutoCaller autoCaller(this);
