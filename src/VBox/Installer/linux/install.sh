@@ -17,8 +17,9 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 
-# Source functions needed by the installer
+# Include routines and utilities needed by the installer
 . ./routines.sh
+#include installer-utils.sh
 
 LOG="/var/log/vbox-install.log"
 VERSION="_VERSION_"
@@ -441,41 +442,8 @@ if [ "$ACTION" = "install" ]; then
     fi
 
     # Create udev description file
-    if [ -d /etc/udev/rules.d ]; then
-        udev_call=""
-        udev_app=`which udevadm 2> /dev/null`
-        if [ $? -eq 0 ]; then
-            udev_call="${udev_app} version 2> /dev/null"
-        else
-            udev_app=`which udevinfo 2> /dev/null`
-            if [ $? -eq 0 ]; then
-                udev_call="${udev_app} -V 2> /dev/null"
-            fi
-        fi
-        udev_fix="="
-        if [ "${udev_call}" != "" ]; then
-            udev_out=`${udev_call}`
-            udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
-            if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
-               udev_fix=""
-            fi
-        fi
-        # Write udev rules
-        echo "KERNEL=${udev_fix}\"vboxdrv\", NAME=\"vboxdrv\", OWNER=\"root\", GROUP=\"$VBOXDRV_GRP\", MODE=\"$VBOXDRV_MODE\"" \
-          > /etc/udev/rules.d/10-vboxdrv.rules
-        echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"add\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}\"" \
-          >> /etc/udev/rules.d/10-vboxdrv.rules
-        echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"add\", ENV{DEVTYPE}==\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}\"" \
-          >> /etc/udev/rules.d/10-vboxdrv.rules
-        echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"remove\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\"" \
-          >> /etc/udev/rules.d/10-vboxdrv.rules
-        echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\"" \
-          >> /etc/udev/rules.d/10-vboxdrv.rules
-    fi
-    # Remove old udev description file
-    if [ -f /etc/udev/rules.d/60-vboxdrv.rules ]; then
-        rm -f /etc/udev/rules.d/60-vboxdrv.rules 2> /dev/null
-    fi
+    install_udev_run "$VBOXDRV_GRP" "$VBOXDRV_MODE" "$INSTALLATION_DIR" \
+        > /etc/udev/rules.d/10-vboxdrv.rules
 
     # Build our device tree
     for i in /sys/bus/usb/devices/*; do
