@@ -267,6 +267,113 @@ int handleCreateVM(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static const RTGETOPTDEF g_aCloneVMOptions[] =
+{
+    { "--name",           'n', RTGETOPT_REQ_STRING },
+    { "--register",       'r', RTGETOPT_REQ_NOTHING },
+    { "--basefolder",     'p', RTGETOPT_REQ_STRING },
+    { "--uuid",           'u', RTGETOPT_REQ_STRING },
+};
+
+int handleCloneVM(HandlerArg *a)
+{
+    HRESULT rc;
+    const char *pszSrcName       = NULL;
+    const char *pszTrgName       = NULL;
+    const char *pszTrgBaseFolder = NULL;
+    bool fRegister               = false;
+    RTUUID trgUuid;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aCloneVMOptions, RT_ELEMENTS(g_aCloneVMOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'n':   // --name
+                pszTrgName = ValueUnion.psz;
+                break;
+
+            case 'p':   // --basefolder
+                pszTrgBaseFolder = ValueUnion.psz;
+                break;
+
+            case 'u':   // --uuid
+                if (RT_FAILURE(RTUuidFromStr(&trgUuid, ValueUnion.psz)))
+                    return errorArgument("Invalid UUID format %s\n", ValueUnion.psz);
+                break;
+
+            case 'r':   // --register
+                fRegister = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pszSrcName)
+                    pszSrcName = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_CLONEVM, "Invalid parameter '%s'", ValueUnion.psz);
+                break;
+
+            default:
+                return errorGetOpt(USAGE_CLONEVM, c, &ValueUnion);
+        }
+    }
+
+    /* ~heck for required options */
+    if (!pszSrcName)
+        return errorSyntax(USAGE_CLONEVM, "VM name required");
+
+    ComPtr<IMachine> srcMachine;
+    CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(pszSrcName).raw(),
+                                               srcMachine.asOutParam()),
+                    RTEXITCODE_FAILURE);
+
+    /* Default name necessary? */
+    if (!pszTrgName)
+        pszTrgName = RTStrAPrintf2("%s Copy", pszSrcName);
+
+    Bstr bstrSettingsFile;
+    CHECK_ERROR_RET(a->virtualBox,
+                    ComposeMachineFilename(Bstr(pszTrgName).raw(),
+                                           Bstr(pszTrgBaseFolder).raw(),
+                                           bstrSettingsFile.asOutParam()),
+                    RTEXITCODE_FAILURE);
+
+    ComPtr<IMachine> trgMachine;
+    CHECK_ERROR_RET(a->virtualBox, CreateMachine(bstrSettingsFile.raw(),
+                                                 Bstr(pszTrgName).raw(),
+                                                 NULL,
+                                                 Guid(trgUuid).toUtf16().raw(),
+                                                 FALSE,
+                                                 trgMachine.asOutParam()),
+                    RTEXITCODE_FAILURE);
+    ComPtr<IProgress> progress;
+    CHECK_ERROR_RET(srcMachine, CloneTo(trgMachine,
+                                        FALSE,
+                                        progress.asOutParam()),
+                    RTEXITCODE_FAILURE);
+    rc = showProgress(progress);
+    if (FAILED(rc))
+    {
+        com::ProgressErrorInfo ErrInfo(progress);
+        com::GluePrintErrorInfo(ErrInfo);
+        return RTEXITCODE_FAILURE;
+    }
+
+    if (fRegister)
+        CHECK_ERROR_RET(a->virtualBox, RegisterMachine(trgMachine), RTEXITCODE_FAILURE);
+
+    Bstr bstrNewName;
+    CHECK_ERROR_RET(trgMachine, COMGETTER(Name)(bstrNewName.asOutParam()), RTEXITCODE_FAILURE);
+    RTPrintf("Machine has been successfully cloned as \"%lS\"\n", bstrNewName.raw());
+
+    return RTEXITCODE_SUCCESS;
+}
+
 int handleStartVM(HandlerArg *a)
 {
     HRESULT rc;

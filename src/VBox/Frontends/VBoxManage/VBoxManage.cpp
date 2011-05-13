@@ -231,7 +231,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
 
 #endif /* !VBOX_ONLY_DOCS */
 
-#ifdef RT_OS_WINDOWS 
+#ifdef RT_OS_WINDOWS
 // Required for ATL
 static CComModule _Module;
 #endif
@@ -398,6 +398,7 @@ int main(int argc, char *argv[])
             { "showvminfo",       USAGE_SHOWVMINFO,        handleShowVMInfo },
             { "registervm",       USAGE_REGISTERVM,        handleRegisterVM },
             { "unregistervm",     USAGE_UNREGISTERVM,      handleUnregisterVM },
+            { "clonevm",          USAGE_CLONEVM,           handleCloneVM },
             { "createhd",         USAGE_CREATEHD,          handleCreateHardDisk },
             { "createvdi",        USAGE_CREATEHD,          handleCreateHardDisk }, /* backward compatibility */
             { "modifyhd",         USAGE_MODIFYHD,          handleModifyHardDisk },

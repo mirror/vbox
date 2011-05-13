@@ -332,6 +332,15 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "\n");
     }
 
+    if (u64Cmd & USAGE_CLONEVM)
+        RTStrmPrintf(pStrm,
+                     "VBoxManage clonevm          <uuid>|<name>\n"
+                     "                            [--name <name>]\n"
+                     "                            [--basefolder <basefolder>]\n"
+                     "                            [--uuid <uuid>]\n"
+                     "                            [--register]\n"
+                     "\n");
+
     if (u64Cmd & USAGE_IMPORTAPPLIANCE)
         RTStrmPrintf(pStrm,
                      "VBoxManage import           <ovf/ova> [--dry-run|-n] [more options]\n"
