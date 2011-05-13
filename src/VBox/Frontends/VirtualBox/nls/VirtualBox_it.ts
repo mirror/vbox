@@ -9270,11 +9270,11 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Fallimento nell&apos;inizializzazione di COM o nell&apos;individuazione del server VirtualBox COM. Probabilmente il server VirtualBox non è in esecuzione o non è riuscito a partire.&lt;/p&gt;&lt;p&gt;L&apos;applicazione verrà chiusa.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Inizializzazione COM o individuazione del server VirtualBox COM non riuscita. Probabilmente il server VirtualBox non è in esecuzione o non è riuscito a partire.&lt;/p&gt;&lt;p&gt;L&apos;applicazione sarà chiusa.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Fallimento nella creazione dell&apos;oggetto COM VirtualBox.&lt;/p&gt;&lt;p&gt;L&apos;applicazione verrà ora chiusa.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Creazione dell&apos;oggetto COM VirtualBox non riuscita.&lt;/p&gt;&lt;p&gt;L&apos;applicazione sarà chiusa immediatamente.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -9286,23 +9286,23 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation>Fallimento nell&apos;impostazione delle proprietà globali di VirtualBox.</translation>
+        <translation>Impostazione delle proprietà globali di VirtualBox non riuscita.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
-        <translation>Fallimento nell&apos;accesso al subsystem USB.</translation>
+        <translation>Accesso al sottosistema USB non riuscito.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation>Fallimento nella creazione di una nuova macchina virtuale.</translation>
+        <translation>Creazione di una nuova macchina virtuale non riuscita.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Fallimento nella creazione di una nuova macchina virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Creazione di una nuova macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
     </message>
     <message>
         <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Fallimento nell&apos;applicazione delle impostazioni alla macchina virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Applicazione delle impostazioni alla macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -9342,7 +9342,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
     <message>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Scarto dello stato salvato per la Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
+        <translation>Scarto dello stato salvato per la macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>

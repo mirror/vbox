@@ -1462,7 +1462,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">Разширения</translation>
+        <translation>Разширения</translation>
     </message>
 </context>
 <context>
@@ -1548,11 +1548,11 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation type="unfinished"></translation>
+        <translation>Нулиране на основния клавиш</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Връща настройката за основен клавиш във виртуалния прозорец по подразбиране.</translation>
     </message>
 </context>
 <context>
@@ -1760,7 +1760,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>Networking</source>
-        <translation type="unfinished"></translation>
+        <translation>Мрежова свързаност</translation>
     </message>
 </context>
 <context>
@@ -2096,7 +2096,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Няма</translation>
     </message>
 </context>
 <context>
@@ -3879,7 +3879,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 текущо е позволено за тази виртуална машина. Това изисква да бъде инсталиран &lt;b&gt;%1&lt;/b&gt;. Моля, инсталирайте пакета с разширения от сайта на VirtualBox. След това ще можете да позволите отново USB 2.0. Междувременно тази настройка ще бъде забранена, освен ако не откажете тази промяна в настройките.</translation>
     </message>
 </context>
 <context>
@@ -7084,7 +7084,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; е невалидна клавишна комбинация за основен клавиш.</translation>
     </message>
 </context>
 <context>
@@ -8561,15 +8561,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="unfinished"></translation>
+        <translation>Изтриването на всички файлове, принадлежащи към виртуалната машина, текущо е забранено за Windows/x64, за да се предотврати срив. Това ще бъде поправено в следващата версия.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не може да се създаде папката &lt;b&gt;%1&lt;/b&gt; за машината в родителската папка &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Моля, проверете дали родителската папка съществува и имате права за създаването на папката на машината.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;USB 2.0 текущо е позволено за тази виртуална машина. Това изисква да бъде инсталиран &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Моля, инсталирайте пакета с разширения от сайта на VirtualBox. След това ще можете да позволите отново USB 2.0. Междувременно тази настройка ще бъде забранена, освен ако не откажете тази промяна в настройките.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

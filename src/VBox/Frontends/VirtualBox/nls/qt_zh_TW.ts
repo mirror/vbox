@@ -1216,7 +1216,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Show </source>
-        <translation>顯示</translation>
+        <translation>顯示 </translation>
     </message>
     <message>
         <source>Forward</source>
@@ -3652,7 +3652,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation>Caps Lock</translation>
+        <translation>大寫鎖定</translation>
     </message>
     <message>
         <source>Num Lock</source>
@@ -4014,15 +4014,15 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>LRE Start of left-to-right embedding</source>
-        <translation>LRE 開始的左到右嵌入</translation>
+        <translation>LRE 開始的從左到右嵌入</translation>
     </message>
     <message>
         <source>RLE Start of right-to-left embedding</source>
-        <translation>RLE 開始的右到左嵌入</translation>
+        <translation>RLE 開始的從右到左嵌入</translation>
     </message>
     <message>
         <source>LRO Start of left-to-right override</source>
-        <translation>LRO 開始的左到右覆寫</translation>
+        <translation>LRO 開始的從左到右覆寫</translation>
     </message>
     <message>
         <source>RLO Start of right-to-left override</source>
@@ -4088,7 +4088,7 @@ Please choose a different file name.</source>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
         <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation>這是可搜尋的索引。 輸入搜尋關鍵字:</translation>
+        <translation>這是可搜尋的索引。 輸入搜尋關鍵字: </translation>
     </message>
     <message>
         <source>Choose File</source>
@@ -4594,7 +4594,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Expected </source>
-        <translation>預期的</translation>
+        <translation>預期的 </translation>
     </message>
     <message>
         <source>, but got &apos;</source>
@@ -4713,7 +4713,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation>時間 24:%1:%2。%3 無效。 小時是 24，但分鐘、 秒和毫秒不是全部 0;</translation>
+        <translation>時間 24:%1:%2。%3 無效。 小時是 24，但分鐘、 秒和毫秒不是全部 0; </translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>

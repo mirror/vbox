@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="pt_BR">
+<!DOCTYPE TS><TS>
 <context>
     <name>@@@</name>
     <message>
@@ -1036,7 +1034,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
-        <translatorcomment>Bucket = serviço de armazenamento no estilo Amazon S3</translatorcomment>
         <translation type="obsolete">Por favor complete os campos adicionais, tais como nome de usuário, senha e o nome do &apos;bucket&apos;. Finalmente, forneça o nome do arquivo OVF de destino.</translation>
     </message>
     <message>
@@ -1123,7 +1120,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translatorcomment>O nome do serviço é este, não seria produtivo traduzi-lo.</translatorcomment>
         <translation>&amp;Simple Storage System (S3)</translation>
     </message>
 </context>
@@ -1230,7 +1226,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translatorcomment>O termo em inglês é mais apropriado neste caso.</translatorcomment>
         <translation type="obsolete">&amp;Bucket:</translation>
     </message>
     <message>
@@ -1251,7 +1246,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Appliance</source>
-        <translatorcomment>O termo em inglês é mais apropriado neste caso.</translatorcomment>
         <translation type="obsolete">Appliance</translation>
     </message>
     <message>
@@ -1596,7 +1590,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">Extensões</translation>
+        <translation>Extensões</translation>
     </message>
 </context>
 <context>
@@ -1647,7 +1641,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translatorcomment>Mostrar Dock e Barra de Menus &amp;automaticamente em tela cheia</translatorcomment>
         <translation></translation>
     </message>
     <message>
@@ -1687,11 +1680,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation type="unfinished"></translation>
+        <translation>Resetar combinação de hospedeiro</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reseta a combinação de teclas utilizada para ativar funções na janela da VM.</translation>
     </message>
 </context>
 <context>
@@ -1899,7 +1892,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Networking</source>
-        <translation type="unfinished"></translation>
+        <translation>Rede</translation>
     </message>
 </context>
 <context>
@@ -2235,7 +2228,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished">Nenhum</translation>
+        <translation>Nenhum</translation>
     </message>
 </context>
 <context>
@@ -2305,7 +2298,6 @@ p, li { white-space: pre-wrap; }
     <name>UIImportApplianceWzdPage1</name>
     <message>
         <source>Select an appliance to import</source>
-        <translatorcomment>O termo em inglês é mais apropriado neste caso.</translatorcomment>
         <translation>Selecione um appliance para importar</translation>
     </message>
     <message>
@@ -3813,7 +3805,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Passthrough</source>
-        <translatorcomment>é mais simples explicar o passthrough do que criar uma tradução sem sentido.</translatorcomment>
         <translation>&amp;Passthrough</translation>
     </message>
     <message>
@@ -4244,7 +4235,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 está habilitado para esta máquina virtual, mas para esta funcionalidade é necessário instalar &lt;b&gt;%1&lt;/b&gt;. Instale o Pacote de Extensão a partir do site do VirtualBox. Após instalar este componente, você poderá habilitar novamente o suporte a USB 2.0. Por enquanto, o suporte a USB 2.0 será desligado, a menos que você cancele as mudanças atuais.</translation>
     </message>
 </context>
 <context>
@@ -6362,12 +6353,10 @@ Versão %1</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
-        <translatorcomment>A tradução precisa ser curta e concisa para este item.</translatorcomment>
         <translation type="obsolete">I&amp;nformações sobre a Sessão</translation>
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translatorcomment>Tradução precisa ser curta e concisa.</translatorcomment>
         <translation type="obsolete">Exibe Informações Sobre a Sessão</translation>
     </message>
     <message>
@@ -6521,7 +6510,6 @@ Versão %1</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translatorcomment>Neste caso, o termo em inglês é mais coerente.</translatorcomment>
         <translation type="obsolete">Exibir Preview do Monitor</translation>
     </message>
     <message>
@@ -8025,7 +8013,6 @@ Versão %1</translation>
     <message>
         <source>Guru Meditation</source>
         <comment>MachineState</comment>
-        <translatorcomment>Nem precisa traduzir....</translatorcomment>
         <translation>Guru Meditation</translation>
     </message>
     <message>
@@ -8181,46 +8168,34 @@ Versão %1</translation>
         <comment>medium</comment>
         <translation>Este disco rígido de base está indiretamente conectado através do seguinte disco rígido diferencial:</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source>%n year(s)</source>
-        <translation>
-            <numerusform>%n ano(s)</numerusform>
-            <numerusform>%n anos</numerusform>
+        <translation>%n anos
         </translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source>%n month(s)</source>
-        <translation>
-            <numerusform>%n mês(meses)</numerusform>
-            <numerusform>%n meses</numerusform>
+        <translation>%n meses
         </translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source>%n day(s)</source>
-        <translation>
-            <numerusform>%n dia(s)</numerusform>
-            <numerusform>%n dias</numerusform>
+        <translation>%n dias
         </translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source>%n hour(s)</source>
-        <translation>
-            <numerusform>%n hora(s)</numerusform>
-            <numerusform>%n horas</numerusform>
+        <translation>%n horas
         </translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source>%n minute(s)</source>
-        <translation>
-            <numerusform>%n minuto(s)</numerusform>
-            <numerusform>%n minuto(s)</numerusform>
+        <translation>%n minuto(s)
         </translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source>%n second(s)</source>
-        <translation>
-            <numerusform>%n segundo(s)</numerusform>
-            <numerusform>%n segundos</numerusform>
+        <translation>%n segundos
         </translation>
     </message>
     <message>
@@ -8459,7 +8434,7 @@ Versão %1</translation>
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; é uma combinação de teclas de hospedeiro inválida.</translation>
     </message>
 </context>
 <context>
@@ -10596,11 +10571,9 @@ to the system default language.&lt;/qt&gt;
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Os Adicionais para Convidado não estão disponíveis nesta máquina virtual, e portanto não é possível utilizar o recurso de pastas compartilhadas. Para utilizar pastas compartilhadas dentro da máquina virtual, instale os Adicionais para Convidado, ou instale-os novamente caso não estejam funcionando corretamente. Para fazer isto, selecione a opção &lt;b&gt;Instalar Adicionais para Convidado&lt;/b&gt; no menu &lt;b&gt;Máquina&lt;/b&gt;. Caso já esteja instalado mas a máquina esteja em processo de inicialização, aguarde até que esteja totalmente ativa e a opção de pastas compartilhadas estará disponível.&lt;/p&gt;</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation>
-            <numerusform>&lt;p&gt;A máquina virtual &lt;b&gt;%1&lt;/b&gt; possui estado de execução salvo. &lt;/p&gt;&lt;p&gt;Se você continuar, o estado atual desta máquina será descartado. A máquina existente não será afetada.&lt;/p&gt;</numerusform>
-            <numerusform>&lt;p&gt;As máquinas virtuais &lt;b&gt;%1&lt;/b&gt; possuem estado de execução salvo. &lt;/p&gt;&lt;p&gt;Se você continuar, o estado atual de execução destas máquinas será descartado. As máquinas existentes não serão afetadas.&lt;/p&gt;</numerusform>
+        <translation>&lt;p&gt;As máquinas virtuais &lt;b&gt;%1&lt;/b&gt; possuem estado de execução salvo. &lt;/p&gt;&lt;p&gt;Se você continuar, o estado atual de execução destas máquinas será descartado. As máquinas existentes não serão afetadas.&lt;/p&gt;
         </translation>
     </message>
     <message>
@@ -10721,16 +10694,12 @@ to the system default language.&lt;/qt&gt;
         <translation>O pacote de extensão &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; foi instalado com sucesso.</translation>
     </message>
     <message>
-        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Não foi possível criar a pasta da máquina &lt;b&gt;%1&lt;/b&gt; em &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Verifique se a pasta de destino realmente existe e que você tem permissões para criar a pasta da máquina neste local.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;USB 2.0 está habilitado para esta máquina virtual, mas para esta funcionalidade é necessário instalar &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt; Instale o Pacote de Extensão a partir do site do VirtualBox. Após instalar este componente, você poderá habilitar novamente o suporte a USB 2.0. Por enquanto, o suporte a USB 2.0 será desligado, a menos que você cancele as mudanças atuais.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -11689,32 +11658,24 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <source> (%1)</source>
         <translation> (%1)</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source> (%n day(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (%n dia atrás)</numerusform>
-            <numerusform> (%n dias atrás)</numerusform>
+        <translation type="obsolete"> (%n dias atrás)
         </translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source> (%n hour(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (%n hora atrás)</numerusform>
-            <numerusform> (%n horas atrás)</numerusform>
+        <translation type="obsolete"> (%n horas atrás)
         </translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source> (%n minute(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (%n minuto atrás)</numerusform>
-            <numerusform> (%n minutos atrás)</numerusform>
+        <translation type="obsolete"> (%n minutos atrás)
         </translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source> (%n second(s) ago)</source>
-        <translation type="obsolete">
-            <numerusform> (%n segundo atrás)</numerusform>
-            <numerusform> (%n segundos atrás)</numerusform>
+        <translation type="obsolete"> (%n segundos atrás)
         </translation>
     </message>
     <message>
@@ -11787,11 +11748,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
         <source>Cancel</source>
         <translation type="obsolete">Cancelar</translation>
     </message>
-    <message numerus="yes">
+    <message>
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation>
-            <numerusform>Aviso: Você está criando um snapshot de uma máquina em execução que possui %n imagem imutável associada a ela. Enquanto você estiver trabalhando a partir deste snapshot, a imagem imutável não será reestabelecida para evitar perda de dados.</numerusform>
-            <numerusform>Aviso: Você está criando um snapshot de uma máquina em execução que possui %n imagens imutáveis associadas a ela. Enquanto você estiver trabalhando a partir deste snapshot, as imagens imutáveis não serão reestabelecidas para evitar perda de dados.</numerusform>
+        <translation>Aviso: Você está criando um snapshot de uma máquina em execução que possui %n imagens imutáveis associadas a ela. Enquanto você estiver trabalhando a partir deste snapshot, as imagens imutáveis não serão reestabelecidas para evitar perda de dados.
         </translation>
     </message>
 </context>

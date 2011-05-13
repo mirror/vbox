@@ -1472,7 +1472,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">Extenties</translation>
+        <translation>Extenties</translation>
     </message>
 </context>
 <context>
@@ -1559,11 +1559,11 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation type="unfinished"></translation>
+        <translation>Zet de gastheer combinatie terug</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zet de toetscombinatie terug die als gastheer toets wordt gebruikt in het VM scherm.</translation>
     </message>
 </context>
 <context>
@@ -1771,7 +1771,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Networking</source>
-        <translation type="unfinished"></translation>
+        <translation>Netwerken</translation>
     </message>
 </context>
 <context>
@@ -2109,7 +2109,7 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished">Geen</translation>
+        <translation>Geen</translation>
     </message>
 </context>
 <context>
@@ -3744,7 +3744,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 is momenteel geactiveerd voor deze virtuele machine. Maar dit vereist installatie van &lt;b&gt;%1&lt;/b&gt;. Installeer het uitbreidingspakket beschikbaar op de VirtualBox download site. Hierna ben u instaat om de USB 2.0 opnieuw te activeren. In de tussentijn blijft deze inactief tenzij u de huidige instelling wijzigd.</translation>
     </message>
 </context>
 <context>
@@ -6907,7 +6907,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; is een ongeldige gastheer-combinatie code volgorde.</translation>
     </message>
 </context>
 <context>
@@ -8374,15 +8374,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijderen van alle bestanden die bij de VM horen is nu inactief op Windows/x64 om een crash te voorkomen. Dit wordt in de volgende versie opgelost.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kan de map &lt;b&gt;%1&lt;/b&gt; voor de machine niet aanmaken  in de bovenligende map &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Controleer of de bovenliggende map bestaat en dan u rechten heeft om de machine map aan te maken.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;USB 2.0 is momenteel geactiveerd voor deze virtuele machine. Maar dit vereist installatie van &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Installeer het uitbreidingspakket beschikbaar op de VirtualBox download site. Hierna ben u instaat om de USB 2.0 opnieuw te activeren. In de tussentijn blijft deze inactief tenzij u de huidige instelling wijzigd.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

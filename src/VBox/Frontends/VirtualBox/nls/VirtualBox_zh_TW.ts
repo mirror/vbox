@@ -262,12 +262,8 @@
         <translation>ACPI 關機(&amp;U)</translation>
     </message>
     <message>
-        <source>ACPI S&amp;hutdown</source>
-        <translation type="obsolete">ACPI 關機(&amp;H)</translation>
-    </message>
-    <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
-        <translation>傳送按下 ACPI 電源開關按鈕的事件到虛擬機器</translation>
+        <translation>傳送按下 [ACPI 電源按鈕] 的事件到虛擬機器</translation>
     </message>
     <message>
         <source>&amp;Close...</source>
@@ -401,7 +397,7 @@
     <name>UIDescriptionPagePrivate</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>沒有任何描述。按下方的 [編輯] 按鈕來加入它。</translation>
+        <translation>沒有任何描述。 按下方的 [編輯] 按鈕來加入它。</translation>
     </message>
     <message>
         <source>Edit</source>
@@ -472,7 +468,7 @@
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>巢狀分頁</translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -747,7 +743,7 @@
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation>本機檔案系統(&amp;L)</translation>
+        <translation>本機檔案系統(&amp;L) </translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
@@ -849,7 +845,7 @@
     </message>
     <message>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
-        <translation>在此您可以變更選取虛擬機器的額外組態值。 您可以在項目連按兩下修改大多數已顯示的內容。</translation>
+        <translation>在此您可以變更選取虛擬機器的額外組態值。 您可以在項目按兩下修改大多數已顯示的內容。</translation>
     </message>
 </context>
 <context>
@@ -1005,7 +1001,7 @@
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished">擴充</translation>
+        <translation>擴充</translation>
     </message>
 </context>
 <context>
@@ -1058,14 +1054,6 @@
         <translation>顯示於虛擬機器視窗中使用的 Host 鍵。 啟用項目欄位並按下新的 Host 鍵。 請注意，不能使用字母數字、游標移動與編輯鍵。</translation>
     </message>
     <message>
-        <source>Reset Host Key</source>
-        <translation type="obsolete">重設熱鍵</translation>
-    </message>
-    <message>
-        <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation type="obsolete">重設在 VM 視窗中作為熱鍵的按鍵。</translation>
-    </message>
-    <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
         <translation>勾選時，每次虛擬機器視窗啟動時，鍵盤會自動擷取。 當擷取鍵盤時，所有的按鍵動作 (包括系統，如 Alt-Tab) 都會直接對虛擬機器。</translation>
     </message>
@@ -1075,11 +1063,11 @@
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation type="unfinished"></translation>
+        <translation>重設 Host 鍵組合</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>重設在 VM 視窗中作為 Host 鍵組合使用的按鍵組合。</translation>
     </message>
 </context>
 <context>
@@ -1272,12 +1260,8 @@
         <translation>名稱</translation>
     </message>
     <message>
-        <source>New Host-Only Interface</source>
-        <translation type="obsolete">新增「僅限主機」介面</translation>
-    </message>
-    <message>
         <source>Networking</source>
-        <translation type="unfinished"></translation>
+        <translation>網路</translation>
     </message>
 </context>
 <context>
@@ -1437,11 +1421,11 @@
     <name>UIHotKeyEditor</name>
     <message>
         <source>Left </source>
-        <translation>←</translation>
+        <translation>← </translation>
     </message>
     <message>
         <source>Right </source>
-        <translation>→</translation>
+        <translation>→ </translation>
     </message>
     <message>
         <source>Left Shift</source>
@@ -1485,7 +1469,7 @@
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation>Caps Lock</translation>
+        <translation>大寫鎖定</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
@@ -1496,124 +1480,8 @@
         <translation>&lt;key_%1&gt;</translation>
     </message>
     <message>
-        <source>Pause</source>
-        <translation type="obsolete">Pause</translation>
-    </message>
-    <message>
-        <source>Print Screen</source>
-        <translation type="obsolete">Print Screen</translation>
-    </message>
-    <message>
-        <source>F1</source>
-        <translation type="obsolete">F1</translation>
-    </message>
-    <message>
-        <source>F2</source>
-        <translation type="obsolete">F2</translation>
-    </message>
-    <message>
-        <source>F3</source>
-        <translation type="obsolete">F3</translation>
-    </message>
-    <message>
-        <source>F4</source>
-        <translation type="obsolete">F4</translation>
-    </message>
-    <message>
-        <source>F5</source>
-        <translation type="obsolete">F5</translation>
-    </message>
-    <message>
-        <source>F6</source>
-        <translation type="obsolete">F6</translation>
-    </message>
-    <message>
-        <source>F7</source>
-        <translation type="obsolete">F7</translation>
-    </message>
-    <message>
-        <source>F8</source>
-        <translation type="obsolete">F8</translation>
-    </message>
-    <message>
-        <source>F9</source>
-        <translation type="obsolete">F9</translation>
-    </message>
-    <message>
-        <source>F10</source>
-        <translation type="obsolete">F10</translation>
-    </message>
-    <message>
-        <source>F11</source>
-        <translation type="obsolete">F11</translation>
-    </message>
-    <message>
-        <source>F12</source>
-        <translation type="obsolete">F12</translation>
-    </message>
-    <message>
-        <source>F13</source>
-        <translation type="obsolete">F13</translation>
-    </message>
-    <message>
-        <source>F14</source>
-        <translation type="obsolete">F14</translation>
-    </message>
-    <message>
-        <source>F15</source>
-        <translation type="obsolete">F15</translation>
-    </message>
-    <message>
-        <source>F16</source>
-        <translation type="obsolete">F16</translation>
-    </message>
-    <message>
-        <source>F17</source>
-        <translation type="obsolete">F17</translation>
-    </message>
-    <message>
-        <source>F18</source>
-        <translation type="obsolete">F18</translation>
-    </message>
-    <message>
-        <source>F19</source>
-        <translation type="obsolete">F19</translation>
-    </message>
-    <message>
-        <source>F20</source>
-        <translation type="obsolete">F20</translation>
-    </message>
-    <message>
-        <source>F21</source>
-        <translation type="obsolete">F21</translation>
-    </message>
-    <message>
-        <source>F22</source>
-        <translation type="obsolete">F22</translation>
-    </message>
-    <message>
-        <source>F23</source>
-        <translation type="obsolete">F23</translation>
-    </message>
-    <message>
-        <source>F24</source>
-        <translation type="obsolete">F24</translation>
-    </message>
-    <message>
-        <source>Num Lock</source>
-        <translation type="obsolete">Num Lock</translation>
-    </message>
-    <message>
-        <source>Forward</source>
-        <translation type="obsolete">下一步</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation type="obsolete">上一步</translation>
-    </message>
-    <message>
         <source>None</source>
-        <translation type="unfinished">無</translation>
+        <translation>無</translation>
     </message>
 </context>
 <context>
@@ -1650,7 +1518,7 @@
     <name>UIImportApplianceWzdPage2</name>
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
-        <translation>這些是包含在應用裝置的虛擬機器和匯入 VirtualBox 機器的建議設定值。 您可以在項目連按兩下變更許多顯示的內容和使用以下核取方塊停用其它。</translation>
+        <translation>這些是包含在應用裝置的虛擬機器和匯入 VirtualBox 機器的建議設定值。 您可以在項目按兩下變更許多顯示的內容和使用以下核取方塊停用其它。</translation>
     </message>
     <message>
         <source>Appliance Import Settings</source>
@@ -1762,7 +1630,7 @@
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>指示這個虛擬機器使用的硬體虛擬化功能之狀態:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation>指示這部虛擬機器使用的硬體虛擬化功能之狀態:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
@@ -1788,10 +1656,6 @@
 </context>
 <context>
     <name>UIMachineLogic</name>
-    <message>
-        <source>VirtualBox OSE</source>
-        <translation type="obsolete">VirtualBox 開放原始碼版本 (OSE)</translation>
-    </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
         <translation>EXPERIMENTAL 組建 %1r%2 - %3</translation>
@@ -1826,7 +1690,7 @@
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation>沒有已支援的裝置連接到主機 PC</translation>
+        <translation>主機 PC 未連接已支援的裝置</translation>
     </message>
 </context>
 <context>
@@ -1864,7 +1728,7 @@
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp; MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Video</source>
@@ -1971,7 +1835,7 @@
     <name>UIMachineSettingsGeneral</name>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>顯示將儲存這個虛擬機器快照的路徑。 注意，快照可能需要相當多的磁碟空間。</translation>
+        <translation>顯示將儲存這部虛擬機器快照的路徑。 注意，快照可能需要相當多的磁碟空間。</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
@@ -2091,7 +1955,7 @@
     </message>
     <message>
         <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation>選取&lt;b&gt;橋接介面卡&lt;/b&gt;或&lt;b&gt;「僅限主機」介面卡&lt;/b&gt;附件的網路卡名稱與&lt;b&gt;內部網路&lt;/b&gt;附件的網路名稱。</translation>
+        <translation>選取&lt;b&gt;橋接介面卡&lt;/b&gt;或&lt;b&gt;「僅限主機」介面卡&lt;/b&gt;附加的網路卡名稱與&lt;b&gt;內部網路&lt;/b&gt;附加的網路名稱。</translation>
     </message>
     <message>
         <source>A&amp;dvanced</source>
@@ -2171,7 +2035,7 @@
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>顯示這個串列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這個虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
+        <translation>顯示這個串列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這部虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
@@ -2182,15 +2046,15 @@
     <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
-        <translation>選取重複的連接埠號</translation>
+        <translation>選取重複的連接埠號 </translation>
     </message>
     <message>
         <source>Port path not specified </source>
-        <translation>未指定連接埠路徑</translation>
+        <translation>未指定連接埠路徑 </translation>
     </message>
     <message>
         <source>Duplicate port path entered </source>
-        <translation>輸入重複的連接埠路徑</translation>
+        <translation>輸入重複的連接埠路徑 </translation>
     </message>
 </context>
 <context>
@@ -2256,7 +2120,7 @@
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>列出所有可存取這個機器的共用資料夾。 從類似 DOS 的作業系統使用 [net use x: \\vboxsvr\share] 存取名為 &lt;i&gt; share &lt;/i&gt; 的共用資料夾，或從 Linux 作業系統 [mount -t vboxsf share mount_point] 來存取它。 這個功能需要 Guest Additions 。</translation>
+        <translation>列出所有可存取這部機器的共用資料夾。 從類似 DOS 的作業系統使用 [net use x: \\vboxsvr\share] 存取名為 &lt;i&gt; share &lt;/i&gt; 的共用資料夾，或從 Linux 作業系統 [mount -t vboxsf share mount_point] 來存取它。 這個功能需要 Guest Additions 。</translation>
     </message>
     <message>
         <source>Name</source>
@@ -2403,7 +2267,7 @@
     </message>
     <message>
         <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>顯示這個序列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這個虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
+        <translation>顯示這個序列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這部虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
     </message>
     <message>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
@@ -2414,15 +2278,15 @@
     <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
-        <translation>選取重複的連接埠號</translation>
+        <translation>選取重複的連接埠號 </translation>
     </message>
     <message>
         <source>Port path not specified </source>
-        <translation>未指定連接埠路徑</translation>
+        <translation>未指定連接埠路徑 </translation>
     </message>
     <message>
         <source>Duplicate port path entered </source>
-        <translation>輸入重複的連接埠路徑</translation>
+        <translation>輸入重複的連接埠路徑 </translation>
     </message>
 </context>
 <context>
@@ -2541,7 +2405,7 @@
     </message>
     <message>
         <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation>包含這個機器的所有存放控制器與附加到它們的虛擬機器及主機裝置。</translation>
+        <translation>包含這部機器的所有存放控制器與附加到它們的虛擬機器及主機裝置。</translation>
     </message>
     <message>
         <source>Information</source>
@@ -2549,7 +2413,7 @@
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation>存放裝置樹能包含數個不同類型的控制器。 這個機器目前沒有控制器。</translation>
+        <translation>存放裝置樹能包含數個不同類型的控制器。 這部機器目前沒有控制器。</translation>
     </message>
     <message>
         <source>Attributes</source>
@@ -2716,12 +2580,12 @@
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp; MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;顆&amp;nbsp;CPU&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp; 顆 &amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Motherboard</source>
@@ -2809,16 +2673,16 @@
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation>勾選時，虛擬機器將嘗試使用 Intel VT-x 和 AMD-V 的巢狀分頁擴充。</translation>
+        <translation>勾選時，虛擬機器將嘗試使用 Intel VT-x 和 AMD-V 的 Nested Paging 擴充。</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation>啟用巢狀分頁(&amp;G)</translation>
+        <translation>啟用 Nested Paging(&amp;G)</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;顆&amp;nbsp;CPU&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp; 顆 &amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
@@ -2854,7 +2718,7 @@
     </message>
     <message>
         <source>Defines chipset type used in this VM.</source>
-        <translation>定義在這個 VM 中使用的晶片組類型。</translation>
+        <translation>定義在這部 VM 中使用的晶片組類型。</translation>
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -2914,11 +2778,11 @@
     <message>
         <source>New Filter %1</source>
         <comment>usb</comment>
-        <translation>新增篩選器 %1</translation>
+        <translation>新篩選器 %1</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>勾選時，啟用這個機器的虛擬 USB 控制器。</translation>
+        <translation>勾選時，啟用這部機器的虛擬 USB 控制器。</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
@@ -2926,7 +2790,7 @@
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>勾選時，啟用這個機器的虛擬 USB EHCI 控制器。 USB EHCI 控制器提供 USB 2.0 支援。</translation>
+        <translation>勾選時，啟用這部機器的虛擬 USB EHCI 控制器。 USB EHCI 控制器提供 USB 2.0 支援。</translation>
     </message>
     <message>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
@@ -2938,7 +2802,7 @@
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>列出這個機器的所有 USB 篩選器。 左側的核取方塊定義是否啟用特定的篩選器。 使用內容功能表或右側的按鈕加入或移除 USB 篩選器。</translation>
+        <translation>列出這部機器的所有 USB 篩選器。 左側的核取方塊定義是否啟用特定的篩選器。 使用內容功能表或右側的按鈕加入或移除 USB 篩選器。</translation>
     </message>
     <message>
         <source>[filter]</source>
@@ -2986,7 +2850,7 @@
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 目前在這部虛擬機器啟用。 然而這需要安裝 &lt;b&gt;%1&lt;/b&gt;。 請從 VirtualBox 下載網站安裝擴充包。 在此之後您將可以重新安裝 USB 2.0。 除非您取消目前設定變更，否則將在此期間停用。</translation>
     </message>
 </context>
 <context>
@@ -3477,7 +3341,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;儲存虛擬機器的目前執行狀態到主機 PC 的實體硬碟。&lt;/p&gt;&lt;p&gt;下次啟動這個機器，它將從儲存狀態還原並從您儲存的相同位置繼續執行，讓您立即繼續您的工作。&lt;/p&gt;&lt;p&gt;請注意儲存機器狀態可能需要很長時間取決於客體作業系統類型與分配至虛擬機器的記憶體量。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;儲存虛擬機器的目前執行狀態到主機 PC 的實體硬碟。&lt;/p&gt;&lt;p&gt;下次啟動這部機器，它將從儲存狀態還原並從您儲存的相同位置繼續執行，讓您立即繼續您的工作。&lt;/p&gt;&lt;p&gt;請注意儲存機器狀態可能需要很長時間取決於客體作業系統類型與分配至虛擬機器的記憶體量。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -3623,7 +3487,7 @@
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>您已針對這個 VM 選取 64 位元的客體作業系統類型。 如此的客體需要硬體虛擬化 (VT-x/AMD-V)，這個功能將會自動啟用。</translation>
+        <translation>您已針對這部 VM 選取 64 位元的客體作業系統類型。 如此的客體需要硬體虛擬化 (VT-x/AMD-V)，這個功能將會自動啟用。</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
@@ -3685,7 +3549,7 @@
     </message>
     <message>
         <source>Vendor-URL</source>
-        <translation>供應商-URL</translation>
+        <translation>供應商 URL</translation>
     </message>
     <message>
         <source>Version</source>
@@ -4425,7 +4289,7 @@
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>巢狀分頁</translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -4827,7 +4691,7 @@
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation>巢狀分頁</translation>
+        <translation>Nested Paging</translation>
     </message>
     <message>
         <source>Shareable</source>
@@ -4974,10 +4838,6 @@
 <context>
     <name>VBoxGlobalSettings</name>
     <message>
-        <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation type="obsolete">「%1 (0x%2)」是無效的主機鍵碼。</translation>
-    </message>
-    <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
         <translation>按鍵「%2」的值「%1」不符合正規運算式限制「%3」。</translation>
     </message>
@@ -4987,7 +4847,7 @@
     </message>
     <message>
         <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
-        <translation type="unfinished"></translation>
+        <translation>&apos;%1&apos; 不是有效的主機組合代碼序列。</translation>
     </message>
 </context>
 <context>
@@ -5031,7 +4891,7 @@
     </message>
     <message>
         <source>Find </source>
-        <translation>尋找</translation>
+        <translation>尋找 </translation>
     </message>
     <message>
         <source>Enter a search string here</source>
@@ -5255,11 +5115,11 @@
     </message>
     <message>
         <source>Displays the operating system family that you plan to install into this virtual machine.</source>
-        <translation>顯示您計畫要安裝於這個虛擬機器的作業系統家族。</translation>
+        <translation>顯示您計畫要安裝於這部虛擬機器的作業系統家族。</translation>
     </message>
     <message>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation>顯示您計畫要安裝於這個虛擬機器的作業系統類型 (稱之為客體作業系統)。</translation>
+        <translation>顯示您計畫要安裝於這部虛擬機器的作業系統類型 (稱之為客體作業系統)。</translation>
     </message>
     <message>
         <source>&amp;Version:</source>
@@ -5433,7 +5293,7 @@
     <message>
         <source>Severity: </source>
         <comment>runtime error info</comment>
-        <translation>嚴重性:</translation>
+        <translation>嚴重性: </translation>
     </message>
     <message>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
@@ -5450,27 +5310,27 @@
     <message>
         <source>Result&amp;nbsp;Code: </source>
         <comment>error info</comment>
-        <translation>結果碼:</translation>
+        <translation>結果碼: </translation>
     </message>
     <message>
         <source>Component: </source>
         <comment>error info</comment>
-        <translation>元件:</translation>
+        <translation>元件: </translation>
     </message>
     <message>
         <source>Interface: </source>
         <comment>error info</comment>
-        <translation>介面:</translation>
+        <translation>介面: </translation>
     </message>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>
-        <translation>被呼叫端:</translation>
+        <translation>被呼叫端: </translation>
     </message>
     <message>
         <source>Callee&amp;nbsp;RC: </source>
         <comment>error info</comment>
-        <translation>被呼叫端&amp;nbsp;RC:</translation>
+        <translation>被呼叫端&amp;nbsp;RC: </translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -6105,10 +5965,6 @@
         <translation>&lt;p&gt;未儲存連接埠轉送組態的變更。&lt;/p&gt;&lt;p&gt;如果您進行，您的變更將捨棄。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation type="obsolete">抱歉，發生某些圖形錯誤。</translation>
-    </message>
-    <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>在機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 附加硬碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
     </message>
@@ -6151,7 +6007,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將安裝 VirtualBox 擴充包。 擴充包補充 VirtualBox 的功能且可以包含系統層級的軟體，可能潛在危害您的系統。 請檢閱以下描述，並只進行從信任來源所取得的擴充包。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;您即將安裝 VirtualBox 擴充包。 擴充包補充 VirtualBox 的功能且包含系統層級的軟體，可能潛在危害您的系統。 請檢閱以下描述，並只進行從信任來源所取得的擴充包。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
@@ -6195,15 +6051,15 @@
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="unfinished"></translation>
+        <translation>刪除所有依賴 VM 的檔案目前已在 Windows/x64 停用以防止當機。 其將在下次發佈時修復。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;無法建立機器資料夾 &lt;b&gt;%1&lt;/b&gt; 在上層資料夾 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;請檢查上層真的存在且您有權限建立機器資料夾。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;USB 2.0 目前在這部虛擬機器啟用。 然而這需要安裝 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;請從 VirtualBox 下載網站安裝擴充包。 在此之後您將可以重新安裝 USB 2.0。 除非您取消目前設定變更，否則將在此期間停用。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6230,10 +6086,6 @@
 </context>
 <context>
     <name>VBoxSelectorWnd</name>
-    <message>
-        <source>VirtualBox OSE</source>
-        <translation type="obsolete">VirtualBox 開放原始碼版本 (OSE)</translation>
-    </message>
     <message>
         <source>&amp;Preferences...</source>
         <comment>global settings</comment>
@@ -6310,10 +6162,6 @@
     <message>
         <source>Show the log files of the selected virtual machine</source>
         <translation>顯示選取虛擬機器的記錄檔案</translation>
-    </message>
-    <message>
-        <source>R&amp;esume</source>
-        <translation type="obsolete">繼續執行(&amp;E)</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
@@ -6531,7 +6379,7 @@
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
-        <translation>%1 自從 %2</translation>
+        <translation>自從 %2 %1</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
