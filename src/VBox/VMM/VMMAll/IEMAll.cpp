@@ -2070,7 +2070,8 @@ static VBOXSTRICTRC iemRaiseSelectorInvalidAccess(PIEMCPU pIemCpu, uint32_t iSeg
 /** \#PF(n) - 0e.  */
 static VBOXSTRICTRC iemRaisePageFault(PIEMCPU pIemCpu, RTGCPTR GCPtrWhere, uint32_t fAccess, int rc)
 {
-    AssertFailed(/** @todo implement this */);
+    /** @todo implement this */
+    AssertMsgFailed(("GCPtrWhere=%RGp fAccess=%#x rc=%Rrc\n", GCPtrWhere, fAccess, rc));
     return VERR_NOT_IMPLEMENTED;
 }
 

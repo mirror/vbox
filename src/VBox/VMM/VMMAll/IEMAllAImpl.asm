@@ -566,6 +566,111 @@ BEGINPROC iemAImpl_xchg_u64
 ENDPROC iemAImpl_xchg_u64
 
 
+;
+; XADD for memory operands.
+;
+; Each function takes three arguments, first the pointer to the
+; memory/register, then the pointer to the register, and finally a pointer to
+; eflags.  They all return void.
+;
+BEGINCODE
+BEGINPROC iemAImpl_xadd_u8
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        mov     T0_8, [A1]
+        xadd    [A0], T0_8
+        mov     [A1], T0_8
+        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_xadd_u8
+
+BEGINPROC iemAImpl_xadd_u16
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        mov     T0_16, [A1]
+        xadd    [A0], T0_16
+        mov     [A1], T0_16
+        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_xadd_u16
+
+BEGINPROC iemAImpl_xadd_u32
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        mov     T0_32, [A1]
+        xadd    [A0], T0_32
+        mov     [A1], T0_32
+        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_xadd_u32
+
+BEGINPROC iemAImpl_xadd_u64
+%ifdef RT_ARCH_AMD64
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        mov     T0, [A1]
+        xadd    [A0], T0
+        mov     [A1], T0
+        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        EPILOGUE_3_ARGS
+        ret
+%else
+        int3
+%endif
+ENDPROC iemAImpl_xadd_u64
+
+BEGINPROC iemAImpl_xadd_u8_locked
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        mov     T0_8, [A1]
+        lock xadd [A0], T0_8
+        mov     [A1], T0_8
+        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_xadd_u8_locked
+
+BEGINPROC iemAImpl_xadd_u16_locked
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        mov     T0_16, [A1]
+        lock xadd [A0], T0_16
+        mov     [A1], T0_16
+        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_xadd_u16_locked
+
+BEGINPROC iemAImpl_xadd_u32_locked
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        mov     T0_32, [A1]
+        lock xadd [A0], T0_32
+        mov     [A1], T0_32
+        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        EPILOGUE_3_ARGS
+        ret
+ENDPROC iemAImpl_xadd_u32_locked
+
+BEGINPROC iemAImpl_xadd_u64_locked
+%ifdef RT_ARCH_AMD64
+        PROLOGUE_3_ARGS
+        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        mov     T0, [A1]
+        lock xadd [A0], T0
+        mov     [A1], T0
+        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+        EPILOGUE_3_ARGS
+        ret
+%else
+        int3
+%endif
+ENDPROC iemAImpl_xadd_u64_locked
+
+
 ;;
 ; Macro for implementing a unary operator.
 ;

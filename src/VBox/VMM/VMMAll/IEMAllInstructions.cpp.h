@@ -3871,9 +3871,214 @@ FNIEMOP_DEF(iemOp_movsx_Gv_Ew)
 
 
 /** Opcode 0x0f 0xc0. */
-FNIEMOP_STUB(iemOp_xadd_Eb_Gb);
+FNIEMOP_DEF(iemOp_xadd_Eb_Gb)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    IEMOP_MNEMONIC("xadd Eb,Gb");
+
+    /*
+     * If rm is denoting a register, no more instruction bytes.
+     */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_HLP_NO_LOCK_PREFIX();
+
+        IEM_MC_BEGIN(3, 0);
+        IEM_MC_ARG(uint8_t *,  pu8Dst,  0);
+        IEM_MC_ARG(uint8_t *,  pu8Reg,  1);
+        IEM_MC_ARG(uint32_t *, pEFlags, 2);
+
+        IEM_MC_REF_GREG_U8(pu8Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+        IEM_MC_REF_GREG_U8(pu8Reg, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+        IEM_MC_REF_EFLAGS(pEFlags);
+        IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u8, pu8Dst, pu8Reg, pEFlags);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * We're accessing memory.
+         */
+        IEM_MC_BEGIN(3, 3);
+        IEM_MC_ARG(uint8_t *,   pu8Dst,          0);
+        IEM_MC_ARG(uint8_t *,   pu8Reg,          1);
+        IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 2);
+        IEM_MC_LOCAL(uint8_t,  u8RegCopy);
+        IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEM_MC_MEM_MAP(pu8Dst, IEM_ACCESS_DATA_RW, pIemCpu->iEffSeg, GCPtrEffDst, 0 /*arg*/);
+        IEM_MC_FETCH_GREG_U8(u8RegCopy, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+        IEM_MC_REF_LOCAL(pu8Reg, u8RegCopy);
+        IEM_MC_FETCH_EFLAGS(EFlags);
+        if (!(pIemCpu->fPrefixes & IEM_OP_PRF_LOCK))
+            IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u8, pu8Dst, pu8Reg, pEFlags);
+        else
+            IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u8_locked, pu8Dst, pu8Reg, pEFlags);
+
+        IEM_MC_MEM_COMMIT_AND_UNMAP(pu8Dst, IEM_ACCESS_DATA_RW);
+        IEM_MC_COMMIT_EFLAGS(EFlags);
+        IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u8RegCopy);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0xc1. */
-FNIEMOP_STUB(iemOp_xadd_Ev_Gv);
+FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
+{
+    IEMOP_MNEMONIC("xadd Ev,Gv");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+
+    /*
+     * If rm is denoting a register, no more instruction bytes.
+     */
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_HLP_NO_LOCK_PREFIX();
+
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(3, 0);
+                IEM_MC_ARG(uint16_t *, pu16Dst,  0);
+                IEM_MC_ARG(uint16_t *, pu16Reg,  1);
+                IEM_MC_ARG(uint32_t *, pEFlags, 2);
+
+                IEM_MC_REF_GREG_U16(pu16Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+                IEM_MC_REF_GREG_U16(pu16Reg, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+                IEM_MC_REF_EFLAGS(pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u16, pu16Dst, pu16Reg, pEFlags);
+
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(3, 0);
+                IEM_MC_ARG(uint32_t *, pu32Dst,  0);
+                IEM_MC_ARG(uint32_t *, pu32Reg,  1);
+                IEM_MC_ARG(uint32_t *, pEFlags, 2);
+
+                IEM_MC_REF_GREG_U32(pu32Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+                IEM_MC_REF_GREG_U32(pu32Reg, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+                IEM_MC_REF_EFLAGS(pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u32, pu32Dst, pu32Reg, pEFlags);
+
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(3, 0);
+                IEM_MC_ARG(uint64_t *, pu64Dst,  0);
+                IEM_MC_ARG(uint64_t *, pu64Reg,  1);
+                IEM_MC_ARG(uint32_t *, pEFlags, 2);
+
+                IEM_MC_REF_GREG_U64(pu64Dst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+                IEM_MC_REF_GREG_U64(pu64Reg, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+                IEM_MC_REF_EFLAGS(pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u64, pu64Dst, pu64Reg, pEFlags);
+
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    else
+    {
+        /*
+         * We're accessing memory.
+         */
+        switch (pIemCpu->enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                IEM_MC_BEGIN(3, 3);
+                IEM_MC_ARG(uint16_t *,  pu16Dst,         0);
+                IEM_MC_ARG(uint16_t *,  pu16Reg,         1);
+                IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 2);
+                IEM_MC_LOCAL(uint16_t,  u16RegCopy);
+                IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+                IEM_MC_MEM_MAP(pu16Dst, IEM_ACCESS_DATA_RW, pIemCpu->iEffSeg, GCPtrEffDst, 0 /*arg*/);
+                IEM_MC_FETCH_GREG_U16(u16RegCopy, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+                IEM_MC_REF_LOCAL(pu16Reg, u16RegCopy);
+                IEM_MC_FETCH_EFLAGS(EFlags);
+                if (!(pIemCpu->fPrefixes & IEM_OP_PRF_LOCK))
+                    IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u16, pu16Dst, pu16Reg, pEFlags);
+                else
+                    IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u16_locked, pu16Dst, pu16Reg, pEFlags);
+
+                IEM_MC_MEM_COMMIT_AND_UNMAP(pu16Dst, IEM_ACCESS_DATA_RW);
+                IEM_MC_COMMIT_EFLAGS(EFlags);
+                IEM_MC_STORE_GREG_U16((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u16RegCopy);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            case IEMMODE_32BIT:
+                IEM_MC_BEGIN(3, 3);
+                IEM_MC_ARG(uint32_t *,  pu32Dst,         0);
+                IEM_MC_ARG(uint32_t *,  pu32Reg,         1);
+                IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 2);
+                IEM_MC_LOCAL(uint32_t,  u32RegCopy);
+                IEM_MC_LOCAL(RTGCPTR,   GCPtrEffDst);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+                IEM_MC_MEM_MAP(pu32Dst, IEM_ACCESS_DATA_RW, pIemCpu->iEffSeg, GCPtrEffDst, 0 /*arg*/);
+                IEM_MC_FETCH_GREG_U32(u32RegCopy, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+                IEM_MC_REF_LOCAL(pu32Reg, u32RegCopy);
+                IEM_MC_FETCH_EFLAGS(EFlags);
+                if (!(pIemCpu->fPrefixes & IEM_OP_PRF_LOCK))
+                    IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u32, pu32Dst, pu32Reg, pEFlags);
+                else
+                    IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u32_locked, pu32Dst, pu32Reg, pEFlags);
+
+                IEM_MC_MEM_COMMIT_AND_UNMAP(pu32Dst, IEM_ACCESS_DATA_RW);
+                IEM_MC_COMMIT_EFLAGS(EFlags);
+                IEM_MC_STORE_GREG_U32((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u32RegCopy);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            case IEMMODE_64BIT:
+                IEM_MC_BEGIN(3, 3);
+                IEM_MC_ARG(uint64_t *,  pu64Dst,         0);
+                IEM_MC_ARG(uint64_t *,  pu64Reg,         1);
+                IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 2);
+                IEM_MC_LOCAL(uint64_t,  u64RegCopy);
+                IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+                IEM_MC_MEM_MAP(pu64Dst, IEM_ACCESS_DATA_RW, pIemCpu->iEffSeg, GCPtrEffDst, 0 /*arg*/);
+                IEM_MC_FETCH_GREG_U64(u64RegCopy, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+                IEM_MC_REF_LOCAL(pu64Reg, u64RegCopy);
+                IEM_MC_FETCH_EFLAGS(EFlags);
+                if (!(pIemCpu->fPrefixes & IEM_OP_PRF_LOCK))
+                    IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u64, pu64Dst, pu64Reg, pEFlags);
+                else
+                    IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u64_locked, pu64Dst, pu64Reg, pEFlags);
+
+                IEM_MC_MEM_COMMIT_AND_UNMAP(pu64Dst, IEM_ACCESS_DATA_RW);
+                IEM_MC_COMMIT_EFLAGS(EFlags);
+                IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u64RegCopy);
+                IEM_MC_ADVANCE_RIP();
+                IEM_MC_END();
+                return VINF_SUCCESS;
+
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+}
+
 /** Opcode 0x0f 0xc2. */
 FNIEMOP_STUB(iemOp_cmpps_Vps_Wps_Ib__cmppd_Vpd_Wpd_Ib__cmpss_Vss_Wss_Ib__cmpsd_Vsd_Wsd_Ib);
 /** Opcode 0x0f 0xc3. */
@@ -6676,6 +6881,7 @@ FNIEMOP_DEF(iemOp_xchg_Eb_Gb)
         /*
          * We're accessing memory.
          */
+/** @todo the register must be committed separately! */
         IEM_MC_BEGIN(2, 2);
         IEM_MC_ARG(uint8_t *,  pu8Mem,           0);
         IEM_MC_ARG(uint8_t *,  pu8Reg,           1);
@@ -6761,6 +6967,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
          */
         switch (pIemCpu->enmEffOpSize)
         {
+/** @todo the register must be committed separately! */
             case IEMMODE_16BIT:
                 IEM_MC_BEGIN(2, 2);
                 IEM_MC_ARG(uint16_t *,  pu16Mem, 0);
