@@ -53,6 +53,7 @@ typedef struct VBOXUSBMONCTX
 typedef struct VBOXUSBHUB_PNPHOOK
 {
     VBOXUSBHOOK_ENTRY Hook;
+    bool fUninitFailed;
 } VBOXUSBHUB_PNPHOOK, *PVBOXUSBHUB_PNPHOOK;
 
 typedef struct VBOXUSBHUB_PNPHOOK_COMPLETION
@@ -67,6 +68,8 @@ typedef struct VBOXUSBMONGLOBALS
     KEVENT OpenSynchEvent;
     IO_REMOVE_LOCK RmLock;
     uint32_t cOpens;
+    volatile LONG ulPreventUnloadOn;
+    PFILE_OBJECT pPreventUnloadFileObj;
 } VBOXUSBMONGLOBALS, *PVBOXUSBMONGLOBALS;
 
 static VBOXUSBMONGLOBALS g_VBoxUsbMonGlobals;
@@ -656,6 +659,11 @@ static NTSTATUS vboxUsbMonHookInstall()
 #ifdef VBOXUSBMON_DBG_NO_PNPHOOK
     return STATUS_SUCCESS;
 #else
+    if (g_VBoxUsbMonGlobals.UsbHubPnPHook.fUninitFailed)
+    {
+        AssertMsgFailed(("trying to hook usbhub pnp after the unhook failed, do nothing & pretend success..\n"));
+        return STATUS_SUCCESS;
+    }
     return VBoxUsbHookInstall(&g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook);
 #endif
 }
@@ -665,7 +673,13 @@ static NTSTATUS vboxUsbMonHookUninstall()
 #ifdef VBOXUSBMON_DBG_NO_PNPHOOK
     return STATUS_SUCCESS;
 #else
-    return VBoxUsbHookUninstall(&g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook);
+    NTSTATUS Status = VBoxUsbHookUninstall(&g_VBoxUsbMonGlobals.UsbHubPnPHook.Hook);
+    if (!NT_SUCCESS(Status))
+    {
+        AssertMsgFailed(("usbhub pnp unhook failed, setting the fUninitFailed flag, the current value of fUninitFailed (%d)\n", g_VBoxUsbMonGlobals.UsbHubPnPHook.fUninitFailed));
+        g_VBoxUsbMonGlobals.UsbHubPnPHook.fUninitFailed = true;
+    }
+    return Status;
 #endif
 }
 
@@ -676,40 +690,26 @@ static NTSTATUS vboxUsbMonCheckTermStuff()
             Executive, KernelMode,
             FALSE, /* BOOLEAN Alertable */
             NULL /* IN PLARGE_INTEGER Timeout */
-        );
-    Assert(Status == STATUS_SUCCESS);
-    if (Status == STATUS_SUCCESS)
+            );
+    AssertRelease(Status == STATUS_SUCCESS);
+
+    do
     {
-        do
+        if (--g_VBoxUsbMonGlobals.cOpens)
+            break;
+
+        Status = vboxUsbMonHookUninstall();
+
+        NTSTATUS tmpStatus = VBoxUsbFltTerm();
+        if (!NT_SUCCESS(tmpStatus))
         {
-            if (--g_VBoxUsbMonGlobals.cOpens)
-                break;
+            /* this means a driver state is screwed up, KeBugCheckEx here ? */
+            AssertReleaseFailed();
+        }
+    } while (0);
 
-            Status = vboxUsbMonHookUninstall();
-            if (NT_SUCCESS(Status))
-            {
-                Status = VBoxUsbFltTerm();
-                if (NT_SUCCESS(Status))
-                {
-                    Status = STATUS_SUCCESS;
-                    break;
-                }
-                else
-                {
-                    AssertFailed();
-                }
-            }
-            else
-            {
-                AssertFailed();
-            }
+    KeSetEvent(&g_VBoxUsbMonGlobals.OpenSynchEvent, 0, FALSE);
 
-            ++g_VBoxUsbMonGlobals.cOpens;
-            Assert(g_VBoxUsbMonGlobals.cOpens == 1);
-        } while (0);
-
-        KeSetEvent(&g_VBoxUsbMonGlobals.OpenSynchEvent, 0, FALSE);
-    }
     return Status;
 }
 
@@ -817,6 +817,25 @@ static NTSTATUS _stdcall VBoxUsbMonClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PVBOXUSBMONCTX pCtx = (PVBOXUSBMONCTX)pFileObj->FsContext;
     NTSTATUS Status = vboxUsbMonContextClose(pCtx);
     Assert(Status == STATUS_SUCCESS);
+    if (Status != STATUS_SUCCESS)
+    {
+        AssertMsgFailed(("close failed with Status 0x%x, prefent unload\n", Status));
+        if (!InterlockedExchange(&g_VBoxUsbMonGlobals.ulPreventUnloadOn, 1))
+        {
+            LogRel(("ulPreventUnloadOn not set, preventing unload\n"));
+            UNICODE_STRING UniName;
+            PDEVICE_OBJECT pTmpDevObj;
+            RtlInitUnicodeString(&UniName, USBMON_DEVICE_NAME_NT);
+            NTSTATUS tmpStatus = IoGetDeviceObjectPointer(&UniName, FILE_ALL_ACCESS, &g_VBoxUsbMonGlobals.pPreventUnloadFileObj, &pTmpDevObj);
+            AssertRelease(NT_SUCCESS(tmpStatus));
+            AssertRelease(pTmpDevObj == pDevObj);
+        }
+        else
+        {
+            AssertMsgFailed(("ulPreventUnloadOn already set\n"));
+        }
+        Status = STATUS_SUCCESS;
+    }
     pFileObj->FsContext = NULL;
     pIrp->IoStatus.Status = Status;
     pIrp->IoStatus.Information  = 0;
