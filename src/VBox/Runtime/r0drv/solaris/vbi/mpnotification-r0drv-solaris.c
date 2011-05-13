@@ -34,6 +34,7 @@
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 #include "r0drv/mp-r0drv.h"
 
 
