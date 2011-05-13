@@ -459,7 +459,13 @@ static int vboxNetAdpSolarisSetMacAddress(gld_mac_info_t *pMacInfo, unsigned cha
 
 static int vboxNetAdpSolarisSend(gld_mac_info_t *pMacInfo, mblk_t *pMsg)
 {
-    freemsgchain(pMsg);
+    while (pMsg)
+    {
+        mblk_t *pMsgNext = pMsg->b_cont;
+        pMsg->b_cont = NULL;
+        freemsg(pMsg);
+        pMsg = pMsgNext;
+    }
     return GLD_SUCCESS;
 }
 
