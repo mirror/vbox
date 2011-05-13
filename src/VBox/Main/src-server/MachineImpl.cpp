@@ -6303,7 +6303,7 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
                 if (FAILED(rc)) throw rc;
 
                 Bstr bstrSrcFormat     = "VDI";
-                MediumVariant_T srcVar = MediumVariant_Standard;
+                ULONG srcVar = MediumVariant_Standard;
                 /* Is the source file based? */
                 if ((uSrcCaps & MediumFormatCapabilities_File) == MediumFormatCapabilities_File)
                 {
