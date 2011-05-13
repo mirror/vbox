@@ -321,6 +321,8 @@ static SUPFUNC g_aFunctions[] =
     { "RTMpGetSet",                             (void *)RTMpGetSet },
     { "RTMpIsCpuOnline",                        (void *)RTMpIsCpuOnline },
     { "RTMpIsCpuWorkPending",                   (void *)RTMpIsCpuWorkPending },
+    { "RTMpNotificationRegister",               (void *)RTMpNotificationRegister },
+    { "RTMpNotificationDeregister",             (void *)RTMpNotificationDeregister },
     { "RTMpOnAll",                              (void *)RTMpOnAll },
     { "RTMpOnOthers",                           (void *)RTMpOnOthers },
     { "RTMpOnSpecific",                         (void *)RTMpOnSpecific },
@@ -4989,34 +4991,16 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
 
 
 /**
- * The calling CPU should be accounted as online, update GIP accordingly.
+ * Helper for finding the CPU index from the CPU Id.
  *
- * This is used by supdrvGipMpEvent as well as the supdrvGipCreate.
+ * @param    pGip               The GIP.
+ * @param    idCpu              The CPU ID.
  *
- * @param   pGip                The GIP.
- * @param   idCpu               The CPU ID.
+ * @returns Index of the CPU in the cache set.
  */
-static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
+static inline uint32_t supdrvGipCpuIndexFromCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
 {
-    int         iCpuSet;
-    uint8_t     idApic;
-    uint32_t    i;
-
-    Assert(idCpu == RTMpCpuId());
-    Assert(pGip->cPossibleCpus == RTMpGetCount());
-
-    /*
-     * Update the globals.
-     */
-    ASMAtomicWriteU16(&pGip->cPresentCpus,  RTMpGetPresentCount());
-    ASMAtomicWriteU16(&pGip->cOnlineCpus,   RTMpGetOnlineCount());
-    iCpuSet = RTMpCpuIdToSetIndex(idCpu);
-    if (iCpuSet >= 0)
-    {
-        Assert(RTCpuSetIsMemberByIndex(&pGip->PossibleCpuSet, iCpuSet));
-        RTCpuSetAddByIndex(&pGip->OnlineCpuSet, iCpuSet);
-        RTCpuSetAddByIndex(&pGip->PresentCpuSet, iCpuSet);
-    }
+    uint32_t i = 0;
 
     /*
      * Find our entry, or allocate one if not found.
@@ -5035,7 +5019,42 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
                 break;
         }
 
-    AssertReturnVoid(i < pGip->cCpus);
+    AssertRelease(i < pGip->cCpus);
+    return i;
+}
+
+
+/**
+ * The calling CPU should be accounted as online, update GIP accordingly.
+ *
+ * This is used by supdrvGipMpEvent as well as the supdrvGipCreate.
+ *
+ * @param   pGip                The GIP.
+ * @param   idCpu               The CPU ID.
+ */
+static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
+{
+    int         iCpuSet = 0;
+    uint16_t    idApic = UINT16_MAX;
+    uint32_t    i = 0;
+
+    AssertRelease(idCpu == RTMpCpuId());
+    Assert(pGip->cPossibleCpus == RTMpGetCount());
+
+    /*
+     * Update the globals.
+     */
+    ASMAtomicWriteU16(&pGip->cPresentCpus,  RTMpGetPresentCount());
+    ASMAtomicWriteU16(&pGip->cOnlineCpus,   RTMpGetOnlineCount());
+    iCpuSet = RTMpCpuIdToSetIndex(idCpu);
+    if (iCpuSet >= 0)
+    {
+        Assert(RTCpuSetIsMemberByIndex(&pGip->PossibleCpuSet, iCpuSet));
+        RTCpuSetAddByIndex(&pGip->OnlineCpuSet, iCpuSet);
+        RTCpuSetAddByIndex(&pGip->PresentCpuSet, iCpuSet);
+    }
+
+    i = supdrvGipCpuIndexFromCpuId(pGip, idCpu);
 
     /*
      * Update the entry.
@@ -5044,13 +5063,14 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     ASMAtomicUoWriteU16(&pGip->aCPUs[i].idApic,  idApic);
     ASMAtomicUoWriteS16(&pGip->aCPUs[i].iCpuSet, (int16_t)iCpuSet);
     ASMAtomicUoWriteSize(&pGip->aCPUs[i].idCpu,  idCpu);
-    ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
 
     /*
      * Update the APIC ID and CPU set index mappings.
      */
     ASMAtomicWriteU16(&pGip->aiCpuFromApicId[idApic],     i);
     ASMAtomicWriteU16(&pGip->aiCpuFromCpuSetIdx[iCpuSet], i);
+
+    ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
 }
 
 
@@ -5075,8 +5095,8 @@ static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     AssertReturnVoid(pGip->aCPUs[i].idCpu == idCpu);
 
     Assert(RTCpuSetIsMemberByIndex(&pGip->PossibleCpuSet, iCpuSet));
-    ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
     RTCpuSetDelByIndex(&pGip->OnlineCpuSet, iCpuSet);
+    ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
 }
 
 
@@ -5094,6 +5114,8 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
 {
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pvUser;
     PSUPGLOBALINFOPAGE  pGip    = pDevExt->pGip;
+
+    AssertRelease(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /*
      * Update the GIP CPU data.
@@ -5358,7 +5380,7 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
         pGip->aCPUs[i].enmState          = SUPGIPCPUSTATE_INVALID;
         pGip->aCPUs[i].idCpu             = NIL_RTCPUID;
         pGip->aCPUs[i].iCpuSet           = -1;
-        pGip->aCPUs[i].idApic            = UINT8_MAX;
+        pGip->aCPUs[i].idApic            = UINT16_MAX;
 
         /*
          * We don't know the following values until we've executed updates.
@@ -5617,6 +5639,17 @@ static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_
 static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC,
                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick)
 {
+    /*
+     * Avoid a potential race when a CPU online notification doesn't fire on the onlined CPU
+     * but the tick creeps in before the event notification is run.
+     */
+    if (iTick == 1)
+    {
+        uint32_t i = supdrvGipCpuIndexFromCpuId(pGip, idCpu);
+        if (pGip->aCPUs[i].enmState == SUPGIPCPUSTATE_OFFLINE)
+            supdrvGipMpEventOnline(pGip, idCpu);
+    }
+
     unsigned iCpu = pGip->aiCpuFromApicId[idApic];
 
     if (RT_LIKELY(iCpu < pGip->cCpus))

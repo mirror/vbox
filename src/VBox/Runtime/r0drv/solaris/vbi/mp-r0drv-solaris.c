@@ -173,6 +173,13 @@ static int rtmpOnAllSolarisWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)(uArg);
 
+    /*
+     * Solaris CPU cross calls execute on offline CPUs too. Check our CPU cache
+     * set and ignore if it's offline.
+     */
+    if (!RTMpIsCpuOnline(RTMpCpuId()))
+        return 0;
+
     pArgs->pfnWorker(RTMpCpuId(), pArgs->pvUser1, pArgs->pvUser2);
 
     NOREF(uIgnored1);
@@ -277,6 +284,9 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
 
     if (idCpu >= vbi_cpu_count())
         return VERR_CPU_NOT_FOUND;
+
+    if (RT_UNLIKELY(!RTMpIsCpuOnline(idCpu)))
+        return RTMpIsCpuPresent(idCpu) ? VERR_CPU_OFFLINE : VERR_CPU_NOT_FOUND;
 
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
