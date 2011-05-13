@@ -114,63 +114,63 @@
     <name>QIHotKeyEdit</name>
     <message>
         <source>Left </source>
-        <translation>Links</translation>
+        <translation type="obsolete">Links</translation>
     </message>
     <message>
         <source>Right </source>
-        <translation>Rechts</translation>
+        <translation type="obsolete">Rechts</translation>
     </message>
     <message>
         <source>Left Shift</source>
-        <translation>Umsch Links</translation>
+        <translation type="obsolete">Umsch Links</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation>Umsch Rechts</translation>
+        <translation type="obsolete">Umsch Rechts</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation>Strg Links</translation>
+        <translation type="obsolete">Strg Links</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation>Strg Rechts</translation>
+        <translation type="obsolete">Strg Rechts</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation>Alt Links</translation>
+        <translation type="obsolete">Alt Links</translation>
     </message>
     <message>
         <source>Right Alt</source>
-        <translation>Alt Rechts</translation>
+        <translation type="obsolete">Alt Rechts</translation>
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation>Win Links</translation>
+        <translation type="obsolete">Win Links</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation>Win Rechts</translation>
+        <translation type="obsolete">Win Rechts</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation>Menü</translation>
+        <translation type="obsolete">Menü</translation>
     </message>
     <message>
         <source>Alt Gr</source>
-        <translation>AltGr</translation>
+        <translation type="obsolete">AltGr</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation>Umsch Lock</translation>
+        <translation type="obsolete">Umsch Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation>Rollen Lock</translation>
+        <translation type="obsolete">Rollen Lock</translation>
     </message>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation>&lt;Taste_%1&gt;</translation>
+        <translation type="obsolete">&lt;Taste_%1&gt;</translation>
     </message>
     <message>
         <source>Pause</source>
@@ -442,7 +442,7 @@
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
-        <translation>Ausschalten per &amp;ACPI</translation>
+        <translation type="obsolete">Ausschalten per &amp;ACPI</translation>
     </message>
     <message>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
@@ -569,11 +569,23 @@
     </message>
     <message>
         <source>Session I&amp;nformation</source>
-        <translation>Session-&amp;Informationen</translation>
+        <translation type="obsolete">Session-&amp;Informationen</translation>
     </message>
     <message>
         <source>Enable R&amp;emote Display</source>
         <translation>&amp;Fernsteuerung aktivieren</translation>
+    </message>
+    <message>
+        <source>&amp;Settings...</source>
+        <translation>Änd&amp;ern...</translation>
+    </message>
+    <message>
+        <source>Manage the virtual machine settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1113,35 +1125,31 @@
     <name>UIGLSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>Allgemein</translation>
+        <translation type="obsolete">Allgemein</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>Eingabe</translation>
+        <translation type="obsolete">Eingabe</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Update</translation>
+        <translation type="obsolete">Update</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>Sprache</translation>
+        <translation type="obsolete">Sprache</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Netzwerk</translation>
-    </message>
-    <message>
-        <source>VirtualBox - %1</source>
-        <translation></translation>
+        <translation type="obsolete">Netzwerk</translation>
     </message>
     <message>
         <source>Extensions</source>
-        <translation>Zusatzpakete</translation>
+        <translation type="obsolete">Zusatzpakete</translation>
     </message>
 </context>
 <context>
@@ -1238,11 +1246,11 @@
     </message>
     <message>
         <source>Reset Host Key</source>
-        <translation>Host-Taste zurücksetzen</translation>
+        <translation type="obsolete">Host-Taste zurücksetzen</translation>
     </message>
     <message>
         <source>Resets the key used as a Host Key in the VM window.</source>
-        <translation>Zurücksetzen der Host-Taste für VM-Fenster.</translation>
+        <translation type="obsolete">Zurücksetzen der Host-Taste für VM-Fenster.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
@@ -1251,6 +1259,14 @@
     <message>
         <source>&amp;Auto Capture Keyboard</source>
         <translation>&amp;Auto-Fangmodus für Tastatur</translation>
+    </message>
+    <message>
+        <source>Reset host combination</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resets the key combination used as the host combination in the VM window.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1605,6 +1621,73 @@
     </message>
 </context>
 <context>
+    <name>UIHotKeyEditor</name>
+    <message>
+        <source>&lt;key_%1&gt;</source>
+        <translation>&lt;Taste_%1&gt;</translation>
+    </message>
+    <message>
+        <source>Left </source>
+        <translation>Links</translation>
+    </message>
+    <message>
+        <source>Right </source>
+        <translation>Rechts</translation>
+    </message>
+    <message>
+        <source>Left Shift</source>
+        <translation>Umsch Links</translation>
+    </message>
+    <message>
+        <source>Right Shift</source>
+        <translation>Umsch Rechts</translation>
+    </message>
+    <message>
+        <source>Left Ctrl</source>
+        <translation>Strg Links</translation>
+    </message>
+    <message>
+        <source>Right Ctrl</source>
+        <translation>Strg Rechts</translation>
+    </message>
+    <message>
+        <source>Left Alt</source>
+        <translation>Alt Links</translation>
+    </message>
+    <message>
+        <source>Right Alt</source>
+        <translation>Alt Rechts</translation>
+    </message>
+    <message>
+        <source>Left WinKey</source>
+        <translation>Win Links</translation>
+    </message>
+    <message>
+        <source>Right WinKey</source>
+        <translation>Win Rechts</translation>
+    </message>
+    <message>
+        <source>Menu key</source>
+        <translation>Menü</translation>
+    </message>
+    <message>
+        <source>Alt Gr</source>
+        <translation>AltGr</translation>
+    </message>
+    <message>
+        <source>Caps Lock</source>
+        <translation>Umsch Lock</translation>
+    </message>
+    <message>
+        <source>Scroll Lock</source>
+        <translation>Rollen Lock</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>Keine</translation>
+    </message>
+</context>
+<context>
     <name>UIImportApplianceWzd</name>
     <message>
         <source>Appliance Import Wizard</source>
@@ -1778,7 +1861,7 @@
     <name>UIMachineLogic</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
@@ -2117,6 +2200,14 @@
         <source>&amp;Port Forwarding</source>
         <translation>&amp;Port-Weiterleitung</translation>
     </message>
+    <message>
+        <source>&amp;Promiscuous Mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsParallel</name>
@@ -2437,7 +2528,7 @@
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation>Keine Festplatte für &lt;i&gt;%1&lt;/i&gt; ausgewählt.</translation>
+        <translation type="obsolete">Keine Festplatte für &lt;i&gt;%1&lt;/i&gt; ausgewählt.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
@@ -2674,6 +2765,18 @@
     <message>
         <source>Choose a virtual floppy disk file...</source>
         <translation>Datei für virtuelle Diskette auswählen...</translation>
+    </message>
+    <message>
+        <source>no name specified for controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>controller at position &lt;b&gt;%1&lt;/b&gt; uses the name that is already used by controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2971,6 +3074,10 @@
         <source>&lt;nobr&gt;State: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
         <translation>&lt;nobr&gt;Zustand: %1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3450,6 +3557,116 @@
     </message>
 </context>
 <context>
+    <name>UISettingsDialogGlobal</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">Allgemein</translation>
+    </message>
+    <message>
+        <source>Input</source>
+        <translation type="unfinished">Eingabe</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation type="unfinished">Update</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished">Sprache</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">Netzwerk</translation>
+    </message>
+    <message>
+        <source>Extensions</source>
+        <translation type="unfinished">Zusatzpakete</translation>
+    </message>
+    <message>
+        <source>VirtualBox - %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISettingsDialogMachine</name>
+    <message>
+        <source>General</source>
+        <translation type="unfinished">Allgemein</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation type="unfinished">System</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished">Anzeige</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation type="unfinished">Massenspeicher</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished">Audio</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="unfinished">Netzwerk</translation>
+    </message>
+    <message>
+        <source>Ports</source>
+        <translation type="unfinished">Ports</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <translation type="unfinished">Serielle Schnittstellen</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <translation type="unfinished">Parallel-Ports</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <translation type="unfinished">Gemeinsame Ordner</translation>
+    </message>
+    <message>
+        <source>%1 - %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished">haben Sie ein 64-Bit-Gastbestriebssystem ausgewählt. Da solche Gäste Hardwarevirtualisierung benötigen (VT-x/AMD-V), wird diese VM-Einstellung automatisch aktiviert.</translation>
+    </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="unfinished">haben Sie 2D-Video-Beschleunigung aktiviert. Diese Funktion wird momentan nur für Windows-Gäste unterstützt und wird daher deaktiviert.</translation>
+    </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished">haben Sie ein USB HID (Human Interface Device) aktiviert. Dieses benötigt die USB-Emulation. Wenn Sie die Einstellungen bestätigen, wird die USB-Emulation für diese VM aktiviert.</translation>
+    </message>
+    <message>
+        <source>at most one supported</source>
+        <translation type="unfinished">höchstens einer unterstützt</translation>
+    </message>
+    <message>
+        <source>up to %1 supported</source>
+        <translation type="unfinished">bis zu %1 unterstützt</translation>
+    </message>
+    <message>
+        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
+        <translation type="unfinished">werden momentan mehr Controller benutzt als ein %1-Chipsatz unterstützt. Bitte ändern Sie den Typ des Chipsatzes auf der Seite Systemeinstellungen oder entfernen Sie Controller aus der folgenden Liste: %2.</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -3559,75 +3776,71 @@
     <name>UIVMSettingsDlg</name>
     <message>
         <source>General</source>
-        <translation>Allgemein</translation>
+        <translation type="obsolete">Allgemein</translation>
     </message>
     <message>
         <source>System</source>
-        <translation>System</translation>
+        <translation type="obsolete">System</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>Anzeige</translation>
+        <translation type="obsolete">Anzeige</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation>Massenspeicher</translation>
+        <translation type="obsolete">Massenspeicher</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>Audio</translation>
+        <translation type="obsolete">Audio</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Netzwerk</translation>
+        <translation type="obsolete">Netzwerk</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation>Ports</translation>
+        <translation type="obsolete">Ports</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation>Serielle Schnittstellen</translation>
+        <translation type="obsolete">Serielle Schnittstellen</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation>Parallel-Ports</translation>
+        <translation type="obsolete">Parallel-Ports</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation>Gemeinsame Ordner</translation>
-    </message>
-    <message>
-        <source>%1 - %2</source>
-        <translation></translation>
+        <translation type="obsolete">Gemeinsame Ordner</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>haben Sie ein 64-Bit-Gastbestriebssystem ausgewählt. Da solche Gäste Hardwarevirtualisierung benötigen (VT-x/AMD-V), wird diese VM-Einstellung automatisch aktiviert.</translation>
+        <translation type="obsolete">haben Sie ein 64-Bit-Gastbestriebssystem ausgewählt. Da solche Gäste Hardwarevirtualisierung benötigen (VT-x/AMD-V), wird diese VM-Einstellung automatisch aktiviert.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation>haben Sie 2D-Video-Beschleunigung aktiviert. Diese Funktion wird momentan nur für Windows-Gäste unterstützt und wird daher deaktiviert.</translation>
+        <translation type="obsolete">haben Sie 2D-Video-Beschleunigung aktiviert. Diese Funktion wird momentan nur für Windows-Gäste unterstützt und wird daher deaktiviert.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>haben Sie ein USB HID (Human Interface Device) aktiviert. Dieses benötigt die USB-Emulation. Wenn Sie die Einstellungen bestätigen, wird die USB-Emulation für diese VM aktiviert.</translation>
+        <translation type="obsolete">haben Sie ein USB HID (Human Interface Device) aktiviert. Dieses benötigt die USB-Emulation. Wenn Sie die Einstellungen bestätigen, wird die USB-Emulation für diese VM aktiviert.</translation>
     </message>
     <message>
         <source>at most one supported</source>
-        <translation>höchstens einer unterstützt</translation>
+        <translation type="obsolete">höchstens einer unterstützt</translation>
     </message>
     <message>
         <source>up to %1 supported</source>
-        <translation>bis zu %1 unterstützt</translation>
+        <translation type="obsolete">bis zu %1 unterstützt</translation>
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation>werden momentan mehr Controller benutzt als ein %1-Chipsatz unterstützt. Bitte ändern Sie den Typ des Chipsatzes auf der Seite Systemeinstellungen oder entfernen Sie Controller aus der folgenden Liste: %2.</translation>
+        <translation type="obsolete">werden momentan mehr Controller benutzt als ein %1-Chipsatz unterstützt. Bitte ändern Sie den Typ des Chipsatzes auf der Seite Systemeinstellungen oder entfernen Sie Controller aus der folgenden Liste: %2.</translation>
     </message>
 </context>
 <context>
@@ -4960,12 +5173,27 @@
         <source>and</source>
         <translation>und</translation>
     </message>
+    <message>
+        <source>Deny</source>
+        <comment>NetworkAdapterPromiscModePolicyType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow VMs</source>
+        <comment>NetworkAdapterPromiscModePolicyType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow All</source>
+        <comment>NetworkAdapterPromiscModePolicyType</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
     <message>
         <source>&apos;%1 (0x%2)&apos; is an invalid host key code.</source>
-        <translation>&apos;%1 (0x%2)&apos; ist kein gültiger Tastencode.</translation>
+        <translation type="obsolete">&apos;%1 (0x%2)&apos; ist kein gültiger Tastencode.</translation>
     </message>
     <message>
         <source>The value &apos;%1&apos; of the key &apos;%2&apos; doesn&apos;t match the regexp constraint &apos;%3&apos;.</source>
@@ -4974,6 +5202,10 @@
     <message>
         <source>Cannot delete the key &apos;%1&apos;.</source>
         <translation>Der Schlüssel &apos;%1&apos; konnte nicht gelöscht werden.</translation>
+    </message>
+    <message>
+        <source>&apos;%1&apos; is an invalid host-combination code-sequence.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5230,7 +5462,7 @@
     <name>VBoxNetworkDialog</name>
     <message>
         <source>Network Adapters</source>
-        <translation>Netzwerkadapter</translation>
+        <translation type="obsolete">Netzwerkadapter</translation>
     </message>
 </context>
 <context>
@@ -5763,7 +5995,7 @@
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation>Der Zugriff auf USB-Geräte des Hosts ist nicht möglich, weil weder das USB-Dateisystem (usbfs) mit den entsprechenden Rechten gemountet ist, noch der DBus / Hal-Service verfügbar ist. Falls Sie USB-Geräte des Hosts innerhalb von Gästen nutzen wollen, müssen Sie dieses Problem beheben und VirtualBox neu starten.</translation>
+        <translation type="obsolete">Der Zugriff auf USB-Geräte des Hosts ist nicht möglich, weil weder das USB-Dateisystem (usbfs) mit den entsprechenden Rechten gemountet ist, noch der DBus / Hal-Service verfügbar ist. Falls Sie USB-Geräte des Hosts innerhalb von Gästen nutzen wollen, müssen Sie dieses Problem beheben und VirtualBox neu starten.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
@@ -5847,7 +6079,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie wirklich zum Sicherungspunkt &lt;b&gt;%1&lt;/b&gt; zurückkehren? Dadurch wird der aktuelle Zustand der virtuellen Maschine unwiderruflich verworfen.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Möchten Sie wirklich zum Sicherungspunkt &lt;b&gt;%1&lt;/b&gt; zurückkehren? Dadurch wird der aktuelle Zustand der virtuellen Maschine unwiderruflich verworfen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore</source>
@@ -6178,14 +6410,54 @@
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Please check you have the permissions required to do so.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Der Ordner für die virtuelle Maschine kann nicht angelegt werden:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Bitte überprüfen Sie die Zugriffsrechte.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Der Ordner für die virtuelle Maschine kann nicht angelegt werden:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Bitte überprüfen Sie die Zugriffsrechte.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation>Der USB-Proxy-Dienst konnte nicht gestarted werden. Dieser Dienst ist möglicherweise nicht auf diesem Computer installiert.</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox kann nicht auf USB-Geräte zugreifen. Dieses Problem kann dadurch gelöst werden, indem der aktuelle Nutzer Mitglied der Gruppe &apos;vboxusers&apos; wird. In der Dokumentation finden Sie eine genauere Erklärung.</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox kann nicht auf USB-Geräte zugreifen. Dieses Problem wird gelöst, wenn der aktuelle Nutzer auf die Dateien und Order des USB-Dateisystems (usbfs) zugreifen kann. In der Dokumentation finden Sie eine genauere Erklärung.</translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation>Der USB-Proxy-Dienst wurde nicht auf diesen Host portiert.</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation>Der USB-Proxy-Dienst konnte nicht gestartet werden.</translation>
     </message>
 </context>
 <context>
     <name>VBoxSFDialog</name>
     <message>
         <source>Shared Folders</source>
-        <translation>Gemeinsame Ordner</translation>
+        <translation type="obsolete">Gemeinsame Ordner</translation>
     </message>
 </context>
 <context>
@@ -6207,7 +6479,7 @@
     <name>VBoxSelectorWnd</name>
     <message>
         <source>VirtualBox OSE</source>
-        <translation>VirtualBox OSE</translation>
+        <translation type="obsolete">VirtualBox OSE</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
@@ -6244,7 +6516,7 @@
     </message>
     <message>
         <source>D&amp;iscard</source>
-        <translation>&amp;Verwerfen</translation>
+        <translation type="obsolete">&amp;Verwerfen</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
@@ -6288,7 +6560,7 @@
     </message>
     <message>
         <source>R&amp;esume</source>
-        <translation>&amp;Fortfahren</translation>
+        <translation type="obsolete">&amp;Fortfahren</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
@@ -6429,6 +6701,14 @@
         <source>Manager</source>
         <comment>Note: main window title which is pretended by the product name.</comment>
         <translation>Manager</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">Verwerfen</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
