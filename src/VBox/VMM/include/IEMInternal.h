@@ -171,7 +171,10 @@ typedef struct IEMCPU
     /** Set if no comparison to REM is currently performed.
      * This is used to skip past really slow bits.  */
     bool                    fNoRem;
-    bool                    afAlignment1[3];
+    /** Indicates that RAX and RDX differences should be ignored since RDTSC
+     *  and RDTSCP are timing sensitive.  */
+    bool                    fIgnoreRaxRdx;
+    bool                    afAlignment1[2];
     /** Mask of undefined eflags.
      * The verifier will any difference in these flags. */
     uint32_t                fUndefinedEFlags;
@@ -315,6 +318,8 @@ typedef IEMCPU *PIEMCPU;
 #define IEM_ACCESS_STACK_W              (IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_WHAT_STACK)
 /** Stack read alias. */
 #define IEM_ACCESS_STACK_R              (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_WHAT_STACK)
+/** Stack read+write alias. */
+#define IEM_ACCESS_STACK_RW             (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_WHAT_STACK)
 /** @} */
 
 /** @name Prefix constants (IEMCPU::fPrefixes)
