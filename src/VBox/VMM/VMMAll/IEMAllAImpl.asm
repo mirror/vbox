@@ -226,6 +226,7 @@
 ; @param        4       The undefined flags.
 ;
 %macro IEMIMPL_BIN_OP 4
+BEGINCODE
 BEGINPROC iemAImpl_ %+ %1 %+ _u8
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
@@ -344,6 +345,7 @@ IEMIMPL_BIN_OP test, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86
 ; @param        4       The undefined flags.
 ;
 %macro IEMIMPL_BIT_OP 4
+BEGINCODE
 BEGINPROC iemAImpl_ %+ %1 %+ _u16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
@@ -434,6 +436,7 @@ IEMIMPL_BIT_OP btr, 1, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86
 ; @param        3       The undefined flags.
 ;
 %macro IEMIMPL_BIT_OP 3
+BEGINCODE
 BEGINPROC iemAImpl_ %+ %1 %+ _u16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
@@ -479,6 +482,7 @@ IEMIMPL_BIT_OP bsr, (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EF
 ; IMUL is also a similar but yet different case (no lock, no mem dst).
 ; The rDX:rAX variant of imul is handled together with mul further down.
 ;
+BEGINCODE
 BEGINPROC iemAImpl_imul_two_u16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
@@ -520,6 +524,7 @@ ENDPROC iemAImpl_imul_two_u64
 ; Each function takes two arguments, first the pointer to the memory,
 ; then the pointer to the register.  They all return void.
 ;
+BEGINCODE
 BEGINPROC iemAImpl_xchg_u8
         PROLOGUE_2_ARGS
         mov     T0_8, [A1]
@@ -576,6 +581,7 @@ ENDPROC iemAImpl_xchg_u64
 ; @param        3       The undefined flags.
 ;
 %macro IEMIMPL_UNARY_OP 3
+BEGINCODE
 BEGINPROC iemAImpl_ %+ %1 %+ _u8
         PROLOGUE_2_ARGS
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
@@ -685,6 +691,7 @@ IEMIMPL_UNARY_OP not, 0, 0
 ; Makes ASSUMPTIONS about A0, A1 and A2 assignments.
 ;
 %macro IEMIMPL_SHIFT_OP 3
+BEGINCODE
 BEGINPROC iemAImpl_ %+ %1 %+ _u8
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
@@ -779,6 +786,7 @@ IEMIMPL_SHIFT_OP sar, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_E
 ; Makes ASSUMPTIONS about A0, A1, A2 and A3 assignments.
 ;
 %macro IEMIMPL_SHIFT_DBL_OP 3
+BEGINCODE
 BEGINPROC iemAImpl_ %+ %1 %+ _u16
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
@@ -860,6 +868,7 @@ IEMIMPL_SHIFT_DBL_OP shrd, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | 
 ; Makes ASSUMPTIONS about A0, A1, A2, A3, T0 and T1 assignments.
 ;
 %macro IEMIMPL_MUL_OP 3
+BEGINCODE
 BEGINPROC iemAImpl_ %+ %1 %+ _u8
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
@@ -965,6 +974,7 @@ IEMIMPL_MUL_OP imul, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_E
 ; Makes ASSUMPTIONS about A0, A1, A2, A3, T0 and T1 assignments.
 ;
 %macro IEMIMPL_DIV_OP 3
+BEGINCODE
 BEGINPROC iemAImpl_ %+ %1 %+ _u8
         PROLOGUE_3_ARGS
 
