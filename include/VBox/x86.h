@@ -2799,16 +2799,16 @@ AssertCompileSize(X86TSS64, 136);
 /**
  * The mask used to mask off the table indicator and CPL of an selector.
  */
-#define X86_SEL_MASK        0xfff8
+#define X86_SEL_MASK        0xfff8U
 
 /**
  * The bit indicating that a selector is in the LDT and not in the GDT.
  */
-#define X86_SEL_LDT         0x0004
+#define X86_SEL_LDT         0x0004U
 /**
  * The bit mask for getting the RPL of a selector.
  */
-#define X86_SEL_RPL         0x0003
+#define X86_SEL_RPL         0x0003U
 
 /** @} */
 
