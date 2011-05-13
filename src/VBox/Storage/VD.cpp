@@ -1714,7 +1714,7 @@ static int vdSetModifiedFlagAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
                     rc = vdIoCtxProcess(pIoCtxFlush);
                     if (rc == VINF_VD_ASYNC_IO_FINISHED)
                     {
-                        vdIoCtxUnlockDisk(pDisk, pIoCtxFlush, false /* fProcessDeferredReqs */);
+                        vdIoCtxUnlockDisk(pDisk, pIoCtx, false /* fProcessDeferredReqs */);
                         vdIoCtxFree(pDisk, pIoCtxFlush);
                     }
                     else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
