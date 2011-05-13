@@ -187,7 +187,19 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             CGImageRelease(pauseImg);
         }
         else
+        {
+#ifdef RT_ARCH_AMD64
+            /* Not sure who to blame, but it seems on 64bit there goes
+             * something terrible wrong (on a second monitor) when directly
+             * using CGImageCreateWithImageInRect without making a copy. We saw
+             * something like this already with the scale mode. */
+            CGImageRef tmpImage = CGImageCreateWithImageInRect(m_image, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+            subImage = CGImageCreateCopy(tmpImage);
+            CGImageRelease(tmpImage);
+#else
             subImage = CGImageCreateWithImageInRect(m_image, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+#endif
+        }
         Assert(VALID_PTR(subImage));
         /* Clear the background (Make the rect fully transparent) */
         CGContextClearRect(ctx, viewRect);
@@ -328,7 +340,19 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             CGImageRelease(pauseImg);
         }
         else
+        {
+#ifdef RT_ARCH_AMD64
+            /* Not sure who to blame, but it seems on 64bit there goes
+             * something terrible wrong (on a second monitor) when directly
+             * using CGImageCreateWithImageInRect without making a copy. We saw
+             * something like this already with the scale mode. */
+            CGImageRef tmpImage = CGImageCreateWithImageInRect(m_image, ::darwinToCGRect(is));
+            subImage = CGImageCreateCopy(tmpImage);
+            CGImageRelease(tmpImage);
+#else
             subImage = CGImageCreateWithImageInRect(m_image, ::darwinToCGRect(is));
+#endif
+        }
         if (subImage)
         {
             /* Ok, for more performance we set a clipping path of the
