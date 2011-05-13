@@ -412,9 +412,13 @@ static int usbLibDevStrHubNameGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
 
     PUSB_NODE_CONNECTION_NAME pName = (PUSB_NODE_CONNECTION_NAME)RTMemAllocZ(Name.ActualLength);
     if (!pName)
+    {
+        AssertFailed();
         return VERR_OUT_OF_RESOURCES;
+    }
 
     int rc = VINF_SUCCESS;
+    pName->ConnectionIndex = iPort;
     if (DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_NAME, pName, Name.ActualLength, pName, Name.ActualLength, &cbReturned, NULL))
     {
         rc = RTUtf16ToUtf8Ex((PCRTUTF16)pName->NodeName, pName->ActualLength, plpszName, 0, NULL);
@@ -424,6 +428,7 @@ static int usbLibDevStrHubNameGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
     }
     else
     {
+        AssertFailed();
         rc = VERR_GENERAL_FAILURE;
     }
     RTMemFree(pName);
