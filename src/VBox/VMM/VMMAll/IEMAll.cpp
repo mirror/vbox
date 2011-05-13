@@ -1322,6 +1322,8 @@ static VBOXSTRICTRC iemRaiseLoadStackFromTss32Or16(PIEMCPU pIemCpu, PCCPUMCTX pC
 {
     VBOXSTRICTRC rcStrict;
     Assert(uCpl < 4);
+    *puEsp  = 0; /* make gcc happy */
+    *pSelSS = 0; /* make gcc happy */
 
     switch (pCtx->trHid.Attr.n.u4Type)
     {
@@ -1492,6 +1494,9 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
                             uint16_t    uErr,
                             uint64_t    uCr2)
 {
+    Log(("iemRaiseXcptOrIntInProtMode: %#x at %04x:%08RGv cbInstr=%#x fFlags=%#x uErr=%#x uCr2=%llx\n",
+         u8Vector, pCtx->cs, pCtx->rip, cbInstr, fFlags, uErr, uCr2));
+
     /*
      * Read the IDT entry.
      */
@@ -1651,6 +1656,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
         rcStrict = iemMiscValidateNewSS(pIemCpu, pCtx, NewSS, uNewCpl, &DescSS);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
+
         fNewSSAttr   = X86DESC_GET_HID_ATTR(DescSS.Legacy);
         cbNewSSLimit = X86DESC_LIMIT(DescSS.Legacy);
         if (DescSS.Legacy.Gen.u1Granularity)
