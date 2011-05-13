@@ -27,8 +27,69 @@
 #ifndef ___VBox_com_mtlist_h
 #define ___VBox_com_mtlist_h
 
+#include <VBox/com/ptr.h>
 #include <VBox/com/string.h>
 #include <iprt/cpp/mtlist.h>
+
+/**
+ * Specialized thread-safe list class for using with com::ComPtr<C>
+ *
+ * @note: This is necessary cause ComPtr<IFACE> has a size of 8.
+ */
+template <typename C>
+class RTCMTList< ComPtr<C> >: public RTCListBase< ComPtr<C>, ComPtr<C>*, true>
+{
+    /* Traits */
+    typedef ComPtr<C>                 T;
+    typedef T                        *ITYPE;
+    static const bool                 MT = true;
+    typedef RTCListBase<T, ITYPE, MT> BASE;
+
+public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
+    RTCList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+};
+
+/**
+ * Specialized thread-safe list class for using with com::ComObjPtr<C>
+ *
+ * @note: This is necessary cause ComObjPtr<IFACE> has a size of 8.
+ */
+template <typename C>
+class RTCMTList< ComObjPtr<C> >: public RTCListBase< ComObjPtr<C>, ComObjPtr<C>*, true>
+{
+    /* Traits */
+    typedef ComObjPtr<C>              T;
+    typedef T                        *ITYPE;
+    static const bool                 MT = true;
+    typedef RTCListBase<T, ITYPE, MT> BASE;
+
+public:
+    /**
+     * Creates a new list.
+     *
+     * This preallocates @a cCapacity elements within the list.
+     *
+     * @param   cCapacitiy   The initial capacity the list has.
+     * @throws  std::bad_alloc
+     */
+    RTCList(size_t cCapacity = BASE::DefaultCapacity)
+     : BASE(cCapacity) {}
+
+    /* Define our own new and delete. */
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+};
 
 /**
  * Specialized thread-safe list class for using with com::Utf8Str.
