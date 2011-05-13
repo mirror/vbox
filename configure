@@ -1963,10 +1963,20 @@ setup_wine()
     echo "  wine binary not found"
     fail
   fi
-  if ! which_wrapper wineprefixcreate > /dev/null; then
-    echo "  wineprefixcreate not found"
+  if ! which_wrapper wine > /dev/null; then
+    echo "  wine not found"
     fail
   fi
+  wine_version="`wine --version`"
+  case "`expr "$wine_version" : 'wine-\([0-9.]*\)' '>' 1.1.43`" in
+    "0")
+      if ! which_wrapper wineprefixcreate > /dev/null; then
+        echo "  wineprefixcreate not found"
+        fail
+      fi
+    ;;
+    *) eval "wineprefixcreate() { true ; }" ;; # now created automatically
+  esac
   export WINEPREFIX="${ODIR}wine.$BUILD_MACHINE"
   echo "WINEPREFIX=\"${ODIR}wine.$BUILD_MACHINE\"" >> $ENV
   echo "export WINEPREFIX" >> $ENV
