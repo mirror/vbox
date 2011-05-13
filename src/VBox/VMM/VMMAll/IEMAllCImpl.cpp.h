@@ -954,15 +954,15 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         uint32_t uNewEip;
-        uint16_t uNewCs;
+        uint16_t uNewCS;
         if (enmEffOpSize == IEMMODE_32BIT)
         {
-            uNewCs  = pu16Frame[2];
+            uNewCS  = pu16Frame[2];
             uNewEip = RT_MAKE_U32(pu16Frame[0], pu16Frame[1]);
         }
         else
         {
-            uNewCs  = pu16Frame[1];
+            uNewCS  = pu16Frame[1];
             uNewEip = pu16Frame[0];
         }
         /** @todo check how this is supposed to work if sp=0xfffe. */
@@ -978,8 +978,8 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         pCtx->rip           = uNewEip;
-        pCtx->cs            = uNewCs;
-        pCtx->csHid.u64Base = (uint32_t)uNewCs << 4;
+        pCtx->cs            = uNewCS;
+        pCtx->csHid.u64Base = (uint32_t)uNewCS << 4;
         /** @todo do we load attribs and limit as well? */
         if (cbPop)
             iemRegAddToRsp(pCtx, cbPop);
@@ -1133,52 +1133,153 @@ IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, bool, fIsBpInstr)
 
 
 /**
- * Implements iret.
+ * Implements iret for real mode and V8086 mode.
  *
  * @param   enmEffOpSize    The effective operand size.
  */
-IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
+IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
 {
-    PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
-    VBOXSTRICTRC    rcStrict;
-    uint64_t        uNewRsp;
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
     /*
-     * Real mode is easy, V8086 mode is relative similar.
+     * iret throws an exception if VME isn't enabled.
      */
-    if (   pIemCpu->enmCpuMode == IEMMODE_16BIT
-        && IEM_IS_REAL_OR_V86_MODE(pIemCpu))
-    {
-        /* iret throws an exception if VME isn't enabled.  */
-        if (   pCtx->eflags.Bits.u1VM
-            && !(pCtx->cr4 & X86_CR4_VME))
-            return iemRaiseGeneralProtectionFault0(pIemCpu);
+    if (   pCtx->eflags.Bits.u1VM
+        && !(pCtx->cr4 & X86_CR4_VME))
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
 
-        /* Do the stack bits, but don't commit RSP before everything checks
-           out right. */
-        union
+    /*
+     * Do the stack bits, but don't commit RSP before everything checks
+     * out right.
+     */
+    Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
+    VBOXSTRICTRC    rcStrict;
+    RTCPTRUNION     uFrame;
+    uint16_t        uNewCS;
+    uint32_t        uNewEip;
+    uint32_t        uNewFlags;
+    uint64_t        uNewRsp;
+    if (enmEffOpSize == IEMMODE_32BIT)
+    {
+        rcStrict = iemMemStackPopBeginSpecial(pIemCpu, 12, &uFrame.pv, &uNewRsp);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        uNewEip    = uFrame.pu32[0];
+        uNewCS     = (uint16_t)uFrame.pu32[1];
+        uNewFlags  = uFrame.pu32[2];
+        uNewFlags &= X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
+                   | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT
+                   | X86_EFL_RF /*| X86_EFL_VM*/ | X86_EFL_AC /*|X86_EFL_VIF*/ /*|X86_EFL_VIP*/
+                   | X86_EFL_ID;
+        uNewFlags |= pCtx->eflags.u & (X86_EFL_VM | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_1);
+    }
+    else
+    {
+        rcStrict = iemMemStackPopBeginSpecial(pIemCpu, 6, &uFrame.pv, &uNewRsp);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        uNewEip    = uFrame.pu16[0];
+        uNewCS     = uFrame.pu16[1];
+        uNewFlags  = uFrame.pu16[2];
+        uNewFlags &= X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
+                   | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT;
+        uNewFlags |= pCtx->eflags.u & (UINT32_C(0xffff0000) | X86_EFL_1);
+        /** @todo The intel pseudo code does not indicate what happens to
+         *        reserved flags. We just ignore them. */
+    }
+    /** @todo Check how this is supposed to work if sp=0xfffe. */
+
+    /*
+     * Check the limit of the new EIP.
+     */
+    /** @todo Only the AMD pseudo code check the limit here, what's
+     *        right? */
+    if (uNewEip > pCtx->csHid.u32Limit)
+        return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
+
+    /*
+     * V8086 checks and flag adjustments
+     */
+    if (pCtx->eflags.Bits.u1VM)
+    {
+        if (pCtx->eflags.Bits.u2IOPL == 3)
         {
-            uint32_t const *pu32;
-            uint16_t const *pu16;
-            void const     *pv;
-        } uFrame;
+            /* Preserve IOPL and clear RF. */
+            uNewFlags &=                 ~(X86_EFL_IOPL | X86_EFL_RF);
+            uNewFlags |= pCtx->eflags.u & (X86_EFL_IOPL);
+        }
+        else if (   enmEffOpSize == IEMMODE_16BIT
+                 && (   !(uNewFlags & X86_EFL_IF)
+                     || !pCtx->eflags.Bits.u1VIP )
+                 && !(uNewFlags & X86_EFL_TF)   )
+        {
+            /* Move IF to VIF, clear RF and preserve IF and IOPL.*/
+            uNewFlags &= ~X86_EFL_VIF;
+            uNewFlags |= (uNewFlags & X86_EFL_IF) << (19 - 9);
+            uNewFlags &=                 ~(X86_EFL_IF | X86_EFL_IOPL | X86_EFL_RF);
+            uNewFlags |= pCtx->eflags.u & (X86_EFL_IF | X86_EFL_IOPL);
+        }
+        else
+            return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /*
+     * Commit the operation.
+     */
+    rcStrict = iemMemStackPopCommitSpecial(pIemCpu, uFrame.pv, uNewRsp);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+    pCtx->rip           = uNewEip;
+    pCtx->cs            = uNewCS;
+    pCtx->csHid.u64Base = (uint32_t)uNewCS << 4;
+    /** @todo do we load attribs and limit as well? */
+    Assert(uNewFlags & X86_EFL_1);
+    pCtx->eflags.u      = uNewFlags;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements iret for protected mode
+ *
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Nested task return.
+     */
+    if (pCtx->eflags.Bits.u1NT)
+    {
+        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    }
+    /*
+     * Normal return.
+     */
+    else
+    {
+        /*
+         * Do the stack bits, but don't commit RSP before everything checks
+         * out right.
+         */
         Assert(enmEffOpSize == IEMMODE_32BIT || enmEffOpSize == IEMMODE_16BIT);
-        uint16_t uNewCs;
-        uint32_t uNewEip;
-        uint32_t uNewFlags;
+        VBOXSTRICTRC    rcStrict;
+        RTCPTRUNION     uFrame;
+        uint16_t        uNewCS;
+        uint32_t        uNewEip;
+        uint32_t        uNewFlags;
+        uint64_t        uNewRsp;
         if (enmEffOpSize == IEMMODE_32BIT)
         {
             rcStrict = iemMemStackPopBeginSpecial(pIemCpu, 12, &uFrame.pv, &uNewRsp);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
             uNewEip    = uFrame.pu32[0];
-            uNewCs     = (uint16_t)uFrame.pu32[1];
+            uNewCS     = (uint16_t)uFrame.pu32[1];
             uNewFlags  = uFrame.pu32[2];
-            uNewFlags &= X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
-                       | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT
-                       | X86_EFL_RF /*| X86_EFL_VM*/ | X86_EFL_AC /*|X86_EFL_VIF*/ /*|X86_EFL_VIP*/
-                       | X86_EFL_ID;
-            uNewFlags |= pCtx->eflags.u & (X86_EFL_VM | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_1);
         }
         else
         {
@@ -1186,63 +1287,163 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
             uNewEip    = uFrame.pu16[0];
-            uNewCs     = uFrame.pu16[1];
+            uNewCS     = uFrame.pu16[1];
             uNewFlags  = uFrame.pu16[2];
-            uNewFlags &= X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
-                       | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT;
-            uNewFlags |= pCtx->eflags.u & (UINT16_C(0xffff0000) | X86_EFL_1);
-            /** @todo The intel pseudo code does not indicate what happens to
-             *        reserved flags. We just ignore them. */
         }
-        /** @todo Check how this is supposed to work if sp=0xfffe. */
-
-        /* Check the limit of the new EIP. */
-        /** @todo Only the AMD pseudo code check the limit here, what's
-         *        right? */
-        if (uNewEip > pCtx->csHid.u32Limit)
-            return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
-
-        /* V8086 checks and flag adjustments */
-        if (pCtx->eflags.Bits.u1VM)
-        {
-            if (pCtx->eflags.Bits.u2IOPL == 3)
-            {
-                /* Preserve IOPL and clear RF. */
-                uNewFlags &=                 ~(X86_EFL_IOPL | X86_EFL_RF);
-                uNewFlags |= pCtx->eflags.u & (X86_EFL_IOPL);
-            }
-            else if (   enmEffOpSize == IEMMODE_16BIT
-                     && (   !(uNewFlags & X86_EFL_IF)
-                         || !pCtx->eflags.Bits.u1VIP )
-                     && !(uNewFlags & X86_EFL_TF)   )
-            {
-                /* Move IF to VIF, clear RF and preserve IF and IOPL.*/
-                uNewFlags &= ~X86_EFL_VIF;
-                uNewFlags |= (uNewFlags & X86_EFL_IF) << (19 - 9);
-                uNewFlags &=                 ~(X86_EFL_IF | X86_EFL_IOPL | X86_EFL_RF);
-                uNewFlags |= pCtx->eflags.u & (X86_EFL_IF | X86_EFL_IOPL);
-            }
-            else
-                return iemRaiseGeneralProtectionFault0(pIemCpu);
-        }
-
-        /* commit the operation. */
-        rcStrict = iemMemStackPopCommitSpecial(pIemCpu, uFrame.pv, uNewRsp);
+        rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uFrame.pv, IEM_ACCESS_STACK_R); /* don't use iemMemStackPopCommitSpecial here. */
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
-        pCtx->rip           = uNewEip;
-        pCtx->cs            = uNewCs;
-        pCtx->csHid.u64Base = (uint32_t)uNewCs << 4;
-        /** @todo do we load attribs and limit as well? */
-        Assert(uNewFlags & X86_EFL_1);
-        pCtx->eflags.u      = uNewFlags;
 
-        return VINF_SUCCESS;
+        /*
+         * What are we returning to?
+         */
+        if (   (uNewFlags & X86_EFL_VM)
+            && pIemCpu->uCpl == 0)
+        {
+            /* V8086 mode! */
+            AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+        }
+        else
+        {
+            /*
+             * Protected mode.
+             */
+            /* Read the CS descriptor. */
+            if (!(uNewCS & (X86_SEL_MASK | X86_SEL_LDT)))
+            {
+                Log(("iret %04x:%08x -> invalid CS selector, #GP(0)\n", uNewCS, uNewEip));
+                return iemRaiseGeneralProtectionFault0(pIemCpu);
+            }
+
+            IEMSELDESC DescCS;
+            rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCS, uNewCS);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+
+            /* Must be a code descriptor. */
+            if (!DescCS.Legacy.Gen.u1DescType)
+            {
+                Log(("iret %04x:%08x - CS is system segment (%#x) -> #GP\n", uNewCS, uNewEip, DescCS.Legacy.Gen.u4Type));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS);
+            }
+            if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE))
+            {
+                Log(("iret %04x:%08x - not code segment (%#x) -> #GP\n", uNewCS, uNewEip, DescCS.Legacy.Gen.u4Type));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS);
+            }
+
+            /* Privilege checks. */
+            if ((uNewCS & X86_SEL_RPL) < pIemCpu->uCpl)
+            {
+                Log(("iret %04x:%08x - RPL < CPL (%d) -> #GP\n", uNewCS, uNewEip, pIemCpu->uCpl));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS);
+            }
+            if (   (DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF)
+                && (uNewCS & X86_SEL_RPL) < DescCS.Legacy.Gen.u2Dpl)
+            {
+                Log(("iret %04x:%08x - RPL < DPL (%d) -> #GP\n", uNewCS, uNewEip, DescCS.Legacy.Gen.u2Dpl));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCS);
+            }
+
+            /* Present? */
+            if (!DescCS.Legacy.Gen.u1Present)
+            {
+                Log(("iret %04x:%08x - CS not present -> #NP\n", uNewCS, uNewEip));
+                return iemRaiseSelectorNotPresentBySelector(pIemCpu, uNewCS);
+            }
+
+            uint32_t cbLimitCS = X86DESC_LIMIT(DescCS.Legacy);
+            if (DescCS.Legacy.Gen.u1Granularity)
+                cbLimitCS = (cbLimitCS << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+
+            /*
+             * Different level?
+             */
+            if ((uNewCS & X86_SEL_RPL) != pIemCpu->uCpl)
+            {
+                AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+            }
+            /*
+             * Same level.
+             */
+            else
+            {
+                /* Check EIP. */
+                if (uNewEip > cbLimitCS)
+                {
+                    Log(("iret %04x:%08x - EIP is out of bounds (%#x) -> #GP(0)\n", uNewCS, uNewEip, cbLimitCS));
+                    return iemRaiseSelectorBoundsBySelector(pIemCpu, uNewCS);
+                }
+
+                /*
+                 * Commit the changes, marking CS first since it may fail.
+                 */
+                if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+                {
+                    rcStrict = iemMemMarkSelDescAccessed(pIemCpu, uNewCS);
+                    if (rcStrict != VINF_SUCCESS)
+                        return rcStrict;
+                    DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+                }
+
+                pCtx->rip               = uNewEip;
+                pCtx->cs                = uNewCS;
+                pCtx->csHid.Attr.u      = X86DESC_GET_HID_ATTR(DescCS.Legacy);
+                pCtx->csHid.u32Limit    = cbLimitCS;
+                pCtx->csHid.u64Base     = X86DESC_BASE(DescCS.Legacy);
+                pCtx->rsp               = uNewRsp;
+
+                uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF  | X86_EFL_SF
+                                     | X86_EFL_TF | X86_EFL_DF | X86_EFL_OF | X86_EFL_NT;
+                if (enmEffOpSize != IEMMODE_16BIT)
+                    fEFlagsMask |= X86_EFL_RF | X86_EFL_AC | X86_EFL_ID;
+                if (pIemCpu->uCpl == 0)
+                    fEFlagsMask |= X86_EFL_IF | X86_EFL_IOPL | X86_EFL_VIF | X86_EFL_VIP; /* VM is 0 */
+                else if (pIemCpu->uCpl <= pCtx->eflags.Bits.u2IOPL)
+                    fEFlagsMask |= X86_EFL_IF;
+                pCtx->eflags.u         &= ~fEFlagsMask;
+                pCtx->eflags.u         |= fEFlagsMask & uNewFlags;
+                /* Done! */
+            }
+        }
     }
 
+    return VINF_SUCCESS;
+}
 
-    AssertFailed();
+
+/**
+ * Implements iret for long mode
+ *
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
+{
+    //PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
+    //VBOXSTRICTRC    rcStrict;
+    //uint64_t        uNewRsp;
+
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Implements iret.
+ *
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
+{
+    /*
+     * Call a mode specific worker.
+     */
+    if (   pIemCpu->enmCpuMode == IEMMODE_16BIT
+        && IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+        return IEM_CIMPL_CALL_1(iemCImpl_iret_real_v8086, enmEffOpSize);
+    if (IEM_IS_LONG_MODE(pIemCpu))
+        return IEM_CIMPL_CALL_1(iemCImpl_iret_long, enmEffOpSize);
+
+    return     IEM_CIMPL_CALL_1(iemCImpl_iret_prot, enmEffOpSize);
 }
 
 
@@ -2448,6 +2649,9 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
     uint64_t uTicks = TMCpuTickGet(IEMCPU_TO_VMCPU(pIemCpu));
     pCtx->rax = (uint32_t)uTicks;
     pCtx->rdx = uTicks >> 32;
+#ifdef IEM_VERIFICATION_MODE
+    pIemCpu->fIgnoreRaxRdx = true;
+#endif
 
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
@@ -2735,7 +2939,7 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
     {
         pCtx->fpu.FCW   = 0x37f;
         pCtx->fpu.FSW   = 0;
-        pCtx->fpu.FTW   = 0xff;
+        pCtx->fpu.FTW   = 0x00;         /* 0 - empty. */
         pCtx->fpu.FPUDP = 0;
         pCtx->fpu.DS    = 0; //??
         pCtx->fpu.FPUIP = 0;
@@ -2747,7 +2951,7 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
         PX86FPUSTATE pFpu = (PX86FPUSTATE)&pCtx->fpu;
         pFpu->FCW       = 0x37f;
         pFpu->FSW       = 0;
-        pFpu->FTW       = 0xffff;
+        pFpu->FTW       = 0xffff;       /* 11 - empty */
         pFpu->FPUOO     = 0; //??
         pFpu->FPUOS     = 0; //??
         pFpu->FPUIP     = 0;
