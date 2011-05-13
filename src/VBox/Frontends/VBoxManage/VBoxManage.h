@@ -44,10 +44,11 @@
 #define USAGE_UNREGISTERVM          RT_BIT_64(3)
 #define USAGE_CREATEVM              RT_BIT_64(4)
 #define USAGE_MODIFYVM              RT_BIT_64(5)
-#define USAGE_STARTVM               RT_BIT_64(6)
-#define USAGE_CONTROLVM             RT_BIT_64(7)
-#define USAGE_DISCARDSTATE          RT_BIT_64(8)
-#define USAGE_SNAPSHOT              RT_BIT_64(9)
+#define USAGE_CLONEVM               RT_BIT_64(6)
+#define USAGE_STARTVM               RT_BIT_64(7)
+#define USAGE_CONTROLVM             RT_BIT_64(8)
+#define USAGE_DISCARDSTATE          RT_BIT_64(9)
+#define USAGE_SNAPSHOT              RT_BIT_64(10)
 #define USAGE_CLOSEMEDIUM           RT_BIT_64(11)
 #define USAGE_SHOWHDINFO            RT_BIT_64(12)
 #define USAGE_CREATEHD              RT_BIT_64(13)
@@ -209,6 +210,7 @@ int handleMetrics(HandlerArg *a);
 int handleRegisterVM(HandlerArg *a);
 int handleUnregisterVM(HandlerArg *a);
 int handleCreateVM(HandlerArg *a);
+int handleCloneVM(HandlerArg *a);
 int handleStartVM(HandlerArg *a);
 int handleDiscardState(HandlerArg *a);
 int handleAdoptState(HandlerArg *a);

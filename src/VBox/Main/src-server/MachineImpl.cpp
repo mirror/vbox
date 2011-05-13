@@ -71,6 +71,7 @@
 #include <iprt/string.h>
 
 #include <VBox/com/array.h>
+#include <VBox/com/list.h>
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -6071,10 +6072,382 @@ STDMETHODIMP Machine::COMGETTER(BandwidthControl)(IBandwidthControl **aBandwidth
     return S_OK;
 }
 
-STDMETHODIMP Machine::CloneTo(IMachine *aTarget, BOOL aFullClone, IProgress **aProgress)
+struct Machine::CloneVMTask
 {
-    NOREF(aTarget); NOREF(aFullClone); NOREF(aProgress);
-    ReturnComNotImplemented();
+    ComObjPtr<Machine>          pSrcMachine;
+    ComObjPtr<Machine>          pTrgMachine;
+    ComObjPtr<Progress>         pProgress;
+    bool                        fLink;
+    typedef struct
+    {
+        ComPtr<IMedium>         pMedium;
+        uint64_t                uSize;
+    }MediumTask;
+    typedef RTCList<MediumTask> MediumTaskChain;
+    RTCList<MediumTaskChain>    llMedias;
+};
+
+STDMETHODIMP Machine::CloneTo(IMachine *pTarget, BOOL fFullClone, IProgress **pProgress)
+{
+    LogFlowFuncEnter();
+
+    CheckComArgNotNull(pTarget);
+    CheckComArgOutPointerValid(pProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock srcLock(this COMMA_LOCKVAL_SRC_POS);
+
+    CloneVMTask *pTask = NULL;
+
+    HRESULT rc;
+    try
+    {
+        pTask = new CloneVMTask;
+        pTask->pSrcMachine = this;
+        pTask->pTrgMachine = static_cast<Machine*>(pTarget);
+        pTask->fLink       = !fFullClone;
+
+        AutoWriteLock trgLock(pTask->pTrgMachine COMMA_LOCKVAL_SRC_POS);
+
+        ULONG uCount       = 2; /* One init task and the machine creation. */
+        ULONG uTotalWeight = 2; /* The init task and the machine creation is worth one. */
+        for (MediaData::AttachmentList::iterator it = mMediaData->mAttachments.begin();
+             it != mMediaData->mAttachments.end();
+             ++it)
+        {
+            /* Query some info of the source image. */
+            const ComObjPtr<MediumAttachment> &pAtt = *it;
+            DeviceType_T type;
+            rc = pAtt->COMGETTER(Type)(&type);
+            if (FAILED(rc)) throw rc;
+
+            /* Only harddisk's are of interest. */
+            if (type != DeviceType_HardDisk)
+                continue;
+
+            /* Valid medium attached? */
+            ComPtr<IMedium> pSrcMedium;
+            rc = pAtt->COMGETTER(Medium)(pSrcMedium.asOutParam());
+            if (FAILED(rc)) throw rc;
+            if (pSrcMedium.isNull())
+                continue;
+
+            /* Build up a child->parent list of this attachment. (Note: we are
+             * not interested of any child's not attached to this VM. So this
+             * will not create a full copy of the base/child relationship.) */
+            Machine::CloneVMTask::MediumTaskChain mtc;
+            while(!pSrcMedium.isNull())
+            {
+                /* Refresh the state so that the file size get read. */
+                MediumState_T e;
+                rc = pSrcMedium->RefreshState(&e);
+                if (FAILED(rc)) throw rc;
+                LONG64 lSize;
+                rc = pSrcMedium->COMGETTER(Size)(&lSize);
+                if (FAILED(rc)) throw rc;
+
+                /* Save the current medium, for later cloning. */
+                Machine::CloneVMTask::MediumTask mt;
+                mt.pMedium = pSrcMedium;
+                mt.uSize   = lSize;
+                mtc.append(mt);
+
+                /* Calculate progress data */
+                ++uCount;
+                uTotalWeight += lSize;
+
+                /* Query next parent. */
+                rc = pSrcMedium->COMGETTER(Parent)(pSrcMedium.asOutParam());
+                if (FAILED(rc)) throw rc;
+            };
+            pTask->llMedias.append(mtc);
+        }
+
+        rc = pTask->pProgress.createObject();
+        if (FAILED(rc)) throw rc;
+        rc = pTask->pProgress->init(getVirtualBox(),
+                                    static_cast<IMachine*>(this) /* aInitiator */,
+                                    Bstr(tr("Cloning Machine")).raw(),
+                                    true /* fCancellable */,
+                                    uCount,
+                                    uTotalWeight,
+                                    Bstr(tr("Initialize Cloning")).raw(),
+                                    1);
+        if (FAILED(rc)) throw rc;
+
+        int vrc = RTThreadCreate(NULL,
+                                 Machine::cloneVMThread,
+                                 static_cast<void*>(pTask),
+                                 0,
+                                 RTTHREADTYPE_MAIN_WORKER,
+                                 0,
+                                 "MachineClone");
+        if (RT_FAILURE(vrc))
+            throw setError(E_FAIL, "Could not create Machine clone thread (%Rrc)", vrc);
+    }
+    catch (HRESULT rc2)
+    {
+        if (pTask)
+            delete pTask;
+        rc = rc2;
+    }
+
+    if (SUCCEEDED(rc))
+        pTask->pProgress.queryInterfaceTo(pProgress);
+
+    LogFlowFuncLeave();
+
+    return rc;
+}
+
+/**
+ * Static task wrapper passed to RTThreadCreate() in Machine::CloneTo() which then
+ * calls Machine::cloneVMTaskWorker() on the actual machine object.
+ * @param Thread
+ * @param pvUser
+ * @return
+ */
+/* static */
+DECLCALLBACK(int) Machine::cloneVMThread(RTTHREAD /* Thread */, void *pvUser)
+{
+    LogFlowFuncEnter();
+
+    CloneVMTask *pTask = static_cast<CloneVMTask*>(pvUser);
+    AssertReturn(pTask,              VERR_INVALID_POINTER);
+    AssertReturn(pTask->pSrcMachine, VERR_INVALID_POINTER);
+    AssertReturn(pTask->pTrgMachine, VERR_INVALID_POINTER);
+    AssertReturn(pTask->pProgress,   VERR_INVALID_POINTER);
+
+    HRESULT rc = pTask->pSrcMachine->cloneVMTaskWorker(pTask);
+    pTask->pProgress->notifyComplete(rc);
+
+    delete pTask;
+
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Task thread implementation for Machine::CloneTo(), called from Machine::cloneVMThread().
+ * @param task
+ * @return
+ */
+HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock  srcLock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock trgLock(pTask->pTrgMachine COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    /*
+     * Todo:
+     * - Regardless where the old media comes from (e.g. snapshots folder) it
+     *   goes to the new main VM folder. Maybe we like to be a little bit
+     *   smarter here.
+     * - Snapshot diffs (can) have the uuid as name. After cloning this isn't
+     *   right anymore. Is it worth to change to the new uuid? Or should the
+     *   cloned disks called exactly as the original one or should all new disks
+     *   get a new name with the new VM name in it.
+     */
+
+    /* Where should all the media go? */
+    Utf8Str strTrgMachineFolder = pTask->pTrgMachine->getSettingsFileFull();
+    strTrgMachineFolder.stripFilename();
+
+    RTCList< ComObjPtr<Medium> > newMedias; /* All created images */
+    try
+    {
+        /* Copy all the configuration from this machine to an empty
+         * configuration dataset. */
+        settings::MachineConfigFile *pTrgMCF = new settings::MachineConfigFile(0);
+        *pTrgMCF = *mData->pMachineConfigFile;
+
+        /* Reset media registry. */
+        pTrgMCF->mediaRegistry.llHardDisks.clear();
+        /* Reset all snapshots. */
+        pTrgMCF->llFirstSnapshot.clear();
+        pTrgMCF->uuidCurrentSnapshot.clear();
+        pTrgMCF->strStateFile = "";
+        /* Force writing of setting file. */
+        pTrgMCF->fCurrentStateModified = true;
+        /* Set the new name. */
+        pTrgMCF->machineUserData.strName = pTask->pTrgMachine->mUserData->s.strName;
+        pTrgMCF->uuid = pTask->pTrgMachine->mData->mUuid;
+
+        for (size_t i = 0; i < pTask->llMedias.size(); ++i)
+        {
+            const Machine::CloneVMTask::MediumTaskChain &mtc = pTask->llMedias.at(i);
+            ComObjPtr<Medium> pNewParent;
+            for (size_t a = mtc.size(); a > 0; --a)
+            {
+                const Machine::CloneVMTask::MediumTask &mt = mtc.at(a - 1);
+                ComPtr<IMedium> pMedium = mt.pMedium;
+
+                Bstr bstrSrcName;
+                rc = pMedium->COMGETTER(Name)(bstrSrcName.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                rc = pTask->pProgress->SetNextOperation(BstrFmt(tr("Cloning Disk '%ls' ..."), bstrSrcName.raw()).raw(), mt.uSize);
+                if (FAILED(rc)) throw rc;
+
+                ComPtr<IMediumFormat> pSrcFormat;
+                rc = pMedium->COMGETTER(MediumFormat)(pSrcFormat.asOutParam());
+                ULONG uSrcCaps = 0;
+                rc = pSrcFormat->COMGETTER(Capabilities)(&uSrcCaps);
+                if (FAILED(rc)) throw rc;
+
+                Bstr bstrSrcFormat     = "VDI";
+                MediumVariant_T srcVar = MediumVariant_Standard;
+                /* Is the source file based? */
+                if ((uSrcCaps & MediumFormatCapabilities_File) == MediumFormatCapabilities_File)
+                {
+                    /* Yes, just use the source format. Otherwise the defaults
+                     * will be used. */
+                    rc = pMedium->COMGETTER(Format)(bstrSrcFormat.asOutParam());
+                    if (FAILED(rc)) throw rc;
+                    rc = pMedium->COMGETTER(Variant)(&srcVar);
+                    if (FAILED(rc)) throw rc;
+                }
+
+                /* Start creating the clone. */
+                ComObjPtr<Medium> pTarget;
+                rc = pTarget.createObject();
+                if (FAILED(rc)) throw rc;
+
+                Utf8Str strFile = Utf8StrFmt("%s%c%lS", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
+                rc = pTarget->init(mParent,
+                                   Utf8Str(bstrSrcFormat),
+                                   strFile,
+                                   pTask->pTrgMachine->mData->mUuid,  /* media registry */
+                                   NULL                               /* llRegistriesThatNeedSaving */);
+                if (FAILED(rc)) throw rc;
+
+                /* Do the disk cloning. */
+                ComPtr<IProgress> progress2;
+                rc = pMedium->CloneTo(pTarget,
+                                      srcVar,
+                                      pNewParent,
+                                      progress2.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                /* Wait until the asynchrony process has finished. */
+                srcLock.release();
+                rc = pTask->pProgress->WaitForAsyncProgressCompletion(progress2);
+                srcLock.acquire();
+                if (FAILED(rc)) throw rc;
+
+                /* Check the result of the asynchrony process. */
+                LONG iRc;
+                rc = progress2->COMGETTER(ResultCode)(&iRc);
+                if (FAILED(rc)) throw rc;
+                if (FAILED(iRc))
+                {
+                    /* If the thread of the progress object has an error, then
+                     * retrieve the error info from there, or it'll be lost. */
+                    ProgressErrorInfo info(progress2);
+                    throw setError(iRc, Utf8Str(info.getText()).c_str());
+                }
+                /* Remember created medias. */
+                newMedias.append(pTarget);
+                /* This medium becomes the parent of the next medium in the
+                 * chain. */
+                pNewParent = pTarget;
+            }
+
+            Bstr bstrSrcId;
+            rc = mtc.first().pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
+            if (FAILED(rc)) throw rc;
+            Bstr bstrTrgId;
+            rc = pNewParent->COMGETTER(Id)(bstrTrgId.asOutParam());
+            if (FAILED(rc)) throw rc;
+            /* We have to patch the configuration, so it contains the new
+             * medium uuid instead of the old one. */
+            settings::StorageControllersList::iterator it3;
+            for (it3 = pTrgMCF->storageMachine.llStorageControllers.begin();
+                 it3 != pTrgMCF->storageMachine.llStorageControllers.end();
+                 ++it3)
+            {
+                settings::AttachedDevicesList &llAttachments = it3->llAttachedDevices;
+                settings::AttachedDevicesList::iterator it4;
+                for (it4 = llAttachments.begin();
+                     it4 != llAttachments.end();
+                     ++it4)
+                {
+                    if (   it4->deviceType == DeviceType_HardDisk
+                        && it4->uuid == bstrSrcId)
+                        it4->uuid = bstrTrgId;
+                }
+            }
+        }
+
+        {
+            rc = pTask->pProgress->SetNextOperation(BstrFmt(tr("Create Machine Clone '%s' ..."), pTrgMCF->machineUserData.strName.c_str()).raw(), 1);
+            if (FAILED(rc)) throw rc;
+            /* After modifying the new machine config, we can copy the stuff
+             * over to the new machine. The machine have to be mutable for
+             * this. */
+            rc = pTask->pTrgMachine->checkStateDependency(MutableStateDep);
+            if (FAILED(rc)) throw rc;
+            rc = pTask->pTrgMachine->loadMachineDataFromSettings(*pTrgMCF,
+                                                                 &pTask->pTrgMachine->mData->mUuid);
+            if (FAILED(rc)) throw rc;
+        }
+
+        /* The medias are created before the machine was there. We have to make
+         * sure the new medias know of there new parent or we get in trouble
+         * when the media registry is saved for this VM, especially in case of
+         * difference image chain's. See VirtualBox::saveMediaRegistry.*/
+//        for (size_t i = 0; i < newBaseMedias.size(); ++i)
+//        {
+//            rc = newBaseMedias.at(i)->addRegistry(pTask->pTrgMachine->mData->mUuid, true /* fRecursive */);
+//            if (FAILED(rc)) throw rc;
+//        }
+
+        /* Now save the new configuration to disk. */
+        rc = pTask->pTrgMachine->SaveSettings();
+        if (FAILED(rc)) throw rc;
+    }
+    catch(HRESULT rc2)
+    {
+        rc = rc2;
+    }
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+    }
+
+    /* Cleanup on failure (CANCEL also) */
+    if (FAILED(rc))
+    {
+        /* Delete all already created medias. (Reverse, cause there could be
+         * parent->child relations.) */
+        for (size_t i = newMedias.size(); i > 0; --i)
+        {
+            ComObjPtr<Medium> &pMedium = newMedias.at(i - 1);
+            AutoCaller mac(pMedium);
+            if (FAILED(mac.rc())) return mac.rc();
+            AutoReadLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
+            bool fFile = pMedium->isMediumFormatFile();
+            Utf8Str strLoc = pMedium->getLocationFull();
+            mlock.release();
+            /* Close the medium. If this succeed, delete it finally from the
+             * disk. */
+            HRESULT rc1 = pMedium->close(NULL, mac);
+            if (   SUCCEEDED(rc1)
+                && fFile)
+                RTFileDelete(strLoc.c_str());
+        }
+        /* Delete the machine folder when not empty. */
+        RTDirRemove(strTrgMachineFolder.c_str());
+    }
+
+    return rc;
 }
 
 // public methods for internal purposes
@@ -7271,6 +7644,8 @@ HRESULT Machine::findSharedFolder(const Utf8Str &aName,
  *    OVF file. In this case, puuidRegistry is set to the machine UUID to
  *    ensure that the media listed as attachments in the config (which have
  *    been imported from the OVF) receive the correct registry ID.
+ *
+ * -- During VM cloning.
  *
  * @param config Machine settings from XML.
  * @param puuidRegistry If != NULL, Medium::setRegistryIdIfFirst() gets called with this registry ID for each attached medium in the config.

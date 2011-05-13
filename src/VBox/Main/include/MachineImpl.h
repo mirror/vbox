@@ -839,6 +839,10 @@ protected:
     static DECLCALLBACK(int) deleteThread(RTTHREAD Thread, void *pvUser);
     HRESULT deleteTaskWorker(DeleteTask &task);
 
+    struct CloneVMTask;
+    static DECLCALLBACK(int) cloneVMThread(RTTHREAD Thread, void *pvUser);
+    HRESULT cloneVMTaskWorker(CloneVMTask *pTask);
+
 #ifdef VBOX_WITH_GUEST_PROPS
     HRESULT getGuestPropertyFromService(IN_BSTR aName, BSTR *aValue,
                                         LONG64 *aTimestamp, BSTR *aFlags) const;
