@@ -1,0 +1,40 @@
+# $Id$
+## @file
+# Sub-Makefile for the VBox Linux installer testcase.
+#
+
+#
+# Copyright (C) 2006-2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+INSTALLS += tstInstallerLinux
+TESTING += tstInstallerLinux
+tstInstallerLinux_INST    = bin/testcase
+tstInstallerLinux_MODE    = a+rx,u+w
+tstInstallerLinux_SOURCES = $(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh
+tstInstallerLinux_CLEAN   = $(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh
+
+$$(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh: \
+	$(PATH_SUB_CURRENT)/tstInstallerLinux.sh \
+	$(PATH_SUB_CURRENT)/../installer-utils.sh \
+	| $$(dir $$@)
+	$(QUIET)$(SED) \
+	-e '/#include installer-utils.sh/ {' \
+	-e "r $(PATH_ROOT)/src/VBox/Installer/linux/installer-utils.sh" \
+	-e 'd' \
+	-e '}' \
+	--output $@ \
+	$<
+
+include	$(KBUILD_PATH)/subfooter.kmk
