@@ -537,12 +537,14 @@ static const IEMOPSHIFTDBLSIZES g_iemAImpl_shrd =
 *   Internal Functions                                                         *
 *******************************************************************************/
 static VBOXSTRICTRC     iemRaiseTaskSwitchFaultCurrentTSS(PIEMCPU pIemCpu);
+static VBOXSTRICTRC     iemRaiseSelectorNotPresent(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess);
+static VBOXSTRICTRC     iemRaiseSelectorNotPresentBySelector(PIEMCPU pIemCpu, uint16_t uSel);
 static VBOXSTRICTRC     iemRaiseSelectorNotPresentWithErr(PIEMCPU pIemCpu, uint16_t uErr);
 static VBOXSTRICTRC     iemRaiseGeneralProtectionFault(PIEMCPU pIemCpu, uint16_t uErr);
 static VBOXSTRICTRC     iemRaiseGeneralProtectionFault0(PIEMCPU pIemCpu);
+static VBOXSTRICTRC     iemRaiseGeneralProtectionFaultBySelector(PIEMCPU pIemCpu, RTSEL uSel);
 static VBOXSTRICTRC     iemRaiseSelectorBounds(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess);
 static VBOXSTRICTRC     iemRaiseSelectorInvalidAccess(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess);
-static VBOXSTRICTRC     iemRaiseSelectorNotPresent(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess);
 static VBOXSTRICTRC     iemRaisePageFault(PIEMCPU pIemCpu, RTGCPTR GCPtrWhere, uint32_t fAccess, int rc);
 static VBOXSTRICTRC     iemMemFetchDataU32(PIEMCPU pIemCpu, uint32_t *pu32Dst, uint8_t iSegReg, RTGCPTR GCPtrMem);
 static VBOXSTRICTRC     iemMemFetchDataU64(PIEMCPU pIemCpu, uint64_t *pu64Dst, uint8_t iSegReg, RTGCPTR GCPtrMem);
@@ -1199,6 +1201,85 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PIEMCPU pIemCpu, uint64_t *pu64)
     } while (0)
 
 
+/** @name  Misc Worker Functions.
+ * @{
+ */
+
+
+/**
+ * Validates a new SS segment.
+ *
+ * @returns VBox strict status code.
+ * @param   pIemCpu         The IEM per CPU instance data.
+ * @param   pCtx            The CPU context.
+ * @param   NewSS           The new SS selctor.
+ * @param   uCpl            The CPL to load the stack for.
+ * @param   pDesc           Where to return the descriptor.
+ */
+static VBOXSTRICTRC iemMiscValidateNewSS(PIEMCPU pIemCpu, PCCPUMCTX pCtx, RTSEL NewSS, uint8_t uCpl, PIEMSELDESC pDesc)
+{
+    /* Null selectors are not allowed (we're not called for dispatching
+       interrupts with SS=0 in long mode). */
+    if (!(NewSS & (X86_SEL_MASK | X86_SEL_LDT)))
+    {
+        Log(("iemMiscValidateNewSSandRsp: #x - null selector -> #GP(0)\n", NewSS));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /*
+     * Read the descriptor.
+     */
+    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, pDesc, NewSS);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /*
+     * Perform the descriptor validation documented for LSS, POP SS and MOV SS.
+     */
+    if (!pDesc->Legacy.Gen.u1DescType)
+    {
+        Log(("iemMiscValidateNewSSandRsp: %#x - system selector -> #GP\n", NewSS, pDesc->Legacy.Gen.u4Type));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, NewSS);
+    }
+
+    if (   (pDesc->Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
+        || !(pDesc->Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
+    {
+        Log(("iemMiscValidateNewSSandRsp: %#x - code or read only (%#x) -> #GP\n", NewSS, pDesc->Legacy.Gen.u4Type));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, NewSS);
+    }
+    if (    (pDesc->Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
+        || !(pDesc->Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
+    {
+        Log(("iemMiscValidateNewSSandRsp: %#x - code or read only (%#x) -> #GP\n", NewSS, pDesc->Legacy.Gen.u4Type));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, NewSS);
+    }
+    /** @todo testcase: check if the TSS.ssX RPL is checked. */
+    if ((NewSS & X86_SEL_RPL) != uCpl)
+    {
+        Log(("iemMiscValidateNewSSandRsp: %#x - RPL and CPL (%d) differs -> #GP\n", NewSS, uCpl));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, NewSS);
+    }
+    if (pDesc->Legacy.Gen.u2Dpl != uCpl)
+    {
+        Log(("iemMiscValidateNewSSandRsp: %#x - DPL (%d) and CPL (%d) differs -> #GP\n", NewSS, pDesc->Legacy.Gen.u2Dpl, uCpl));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, NewSS);
+    }
+
+    /* Is it there? */
+    /** @todo testcase: Is this checked before the canonical / limit check below? */
+    if (!pDesc->Legacy.Gen.u1Present)
+    {
+        Log(("iemMiscValidateNewSSandRsp: %#x - segment not present -> #NP\n", NewSS));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, NewSS);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/** @}  */
+
 /** @name  Raising Exceptions.
  *
  * @{
@@ -1527,20 +1608,76 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
     }
     /** @todo is the RPL of the interrupt/trap gate descriptor checked? */
 
+    /* Check the new EIP against the new CS limit. */
+    uint32_t const uNewEip =    Idte.Gate.u4Type == X86_SEL_TYPE_SYS_286_INT_GATE
+                             || Idte.Gate.u4Type == X86_SEL_TYPE_SYS_286_TRAP_GATE
+                           ? Idte.Gate.u16OffsetLow
+                           : Idte.Gate.u16OffsetLow | ((uint32_t)Idte.Gate.u16OffsetHigh << 16);
+    uint32_t cbLimit = X86DESC_LIMIT(DescCS.Legacy);
+    if (DescCS.Legacy.Gen.u1Granularity)
+        cbLimit = (cbLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+    if (uNewEip > X86DESC_LIMIT(DescCS.Legacy))
+    {
+        Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - DPL (%d) > CPL (%d) -> #GP\n",
+             u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
+        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & (X86_SEL_MASK | X86_SEL_LDT));
+    }
+
+    /* Make sure the selector is present. */
+    if (!DescCS.Legacy.Gen.u1Present)
+    {
+        Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - segment not present -> #NP\n", u8Vector, NewCS));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, NewCS);
+    }
+
     /*
      * If the privilege level changes, we need to get a new stack from the TSS.
+     * This in turns means validating the new SS and ESP...
      */
-    uint8_t const uNewCpl = DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF
-                          ? pIemCpu->uCpl : DescCS.Legacy.Gen.u2Dpl;
+    uint8_t const   uNewCpl = DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF
+                            ? pIemCpu->uCpl : DescCS.Legacy.Gen.u2Dpl;
+    uint32_t        uNewEsp;
+    RTSEL           NewSS;
+    uint32_t        fNewSSAttr;
+    uint32_t        cbNewSSLimit;
+    uint64_t        uNewSSBase;
+
     if (uNewCpl != pIemCpu->uCpl)
     {
-        uint32_t uNewEsp;
-        RTSEL    uNewSs;
-        rcStrict = iemRaiseLoadStackFromTss32Or16(pIemCpu, pCtx, uNewCpl, &uNewSs, &uNewEsp);
+        rcStrict = iemRaiseLoadStackFromTss32Or16(pIemCpu, pCtx, uNewCpl, &NewSS, &uNewEsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
-
+        IEMSELDESC DescSS;
+        rcStrict = iemMiscValidateNewSS(pIemCpu, pCtx, NewSS, uNewCpl, &DescSS);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        fNewSSAttr   = X86DESC_GET_HID_ATTR(DescSS.Legacy);
+        cbNewSSLimit = X86DESC_LIMIT(DescSS.Legacy);
+        if (DescSS.Legacy.Gen.u1Granularity)
+            cbNewSSLimit = (cbNewSSLimit << PAGE_SHIFT) | PAGE_OFFSET_MASK;
+        uNewSSBase   = X86DESC_BASE(DescSS.Legacy);
     }
+    else
+    {
+        uNewEsp      = pCtx->esp;
+        NewSS        = pCtx->ss;
+        fNewSSAttr   = pCtx->ssHid.Attr.u;
+        cbNewSSLimit = pCtx->ssHid.u32Limit;
+        uNewSSBase   = pCtx->ssHid.u64Base;
+    }
+
+    /*
+     * Check if we have the space for the stack frame.
+     */
+
+
+    /*
+     * Set the CS and maybe SS accessed bits.
+     */
+    /** @todo testcase: excatly when is the accessed bit set, before or after
+     *        pushing the stack frame. (write protect the gdt + stack to find
+     *        out). */
+
 
     return VERR_NOT_IMPLEMENTED;
 }
@@ -1740,6 +1877,13 @@ static VBOXSTRICTRC iemRaiseGeneralProtectionFault(PIEMCPU pIemCpu, uint16_t uEr
 static VBOXSTRICTRC iemRaiseGeneralProtectionFault0(PIEMCPU pIemCpu)
 {
     return iemRaiseGeneralProtectionFault(pIemCpu, 0);
+}
+
+
+/** \#GP(sel) - 0d.  */
+static VBOXSTRICTRC iemRaiseGeneralProtectionFaultBySelector(PIEMCPU pIemCpu, RTSEL Sel)
+{
+    return iemRaiseGeneralProtectionFault(pIemCpu, Sel & (X86_SEL_MASK | X86_SEL_LDT));
 }
 
 
@@ -4064,7 +4208,7 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
             Log(("iemMemFetchSelDesc: LDT selector %#x is out of bounds (%3x) or ldtr is NP (%#x)\n",
                  uSel, pCtx->ldtrHid.u32Limit, pCtx->ldtr));
             /** @todo is this the right exception? */
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
 
         Assert(pCtx->ldtrHid.Attr.n.u1Present);
@@ -4076,7 +4220,7 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
         {
             Log(("iemMemFetchSelDesc: GDT selector %#x is out of bounds (%3x)\n", uSel, pCtx->gdtr.cbGdt));
             /** @todo is this the right exception? */
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
         GCPtrBase = pCtx->gdtr.pGdt;
     }
@@ -4097,7 +4241,7 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
         {
             Log(("iemMemFetchSelDesc: system selector %#x is out of bounds\n", uSel));
             /** @todo is this the right exception? */
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
     }
     return rcStrict;
