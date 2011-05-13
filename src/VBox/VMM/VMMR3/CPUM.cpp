@@ -1101,7 +1101,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
     pCtx->dr[6]                     = X86_DR6_INIT_VAL;
     pCtx->dr[7]                     = X86_DR7_INIT_VAL;
 
-    pCtx->fpu.FTW                   = 0xff;         /* All tags are set, i.e. the regs are empty. */
+    pCtx->fpu.FTW                   = 0x00;         /* All empty (abbridged tag reg edition). */
     pCtx->fpu.FCW                   = 0x37f;
 
     /* Intel 64 and IA-32 Architectures Software Developer's Manual Volume 3A, Table 8-1. IA-32 Processor States Following Power-up, Reset, or INIT */
