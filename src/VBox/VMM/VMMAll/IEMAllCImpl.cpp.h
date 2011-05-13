@@ -722,7 +722,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
         return rcStrict;
 
     /* Is it there? */
-    if (!Desc.Legacy.Gen.u1Present)
+    if (!Desc.Legacy.Gen.u1Present) /** @todo this is probably checked too early. Testcase! */
     {
         Log(("jmpf %04x:%08x -> segment not present\n", uSel, offSeg));
         return iemRaiseSelectorNotPresentBySelector(pIemCpu, uSel);
@@ -737,7 +737,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
         if (!(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE))
         {
             Log(("jmpf %04x:%08x -> not a code selector (u4Type=%#x).\n", uSel, offSeg, Desc.Legacy.Gen.u4Type));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
 
         /* L vs D. */
@@ -746,7 +746,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
             && IEM_IS_LONG_MODE(pIemCpu))
         {
             Log(("jmpf %04x:%08x -> both L and D are set.\n", uSel, offSeg));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
 
         /* DPL/RPL/CPL check, where conforming segments makes a difference. */
@@ -756,7 +756,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
             {
                 Log(("jmpf %04x:%08x -> DPL violation (conforming); DPL=%d CPL=%u\n",
                      uSel, offSeg, Desc.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
-                return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
             }
         }
         else
@@ -764,12 +764,12 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
             if (Desc.Legacy.Gen.u2Dpl != pIemCpu->uCpl)
             {
                 Log(("jmpf %04x:%08x -> CPL != DPL; DPL=%d CPL=%u\n", uSel, offSeg, Desc.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
-                return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
             }
             if ((uSel & X86_SEL_RPL) > pIemCpu->uCpl)
             {
                 Log(("jmpf %04x:%08x -> RPL > DPL; RPL=%d CPL=%u\n", uSel, offSeg, (uSel & X86_SEL_RPL), pIemCpu->uCpl));
-                return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
             }
         }
 
@@ -786,7 +786,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
             if (offSeg > cbLimit)
             {
                 Log(("jmpf %04x:%08x -> out of bounds (%#x)\n", uSel, offSeg, cbLimit));
-                return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
             }
             u64Base = X86DESC_BASE(Desc.Legacy);
         }
@@ -833,7 +833,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
                 AssertFailedReturn(VERR_NOT_IMPLEMENTED);
             default:
                 Log(("jmpf %04x:%08x -> wrong sys selector (64-bit): %d\n", uSel, offSeg, Desc.Legacy.Gen.u4Type));
-                return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
 
         }
     switch (Desc.Legacy.Gen.u4Type)
@@ -858,7 +858,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
 
         default:
             Log(("jmpf %04x:%08x -> wrong sys selector (32-bit): %d\n", uSel, offSeg, Desc.Legacy.Gen.u4Type));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
     }
 }
 
@@ -1345,7 +1345,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     if (!Desc.Legacy.Gen.u1DescType)
     {
         Log(("load sreg %d - system selector (%#x) -> #GP\n", iSegReg, uSel, Desc.Legacy.Gen.u4Type));
-        return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
     }
     if (iSegReg == X86_SREG_SS) /* SS gets different treatment */
     {
@@ -1353,23 +1353,23 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
             || !(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
         {
             Log(("load sreg SS, %#x - code or read only (%#x) -> #GP\n", uSel, Desc.Legacy.Gen.u4Type));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
         if (    (Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_CODE)
             || !(Desc.Legacy.Gen.u4Type & X86_SEL_TYPE_WRITE) )
         {
             Log(("load sreg SS, %#x - code or read only (%#x) -> #GP\n", uSel, Desc.Legacy.Gen.u4Type));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
         if ((uSel & X86_SEL_RPL) != pIemCpu->uCpl)
         {
             Log(("load sreg SS, %#x - RPL and CPL (%d) differs -> #GP\n", uSel, pIemCpu->uCpl));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
         if (Desc.Legacy.Gen.u2Dpl != pIemCpu->uCpl)
         {
             Log(("load sreg SS, %#x - DPL (%d) and CPL (%d) differs -> #GP\n", uSel, Desc.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
     }
     else
@@ -1377,7 +1377,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
         if ((Desc.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ)) == X86_SEL_TYPE_CODE)
         {
             Log(("load sreg%u, %#x - execute only segment -> #GP\n", iSegReg, uSel));
-            return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+            return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
         }
         if (   (Desc.Legacy.Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
             != (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
@@ -1388,20 +1388,20 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
             {
                 Log(("load sreg%u, %#x - both RPL (%d) and CPL (%d) are greater than DPL (%d) -> #GP\n",
                      iSegReg, uSel, (uSel & X86_SEL_RPL), pIemCpu->uCpl, Desc.Legacy.Gen.u2Dpl));
-                return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
             }
 #else /* this is what makes more sense. */
             if ((unsigned)(uSel & X86_SEL_RPL) > Desc.Legacy.Gen.u2Dpl)
             {
                 Log(("load sreg%u, %#x - RPL (%d) is greater than DPL (%d) -> #GP\n",
                      iSegReg, uSel, (uSel & X86_SEL_RPL), Desc.Legacy.Gen.u2Dpl));
-                return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
             }
             if (pIemCpu->uCpl > Desc.Legacy.Gen.u2Dpl)
             {
                 Log(("load sreg%u, %#x - CPL (%d) is greater than DPL (%d) -> #GP\n",
                      iSegReg, uSel, pIemCpu->uCpl, Desc.Legacy.Gen.u2Dpl));
-                return iemRaiseGeneralProtectionFault(pIemCpu, uSel & (X86_SEL_MASK | X86_SEL_LDT));
+                return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
             }
 #endif
         }
@@ -1670,7 +1670,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     if (uNewLdt & X86_SEL_LDT)
     {
         Log(("lldt %04x - LDT selector -> #GP\n", uNewLdt));
-        return iemRaiseGeneralProtectionFault(pIemCpu, uNewLdt & (X86_SEL_MASK | X86_SEL_LDT));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewLdt);
     }
 
     /*
@@ -1779,7 +1779,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
     if (uNewTr & X86_SEL_LDT)
     {
         Log(("ltr %04x - LDT selector -> #GP\n", uNewTr));
-        return iemRaiseGeneralProtectionFault(pIemCpu, uNewTr & (X86_SEL_MASK | X86_SEL_LDT));
+        return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewTr);
     }
     if ((uNewTr & X86_SEL_MASK) == 0)
     {
