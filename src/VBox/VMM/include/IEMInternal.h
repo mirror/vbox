@@ -146,12 +146,16 @@ typedef struct IEMCPU
     /** Whether to bypass access handlers or not. */
     bool                    fByPassHandlers;
     /** Explicit alignment padding. */
-    bool                    afAlignment0[4];
+    bool                    afAlignment0[2];
 
+    /** The flags of the current exception / interrupt. */
+    uint32_t                fCurXcpt;
+    /** The current exception / interrupt. */
+    uint8_t                 uCurXcpt;
     /** Exception / interrupt recursion depth. */
     int8_t                  cXcptRecursions;
-    /** The current exception / interrupt . */
-    uint8_t                 uCurXcpt;
+    /** Explicit alignment padding. */
+    bool                    afAlignment1[1];
     /** The CPL. */
     uint8_t                 uCpl;
     /** The current CPU execution mode (CS). */
@@ -174,7 +178,7 @@ typedef struct IEMCPU
     /** Indicates that RAX and RDX differences should be ignored since RDTSC
      *  and RDTSCP are timing sensitive.  */
     bool                    fIgnoreRaxRdx;
-    bool                    afAlignment1[2];
+    bool                    afAlignment2[2];
     /** Mask of undefined eflags.
      * The verifier will any difference in these flags. */
     uint32_t                fUndefinedEFlags;
