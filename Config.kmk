@@ -146,6 +146,19 @@ ifndef USERNAME
  endif
 endif
 
+# 
+# Detect the darwin host version number so we can disable stuff that doesn't 
+# currently build on Lion.
+#
+ifeq ($(KBUILD_HOST),darwin)
+ VBOX_DARWIN_HOST_VERSION := $(subst ., ,$(shell uname -r))
+ VBOX_DARWIN_HOST_VERSION_MAJOR := $(expr $(word 1, $(VBOX_DARWIN_HOST_VERSION)) - 4)
+ VBOX_DARWIN_HOST_VERSION_MINOR := $(word 2, $(VBOX_DARWIN_HOST_VERSION))
+ VBOX_DARWIN_HOST_VERSION_PATCH := $(word 3, $(VBOX_DARWIN_HOST_VERSION))
+ VBOX_DARWIN_HOST_VERSION := 10.$(VBOX_DARWIN_HOST_VERSION_MAJOR).$(VBOX_DARWIN_HOST_VERSION_MINOR)
+endif
+
+
 #
 # The VirtualBox version.
 #
@@ -757,6 +770,13 @@ ifeq ($(KBUILD_TARGET),darwin)
  # Permanent (no working SDL).
  VBOX_WITH_VBOXSDL=
  VBOX_WITH_VBOXBFE=
+
+ # Temporary while Lion is being worked on by apple (we need java).
+ if "$(VBOX_DARWIN_HOST_VERSION_MAJOR)" == "7" # Lion
+  VBOX_WITH_JXPCOM=
+  VBOX_WITH_JWS=
+  VBOX_WITH_DOCS=
+ endif
 endif
 
 ifeq ($(KBUILD_TARGET),freebsd)
@@ -1694,16 +1714,40 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 # version is assumed to be the
 #
 ifeq ($(KBUILD_TARGET),darwin)
+ ## The Xcode version.
+ ifndef VBOX_XCODE_VERSION
+  VBOX_XCODE_VERSION  := $(word 2, $(shell xcodebuild -version))
+  if "$(VBOX_XCODE_VERSION)" == ""
+   VBOX_XCODE_VERSION := 4.2
+  endif
+ endif
+ VBOX_XCODE_VERSION_MAJOR := $(word 1, $(subst ., ,$(VBOX_XCODE_VERSION)))
+ VBOX_XCODE_VERSION_MINOR := $(word 2, $(subst ., ,$(VBOX_XCODE_VERSION)))
+ VBOX_XCODE_VERSION       := $(VBOX_XCODE_VERSION_MAJOR).$(VBOX_XCODE_VERSION_MINOR)
+
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   ifdef VBOX_WITH_COCOA_QT
-   VBOX_DEF_MACOSX_VERSION_MIN ?= 10.5
-   VBOX_DARWIN_NO_COMPACT_LINKEDIT ?= $(VBOX_LD_no_compact_linkedit)
+   if "$(VBOX_XCODE_VERSION_MAJOR)" == "4"
+    VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
+    VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
+    VBOX_MACOSX_GCC_INFIX ?= -4.2
+   else
+    VBOX_DEF_MACOSX_VERSION_MIN ?= 10.5
+    VBOX_DARWIN_NO_COMPACT_LINKEDIT ?= $(VBOX_LD_no_compact_linkedit)
+    VBOX_MACOSX_GCC_INFIX ?= -4.0
+   endif
   else
+   if $(VBOX_XCODE_VERSION_MAJOR) >= 4
+    $(error Too new Xcode version ($(VBOX_XCODE_VERSION)) for non-Cocoa builds.)
+   endif
    VBOX_DEF_MACOSX_VERSION_MIN ?= 10.4
    VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
+   VBOX_MACOSX_GCC_INFIX ?= -4.0
   endif
-  VBOX_MACOSX_GCC_INFIX ?= -4.0
  else
+  if $(VBOX_XCODE_VERSION_MAJOR) < 4 && "$(VBOX_XCODE_VERSION)" != "3.2"
+   $(error 64-bit darwin builds require Xcode 3.2 or later, you have $(VBOX_XCODE_VERSION))
+  endif
   VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
   VBOX_MACOSX_GCC_INFIX ?= -4.2
   VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
@@ -1785,6 +1829,20 @@ ifeq ($(KBUILD_TARGET),darwin)
  else
   VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS  = $(error Using 10.6 SDK)
   VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS   = $(error Using 10.6 SDK)
+ endif
+
+ if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6 10.7)
+  VBOX_PATH_MACOSX_SDK_10_7            ?= /Developer/SDKs/MacOSX10.7.sdk
+  VBOX_DARWIN_DEF_SDK_10_7_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1070 MAC_OS_X_VERSION_MAX_ALLOWED=1070
+  VBOX_DARWIN_DEF_SDK_10_7_CFLAGS      := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
+  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS    := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
+  VBOX_DARWIN_DEF_SDK_10_7_OBJCFLAGS   := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
+  VBOX_DARWIN_DEF_SDK_10_7_OBJCXXFLAGS := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
+  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS     := -mmacosx-version-min=10.7 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_7) \
+         -Wl,-headerpad_max_install_names
+ else
+  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS  = $(error Using 10.7 SDK)
+  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS   = $(error Using 10.7 SDK)
  endif
 
 
