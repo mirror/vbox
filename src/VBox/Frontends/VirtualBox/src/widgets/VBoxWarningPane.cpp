@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,16 +31,15 @@ VBoxWarningPane::VBoxWarningPane(QWidget *pParent)
     VBoxGlobal::setLayoutMargin(pLayout, 0);
     pLayout->addWidget(&m_icon);
     pLayout->addWidget(&m_label);
-    setVisible(false);
 }
 
 void VBoxWarningPane::setWarningPixmap(const QPixmap &imgPixmap)
 {
-    m_icon.setPixmap (imgPixmap);
+    m_icon.setPixmap(imgPixmap);
 }
 
 void VBoxWarningPane::setWarningText(const QString &strText)
 {
-    m_label.setText (strText);
+    m_label.setText(strText);
 }
 
