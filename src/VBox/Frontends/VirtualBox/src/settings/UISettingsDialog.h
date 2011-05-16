@@ -27,6 +27,7 @@
 
 /* Forward declarations: */
 class QIWidgetValidator;
+class QProgressBar;
 class QStackedWidget;
 class QTimer;
 class VBoxWarningPane;
@@ -61,6 +62,10 @@ protected slots:
 
     /* Mark dialog as processed: */
     virtual void sltMarkProcessed();
+
+    /* Handlers for process bar: */
+    void sltHandleProcessStarted();
+    void sltHandlePageProcessed();
 
 protected:
 
@@ -115,8 +120,16 @@ private:
     SettingsDialogType m_dialogType;
     bool m_fPolished;
 
-    /* Error & Warning stuff: */
+    /* Loading/saving stuff: */
     bool m_fProcessed;
+
+    /* Status bar widget: */
+    QStackedWidget *m_pStatusBar;
+
+    /* Process bar widget: */
+    QProgressBar *m_pProcessBar;
+
+    /* Error & Warning stuff: */
     bool m_fValid;
     bool m_fSilent;
     QString m_strErrorHint;

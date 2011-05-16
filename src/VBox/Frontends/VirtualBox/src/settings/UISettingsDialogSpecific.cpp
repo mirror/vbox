@@ -85,10 +85,13 @@ public:
         , m_iPageIdWeAreWaitingFor(-1)
         , m_iIdOfHighPriorityPage(-1)
     {
-        /* Connecting thread signals: */
+        /* Connecting this signals: */
         connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), this, SLOT(sltHandleProcessedPage(int)), Qt::QueuedConnection);
         connect(this, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltHandleProcessedPages()), Qt::QueuedConnection);
         connect(this, SIGNAL(finished()), this, SLOT(sltDestroySerializer()), Qt::QueuedConnection);
+        /* Connecting parent signals: */
+        connect(this, SIGNAL(sigNotifyAboutProcessStarted()), parent(), SLOT(sltHandleProcessStarted()), Qt::QueuedConnection);
+        connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), parent(), SLOT(sltHandlePageProcessed()), Qt::QueuedConnection);
 
         /* Set instance: */
         m_pInstance = this;
@@ -152,6 +155,9 @@ public:
 
 signals:
 
+    /* Signal to notify main GUI thread about process has been started: */
+    void sigNotifyAboutProcessStarted();
+
     /* Signal to notify main GUI thread about some page was processed: */
     void sigNotifyAboutPageProcessed(int iPageId);
 
@@ -162,6 +168,8 @@ public slots:
 
     void start(Priority priority = InheritPriority)
     {
+        /* Notify listeners a bout we are starting: */
+        emit sigNotifyAboutProcessStarted();
         /* If serializer saves settings: */
         if (m_direction == UISettingsSerializeDirection_Save)
         {
