@@ -42,14 +42,14 @@
 #endif /* Q_WS_MAC */
 
 /* Settings Dialog Constructor: */
-UISettingsDialog::UISettingsDialog(QWidget *pParent, SettingsDialogType settingsDialogType)
+UISettingsDialog::UISettingsDialog(QWidget *pParent)
     /* Parent class: */
     : QIWithRetranslateUI<QIMainDialog>(pParent)
     /* Protected variables: */
     , m_pSelector(0)
     , m_pStack(0)
     /* Common variables: */
-    , m_dialogType(settingsDialogType)
+    , m_dialogType(SettingsDialogType_Wrong)
     , m_fPolished(false)
     /* Loading/saving stuff: */
     , m_fProcessed(false)
@@ -147,6 +147,19 @@ UISettingsDialog::~UISettingsDialog()
 {
     /* Delete selector early! */
     delete m_pSelector;
+}
+
+void UISettingsDialog::execute()
+{
+    /* Load data: */
+    loadData();
+
+    /* Execute dialog and wait for completion: */
+    if (exec() != QDialog::Accepted)
+        return;
+
+    /* Save data: */
+    saveData();
 }
 
 void UISettingsDialog::sltRevalidate(QIWidgetValidator *pValidator)
@@ -253,6 +266,16 @@ void UISettingsDialog::retranslateUi()
         QIWidgetValidator *pValidator = validatorsList[i];
         if (!pValidator->isValid())
             sltRevalidate(pValidator);
+    }
+}
+
+void UISettingsDialog::setDialogType(SettingsDialogType settingsDialogType)
+{
+    m_dialogType = settingsDialogType;
+    for (int iWidgetNumber = 0; iWidgetNumber < m_pStack->count(); ++iWidgetNumber)
+    {
+        UISettingsPage *pPage = static_cast<UISettingsPage*>(m_pStack->widget(iWidgetNumber));
+        pPage->setDialogType(dialogType());
     }
 }
 

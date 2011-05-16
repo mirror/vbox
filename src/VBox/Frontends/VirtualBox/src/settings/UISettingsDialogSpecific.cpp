@@ -31,6 +31,7 @@
 #include "VBoxProblemReporter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxSettingsSelector.h"
+#include "UIVirtualBoxEventHandler.h"
 
 #include "UIGlobalSettingsGeneral.h"
 #include "UIGlobalSettingsInput.h"
@@ -304,13 +305,16 @@ protected:
 
 UISettingsSerializer* UISettingsSerializer::m_pInstance = 0;
 
-UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent, SettingsDialogType settingsDialogType)
-    : UISettingsDialog(pParent, settingsDialogType)
+UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
+    : UISettingsDialog(pParent)
 {
     /* Window icon: */
 #ifndef Q_WS_MAC
     setWindowIcon(QIcon(":/global_settings_16px.png"));
 #endif /* !Q_WS_MAC */
+
+    /* Assign default dialog type: */
+    setDialogType(SettingsDialogType_Offline);
 
     /* Creating settings pages: */
     for (int iPageIndex = GLSettingsPage_General; iPageIndex < GLSettingsPage_MAX; ++iPageIndex)
@@ -523,12 +527,10 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId)
     return true;
 }
 
-UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, SettingsDialogType settingsDialogType,
-                                                 const CMachine &machine, const CConsole &console,
+UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString &strMachineId,
                                                  const QString &strCategory, const QString &strControl)
-    : UISettingsDialog(pParent, settingsDialogType)
-    , m_machine(machine)
-    , m_console(console)
+    : UISettingsDialog(pParent)
+    , m_strMachineId(strMachineId)
     , m_fAllowResetFirstRunFlag(false)
     , m_fResetFirstRunFlag(false)
 {
@@ -539,6 +541,12 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, SettingsDialo
 
     /* Allow to reset first-run flag just when medium enumeration was finished: */
     connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltAllowResetFirstRunFlag()));
+
+    /* Get corresponding machine (required to determine dialog type): */
+    m_machine = vboxGlobal().virtualBox().FindMachine(m_strMachineId);
+    AssertMsg(!m_machine.isNull(), ("Can't find corresponding machine!\n"));
+    /* Assign current dialog type: */
+    setDialogType(machineStateToSettingsDialogType(m_machine.GetState()));
 
     /* Creating settings pages: */
     for (int iPageIndex = VMSettingsPage_General; iPageIndex < VMSettingsPage_MAX; ++iPageIndex)
@@ -662,7 +670,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, SettingsDialo
     /* Retranslate UI: */
     retranslateUi();
 
-    /* Setup Settings Dialog: */
+    /* Setup settings dialog: */
     if (!strCategory.isNull())
     {
         m_pSelector->selectByLink(strCategory);
@@ -694,10 +702,31 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, SettingsDialo
     /* First item as default: */
     else
         m_pSelector->selectById(0);
+
+    /* Make sure settings dialog will be updated on machine state changes: */
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+            this, SLOT(sltMachineStateChanged(QString, KMachineState)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
+            this, SLOT(sltMachineDataChanged(QString)));
 }
 
 void UISettingsDialogMachine::loadData()
 {
+    /* Check that session is NOT created: */
+    if (!m_session.isNull())
+        return;
+
+    /* Prepare session: */
+    m_session = dialogType() == SettingsDialogType_Wrong ? CSession() : vboxGlobal().openSession(m_strMachineId, true /* shared */);
+    /* Check that session was created: */
+    if (m_session.isNull())
+        return;
+
+    /* Get machine from session: */
+    m_machine = m_session.GetMachine();
+    /* Get console from session: */
+    m_console = dialogType() == SettingsDialogType_Offline ? CConsole() : m_session.GetConsole();
+
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
     UISettingsDataMachine data(m_machine, m_console);
@@ -718,6 +747,22 @@ void UISettingsDialogMachine::loadData()
 
 void UISettingsDialogMachine::saveData()
 {
+    /* Check that session is NOT created: */
+    if (!m_session.isNull())
+        return;
+
+    /* Prepare session: */
+    bool fSessionShared = dialogType() != SettingsDialogType_Offline;
+    m_session = dialogType() == SettingsDialogType_Wrong ? CSession() : vboxGlobal().openSession(m_strMachineId, fSessionShared);
+    /* Check that session was created: */
+    if (m_session.isNull())
+        return;
+
+    /* Get machine from session: */
+    m_machine = m_session.GetMachine();
+    /* Get console from session: */
+    m_console = dialogType() == SettingsDialogType_Offline ? CConsole() : m_session.GetConsole();
+
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
     UISettingsDataMachine data(m_machine, m_console);
@@ -733,7 +778,6 @@ void UISettingsDialogMachine::saveData()
 
     /* Get updated machine: */
     m_machine = pMachineSettingsSaver->data().value<UISettingsDataMachine>().m_machine;
-    m_console = pMachineSettingsSaver->data().value<UISettingsDataMachine>().m_console;
     /* If machine is ok => perform final operations: */
     if (m_machine.isOk())
     {
@@ -769,13 +813,17 @@ void UISettingsDialogMachine::saveData()
          * the boot order or disk configuration were changed: */
         if (m_fResetFirstRunFlag)
             m_machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString::null);
+
+        /* Save settings finally: */
+        m_machine.SaveSettings();
     }
-    /* If machine is NOT ok => show error message: */
-    else
-    {
-        /* Show final error message: */
+
+    /* If machine is NOT ok => show the error message: */
+    if (!m_machine.isOk())
         vboxProblem().cannotSaveMachineSettings(m_machine);
-    }
+
+    /* Mark page processed: */
+    sltMarkProcessed();
 }
 
 void UISettingsDialogMachine::retranslateUi()
@@ -966,6 +1014,55 @@ bool UISettingsDialogMachine::recorrelate(QWidget *pPage, QString &strWarning)
     }
 
     return true;
+}
+
+void UISettingsDialogMachine::sltMarkProcessed()
+{
+    /* Call for base-class: */
+    UISettingsDialog::sltMarkProcessed();
+
+    /* Unlock the session if exists: */
+    if (!m_session.isNull())
+    {
+        m_session.UnlockMachine();
+        m_session = CSession();
+        m_machine = CMachine();
+        m_console = CConsole();
+    }
+}
+
+void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMachineState machineState)
+{
+    /* Ignore if thats NOT our VM: */
+    if (strMachineId != m_strMachineId)
+        return;
+
+    /* Ignore if state was NOT actually changed: */
+    if (m_machineState == machineState)
+        return;
+
+    /* Update current machine state: */
+    m_machineState = machineState;
+
+    /* Get new dialog type: */
+    SettingsDialogType newDialogType = machineStateToSettingsDialogType(m_machineState);
+
+    /* Ignore if dialog type was NOT actually changed: */
+    if (dialogType() == newDialogType)
+        return;
+
+    /* Update current dialog type: */
+    setDialogType(newDialogType);
+}
+
+void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
+{
+    /* Ignore if thats NOT our VM: */
+    if (strMachineId != m_strMachineId)
+        return;
+
+    /* Reload data: */
+    loadData();
 }
 
 void UISettingsDialogMachine::sltCategoryChanged(int cId)
