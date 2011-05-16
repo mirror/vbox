@@ -155,15 +155,14 @@ static mapVM g_mapVM;
 static void serviceLog(const char *pszFormat, ...);
 
 static bool machineIsRunning(MachineState_T enmState);
-static mapVMIter machineGetByUUID(const Bstr &strUUID);
-static int machineAdd(const ComPtr<IMachine> &rptrMachine);
-static int machineUpdate(const ComPtr<IMachine> &rptrMachine, MachineState_T enmState);
-static int machineUpdate(mapVMIter it, MachineState_T enmState);
-static void machineRemove(mapVMIter it);
+static bool machineHandled(const Bstr &strUuid);
+static int machineAdd(const Bstr &strUuid);
+static int machineRemove(const Bstr &strUuid);
+static int machineUpdate(const Bstr &strUuid, MachineState_T enmState);
 
 static unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine);
-static bool balloonIsRequired(mapVMIter it);
-static int balloonUpdate(mapVMIterConst it);
+static bool balloonIsRequired(PVBOXBALLOONCTRL_MACHINE pMachine);
+static int balloonUpdate(const Bstr &strUuid, PVBOXBALLOONCTRL_MACHINE pMachine);
 
 static HRESULT balloonCtrlSetup();
 static void balloonCtrlShutdown();
@@ -219,22 +218,15 @@ class VirtualBoxEventListener
                         int rc = RTCritSectEnter(&g_MapCritSect);
                         if (RT_SUCCESS(rc))
                         {
-                            if (fRegistered)
-                            {
-                                ComPtr <IMachine> machine;
-                                hr = g_pVirtualBox->FindMachine(uuid.raw(), machine.asOutParam());
-                                if (SUCCEEDED(hr))
-                                    rc = machineAdd(machine);
-                                else
-                                    rc = VERR_NOT_FOUND;
-                            }
-                            else
-                                machineRemove(machineGetByUUID(uuid));
-                            AssertRC(rc);
+                            if (fRegistered && machineHandled(uuid))
+                                rc = machineAdd(uuid);
+                            else if (!fRegistered)
+                                 rc = machineRemove(uuid);
 
                             int rc2 = RTCritSectLeave(&g_MapCritSect);
                             if (RT_SUCCESS(rc))
                                 rc = rc2;
+                            AssertRC(rc);
                         }
                     }
                     break;
@@ -257,23 +249,11 @@ class VirtualBoxEventListener
                         int rc = RTCritSectEnter(&g_MapCritSect);
                         if (RT_SUCCESS(rc))
                         {
-                            mapVMIter it = machineGetByUUID(uuid);
-                            if (it == g_mapVM.end())
-                            {
-                                /* Use the machine object to figure out if we
-                                 * need to do something. */
-                                ComPtr <IMachine> machine;
-                                hr = g_pVirtualBox->FindMachine(uuid.raw(), machine.asOutParam());
-                                if (SUCCEEDED(hr))
-                                    rc = machineUpdate(machine, machineState);
-                            }
-                            else /* Update an existing machine. */
-                                rc = machineUpdate(it, machineState);
-                            AssertRC(rc);
-
+                            rc = machineUpdate(uuid, machineState);
                             int rc2 = RTCritSectLeave(&g_MapCritSect);
                             if (RT_SUCCESS(rc))
                                 rc = rc2;
+                            AssertRC(rc);
                         }
                     }
                     break;
@@ -288,10 +268,9 @@ class VirtualBoxEventListener
                     if (!fAvailable)
                     {
                         serviceLog("VBoxSVC became unavailable\n");
-                        {
-                            balloonCtrlShutdown();
-                            deleteGlobalObjects();
-                        }
+
+                        balloonCtrlShutdown();
+                        deleteGlobalObjects();
                     }
                     else
                     {
@@ -366,6 +345,14 @@ static void signalHandlerUninstall()
 #endif
 }
 
+/**
+ * Retrieves the current delta value
+ *
+ * @return  long                                Delta (MB) of the balloon to be deflated (<0) or inflated (>0).
+ * @param   ulCurrentDesktopBalloonSize         The balloon's current size.
+ * @param   ulDesktopFreeMemory                 The VM's current free memory.
+ * @param   ulMaxBalloonSize                    The maximum balloon size (MB) it can inflate to.
+ */
 static long getlBalloonDelta(unsigned long ulCurrentDesktopBalloonSize, unsigned long ulDesktopFreeMemory, unsigned long ulMaxBalloonSize)
 {
     if (ulCurrentDesktopBalloonSize > ulMaxBalloonSize)
@@ -426,19 +413,66 @@ static bool machineIsRunning(MachineState_T enmState)
     return false;
 }
 
-static mapVMIter machineGetByUUID(const Bstr &strUUID)
+/**
+ * Determines whether the specified machine needs to be handled
+ * by this service.
+ *
+ * @return  bool                    True if the machine needs handling, false if not.
+ * @param   strUuid                 UUID of the specified machine.
+ */
+static bool machineHandled(const Bstr &strUuid)
 {
-    return g_mapVM.find(strUUID);
+    bool fHandled = false;
+
+    do
+    {
+        HRESULT rc;
+
+        ComPtr <IMachine> machine;
+        CHECK_ERROR_BREAK(g_pVirtualBox, FindMachine(strUuid.raw(), machine.asOutParam()));
+
+        MachineState_T machineState;
+        CHECK_ERROR_BREAK(machine, COMGETTER(State)(&machineState));
+
+        if (   balloonGetMaxSize(machine)
+            && machineIsRunning(machineState))
+        {
+            serviceLogVerbose(("Handling machine \"%ls\"\n", strUuid.raw()));
+            fHandled = true;
+        }
+    }
+    while (0);
+
+    return fHandled;
 }
 
-static int machineAdd(const ComPtr<IMachine> &rptrMachine)
+/**
+ * Adds a specified machine to the list (map) of handled machines.
+ *
+ * @return  IPRT status code.
+ * @param   strUuid                 UUID of the specified machine.
+ */
+static int machineAdd(const Bstr &strUuid)
 {
     HRESULT rc;
 
     do
     {
+        ComPtr <IMachine> machine;
+        CHECK_ERROR_BREAK(g_pVirtualBox, FindMachine(strUuid.raw(), machine.asOutParam()));
+
+        MachineState_T machineState;
+        CHECK_ERROR_BREAK(machine, COMGETTER(State)(&machineState));
+
+        if (   !balloonGetMaxSize(machine)
+            || !machineIsRunning(machineState))
+        {
+            /* This machine does not need to be added, just skip it! */
+            break;
+        }
+
         VBOXBALLOONCTRL_MACHINE m;
-        m.machine = rptrMachine;
+        m.machine = machine;
 
         /*
          * Setup metrics.
@@ -469,67 +503,129 @@ static int machineAdd(const ComPtr<IMachine> &rptrMachine)
         /*
          * Add machine to map.
          */
-        Bstr strUUID;
-        CHECK_ERROR_BREAK(rptrMachine, COMGETTER(Id)(strUUID.asOutParam()));
-
-        mapVMIter it = g_mapVM.find(strUUID);
+        mapVMIter it = g_mapVM.find(strUuid);
         Assert(it == g_mapVM.end());
 
-        g_mapVM.insert(std::make_pair(strUUID, m));
+        g_mapVM.insert(std::make_pair(strUuid, m));
 
-        serviceLogVerbose(("Added machine \"%ls\"\n", strUUID.raw()));
+        serviceLogVerbose(("Added machine \"%ls\"\n", strUuid.raw()));
 
     } while (0);
 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /* @todo Find a better error! */
 }
 
-static void machineRemove(mapVMIter it)
+/**
+ * Removes a specified machine from the list of handled machines.
+ *
+ * @return  IPRT status code.
+ * @param   strUuid                 UUID of the specified machine.
+ */
+static int machineRemove(const Bstr &strUuid)
 {
+    int rc = RTCritSectEnter(&g_MapCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        mapVMIter it = g_mapVM.find(strUuid);
+        if (it != g_mapVM.end())
+        {
+            /* Must log before erasing the iterator because of the UUID ref! */
+            serviceLogVerbose(("Removing machine \"%ls\"\n", strUuid.raw()));
+
+            /*
+             * Remove machine from map.
+             */
+            g_mapVM.erase(it);
+        }
+        else
+        {
+            serviceLogVerbose(("Warning: Removing not added machine \"%ls\"\n", strUuid.raw()));
+            rc = VERR_NOT_FOUND;
+        }
+
+        int rc2 = RTCritSectLeave(&g_MapCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+/**
+ * Updates a specified machine according to its current machine state.
+ * That currently also could mean that a machine gets removed if it doesn't
+ * fit in our criteria anymore or a machine gets added if we need to handle
+ * it now (and didn't before).
+ *
+ * @return  IPRT status code.
+ * @param   strUuid                 UUID of the specified machine.
+ * @param   enmState                The machine's current state.
+ */
+static int machineUpdate(const Bstr &strUuid, MachineState_T enmState)
+{
+    int rc = VINF_SUCCESS;
+
+    mapVMIter it = g_mapVM.find(strUuid);
+    if (it == g_mapVM.end())
+    {
+        if (machineHandled(strUuid))
+        {
+            rc  = machineAdd(strUuid);
+            if (RT_SUCCESS(rc))
+                it = g_mapVM.find(strUuid);
+        }
+        else
+        {
+            serviceLogVerbose(("Machine \"%ls\" (state: %u) does not need to be updated\n",
+                               strUuid.raw(), enmState));
+        }
+    }
+
     if (it != g_mapVM.end())
     {
-        /* Must log before erasing the iterator because of the UUID ref! */
-        serviceLogVerbose(("Removing machine \"%ls\"\n", it->first.raw()));
-
         /*
-         * Remove machine from map.
+         * Ballooning stuff - start.
          */
-        g_mapVM.erase(it);
-    }
-}
 
-static int machineUpdate(const ComPtr<IMachine> &rptrMachine, MachineState_T enmState)
-{
-    if (   !balloonGetMaxSize(rptrMachine)
-        || !machineIsRunning(enmState))
-    {
-        return VINF_SUCCESS; /* Machine is not required to be added. */
-    }
-    return machineAdd(rptrMachine);
-}
-
-static int machineUpdate(mapVMIter it, MachineState_T enmState)
-{
-    Assert(it != g_mapVM.end());
-
-    if (   !balloonIsRequired(it)
-        || !machineIsRunning(enmState))
-    {
-        machineRemove(it);
-        return VINF_SUCCESS;
+        /* Our actual ballooning criteria. */
+        if (   !balloonIsRequired(&it->second)
+            || !machineIsRunning(enmState))
+        {
+            /* Current machine is not suited for ballooning anymore -
+             * remove it from our map. */
+            rc = machineRemove(strUuid);
+        }
+        else
+        {
+            rc = balloonUpdate(strUuid, &it->second);
+            AssertRC(rc);
+        }
     }
 
-    return balloonUpdate(it);
+    /*
+     * Ballooning stuff - end.
+     */
+
+    return rc;
 }
 
-static int getMetric(mapVMIterConst it, const Bstr& strName, LONG *pulData)
+/**
+ * Retrieves a metric from a specified machine.
+ *
+ * @return  IPRT status code.
+ * @param   pMachine                Pointer to the machine's internal structure.
+ * @param   strName                 Name of metric to retrieve.
+ * @param   pulData                 Pointer to value to retrieve the actual metric value.
+ */
+static int getMetric(PVBOXBALLOONCTRL_MACHINE pMachine, const Bstr& strName, LONG *pulData)
 {
-    AssertPtrReturn(pulData, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pMachine, VERR_INVALID_POINTER);
+    AssertPtrReturn(pulData, VERR_INVALID_POINTER);
 
     /* Input. */
     com::SafeArray<BSTR> metricNames(1);
     com::SafeIfaceArray<IUnknown> metricObjects(1);
-    it->second.machine.queryInterfaceTo(&metricObjects[0]);
+    pMachine->machine.queryInterfaceTo(&metricObjects[0]);
 
     /* Output. */
     com::SafeArray<BSTR>          retNames;
@@ -544,9 +640,11 @@ static int getMetric(mapVMIterConst it, const Bstr& strName, LONG *pulData)
     /* Query current memory free. */
     strName.cloneTo(&metricNames[0]);
 #ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
+    Assert(!g_pPerfCollector.isNull());
     HRESULT hrc = g_pPerfCollector->QueryMetricsData(
 #else
-    HRESULT hrc = it->second.collector->QueryMetricsData(
+    Assert(!pMachine->collector.isNull());
+    HRESULT hrc = pMachine->collector->QueryMetricsData(
 #endif
                                                 ComSafeArrayAsInParam(metricNames),
                                                 ComSafeArrayAsInParam(metricObjects),
@@ -589,7 +687,7 @@ static int getMetric(mapVMIterConst it, const Bstr& strName, LONG *pulData)
  * Determines the maximum balloon size to set for the specified machine.
  *
  * @return  unsigned long           Balloon size (in MB) to set, 0 if no ballooning required.
- * @param   rptrMachine             Pointer to specified machine.
+ * @param   rptrMachine             Pointer to interface of specified machine.
  */
 static unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
 {
@@ -628,17 +726,20 @@ static unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
 }
 
 /**
- * Determines whether ballooning is required to the spcified VM.
+ * Determines whether ballooning is required to the specified machine.
  *
- * @return  bool        True if ballooning is required, false if not.
- * @param   it          Iterator pointing to the VM to be processed.
+ * @return  bool                    True if ballooning is required, false if not.
+ * @param   strUuid                 UUID of the specified machine.
  */
-static bool balloonIsRequired(mapVMIter it)
+static bool balloonIsRequired(PVBOXBALLOONCTRL_MACHINE pMachine)
 {
-    /* Only do ballooning if we have a maximum balloon size set. */
-    it->second.ulBalloonSizeMax = balloonGetMaxSize(it->second.machine);
+    AssertPtrReturn(pMachine, false);
 
-    return it->second.ulBalloonSizeMax ? true : false;
+    /* Only do ballooning if we have a maximum balloon size set. */
+    pMachine->ulBalloonSizeMax = pMachine->machine.isNull()
+                               ? 0 : balloonGetMaxSize(pMachine->machine);
+
+    return pMachine->ulBalloonSizeMax ? true : false;
 }
 
 /**
@@ -646,17 +747,20 @@ static bool balloonIsRequired(mapVMIter it)
  * capable and ready for ballooning.
  *
  * @return  IPRT status code.
- * @param   it          Iterator pointing to the VM to be processed.
+ * @param   strUuid                 UUID of the specified machine.
+ * @param   pMachine                Pointer to the machine's internal structure.
  */
-static int balloonUpdate(mapVMIterConst it)
+static int balloonUpdate(const Bstr &strUuid, PVBOXBALLOONCTRL_MACHINE pMachine)
 {
+    AssertPtrReturn(pMachine, VERR_INVALID_POINTER);
+
     /*
      * Get metrics collected at this point.
      */
     LONG lMemFree, lBalloonCur;
-    int vrc = getMetric(it, L"Guest/RAM/Usage/Free", &lMemFree);
+    int vrc = getMetric(pMachine, L"Guest/RAM/Usage/Free", &lMemFree);
     if (RT_SUCCESS(vrc))
-        vrc = getMetric(it, L"Guest/RAM/Usage/Balloon", &lBalloonCur);
+        vrc = getMetric(pMachine, L"Guest/RAM/Usage/Balloon", &lBalloonCur);
 
     if (RT_SUCCESS(vrc))
     {
@@ -665,7 +769,7 @@ static int balloonUpdate(mapVMIterConst it)
         if (lMemFree <= 0)
         {
 #ifdef DEBUG
-            serviceLogVerbose(("%ls: No metrics available yet!\n", it->first.raw()));
+            serviceLogVerbose(("%ls: No metrics available yet!\n", strUuid.raw()));
 #endif
             return VINF_SUCCESS;
         }
@@ -674,24 +778,24 @@ static int balloonUpdate(mapVMIterConst it)
         lBalloonCur /= 1024;
 
         serviceLogVerbose(("%ls: Balloon: %ld, Free mem: %ld, Max ballon: %ld\n",
-                           it->first.raw(),
-                           lBalloonCur, lMemFree, it->second.ulBalloonSizeMax));
+                           strUuid.raw(),
+                           lBalloonCur, lMemFree, pMachine->ulBalloonSizeMax));
 
         /* Calculate current balloon delta. */
-        long lDelta = getlBalloonDelta(lBalloonCur, lMemFree, it->second.ulBalloonSizeMax);
+        long lDelta = getlBalloonDelta(lBalloonCur, lMemFree, pMachine->ulBalloonSizeMax);
         if (lDelta) /* Only do ballooning if there's really smth. to change ... */
         {
             lBalloonCur = lBalloonCur + lDelta;
             Assert(lBalloonCur > 0);
 
             serviceLog("%ls: %s balloon by %ld to %ld ...\n",
-                       it->first.raw(),
+                       strUuid.raw(),
                        lDelta > 0 ? "Inflating" : "Deflating", lDelta, lBalloonCur);
 
             HRESULT rc;
 
             /* Open a session for the VM. */
-            CHECK_ERROR(it->second.machine, LockMachine(g_pSession, LockType_Shared));
+            CHECK_ERROR(pMachine->machine, LockMachine(g_pSession, LockType_Shared));
 
             do
             {
@@ -705,7 +809,7 @@ static int balloonUpdate(mapVMIterConst it)
                     CHECK_ERROR_BREAK(guest, COMSETTER(MemoryBalloonSize)(lBalloonCur));
                 else
                     serviceLog("Error: Unable to set new balloon size %ld for machine \"%ls\", rc=%Rhrc",
-                               lBalloonCur, it->first.raw(), rc);
+                               lBalloonCur, strUuid.raw(), rc);
             } while (0);
 
             /* Unlock the machine again. */
@@ -714,7 +818,7 @@ static int balloonUpdate(mapVMIterConst it)
     }
     else
         serviceLog("Error: Unable to retrieve metrics for machine \"%ls\", rc=%Rrc",
-                   it->first.raw(), vrc);
+                   strUuid.raw(), vrc);
     return vrc;
 }
 
@@ -780,19 +884,9 @@ static int vmListBuild()
                         continue;
                     }
 
-                    MachineState_T machineState;
-                    CHECK_ERROR_BREAK(machines[i], COMGETTER(State)(&machineState));
-
-                    if (g_fVerbose)
-                        serviceLogVerbose(("Processing machine \"%ls\" (state: %ld)\n",
-                                           strUUID.raw(), machineState));
-
-                    if (machineIsRunning(machineState))
-                    {
-                        rc = machineAdd(machines[i]);
-                        if (RT_FAILURE(rc))
-                            break;
-                    }
+                    rc = machineAdd(strUUID);
+                    if (RT_FAILURE(rc))
+                        break;
                 }
             }
 
@@ -825,7 +919,7 @@ static int balloonCtrlCheck()
             HRESULT hrc = it->second.machine->COMGETTER(State)(&machineState);
             if (SUCCEEDED(hrc))
             {
-                rc = machineUpdate(it, machineState);
+                rc = machineUpdate(it->first /* UUID */, machineState);
                 if (RT_FAILURE(rc))
                     break;
             }
