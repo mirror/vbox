@@ -776,6 +776,10 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_WITH_JXPCOM=
   VBOX_WITH_JWS=
   VBOX_WITH_DOCS=
+  # Using the 10.7 SDK triggers some gl.h include issue. Our problem.
+  ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.7)
+   VBOX_WITH_CROGL=
+  endif
  endif
 endif
 
@@ -1799,8 +1803,8 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS     := -mmacosx-version-min=10.4 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_4) \
 	-Wl,-headerpad_max_install_names $(VBOX_DARWIN_CLASSIC_LINKER)
  else
-  VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS  = $(error Using 10.4 SDK)
-  VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS   = $(error Using 10.4 SDK)
+  VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS  = $(error $(if $(target),$(target): ,)Using 10.4 SDK)
+  VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS   = $(error $(if $(target),$(target): ,)Using 10.4 SDK)
  endif
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5)
@@ -1813,8 +1817,8 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS     := -mmacosx-version-min=10.5 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_5) \
 	-Wl,-headerpad_max_install_names $(VBOX_DARWIN_NO_COMPACT_LINKEDIT)
  else
-  VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS  = $(error Using 10.5 SDK)
-  VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS   = $(error Using 10.5 SDK)
+  VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS  = $(error $(if $(target),$(target): ,)Using 10.5 SDK)
+  VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS   = $(error $(if $(target),$(target): ,)Using 10.5 SDK)
  endif
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6)
@@ -1827,22 +1831,22 @@ ifeq ($(KBUILD_TARGET),darwin)
   VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS     := -mmacosx-version-min=10.6 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_6) \
          -Wl,-headerpad_max_install_names
  else
-  VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS  = $(error Using 10.6 SDK)
-  VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS   = $(error Using 10.6 SDK)
+  VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS  = $(error $(if $(target),$(target): ,)Using 10.6 SDK)
+  VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS   = $(error $(if $(target),$(target): ,)Using 10.6 SDK)
  endif
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6 10.7)
   VBOX_PATH_MACOSX_SDK_10_7            ?= /Developer/SDKs/MacOSX10.7.sdk
   VBOX_DARWIN_DEF_SDK_10_7_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1070 MAC_OS_X_VERSION_MAX_ALLOWED=1070
-  VBOX_DARWIN_DEF_SDK_10_7_CFLAGS      := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
-  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS    := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
-  VBOX_DARWIN_DEF_SDK_10_7_OBJCFLAGS   := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
-  VBOX_DARWIN_DEF_SDK_10_7_OBJCXXFLAGS := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_6)
+  VBOX_DARWIN_DEF_SDK_10_7_CFLAGS      := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
+  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS    := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
+  VBOX_DARWIN_DEF_SDK_10_7_OBJCFLAGS   := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
+  VBOX_DARWIN_DEF_SDK_10_7_OBJCXXFLAGS := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
   VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS     := -mmacosx-version-min=10.7 -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK_10_7) \
          -Wl,-headerpad_max_install_names
  else
-  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS  = $(error Using 10.7 SDK)
-  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS   = $(error Using 10.7 SDK)
+  VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS  = $(error $(if $(target),$(target): ,)Using 10.7 SDK)
+  VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS   = $(error $(if $(target),$(target): ,)Using 10.7 SDK)
  endif
 
 
