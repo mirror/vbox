@@ -74,7 +74,7 @@ GLOBALNAME PATMStatsRecord
     DD      0
     DD      PATM_ALLPATCHCALLS
     DD      0
-    DD	    PATM_PERPATCHCALLS
+    DD      PATM_PERPATCHCALLS
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
@@ -123,7 +123,7 @@ GLOBALNAME PATMClearPIFRecord
     DD      0
     DD      0
     DD      PATMClearPIF_End - PATMClearPIF_Start
-	DD		1
+    DD      1
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
@@ -137,8 +137,8 @@ PATMClearInhibitIRQFaultIF0_Start:
     mov     dword [ss:PATM_INHIBITIRQADDR], 0
     pushf
 
-	test	dword [ss:PATM_VMFLAGS], X86_EFL_IF
-	jz		PATMClearInhibitIRQFaultIF0_Fault
+    test    dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    jz      PATMClearInhibitIRQFaultIF0_Fault
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
     test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
@@ -176,7 +176,7 @@ GLOBALNAME PATMClearInhibitIRQFaultIF0Record
     DD      0
     DD      0
     DD      PATMClearInhibitIRQFaultIF0_End - PATMClearInhibitIRQFaultIF0_Start
-	DD		12
+    DD      12
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      PATM_INHIBITIRQADDR
@@ -212,8 +212,8 @@ PATMClearInhibitIRQContIF0_Start:
     mov     dword [ss:PATM_INHIBITIRQADDR], 0
     pushf
 
-	test	dword [ss:PATM_VMFLAGS], X86_EFL_IF
-	jz		PATMClearInhibitIRQContIF0_Continue
+    test    dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    jz      PATMClearInhibitIRQContIF0_Continue
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
     test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
@@ -246,7 +246,7 @@ GLOBALNAME PATMClearInhibitIRQContIF0Record
     DD      0
     DD      0
     DD      PATMClearInhibitIRQContIF0_End - PATMClearInhibitIRQContIF0_Start
-	DD		11
+    DD      11
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      PATM_INHIBITIRQADDR
@@ -415,13 +415,13 @@ PATMTrapEntryStart:
     and     dword [esp+8], dword ~1     ; yasm / nasm dword
 PATMTrapNoRing1:
 
-	; correct EFLAGS on the stack to include the current IOPL
-	push	eax
-	mov     eax, dword [ss:PATM_VMFLAGS]
-	and     eax, X86_EFL_IOPL
-	and     dword [esp+16], ~X86_EFL_IOPL		; esp+16 = eflags = esp+8+4(efl)+4(eax)
-	or      dword [esp+16], eax
-    pop		eax
+    ; correct EFLAGS on the stack to include the current IOPL
+    push    eax
+    mov     eax, dword [ss:PATM_VMFLAGS]
+    and     eax, X86_EFL_IOPL
+    and     dword [esp+16], ~X86_EFL_IOPL       ; esp+16 = eflags = esp+8+4(efl)+4(eax)
+    or      dword [esp+16], eax
+    pop     eax
 
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
@@ -500,13 +500,13 @@ PATMTrapErrorCodeEntryStart:
     and     dword [esp+12], dword ~1     ; yasm / nasm dword
 PATMTrapErrorCodeNoRing1:
 
-	; correct EFLAGS on the stack to include the current IOPL
-	push	eax
-	mov     eax, dword [ss:PATM_VMFLAGS]
-	and     eax, X86_EFL_IOPL
-	and     dword [esp+20], ~X86_EFL_IOPL		; esp+20 = eflags = esp+8+4(efl)+4(error code)+4(eax)
-	or      dword [esp+20], eax
-    pop		eax
+    ; correct EFLAGS on the stack to include the current IOPL
+    push    eax
+    mov     eax, dword [ss:PATM_VMFLAGS]
+    and     eax, X86_EFL_IOPL
+    and     dword [esp+20], ~X86_EFL_IOPL       ; esp+20 = eflags = esp+8+4(efl)+4(error code)+4(eax)
+    or      dword [esp+20], eax
+    pop     eax
 
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
@@ -585,13 +585,13 @@ PATMIntEntryStart:
     and     dword [esp+8], dword ~1     ; yasm / nasm dword
 PATMIntNoRing1:
 
-	; correct EFLAGS on the stack to include the current IOPL
-	push	eax
-	mov     eax, dword [ss:PATM_VMFLAGS]
-	and     eax, X86_EFL_IOPL
-	and     dword [esp+16], ~X86_EFL_IOPL		; esp+16 = eflags = esp+8+4(efl)+4(eax)
-	or      dword [esp+16], eax
-    pop		eax
+    ; correct EFLAGS on the stack to include the current IOPL
+    push    eax
+    mov     eax, dword [ss:PATM_VMFLAGS]
+    and     eax, X86_EFL_IOPL
+    and     dword [esp+16], ~X86_EFL_IOPL       ; esp+16 = eflags = esp+8+4(efl)+4(eax)
+    or      dword [esp+16], eax
+    pop     eax
 
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
@@ -667,13 +667,13 @@ PATMIntEntryErrorCodeStart:
     and     dword [esp+12], dword ~1     ; yasm / nasm dword
 PATMIntNoRing1_ErrorCode:
 
-	; correct EFLAGS on the stack to include the current IOPL
-	push	eax
-	mov     eax, dword [ss:PATM_VMFLAGS]
-	and     eax, X86_EFL_IOPL
-	and     dword [esp+20], ~X86_EFL_IOPL		; esp+20 = eflags = esp+8+4(efl)+4(eax)+4(error code)
-	or      dword [esp+20], eax
-    pop		eax
+    ; correct EFLAGS on the stack to include the current IOPL
+    push    eax
+    mov     eax, dword [ss:PATM_VMFLAGS]
+    and     eax, X86_EFL_IOPL
+    and     dword [esp+20], ~X86_EFL_IOPL       ; esp+20 = eflags = esp+8+4(efl)+4(eax)+4(error code)
+    or      dword [esp+20], eax
+    pop     eax
 
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
@@ -1251,17 +1251,17 @@ iret_notring0:
     ; does not return
 
 iret_continue :
-	; This section must *always* be executed (!!)
-	; Extract the IOPL from the return flags, save them to our virtual flags and
-	; put them back to zero
+    ; This section must *always* be executed (!!)
+    ; Extract the IOPL from the return flags, save them to our virtual flags and
+    ; put them back to zero
     ; @note we assume iretd doesn't fault!!!
-	push	eax
-	mov     eax, dword [esp+16]
-	and     eax, X86_EFL_IOPL
-	and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
-	or      dword [ss:PATM_VMFLAGS], eax
-    pop		eax
-	and		dword [esp+12], ~X86_EFL_IOPL
+    push    eax
+    mov     eax, dword [esp+16]
+    and     eax, X86_EFL_IOPL
+    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
+    or      dword [ss:PATM_VMFLAGS], eax
+    pop     eax
+    and     dword [esp+12], ~X86_EFL_IOPL
 
     ; Set IF again; below we make sure this won't cause problems.
     or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
@@ -1305,16 +1305,16 @@ iret_clearIF:
     ; always ring 0 return -> change to ring 1 (CS in iret frame)
     or      dword [esp+8], 1
 
-	; This section must *always* be executed (!!)
-	; Extract the IOPL from the return flags, save them to our virtual flags and
-	; put them back to zero
-	push	eax
-	mov     eax, dword [esp+16]
-	and     eax, X86_EFL_IOPL
-	and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
-	or      dword [ss:PATM_VMFLAGS], eax
-    pop		eax
-	and		dword [esp+12], ~X86_EFL_IOPL
+    ; This section must *always* be executed (!!)
+    ; Extract the IOPL from the return flags, save them to our virtual flags and
+    ; put them back to zero
+    push    eax
+    mov     eax, dword [esp+16]
+    and     eax, X86_EFL_IOPL
+    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
+    or      dword [ss:PATM_VMFLAGS], eax
+    pop     eax
+    and     dword [esp+12], ~X86_EFL_IOPL
 
     ; Clear IF
     and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IF
@@ -2441,14 +2441,14 @@ BEGINPROC   PATMCheckIF
 PATMCheckIF_Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
-	test	dword [ss:PATM_VMFLAGS], X86_EFL_IF
-	jnz		PATMCheckIF_Safe
-	nop
+    test    dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    jnz     PATMCheckIF_Safe
+    nop
 
-	; IF=0 -> unsafe, so we must call the duplicated function (which we don't do here)
-	popf
+    ; IF=0 -> unsafe, so we must call the duplicated function (which we don't do here)
+    popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
-	jmp     PATMCheckIF_End
+    jmp     PATMCheckIF_End
 
 PATMCheckIF_Safe:
     ; invalidate the PATM stack as we'll jump back to guest code
@@ -2464,9 +2464,9 @@ PATMCheckIF_Safe:
     pop     ecx
     pop     eax
 %endif
-	popf
+    popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
-	; IF=1 -> we can safely jump back to the original instruction
+    ; IF=1 -> we can safely jump back to the original instruction
     DB      0xE9
 PATMCheckIF_Jump:
     DD      PATM_JUMPDELTA
@@ -2508,18 +2508,18 @@ BEGINPROC   PATMJumpToGuest_IF1
 PATMJumpToGuest_IF1_Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
-	test	dword [ss:PATM_VMFLAGS], X86_EFL_IF
-	jnz		PATMJumpToGuest_IF1_Safe
-	nop
+    test    dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    jnz     PATMJumpToGuest_IF1_Safe
+    nop
 
-	; IF=0 -> unsafe, so fault
-	popf
+    ; IF=0 -> unsafe, so fault
+    popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
-	PATM_INT3
+    PATM_INT3
 
 PATMJumpToGuest_IF1_Safe:
-	; IF=1 -> we can safely jump back to the original instruction
-	popf
+    ; IF=1 -> we can safely jump back to the original instruction
+    popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
     DB      0xE9
 PATMJumpToGuest_IF1_Jump:
