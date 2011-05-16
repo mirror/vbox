@@ -42,7 +42,7 @@ public:
         GLSettingsPage_MAX
     };
 
-    UISettingsDialogGlobal(QWidget *pParent, SettingsDialogType settingsDialogType);
+    UISettingsDialogGlobal(QWidget *pParent);
 
 protected:
 
@@ -81,8 +81,7 @@ public:
         VMSettingsPage_MAX
     };
 
-    UISettingsDialogMachine(QWidget *pParent, SettingsDialogType settingsDialogType,
-                            const CMachine &machine, const CConsole &console,
+    UISettingsDialogMachine(QWidget *pParent, const QString &strMachineId,
                             const QString &strCategory, const QString &strControl);
 
 protected:
@@ -98,6 +97,9 @@ protected:
 
 private slots:
 
+    void sltMarkProcessed();
+    void sltMachineStateChanged(QString strMachineId, KMachineState machineState);
+    void sltMachineDataChanged(QString strMachineId);
     void sltCategoryChanged(int cId);
     void sltAllowResetFirstRunFlag();
     void sltSetFirstRunFlag();
@@ -107,6 +109,10 @@ private:
 
     bool isPageAvailable(int iPageId);
 
+    QString m_strMachineId;
+    KMachineState m_machineState;
+
+    CSession m_session;
     CMachine m_machine;
     CConsole m_console;
 

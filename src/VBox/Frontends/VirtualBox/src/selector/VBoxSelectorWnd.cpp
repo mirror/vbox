@@ -591,16 +591,9 @@ void VBoxSelectorWnd::fileExportAppliance()
 
 void VBoxSelectorWnd::fileSettings()
 {
-    VBoxGlobalSettings settings = vboxGlobal().settings();
-    CSystemProperties props = vboxGlobal().virtualBox().GetSystemProperties();
-
-    UISettingsDialog *dlg = new UISettingsDialogGlobal(this, SettingsDialogType_Offline);
-    dlg->loadData();
-
-    if (dlg->exec() == QDialog::Accepted)
-        dlg->saveData();
-
-    delete dlg;
+    /* Create and execute global settings dialog: */
+    UISettingsDialogGlobal dlg(this);
+    dlg.execute();
 }
 
 void VBoxSelectorWnd::fileExit()
@@ -696,22 +689,24 @@ void VBoxSelectorWnd::vmAdd(const QString &strFile /* = "" */)
 /**
  *  Opens the VM settings dialog.
  */
-void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
-                                 const QString &aControl /* = QString::null */,
-                                 const QString &aUuid /* = QString::null */)
+void VBoxSelectorWnd::vmSettings(const QString &strCategoryRef /* = QString::null */,
+                                 const QString &strControlRef /* = QString::null */,
+                                 const QString &strMachineId /* = QString::null */)
 {
-    if (!aCategory.isEmpty() && aCategory [0] != '#')
+    /* Process href from VM details / description: */
+    if (!strCategoryRef.isEmpty() && strCategoryRef[0] != '#')
     {
-        /* Assume it's a href from the Details HTML */
-        vboxGlobal().openURL(aCategory);
+        vboxGlobal().openURL(strCategoryRef);
         return;
     }
-    QString strCategory = aCategory;
-    QString strControl = aControl;
-    /* Maybe the control is coded into the URL by %% */
-    if (aControl == QString::null)
+
+    /* Get category and control: */
+    QString strCategory = strCategoryRef;
+    QString strControl = strControlRef;
+    /* Check if control is coded into the URL by %%: */
+    if (strControl.isEmpty())
     {
-        QStringList parts = aCategory.split("%%");
+        QStringList parts = strCategory.split("%%");
         if (parts.size() == 2)
         {
             strCategory = parts.at(0);
@@ -719,40 +714,16 @@ void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
         }
     }
 
-    UIVMItem *pItem = aUuid.isNull() ? mVMListView->selectedItem() : mVMModel->itemById(aUuid);
-    AssertMsgReturnVoid(pItem, ("Item must be always selected here"));
-
-    SettingsDialogType dialogType = machineStateToSettingsDialogType(pItem->machineState());
-
-    CSession session = vboxGlobal().openSession(pItem->id(), dialogType != SettingsDialogType_Offline /* connect to existing? */);
-    AssertMsgReturnVoid(!session.isNull(), ("Session must not be null"));
-    CMachine machine = session.GetMachine();
-    AssertMsgReturnVoid(!machine.isNull(), ("Machine must not be null"));
-    CConsole console = dialogType == SettingsDialogType_Offline ? CConsole() : session.GetConsole();
-
-    /* Don't show the inaccessible warning if the user open the vm settings: */
+    /* Don't show the inaccessible warning if the user tries to open VM settings: */
     mDoneInaccessibleWarningOnce = true;
 
-    UISettingsDialog *pDlg = new UISettingsDialogMachine(this, dialogType, machine, console, strCategory, strControl);
-    pDlg->loadData();
+    /* Get corresponding VM item: */
+    UIVMItem *pItem = strMachineId.isNull() ? mVMListView->selectedItem() : mVMModel->itemById(strMachineId);
+    AssertMsgReturnVoid(pItem, ("Item must be always selected here!\n"));
 
-    if (pDlg->exec() == QDialog::Accepted)
-    {
-        pDlg->saveData();
-
-        machine.SaveSettings();
-        if (!machine.isOk())
-            vboxProblem().cannotSaveMachineSettings(machine);
-
-        /* To check use the result in future:
-         * vboxProblem().cannotApplyMachineSettings(m, res); */
-    }
-
-    delete pDlg;
-
-    mVMListView->setFocus();
-
-    session.UnlockMachine();
+    /* Create and execute corresponding VM settings dialog: */
+    UISettingsDialogMachine dlg(this, pItem->id(), strCategory, strControl);
+    dlg.execute();
 }
 
 void VBoxSelectorWnd::vmDelete(const QString &aUuid /* = QString::null */)

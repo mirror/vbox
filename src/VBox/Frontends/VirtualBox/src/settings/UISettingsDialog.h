@@ -45,12 +45,11 @@ class UISettingsDialog : public QIWithRetranslateUI<QIMainDialog>, public Ui::UI
 public:
 
     /* Settings Dialog Constructor/Destructor: */
-    UISettingsDialog(QWidget *pParent, SettingsDialogType settingsDialogType);
+    UISettingsDialog(QWidget *pParent);
    ~UISettingsDialog();
 
-    /* Save/Load interface: */
-    virtual void loadData() = 0;
-    virtual void saveData() = 0;
+    /* Execute API: */
+    void execute();
 
 protected slots:
 
@@ -69,11 +68,16 @@ protected slots:
 
 protected:
 
+    /* Save/load API: */
+    virtual void loadData() = 0;
+    virtual void saveData() = 0;
+
     /* UI translator: */
     virtual void retranslateUi();
 
     /* Dialog type: */
     SettingsDialogType dialogType() { return m_dialogType; }
+    void setDialogType(SettingsDialogType settingsDialogType);
     /* Dialog title: */
     virtual QString title() const = 0;
     /* Dialog title extension: */
