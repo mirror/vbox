@@ -19,6 +19,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD_VMDK
+#define RT_STRICT
+#define LOG_ENABLED
 #include <VBox/vd-plugin.h>
 #include <VBox/err.h>
 
@@ -6622,7 +6624,7 @@ static unsigned vmdkGetOpenFlags(void *pBackendData)
 /** @copydoc VBOXHDDBACKEND::pfnSetOpenFlags */
 static int vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
-    LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
+    LogFlowFunc(("pBackendData=%#p uOpenFlags=%#x\n", pBackendData, uOpenFlags));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
