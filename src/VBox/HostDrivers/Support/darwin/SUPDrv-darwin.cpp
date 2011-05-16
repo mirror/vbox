@@ -361,10 +361,10 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
     if (pCred)
     {
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
-        RTUID           Uid =  pCred->posix_cred.cr_ruid;
-        RTGID           Gid = pCred->posix_cred.cr_rgid;
+        RTUID           Uid = pCred->cr_posix.cr_ruid;
+        RTGID           Gid = pCred->cr_posix.cr_rgid;
 #else
-        RTUID           Uid =  pCred->cr_ruid;
+        RTUID           Uid = pCred->cr_ruid;
         RTGID           Gid = pCred->cr_rgid;
 #endif
         RTPROCESS       Process = RTProcSelf();
