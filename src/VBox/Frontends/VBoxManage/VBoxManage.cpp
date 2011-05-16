@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
             fShowLogo = false;
             iCmd++;
         }
-        else if (   !strcmp(argv[i], "--detailprogress")
+        else if (   !strcmp(argv[i], "--detailed-progress")
                  || !strcmp(argv[i], "-d"))
         {
             /* detailed progress report */
