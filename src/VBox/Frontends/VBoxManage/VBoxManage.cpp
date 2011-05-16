@@ -48,7 +48,7 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/*extern*/ bool         g_fDetailedProgress = false;
+/*extern*/ bool         g_fDetailedProgress = true;
 
 #ifndef VBOX_ONLY_DOCS
 /** Set by the signal handler. */
@@ -151,7 +151,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
                 LONG lSecsRem = 0;
                 progress->COMGETTER(TimeRemaining)(&lSecsRem);
 
-                RTStrmPrintf(g_pStdErr, "(%ld/%ld) %ls %ld%% => %ld%% (%d s remaining)\n", ulOperation + 1, cOperations, bstrOperationDescription.raw(), ulCurrentOperationPercent, ulCurrentPercent, lSecsRem);
+                RTStrmPrintf(g_pStdErr, "(%u/%u) %ls %02u%% => %02u%% (%d s remaining)\n", ulOperation + 1, cOperations, bstrOperationDescription.raw(), ulCurrentOperationPercent, ulCurrentPercent, lSecsRem);
                 ulLastPercent = ulCurrentPercent;
                 ulLastOperationPercent = ulCurrentOperationPercent;
             }
@@ -166,7 +166,7 @@ HRESULT showProgress(ComPtr<IProgress> progress)
                 {
                     if (curVal < 100)
                     {
-                        RTStrmPrintf(g_pStdErr, "%ld%%...", curVal);
+                        RTStrmPrintf(g_pStdErr, "%u%%...", curVal);
                         RTStrmFlush(g_pStdErr);
                     }
                 }
