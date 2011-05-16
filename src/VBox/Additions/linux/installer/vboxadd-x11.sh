@@ -514,11 +514,15 @@ EOF
     fi
 
     begin "Installing graphics libraries and desktop services components"
-    # Install selinux policy for Fedora 7 and 8 to allow the X server to
-    # open device files
     case "$redhat_release" in
+        # Install selinux policy for Fedora 7 and 8 to allow the X server to
+        # open device files
         Fedora\ release\ 7* | Fedora\ release\ 8* )
             semodule -i "$share_dir/vbox_x11.pp" > /dev/null 2>&1
+            ;;
+        # Similar for the accelerated graphics check on Fedora 15
+        Fedora\ release\ 15* )
+            semodule -i "$share_dir/vbox_accel.pp" > /dev/null 2>&1
             ;;
     esac
 
