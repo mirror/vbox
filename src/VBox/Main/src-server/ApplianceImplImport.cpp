@@ -2582,17 +2582,18 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
          ++it3)
     {
         settings::AttachedDevicesList &llAttachments = it3->llAttachedDevices;
-        settings::AttachedDevicesList::iterator it4;
-        for (it4 = llAttachments.begin();
-             it4 != llAttachments.end();
-             ++it4)
+        settings::AttachedDevicesList::iterator it4 = llAttachments.begin();
+        while (it4 != llAttachments.end())
         {
             if (  (   !fDVD
                    && it4->deviceType == DeviceType_DVD)
                 ||
                   (   !fFloppy
                    && it4->deviceType == DeviceType_Floppy))
-                llAttachments.erase(it4++);
+            {
+                it4 = llAttachments.erase(it4);
+                continue;
+            }
             else if (it4->deviceType == DeviceType_HardDisk)
             {
                 const Guid &thisUuid = it4->uuid;
@@ -2612,6 +2613,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                         fRepairDuplicate = true;
                 }
             }
+            ++it4;
         }
     }
     /* paranoia... */
