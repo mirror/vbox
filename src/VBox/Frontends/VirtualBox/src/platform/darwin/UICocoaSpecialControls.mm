@@ -44,7 +44,9 @@
 {
     UICocoaButton *mRealTarget;
 }
--(id)initWithObject:(UICocoaButton*)object;
+/* The next method used to be called initWithObject, but Xcode 4.1 preview 5 
+   cannot cope with that for some reason.  Hope this doesn't break anything... */
+-(id)initWithObjectAndLionTrouble:(UICocoaButton*)object; 
 -(IBAction)clicked:(id)sender;
 @end
 
@@ -82,7 +84,7 @@
  * Implementation of the private interfaces
  */
 @implementation UIButtonTargetPrivate
--(id)initWithObject:(UICocoaButton*)object
+-(id)initWithObjectAndLionTrouble:(UICocoaButton*)object
 {
     self = [super init];
 
@@ -292,7 +294,7 @@ UICocoaButton::UICocoaButton(CocoaButtonType aType, QWidget *pParent /* = 0 */)
         }
     }
 
-    UIButtonTargetPrivate *bt = [[UIButtonTargetPrivate alloc] initWithObject:this];
+    UIButtonTargetPrivate *bt = [[UIButtonTargetPrivate alloc] initWithObjectAndLionTrouble:this];
     [m_pNativeRef setTarget:bt];
     [m_pNativeRef setAction:@selector(clicked:)];
 
