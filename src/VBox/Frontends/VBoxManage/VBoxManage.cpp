@@ -48,7 +48,7 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/*extern*/ bool         g_fDetailedProgress = true;
+/*extern*/ bool         g_fDetailedProgress = false;
 
 #ifndef VBOX_ONLY_DOCS
 /** Set by the signal handler. */
