@@ -43,10 +43,10 @@ udev_write_usb() {
     INSTALLATION_DIR="$1"
     USB_GROUP="$2"
 
-    echo "SUBSYSTEM==\"usb_device\", ACTION==\"add\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}${USB_GROUP}\""
-    echo "SUBSYSTEM==\"usb\", ACTION==\"add\", ENV{DEVTYPE}==\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}${USB_GROUP}\""
-    echo "SUBSYSTEM==\"usb_device\", ACTION==\"remove\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
-    echo "SUBSYSTEM==\"usb\", ACTION==\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
+    echo "SUBSYSTEM==\"usb_device\", ACTION==\"add\", RUN+=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}${USB_GROUP}\""
+    echo "SUBSYSTEM==\"usb\", ACTION==\"add\", ENV{DEVTYPE}==\"usb_device\", RUN+=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}${USB_GROUP}\""
+    echo "SUBSYSTEM==\"usb_device\", ACTION==\"remove\", RUN+=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
+    echo "SUBSYSTEM==\"usb\", ACTION==\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN+=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
 }
 
 install_udev_run() {
@@ -80,17 +80,21 @@ install_udev_run() {
                 if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
                     udev_fix="1"
                 fi
+                udev_do_usb=""
+                if [ "$udev_ver" -ge 59 ]; then
+                    udev_do_usb="1"
+                fi
             fi
             case "$udev_fix" in
             "1")
                 udev_write_vboxdrv "$VBOXDRV_GRP" "$VBOXDRV_MODE" |
                     sed 's/\([^+=]*\)[+=]*\([^"]*"[^"]*"\)/\1=\2/g'
-                udev_write_usb "$INSTALLATION_DIR" "$USB_GROUP" |
-                    sed 's/\([^+=]*\)[+=]*\([^"]*"[^"]*"\)/\1=\2/g'
                 ;;
             *)
                 udev_write_vboxdrv "$VBOXDRV_GRP" "$VBOXDRV_MODE"
-                udev_write_usb "$INSTALLATION_DIR" "$USB_GROUP"
+                case "$udev_do_usb" in "1")
+                    udev_write_usb "$INSTALLATION_DIR" "$USB_GROUP" ;;
+                esac
                 ;;
             esac
                 
