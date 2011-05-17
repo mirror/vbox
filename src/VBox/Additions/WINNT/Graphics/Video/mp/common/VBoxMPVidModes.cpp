@@ -117,7 +117,7 @@ void VBoxMPCmnInitCustomVideoModes(PVBOXMP_DEVEXT pExt)
     /* Read stored custom resolution info from registry */
     for (iMode=0; iMode<VBoxCommonFromDeviceExt(pExt)->cDisplays; ++iMode)
     {
-        uint32_t CustomXRes, CustomYRes, CustomBPP;
+        uint32_t CustomXRes = 0, CustomYRes = 0, CustomBPP = 0;
 
         if (iMode==0)
         {
