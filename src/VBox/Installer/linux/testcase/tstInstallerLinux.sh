@@ -19,11 +19,9 @@
 
 CERRS=0
 
-setup_test_install_udev
-
 echo "Testing udev rule generation for the \".run\" installer"
 
-TEST_UDEV_VERSION=55
+setup_test_input_install_udev ".run, udev-55" 55
 
 udev_55_rules=`cat <<'UDEV_END'
 KERNEL=="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"
@@ -45,7 +43,9 @@ case "$install_udev_output" in
         ;;
 esac
 
-TEST_UDEV_VERSION=54
+cleanup_test_input_install_udev
+
+setup_test_input_install_udev ".run, udev-54" 54
 
 udev_54_rules=`cat <<'UDEV_END'
 KERNEL="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="root", MODE="0600"
@@ -69,7 +69,9 @@ esac
 
 echo "Testing udev rule generation for the \"package\" installer"
 
-TEST_UDEV_VERSION=55
+cleanup_test_input_install_udev
+
+setup_test_input_install_udev "package, udev-55" 55
 
 udev_55_rules=`cat <<'UDEV_END'
 KERNEL=="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="root", MODE="0600"
@@ -91,7 +93,9 @@ case "$install_udev_output" in
         ;;
 esac
 
-TEST_UDEV_VERSION=54
+cleanup_test_input_install_udev
+
+setup_test_input_install_udev "package, udev-54" 54
 
 udev_54_rules=`cat <<'UDEV_END'
 KERNEL="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="root", MODE="0600"
@@ -112,5 +116,25 @@ case "$install_udev_output" in
         CERRS="`expr "$CERRS" + 1`"
         ;;
 esac
+
+cleanup_test_input_install_udev
+
+setup_test_input_install_udev "package, no udev" 54
+INSTALL_NO_UDEV=1
+
+install_udev_output="`install_udev_package root`"
+case "$install_udev_output" in
+    "") ;;
+    *)
+        echo "Bad output for udev version 54.  Expected:"
+        echo "$udev_54_rules"
+        echo "Actual:"
+        echo "$install_udev_output"
+        CERRS="`expr "$CERRS" + 1`"
+        ;;
+esac
+
+cleanup_test_input_install_udev
+INSTALL_NO_UDEV=
 
 echo "Done.  Error count $CERRS."
