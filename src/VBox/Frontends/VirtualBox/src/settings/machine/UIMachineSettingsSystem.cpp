@@ -245,23 +245,20 @@ void UIMachineSettingsSystem::getFromCache()
     mCbEFI->setChecked(systemData.m_fEFIEnabled);
     mCbTCUseUTC->setChecked(systemData.m_fUTCEnabled);
     mCbUseAbsHID->setChecked(systemData.m_fUseAbsHID);
-    mSlCPU->setEnabled(systemData.m_fPFHwVirtExSupported);
-    mLeCPU->setEnabled(systemData.m_fPFHwVirtExSupported);
-    mCbPae->setEnabled(systemData.m_fPFPAESupported);
     mCbPae->setChecked(systemData.m_fPAEEnabled);
-    mCbVirt->setEnabled(systemData.m_fPFHwVirtExSupported);
     mCbVirt->setChecked(systemData.m_fHwVirtExEnabled);
-    mCbNestedPaging->setEnabled(systemData.m_fPFHwVirtExSupported && systemData.m_fHwVirtExEnabled);
     mCbNestedPaging->setChecked(systemData.m_fNestedPagingEnabled);
     mSlMemory->setValue(systemData.m_iRAMSize);
     mSlCPU->setValue(systemData.m_cCPUCount);
     int iChipsetPositionPos = mCbChipset->findData(systemData.m_chipsetType);
     mCbChipset->setCurrentIndex(iChipsetPositionPos == -1 ? 0 : iChipsetPositionPos);
-    if (!systemData.m_fPFHwVirtExSupported)
-        mTwSystem->removeTab(2);
+
+    /* Polish page finally: */
+    polishPage();
 
     /* Revalidate if possible: */
-    if (mValidator) mValidator->revalidate();
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -565,6 +562,9 @@ bool UIMachineSettingsSystem::eventFilter (QObject *aObject, QEvent *aEvent)
 
 void UIMachineSettingsSystem::polishPage()
 {
+    /* Get system data from cache: */
+    const UIDataSettingsMachineSystem &systemData = m_cache.base();
+
     /* Motherboard tab: */
     mLbMemory->setEnabled(isMachineOffline());
     mLbMemoryMin->setEnabled(isMachineOffline());
@@ -574,8 +574,8 @@ void UIMachineSettingsSystem::polishPage()
     mLeMemory->setEnabled(isMachineOffline());
     mLbBootOrder->setEnabled(isMachineOffline());
     mTwBootOrder->setEnabled(isMachineOffline());
-    mTbBootItemUp->setEnabled(isMachineOffline());
-    mTbBootItemDown->setEnabled(isMachineOffline());
+    mTbBootItemUp->setEnabled(isMachineOffline() && mTwBootOrder->hasFocus() && mTwBootOrder->currentRow() > 0);
+    mTbBootItemDown->setEnabled(isMachineOffline() && mTwBootOrder->hasFocus() && (mTwBootOrder->currentRow() < mTwBootOrder->count() - 1));
     mLbChipset->setEnabled(isMachineOffline());
     mCbChipset->setEnabled(isMachineOffline());
     mLbMotherboardExtended->setEnabled(isMachineOffline());
@@ -587,13 +587,14 @@ void UIMachineSettingsSystem::polishPage()
     mLbCPU->setEnabled(isMachineOffline());
     mLbCPUMin->setEnabled(isMachineOffline());
     mLbCPUMax->setEnabled(isMachineOffline());
-    mSlCPU->setEnabled(isMachineOffline());
-    mLeCPU->setEnabled(isMachineOffline());
+    mSlCPU->setEnabled(isMachineOffline() && systemData.m_fPFHwVirtExSupported);
+    mLeCPU->setEnabled(isMachineOffline() && systemData.m_fPFHwVirtExSupported);
     mLbProcessorExtended->setEnabled(isMachineOffline());
-    mCbPae->setEnabled(isMachineOffline());
+    mCbPae->setEnabled(isMachineOffline() && systemData.m_fPFPAESupported);
     /* Acceleration tab: */
+    mTwSystem->setTabEnabled(2, systemData.m_fPFHwVirtExSupported);
     mLbVirt->setEnabled(isMachineOffline());
     mCbVirt->setEnabled(isMachineOffline());
-    mCbNestedPaging->setEnabled(mCbVirt->isChecked() && isMachineOffline());
+    mCbNestedPaging->setEnabled(isMachineOffline() && mCbVirt->isChecked());
 }
 

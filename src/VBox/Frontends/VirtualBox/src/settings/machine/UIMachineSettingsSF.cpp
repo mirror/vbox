@@ -294,6 +294,9 @@ void UIMachineSettingsSF::getFromCache()
     /* Ensure current item fetched: */
     mTwFolders->setCurrentItem(mTwFolders->topLevelItem(0));
     processCurrentChanged(mTwFolders->currentItem());
+
+    /* Polish page finally: */
+    polishPage();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -520,20 +523,21 @@ void UIMachineSettingsSF::processDoubleClick (QTreeWidgetItem *aItem)
         edtTriggered();
 }
 
-void UIMachineSettingsSF::showContextMenu (const QPoint &aPos)
+void UIMachineSettingsSF::showContextMenu(const QPoint &pos)
 {
     QMenu menu;
-    QTreeWidgetItem *item = mTwFolders->itemAt (aPos);
-    if (item && item->flags() & Qt::ItemIsSelectable)
+    QTreeWidgetItem *pItem = mTwFolders->itemAt(pos);
+    if (mTwFolders->isEnabled() && pItem && pItem->flags() & Qt::ItemIsSelectable)
     {
-        menu.addAction (mEdtAction);
-        menu.addAction (mDelAction);
+        menu.addAction(mEdtAction);
+        menu.addAction(mDelAction);
     }
     else
     {
-        menu.addAction (mNewAction);
+        menu.addAction(mNewAction);
     }
-    menu.exec (mTwFolders->viewport()->mapToGlobal (aPos));
+    if (!menu.isEmpty())
+        menu.exec(mTwFolders->viewport()->mapToGlobal(pos));
 }
 
 void UIMachineSettingsSF::adjustList()
@@ -693,6 +697,11 @@ void UIMachineSettingsSF::setRootItemVisible(UISharedFolderType sharedFolderType
 
 void UIMachineSettingsSF::polishPage()
 {
+    /* Update widgets availability: */
+    mNameSeparator->setEnabled(isMachineInValidMode());
+    mTwFolders->setEnabled(isMachineInValidMode());
+    mTbFolders->setEnabled(isMachineInValidMode());
+
     /* Update root items visibility: */
     updateRootItemsVisibility();
 }

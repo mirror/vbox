@@ -1909,8 +1909,12 @@ void UIMachineSettingsStorage::getFromCache()
     /* Update actions: */
     updateActionsState();
 
+    /* Polish page finally: */
+    polishPage();
+
     /* Revalidate if possible: */
-    if (mValidator) mValidator->revalidate();
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -3439,16 +3443,18 @@ bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UICacheSettingsM
 
 void UIMachineSettingsStorage::setDialogType(SettingsDialogType settingsDialogType)
 {
+    /* Update model 'settings dialog type': */
+    mStorageModel->setDialogType(settingsDialogType);
     /* Update 'settings dialog type' of base class: */
     UISettingsPageMachine::setDialogType(settingsDialogType);
-    /* Update model 'settings dialog type': */
-    mStorageModel->setDialogType(dialogType());
-    /* Update action states: */
-    updateActionsState();
 }
 
 void UIMachineSettingsStorage::polishPage()
 {
+    /* Declare required variables: */
+    QModelIndex index = mTwStorageTree->currentIndex();
+    KDeviceType device = mStorageModel->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
+
     /* Left pane: */
     mLsLeftPane->setEnabled(isMachineInValidMode());
     mTwStorageTree->setEnabled(isMachineInValidMode());
@@ -3464,9 +3470,9 @@ void UIMachineSettingsStorage::polishPage()
     mCbIoCache->setEnabled(isMachineOffline());
     /* Attachments pane: */
     mLsAttributes->setEnabled(isMachineInValidMode());
-    mLbMedium->setEnabled(isMachineInValidMode());
+    mLbMedium->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
     mCbSlot->setEnabled(isMachineOffline());
-    mTbOpen->setEnabled(isMachineInValidMode());
+    mTbOpen->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
     mCbPassthrough->setEnabled(isMachineOffline());
     mLsInformation->setEnabled(isMachineInValidMode());
     mLbHDFormat->setEnabled(isMachineInValidMode());
@@ -3483,6 +3489,9 @@ void UIMachineSettingsStorage::polishPage()
     mLbLocationValue->setEnabled(isMachineInValidMode());
     mLbUsage->setEnabled(isMachineInValidMode());
     mLbUsageValue->setEnabled(isMachineInValidMode());
+
+    /* Update action states: */
+    updateActionsState();
 }
 
 #include "UIMachineSettingsStorage.moc"
