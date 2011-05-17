@@ -295,8 +295,12 @@ void UIMachineSettingsSerialPage::getFromCache()
     /* Applying language settings: */
     retranslateUi();
 
+    /* Polish page finally: */
+    polishPage();
+
     /* Revalidate if possible: */
-    if (mValidator) mValidator->revalidate();
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,

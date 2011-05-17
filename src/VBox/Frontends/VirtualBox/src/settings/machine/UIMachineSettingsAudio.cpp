@@ -69,6 +69,9 @@ void UIMachineSettingsAudio::getFromCache()
     mGbAudio->setChecked(audioData.m_fAudioEnabled);
     mCbAudioDriver->setCurrentIndex(mCbAudioDriver->findText(vboxGlobal().toString(audioData.m_audioDriverType)));
     mCbAudioController->setCurrentIndex(mCbAudioController->findText(vboxGlobal().toString(audioData.m_audioControllerType)));
+
+    /* Polish page finally: */
+    polishPage();
 }
 
 /* Save data from corresponding widgets to cache,

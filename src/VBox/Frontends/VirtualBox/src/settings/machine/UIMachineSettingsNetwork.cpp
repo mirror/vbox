@@ -87,6 +87,9 @@ void UIMachineSettingsNetwork::polishTab()
     m_pMACEditor->setEnabled(m_pParent->isMachineOffline());
     m_pMACButton->setEnabled(m_pParent->isMachineOffline());
 
+    m_pPortForwardingButton->setEnabled(m_pParent->isMachineInValidMode() &&
+                                        attachmentType() == KNetworkAttachmentType_NAT);
+
     /* Postprocessing: */
     if ((m_pParent->isMachineSaved() || m_pParent->isMachineOnline()) && !m_pAdvancedArrow->isExpanded())
         m_pAdvancedArrow->animateClick();
@@ -855,8 +858,12 @@ void UIMachineSettingsNetworkPage::getFromCache()
     /* Applying language settings: */
     retranslateUi();
 
+    /* Polish page finally: */
+    polishPage();
+
     /* Revalidate if possible: */
-    if (m_pValidator) m_pValidator->revalidate();
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,

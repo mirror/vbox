@@ -32,9 +32,10 @@
 UIMachineSettingsUSB::UIMachineSettingsUSB(UISettingsPageType type)
     : UISettingsPage(type)
     , mValidator(0)
+    , m_pToolBar(0)
     , mNewAction(0), mAddAction(0), mEdtAction(0), mDelAction(0)
     , mMupAction(0), mMdnAction(0)
-    , mMenu(0), mUSBDevicesMenu(0)
+    , mUSBDevicesMenu(0)
 {
     /* Apply UI decorations */
     Ui::UIMachineSettingsUSB::setupUi (this);
@@ -67,39 +68,27 @@ UIMachineSettingsUSB::UIMachineSettingsUSB(UISettingsPageType type)
     mMdnAction->setIcon(UIIconPool::iconSet(":/usb_movedown_16px.png",
                                             ":/usb_movedown_disabled_16px.png"));
 
-    /* Prepare menu and toolbar */
-    mMenu = new QMenu (mTwFilters);
-    mMenu->addAction (mNewAction);
-    mMenu->addAction (mAddAction);
-    mMenu->addSeparator();
-    mMenu->addAction (mEdtAction);
-    mMenu->addSeparator();
-    mMenu->addAction (mDelAction);
-    mMenu->addSeparator();
-    mMenu->addAction (mMupAction);
-    mMenu->addAction (mMdnAction);
-
     /* Prepare toolbar */
-    UIToolBar *toolBar = new UIToolBar (mWtFilterHandler);
-    toolBar->setUsesTextLabel (false);
-    toolBar->setIconSize (QSize (16, 16));
-    toolBar->setOrientation (Qt::Vertical);
-    toolBar->addAction (mNewAction);
-    toolBar->addAction (mAddAction);
-    toolBar->addAction (mEdtAction);
-    toolBar->addAction (mDelAction);
-    toolBar->addAction (mMupAction);
-    toolBar->addAction (mMdnAction);
-    toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    toolBar->updateGeometry();
+    m_pToolBar = new UIToolBar (mWtFilterHandler);
+    m_pToolBar->setUsesTextLabel (false);
+    m_pToolBar->setIconSize (QSize (16, 16));
+    m_pToolBar->setOrientation (Qt::Vertical);
+    m_pToolBar->addAction (mNewAction);
+    m_pToolBar->addAction (mAddAction);
+    m_pToolBar->addAction (mEdtAction);
+    m_pToolBar->addAction (mDelAction);
+    m_pToolBar->addAction (mMupAction);
+    m_pToolBar->addAction (mMdnAction);
+    m_pToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    m_pToolBar->updateGeometry();
 #ifdef Q_WS_MAC
     /* On the Mac this has to be slightly higher, than what sizeHint returned.
      * No idea why. */
-    toolBar->setMinimumHeight(toolBar->sizeHint().height() + 4);
+    m_pToolBar->setMinimumHeight(m_pToolBar->sizeHint().height() + 4);
 #else
-    toolBar->setMinimumHeight(toolBar->sizeHint().height());
+    m_pToolBar->setMinimumHeight(m_pToolBar->sizeHint().height());
 #endif /* Q_WS_MAC */
-    mWtFilterHandler->layout()->addWidget (toolBar);
+    mWtFilterHandler->layout()->addWidget (m_pToolBar);
 
     /* Setup connections */
     connect (mGbUSB, SIGNAL (toggled (bool)),
@@ -295,6 +284,9 @@ void UIMachineSettingsUSB::getFromCache()
 
     /* Update page: */
     usbAdapterToggled(mGbUSB->isChecked());
+
+    /* Polish page finally: */
+    polishPage();
 
     /* Revalidate if possible: */
     if (mValidator)
@@ -792,9 +784,23 @@ void UIMachineSettingsUSB::mdnClicked()
     mTwFilters->setCurrentItem (takenItem);
 }
 
-void UIMachineSettingsUSB::showContextMenu (const QPoint &aPos)
+void UIMachineSettingsUSB::showContextMenu(const QPoint &pos)
 {
-    mMenu->exec (mTwFilters->mapToGlobal (aPos));
+    QMenu menu;
+    if (mTwFilters->isEnabled())
+    {
+        menu.addAction(mNewAction);
+        menu.addAction(mAddAction);
+        menu.addSeparator();
+        menu.addAction(mEdtAction);
+        menu.addSeparator();
+        menu.addAction(mDelAction);
+        menu.addSeparator();
+        menu.addAction(mMupAction);
+        menu.addAction(mMdnAction);
+    }
+    if (!menu.isEmpty())
+        menu.exec(mTwFilters->mapToGlobal(pos));
 }
 
 void UIMachineSettingsUSB::sltUpdateActivityState(QTreeWidgetItem *pChangedItem)
@@ -913,8 +919,7 @@ QString UIMachineSettingsUSB::toolTipFor(const UIDataSettingsMachineUSBFilter &u
 void UIMachineSettingsUSB::polishPage()
 {
     mGbUSB->setEnabled(isMachineOffline());
-    mCbUSB2->setEnabled(isMachineOffline());
-    mGbUSBFilters->setEnabled(isMachineInValidMode());
-    mTwFilters->setEnabled(isMachineInValidMode());
+    mUSBChild->setEnabled(isMachineInValidMode() && mGbUSB->isChecked());
+    mCbUSB2->setEnabled(isMachineOffline() && mGbUSB->isChecked());
 }
 

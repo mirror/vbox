@@ -196,10 +196,8 @@ void UIMachineSettingsDisplay::getFromCache()
 
     /* Load display data to page: */
     mSlMonitors->setValue(displayData.m_cMonitorCount);
-    mCb3D->setEnabled(vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable());
     mCb3D->setChecked(displayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    mCb2DVideo->setEnabled(VBoxGlobal::isAcceleration2DVideoAvailable());
     mCb2DVideo->setChecked(displayData.m_f2dAccelerationEnabled);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
     checkVRAMRequirements();
@@ -215,8 +213,12 @@ void UIMachineSettingsDisplay::getFromCache()
     else
         mTwDisplay->removeTab(1);
 
+    /* Polish page finally: */
+    polishPage();
+
     /* Revalidate if possible: */
-    if (mValidator) mValidator->revalidate();
+    if (mValidator)
+        mValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -473,9 +475,9 @@ void UIMachineSettingsDisplay::polishPage()
     mSlMonitors->setEnabled(isMachineOffline());
     mLeMonitors->setEnabled(isMachineOffline());
     mLbOptions->setEnabled(isMachineOffline());
-    mCb3D->setEnabled(isMachineOffline());
+    mCb3D->setEnabled(isMachineOffline() && vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable());
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    mCb2DVideo->setEnabled(isMachineOffline());
+    mCb2DVideo->setEnabled(isMachineOffline() && VBoxGlobal::isAcceleration2DVideoAvailable());
 #endif /* VBOX_WITH_VIDEOHWACCEL */
     /* VRDE tab: */
     mCbVRDE->setEnabled(isMachineInValidMode());

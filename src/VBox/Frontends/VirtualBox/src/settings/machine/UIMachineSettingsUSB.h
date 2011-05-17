@@ -24,6 +24,7 @@
 #include "COMDefs.h"
 
 class VBoxUSBMenu;
+class UIToolBar;
 
 /* Common settings / USB page / USB filter data: */
 struct UIDataSettingsMachineUSBFilter
@@ -155,7 +156,7 @@ private slots:
     void delClicked();
     void mupClicked();
     void mdnClicked();
-    void showContextMenu (const QPoint &aPos);
+    void showContextMenu(const QPoint &pos);
     void sltUpdateActivityState(QTreeWidgetItem *pChangedItem);
 
 private:
@@ -183,13 +184,13 @@ private:
 
     /* Other variables: */
     QIWidgetValidator *mValidator;
+    UIToolBar *m_pToolBar;
     QAction *mNewAction;
     QAction *mAddAction;
     QAction *mEdtAction;
     QAction *mDelAction;
     QAction *mMupAction;
     QAction *mMdnAction;
-    QMenu *mMenu;
     VBoxUSBMenu *mUSBDevicesMenu;
     QString mUSBFilterName;
     QList<UIDataSettingsMachineUSBFilter> m_filters;
