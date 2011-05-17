@@ -32,17 +32,21 @@ setup_test_input_install_udev() {
     DELETED_UDEV_FILE=""
 }
 
-udev_write_rules() {
+udev_write_vboxdrv() {
     VBOXDRV_GRP="$1"
     VBOXDRV_MODE="$2"
-    INSTALLATION_DIR="$3"
-    USB_GROUP="$4"
 
-    echo "KERNEL=${udev_fix}\"vboxdrv\", NAME=\"vboxdrv\", OWNER=\"root\", GROUP=\"$VBOXDRV_GRP\", MODE=\"$VBOXDRV_MODE\""
-    echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"add\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}${USB_GROUP}\""
-    echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"add\", ENV{DEVTYPE}=${udev_fix}\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}${USB_GROUP}\""
-    echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"remove\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
-    echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"remove\", ENV{DEVTYPE}=${udev_fix}\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
+    echo "KERNEL==\"vboxdrv\", NAME=\"vboxdrv\", OWNER=\"root\", GROUP=\"$VBOXDRV_GRP\", MODE=\"$VBOXDRV_MODE\""
+}
+
+udev_write_usb() {
+    INSTALLATION_DIR="$1"
+    USB_GROUP="$2"
+
+    echo "SUBSYSTEM==\"usb_device\", ACTION==\"add\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}${USB_GROUP}\""
+    echo "SUBSYSTEM==\"usb\", ACTION==\"add\", ENV{DEVTYPE}==\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}${USB_GROUP}\""
+    echo "SUBSYSTEM==\"usb_device\", ACTION==\"remove\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
+    echo "SUBSYSTEM==\"usb\", ACTION==\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
 }
 
 install_udev_run() {
@@ -56,8 +60,8 @@ install_udev_run() {
     # Extra space!
     case "$USB_GROUP" in ?*) USB_GROUP=" $USB_GROUP" ;; esac
     case "$NO_INSTALL" in
-        "1") ;;
-        *)
+    "1") ;;
+    *)
         if my_test -d /etc/udev/rules.d; then
             udev_call=""
             udev_app=`my_which udevadm 2> /dev/null`
@@ -69,16 +73,27 @@ install_udev_run() {
                     udev_call="${udev_app} -V 2> /dev/null"
                 fi
             fi
-            udev_fix="="
+            udev_fix=""
             if [ "${udev_call}" != "" ]; then
                 udev_out=`${udev_call}`
                 udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
                 if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
-                    udev_fix=""
+                    udev_fix="1"
                 fi
             fi
-            udev_write_rules "$VBOXDRV_GRP" "$VBOXDRV_MODE" \
-                             "$INSTALLATION_DIR" "$USB_GROUP"
+            case "$udev_fix" in
+            "1")
+                udev_write_vboxdrv "$VBOXDRV_GRP" "$VBOXDRV_MODE" |
+                    sed 's/\([^+=]*\)[+=]*\([^"]*"[^"]*"\)/\1=\2/g'
+                udev_write_usb "$INSTALLATION_DIR" "$USB_GROUP" |
+                    sed 's/\([^+=]*\)[+=]*\([^"]*"[^"]*"\)/\1=\2/g'
+                ;;
+            *)
+                udev_write_vboxdrv "$VBOXDRV_GRP" "$VBOXDRV_MODE"
+                udev_write_usb "$INSTALLATION_DIR" "$USB_GROUP"
+                ;;
+            esac
+                
         fi
         ;;
     esac
