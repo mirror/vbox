@@ -237,7 +237,8 @@ fi
 rm -f /etc/vbox/module_not_compiled
 
 # install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox)
-install_udev_package vboxusers > /etc/udev/rules.d/10-vboxdrv.rules
+install_udev root 0600 /usr/share/virtualbox vboxusers "$INSTALL_NO_UDEV" \
+             > /etc/udev/rules.d/10-vboxdrv.rules
 
 # Build our device tree
 for i in /sys/bus/usb/devices/*; do

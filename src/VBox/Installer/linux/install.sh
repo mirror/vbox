@@ -442,7 +442,7 @@ if [ "$ACTION" = "install" ]; then
     fi
 
     # Create udev description file
-    install_udev_run "$VBOXDRV_GRP" "$VBOXDRV_MODE" "$INSTALLATION_DIR" \
+    install_udev "$VBOXDRV_GRP" "$VBOXDRV_MODE" "$INSTALLATION_DIR" \
         > /etc/udev/rules.d/10-vboxdrv.rules
 
     # Build our device tree

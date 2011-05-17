@@ -49,7 +49,7 @@ udev_write_usb() {
     echo "SUBSYSTEM==\"usb\", ACTION==\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN+=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
 }
 
-install_udev_run() {
+install_udev() {
     # install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox) for distribution packages
     VBOXDRV_GRP="$1"      # The group owning the vboxdrv device
     VBOXDRV_MODE="$2"     # The access mode for the vboxdrv device
@@ -111,11 +111,4 @@ cleanup_test_input_install_udev() {
     setup_normal_input_install_udev
     unset test_udev
     DELETED_UDEV_FILE=""
-}
-
-install_udev_package() {
-    # install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox) for distribution packages
-    usb_group=$1
-    install_udev_run root 0600 /usr/share/virtualbox "${usb_group}" \
-                     "$INSTALL_NO_UDEV"
 }

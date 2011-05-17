@@ -47,7 +47,8 @@ if [ "$1" = "configure" ]; then
   else
       usb_group=root
   fi
-  install_udev_package ${usb_group} > /etc/udev/rules.d/10-vboxdrv.rules
+  install_udev root 0600 /usr/share/virtualbox "${usb_group}" \
+               "$INSTALL_NO_UDEV" > /etc/udev/rules.d/10-vboxdrv.rules
   # Build our device tree
   for i in /sys/bus/usb/devices/*; do
     if test -r "$i/dev"; then
