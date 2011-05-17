@@ -2069,8 +2069,15 @@ check_darwinversion()
   test_header "Darwin version"
   darwin_ver=`uname -r`
   case "$darwin_ver" in
+    11\.*)
+      darwin_ver="10.7" # Lion
+      sdk=/Developer/SDKs/MacOSX10.6.sdk
+      CXX_FLAGS="-mmacosx-version-min=10.6 -isysroot $sdk -Wl,-syslibroot,$sdk"
+      # We disable the java stuff until Apple make the java stuff downloadable.
+      WITH_JAVA=0
+      ;;
     10\.*)
-      darwin_ver="10.6"
+      darwin_ver="10.6" # Snow Leopard
       if [ "$BUILD_MACHINE" = "x86" ]; then
           sdk=/Developer/SDKs/MacOSX10.5.sdk
           CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
@@ -2083,16 +2090,15 @@ check_darwinversion()
 #      test "$CXX" = "g++" && CXX="g++-4.0"
       ;;
     9\.*)
-      darwin_ver="10.5"
+      darwin_ver="10.5" # Leopard
       sdk=/Developer/SDKs/MacOSX10.5.sdk
       CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
 #      test "$CC" = "gcc" && CC="gcc-4.0"
 #      test "$CXX" = "g++" && CXX="g++-4.0"
       cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
-      cnf_append "VBOX_MACOS_10_5_WORKAROUND" "1"
       ;;
     8\.*)
-      darwin_ver="10.4"
+      darwin_ver="10.4" # Tiger
       sdk=/Developer/SDKs/MacOSX10.4u.sdk
       CXX_FLAGS="-mmacosx-version-min=10.4 -isysroot $sdk -Wl,-syslibroot,$sdk"
 #      test "$CC" = "gcc" && CC="gcc-4.0"
