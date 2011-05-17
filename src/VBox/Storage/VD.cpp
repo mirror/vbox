@@ -2720,21 +2720,20 @@ static int vdUserXferCompleted(PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
     LogFlowFunc(("pIoStorage=%#p pIoCtx=%#p pfnComplete=%#p pvUser=%#p cbTransfer=%zu rcReq=%Rrc\n",
                  pIoStorage, pIoCtx, pfnComplete, pvUser, cbTransfer, rcReq));
 
+    RTCritSectEnter(&pDisk->CritSect);
     Assert(pIoCtx->cbTransferLeft >= cbTransfer);
     ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbTransfer);
     ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
 
     if (pfnComplete)
-    {
-        RTCritSectEnter(&pDisk->CritSect);
         rc = pfnComplete(pIoStorage->pVDIo->pBackendData, pIoCtx, pvUser, rcReq);
-        RTCritSectLeave(&pDisk->CritSect);
-    }
 
     if (RT_SUCCESS(rc))
         rc = vdIoCtxContinue(pIoCtx, rcReq);
     else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         rc = VINF_SUCCESS;
+
+    RTCritSectLeave(&pDisk->CritSect);
 
     return rc;
 }
@@ -2776,7 +2775,6 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
     }
     else
         RTListMove(&ListIoCtxWaiting, &pMetaXfer->ListIoCtxWaiting);
-    RTCritSectLeave(&pDisk->CritSect);
 
     /* Go through the waiting list and continue the I/O contexts. */
     while (!RTListIsEmpty(&ListIoCtxWaiting))
@@ -2791,11 +2789,7 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
         ASMAtomicDecU32(&pIoCtx->cMetaTransfersPending);
 
         if (pfnComplete)
-        {
-            RTCritSectEnter(&pDisk->CritSect);
             rc = pfnComplete(pIoStorage->pVDIo->pBackendData, pIoCtx, pvUser, rcReq);
-            RTCritSectLeave(&pDisk->CritSect);
-        }
 
         LogFlow(("Completion callback for I/O context %#p returned %Rrc\n", pIoCtx, rc));
 
@@ -2811,7 +2805,6 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
     /* Remove if not used anymore. */
     if (RT_SUCCESS(rcReq) && !fFlush)
     {
-        RTCritSectEnter(&pDisk->CritSect);
         pMetaXfer->cRefs--;
         if (!pMetaXfer->cRefs && RTListIsEmpty(&pMetaXfer->ListIoCtxWaiting))
         {
@@ -2821,10 +2814,11 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
             Assert(fRemoved);
             RTMemFree(pMetaXfer);
         }
-        RTCritSectLeave(&pDisk->CritSect);
     }
     else if (fFlush)
         RTMemFree(pMetaXfer);
+
+    RTCritSectLeave(&pDisk->CritSect);
 
     return VINF_SUCCESS;
 }
