@@ -988,7 +988,7 @@ int handleExtPack(HandlerArg *a)
 
         static const RTGETOPTDEF s_aUninstallOptions[] =
         {
-            { "--forced",  'f', RTGETOPT_REQ_NOTHING },
+            { "--force",  'f', RTGETOPT_REQ_NOTHING },
         };
 
         RTGetOptInit(&GetState, a->argc, a->argv, s_aUninstallOptions, RT_ELEMENTS(s_aUninstallOptions), 1, 0);
