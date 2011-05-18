@@ -258,8 +258,8 @@ typedef struct X86CPUIDFEATECX
     unsigned    u1AVX : 1;
     /** Bit 29 - 30 - Reserved */
     unsigned    u2Reserved3 : 2;
-    /** Reserved, always 0. */
-    unsigned    u1Reserved4 : 1;
+    /** Bit 31 - Hypervisor present (we're a guest). */
+    unsigned    u1HVP : 1;
 } X86CPUIDFEATECX;
 /** Pointer to CPUID Feature Information - ECX. */
 typedef X86CPUIDFEATECX *PX86CPUIDFEATECX;
