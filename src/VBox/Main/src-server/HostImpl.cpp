@@ -1658,8 +1658,9 @@ HRESULT Host::getDrives(DeviceType_T mediumType,
             // list was built, and this was a subsequent call: then compare the old and the new lists
 
             // remove drives from the cached list which are no longer present
-            MediaList::iterator itCached = pllCached->begin();
-            while (itCached != pllCached->end())
+            for (MediaList::iterator itCached = pllCached->begin();
+                 itCached != pllCached->end();
+                 /*nothing */)
             {
                 Medium *pCached = *itCached;
                 const Utf8Str strLocationCached = pCached->getLocationFull();
