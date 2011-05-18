@@ -1263,9 +1263,6 @@ typedef PGMLIVESAVERAMPAGE *PPGMLIVESAVERAMPAGE;
 #define PGMLIVSAVEPAGE_MAX_DIRTIED 0x00fffff0
 
 
-/** Enables the RAM range search trees. */
-#define PGM_USE_RAMRANGE_SEARCH_TREES
-
 /**
  * RAM range for GC Phys to HC Phys conversion.
  *
@@ -1301,7 +1298,6 @@ typedef struct PGMRAMRANGE
     /** Pointer to self - RC pointer. */
     RCPTRTYPE(struct PGMRAMRANGE *)     pSelfRC;
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     /** Alignment padding. */
     RTRCPTR                             Alignment0;
     /** Pointer to the left search three node - ring-3 context. */
@@ -1316,15 +1312,10 @@ typedef struct PGMRAMRANGE
     RCPTRTYPE(struct PGMRAMRANGE *)     pLeftRC;
     /** Pointer to the right search three node - raw-mode context. */
     RCPTRTYPE(struct PGMRAMRANGE *)     pRightRC;
-#endif
 
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
-# if HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 2 : 0];
-# endif
-#else
-    uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 1 : 3];
 #endif
     /** Array of physical guest page tracking structures. */
     PGMPAGE                             aPages[1];

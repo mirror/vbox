@@ -179,7 +179,6 @@ PPGMRAMRANGE pgmPhysGetRangeSlow(PVM pVM, RTGCPHYS GCPhys)
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
     while (pRam)
     {
@@ -195,20 +194,6 @@ PPGMRAMRANGE pgmPhysGetRangeSlow(PVM pVM, RTGCPHYS GCPhys)
             pRam = pRam->CTX_SUFF(pRight);
     }
     return NULL;
-#else
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-    while (GCPhys > pRam->GCPhysLast)
-    {
-        pRam = pRam->CTX_SUFF(pNext);
-        if (!pRam)
-            return NULL;
-    }
-    if (GCPhys < pRam->GCPhys)
-        return NULL;
-
-    pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
-    return pRam;
-#endif
 }
 
 
@@ -221,7 +206,6 @@ PPGMRAMRANGE pgmPhysGetRangeAtOrAboveSlow(PVM pVM, RTGCPHYS GCPhys)
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     PPGMRAMRANGE pLastLeft = NULL;
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
     while (pRam)
@@ -241,17 +225,6 @@ PPGMRAMRANGE pgmPhysGetRangeAtOrAboveSlow(PVM pVM, RTGCPHYS GCPhys)
             pRam = pRam->CTX_SUFF(pRight);
     }
     return pLastLeft;
-#else
-    PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-    while (GCPhys > pRam->GCPhysLast)
-    {
-        pRam = pRam->CTX_SUFF(pNext);
-        if (!pRam)
-            return NULL;
-    }
-    pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
-    return pRam;
-#endif
 }
 
 
@@ -264,7 +237,6 @@ PPGMPAGE pgmPhysGetPageSlow(PVM pVM, RTGCPHYS GCPhys)
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
     while (pRam)
     {
@@ -280,19 +252,6 @@ PPGMPAGE pgmPhysGetPageSlow(PVM pVM, RTGCPHYS GCPhys)
         else
             pRam = pRam->CTX_SUFF(pRight);
     }
-#else
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
-    {
-        RTGCPHYS off = GCPhys - pRam->GCPhys;
-        if (off < pRam->cb)
-        {
-            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
-            return &pRam->aPages[off >> PAGE_SHIFT];
-        }
-    }
-#endif
     return NULL;
 }
 
@@ -306,7 +265,6 @@ int pgmPhysGetPageExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
     while (pRam)
     {
@@ -323,20 +281,6 @@ int pgmPhysGetPageExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
         else
             pRam = pRam->CTX_SUFF(pRight);
     }
-#else
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
-    {
-        RTGCPHYS off = GCPhys - pRam->GCPhys;
-        if (off < pRam->cb)
-        {
-            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
-            *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
-            return VINF_SUCCESS;
-        }
-    }
-#endif
 
     *ppPage = NULL;
     return VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;
@@ -352,7 +296,6 @@ int pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPG
 {
     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,RamRangeTlbMisses));
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangeTree);
     while (pRam)
     {
@@ -370,21 +313,6 @@ int pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPG
         else
             pRam = pRam->CTX_SUFF(pRight);
     }
-#else
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.CTX_SUFF(pRamRangesX);
-         pRam;
-         pRam = pRam->CTX_SUFF(pNext))
-    {
-        RTGCPHYS off = GCPhys - pRam->GCPhys;
-        if (off < pRam->cb)
-        {
-            pVM->pgm.s.CTX_SUFF(apRamRangesTlb)[PGM_RAMRANGE_TLB_IDX(GCPhys)] = pRam;
-            *ppRam  = pRam;
-            *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
-            return VINF_SUCCESS;
-        }
-    }
-#endif
 
     *ppRam  = NULL;
     *ppPage = NULL;

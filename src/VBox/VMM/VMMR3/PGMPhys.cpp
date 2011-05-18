@@ -577,7 +577,6 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
     return rc;
 }
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
 
 #define MAKE_LEAF(a_pNode) \
     do { \
@@ -719,7 +718,6 @@ static void pgmR3PhysRebuildRamRangeSearchTrees(PVM pVM)
 #undef MAKE_LEAF
 #undef INSERT_LEFT
 #undef INSERT_RIGHT
-#endif /* PGM_USE_RAMRANGE_SEARCH_TREES */
 
 /**
  * Relinks the RAM ranges using the pSelfRC and pSelfR0 pointers.
@@ -769,9 +767,7 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     pgmR3PhysRebuildRamRangeSearchTrees(pVM);
-#endif
 }
 
 
@@ -809,9 +805,7 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     pgmR3PhysRebuildRamRangeSearchTrees(pVM);
-#endif
     pgmUnlock(pVM);
 }
 
@@ -847,9 +841,7 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
     }
     ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
-#ifdef PGM_USE_RAMRANGE_SEARCH_TREES
     pgmR3PhysRebuildRamRangeSearchTrees(pVM);
-#endif
     pgmUnlock(pVM);
 }
 
