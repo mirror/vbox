@@ -719,6 +719,17 @@ void VBoxProblemReporter::cannotLoadMachineSettings (const CMachine &machine,
              formatErrorInfo (res));
 }
 
+bool VBoxProblemReporter::confirmedSettingsReloading(QWidget *pParent)
+{
+    int rc = message(pParent, Question,
+                     tr("<p>The machine settings were changed while you were editing them. "
+                        "You currently have unsaved setting changes.</p>"
+                        "<p>Would you like to reload the changed settings or to keep your own changes?</p>"), 0,
+                     QIMessageBox::Yes, QIMessageBox::No | QIMessageBox::Default | QIMessageBox::Escape, 0,
+                     tr("Reload settings"), tr("Keep changes"), 0);
+    return rc == QIMessageBox::Yes;
+}
+
 void VBoxProblemReporter::cannotStartMachine (const CConsole &console)
 {
     /* preserve the current error info before calling the object again */

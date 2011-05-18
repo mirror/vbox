@@ -109,6 +109,7 @@ private slots:
 private:
 
     bool isPageAvailable(int iPageId);
+    bool isSettingsChanged();
 
     QString m_strMachineId;
     KMachineState m_machineState;

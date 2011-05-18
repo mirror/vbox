@@ -95,6 +95,9 @@ protected:
      * this task SHOULD be performed in GUI thread only: */
     void getFromCache();
 
+    /* Page changed: */
+    bool changed() const { return m_cache.wasChanged(); }
+
     /* Save data from corresponding widgets to cache,
      * this task SHOULD be performed in GUI thread only: */
     void putToCache();

@@ -186,6 +186,9 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
+    /* Page changed: */
+    bool changed() const { return m_cache.wasChanged(); }
+
     void setValidator(QIWidgetValidator *pValidator);
     bool revalidate(QString &strWarning, QString &strTitle);
 

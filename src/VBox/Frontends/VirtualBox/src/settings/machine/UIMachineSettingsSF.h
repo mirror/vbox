@@ -99,6 +99,9 @@ protected:
     void saveFromCacheTo(QVariant &data);
     void saveFromCacheTo(UISharedFolderType sharedFoldersType);
 
+    /* Page changed: */
+    bool changed() const { return m_cache.wasChanged(); }
+
     void setOrderAfter (QWidget *aWidget);
 
     void retranslateUi();

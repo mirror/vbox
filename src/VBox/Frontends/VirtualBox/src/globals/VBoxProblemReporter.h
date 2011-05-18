@@ -201,6 +201,8 @@ public:
                                     bool strict = true,
                                     QWidget *parent = 0);
 
+    bool confirmedSettingsReloading(QWidget *pParent);
+
     void cannotStartMachine (const CConsole &console);
     void cannotStartMachine (const CProgress &progress);
     void cannotPauseMachine (const CConsole &console);
