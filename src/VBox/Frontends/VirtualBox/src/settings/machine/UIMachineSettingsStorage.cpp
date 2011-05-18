@@ -1922,7 +1922,7 @@ void UIMachineSettingsStorage::getFromCache()
 void UIMachineSettingsStorage::putToCache()
 {
     /* Prepare storage data: */
-    UIDataSettingsMachineStorage storageData;
+    UIDataSettingsMachineStorage storageData = m_cache.base();
 
     /* For each storage controller: */
     QModelIndex rootIndex = mStorageModel->root();
