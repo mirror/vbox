@@ -616,7 +616,15 @@ static PVUSBURB usbProxyWinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies
      * Wait/poll.
      */
     PVUSBURB pUrb = NULL;
-    unsigned cQueuedUrbs = pPriv->cQueuedUrbs;
+    unsigned cQueuedUrbs;
+    /* we must get the queued urb count inside a lock
+     * otherwise we may end up in a situation when cQueuedUrbs is incremented
+     * by the usbProxyWinAsyncIoThread, but the pPriv->paHandles[cQueuedUrbs-1]
+     * is still invalid */
+    RTCritSectEnter(&pPriv->CritSect);
+    cQueuedUrbs = pPriv->cQueuedUrbs;
+    RTCritSectLeave(&pPriv->CritSect);
+
     DWORD rc = WaitForMultipleObjects(cQueuedUrbs, pPriv->paHandles, FALSE, cMillies);
     if (rc >= WAIT_OBJECT_0 && rc < WAIT_OBJECT_0 + cQueuedUrbs)
     {
