@@ -36,46 +36,50 @@
 
 
 /**
- * Fallback for vbglR3GetAdditionsVersion.
+ * Fallback for VbglR3GetAdditionsVersion.
  */
 static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszVerEx, char **ppszRev)
 {
-    /* Raw version string: major.minor.build. */
+    int rc = VINF_SUCCESS;
     if (ppszVer)
+        rc = RTStrDupEx(ppszVer, VBOX_VERSION_STRING_RAW);
+    if (RT_SUCCESS(rc))
     {
-        *ppszVer = RTStrDup(VBOX_VERSION_STRING_RAW);
-        if (!*ppszVer)
-            return VERR_NO_STR_MEMORY;
-    }
-
-    /* Extended version string: major.minor.build (+ vendor [suffix(es)]). */
-    if (ppszVerEx)
-    {
-        *ppszVerEx = RTStrDup(VBOX_VERSION_STRING);
-        if (!*ppszVerEx)
-            return VERR_NO_STR_MEMORY;
-    }
-
-    if (ppszRev)
-    {
-        char szRev[64];
-        RTStrPrintf(szRev, sizeof(szRev), "%d", VBOX_SVN_REV);
-        *ppszRev = RTStrDup(szRev);
-        if (!*ppszRev)
+        if (ppszVerEx)
+            rc = RTStrDupEx(ppszVerEx, VBOX_VERSION_STRING);
+        if (RT_SUCCESS(rc))
         {
-            if (ppszVer)
+            if (ppszRev)
             {
-                RTStrFree(*ppszVer);
-                *ppszVer = NULL;
+#if 0
+                char szRev[64];
+                RTStrPrintf(szRev, sizeof(szRev), "%d", VBOX_SVN_REV);
+                rc = RTStrDupEx(ppszRev, szRev);
+#else
+                rc = RTStrDupEx(ppszRev, RT_XSTR(VBOX_SVN_REV));
+#endif
             }
-            return VERR_NO_STR_MEMORY;
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+
+            /* bail out: */
+        }
+        if (ppszVerEx)
+        {
+            RTStrFree(*ppszVerEx);
+            *ppszVerEx = NULL;
         }
     }
-
-    return VINF_SUCCESS;
+    if (ppszVer)
+    {
+        RTStrFree(*ppszVer);
+        *ppszVer = NULL;
+    }
+    return rc;
 }
 
 #ifdef RT_OS_WINDOWS
+
 /**
  * Looks up the storage path handle (registry).
  *
@@ -84,7 +88,7 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszVerEx
  *                      accepted. The returned pointer must be closed by
  *                      vbglR3CloseAdditionsWinStoragePath().
  */
-static int vbglR3GetAdditionsWinStoragePath(PHKEY phKey)
+static int vbglR3QueryAdditionsWinStoragePath(PHKEY phKey)
 {
     /*
      * Try get the *installed* version first.
@@ -138,7 +142,7 @@ static int vbglR3GetAdditionsWinStoragePath(PHKEY phKey)
  *
  * @returns IPRT status value
  * @param   hKey        Handle to close, retrieved by
- *                      vbglR3GetAdditionsWinStoragePath().
+ *                      vbglR3QueryAdditionsWinStoragePath().
  */
 static int vbglR3CloseAdditionsWinStoragePath(HKEY hKey)
 {
@@ -173,6 +177,7 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
     return rc;
 }
 
+
 /**
  * Retrieves the installed Guest Additions version and/or revision.
  *
@@ -190,12 +195,30 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
  */
 VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerEx, char **ppszRev)
 {
+    /*
+     * Zap the return value up front.
+     */
+    if (ppszVer)
+        *ppszVer   = NULL;
+    if (ppszVerEx)
+        *ppszVerEx = NULL;
+    if (ppszRev)
+        *ppszRev   = NULL;
+
+
 #ifdef RT_OS_WINDOWS
     HKEY hKey;
-    int rc = vbglR3GetAdditionsWinStoragePath(&hKey);
+    int rc = vbglR3QueryAdditionsWinStoragePath(&hKey);
     if (RT_SUCCESS(rc))
     {
-        /* Version. */
+        /*
+         * Version.
+         */
+        /** @todo r=bird: This code has broken error handling: 1. Errors are
+         *        overwritten and hidden, leaving return values undefined.
+         *        2. On error, memory could be leaked.
+         *  Also, just use a static 32-byte buffer instead of allocating
+         *  three!  In fact, why not just factor out the string value query? */
         LONG l;
         DWORD dwType;
         DWORD dwSize = 32;
@@ -245,7 +268,10 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerEx, char
             else
                 rc = VERR_NO_MEMORY;
         }
-        /* Revision. */
+
+        /*
+         * Revision.
+         */
         if (ppszRev)
         {
             dwSize = 32; /* Reset */
@@ -309,7 +335,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsInstallationPath(char **ppszPath)
     int rc;
 #ifdef RT_OS_WINDOWS
     HKEY hKey;
-    rc = vbglR3GetAdditionsWinStoragePath(&hKey);
+    rc = vbglR3QueryAdditionsWinStoragePath(&hKey);
     if (RT_SUCCESS(rc))
     {
         /* Installation directory. */
