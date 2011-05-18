@@ -652,7 +652,12 @@ static PVUSBURB usbProxyWinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies
     }
     else if (   rc == WAIT_FAILED
              || (rc >= WAIT_ABANDONED_0 && rc < WAIT_ABANDONED_0 + cQueuedUrbs))
-        AssertMsgFailed(("USB: WaitForMultipleObjects %d objects failed with rc=%d and last error %d\n", cQueuedUrbs, rc, GetLastError()));
+    {
+        /* do not use GetLastError() in AssertMsgFailed directly since the "real" err will be overwriten with the
+         * RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); call encapsulated by AssertMsgFailed */
+        DWORD winEr = GetLastError();
+        AssertMsgFailed(("USB: WaitForMultipleObjects %d objects failed with rc=%d and last error %d\n", cQueuedUrbs, rc, winEr));
+    }
 
     return pUrb;
 }
