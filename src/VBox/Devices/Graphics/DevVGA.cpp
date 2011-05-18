@@ -6146,6 +6146,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             reqSize = pDefMode->info.XResolution * pDefMode->info.YResolution *  pixelWidth;
             if (reqSize >= pThis->vram_size)
                 continue;
+            if (   pDefMode->info.XResolution > maxBiosXRes
+                || pDefMode->info.YResolution > maxBiosYRes)
+                continue;
             *pCurMode = *pDefMode;
             pCurMode->mode += 0x30;
             pCurMode->info.YResolution -= cyReduction;
