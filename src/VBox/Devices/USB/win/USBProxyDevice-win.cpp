@@ -35,6 +35,7 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/asm.h>
 #include "../USBProxyDevice.h"
 #include <VBox/usblib.h>
 //#include "USBLibInternal.h"
@@ -616,14 +617,7 @@ static PVUSBURB usbProxyWinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies
      * Wait/poll.
      */
     PVUSBURB pUrb = NULL;
-    unsigned cQueuedUrbs;
-    /* we must get the queued urb count inside a lock
-     * otherwise we may end up in a situation when cQueuedUrbs is incremented
-     * by the usbProxyWinAsyncIoThread, but the pPriv->paHandles[cQueuedUrbs-1]
-     * is still invalid */
-    RTCritSectEnter(&pPriv->CritSect);
-    cQueuedUrbs = pPriv->cQueuedUrbs;
-    RTCritSectLeave(&pPriv->CritSect);
+    unsigned cQueuedUrbs = ASMAtomicReadU32((volatile uint32_t *)&pPriv->cQueuedUrbs);
 
     DWORD rc = WaitForMultipleObjects(cQueuedUrbs, pPriv->paHandles, FALSE, cMillies);
     if (rc >= WAIT_OBJECT_0 && rc < WAIT_OBJECT_0 + cQueuedUrbs)
@@ -727,9 +721,12 @@ static DECLCALLBACK(int) usbProxyWinAsyncIoThread(RTTHREAD ThreadSelf, void *lpP
                         || GetLastError() == ERROR_IO_PENDING)
                     {
                         /* insert into the queue */
-                        unsigned j = pPriv->cQueuedUrbs++;
+                        unsigned j = pPriv->cQueuedUrbs;
                         pPriv->paQueuedUrbs[j] = pQUrbWin;
-                        pPriv->paHandles[j]    = pQUrbWin->overlapped.hEvent;
+                        pPriv->paHandles[j] = pQUrbWin->overlapped.hEvent;
+                        /* do an atomic increment to allow usbProxyWinUrbReap thread get it outside a lock,
+                         * being sure that pPriv->paHandles contains cQueuedUrbs valid handles */
+                        ASMAtomicIncU32((uint32_t volatile *)&pPriv->cQueuedUrbs);
                     }
                     else
                     {
