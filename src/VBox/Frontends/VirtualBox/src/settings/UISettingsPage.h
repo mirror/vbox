@@ -105,6 +105,9 @@ public:
     bool isMachineOnline() const { return dialogType() == SettingsDialogType_Online; }
     bool isMachineInValidMode() const { return isMachineOffline() || isMachineSaved() || isMachineOnline(); }
 
+    /* Page changed: */
+    virtual bool changed() const = 0;
+
     /* Page 'ID' stuff: */
     int id() const { return m_cId; }
     void setId(int cId) { m_cId = cId; }
@@ -151,6 +154,9 @@ protected:
 
     /* Upload m_properties & m_settings to data: */
     void uploadData(QVariant &data) const;
+
+    /* Page changed: */
+    bool changed() const { return false; }
 
     /* Global data source: */
     CSystemProperties m_properties;
