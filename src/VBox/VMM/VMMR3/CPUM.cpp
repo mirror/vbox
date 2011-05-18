@@ -935,6 +935,13 @@ static int cpumR3CpuIdInit(PVM pVM)
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
 
     /*
+     * We don't enable the Hypervisor Present bit by default, but it may
+     * be needed by some guests.
+     */
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "EnableHVP", &fEnable, false);                AssertRCReturn(rc, rc);
+    if (fEnable)
+        CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_HVP);
+    /*
      * Log the cpuid and we're good.
      */
     bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
