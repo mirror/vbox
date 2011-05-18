@@ -52,7 +52,8 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     , m_dialogType(SettingsDialogType_Wrong)
     , m_fPolished(false)
     /* Loading/saving stuff: */
-    , m_fProcessed(false)
+    , m_fLoaded(false)
+    , m_fSaved(false)
     /* Status bar stuff: */
     , m_pStatusBar(new QStackedWidget(this))
     /* Process bar stuff: */
@@ -216,9 +217,14 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 #endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 }
 
-void UISettingsDialog::sltMarkProcessed()
+void UISettingsDialog::sltMarkLoaded()
 {
-    m_fProcessed = true;
+    m_fLoaded = true;
+}
+
+void UISettingsDialog::sltMarkSaved()
+{
+    m_fSaved = true;
 }
 
 void UISettingsDialog::sltHandleProcessStarted()
@@ -237,6 +243,16 @@ void UISettingsDialog::sltHandlePageProcessed()
         else
             m_pStatusBar->setCurrentIndex(0);
     }
+}
+
+void UISettingsDialog::loadData()
+{
+    m_fLoaded = false;
+}
+
+void UISettingsDialog::saveData()
+{
+    m_fSaved = false;
 }
 
 void UISettingsDialog::retranslateUi()
@@ -487,7 +503,7 @@ void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus /* = false */)
 
 void UISettingsDialog::reject()
 {
-    if (m_fProcessed)
+    if (m_fLoaded)
         QIMainDialog::reject();
 }
 
@@ -590,7 +606,7 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
 
 void UISettingsDialog::closeEvent(QCloseEvent *pEvent)
 {
-    if (m_fProcessed)
+    if (m_fLoaded)
         QIMainDialog::closeEvent(pEvent);
     else
         pEvent->ignore();
