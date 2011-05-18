@@ -404,13 +404,16 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
 
 void UISettingsDialogGlobal::loadData()
 {
+    /* Call for base-class: */
+    UISettingsDialog::loadData();
+
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
     UISettingsDataGlobal data(vboxGlobal().virtualBox().GetSystemProperties(), vboxGlobal().settings());
     /* Create global settings loader,
      * it will load global settings & delete itself in the appropriate time: */
     UISettingsSerializer *pGlobalSettingsLoader = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Load);
-    connect(pGlobalSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkProcessed()));
+    connect(pGlobalSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkLoaded()));
     /* Set pages to be loaded: */
     pGlobalSettingsLoader->setPageList(m_pSelector->settingPages());
     /* Start loader: */
@@ -421,6 +424,9 @@ void UISettingsDialogGlobal::loadData()
 
 void UISettingsDialogGlobal::saveData()
 {
+    /* Call for base-class: */
+    UISettingsDialog::saveData();
+
     /* Get properties and settings: */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
     VBoxGlobalSettings settings = vboxGlobal().settings();
@@ -446,6 +452,9 @@ void UISettingsDialogGlobal::saveData()
     /* Else save the new settings if they were changed: */
     else if (!(newSettings == settings))
         vboxGlobal().setSettings(newSettings);
+
+    /* Mark page processed: */
+    sltMarkSaved();
 }
 
 void UISettingsDialogGlobal::retranslateUi()
@@ -699,12 +708,6 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
     /* First item as default: */
     else
         m_pSelector->selectById(0);
-
-    /* Make sure settings dialog will be updated on machine state changes: */
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
-            this, SLOT(sltMachineStateChanged(QString, KMachineState)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
-            this, SLOT(sltMachineDataChanged(QString)));
 }
 
 void UISettingsDialogMachine::loadData()
@@ -712,6 +715,12 @@ void UISettingsDialogMachine::loadData()
     /* Check that session is NOT created: */
     if (!m_session.isNull())
         return;
+
+    /* Call for base-class: */
+    UISettingsDialog::loadData();
+
+    /* Disconnect global VBox events from this dialog: */
+    gVBoxEvents->disconnect(this);
 
     /* Prepare session: */
     m_session = dialogType() == SettingsDialogType_Wrong ? CSession() : vboxGlobal().openSession(m_strMachineId, true /* shared */);
@@ -730,7 +739,7 @@ void UISettingsDialogMachine::loadData()
     /* Create machine settings loader,
      * it will load machine settings & delete itself in the appropriate time: */
     UISettingsSerializer *pMachineSettingsLoader = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Load);
-    connect(pMachineSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkProcessed()));
+    connect(pMachineSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkLoaded()));
     connect(pMachineSettingsLoader, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltSetFirstRunFlag()));
     /* Set pages to be loaded: */
     pMachineSettingsLoader->setPageList(m_pSelector->settingPages());
@@ -747,6 +756,9 @@ void UISettingsDialogMachine::saveData()
     /* Check that session is NOT created: */
     if (!m_session.isNull())
         return;
+
+    /* Call for base-class: */
+    UISettingsDialog::saveData();
 
     /* Prepare session: */
     bool fSessionShared = dialogType() != SettingsDialogType_Offline;
@@ -820,7 +832,7 @@ void UISettingsDialogMachine::saveData()
         vboxProblem().cannotSaveMachineSettings(m_machine);
 
     /* Mark page processed: */
-    sltMarkProcessed();
+    sltMarkSaved();
 }
 
 void UISettingsDialogMachine::retranslateUi()
@@ -1013,10 +1025,31 @@ bool UISettingsDialogMachine::recorrelate(QWidget *pPage, QString &strWarning)
     return true;
 }
 
-void UISettingsDialogMachine::sltMarkProcessed()
+void UISettingsDialogMachine::sltMarkLoaded()
 {
     /* Call for base-class: */
-    UISettingsDialog::sltMarkProcessed();
+    UISettingsDialog::sltMarkLoaded();
+
+    /* Unlock the session if exists: */
+    if (!m_session.isNull())
+    {
+        m_session.UnlockMachine();
+        m_session = CSession();
+        m_machine = CMachine();
+        m_console = CConsole();
+    }
+
+    /* Make sure settings dialog will be updated on machine state/data changes: */
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+            this, SLOT(sltMachineStateChanged(QString, KMachineState)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
+            this, SLOT(sltMachineDataChanged(QString)));
+}
+
+void UISettingsDialogMachine::sltMarkSaved()
+{
+    /* Call for base-class: */
+    UISettingsDialog::sltMarkSaved();
 
     /* Unlock the session if exists: */
     if (!m_session.isNull())

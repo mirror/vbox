@@ -59,8 +59,10 @@ protected slots:
     /* Category-change slot: */
     virtual void sltCategoryChanged(int cId);
 
-    /* Mark dialog as processed: */
-    virtual void sltMarkProcessed();
+    /* Mark dialog as loaded: */
+    virtual void sltMarkLoaded();
+    /* Mark dialog as saved: */
+    virtual void sltMarkSaved();
 
     /* Handlers for process bar: */
     void sltHandleProcessStarted();
@@ -69,8 +71,8 @@ protected slots:
 protected:
 
     /* Save/load API: */
-    virtual void loadData() = 0;
-    virtual void saveData() = 0;
+    virtual void loadData();
+    virtual void saveData();
 
     /* UI translator: */
     virtual void retranslateUi();
@@ -125,7 +127,8 @@ private:
     bool m_fPolished;
 
     /* Loading/saving stuff: */
-    bool m_fProcessed;
+    bool m_fLoaded;
+    bool m_fSaved;
 
     /* Status bar widget: */
     QStackedWidget *m_pStatusBar;

@@ -97,7 +97,8 @@ protected:
 
 private slots:
 
-    void sltMarkProcessed();
+    void sltMarkLoaded();
+    void sltMarkSaved();
     void sltMachineStateChanged(QString strMachineId, KMachineState machineState);
     void sltMachineDataChanged(QString strMachineId);
     void sltCategoryChanged(int cId);
