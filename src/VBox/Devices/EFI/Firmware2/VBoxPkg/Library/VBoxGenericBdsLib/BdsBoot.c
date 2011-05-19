@@ -972,6 +972,33 @@ BdsDeleteAllInvalidEfiBootOption (
   return Status;
 }
 
+static BOOLEAN bdsCheckFileName(EFI_IMAGE_OPTIONAL_HEADER_UNION *pHdrData, EFI_HANDLE FileSystemHandle, CHAR16 *pu16FileName, CHAR16 **ppNewFileName)
+{
+    EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
+    BOOLEAN fNeedDelete = TRUE;
+    CHAR16 *NewFileName;
+    EFI_STATUS Status;
+    Hdr.Union = pHdrData;
+    EFI_IMAGE_DOS_HEADER          DosHeader;
+    Status     = BdsLibGetImageHeader (
+                   FileSystemHandle,
+                   pu16FileName,
+                   &DosHeader,
+                   Hdr,
+                   &NewFileName
+                   );
+    if (!EFI_ERROR (Status)
+#ifndef VBOX
+        && EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Hdr.Pe32->FileHeader.Machine) &&
+        Hdr.Pe32->OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION
+#endif
+        ) {
+      fNeedDelete = FALSE;
+    }
+    if (ppNewFileName)
+        *ppNewFileName = NewFileName;
+    return fNeedDelete;
+}
 
 /**
   For EFI boot option, BDS separate them as six types:
@@ -1049,10 +1076,8 @@ BdsLibEnumerateAllBootOption (
   EFI_HANDLE                    *FileSystemHandles;
   UINTN                         NumberFileSystemHandles;
   BOOLEAN                       NeedDelete;
-  EFI_IMAGE_DOS_HEADER          DosHeader;
   EFI_IMAGE_OPTIONAL_HEADER_UNION       HdrData;
-  EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
-  CHAR16 *NewFileName;
+  //EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
 
   FloppyNumber  = 0;
   CdromNumber   = 0;
@@ -1188,35 +1213,13 @@ BdsLibEnumerateAllBootOption (
     // Do the removable Media thing. \EFI\BOOT\boot{machinename}.EFI
     //  machinename is ia32, ia64, x64, ...
     //
-    Hdr.Union = &HdrData;
+    //Hdr.Union = &HdrData;
     NeedDelete = TRUE;
-    Status     = BdsLibGetImageHeader (
-                   FileSystemHandles[Index],
-                   EFI_REMOVABLE_MEDIA_FILE_NAME,
-                   &DosHeader,
-                   Hdr,
-                   &NewFileName
-                   );
-    if (!EFI_ERROR (Status)
-#ifndef VBOX
-        && EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Hdr.Pe32->FileHeader.Machine) &&
-        Hdr.Pe32->OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION
-#endif
-        ) {
-      NeedDelete = FALSE;
-    }
-      Status = BdsLibGetImageHeader (
-                 FileSystemHandles[Index],
-                 L"\\System\\Library\\CoreServices\\boot.efi",
-                 &DosHeader,
-                 Hdr,
-                 &NewFileName
-                 );
-      /* Here should be Mac Specific checks */
-      if (!EFI_ERROR (Status)) {
-            NeedDelete = FALSE;
-      }
-
+    NeedDelete = bdsCheckFileName(&HdrData, FileSystemHandles[Index], EFI_REMOVABLE_MEDIA_FILE_NAME, NULL);
+    if (NeedDelete)
+        NeedDelete = bdsCheckFileName(&HdrData, FileSystemHandles[Index], L"\\System\\Library\\CoreServices\\boot.efi", NULL);
+    if (NeedDelete)
+        NeedDelete = bdsCheckFileName(&HdrData, FileSystemHandles[Index], L"\\Mac OS X Install Data\\boot.efi", NULL);
     if (NeedDelete) {
       //
       // No such file or the file is not a EFI application, delete this boot option
@@ -1454,9 +1457,9 @@ BdsLibGetBootableHandle (
 
   UINTN                           NumberSimpleFileSystemHandles;
   UINTN                           Index;
-  EFI_IMAGE_DOS_HEADER            DosHeader;
+  //EFI_IMAGE_DOS_HEADER            DosHeader;
   EFI_IMAGE_OPTIONAL_HEADER_UNION       HdrData;
-  EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
+  //EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
 
   UpdatedDevicePath = DevicePath;
 
@@ -1556,40 +1559,15 @@ BdsLibGetBootableHandle (
       // Load the default boot file \EFI\BOOT\boot{machinename}.EFI from removable Media
       //  machinename is ia32, ia64, x64, ...
       //
-      Hdr.Union = &HdrData;
-      Status = BdsLibGetImageHeader (
-                 SimpleFileSystemHandles[Index],
-                 EFI_REMOVABLE_MEDIA_FILE_NAME,
-                 &DosHeader,
-                 Hdr,
-                 NewFileName
-                 );
-      if (!EFI_ERROR (Status)
-#ifndef VBOX
-        && EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Hdr.Pe32->FileHeader.Machine) &&
-        Hdr.Pe32->OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION
-#endif
-      ) {
-        ReturnHandle = SimpleFileSystemHandles[Index];
-        break;
-      }
-      Status = BdsLibGetImageHeader (
-                 SimpleFileSystemHandles[Index],
-                 L"\\System\\Library\\CoreServices\\boot.efi",
-                 &DosHeader,
-                 Hdr,
-                 NewFileName
-                 );
-      /* Here should be Mac Specific checks */
-      if (!EFI_ERROR (Status)
-#ifndef VBOX
-        && EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Hdr.Pe32->FileHeader.Machine) &&
-        Hdr.Pe32->OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION
-#endif
-        ) {
-        DEBUG((DEBUG_INFO, "%a:%d clear the timer \n", __FILE__, __LINE__));
-        ReturnHandle = SimpleFileSystemHandles[Index];
-        break;
+      BOOLEAN fNotFound = bdsCheckFileName(&HdrData, SimpleFileSystemHandles[Index], EFI_REMOVABLE_MEDIA_FILE_NAME, NewFileName);
+      if (fNotFound)
+          fNotFound = bdsCheckFileName(&HdrData, SimpleFileSystemHandles[Index], L"\\System\\Library\\CoreServices\\boot.efi", NewFileName);
+      if (fNotFound)
+          fNotFound = bdsCheckFileName(&HdrData, SimpleFileSystemHandles[Index], L"\\Mac OS X Install Data\\boot.efi", NewFileName);
+      if (!fNotFound)
+      {
+         ReturnHandle = SimpleFileSystemHandles[Index];
+         break;
       }
     }
   }
