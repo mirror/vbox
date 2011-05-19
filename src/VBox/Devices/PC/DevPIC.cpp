@@ -611,7 +611,7 @@ static uint32_t pic_poll_read (PicState *s, uint32_t addr1)
         if (addr1 >> 7 || ret != 2)
             pic_update_irq(pThis);
     } else {
-        ret = 0x07;
+        ret = 0;
         pic_update_irq(pThis);
     }
 
