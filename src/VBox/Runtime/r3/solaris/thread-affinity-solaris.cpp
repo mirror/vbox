@@ -40,6 +40,7 @@
 #include <sys/processor.h>
 #include <sys/procset.h>
 #include <unistd.h>
+#include <errno.h>
 
 
 /* Note! The current implementation can only bind to a single CPU. */
@@ -53,7 +54,7 @@ RTR3DECL(int) RTThreadSetAffinity(PCRTCPUSET pCpuSet)
     else
     {
         RTCPUSET PresentSet;
-        int cCpusInSet = RTCpuSetCount(&pCpuSet);
+        int cCpusInSet = RTCpuSetCount(pCpuSet);
         if (cCpusInSet == 1)
         {
             unsigned iCpu = 0;
