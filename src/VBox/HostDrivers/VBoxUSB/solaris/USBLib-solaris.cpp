@@ -73,7 +73,6 @@ typedef enum USBHELPER_OP
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int usblibDoIOCtl(unsigned iFunction, void *pvData, size_t cbData);
-static int usblibRunHelper(USBHELPER_OP HelperOp, void *pvData);
 
 
 USBLIB_DECL(int) USBLibInit(void)
@@ -219,7 +218,6 @@ USBLIB_DECL(int) USBLibGetClientInfo(char *pszDeviceIdent, char **ppszClientPath
 }
 
 
-#if 1
 USBLIB_DECL(int) USBLibResetDevice(char *pszDevicePath, bool fReattach)
 {
     LogFlow((USBLIBR3 ":USBLibResetDevice pszDevicePath=%s\n", pszDevicePath));
@@ -237,131 +235,6 @@ USBLIB_DECL(int) USBLibResetDevice(char *pszDevicePath, bool fReattach)
         LogRel((USBLIBR3 ":VBOXUSBMON_IOCTL_RESET_DEVICE failed! rc=%Rrc\n", rc));
 
     RTMemFree(pReq);
-    return rc;
-}
-#else
-
-USBLIB_DECL(int) USBLibResetDevice(char *pszDevicePath, bool fReattach)
-{
-    VBOXUSBHELPERDATA_RESET Data;
-    Data.pszDevicePath = pszDevicePath;
-    Data.fHardReset = fReattach;
-    return usblibRunHelper(RESET, &Data);
-}
-#endif
-
-USBLIB_DECL(int) USBLibAddDeviceAlias(PUSBDEVICE pDevice)
-{
-    VBOXUSBHELPERDATA_ALIAS Data;
-    Data.idVendor = pDevice->idVendor;
-    Data.idProduct = pDevice->idProduct;
-    Data.bcdDevice = pDevice->bcdDevice;
-    Data.pszDevicePath = pDevice->pszDevicePath;
-    return usblibRunHelper(ADD_ALIAS, &Data);
-}
-
-
-USBLIB_DECL(int) USBLibRemoveDeviceAlias(PUSBDEVICE pDevice)
-{
-    VBOXUSBHELPERDATA_ALIAS Data;
-    Data.idVendor = pDevice->idVendor;
-    Data.idProduct = pDevice->idProduct;
-    Data.bcdDevice = pDevice->bcdDevice;
-    Data.pszDevicePath = pDevice->pszDevicePath;
-    return usblibRunHelper(DEL_ALIAS, &Data);
-}
-
-#if 0
-USBLIB_DECL(int) USBLibConfigureDevice(PUSBDEVICE pDevice)
-{
-    return usblibRunHelper(pDevice, CONFIGURE);
-}
-#endif
-
-static int usblibRunHelper(USBHELPER_OP HelperOp, void *pvUsbHelperData)
-{
-    LogFlow((USBLIBR3 ":usblibRunHelper HelperOp=%d pvUSBHelperData=%p\n", HelperOp, pvUsbHelperData));
-
-    /*
-     * Find VBoxUSBHelper.
-     */
-    char szDriverCtl[PATH_MAX];
-    int rc = RTPathExecDir(szDriverCtl, sizeof(szDriverCtl) - sizeof("/" VBOXUSB_HELPER_NAME));
-    if (RT_SUCCESS(rc))
-    {
-        strcat(szDriverCtl, "/" VBOXUSB_HELPER_NAME);
-        if (!RTPathExists(szDriverCtl))
-        {
-            LogRel(("USBProxy: path %s does not exist. Failed to run USB helper %s.\n", szDriverCtl, VBOXUSB_HELPER_NAME));
-            return VERR_FILE_NOT_FOUND;
-        }
-
-        /*
-         * Run VBoxUSBHelper task.
-         */
-        const char *pszArgs[5];
-        if (HelperOp == RESET)
-        {
-            PVBOXUSBHELPERDATA_RESET pData = (PVBOXUSBHELPERDATA_RESET)pvUsbHelperData;
-            pszArgs[0] = szDriverCtl;
-            pszArgs[1] = pData->fHardReset ? "hardreset" : "softreset";
-            pszArgs[2] = pData->pszDevicePath;
-            pszArgs[3] = NULL;
-        }
-        else
-        {
-            PVBOXUSBHELPERDATA_ALIAS pData = (PVBOXUSBHELPERDATA_ALIAS)pvUsbHelperData;
-            char szDriverAlias[128];
-
-#if 0
-            /*
-             * USB vid.pid.rev driver binding alias.
-             */
-            RTStrPrintf(szDriverAlias, sizeof(szDriverAlias), "usb%x,%x.%x", pData->idVendor, pData->idProduct, pData->bcdDevice);
-#else
-            /*
-             * Path based driver binding alias.
-             */
-            RTStrPrintf(szDriverAlias, sizeof(szDriverAlias), "%s", pData->pszDevicePath + sizeof("/devices"));
-#endif
-            pszArgs[0] = szDriverCtl;
-            pszArgs[1] = HelperOp == ADD_ALIAS ? "add" : "del";
-            pszArgs[2] = szDriverAlias;
-            pszArgs[3] = VBOXUSB_DRIVER_NAME;
-        }
-        pszArgs[4] = NULL;
-        RTPROCESS pid = NIL_RTPROCESS;
-        rc = RTProcCreate(pszArgs[0], pszArgs, RTENV_DEFAULT, 0, &pid);
-        if (RT_SUCCESS(rc))
-        {
-            RTPROCSTATUS Status;
-            rc = RTProcWait(pid, 0, &Status);
-            if (RT_SUCCESS(rc))
-            {
-                if (Status.enmReason == RTPROCEXITREASON_NORMAL)
-                {
-                    switch (Status.iStatus)
-                    {
-                        case  0: return VINF_SUCCESS;            /* @todo later maybe ignore -4 as well (see VBoxUSBHelper return codes). */
-                        case -1: return VERR_PERMISSION_DENIED;
-                        case -2: return VERR_INVALID_PARAMETER;
-                        case -3: return VERR_GENERAL_FAILURE;
-                        default: return VERR_INTERNAL_ERROR;
-                    }
-                }
-                else
-                    LogRel((USBLIBR3 ":abnormal termination of USB Helper. enmReason=%d\n", Status.enmReason));
-                rc = VERR_GENERAL_FAILURE;
-            }
-            else
-                LogRel((USBLIBR3 ":RTProcWait failed rc=%Rrc\n", rc));
-        }
-        else
-        {
-            /* Bad. RTProcCreate() failed! */
-            LogRel((USBLIBR3 ":Failed to fork() process for running USB helper for device %s: rc=%Rrc\n", rc));
-        }
-    }
     return rc;
 }
 
@@ -393,4 +266,3 @@ static int usblibDoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 
     return rc;
 }
-
