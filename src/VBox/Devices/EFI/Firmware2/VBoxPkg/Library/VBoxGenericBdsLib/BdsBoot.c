@@ -1217,9 +1217,9 @@ BdsLibEnumerateAllBootOption (
     NeedDelete = TRUE;
     NeedDelete = bdsCheckFileName(&HdrData, FileSystemHandles[Index], EFI_REMOVABLE_MEDIA_FILE_NAME, NULL);
     if (NeedDelete)
-        NeedDelete = bdsCheckFileName(&HdrData, FileSystemHandles[Index], L"\\System\\Library\\CoreServices\\boot.efi", NULL);
-    if (NeedDelete)
         NeedDelete = bdsCheckFileName(&HdrData, FileSystemHandles[Index], L"\\Mac OS X Install Data\\boot.efi", NULL);
+    if (NeedDelete)
+        NeedDelete = bdsCheckFileName(&HdrData, FileSystemHandles[Index], L"\\System\\Library\\CoreServices\\boot.efi", NULL);
     if (NeedDelete) {
       //
       // No such file or the file is not a EFI application, delete this boot option
@@ -1561,9 +1561,9 @@ BdsLibGetBootableHandle (
       //
       BOOLEAN fNotFound = bdsCheckFileName(&HdrData, SimpleFileSystemHandles[Index], EFI_REMOVABLE_MEDIA_FILE_NAME, NewFileName);
       if (fNotFound)
-          fNotFound = bdsCheckFileName(&HdrData, SimpleFileSystemHandles[Index], L"\\System\\Library\\CoreServices\\boot.efi", NewFileName);
-      if (fNotFound)
           fNotFound = bdsCheckFileName(&HdrData, SimpleFileSystemHandles[Index], L"\\Mac OS X Install Data\\boot.efi", NewFileName);
+      if (fNotFound)
+          fNotFound = bdsCheckFileName(&HdrData, SimpleFileSystemHandles[Index], L"\\System\\Library\\CoreServices\\boot.efi", NewFileName);
       if (!fNotFound)
       {
          ReturnHandle = SimpleFileSystemHandles[Index];
