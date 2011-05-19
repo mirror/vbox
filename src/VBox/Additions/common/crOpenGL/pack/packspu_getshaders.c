@@ -207,5 +207,11 @@ void PACKSPU_APIENTRY packspu_GetShaderSource(GLuint shader, GLsizei bufSize, GL
 
     if (length) *length=*pLocal;
     crMemcpy(source, &pLocal[1], (bufSize >= pLocal[0]) ? pLocal[0] : bufSize);
+
+    if (bufSize > pLocal[0])
+    {
+        source[pLocal[0]] = 0;
+    }
+
     crFree(pLocal);
 }
