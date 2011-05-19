@@ -273,7 +273,9 @@ do_vboxguest_non_udev()
 start()
 {
     begin "Starting the VirtualBox Guest Additions ";
-    which udevd >/dev/null 2>&1 || no_udev=1
+    uname -r | grep -q '^2\.6' 2>/dev/null &&
+        ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
+        no_udev=1
     running_vboxguest || {
         rm -f $dev || {
             fail "Cannot remove $dev"
