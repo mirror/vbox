@@ -1442,6 +1442,7 @@
 # define RTThreadSelfAutoAdopt                          RT_MANGLER(RTThreadSelfAutoAdopt)
 # define RTThreadSelfName                               RT_MANGLER(RTThreadSelfName)
 # define RTThreadSetAffinity                            RT_MANGLER(RTThreadSetAffinity)
+# define RTThreadSetAffinityToCpu                       RT_MANGLER(RTThreadSetAffinityToCpu)
 # define RTThreadSetName                                RT_MANGLER(RTThreadSetName)
 # define RTThreadSetType                                RT_MANGLER(RTThreadSetType)
 # define RTThreadSleep                                  RT_MANGLER(RTThreadSleep)
