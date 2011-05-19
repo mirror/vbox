@@ -462,23 +462,6 @@ static int usbProxyWinUrbQueue(PVUSBURB pUrb)
     Assert(pPriv);
 
     /*
-     * Ensure we've got sufficient space in the arrays.
-     */
-    if (pPriv->cQueuedUrbs + 1 > pPriv->cAllocatedUrbs)
-    {
-        unsigned cNewMax = pPriv->cAllocatedUrbs + 32;
-        void *pv = RTMemRealloc(pPriv->paHandles, sizeof(pPriv->paHandles[0]) * cNewMax);
-        if (!pv)
-            return false;
-        pPriv->paHandles = (PHANDLE)pv;
-        pv = RTMemRealloc(pPriv->paQueuedUrbs, sizeof(pPriv->paQueuedUrbs[0]) * cNewMax);
-        if (!pv)
-            return false;
-        pPriv->paQueuedUrbs = (PQUEUED_URB *)pv;
-        pPriv->cAllocatedUrbs = cNewMax;
-    }
-
-    /*
      * Allocate and initialize a URB queue structure.
      */
     /** @todo pool these */
@@ -542,14 +525,50 @@ static int usbProxyWinUrbQueue(PVUSBURB pUrb)
             RTThreadSleep(1);
 
         RTCritSectEnter(&pPriv->CritSect);
-        pUrb->Dev.pvPrivate = pQUrbWin;
-        pPriv->aPendingUrbs[pPriv->cPendingUrbs] = pQUrbWin;
-        pPriv->cPendingUrbs++;
+        do
+        {
+            /* Ensure we've got sufficient space in the arrays.
+             * Do it inside the lock to ensure we do not concur
+             * with the usbProxyWinAsyncIoThread */
+            if (pPriv->cQueuedUrbs + 1 > pPriv->cAllocatedUrbs)
+            {
+                unsigned cNewMax = pPriv->cAllocatedUrbs + 32;
+                void *pv = RTMemRealloc(pPriv->paHandles, sizeof(pPriv->paHandles[0]) * cNewMax);
+                if (!pv)
+                {
+                    AssertMsgFailed(("RTMemRealloc failed for paHandles[%d]", cNewMax));
+                    break;
+                }
+                pPriv->paHandles = (PHANDLE)pv;
+
+                pv = RTMemRealloc(pPriv->paQueuedUrbs, sizeof(pPriv->paQueuedUrbs[0]) * cNewMax);
+                if (!pv)
+                {
+                    AssertMsgFailed(("RTMemRealloc failed for paQueuedUrbs[%d]", cNewMax));
+                    break;
+                }
+                pPriv->paQueuedUrbs = (PQUEUED_URB *)pv;
+                pPriv->cAllocatedUrbs = cNewMax;
+            }
+
+            pUrb->Dev.pvPrivate = pQUrbWin;
+            pPriv->aPendingUrbs[pPriv->cPendingUrbs] = pQUrbWin;
+            pPriv->cPendingUrbs++;
+            RTCritSectLeave(&pPriv->CritSect);
+            SetEvent(pPriv->hEventAsyncIo);
+            return true;
+        } while (0);
+
         RTCritSectLeave(&pPriv->CritSect);
-        SetEvent(pPriv->hEventAsyncIo);
-        return true;
     }
-    Assert(pPriv->cPendingUrbs < RT_ELEMENTS(pPriv->aPendingUrbs));
+#ifdef DEBUG_misha
+    else
+    {
+        AssertMsgFailed((__FUNCTION__": FAILED!!\n"));
+    }
+#endif
+
+    Assert(pQUrbWin->overlapped.hEvent == INVALID_HANDLE_VALUE);
     RTMemFree(pQUrbWin);
     return false;
 }
@@ -619,6 +638,9 @@ static PVUSBURB usbProxyWinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies
     PVUSBURB pUrb = NULL;
     unsigned cQueuedUrbs = ASMAtomicReadU32((volatile uint32_t *)&pPriv->cQueuedUrbs);
 
+    /* we assume here
+     * 1. the usbProxyWinUrbReap can not be run concurrently with each other so racing the cQueuedUrbs access/modification can not occur
+     * 2. the usbProxyWinUrbReap can not be run concurrently with usbProxyWinUrbQueue so they can not race the pPriv->paHandles access/realloc */
     DWORD rc = WaitForMultipleObjects(cQueuedUrbs, pPriv->paHandles, FALSE, cMillies);
     if (rc >= WAIT_OBJECT_0 && rc < WAIT_OBJECT_0 + cQueuedUrbs)
     {
