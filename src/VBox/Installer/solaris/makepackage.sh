@@ -203,9 +203,7 @@ fi
 
 # Other executables that need setuid root (hardened or otherwise)
 $VBOX_AWK 'NF == 6 \
-    && (    $3 == "opt/VirtualBox/amd64/VBoxUSBHelper" \
-        ||  $3 == "opt/VirtualBox/i386/VBoxUSBHelper" \
-        ||  $3 == "opt/VirtualBox/amd64/VBoxNetAdpCtl" \
+    && (    $3 == "opt/VirtualBox/amd64/VBoxNetAdpCtl" \
         ||  $3 == "opt/VirtualBox/i386/VBoxNetAdpCtl" \
         ||  $3 == "opt/VirtualBox/amd64/VBoxNetDHCP" \
         ||  $3 == "opt/VirtualBox/i386/VBoxNetDHCP" \
