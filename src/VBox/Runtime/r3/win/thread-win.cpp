@@ -35,11 +35,14 @@
 #include <process.h>
 
 #include <iprt/thread.h>
-#include <iprt/log.h>
-#include <iprt/assert.h>
-#include <iprt/alloc.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm-amd64-x86.h>
+#include <iprt/assert.h>
+#include <iprt/cpuset.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/mem.h>
 #include "internal/thread.h"
 
 
