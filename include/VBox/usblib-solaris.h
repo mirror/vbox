@@ -201,7 +201,6 @@ typedef struct
 
 /** USB driver name*/
 #define VBOXUSB_DRIVER_NAME     "vboxusb"
-#define VBOXUSB_HELPER_NAME     "VBoxUSBHelper"
 
 /* No automatic buffering, size limited to 255 bytes => use VBOXUSBREQ for everything. */
 #define VBOXUSB_IOCTL_CODE(Function, Size)  _IOWRN('V', (Function) | VBOXUSB_IOCTL_FLAG, sizeof(VBOXUSBREQ))
