@@ -4456,42 +4456,38 @@ typedef struct
 static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pvInfo)
 {
     PGMMCHUNK           pChunk = (PGMMCHUNK)pNode;
-    PGMMFINDDUPPAGEINFO pInfo = (PGMMFINDDUPPAGEINFO)pvInfo;
-    PGVM                pGVM = pInfo->pGVM;
-    PGMM                pGMM = pInfo->pGMM;
+    PGMMFINDDUPPAGEINFO pInfo  = (PGMMFINDDUPPAGEINFO)pvInfo;
+    PGVM                pGVM   = pInfo->pGVM;
+    PGMM                pGMM   = pInfo->pGMM;
     uint8_t            *pbChunk;
 
     /* Only take chunks not mapped into this VM process; not entirely correct. */
     if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
     {
         int rc = gmmR0MapChunk(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk);
-        if (rc != VINF_SUCCESS)
-            goto end;
-
-        /*
-         * Look for duplicate pages
-         */
-        unsigned iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
-        while (iPage-- > 0)
+        if (RT_SUCCESS(rc))
         {
-            if (GMM_PAGE_IS_PRIVATE(&pChunk->aPages[iPage]))
+            /*
+             * Look for duplicate pages
+             */
+            unsigned iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
+            while (iPage-- > 0)
             {
-                uint8_t *pbDestPage = pbChunk + (iPage  << PAGE_SHIFT);
-
-                if (!memcmp(pInfo->pSourcePage, pbDestPage, PAGE_SIZE))
+                if (GMM_PAGE_IS_PRIVATE(&pChunk->aPages[iPage]))
                 {
-                    pInfo->fFoundDuplicate = true;
-                    break;
+                    uint8_t *pbDestPage = pbChunk + (iPage  << PAGE_SHIFT);
+
+                    if (!memcmp(pInfo->pSourcePage, pbDestPage, PAGE_SIZE))
+                    {
+                        pInfo->fFoundDuplicate = true;
+                        break;
+                    }
                 }
             }
+            gmmR0UnmapChunk(pGMM, pGVM, pChunk);
         }
-        gmmR0UnmapChunk(pGMM, pGVM, pChunk);
     }
-end:
-    if (pInfo->fFoundDuplicate)
-        return 1;   /* stop search */
-    else
-        return 0;
+    return pInfo->fFoundDuplicate; /* (stops search if true) */
 }
 
 
@@ -4514,54 +4510,51 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
 
+    PGVM pGVM;
+    int rc = GVMMR0ByVM(pVM, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /*
      * Take the semaphore and do some more validations.
      */
-    int rc = gmmR0MutexAcquire(pGMM);
+    rc = gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        PGVM pGVM;
-        rc = GVMMR0ByVM(pVM, &pGVM);
-        if (RT_FAILURE(rc))
-            goto end;
-
         uint8_t  *pbChunk;
         PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, pReq->idPage >> GMM_CHUNKID_SHIFT);
-        if (!pChunk)
+        if (pChunk)
         {
-            AssertFailed();
-            goto end;
+            if (gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
+            {
+                uint8_t *pbSourcePage = pbChunk + ((pReq->idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+                PGMMPAGE pPage = gmmR0GetPage(pGMM, pReq->idPage);
+                if (pPage)
+                {
+                    GMMFINDDUPPAGEINFO Info;
+                    Info.pGVM            = pGVM;
+                    Info.pGMM            = pGMM;
+                    Info.pSourcePage     = pbSourcePage;
+                    Info.fFoundDuplicate = false;
+                    RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FindDupPageInChunk, &Info);
+
+                    pReq->fDuplicate = Info.fFoundDuplicate;
+                }
+                else
+                {
+                    AssertFailed();
+                    rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
+                }
+            }
+            else
+                AssertFailed();
         }
-
-        if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
-        {
+        else
             AssertFailed();
-            goto end;
-        }
-
-        uint8_t *pbSourcePage = pbChunk + ((pReq->idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
-
-        PGMMPAGE pPage = gmmR0GetPage(pGMM, pReq->idPage);
-        if (!pPage)
-        {
-            AssertFailed();
-            rc = VERR_PGM_PHYS_INVALID_PAGE_ID;
-            goto end;
-        }
-        GMMFINDDUPPAGEINFO Info;
-
-        Info.pGVM            = pGVM;
-        Info.pGMM            = pGMM;
-        Info.pSourcePage     = pbSourcePage;
-        Info.fFoundDuplicate = false;
-        RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FindDupPageInChunk, &Info);
-
-        pReq->fDuplicate = Info.fFoundDuplicate;
     }
     else
         rc = VERR_INTERNAL_ERROR_5;
 
-end:
     gmmR0MutexRelease(pGMM);
     return rc;
 }
