@@ -19,14 +19,6 @@ SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
-# VBoxUSBHelper - Setuid binary helper for updating driver alias.
-#
-PROGRAMS.solaris      += VBoxUSBHelper
-VBoxUSBHelper_TEMPLATE = VBOXR3EXE
-VBoxUSBHelper_SOURCES  = VBoxUSBHelper.cpp
-VBoxUSBHelper_LIBS     = nvpair device
-
-#
 # vboxusbmon - The Solaris USB Monitor Kernel module.
 #
 SYSMODS.solaris         += vboxusbmon
