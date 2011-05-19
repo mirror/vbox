@@ -586,17 +586,29 @@ RTDECL(RTTHREAD) RTThreadSelfAutoAdopt(void);
 /**
  * Gets the affinity mask of the current thread.
  *
- * @returns The affinity mask (bit 0 = logical cpu 0).
+ * @returns IPRT status code.
+ * @param   pCpuSet         Where to return the CPU affienty set of the calling
+ *                          thread.
  */
-RTR3DECL(uint64_t) RTThreadGetAffinity(void);
+RTR3DECL(int) RTThreadGetAffinity(PRTCPUSET pCpuSet);
 
 /**
  * Sets the affinity mask of the current thread.
  *
  * @returns iprt status code.
- * @param   u64Mask         Affinity mask (bit 0 = logical cpu 0).
+ * @param   pCpuSet         The set of CPUs this thread can run on.  NULL means
+ *                          all CPUs.
  */
-RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask);
+RTR3DECL(int) RTThreadSetAffinity(PCRTCPUSET pCpuSet);
+
+/**
+ * Binds the thread to one specific CPU.
+ *
+ * @returns iprt status code.
+ * @param   idCpu           The ID of the CPU to bind this thread to.  Use
+ *                          NIL_RTCPUID to unbind it.
+ */
+RTR3DECL(int) RTThreadSetAffinityToCpu(RTCPUID idCpu);
 
 /**
  * Unblocks a thread.

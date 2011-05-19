@@ -198,7 +198,12 @@ RTDECL(bool) RTThreadYield(void)
 }
 
 
-RTDECL(uint64_t) RTThreadGetAffinity(void)
+RTR3DECL(int) RTThreadGetAffinity(PRTCPUSET pCpuSet)
+{
+    return VINF_SUCCESS;
+}
+
+RTR3DECL(int) RTThreadGetAffinity(PRTCPUSET pCpuSet)
 {
     union
     {
@@ -206,21 +211,24 @@ RTDECL(uint64_t) RTThreadGetAffinity(void)
         MPAFFINITY mpaff;
     } u;
 
-    int rc = DosQueryThreadAffinity(AFNTY_THREAD, &u.mpaff);
-    if (rc)
-        u.u64 = 1;
-    return u.u64;
+    APIRET rc = DosQueryThreadAffinity(AFNTY_THREAD, &u.mpaff);
+    if (!rc)
+    {
+        RTCpuSetFromU64(pCpuSet, u.u64);
+        return VINF_SUCCESS;
+    }
+    return RTErrConvertFromOS2(rc);
 }
 
 
-RTDECL(int) RTThreadSetAffinity(uint64_t u64Mask)
+RTR3DECL(int) RTThreadSetAffinity(PCRTCPUSET pCpuSet)
 {
     union
     {
         uint64_t u64;
         MPAFFINITY mpaff;
     } u;
-    u.u64 = u64Mask;
+    u.u64 = pCpuSet ? RTCpuSetToU64(pCpuSet) : UINT64_MAX;
     int rc = DosSetThreadAffinity(&u.mpaff);
     if (!rc)
         return VINF_SUCCESS;

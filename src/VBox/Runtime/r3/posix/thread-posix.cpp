@@ -383,20 +383,6 @@ RTDECL(bool) RTThreadYield(void)
 }
 
 
-RTR3DECL(uint64_t) RTThreadGetAffinity(void)
-{
-    return 1;
-}
-
-
-RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask)
-{
-    if (u64Mask != 1)
-        return VERR_INVALID_PARAMETER;
-    return VINF_SUCCESS;
-}
-
-
 #ifdef RTTHREAD_POSIX_WITH_POKE
 RTDECL(int) RTThreadPoke(RTTHREAD hThread)
 {
