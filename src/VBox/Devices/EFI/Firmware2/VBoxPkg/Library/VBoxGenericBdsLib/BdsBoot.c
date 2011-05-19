@@ -1077,7 +1077,6 @@ BdsLibEnumerateAllBootOption (
   UINTN                         NumberFileSystemHandles;
   BOOLEAN                       NeedDelete;
   EFI_IMAGE_OPTIONAL_HEADER_UNION       HdrData;
-  //EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
 
   FloppyNumber  = 0;
   CdromNumber   = 0;
@@ -1213,7 +1212,6 @@ BdsLibEnumerateAllBootOption (
     // Do the removable Media thing. \EFI\BOOT\boot{machinename}.EFI
     //  machinename is ia32, ia64, x64, ...
     //
-    //Hdr.Union = &HdrData;
     NeedDelete = TRUE;
     NeedDelete = bdsCheckFileName(&HdrData, FileSystemHandles[Index], EFI_REMOVABLE_MEDIA_FILE_NAME, NULL);
     if (NeedDelete)
@@ -1457,9 +1455,7 @@ BdsLibGetBootableHandle (
 
   UINTN                           NumberSimpleFileSystemHandles;
   UINTN                           Index;
-  //EFI_IMAGE_DOS_HEADER            DosHeader;
   EFI_IMAGE_OPTIONAL_HEADER_UNION       HdrData;
-  //EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION   Hdr;
 
   UpdatedDevicePath = DevicePath;
 
