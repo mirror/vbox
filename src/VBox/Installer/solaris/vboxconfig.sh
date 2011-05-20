@@ -661,6 +661,28 @@ stop_process()
 }
 
 
+# stop_service(servicename, shortFMRI-suitable for grep, full FMRI)
+# failure: non fatal
+stop_service()
+{
+    if test -z "$1" || test -z "$2" || test -z "$3"; then
+        errorprint "missing argument to stop_service()"
+        exit 1
+    fi
+    servicefound=`$BIN_SVCS -a | grep "$2" 2>/dev/null`
+    if test ! -z "$servicefound"; then
+        $BIN_SVCADM disable -s $3
+        # Don't delete the manifest, this is handled by the manifest class action
+        # $BIN_SVCCFG delete $3
+        if test "$?" -eq 0; then
+            subprint "Unloaded: $1"
+        else
+            subprint "Unloading: $1  ...ERROR(S)."
+        fi
+    fi
+}
+
+
 # cleanup_install([fatal])
 # failure: depends on [fatal]
 cleanup_install()
@@ -672,45 +694,10 @@ cleanup_install()
         return 0
     fi
 
-    # stop webservice
-    servicefound=`$BIN_SVCS -a | grep "virtualbox/webservice" 2>/dev/null`
-    if test ! -z "$servicefound"; then
-        $BIN_SVCADM disable -s svc:/application/virtualbox/webservice:default
-        # Don't delete the manifest, this is handled by the manifest class action
-        # $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
-        if test "$?" -eq 0; then
-            subprint "Unloaded: Web service"
-        else
-            subprint "Unloading: Web service  ...ERROR(S)."
-        fi
-    fi
-
-    # stop balloonctrl
-    servicefound=`$BIN_SVCS -a | grep "virtualbox/balloonctrl" 2>/dev/null`
-    if test ! -z "$servicefound"; then
-        $BIN_SVCADM disable -s svc:/application/virtualbox/balloonctrl:default
-        # Don't delete the manifest, this is handled by the manifest class action
-        # $BIN_SVCCFG delete svc:/application/virtualbox/balloonctrl:default
-        if test "$?" -eq 0; then
-            subprint "Unloaded: Balloon control service"
-        else
-            subprint "Unloading: Balloon control service  ...ERROR(S)."
-        fi
-    fi
-
-
-    # stop zoneaccess service
-    servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess" 2>/dev/null`
-    if test ! -z "$servicefound"; then
-        $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess:default
-        # Don't delete the manifest, this is handled by the manifest class action
-        # $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
-        if test "$?" -eq 0; then
-            subprint "Unloaded: Zone access service"
-        else
-            subprint "Unloading: Zone access service  ...ERROR(S)."
-        fi
-    fi
+    # stop the services
+    stop_service "Web service" "virtualbox/webservice" "svc:/application/virtualbox/webservice:default"
+    stop_service "Balloon control service" "virtualbox/balloonctrl" "svc:/application/virtualbox/balloonctrl:default"
+    stop_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default"
 
     # unplumb all vboxnet instances for non-remote installs
     inst=0
