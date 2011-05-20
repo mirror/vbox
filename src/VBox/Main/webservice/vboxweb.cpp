@@ -735,7 +735,7 @@ void doQueuesLoop()
             if (s < 0)
             {
                 WebLogSoapError(&soap);
-                break;
+                continue;
             }
 
             // add the socket to the queue and tell worker threads to
@@ -1205,13 +1205,13 @@ std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData))
     RTCString aStr;
 
     aStr.reserve(cchOut+1);
-    int rc = RTBase64Encode(sfaData.raw(), cbData, 
+    int rc = RTBase64Encode(sfaData.raw(), cbData,
                             aStr.mutableRaw(), aStr.capacity(),
                             NULL);
     AssertRC(rc);
     aStr.jolt();
 
-    return aStr.c_str(); 
+    return aStr.c_str();
 }
 
 void Base64DecodeByteArray(std::string& aStr, ComSafeArrayOut(BYTE, aData))
