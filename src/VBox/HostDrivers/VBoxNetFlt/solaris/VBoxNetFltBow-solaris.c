@@ -506,7 +506,6 @@ LOCAL inline mblk_t *vboxNetFltSolarisMBlkFromSG(PVBOXNETFLTINS pThis, PINTNETSG
             pMsg->b_wptr += pSG->aSegs[i].cb;
         }
     }
-    DB_TYPE(pMsg) = M_DATA;
     return pMsg;
 }
 
@@ -979,7 +978,7 @@ LOCAL int vboxNetFltSolarisInitVNICTemplate(PVBOXNETFLTINS pThis, PVBOXNETFLTVNI
  */
 LOCAL PVBOXNETFLTVNIC vboxNetFltSolarisAllocVNIC(void)
 {
-    PVBOXNETFLTVNIC pVNIC = RTMemAlloc(sizeof(VBOXNETFLTVNIC));
+    PVBOXNETFLTVNIC pVNIC = RTMemAllocZ(sizeof(VBOXNETFLTVNIC));
     if (RT_UNLIKELY(!pVNIC))
         return NULL;
 
@@ -1004,8 +1003,7 @@ LOCAL PVBOXNETFLTVNIC vboxNetFltSolarisAllocVNIC(void)
  */
 LOCAL inline void vboxNetFltSolarisFreeVNIC(PVBOXNETFLTVNIC pVNIC)
 {
-    if (pVNIC)
-        RTMemFree(pVNIC);
+    RTMemFree(pVNIC);
 }
 
 
@@ -1017,6 +1015,8 @@ LOCAL inline void vboxNetFltSolarisFreeVNIC(PVBOXNETFLTVNIC pVNIC)
  */
 LOCAL void vboxNetFltSolarisDestroyVNIC(PVBOXNETFLTVNIC pVNIC)
 {
+    AssertPtrReturnVoid(pVNIC);
+    AssertMsgReturnVoid(pVNIC->u32Magic == VBOXNETFLTVNIC_MAGIC, ("pVNIC=%p u32Magic=%#x\n", pVNIC, pVNIC->u32Magic));
     if (pVNIC)
     {
         if (pVNIC->hClient)
