@@ -760,6 +760,9 @@ void UISettingsDialogMachine::saveData()
     /* Call for base-class: */
     UISettingsDialog::saveData();
 
+    /* Disconnect global VBox events from this dialog: */
+    gVBoxEvents->disconnect(this);
+
     /* Prepare session: */
     bool fSessionShared = dialogType() != SettingsDialogType_Offline;
     m_session = dialogType() == SettingsDialogType_Wrong ? CSession() : vboxGlobal().openSession(m_strMachineId, fSessionShared);
