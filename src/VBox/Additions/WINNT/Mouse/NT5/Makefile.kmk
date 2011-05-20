@@ -1,10 +1,10 @@
 # $Id$
 ## @file
-# Sub-Makefile for the VirtualBox Windows Guest mouse filter driver.
+# Makefile for the Windows NT5+ Guest Additions Mouse Filter Driver
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -15,20 +15,24 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-SUB_DEPTH = ../../../../..
+SUB_DEPTH = ../../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-SYSMODS += VBoxMouse
-VBoxMouse_TEMPLATE    = VBOXGUESTR0
-VBoxMouse_DEFS        = LOG_TO_BACKDOOR
-#VBoxMouse_DEFS       += LOG_ENABLED
-VBoxMouse_CXXFLAGS    = -Od
-VBoxMouse_CFLAGS      = -Od
+#
+# VBoxMouse - Windows NT5+ Guest Additions Mouse Filter Driver
+#
+SYSMODS                += VBoxMouse
+VBoxMouse_TEMPLATE      = VBOXGUESTR0
+VBoxMouse_DEFS          = LOG_TO_BACKDOOR
+#VBoxMouse_DEFS         += LOG_ENABLED
+VBoxMouse_CXXFLAGS      = -Od
+VBoxMouse_CFLAGS        = -Od
 VBoxMouse_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxMouse_LDFLAGS.amd64 = -Entry:DriverEntry
-VBoxMouse_SOURCES     = VBoxMouse.cpp \
-                        VBoxMouse.rc
-VBoxMouse_LIBS        = \
+VBoxMouse_SOURCES       = VBoxMFDriver.cpp \
+                          VBoxMFInternal.cpp \
+                          VBoxMF.rc
+VBoxMouse_LIBS          = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(VBOX_LIB_IPRT_GUEST_R0) \
@@ -63,4 +67,3 @@ $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat: $(PATH_TARGET)/VBoxMouseCat.dir/V
 endif # signing
 
 include	$(KBUILD_PATH)/subfooter.kmk
-
