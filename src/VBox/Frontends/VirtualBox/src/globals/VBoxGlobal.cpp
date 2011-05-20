@@ -3804,27 +3804,12 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
     return QString ("%1 %2").arg (number).arg (Suffixes [suffix]);
 }
 
-/* static */
-bool VBoxGlobal::shouldWarnAboutToLowVRAM(const CMachine *pMachine /* = 0 */)
-{
-    static QStringList osList = QStringList()
-        << "Other" << "DOS" << "Netware" << "L4" << "QNX" << "JRockitVE";
-
-    bool fResult = true;
-    if (   pMachine
-        && !pMachine->isNull()
-        && osList.contains(pMachine->GetOSTypeId()))
-        fResult = false;
-
-    return fResult;
-}
-
 /**
  *  Returns the required video memory in bytes for the current desktop
  *  resolution at maximum possible screen depth in bpp.
  */
 /* static */
-quint64 VBoxGlobal::requiredVideoMemory (CMachine *aMachine /* = 0 */, int cMonitors /* = 1 */)
+quint64 VBoxGlobal::requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors /* = 1 */)
 {
     QSize desktopRes = QApplication::desktop()->screenGeometry().size();
     QDesktopWidget *pDW = QApplication::desktop();
@@ -3862,23 +3847,19 @@ quint64 VBoxGlobal::requiredVideoMemory (CMachine *aMachine /* = 0 */, int cMoni
     quint64 needMBytes = needBits % (8 * _1M) ? needBits / (8 * _1M) + 1 :
                          needBits / (8 * _1M) /* convert to megabytes */;
 
-    if (aMachine && !aMachine->isNull())
+    if (strGuestOSTypeId.startsWith("Windows"))
     {
-       QString typeId = aMachine->GetOSTypeId();
-       if (typeId.startsWith("Windows"))
-       {
-           /* Windows guests need offscreen VRAM too for graphics acceleration features. */
+       /* Windows guests need offscreen VRAM too for graphics acceleration features: */
 #ifdef VBOX_WITH_CRHGSMI
-           if (typeId == "WindowsVista" || typeId == "Windows7")
-           {
-               /* wddm mode, there are two surfaces for each screen: shadow & primary */
-               needMBytes *= 3;
-           }
-           else
-#endif
-           {
-               needMBytes *= 2;
-           }
+       if (strGuestOSTypeId == "WindowsVista" || strGuestOSTypeId == "Windows7")
+       {
+           /* wddm mode, there are two surfaces for each screen: shadow & primary */
+           needMBytes *= 3;
+       }
+       else
+#endif /* VBOX_WITH_CRHGSMI */
+       {
+           needMBytes *= 2;
        }
     }
 
@@ -4433,14 +4414,14 @@ quint64 VBoxGlobal::required2DOffscreenVideoMemory()
 
 #ifdef VBOX_WITH_CRHGSMI
 /* static */
-quint64 VBoxGlobal::required3DWddmOffscreenVideoMemory(CMachine *aMachine /* = 0 */, int cMonitors /* = 1 */)
+quint64 VBoxGlobal::required3DWddmOffscreenVideoMemory(const QString &strGuestOSTypeId, int cMonitors /* = 1 */)
 {
     cMonitors = RT_MAX(cMonitors, 1);
-    quint64 cbSize = VBoxGlobal::requiredVideoMemory(aMachine, 1); /* why not cMonitors? */
+    quint64 cbSize = VBoxGlobal::requiredVideoMemory(strGuestOSTypeId, 1); /* why not cMonitors? */
     cbSize += 64 * _1M;
     return cbSize;
 }
-#endif
+#endif /* VBOX_WITH_CRHGSMI */
 
 #ifdef Q_WS_MAC
 bool VBoxGlobal::isSheetWindowsAllowed(QWidget *pParent) const

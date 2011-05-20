@@ -93,7 +93,7 @@ protected:
 
     QString title() const;
 
-    bool recorrelate(QWidget *pPage, QString &strWarning);
+    void recorrelate(UISettingsPage *pSettingsPage);
 
 private slots:
 

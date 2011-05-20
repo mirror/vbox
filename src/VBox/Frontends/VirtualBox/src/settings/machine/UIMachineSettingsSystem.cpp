@@ -30,6 +30,7 @@
 UIMachineSettingsSystem::UIMachineSettingsSystem()
     : mValidator(0)
     , mMinGuestCPU(0), mMaxGuestCPU(0)
+    , m_fOHCIEnabled(false)
 {
     /* Apply UI decorations */
     Ui::UIMachineSettingsSystem::setupUi (this);
@@ -147,11 +148,6 @@ bool UIMachineSettingsSystem::isHWVirtExEnabled() const
     return mCbVirt->isChecked();
 }
 
-int UIMachineSettingsSystem::cpuCount() const
-{
-    return mSlCPU->value();
-}
-
 bool UIMachineSettingsSystem::isHIDEnabled() const
 {
     return mCbUseAbsHID->isChecked();
@@ -160,6 +156,11 @@ bool UIMachineSettingsSystem::isHIDEnabled() const
 KChipsetType UIMachineSettingsSystem::chipsetType() const
 {
     return (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt();
+}
+
+void UIMachineSettingsSystem::setOHCIEnabled(bool fEnabled)
+{
+    m_fOHCIEnabled = fEnabled;
 }
 
 /* Load data to cashe from corresponding external object(s),
@@ -426,6 +427,17 @@ bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle
         aWarning = tr (
             "you have assigned ICH9 chipset type to this VM. "
             "It will not work properly unless the IO-APIC feature is also enabled. "
+            "This will be done automatically when you accept the VM Settings "
+            "by pressing the OK button.");
+        return true;
+    }
+
+    /* HID dependency from OHCI feature: */
+    if (mCbUseAbsHID->isChecked() && !m_fOHCIEnabled)
+    {
+        aWarning = tr (
+            "you have enabled a USB HID (Human Interface Device). "
+            "This will not work unless USB emulation is also enabled. "
             "This will be done automatically when you accept the VM Settings "
             "by pressing the OK button.");
         return true;

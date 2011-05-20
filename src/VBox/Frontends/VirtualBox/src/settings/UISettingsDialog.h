@@ -95,8 +95,8 @@ protected:
                  int cId, const QString &strLink,
                  UISettingsPage* pSettingsPage = 0, int iParentId = -1);
 
-    /* Correlation handler: */
-    virtual bool recorrelate(QWidget *pPage, QString &strWarning);
+    /* Settings page correlator: */
+    virtual void recorrelate(UISettingsPage *pSettingsPage) { Q_UNUSED(pSettingsPage); }
 
     /* Protected variables: */
     VBoxSettingsSelector *m_pSelector;

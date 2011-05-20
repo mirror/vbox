@@ -635,7 +635,6 @@ public:
 
     /* public static stuff */
 
-    static bool shouldWarnAboutToLowVRAM(const CMachine *pMachine = 0);
     static bool isDOSType (const QString &aOSTypeId);
 
     static QString languageId();
@@ -662,7 +661,7 @@ public:
     static QString formatSize (quint64 aSize, uint aDecimal = 2,
                                VBoxDefs::FormatSize aMode = VBoxDefs::FormatSize_Round);
 
-    static quint64 requiredVideoMemory (CMachine *aMachine = 0, int cMonitors = 1);
+    static quint64 requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors = 1);
 
     static QString locationForHTML (const QString &aFileName);
 
@@ -714,8 +713,8 @@ public:
 #endif
 
 #ifdef VBOX_WITH_CRHGSMI
-    static quint64 required3DWddmOffscreenVideoMemory(CMachine *aMachine = 0, int cMonitors = 1);
-#endif
+    static quint64 required3DWddmOffscreenVideoMemory(const QString &strGuestOSTypeId, int cMonitors = 1);
+#endif /* VBOX_WITH_CRHGSMI */
 
 #ifdef Q_WS_MAC
     bool isSheetWindowsAllowed(QWidget *pParent) const;

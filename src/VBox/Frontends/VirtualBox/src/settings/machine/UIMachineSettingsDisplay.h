@@ -85,13 +85,11 @@ public:
 
     UIMachineSettingsDisplay();
 
+    void setGuestOSType(CGuestOSType guestOSType);
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool isAcceleration2DVideoSelected() const;
-#endif
-
-#ifdef VBOX_WITH_CRHGSMI
-    void setWddmMode(bool bWddm);
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 protected:
 
@@ -129,11 +127,14 @@ private slots:
 private:
 
     void checkVRAMRequirements();
+    bool shouldWeWarnAboutLowVideoMemory();
 
     void polishPage();
 
     QIWidgetValidator *mValidator;
 
+    /* Guest OS type id: */
+    CGuestOSType m_guestOSType;
     /* System minimum lower limit of VRAM (MiB). */
     int m_minVRAM;
     /* System maximum limit of VRAM (MiB). */
@@ -143,10 +144,14 @@ private:
     int m_maxVRAMVisible;
     /* Initial VRAM value when the dialog is opened. */
     int m_initialVRAM;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* Specifies whether the guest OS supports 2D video-acceleration: */
+    bool m_f2DVideoAccelerationSupported;
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifdef VBOX_WITH_CRHGSMI
-    /* Specifies whether the guest os is wddm-capable: */
-    bool m_bWddmMode;
-#endif
+    /* Specifies whether the guest OS supports WDDM: */
+    bool m_fWddmModeSupported;
+#endif /* VBOX_WITH_CRHGSMI */
 
     /* Cache: */
     UICacheSettingsMachineDisplay m_cache;

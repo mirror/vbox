@@ -1765,25 +1765,10 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mSplitter->setSizes (QList<int>() << (int) (0.45 * minimumWidth()) << (int) (0.55 * minimumWidth()));
 }
 
-KChipsetType UIMachineSettingsStorage::chipsetType() const
-{
-    return mStorageModel->chipsetType();
-}
-
 void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
 {
     mStorageModel->setChipsetType(type);
     updateActionsState();
-}
-
-QMap<KStorageBus, int> UIMachineSettingsStorage::currentControllerTypes() const
-{
-    return mStorageModel->currentControllerTypes();
-}
-
-QMap<KStorageBus, int> UIMachineSettingsStorage::maximumControllerTypes() const
-{
-    return mStorageModel->maximumControllerTypes();
 }
 
 /* Load data to cashe from corresponding external object(s),
@@ -1796,11 +1781,10 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
     /* Clear cache initially: */
     m_cache.clear();
 
-    /* Prepare storage data: */
-    UIDataSettingsMachineStorage storageData;
-
     /* Gather storage data: */
-    storageData.m_strMachineId = m_machine.GetId();
+    m_strMachineId = m_machine.GetId();
+    m_strMachineSettingsFilePath = m_machine.GetSettingsFilePath();
+    m_strMachineGuestOSTypeId = m_machine.GetOSTypeId();
 
     /* For each controller: */
     const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
@@ -1850,9 +1834,6 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
         m_cache.child(iControllerIndex).cacheInitialData(storageControllerData);
     }
 
-    /* Cache storage data: */
-    m_cache.cacheInitialData(storageData);
-
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
 }
@@ -1864,11 +1845,8 @@ void UIMachineSettingsStorage::getFromCache()
     /* Clear model initially: */
     mStorageModel->clear();
 
-    /* Get storage data from cache: */
-    const UIDataSettingsMachineStorage &storageData = m_cache.base();
-
     /* Load storage data to page: */
-    mStorageModel->setMachineId(storageData.m_strMachineId);
+    mStorageModel->setMachineId(m_strMachineId);
 
     /* For each storage controller: */
     for (int iControllerIndex = 0; iControllerIndex < m_cache.childCount(); ++iControllerIndex)
@@ -1984,8 +1962,10 @@ void UIMachineSettingsStorage::setValidator (QIWidgetValidator *aVal)
     mValidator = aVal;
 }
 
-bool UIMachineSettingsStorage::revalidate (QString &aWarning, QString &)
+bool UIMachineSettingsStorage::revalidate (QString &strWarning, QString& /* strTitle */)
 {
+    /* Check controllers for name emptiness & coincidence.
+     * Check attachments for the hd presence / uniqueness. */
     QModelIndex rootIndex = mStorageModel->root();
     QMap <QString, QString> config;
     QMap<int, QString> names;
@@ -1997,16 +1977,16 @@ bool UIMachineSettingsStorage::revalidate (QString &aWarning, QString &)
         /* Check for name emptiness: */
         if (ctrName.isEmpty())
         {
-            aWarning = tr("no name specified for controller at position <b>%1</b>.").arg(i + 1);
-            return aWarning.isNull();
+            strWarning = tr("no name specified for controller at position <b>%1</b>.").arg(i + 1);
+            return false;
         }
         /* Check for name coincidence: */
         if (names.values().contains(ctrName))
         {
-            aWarning = tr("controller at position <b>%1</b> uses the name that is "
+            strWarning = tr("controller at position <b>%1</b> uses the name that is "
                           "already used by controller at position <b>%2</b>.")
                           .arg(i + 1).arg(names.key(ctrName) + 1);
-            return aWarning.isNull();
+            return false;
         }
         else names.insert(i, ctrName);
         /* For each attachment: */
@@ -2020,20 +2000,47 @@ bool UIMachineSettingsStorage::revalidate (QString &aWarning, QString &)
             /* Check for emptiness */
             if (vboxGlobal().findMedium (key).isNull() && attDevice == KDeviceType_HardDisk)
             {
-                aWarning = tr ("no hard disk is selected for <i>%1</i>.").arg (value);
-                return aWarning.isNull();
+                strWarning = tr ("no hard disk is selected for <i>%1</i>.").arg (value);
+                return false;
             }
             /* Check for coincidence */
             if (!vboxGlobal().findMedium (key).isNull() && config.contains (key))
             {
-                aWarning = tr ("<i>%1</i> uses a medium that is already attached to <i>%2</i>.")
+                strWarning = tr ("<i>%1</i> uses a medium that is already attached to <i>%2</i>.")
                               .arg (value).arg (config [key]);
-                return aWarning.isNull();
+                return false;
             }
             else config.insert (key, value);
         }
     }
-    return aWarning.isNull();
+
+    /* Check for excessive controllers on Storage page controllers list: */
+    QStringList excessiveList;
+    QMap<KStorageBus, int> currentType = mStorageModel->currentControllerTypes();
+    QMap<KStorageBus, int> maximumType = mStorageModel->maximumControllerTypes();
+    for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_SAS; ++iStorageBusType)
+    {
+        if (currentType[(KStorageBus)iStorageBusType] > maximumType[(KStorageBus)iStorageBusType])
+        {
+            QString strExcessiveRecord = QString("%1 (%2)");
+            strExcessiveRecord = strExcessiveRecord.arg(QString("<b>%1</b>").arg(vboxGlobal().toString((KStorageBus)iStorageBusType)));
+            strExcessiveRecord = strExcessiveRecord.arg(maximumType[(KStorageBus)iStorageBusType] == 1 ?
+                                                        tr("at most one supported", "controller") :
+                                                        tr("up to %1 supported", "controllers").arg(maximumType[(KStorageBus)iStorageBusType]));
+            excessiveList << strExcessiveRecord;
+        }
+    }
+    if (!excessiveList.isEmpty())
+    {
+        strWarning = tr("you are currently using more storage controllers than a %1 chipset supports. "
+                        "Please change the chipset type on the System settings page or reduce the number "
+                        "of the following storage controllers on the Storage settings page: %2.")
+                        .arg(vboxGlobal().toString(mStorageModel->chipsetType()))
+                        .arg(excessiveList.join(", "));
+        return false;
+    }
+
+    return true;
 }
 
 void UIMachineSettingsStorage::retranslateUi()
@@ -2514,7 +2521,7 @@ void UIMachineSettingsStorage::sltUnmountDevice()
 
 void UIMachineSettingsStorage::sltChooseExistingMedium()
 {
-    QString strMachineFolder(QFileInfo(m_machine.GetSettingsFilePath()).absolutePath());
+    QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
     QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), this, strMachineFolder);
     if (!strMediumId.isNull())
         m_pMediumIdHolder->setId(strMediumId);
@@ -2864,7 +2871,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
     Assert(mStorageModel->data(index, StorageModel::R_IsController).toBool());
     Assert(mStorageModel->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
     QString strControllerName(mStorageModel->data(index, StorageModel::R_CtrName).toString());
-    QString strMachineFolder(QFileInfo(m_machine.GetSettingsFilePath()).absolutePath());
+    QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
     QString strMediumId;
     switch (deviceType)
@@ -2913,10 +2920,9 @@ QString UIMachineSettingsStorage::getWithNewHDWizard()
     /* Run New HD Wizard */
     UINewHDWzd dlg(this);
     /* Initialize variables: */
-    CGuestOSType guestOSType = vboxGlobal().virtualBox().GetGuestOSType(m_machine.GetOSTypeId());
+    CGuestOSType guestOSType = vboxGlobal().virtualBox().GetGuestOSType(m_strMachineGuestOSTypeId);
     dlg.setRecommendedSize(guestOSType.GetRecommendedHDD());
-    QString strMachineSettingsFilepath = m_machine.GetSettingsFilePath();
-    QFileInfo fileInfo(strMachineSettingsFilepath);
+    QFileInfo fileInfo(m_strMachineSettingsFilePath);
     dlg.setDefaultPath(fileInfo.absolutePath());
 
     return dlg.exec() == QDialog::Accepted ? dlg.hardDisk().GetId() : QString();

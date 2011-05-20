@@ -607,13 +607,10 @@ typedef UISettingsCachePool<UIDataSettingsMachineStorageController, UICacheSetti
 struct UIDataSettingsMachineStorage
 {
     /* Default constructor: */
-    UIDataSettingsMachineStorage()
-        : m_strMachineId(QString()) {}
+    UIDataSettingsMachineStorage() {}
     /* Operators: */
-    bool operator==(const UIDataSettingsMachineStorage &other) const { return m_strMachineId == other.m_strMachineId; }
-    bool operator!=(const UIDataSettingsMachineStorage &other) const { return m_strMachineId != other.m_strMachineId; }
-    /* Variables: */
-    QString m_strMachineId;
+    bool operator==(const UIDataSettingsMachineStorage& /* other */) const { return true; }
+    bool operator!=(const UIDataSettingsMachineStorage& /* other */) const { return false; }
 };
 typedef UISettingsCachePool<UIDataSettingsMachineStorage, UICacheSettingsMachineStorageController> UICacheSettingsMachineStorage;
 
@@ -627,11 +624,7 @@ public:
 
     UIMachineSettingsStorage();
 
-    KChipsetType chipsetType() const;
     void setChipsetType(KChipsetType type);
-
-    QMap<KStorageBus, int> currentControllerTypes() const;
-    QMap<KStorageBus, int> maximumControllerTypes() const;
 
 signals:
 
@@ -740,6 +733,10 @@ private:
     void polishPage();
 
     QIWidgetValidator *mValidator;
+
+    QString m_strMachineId;
+    QString m_strMachineSettingsFilePath;
+    QString m_strMachineGuestOSTypeId;
 
     StorageModel *mStorageModel;
 
