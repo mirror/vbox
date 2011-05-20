@@ -868,13 +868,14 @@ VBoxWddmBuildVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID 
         if (VBoxMPValidateVideoModeParams(pExt, VidPnTargetId, xres, yres, bpp))
         {
             VBoxFillVidModeInfo(&g_CustomVideoModes[VidPnTargetId], xres, yres, bpp, 1/*index*/, 0);
+            Assert(g_CustomVideoModes[VidPnTargetId].ModeIndex == 1);
         }
     }
 
     /* Add custom mode to the table */
     if (g_CustomVideoModes[VidPnTargetId].ModeIndex)
     {
-        if (RT_ELEMENTS(pModes->aModes) == pModes->cModes)
+        if (RT_ELEMENTS(pModes->aModes) > pModes->cModes)
         {
             g_CustomVideoModes[VidPnTargetId].ModeIndex = pModes->cModes;
             pModes->aModes[pModes->cModes] = g_CustomVideoModes[VidPnTargetId];
@@ -902,8 +903,14 @@ VBoxWddmBuildVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID 
                 if (RT_ELEMENTS(pModes->aModes) == pModes->cModes)
                 {
                     WARN(("table full, can't add other bpp for specail mode!"));
+#ifdef DEBUG_misha
+                    /* this is definitely something we do not expect */
+                    AssertFailed();
+#endif
                     break;
                 }
+
+                AssertRelease(RT_ELEMENTS(pModes->aModes) > pModes->cModes); /* if not - the driver state is screwed up, @todo: better do KeBugCheckEx here */
 
                 if (pModes->aModes[pModes->iPreferredMode].BitsPerPlane != bpp)
                 {
@@ -911,7 +918,7 @@ VBoxWddmBuildVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID 
                                         pModes->aModes[pModes->iPreferredMode].VisScreenWidth,
                                         pModes->aModes[pModes->iPreferredMode].VisScreenHeight,
                                         bpp, pModes->cModes, 0);
-                    if (!VBoxMPFindVideoMode(pModes->aModes, pModes->cModes, &pModes->aModes[pModes->cModes]))
+                    if (VBoxMPFindVideoMode(pModes->aModes, pModes->cModes, &pModes->aModes[pModes->cModes]) < 0)
                     {
                         ++pModes->cModes;
                     }
@@ -920,7 +927,12 @@ VBoxWddmBuildVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID 
         }
         else
         {
+            AssertRelease(RT_ELEMENTS(pModes->aModes) == pModes->cModes); /* if not - the driver state is screwed up, @todo: better do KeBugCheckEx here */
             WARN(("table full, can't add video mode for a host request!"));
+#ifdef DEBUG_misha
+            /* this is definitely something we do not expect */
+            AssertFailed();
+#endif
         }
     }
 
@@ -930,8 +942,14 @@ VBoxWddmBuildVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID 
         if (RT_ELEMENTS(pModes->aModes) == pModes->cModes)
         {
            WARN(("table full, can't add addl modes!"));
+#ifdef DEBUG_misha
+            /* this is definitely something we do not expect */
+            AssertFailed();
+#endif
            break;
         }
+
+        AssertRelease(RT_ELEMENTS(pModes->aModes) > pModes->cModes); /* if not - the driver state is screwed up, @todo: better do KeBugCheckEx here */
 
         if (!pExt->fAnyX)
         {
