@@ -3305,7 +3305,12 @@ HRESULT Medium::addBackReference(const Guid &aMachineId,
     if (aSnapshotId.isEmpty())
     {
         /* sanity: no duplicate attachments */
-        AssertReturn(!it->fInCurState, E_FAIL);
+        if (it->fInCurState)
+            return setError(VBOX_E_OBJECT_IN_USE,
+                            tr("Cannot attach medium '%s' {%RTuuid}: medium is already associated with the current state of machine uuid {%RTuuid}!"),
+                            m->strLocationFull.c_str(),
+                            m->id.raw(),
+                            aMachineId.raw());
         it->fInCurState = true;
 
         return S_OK;
@@ -3329,8 +3334,7 @@ HRESULT Medium::addBackReference(const Guid &aMachineId,
                             tr("Cannot attach medium '%s' {%RTuuid} from snapshot '%RTuuid': medium is already in use by this snapshot!"),
                             m->strLocationFull.c_str(),
                             m->id.raw(),
-                            aSnapshotId.raw(),
-                            idOldSnapshot.raw());
+                            aSnapshotId.raw());
         }
     }
 
