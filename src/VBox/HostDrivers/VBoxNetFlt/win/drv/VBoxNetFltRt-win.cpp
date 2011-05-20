@@ -2962,6 +2962,7 @@ static NDIS_STATUS vboxNetFltWinDevDestroy(PVBOXNETFLTGLOBALS_WIN pGlobals)
     if (Status == NDIS_STATUS_SUCCESS)
     {
         pGlobals->hDevice = NULL;
+        pGlobals->pDevObj = NULL;
     }
     return Status;
 }
