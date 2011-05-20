@@ -20,7 +20,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Include Sub-Makefiles.
 include $(PATH_SUB_CURRENT)/Graphics/Makefile.kmk
 include $(PATH_SUB_CURRENT)/i8042prt/Makefile.kmk
-include $(PATH_SUB_CURRENT)/MouseFilter/Makefile.kmk
+include $(PATH_SUB_CURRENT)/Mouse/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxTray/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxGINA/Makefile.kmk
 include $(PATH_SUB_CURRENT)/VBoxCredProv/Makefile.kmk
