@@ -50,9 +50,12 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     , m_maxVRAM(0)
     , m_maxVRAMVisible(0)
     , m_initialVRAM(0)
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    , m_f2DVideoAccelerationSupported(false)
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 #ifdef VBOX_WITH_CRHGSMI
-    , m_bWddmMode(false)
-#endif
+    , m_fWddmModeSupported(false)
+#endif /* VBOX_WITH_CRHGSMI */
 {
     /* Apply UI decorations */
     Ui::UIMachineSettingsDisplay::setupUi (this);
@@ -93,10 +96,7 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     mSlMemory->setMinimum ((m_minVRAM / mSlMemory->pageStep()) * mSlMemory->pageStep());
     mSlMemory->setMaximum (m_maxVRAMVisible);
     mSlMemory->setSnappingEnabled (true);
-    quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&m_machine) / _1M;
     mSlMemory->setErrorHint (0, 1);
-    mSlMemory->setWarningHint (1, needMBytes);
-    mSlMemory->setOptimalHint (needMBytes, m_maxVRAMVisible);
     mSlMonitors->setMinimum (MinMonitors);
     mSlMonitors->setMaximum (MaxMonitors);
     mSlMonitors->setErrorHint (0, MinMonitors);
@@ -119,12 +119,32 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     mCb2DVideo->setVisible (false);
 #endif
 
-#ifdef VBOX_WITH_CRHGSMI
-    m_bWddmMode = false;
-#endif
-
     /* Applying language settings */
     retranslateUi();
+}
+
+void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType guestOSType)
+{
+    /* Check if guest os type changed: */
+    if (m_guestOSType == guestOSType)
+        return;
+
+    /* Remember new guest os type: */
+    m_guestOSType = guestOSType;
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* Check if 2D video acceleration supported by the guest OS type: */
+    QString strguestOSTypeFamily = m_guestOSType.GetFamilyId();
+    m_f2DVideoAccelerationSupported = strguestOSTypeFamily == "Windows";
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+#ifdef VBOX_WITH_CRHGSMI
+    /* Check if WDDM mode supported by the guest OS type: */
+    QString strguestOSTypeId = m_guestOSType.GetId();
+    m_fWddmModeSupported = strguestOSTypeId == "WindowsVista" || strguestOSTypeId == "Windows7";
+#endif /* VBOX_WITH_CRHGSMI */
+
+    /* Recheck video RAM requirement: */
+    checkVRAMRequirements();
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -132,18 +152,7 @@ bool UIMachineSettingsDisplay::isAcceleration2DVideoSelected() const
 {
     return mCb2DVideo->isChecked();
 }
-#endif
-
-#ifdef VBOX_WITH_CRHGSMI
-void UIMachineSettingsDisplay::setWddmMode(bool bWddm)
-{
-    if (bWddm == m_bWddmMode)
-        return;
-
-    m_bWddmMode = bWddm;
-    checkVRAMRequirements();
-}
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* Load data to cashe from corresponding external object(s),
  * this task COULD be performed in other than GUI thread: */
@@ -312,49 +321,70 @@ void UIMachineSettingsDisplay::setValidator (QIWidgetValidator *aVal)
              mValidator, SLOT (revalidate()));
 }
 
-bool UIMachineSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitle */)
+bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString & /* strTitle */)
 {
-    /* Video RAM amount test */
-    quint64 needBytes = VBoxGlobal::requiredVideoMemory (&m_machine, mSlMonitors->value());
-    if (   vboxGlobal().shouldWarnAboutToLowVRAM(&m_machine)
-        && (quint64)mSlMemory->value() * _1M < needBytes)
-    {
-        aWarning = tr (
-                       "you have assigned less than <b>%1</b> of video memory which is "
-                       "the minimum amount required to switch the virtual machine to "
-                       "fullscreen or seamless mode.")
-            .arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
-    }
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    else if (mCb2DVideo->isChecked())
-    {
-        needBytes += VBoxGlobal::required2DOffscreenVideoMemory();
-        if ((quint64) mSlMemory->value() * _1M < needBytes)
-        {
-            aWarning = tr (
-                "you have assigned less than <b>%1</b> of video memory which is "
-                "the minimum amount required for HD Video to be played efficiently.")
-                .arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
-        }
-    }
-#endif
-#ifdef VBOX_WITH_CRHGSMI
-    else if (false) // m_bWddmMode && mCb3D->isChecked())
-    {
-        int cVal = mSlMonitors->value();
-        needBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(&m_machine, cVal);
-        needBytes = RT_MAX(needBytes, 128 * _1M);
-        needBytes = RT_MIN(needBytes, 256 * _1M);
-        if ((quint64) mSlMemory->value() * _1M < needBytes)
-        {
-            aWarning = tr(
-                "You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. "
-                "For maximal performance set the guest VRAM to at least <b>%1</b>."
-                ).arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
-        }
-    }
-#endif
+    /* Check if video RAM requirement changed first: */
     checkVRAMRequirements();
+
+    /* Video RAM amount test: */
+    if (shouldWeWarnAboutLowVideoMemory() && !m_guestOSType.isNull())
+    {
+        quint64 uNeedBytes = VBoxGlobal::requiredVideoMemory(m_guestOSType.GetId(), mSlMonitors->value());
+
+        /* Basic video RAM amount test: */
+        if ((quint64)mSlMemory->value() * _1M < uNeedBytes)
+        {
+            strWarning = tr("you have assigned less than <b>%1</b> of video memory which is "
+                            "the minimum amount required to switch the virtual machine to "
+                            "fullscreen or seamless mode.")
+                            .arg(vboxGlobal().formatSize(uNeedBytes, 0, VBoxDefs::FormatSize_RoundUp));
+            return true;
+        }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        /* 2D acceleration video RAM amount test: */
+        if (mCb2DVideo->isChecked() && m_f2DVideoAccelerationSupported)
+        {
+            uNeedBytes += VBoxGlobal::required2DOffscreenVideoMemory();
+            if ((quint64)mSlMemory->value() * _1M < uNeedBytes)
+            {
+                strWarning = tr("you have assigned less than <b>%1</b> of video memory which is "
+                                "the minimum amount required for HD Video to be played efficiently.")
+                                .arg(vboxGlobal().formatSize(uNeedBytes, 0, VBoxDefs::FormatSize_RoundUp));
+                return true;
+            }
+        }
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+#if 0
+# ifdef VBOX_WITH_CRHGSMI
+        if (mCb3D->isChecked() && m_fWddmModeSupported)
+        {
+            int cMonitorsCount = mSlMonitors->value();
+            uNeedBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(m_guestOSType.GetId(), cMonitorsCount);
+            uNeedBytes = RT_MAX(uNeedBytes, 128 * _1M);
+            uNeedBytes = RT_MIN(uNeedBytes, 256 * _1M);
+            if ((quint64)mSlMemory->value() * _1M < uNeedBytes)
+            {
+                strWarning = tr("you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. "
+                                "For maximal performance set the guest VRAM to at least <b>%1</b>.")
+                                .arg(vboxGlobal().formatSize(uNeedBytes, 0, VBoxDefs::FormatSize_RoundUp));
+                return true;
+            }
+        }
+# endif /* VBOX_WITH_CRHGSMI */
+#endif /* 0 */
+    }
+
+    /* Check mode availability: */
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* 2D video acceleration is available for Windows guests only: */
+    if (mCb2DVideo->isChecked() && !m_f2DVideoAccelerationSupported)
+    {
+        strWarning = tr("you have 2D Video Acceleration enabled. As 2D Video Acceleration "
+                        "is supported for Windows guests only, this feature will be disabled.");
+        return true;
+    }
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+
     return true;
 }
 
@@ -423,40 +453,56 @@ void UIMachineSettingsDisplay::textChangedMonitors (const QString &aText)
 
 void UIMachineSettingsDisplay::checkVRAMRequirements()
 {
-    int cVal = mSlMonitors->value();
-    /* The memory requirements have changed too. */
-    quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&m_machine, cVal) / _1M;
-    /* Limit the maximum memory to save careless users from setting useless big values */
+    if (m_guestOSType.isNull())
+        return;
+
+    /* Get monitors count and base video memory requirements: */
+    int cMonitorsCount = mSlMonitors->value();
+    quint64 uNeedMBytes = VBoxGlobal::requiredVideoMemory(m_guestOSType.GetId(), cMonitorsCount) / _1M;
+
+    /* Initial values: */
+    m_maxVRAMVisible = cMonitorsCount * 32;
+    if (m_maxVRAMVisible < 128)
+        m_maxVRAMVisible = 128;
+    if (m_maxVRAMVisible < m_initialVRAM)
+        m_maxVRAMVisible = m_initialVRAM;
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    if (mCb2DVideo->isChecked())
+    if (mCb2DVideo->isChecked() && m_f2DVideoAccelerationSupported)
     {
-        needMBytes += VBoxGlobal::required2DOffscreenVideoMemory() / _1M;
+        uNeedMBytes += VBoxGlobal::required2DOffscreenVideoMemory() / _1M;
     }
-#endif
-#if 0 // def VBOX_WITH_CRHGSMI
-    if (m_bWddmMode && mCb3D->isChecked())
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+#if 0
+# ifdef VBOX_WITH_CRHGSMI
+    if (mCb3D->isChecked() && m_fWddmModeSupported)
     {
-        needMBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(&m_machine, cVal) / _1M;
-        needMBytes = RT_MAX(needMBytes, 128);
-        needMBytes = RT_MIN(needMBytes, 256);
+        uNeedMBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(m_guestOSType.GetId(), cMonitorsCount) / _1M;
+        uNeedMBytes = RT_MAX(uNeedMBytes, 128);
+        uNeedMBytes = RT_MIN(uNeedMBytes, 256);
         m_maxVRAMVisible = 256;
     }
-    else
-#endif
-    {
-        m_maxVRAMVisible = cVal * 32;
-        if (m_maxVRAMVisible < 128)
-            m_maxVRAMVisible = 128;
-        if (m_maxVRAMVisible < m_initialVRAM)
-            m_maxVRAMVisible = m_initialVRAM;
-    }
-    mSlMemory->setWarningHint (1, needMBytes);
-    mSlMemory->setPageStep (calcPageStep (m_maxVRAMVisible));
-    mSlMemory->setMaximum (m_maxVRAMVisible);
-    mSlMemory->setOptimalHint (needMBytes, m_maxVRAMVisible);
-    mLeMemory->setValidator (new QIntValidator (m_minVRAM, m_maxVRAMVisible, this));
-    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (m_maxVRAMVisible));
-    /* ... or just call retranslateUi()? */
+# endif /* VBOX_WITH_CRHGSMI */
+#endif /* 0 */
+
+    mSlMemory->setWarningHint(1, uNeedMBytes);
+    mSlMemory->setPageStep(calcPageStep(m_maxVRAMVisible));
+    mSlMemory->setMaximum(m_maxVRAMVisible);
+    mSlMemory->setOptimalHint(uNeedMBytes, m_maxVRAMVisible);
+    mLeMemory->setValidator(new QIntValidator(m_minVRAM, m_maxVRAMVisible, this));
+    mLbMemoryMax->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_maxVRAMVisible));
+}
+
+bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVideoMemory()
+{
+    bool fResult = true;
+
+    QStringList excludingOSList = QStringList()
+        << "Other" << "DOS" << "Netware" << "L4" << "QNX" << "JRockitVE";
+    if (excludingOSList.contains(m_guestOSType.GetId()))
+        fResult = false;
+
+    return fResult;
 }
 
 void UIMachineSettingsDisplay::polishPage()

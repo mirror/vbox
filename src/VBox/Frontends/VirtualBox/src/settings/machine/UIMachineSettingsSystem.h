@@ -105,9 +105,9 @@ public:
     UIMachineSettingsSystem();
 
     bool isHWVirtExEnabled() const;
-    int cpuCount() const;
     bool isHIDEnabled() const;
     KChipsetType chipsetType() const;
+    void setOHCIEnabled(bool fEnabled);
 
 signals:
 
@@ -163,6 +163,8 @@ private:
     uint mMaxGuestCPU;
 
     QList<KDeviceType> m_possibleBootItems;
+
+    bool m_fOHCIEnabled;
 
     /* Cache: */
     UICacheSettingsMachineSystem m_cache;

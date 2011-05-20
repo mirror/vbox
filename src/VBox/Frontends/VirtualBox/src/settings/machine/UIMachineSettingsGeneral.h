@@ -76,15 +76,12 @@ public:
 
     UIMachineSettingsGeneral();
 
+    CGuestOSType guestOSType() const;
+    void setHWVirtExEnabled(bool fEnabled);
     bool is64BitOSTypeSelected() const;
-
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool isWindowsOSTypeSelected() const;
-#endif
-
-#ifdef VBOX_WITH_CRHGSMI
-    bool isWddmSupportedForOSType() const;
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 protected:
 
@@ -106,6 +103,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aVal);
+    bool revalidate(QString &strWarning, QString &strTitle);
 
     void setOrderAfter (QWidget *aWidget);
 
@@ -116,6 +114,7 @@ private:
     void polishPage();
 
     QIWidgetValidator *mValidator;
+    bool m_fHWVirtExEnabled;
 
     /* Cache: */
     UICacheSettingsMachineGeneral m_cache;

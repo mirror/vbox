@@ -26,6 +26,7 @@
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     : mValidator(0)
+    , m_fHWVirtExEnabled(false)
 {
     /* Apply UI decorations */
     Ui::UIMachineSettingsGeneral::setupUi (this);
@@ -47,6 +48,16 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     retranslateUi();
 }
 
+CGuestOSType UIMachineSettingsGeneral::guestOSType() const
+{
+    return mOSTypeSelector->type();
+}
+
+void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
+{
+    m_fHWVirtExEnabled = fEnabled;
+}
+
 bool UIMachineSettingsGeneral::is64BitOSTypeSelected() const
 {
     return mOSTypeSelector->type().GetIs64Bit();
@@ -57,15 +68,7 @@ bool UIMachineSettingsGeneral::isWindowsOSTypeSelected() const
 {
     return mOSTypeSelector->type().GetFamilyId() == "Windows";
 }
-#endif
-
-#ifdef VBOX_WITH_CRHGSMI
-bool UIMachineSettingsGeneral::isWddmSupportedForOSType() const
-{
-    const QString &strOsId = mOSTypeSelector->type().GetId();
-    return strOsId == "WindowsVista" || strOsId == "Windows7";
-}
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* Load data to cashe from corresponding external object(s),
  * this task COULD be performed in other than GUI thread: */
@@ -194,6 +197,15 @@ void UIMachineSettingsGeneral::setValidator (QIWidgetValidator *aVal)
 {
     mValidator = aVal;
     connect (mOSTypeSelector, SIGNAL (osTypeChanged()), mValidator, SLOT (revalidate()));
+}
+
+bool UIMachineSettingsGeneral::revalidate(QString &strWarning, QString& /* strTitle */)
+{
+    if (is64BitOSTypeSelected() && !m_fHWVirtExEnabled)
+        strWarning = tr("you have selected a 64-bit guest OS type for this VM. As such guests "
+                        "require hardware virtualization (VT-x/AMD-V), this feature will be enabled "
+                        "automatically.");
+    return true;
 }
 
 void UIMachineSettingsGeneral::setOrderAfter (QWidget *aWidget)

@@ -908,121 +908,45 @@ QString UISettingsDialogMachine::title() const
     return strDialogTitle;
 }
 
-bool UISettingsDialogMachine::recorrelate(QWidget *pPage, QString &strWarning)
+void UISettingsDialogMachine::recorrelate(UISettingsPage *pSettingsPage)
 {
-    /* This method performs correlation option check
-     * between different pages of VM Settings dialog: */
-
-    if (pPage == m_pSelector->idToPage(VMSettingsPage_General))
+    switch (pSettingsPage->id())
     {
-        /* Get General & System pages: */
-        UIMachineSettingsGeneral *pGeneralPage =
-            qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
-        UIMachineSettingsSystem *pSystemPage =
-            qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
-
-        /* Guest OS type & VT-x/AMD-V option correlation test: */
-        if (pGeneralPage && pSystemPage &&
-            pGeneralPage->is64BitOSTypeSelected() && !pSystemPage->isHWVirtExEnabled())
+        case VMSettingsPage_General:
         {
-            strWarning = tr(
-                "you have selected a 64-bit guest OS type for this VM. As such guests "
-                "require hardware virtualization (VT-x/AMD-V), this feature will be enabled "
-                "automatically.");
-            return true;
+            UIMachineSettingsGeneral *pGeneralPage = qobject_cast<UIMachineSettingsGeneral*>(pSettingsPage);
+            UIMachineSettingsSystem *pSystemPage = qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
+            if (pGeneralPage && pSystemPage)
+                pGeneralPage->setHWVirtExEnabled(pSystemPage->isHWVirtExEnabled());
+            break;
         }
-    }
-
-#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI)
-    /* 2D Video Acceleration is available for Windows guests only: */
-    if (pPage == m_pSelector->idToPage(VMSettingsPage_Display))
-    {
-        /* Get General & Display pages: */
-        UIMachineSettingsGeneral *pGeneralPage =
-            qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
-        UIMachineSettingsDisplay *pDisplayPage =
-            qobject_cast<UIMachineSettingsDisplay*>(m_pSelector->idToPage(VMSettingsPage_Display));
-#ifdef VBOX_WITH_CRHGSMI
-        if (pGeneralPage && pDisplayPage)
+        case VMSettingsPage_Display:
         {
-            bool bWddmSupported = pGeneralPage->isWddmSupportedForOSType();
-            pDisplayPage->setWddmMode(bWddmSupported);
+            UIMachineSettingsDisplay *pDisplayPage = qobject_cast<UIMachineSettingsDisplay*>(pSettingsPage);
+            UIMachineSettingsGeneral *pGeneralPage = qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
+            if (pDisplayPage && pGeneralPage)
+                pDisplayPage->setGuestOSType(pGeneralPage->guestOSType());
+            break;
         }
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        if (pGeneralPage && pDisplayPage &&
-            pDisplayPage->isAcceleration2DVideoSelected() && !pGeneralPage->isWindowsOSTypeSelected())
+        case VMSettingsPage_System:
         {
-            strWarning = tr(
-                "you have 2D Video Acceleration enabled. As 2D Video Acceleration "
-                "is supported for Windows guests only, this feature will be disabled.");
-            return true;
+            UIMachineSettingsSystem *pSystemPage = qobject_cast<UIMachineSettingsSystem*>(pSettingsPage);
+            UIMachineSettingsUSB *pUsbPage = qobject_cast<UIMachineSettingsUSB*>(m_pSelector->idToPage(VMSettingsPage_USB));
+            if (pSystemPage && pUsbPage)
+                pSystemPage->setOHCIEnabled(pUsbPage->isOHCIEnabled());
+            break;
         }
-#endif
-    }
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-
-    if (pPage == m_pSelector->idToPage(VMSettingsPage_System))
-    {
-        /* Get System & USB pages: */
-        UIMachineSettingsSystem *pSystemPage =
-            qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
-        UIMachineSettingsUSB *pUsbPage =
-            qobject_cast<UIMachineSettingsUSB*>(m_pSelector->idToPage(VMSettingsPage_USB));
-        if (pSystemPage && pUsbPage &&
-            pSystemPage->isHIDEnabled() && !pUsbPage->isOHCIEnabled())
+        case VMSettingsPage_Storage:
         {
-            strWarning = tr(
-                "you have enabled a USB HID (Human Interface Device). "
-                "This will not work unless USB emulation is also enabled. "
-                "This will be done automatically when you accept the VM Settings "
-                "by pressing the OK button.");
-            return true;
-        }
-    }
-
-    if (pPage == m_pSelector->idToPage(VMSettingsPage_Storage))
-    {
-        /* Get System & Storage pages: */
-        UIMachineSettingsSystem *pSystemPage =
-            qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
-        UIMachineSettingsStorage *pStoragePage =
-            qobject_cast<UIMachineSettingsStorage*>(m_pSelector->idToPage(VMSettingsPage_Storage));
-        if (pSystemPage && pStoragePage)
-        {
-            /* Update chiset type for the Storage settings page: */
-            if (pStoragePage->chipsetType() != pSystemPage->chipsetType())
+            UIMachineSettingsStorage *pStoragePage = qobject_cast<UIMachineSettingsStorage*>(pSettingsPage);
+            UIMachineSettingsSystem *pSystemPage = qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
+            if (pStoragePage && pSystemPage)
                 pStoragePage->setChipsetType(pSystemPage->chipsetType());
-            /* Check for excessive controllers on Storage page controllers list: */
-            QStringList excessiveList;
-            QMap<KStorageBus, int> currentType = pStoragePage->currentControllerTypes();
-            QMap<KStorageBus, int> maximumType = pStoragePage->maximumControllerTypes();
-            for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_SAS; ++iStorageBusType)
-            {
-                if (currentType[(KStorageBus)iStorageBusType] > maximumType[(KStorageBus)iStorageBusType])
-                {
-                    QString strExcessiveRecord = QString("%1 (%2)");
-                    strExcessiveRecord = strExcessiveRecord.arg(QString("<b>%1</b>").arg(vboxGlobal().toString((KStorageBus)iStorageBusType)));
-                    strExcessiveRecord = strExcessiveRecord.arg(maximumType[(KStorageBus)iStorageBusType] == 1 ?
-                                                                tr("at most one supported") :
-                                                                tr("up to %1 supported").arg(maximumType[(KStorageBus)iStorageBusType]));
-                    excessiveList << strExcessiveRecord;
-                }
-            }
-            if (!excessiveList.isEmpty())
-            {
-                strWarning = tr(
-                    "you are currently using more storage controllers than a %1 chipset supports. "
-                    "Please change the chipset type on the System settings page or reduce the number "
-                    "of the following storage controllers on the Storage settings page: %2.")
-                    .arg(vboxGlobal().toString(pStoragePage->chipsetType()))
-                    .arg(excessiveList.join(", "));
-                return false;
-            }
+            break;
         }
+        default:
+            break;
     }
-
-    return true;
 }
 
 void UISettingsDialogMachine::sltMarkLoaded()
