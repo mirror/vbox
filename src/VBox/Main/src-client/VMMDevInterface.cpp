@@ -464,9 +464,6 @@ DECLCALLBACK(int) vmmdevSetVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint32
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
     Console *pConsole = pDrv->pVMMDev->getParent();
 
-    if (!cRect)
-        return VERR_INVALID_PARAMETER;
-
     /* Forward to Display, which calls corresponding framebuffers. */
     pConsole->getDisplay()->handleSetVisibleRegion(cRect, pRect);
 
