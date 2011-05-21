@@ -417,8 +417,12 @@ void VBoxGuestSeamlessX11::doShapeEvent(Window hWin)
 void VBoxGuestSeamlessX11::doUnmapEvent(Window hWin)
 {
     LogRelFlowFunc(("\n"));
-    VBoxGuestWinFree(mGuestWindows.removeWindow(hWin), NULL);
-    mChanged = true;
+    VBoxGuestWinInfo *pInfo = mGuestWindows.removeWindow(hWin);
+    if (pInfo)
+    {
+        VBoxGuestWinFree(pInfo, mDisplay);
+        mChanged = true;
+    }
     LogRelFlowFunc(("returning\n"));
 }
 
