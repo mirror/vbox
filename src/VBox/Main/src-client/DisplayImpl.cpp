@@ -1047,7 +1047,8 @@ static bool displayIntersectRect(RTRECT *prectResult,
 
 int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
 {
-    RTRECT *pVisibleRegion = (RTRECT *)RTMemTmpAlloc(cRect * sizeof (RTRECT));
+    RTRECT *pVisibleRegion = (RTRECT *)RTMemTmpAlloc(  RT_MAX(cRect, 1)
+                                                     * sizeof (RTRECT));
     if (!pVisibleRegion)
     {
         return VERR_NO_TMP_MEMORY;
@@ -1102,10 +1103,7 @@ int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
                 }
             }
 
-            if (cRectVisibleRegion > 0)
-            {
-                pFBInfo->pFramebuffer->SetVisibleRegion((BYTE *)pVisibleRegion, cRectVisibleRegion);
-            }
+            pFBInfo->pFramebuffer->SetVisibleRegion((BYTE *)pVisibleRegion, cRectVisibleRegion);
         }
     }
 
