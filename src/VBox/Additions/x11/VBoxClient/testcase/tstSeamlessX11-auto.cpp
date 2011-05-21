@@ -1,5 +1,6 @@
 /** @file
  * Automated test of the X11 seamless Additions code.
+ * @todo Better separate test data from implementation details!
  */
 
 /*
@@ -66,6 +67,7 @@ extern "C" Atom XInternAtom(Display *display, const char *atom_name,
                             Bool only_if_exists);
 Atom XInternAtom(Display *display, const char *atom_name, Bool only_if_exists)
 {
+    Assert(display == TEST_DISPLAY);
     if (!RTStrCmp(atom_name, WM_TYPE_PROP))
         return (Atom) ATOM_PROP;
     if (!RTStrCmp(atom_name, WM_TYPE_DESKTOP_PROP))
@@ -94,8 +96,9 @@ int XGetWindowProperty(Display *display, Window w, Atom property,
                        unsigned long *bytes_after_return,
                        unsigned char **prop_return)
 {
-    Atom atomType = XInternAtom (NULL, WM_TYPE_PROP, true);
-    Atom atomTypeDesktop = XInternAtom (NULL, WM_TYPE_DESKTOP_PROP, true);
+    Assert(display == TEST_DISPLAY);
+    Atom atomType = XInternAtom (display, WM_TYPE_PROP, true);
+    Atom atomTypeDesktop = XInternAtom (display, WM_TYPE_DESKTOP_PROP, true);
     /* We only handle things we expect. */
     AssertReturn((req_type == XA_ATOM) || (req_type == AnyPropertyType),
                  0xffff);
@@ -129,6 +132,7 @@ extern "C" Bool XShapeQueryExtension (Display *dpy, int *event_basep,
                                       int *error_basep);
 Bool XShapeQueryExtension (Display *dpy, int *event_basep, int *error_basep)
 {
+    Assert(dpy == TEST_DISPLAY);
     return true;
 }
 
@@ -136,6 +140,7 @@ Bool XShapeQueryExtension (Display *dpy, int *event_basep, int *error_basep)
 extern "C" int XSelectInput(Display *display, Window w, long event_mask);
 int XSelectInput(Display *display, Window w, long event_mask)
 {
+    Assert(display == TEST_DISPLAY);
     return 0;
 }
 
@@ -143,11 +148,14 @@ int XSelectInput(Display *display, Window w, long event_mask)
 extern "C" void XShapeSelectInput(Display *display, Window w,
                                   unsigned long event_mask);
 void XShapeSelectInput(Display *display, Window w, unsigned long event_mask)
-{}
+{
+    Assert(display == TEST_DISPLAY);
+}
 
 extern "C" Window XDefaultRootWindow(Display *display);
 Window XDefaultRootWindow(Display *display)
 {
+    Assert(display == TEST_DISPLAY);
     return TEST_ROOT;
 }
 
@@ -163,6 +171,7 @@ Status XQueryTree(Display *display, Window w, Window *root_return,
                   Window *parent_return, Window **children_return,
                   unsigned int *nchildren_return)
 {
+    Assert(display == TEST_DISPLAY);
     AssertReturn(w == TEST_ROOT, False);  /* We support nothing else */
     AssertPtrReturn(children_return, False);
     AssertReturn(g_paSmlsWindows, False);
@@ -180,6 +189,7 @@ Status XQueryTree(Display *display, Window w, Window *root_return,
 extern "C" Window XmuClientWindow(Display *dpy, Window win);
 Window XmuClientWindow(Display *dpy, Window win)
 {
+    Assert(dpy == TEST_DISPLAY);
     return win;
 }
 
@@ -188,6 +198,7 @@ extern "C" Status XGetWindowAttributes(Display *display, Window w,
 Status XGetWindowAttributes(Display *display, Window w,
                             XWindowAttributes *window_attributes_return)
 {
+    Assert(display == TEST_DISPLAY);
     AssertPtrReturn(window_attributes_return, 1);
     for (unsigned i = 0; i < g_cSmlsWindows; ++i)
         if (g_paSmlsWindows[i] == w)
@@ -205,6 +216,7 @@ extern "C" Status XGetWMNormalHints(Display *display, Window w,
 Status XGetWMNormalHints(Display *display, Window w,
                          XSizeHints *hints_return, long *supplied_return)
 {
+    Assert(display == TEST_DISPLAY);
     return 1;
 }
 
@@ -228,6 +240,7 @@ extern "C" XRectangle *XShapeGetRectangles (Display *dpy, Window window,
 XRectangle *XShapeGetRectangles (Display *dpy, Window window, int kind,
                                  int *count, int *ordering)
 {
+    Assert(dpy == TEST_DISPLAY);
     if ((window != g_SmlsShapedWindow) || (window == 0))
         return NULL;  /* Probably not correct, but works for us. */
     *count = g_cSmlsShapeRectangles;
@@ -252,6 +265,7 @@ static Window g_SmlsEventWindow = 0;
 extern "C" int XNextEvent(Display *display, XEvent *event_return);
 int XNextEvent(Display *display, XEvent *event_return)
 {
+    Assert(display == TEST_DISPLAY);
     event_return->xany.type = g_SmlsEventType;
     event_return->xany.window = g_SmlsEventWindow;
     event_return->xmap.window = g_SmlsEventWindow;
@@ -270,6 +284,7 @@ extern "C" Status XSendEvent(Display *display, Window w, Bool propagate,
 Status XSendEvent(Display *display, Window w, Bool propagate,
                   long event_mask, XEvent *event_send)
 {
+    Assert(display == TEST_DISPLAY);
     AssertFailedReturn(0);
 }
 
@@ -277,6 +292,7 @@ Status XSendEvent(Display *display, Window w, Bool propagate,
 extern "C" int XFlush(Display *display);
 int XFlush(Display *display)
 {
+    Assert(display == TEST_DISPLAY);
     AssertFailedReturn(0);
 }
 
@@ -348,7 +364,7 @@ struct SMLSFIXTURE
     XRectangle *paShapeRectsAfter;
     /** The event to delivered */
     int x11EventType;
-    /** The windows for which the event in @enmEvent is delivered */
+    /** The window for which the event in @enmEvent is delivered */
     Window hEventWindow;
     /** The number of windows expected to be reported at the end of the
      * fixture */
@@ -470,7 +486,7 @@ static SMLSFIXTURE g_testMap =
     g_aRects1
 };
 
-/*** Test fixture to test the code against X11 unmap events ***/
+/*** Test fixtures to test the code against X11 unmap events ***/
 
 static XWindowAttributes g_aAttrib4After[] =
 { { 100, 200, 300, 400, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, IsUnmapped }
@@ -498,6 +514,37 @@ static SMLSFIXTURE g_testUnmap =
     20,
     0,
     NULL
+};
+
+/*** A window we are not monitoring has been unmapped.  Nothing should
+ *** happen, especially nothing bad. ***/
+
+static RTRECT g_aRects2[] =
+{
+    { 100, 200, 150, 250 },
+    { 150, 250, 300, 500 }
+};
+
+static SMLSFIXTURE g_testUnmapOther =
+{
+    RT_ELEMENTS(g_ahWin1),
+    g_ahWin1,
+    g_aAttrib1Before,
+    g_apszNames1,
+    20,
+    RT_ELEMENTS(g_aRectangle1),
+    g_aRectangle1,
+    RT_ELEMENTS(g_ahWin1),
+    g_ahWin1,
+    g_aAttrib1Before,
+    g_apszNames1,
+    20,
+    RT_ELEMENTS(g_aRectangle1),
+    g_aRectangle1,
+    UnmapNotify,
+    21,
+    RT_ELEMENTS(g_aRects2),
+    g_aRects2
 };
 
 /*** Test fixture to test the code against X11 shape events ***/
@@ -649,6 +696,8 @@ int main( int argc, char **argv)
                            "ConfigureNotify event (window resized)");
     cErrs += smlsDoFixture(&g_testMap, "MapNotify event");
     cErrs += smlsDoFixture(&g_testUnmap, "UnmapNotify event");
+    cErrs += smlsDoFixture(&g_testUnmapOther,
+                           "UnmapNotify event for unmonitored window");
     cErrs += smlsDoFixture(&g_testShape, "ShapeNotify event");
     if (cErrs > 0)
         RTPrintf("%u errors\n", cErrs);
