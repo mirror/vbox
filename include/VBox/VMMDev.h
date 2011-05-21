@@ -1824,7 +1824,9 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
         case VMMDevReq_VideoAccelFlush:
             return sizeof(VMMDevVideoAccelFlush);
         case VMMDevReq_VideoSetVisibleRegion:
-            return sizeof(VMMDevVideoSetVisibleRegion);
+            /* The original protocol didn't consider a guest with NO visible
+             * windows */
+            return sizeof(VMMDevVideoSetVisibleRegion) - sizeof(RTRECT);
         case VMMDevReq_GetSeamlessChangeRequest:
             return sizeof(VMMDevSeamlessChangeRequest);
         case VMMDevReq_QueryCredentials:

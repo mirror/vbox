@@ -136,26 +136,35 @@ VBGLR3DECL(int) VbglR3SeamlessGetLastEvent(VMMDevSeamlessMode *pMode)
  * @todo A scatter-gather version of vbglR3GRPerform would be nice, so that we don't have
  *       to copy our rectangle and header data into a single structure and perform an
  *       additional allocation.
+ * @todo Would that really gain us much, given that the rectangles may not
+ *       be grouped at all, or in the format we need?  Keeping the memory
+ *       for our "single structure" around (re-alloc-ing it if necessary)
+ *       sounds like a simpler optimisation if we need it.
  */
 VBGLR3DECL(int) VbglR3SeamlessSendRects(uint32_t cRects, PRTRECT pRects)
 {
     VMMDevVideoSetVisibleRegion *pReq;
     int rc;
 
-    if (!cRects || !pRects)
-        return VINF_SUCCESS;
+    AssertReturn(pRects || (cRects == 0), VERR_INVALID_PARAMETER);
     rc = vbglR3GRAlloc((VMMDevRequestHeader **)&pReq,
-                       sizeof(VMMDevVideoSetVisibleRegion) + (cRects - 1) * sizeof(RTRECT),
+                         sizeof(VMMDevVideoSetVisibleRegion)
+                       + cRects * sizeof(RTRECT) - sizeof(RTRECT),
                        VMMDevReq_VideoSetVisibleRegion);
     if (RT_SUCCESS(rc))
     {
         pReq->cRect = cRects;
-        memcpy(&pReq->Rect, pRects, cRects * sizeof(RTRECT));
+        if (cRects)
+            memcpy(&pReq->Rect, pRects, cRects * sizeof(RTRECT));
+        /* This will fail harmlessly for cRect == 0 and older host code */
         rc = vbglR3GRPerform(&pReq->header);
+        LogFunc(("Visible region request returned %Rrc, internal %Rrc.\n",
+                 rc, pReq->header.rc));
         if (RT_SUCCESS(rc))
             rc = pReq->header.rc;
         vbglR3GRFree(&pReq->header);
     }
+    LogFunc(("Sending %u rectangles to the host: %Rrc\n", cRects, rc));
     return rc;
 }
 

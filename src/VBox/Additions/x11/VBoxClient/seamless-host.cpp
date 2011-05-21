@@ -136,7 +136,7 @@ int VBoxGuestSeamlessHost::nextEvent(void)
 void VBoxGuestSeamlessHost::updateRects(RTRECT *pRects, size_t cRects)
 {
     LogRelFlowFunc(("\n"));
-    if (!pRects)  /* Assertion */
+    if (cRects && !pRects)  /* Assertion */
     {
         LogRelThisFunc(("ERROR: called with null pointer!\n"));
         return;
