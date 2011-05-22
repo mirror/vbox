@@ -1187,6 +1187,11 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
            permit grand parents and beyond to be group writable by admin. */
         if (pFsObjState->Stat.st_gid != 80 /*admin*/) /** @todo dynamically resolve the admin group? */
 #endif
+#ifdef RT_OS_FREEBSD
+        /* PC-BSD 9 has group-writable application directory, similar to OSX and
+           their Applications directory */
+        if (pFsObjState->Stat.st_gid != 5 /*operators*/) /* Allow operators group-writes */
+#endif
             return supR3HardenedSetError3(VERR_SUPLIB_WRITE_NON_SYS_GROUP, pErrInfo,
                                           "The group is not a system group and it has write access to '", pszPath, "'");
     }
