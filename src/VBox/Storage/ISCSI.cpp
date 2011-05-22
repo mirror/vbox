@@ -1977,6 +1977,7 @@ out_release:
          * about 30-40 seconds, or the guest will lose its patience. */
         iscsiTransportClose(pImage);
         pImage->state = ISCSISTATE_FREE;
+        rc = VERR_BROKEN_PIPE;
     }
     RTSemMutexRelease(pImage->Mutex);
 
