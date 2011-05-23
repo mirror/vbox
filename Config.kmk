@@ -771,10 +771,8 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_VBOXSDL=
  VBOX_WITH_VBOXBFE=
 
- # Temporary while Lion is being worked on by apple (we need java).
+ # Temporary while Lion is being worked on by apple and others (mac ports).
  if "$(VBOX_DARWIN_HOST_VERSION_MAJOR)" == "7" # Lion
-  VBOX_WITH_JXPCOM=
-  VBOX_WITH_JWS=
   VBOX_WITH_DOCS=
   # Using the 10.7 SDK triggers some gl.h include issue. Our problem.
   ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.7)
