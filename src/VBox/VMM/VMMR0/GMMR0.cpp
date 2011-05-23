@@ -395,7 +395,7 @@ typedef struct GMMCHUNK
     PGMMCHUNK           pFreeNext;
     /** Pointer to the previous chunk in the free list. */
     PGMMCHUNK           pFreePrev;
-    /** Pointer to the free set this chunk belongs to. NULL for
+    /** Pointer to the free set this chunk belongs to.  NULL for
      * chunks with no free pages. */
     PGMMCHUNKFREESET    pSet;
     /** List node in the chunk list (GMM::ChunkList).  */
@@ -404,6 +404,9 @@ typedef struct GMMCHUNK
     PGMMCHUNKMAP        paMappings;
     /** The number of mappings. */
     uint16_t            cMappings;
+    /** The number of mapping operations that is in progress without owning
+     * the semaphore. */
+    uint16_t volatile   cMappingsInProgress;
     /** The head of the list of free pages. UINT16_MAX is the NIL value. */
     uint16_t            iFreeHead;
     /** The number of free pages. */
@@ -412,6 +415,9 @@ typedef struct GMMCHUNK
      * is used as a preference when there are several chunks to choose from.
      * When in bound memory mode this isn't a preference any longer. */
     uint16_t            hGVM;
+    /** The ID of the NUMA node the memory mostly resides on. (Reserved for
+     *  future use.) */
+    uint16_t            idNumaNode;
     /** The number of private pages. */
     uint16_t            cPrivate;
     /** The number of shared pages. */
@@ -460,6 +466,9 @@ typedef GMMCHUNKTLB *PGMMCHUNKTLB;
 #define GMM_CHUNK_FREE_SET_MASK     15
 /** The number of lists in set. */
 #define GMM_CHUNK_FREE_SET_LISTS    (GMM_CHUNK_NUM_PAGES >> GMM_CHUNK_FREE_SET_SHIFT)
+
+/** Indicates that the NUMA properies of the memory is unknown. */
+#define GMM_CHUNK_NUMA_ID_UNKNOWN   UINT16_C(0xfffe)
 
 /**
  * A set of free chunks.
@@ -791,6 +800,7 @@ static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGM
     if (pChunk->cFree != (GMM_CHUNK_SIZE >> PAGE_SHIFT))
         SUPR0Printf("GMMR0Term: %p/%#x: cFree=%d cPrivate=%d cShared=%d cMappings=%d\n", pChunk,
                     pChunk->Core.Key, pChunk->cFree, pChunk->cPrivate, pChunk->cShared, pChunk->cMappings);
+    Assert(pChunk->cMappingsInProgress == 0);
 
     int rc = RTR0MemObjFree(pChunk->MemObj, true /* fFreeMappings */);
     if (RT_FAILURE(rc))
@@ -1182,6 +1192,7 @@ static bool gmmR0CleanupVMScanChunk(PGVM pGVM, PGMMCHUNK pChunk)
             Assert(pChunk->cMappings - 1U == cMappings);
             pChunk->cMappings = cMappings;
 
+/** @todo Leave the GMM mutex when doing this, it's expensive. */
             int rc = RTR0MemObjFree(MemObj, false /* fFreeMappings (NA) */);
             if (RT_FAILURE(rc))
             {
@@ -1755,7 +1766,8 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
         pChunk->MemObj = MemObj;
         pChunk->cFree = GMM_CHUNK_NUM_PAGES;
         pChunk->hGVM = hGVM;
-        pChunk->iFreeHead = 0;
+        /*pChunk->iFreeHead = 0;*/
+        pChunk->idNumaNode = GMM_CHUNK_NUMA_ID_UNKNOWN;
         pChunk->enmType = enmChunkType;
         for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
         {
@@ -2687,11 +2699,12 @@ static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
      * VMs to unmap them. Reposition the chunk in the free list so
      * it won't be a likely candidate for allocations.
      */
-    if (pChunk->cMappings)
+    if (   pChunk->cMappings
+        || pChunk->cMappingsInProgress)
     {
         /** @todo R0 -> VM request */
         /* The chunk can be mapped by more than one VM if fBoundMemoryMode is false! */
-        Log(("gmmR0FreeChunk: chunk still has %d mappings; don't free!\n", pChunk->cMappings));
+        Log(("gmmR0FreeChunk: chunk still has %d/%d mappings; don't free!\n", pChunk->cMappings, pChunk->cMappingsInProgress));
     }
     else
     {
@@ -3399,11 +3412,13 @@ static int gmmR0UnmapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
  * @param   pGMM        Pointer to the GMM instance data.
  * @param   pGVM        Pointer to the Global VM structure.
  * @param   pChunk      Pointer to the chunk to be mapped.
+ * @param   fRelaxedSem Whether we can release the semaphore while doing the
+ *                      locking (@c true) or not.
  * @param   ppvR3       Where to store the ring-3 address of the mapping.
  *                      In the VERR_GMM_CHUNK_ALREADY_MAPPED case, this will be
  *                      contain the address of the existing mapping.
  */
-static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
+static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSem, PRTR3PTR ppvR3)
 {
     Assert(pGMM->hMtxOwner == RTThreadNativeSelf());
 
@@ -3442,10 +3457,28 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
     }
 
     /*
-     * Do the mapping.
+     * Do the mapping.  Leave the semaphore when possible since mapping memory
+     * into the user process can be very expensive.
+     *
+     * ASSUMES that all mappers will hold the PGM lock and therefore prevent
+     * other threads from mapping the memory into the same process.
      */
     RTR0MEMOBJ MapObj;
-    int rc = RTR0MemObjMapUser(&MapObj, pChunk->MemObj, (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+    int rc;
+    if (   !fRelaxedSem
+        || pChunk->cFree == GMM_CHUNK_NUM_PAGES)
+        rc = RTR0MemObjMapUser(&MapObj, pChunk->MemObj, (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+    else
+    {
+        pChunk->cMappingsInProgress++;
+        gmmR0MutexRelease(pGMM);
+        Assert(PGMIsLockOwner(pGVM->pVM));
+
+        rc = RTR0MemObjMapUser(&MapObj, pChunk->MemObj, (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+
+        int rc2 = gmmR0MutexAcquire(pGMM); AssertRC(rc2);
+        pChunk->cMappingsInProgress--;
+    }
     if (RT_SUCCESS(rc))
     {
         /* reallocate the array? assumes few users per chunk (usually one). */
@@ -3572,7 +3605,7 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunk
         {
             pMap = gmmR0GetChunk(pGMM, idChunkMap);
             if (RT_LIKELY(pMap))
-                rc = gmmR0MapChunk(pGMM, pGVM, pMap, ppvR3);
+                rc = gmmR0MapChunk(pGMM, pGVM, pMap, true /*fRelaxedSem*/, ppvR3);
             else
             {
                 Log(("GMMR0MapUnmapChunk: idChunkMap=%#x\n", idChunkMap));
@@ -4165,7 +4198,7 @@ new_shared_page:
         if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
         {
             Log(("Map chunk into process!\n"));
-            rc = gmmR0MapChunk(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk);
+            rc = gmmR0MapChunk(pGMM, pGVM, pChunk, false /*fRelaxedSem*/, (PRTR3PTR)&pbChunk);
             if (rc != VINF_SUCCESS)
             {
                 AssertRC(rc);
@@ -4464,7 +4497,7 @@ static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pv
     /* Only take chunks not mapped into this VM process; not entirely correct. */
     if (!gmmR0IsChunkMapped(pGVM, pChunk, (PRTR3PTR)&pbChunk))
     {
-        int rc = gmmR0MapChunk(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk);
+        int rc = gmmR0MapChunk(pGMM, pGVM, pChunk, false /*fRelaxedSem*/, (PRTR3PTR)&pbChunk);
         if (RT_SUCCESS(rc))
         {
             /*
