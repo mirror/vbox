@@ -1558,7 +1558,7 @@ static int pgmR3DumpHierarchyShwDoIt(PPGMR3DUMPHIERARCHYSTATE pState, uint64_t c
         pState->pHlp->pfnPrintf(pState->pHlp, "cr3=%0*llx", cch, cr3);
         if (pState->fDumpPageInfo)
             pgmR3DumpHierarchyShwTablePageInfo(pState, cr3 & X86_CR3_AMD64_PAGE_MASK);
-        pState->pHlp->pfnPrintf(pState->pHlp, " %s%s\n",
+        pState->pHlp->pfnPrintf(pState->pHlp, " %s%s%s\n",
                                 pszMode,
                                 pState->fNp  ? " + Nested Paging" : "",
                                 pState->fNxe ? " + NX" : "");
