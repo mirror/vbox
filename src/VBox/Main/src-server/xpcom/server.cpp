@@ -809,7 +809,7 @@ int main(int argc, char **argv)
                 break;
             }
 
-            /* Used together with '-P', see below. Internal use only. */
+            /* --auto-shutdown mode means we're already daemonized. */
             case 'A':
             {
                 gAutoShutdown = true;
