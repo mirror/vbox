@@ -3503,10 +3503,14 @@ DxgkDdiIsSupportedVidPn(
 
     vboxVDbgBreakFv();
 
-    PVBOXMP_DEVEXT pContext = (PVBOXMP_DEVEXT)hAdapter;
+    NTSTATUS Status = STATUS_SUCCESS;
     BOOLEAN bSupported = TRUE;
+#if 1
+    /* always report it as supported and let DxgkDdiEnumVidPnCofuncModality deal with support info */
+#else
+    PVBOXMP_DEVEXT pContext = (PVBOXMP_DEVEXT)hAdapter;
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
-    NTSTATUS Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pIsSupportedVidPnArg->hDesiredVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pIsSupportedVidPnArg->hDesiredVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     if (Status == STATUS_SUCCESS)
     {
 #ifdef VBOXWDDM_DEBUG_VIDPN
@@ -3598,6 +3602,8 @@ DxgkDdiIsSupportedVidPn(
     {
         LOGREL(("DxgkCbQueryVidPnInterface failed Status(0x%x)"));
     }
+#endif /* if 0 */
+
     pIsSupportedVidPnArg->IsVidPnSupported = bSupported;
 
 #ifdef VBOXWDDM_DEBUG_VIDPN
@@ -3684,7 +3690,7 @@ DxgkDdiRecommendFunctionalVidPn(
             Assert(iPreferableResMode >= 0);
             Assert(cActualResModes);
 
-            Status = vboxVidPnCreatePopulateVidPnFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
+            Status = vboxVidPnCreatePopulateVidPnPathFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
                             pResModes, cActualResModes, iPreferableResMode,
                             &Resolution, 1 /* cResolutions */,
                             i, i); /* srcId, tgtId */
@@ -3750,7 +3756,7 @@ DxgkDdiEnumVidPnCofuncModality(
             CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
             CbContext.pInfos = VBoxWddmGetAllVideoModesInfos(pDevExt);
 
-#if 1
+#if 0
             for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
             {
                 vboxVidPnCofuncModalityForPath(&CbContext, i, i, TRUE);
