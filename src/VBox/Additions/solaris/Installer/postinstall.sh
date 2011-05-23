@@ -214,7 +214,9 @@ if test ! -z "$xorgbin"; then
 
         # snv_163 drops 32-bit support completely, and uses 32-bit locations for the 64-bit stuff. Ugly.
         # We try to detect this by looking at bitness of "mouse_drv.so", and adjust our destination paths accordingly.
-        bitsize=`file $vboxmouse32_dest_base/mouse_drv.so | grep "32-bit"`
+        # We do not rely on using Xorg -version's ABI output because some builds (snv_162 iirc) have 64-bit ABI with
+        # 32-bit file locations.
+        bitsize=`file $vboxmouse32_dest_base/mouse_drv.so | grep -i "32-bit"`
         skip32="no"
         if test -z "$bitsize"; then
             skip32="yes"
