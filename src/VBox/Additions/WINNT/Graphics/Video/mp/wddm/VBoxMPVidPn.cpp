@@ -741,7 +741,7 @@ static DECLCALLBACK(BOOLEAN) vboxFidPnCheckMonitorModesEnum(D3DKMDT_HMONITORSOUR
 
 NTSTATUS vboxVidPnCheckAddMonitorModes(PVBOXMP_DEVEXT pDevExt,
         D3DDDI_VIDEO_PRESENT_TARGET_ID targetId, D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin,
-        D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions, int32_t iPreferred)
+        D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions)
 {
     NTSTATUS Status;
     CONST DXGK_MONITOR_INTERFACE *pMonitorInterface;
@@ -775,7 +775,7 @@ NTSTATUS vboxVidPnCheckAddMonitorModes(PVBOXMP_DEVEXT pDevExt,
                                 pMonitorSMSIf,
                                 pRes,
                                 enmOrigin,
-                                FALSE//i == (uint32_t)iPreferred
+                                FALSE
                                 );
                         Assert(Status == STATUS_SUCCESS);
                         if (Status != STATUS_SUCCESS)

@@ -3641,7 +3641,8 @@ DxgkDdiRecommendFunctionalVidPn(
     {
         VIDEO_MODE_INFORMATION *pResModes = NULL;
         uint32_t cResModes = 0;
-        for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+        int i;
+        for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
         {
             /* @todo: check that we actually need the current source->target */
             D3DKMDT_2DREGION Resolution;
@@ -3649,14 +3650,22 @@ DxgkDdiRecommendFunctionalVidPn(
             VIDEO_MODE_INFORMATION *pModeInfo = &pInfo->aModes[pInfo->iPreferredMode];
             Resolution.cx = pModeInfo->VisScreenWidth;
             Resolution.cy = pModeInfo->VisScreenHeight;
-            Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, &Resolution, 1, 0);
+            Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, &Resolution, 1);
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
             {
                 LOGREL(("vboxVidPnCheckAddMonitorModes failed Status(0x%x)", Status));
                 break;
             }
+        }
 
+        for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+        {
+            D3DKMDT_2DREGION Resolution;
+            PVBOXWDDM_VIDEOMODES_INFO pInfo = &pInfos[i];
+            VIDEO_MODE_INFORMATION *pModeInfo = &pInfo->aModes[pInfo->iPreferredMode];
+            Resolution.cx = pModeInfo->VisScreenWidth;
+            Resolution.cy = pModeInfo->VisScreenHeight;
             int32_t iPreferableResMode;
             uint32_t cActualResModes;
 
