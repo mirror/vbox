@@ -121,18 +121,16 @@ NTSTATUS vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(PVBOXMP_DEVEXT pDevExt
         D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin,
         BOOLEAN bPreferred);
 
-NTSTATUS vboxVidPnCreatePopulateVidPnFromLegacy(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
+NTSTATUS vboxVidPnCreatePopulateVidPnPathFromLegacy(PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         VIDEO_MODE_INFORMATION *pModes, uint32_t cModes, int iPreferredMode,
         D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions,
-        const D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, const D3DDDI_VIDEO_PRESENT_TARGET_ID tgtId);
+        const D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, const D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId);
 
 NTSTATUS vboxVidPnCheckAddMonitorModes(PVBOXMP_DEVEXT pDevExt,
         D3DDDI_VIDEO_PRESENT_TARGET_ID targetId, D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin,
         D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions, int32_t iPreferred);
 
-NTSTATUS vboxVidPnCofuncModalityForPath(PVBOXVIDPNCOFUNCMODALITY pCbContext,
-        D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId,
-        BOOLEAN bModesAllowed);
+NTSTATUS vboxVidPnCofuncModalityForPath(PVBOXVIDPNCOFUNCMODALITY pCbContext, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId);
 
 void vboxVidPnDumpVidPn(const char * pPrefix, PVBOXMP_DEVEXT pDevExt, D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, const char * pSuffix);
 void vboxVidPnDumpCofuncModalityArg(const char *pPrefix, CONST DXGKARG_ENUMVIDPNCOFUNCMODALITY* CONST  pEnumCofuncModalityArg, const char *pSuffix);
