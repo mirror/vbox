@@ -145,7 +145,7 @@
 /** The value of RTSTREAM::u32Magic for a valid stream. */
 #define RTSTREAM_MAGIC                  UINT32_C(0xe44e44ee)
 /** Magic value for RTTCPSERVER::u32Magic. (Jan Garbarek) */
-#define RTTCPSERVER_MAGIC               UINT32_C(0x19540304)
+#define RTTCPSERVER_MAGIC               UINT32_C(0x19470304)
 /** RTTESTINT::u32Magic value. (Daniel Kehlmann) */
 #define RTTESTINT_MAGIC                 UINT32_C(0x19750113)
 /** RTTHREADINT::u32Magic value. (Gilbert Keith Chesterton) */
