@@ -1185,6 +1185,22 @@ RT_C_DECLS_END
 /** @} */
 
 
+/** @name UDP Status Codes
+ * @{
+ */
+/** Stop the UDP server. */
+#define VERR_UDP_SERVER_STOP                    (-520)
+/** The server was stopped. */
+#define VINF_UDP_SERVER_STOP                    520
+/** The UDP server was shut down using RTUdpServerShutdown. */
+#define VERR_UDP_SERVER_SHUTDOWN                (-521)
+/** The UDP server was destroyed. */
+#define VERR_UDP_SERVER_DESTROYED               (-522)
+/** The UDP server has no client associated with it. */
+#define VINF_UDP_SERVER_NO_CLIENT               523
+/** @} */
+
+
 /** @name L4 Specific Status Codes
  * @{
  */

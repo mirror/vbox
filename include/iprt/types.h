@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1630,6 +1630,13 @@ typedef struct RTTCPSERVER                         *PRTTCPSERVER;
 typedef PRTTCPSERVER                               *PPRTTCPSERVER;
 /** Nil RTTCPSERVER handle. */
 #define NIL_RTTCPSERVER                            ((PRTTCPSERVER)0)
+
+/** Pointer to a RTUDPSERVER handle. */
+typedef struct RTUDPSERVER                         *PRTUDPSERVER;
+/** Pointer to a RTUDPSERVER handle. */
+typedef PRTUDPSERVER                               *PPRTUDPSERVER;
+/** Nil RTUDPSERVER handle. */
+#define NIL_RTUDPSERVER                            ((PRTUDPSERVER)0)
 
 /** Thread handle.*/
 typedef R3R0PTRTYPE(struct RTTHREADINT *)           RTTHREAD;

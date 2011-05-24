@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -114,6 +114,16 @@ RTDECL(RTHCUINTPTR) RTSocketToNative(RTSOCKET hSocket);
 RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable);
 
 /**
+ * Parse Internet style addresses, getting a generic IPRT network address.
+ *
+ * @returns IPRT status code
+ * @param   pszAddress      Name or IP address.
+ * @param   uPort           Port number (host byte order).
+ * @param   pAddr           Where to return the generic IPRT network address.
+ */
+RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRTNETADDR pAddr);
+
+/**
  * Receive data from a socket.
  *
  * @returns IPRT status code.
@@ -127,6 +137,19 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable);
 RTDECL(int) RTSocketRead(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
 
 /**
+ * Receive data from a socket, including sender address. Mainly useful
+ * for datagram sockets.
+ *
+ * @returns IPRT status code.
+ * @param   hSocket         The socket handle.
+ * @param   pvBuffer        Where to put the data we read.
+ * @param   cbBuffer        Read buffer size.
+ * @param   pcbRead         Number of bytes read. Must be non-NULL.
+ * @param   pSrcAddr        Pointer to sender address buffer. May be NULL.
+ */
+RTDECL(int) RTSocketReadFrom(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size_t *pcbRead, PRTNETADDR pSrcAddr);
+
+/**
  * Send data to a socket.
  *
  * @returns IPRT status code.
@@ -137,6 +160,20 @@ RTDECL(int) RTSocketRead(RTSOCKET hSocket, void *pvBuffer, size_t cbBuffer, size
  * @param   cbBuffer        How much to write.
  */
 RTDECL(int) RTSocketWrite(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffer);
+
+/**
+ * Send data to a socket, including destination address. Mainly useful
+ * for datagram sockets.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INTERRUPTED if interrupted before anything was written.
+ *
+ * @param   hSocket         The socket handle.
+ * @param   pvBuffer        Buffer to write data to socket.
+ * @param   cbBuffer        How much to write.
+ * @param   pDstAddr        Pointer to destination address. May be NULL.
+ */
+RTDECL(int) RTSocketWriteTo(RTSOCKET hSocket, const void *pvBuffer, size_t cbBuffer, PCRTNETADDR pDstAddr);
 
 /**
  * Checks if the socket is ready for reading (for I/O multiplexing).
