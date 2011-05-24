@@ -467,10 +467,6 @@ typedef GMMCHUNKTLB *PGMMCHUNKTLB;
 
 /** The GMMCHUNK::cFree shift count. */
 #define GMM_CHUNK_FREE_SET_SHIFT    4
-/** The GMMCHUNK::cFree mask for use when considering relinking a chunk. */
-#define GMM_CHUNK_FREE_SET_MASK     15
-/** The number of lists in set. */
-#define GMM_CHUNK_FREE_SET_LISTS    (GMM_CHUNK_NUM_PAGES >> GMM_CHUNK_FREE_SET_SHIFT)
 
 
 /**
@@ -484,7 +480,7 @@ typedef struct GMMCHUNKFREESET
      *  something is linked or unlinked from this set. */
     uint64_t            idGeneration;
     /** Chunks ordered by increasing number of free pages. */
-    PGMMCHUNK           apLists[GMM_CHUNK_FREE_SET_LISTS];
+    PGMMCHUNK           apLists[GMM_CHUNK_NUM_PAGES >> GMM_CHUNK_FREE_SET_SHIFT];
 } GMMCHUNKFREESET;
 
 
@@ -1705,6 +1701,18 @@ DECLINLINE(RTHCPHYS) gmmR0GetPageHCPhys(PGMM pGMM,  uint32_t idPage)
 
 
 /**
+ * Selects the appropriate free list given the number of free pages.
+ *
+ * @returns Free list index.
+ * @param
+ */
+DECLINLINE(unsigned) gmmR0SelectFreeSetList(unsigned cFree)
+{
+    return (cFree - 1) >> GMM_CHUNK_FREE_SET_SHIFT;
+}
+
+
+/**
  * Unlinks the chunk from the free list it's currently on (if any).
  *
  * @param   pChunk      The allocation chunk.
@@ -1722,7 +1730,7 @@ DECLINLINE(void) gmmR0UnlinkChunk(PGMMCHUNK pChunk)
         if (pPrev)
             pPrev->pFreeNext = pNext;
         else
-            pSet->apLists[(pChunk->cFree - 1) >> GMM_CHUNK_FREE_SET_SHIFT] = pNext;
+            pSet->apLists[gmmR0SelectFreeSetList(pChunk->cFree)] = pNext;
         if (pNext)
             pNext->pFreePrev = pPrev;
 
@@ -1757,7 +1765,7 @@ DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet)
     {
         pChunk->pSet = pSet;
         pChunk->pFreePrev = NULL;
-        unsigned iList = (pChunk->cFree - 1) >> GMM_CHUNK_FREE_SET_SHIFT;
+        unsigned const iList = gmmR0SelectFreeSetList(pChunk->cFree);
         pChunk->pFreeNext = pSet->apLists[iList];
         if (pChunk->pFreeNext)
             pChunk->pFreeNext->pFreePrev = pChunk;
@@ -1986,7 +1994,7 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
         while (     pSet->cFreePages < cPages
                &&   pOtherSet->cFreePages >= GMM_CHUNK_NUM_PAGES)
         {
-            PGMMCHUNK pChunk = pOtherSet->apLists[GMM_CHUNK_FREE_SET_LISTS - 1];
+            PGMMCHUNK pChunk = pOtherSet->apLists[RT_ELEMENTS(pOtherSet->apLists) - 1];
             while (pChunk && pChunk->cFree != GMM_CHUNK_NUM_PAGES)
                 pChunk = pChunk->pFreeNext;
             if (!pChunk)
@@ -2909,7 +2917,7 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
      * Update statistics (the cShared/cPrivate stats are up to date already),
      * and relink the chunk if necessary.
      */
-    if ((pChunk->cFree & GMM_CHUNK_FREE_SET_MASK) == 0)
+    if (gmmR0SelectFreeSetList(pChunk->cFree) != gmmR0SelectFreeSetList(pChunk->cFree + 1))
     {
         gmmR0UnlinkChunk(pChunk);
         pChunk->cFree++;
@@ -2919,22 +2927,23 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
     {
         pChunk->cFree++;
         pChunk->pSet->cFreePages++;
-
-        /*
-         * If the chunk becomes empty, consider giving memory back to the host OS.
-         *
-         * The current strategy is to try give it back if there are other chunks
-         * in this free list, meaning if there are at least 240 free pages in this
-         * category. Note that since there are probably mappings of the chunk,
-         * it won't be freed up instantly, which probably screws up this logic
-         * a bit...
-         */
-        if (RT_UNLIKELY(   pChunk->cFree == GMM_CHUNK_NUM_PAGES
-                        && pChunk->pFreeNext
-                        && pChunk->pFreePrev /** @todo this is probably misfiring, see reset... */
-                        && !pGMM->fLegacyAllocationMode))
-            gmmR0FreeChunk(pGMM, NULL, pChunk);
     }
+
+    /*
+     * If the chunk becomes empty, consider giving memory back to the host OS.
+     *
+     * The current strategy is to try give it back if there are other chunks
+     * in this free list, meaning if there are at least 240 free pages in this
+     * category. Note that since there are probably mappings of the chunk,
+     * it won't be freed up instantly, which probably screws up this logic
+     * a bit...
+     */
+    if (RT_UNLIKELY(   pChunk->cFree == GMM_CHUNK_NUM_PAGES
+                    && pChunk->pFreeNext
+                    && pChunk->pFreePrev /** @todo this is probably misfiring, see reset... */
+                    && !pGMM->fLegacyAllocationMode))
+        gmmR0FreeChunk(pGMM, NULL, pChunk);
+
 }
 
 
