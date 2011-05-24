@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -46,10 +46,8 @@ public:
                  mLineSpeed(0),
                  mPromiscModePolicy(NetworkAdapterPromiscModePolicy_Deny),
                  mTraceEnabled(FALSE),
-                 mHostInterface("") /* cannot be null */,
-#ifdef VBOX_WITH_VDE
-                 mVDENetwork("") /* can be null */,
-#endif
+                 mBridgedInterface("") /* cannot be null */,
+                 mHostOnlyInterface("") /* cannot be null */,
                  mNATNetwork("") /* cannot be null */,
                  mBootPriority(0)
         {}
@@ -64,12 +62,12 @@ public:
         NetworkAdapterPromiscModePolicy_T mPromiscModePolicy;
         BOOL mTraceEnabled;
         Bstr mTraceFile;
-        Bstr mHostInterface;
+        Bstr mBridgedInterface;
+        Bstr mHostOnlyInterface;
         Bstr mInternalNetwork;
-#ifdef VBOX_WITH_VDE
-        Bstr mVDENetwork;
-#endif
         Bstr mNATNetwork;
+        Bstr mGenericDriver;
+        settings::StringsMap mGenericProperties;
         ULONG mBootPriority;
         ComObjPtr<BandwidthGroup> mBandwidthGroup;
     };
@@ -81,60 +79,62 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(NetworkAdapter)
-        VBOX_DEFAULT_INTERFACE_ENTRIES (INetworkAdapter)
+        VBOX_DEFAULT_INTERFACE_ENTRIES(INetworkAdapter)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (NetworkAdapter)
+    DECLARE_EMPTY_CTOR_DTOR(NetworkAdapter)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *aParent, ULONG aSlot);
-    HRESULT init (Machine *aParent, NetworkAdapter *aThat);
-    HRESULT initCopy (Machine *aParent, NetworkAdapter *aThat);
+    HRESULT init(Machine *aParent, ULONG aSlot);
+    HRESULT init(Machine *aParent, NetworkAdapter *aThat);
+    HRESULT initCopy(Machine *aParent, NetworkAdapter *aThat);
     void uninit();
 
     // INetworkAdapter properties
     STDMETHOD(COMGETTER(AdapterType))(NetworkAdapterType_T *aAdapterType);
     STDMETHOD(COMSETTER(AdapterType))(NetworkAdapterType_T aAdapterType);
-    STDMETHOD(COMGETTER(Slot)) (ULONG *aSlot);
-    STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
-    STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
-    STDMETHOD(COMGETTER(MACAddress)) (BSTR *aMACAddress);
-    STDMETHOD(COMSETTER(MACAddress)) (IN_BSTR aMACAddress);
-    STDMETHOD(COMGETTER(AttachmentType)) (NetworkAttachmentType_T *aAttachmentType);
-    STDMETHOD(COMGETTER(HostInterface)) (BSTR *aHostInterface);
-    STDMETHOD(COMSETTER(HostInterface)) (IN_BSTR aHostInterface);
-    STDMETHOD(COMGETTER(InternalNetwork)) (BSTR *aInternalNetwork);
-    STDMETHOD(COMSETTER(InternalNetwork)) (IN_BSTR aInternalNetwork);
-    STDMETHOD(COMGETTER(NATNetwork)) (BSTR *aNATNetwork);
-    STDMETHOD(COMSETTER(NATNetwork)) (IN_BSTR aNATNetwork);
-    STDMETHOD(COMGETTER(VDENetwork)) (BSTR *aVDENetwork);
-    STDMETHOD(COMSETTER(VDENetwork)) (IN_BSTR aVDENetwork);
-    STDMETHOD(COMGETTER(CableConnected)) (BOOL *aConnected);
-    STDMETHOD(COMSETTER(CableConnected)) (BOOL aConnected);
-    STDMETHOD(COMGETTER(TraceEnabled)) (BOOL *aEnabled);
-    STDMETHOD(COMSETTER(TraceEnabled)) (BOOL aEnabled);
-    STDMETHOD(COMGETTER(LineSpeed)) (ULONG *aSpeed);
-    STDMETHOD(COMSETTER(LineSpeed)) (ULONG aSpeed);
+    STDMETHOD(COMGETTER(Slot))(ULONG *aSlot);
+    STDMETHOD(COMGETTER(Enabled))(BOOL *aEnabled);
+    STDMETHOD(COMSETTER(Enabled))(BOOL aEnabled);
+    STDMETHOD(COMGETTER(MACAddress))(BSTR *aMACAddress);
+    STDMETHOD(COMSETTER(MACAddress))(IN_BSTR aMACAddress);
+    STDMETHOD(COMGETTER(AttachmentType))(NetworkAttachmentType_T *aAttachmentType);
+    STDMETHOD(COMSETTER(AttachmentType))(NetworkAttachmentType_T aAttachmentType);
+    STDMETHOD(COMGETTER(BridgedInterface))(BSTR *aBridgedInterface);
+    STDMETHOD(COMSETTER(BridgedInterface))(IN_BSTR aBridgedInterface);
+    STDMETHOD(COMGETTER(HostOnlyInterface))(BSTR *aHostOnlyInterface);
+    STDMETHOD(COMSETTER(HostOnlyInterface))(IN_BSTR aHostOnlyInterface);
+    STDMETHOD(COMGETTER(InternalNetwork))(BSTR *aInternalNetwork);
+    STDMETHOD(COMSETTER(InternalNetwork))(IN_BSTR aInternalNetwork);
+    STDMETHOD(COMGETTER(NATNetwork))(BSTR *aNATNetwork);
+    STDMETHOD(COMSETTER(NATNetwork))(IN_BSTR aNATNetwork);
+    STDMETHOD(COMGETTER(GenericDriver))(BSTR *aGenericDriver);
+    STDMETHOD(COMSETTER(GenericDriver))(IN_BSTR aGenericDriver);
+    STDMETHOD(COMGETTER(CableConnected))(BOOL *aConnected);
+    STDMETHOD(COMSETTER(CableConnected))(BOOL aConnected);
+    STDMETHOD(COMGETTER(TraceEnabled))(BOOL *aEnabled);
+    STDMETHOD(COMSETTER(TraceEnabled))(BOOL aEnabled);
+    STDMETHOD(COMGETTER(LineSpeed))(ULONG *aSpeed);
+    STDMETHOD(COMSETTER(LineSpeed))(ULONG aSpeed);
     STDMETHOD(COMGETTER(PromiscModePolicy))(NetworkAdapterPromiscModePolicy_T *aPromiscModePolicy);
     STDMETHOD(COMSETTER(PromiscModePolicy))(NetworkAdapterPromiscModePolicy_T aPromiscModePolicy);
-    STDMETHOD(COMGETTER(TraceFile)) (BSTR *aTraceFile);
-    STDMETHOD(COMSETTER(TraceFile)) (IN_BSTR aTraceFile);
-    STDMETHOD(COMGETTER(NatDriver)) (INATEngine **aNatDriver);
-    STDMETHOD(COMGETTER(BootPriority)) (ULONG *aBootPriority);
-    STDMETHOD(COMSETTER(BootPriority)) (ULONG aBootPriority);
-    STDMETHOD(COMGETTER(BandwidthGroup)) (IBandwidthGroup **aBwGroup);
-    STDMETHOD(COMSETTER(BandwidthGroup)) (IBandwidthGroup *aBwGroup);
+    STDMETHOD(COMGETTER(TraceFile))(BSTR *aTraceFile);
+    STDMETHOD(COMSETTER(TraceFile))(IN_BSTR aTraceFile);
+    STDMETHOD(COMGETTER(NatDriver))(INATEngine **aNatDriver);
+    STDMETHOD(COMGETTER(BootPriority))(ULONG *aBootPriority);
+    STDMETHOD(COMSETTER(BootPriority))(ULONG aBootPriority);
+    STDMETHOD(COMGETTER(BandwidthGroup))(IBandwidthGroup **aBwGroup);
+    STDMETHOD(COMSETTER(BandwidthGroup))(IBandwidthGroup *aBwGroup);
 
     // INetworkAdapter methods
-    STDMETHOD(AttachToNAT)();
-    STDMETHOD(AttachToBridgedInterface)();
-    STDMETHOD(AttachToInternalNetwork)();
-    STDMETHOD(AttachToHostOnlyInterface)();
-    STDMETHOD(AttachToVDE)();
-    STDMETHOD(Detach)();
+    STDMETHOD(GetProperty)(IN_BSTR aName, BSTR *aValue);
+    STDMETHOD(SetProperty)(IN_BSTR aName, IN_BSTR aValue);
+    STDMETHOD(GetProperties)(IN_BSTR aNames,
+                             ComSafeArrayOut(BSTR, aReturnNames),
+                             ComSafeArrayOut(BSTR, aReturnValues));
 
     // public methods only for internal purposes
 
@@ -144,12 +144,11 @@ public:
     bool isModified();
     void rollback();
     void commit();
-    void copyFrom (NetworkAdapter *aThat);
-    void applyDefaults (GuestOSType *aOsType);
+    void copyFrom(NetworkAdapter *aThat);
+    void applyDefaults(GuestOSType *aOsType);
 
 private:
 
-    void detach();
     void generateMACAddress();
     HRESULT updateMacAddress(Utf8Str aMacAddress);
     void updateBandwidthGroup(BandwidthGroup *aBwGroup);

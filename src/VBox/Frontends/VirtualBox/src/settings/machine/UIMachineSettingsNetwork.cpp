@@ -112,29 +112,22 @@ void UIMachineSettingsNetwork::fetchAdapterCache(const UICacheSettingsMachineNet
     m_pAttachmentTypeCombo->setCurrentIndex(iAttachmentPos == -1 ? 0 : iAttachmentPos);
 
     /* Load alternative name: */
-    switch (attachmentType())
-    {
-        case KNetworkAttachmentType_Bridged:
-            m_strBrgName = adapterData.m_strBridgedAdapterName;
-            if (m_strBrgName.isEmpty()) m_strBrgName = QString();
-            break;
-        case KNetworkAttachmentType_Internal:
-            m_strIntName = adapterData.m_strInternalNetworkName;
-            if (m_strIntName.isEmpty()) m_strIntName = QString();
-            break;
-        case KNetworkAttachmentType_HostOnly:
-            m_strHoiName = adapterData.m_strHostInterfaceName;
-            if (m_strHoiName.isEmpty()) m_strHoiName = QString();
-            break;
-#ifdef VBOX_WITH_VDE
-        case KNetworkAttachmentType_VDE:
-            mVDEName = adapterData.m_strVDENetworkName;
-            if (mVDEName.isEmpty()) mVDEName = QString();
-            break;
-#endif /* VBOX_WITH_VDE */
-        default:
-            break;
-    }
+    m_strBrgName = adapterData.m_strBridgedAdapterName;
+    if (m_strBrgName.isEmpty())
+        m_strBrgName = QString();
+
+    m_strIntName = adapterData.m_strInternalNetworkName;
+    if (m_strIntName.isEmpty())
+        m_strIntName = QString();
+
+    m_strHoiName = adapterData.m_strHostInterfaceName;
+    if (m_strHoiName.isEmpty())
+        m_strHoiName = QString();
+
+    m_strGenericDriver = adapterData.m_strGenericDriver;
+    if (m_strGenericDriver.isEmpty())
+        m_strGenericDriver = QString();
+
     sltUpdateAttachmentAlternative();
 
     /* Load adapter type: */
@@ -178,11 +171,9 @@ void UIMachineSettingsNetwork::uploadAdapterCache(UICacheSettingsMachineNetworkA
         case KNetworkAttachmentType_HostOnly:
             adapterData.m_strHostInterfaceName = alternativeName();
             break;
-#ifdef VBOX_WITH_VDE
-        case KNetworkAttachmentType_VDE:
-            adapterData.m_strVDENetworkName = alternativeName();
+        case KNetworkAttachmentType_Generic:
+            adapterData.m_strGenericDriver = alternativeName();
             break;
-#endif /* VBOX_WITH_VDE */
         default:
             break;
     }
@@ -297,11 +288,9 @@ QString UIMachineSettingsNetwork::alternativeName(int type) const
         case KNetworkAttachmentType_HostOnly:
             strResult = m_strHoiName;
             break;
-#ifdef VBOX_WITH_VDE
-        case KNetworkAttachmentType_VDE:
-            strResult = mVDEName;
+        case KNetworkAttachmentType_Generic:
+            strResult = m_strGenericDriver;
             break;
-#endif
         default:
             break;
     }
@@ -366,13 +355,11 @@ void UIMachineSettingsNetwork::sltUpdateAttachmentAlternative()
             m_pAdapterNameCombo->insertItems(0, m_pParent->hoiList());
             m_pAdapterNameCombo->setEditable(false);
             break;
-#ifdef VBOX_WITH_VDE
-        case KNetworkAttachmentType_VDE:
+        case KNetworkAttachmentType_Generic:
             m_pAdapterNameCombo->insertItem(0, alternativeName());
             m_pAdapterNameCombo->setEditable(true);
             m_pAdapterNameCombo->setCompleter(0);
             break;
-#endif
         default:
             break;
     }
@@ -475,8 +462,7 @@ void UIMachineSettingsNetwork::sltUpdateAlternativeName()
                 m_strHoiName = newName;
             break;
         }
-#ifdef VBOX_WITH_VDE
-        case KNetworkAttachmentType_VDE:
+        case KNetworkAttachmentType_Generic:
         {
             QString newName((m_pAdapterNameCombo->itemData(m_pAdapterNameCombo->currentIndex()).toString() ==
                              QString(emptyItemCode) &&
@@ -484,11 +470,10 @@ void UIMachineSettingsNetwork::sltUpdateAlternativeName()
                              m_pAdapterNameCombo->itemText(m_pAdapterNameCombo->currentIndex())) ||
                              m_pAdapterNameCombo->currentText().isEmpty() ?
                              QString::null : m_pAdapterNameCombo->currentText());
-            if (mVDEName != newName)
-                mVDEName = newName;
+            if (m_strGenericDriver != newName)
+                m_strGenericDriver = newName;
             break;
         }
-#endif
         default:
             break;
     }
@@ -554,16 +539,10 @@ void UIMachineSettingsNetwork::populateComboboxes()
         m_pAttachmentTypeCombo->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_HostOnly);
         m_pAttachmentTypeCombo->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeCombo->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
-#ifdef VBOX_WITH_VDE
-        RTLDRMOD hLdrDummy;
-        if (RT_SUCCESS(RTLdrLoad(VBOX_LIB_VDE_PLUG_NAME, &hLdrDummy)))
-        {
-            m_pAttachmentTypeCombo->insertItem(iAttachmentTypeIndex, vboxGlobal().toString(KNetworkAttachmentType_VDE));
-            m_pAttachmentTypeCombo->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_VDE);
-            m_pAttachmentTypeCombo->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeCombo->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
-            ++iAttachmentTypeIndex;
-        }
-#endif
+        m_pAttachmentTypeCombo->insertItem(iAttachmentTypeIndex, vboxGlobal().toString(KNetworkAttachmentType_Generic));
+        m_pAttachmentTypeCombo->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Generic);
+        m_pAttachmentTypeCombo->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeCombo->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
+        ++iAttachmentTypeIndex;
 
         /* Restore the previously selected attachment type: */
         m_pAttachmentTypeCombo->setCurrentIndex(iCurrentAttachment);
@@ -773,33 +752,22 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             adapterData.m_iSlot = iSlot;
             adapterData.m_fAdapterEnabled = adapter.GetEnabled();
             adapterData.m_attachmentType = adapter.GetAttachmentType();
-            switch (adapterData.m_attachmentType)
-            {
-                case KNetworkAttachmentType_Bridged:
-                    adapterData.m_strBridgedAdapterName = adapter.GetHostInterface();
-                    if (adapterData.m_strBridgedAdapterName.isEmpty())
-                        adapterData.m_strBridgedAdapterName = QString();
-                    break;
-                case KNetworkAttachmentType_Internal:
-                    adapterData.m_strInternalNetworkName = adapter.GetInternalNetwork();
-                    if (adapterData.m_strInternalNetworkName.isEmpty())
-                        adapterData.m_strInternalNetworkName = QString();
-                    break;
-                case KNetworkAttachmentType_HostOnly:
-                    adapterData.m_strHostInterfaceName = adapter.GetHostInterface();
-                    if (adapterData.m_strHostInterfaceName.isEmpty())
-                        adapterData.m_strHostInterfaceName = QString();
-                    break;
-#ifdef VBOX_WITH_VDE
-                case KNetworkAttachmentType_VDE:
-                    adapterData.m_strVDENetworkName = adapter.GetVDENetwork();
-                    if (adapterData.m_strVDENetworkName.isEmpty())
-                        adapterData.m_strVDENetworkName = QString();
-                    break;
-#endif /* VBOX_WITH_VDE */
-                default:
-                    break;
-            }
+
+            adapterData.m_strBridgedAdapterName = adapter.GetBridgedInterface();
+            if (adapterData.m_strBridgedAdapterName.isEmpty())
+                adapterData.m_strBridgedAdapterName = QString();
+
+            adapterData.m_strInternalNetworkName = adapter.GetInternalNetwork();
+            if (adapterData.m_strInternalNetworkName.isEmpty())
+                adapterData.m_strInternalNetworkName = QString();
+
+            adapterData.m_strHostInterfaceName = adapter.GetHostOnlyInterface();
+            if (adapterData.m_strHostInterfaceName.isEmpty())
+                adapterData.m_strHostInterfaceName = QString();
+
+            adapterData.m_strGenericDriver = adapter.GetGenericDriver();
+            if (adapterData.m_strGenericDriver.isEmpty())
+                adapterData.m_strGenericDriver = QString();
 
             /* Gather advanced options: */
             adapterData.m_adapterType = adapter.GetAdapterType();
@@ -918,33 +886,22 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
                         /* Attachment type: */
                         switch (adapterData.m_attachmentType)
                         {
-                            case KNetworkAttachmentType_Null:
-                                adapter.Detach();
-                                break;
-                            case KNetworkAttachmentType_NAT:
-                                adapter.AttachToNAT();
-                                break;
                             case KNetworkAttachmentType_Bridged:
-                                adapter.SetHostInterface(adapterData.m_strBridgedAdapterName);
-                                adapter.AttachToBridgedInterface();
+                                adapter.SetBridgedInterface(adapterData.m_strBridgedAdapterName);
                                 break;
                             case KNetworkAttachmentType_Internal:
                                 adapter.SetInternalNetwork(adapterData.m_strInternalNetworkName);
-                                adapter.AttachToInternalNetwork();
                                 break;
                             case KNetworkAttachmentType_HostOnly:
-                                adapter.SetHostInterface(adapterData.m_strHostInterfaceName);
-                                adapter.AttachToHostOnlyInterface();
+                                adapter.SetHostOnlyInterface(adapterData.m_strHostInterfaceName);
                                 break;
-#ifdef VBOX_WITH_VDE
-                            case KNetworkAttachmentType_VDE:
-                                adapter.SetVDENetwork(adapterData.m_strVDENetworkName);
-                                adapter.AttachToVDE();
+                            case KNetworkAttachmentType_Generic:
+                                adapter.SetGenericDriver(adapterData.m_strGenericDriver);
                                 break;
-#endif /* VBOX_WITH_VDE */
                             default:
                                 break;
                         }
+                        adapter.SetAttachmentType(adapterData.m_attachmentType);
                         /* Advanced attributes: */
                         adapter.SetPromiscModePolicy(adapterData.m_promiscuousMode);
                         /* Cable connected flag: */

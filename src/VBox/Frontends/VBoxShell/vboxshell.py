@@ -817,7 +817,7 @@ class XPathNodeVM(XPathNode):
 class XPathNodeHolderNIC(XPathNodeHolder):
     def __init__(self, parent, mach):
         XPathNodeHolder.__init__(self, parent, mach, 'nics', XPathNodeVM, 'nics')
-        self.maxNic = self.getCtx()['vb'].systemProperties.networkAdapterCount
+        self.maxNic = self.getCtx()['vb'].systemProperties.getMaxNetworkAdapters(self.obj.chipsetType)
     def enum(self):
         children = []
         for i in range(0, self.maxNic):
@@ -1484,7 +1484,6 @@ def hostCmd(ctx, args):
    print "VirtualBox version %s" %(colored(vb.version, 'blue'))
    props = vb.systemProperties
    print "Machines: %s" %(colPath(ctx,props.defaultMachineFolder))
-   print "HDDs:     %s" %(colPath(ctx,props.defaultHardDiskFolder))
 
    #print "Global shared folders:"
    #for ud in ctx['global'].getArray(vb, 'sharedFolders'):
@@ -2622,9 +2621,9 @@ def natAlias(ctx, mach, nicnum, nat, args=[]):
             else:
                 msg += ', '
             if int(nat.aliasMode) & aliaskey:
-                msg += '{0}: {1}'.format(aliasmode, 'on')
+                msg += '%d: %s' % (aliasmode, 'on')
             else:
-                msg += '{0}: {1}'.format(aliasmode, 'off')
+                msg += '%d: %s' % (aliasmode, 'off')
         msg += ')'
         return (0, [msg])
     else:
@@ -2652,15 +2651,15 @@ def natSettings(ctx, mach, nicnum, nat, args):
         if sockrcvbuf == 0: sockrcvbuf = 64
         if tcpsndwnd == 0: tcpsndwnd = 64
         if tcprcvwnd == 0: tcprcvwnd = 64
-        msg = 'mtu:{0} socket(snd:{1}, rcv:{2}) tcpwnd(snd:{3}, rcv:{4})'.format(mtu, socksndbuf, sockrcvbuf, tcpsndwnd, tcprcvwnd);
+        msg = 'mtu:%s socket(snd:%s, rcv:%s) tcpwnd(snd:%s, rcv:%s)' % (mtu, socksndbuf, sockrcvbuf, tcpsndwnd, tcprcvwnd);
         return (0, [msg])
     else:
         if args[1] < 16000:
-            print 'invalid mtu value ({0} no in range [65 - 16000])'.format(args[1])
+            print 'invalid mtu value (%s not in range [65 - 16000])' % (args[1])
             return (1, None)
         for i in range(2, len(args)):
             if not args[i].isdigit() or int(args[i]) < 8 or int(args[i]) > 1024:
-                print 'invalid {0} parameter ({1} not in range [8-1024])'.format(i, args[i])
+                print 'invalid %s parameter (%i not in range [8-1024])' % (i, args[i])
                 return (1, None)
         a = [args[1]]
         if len(args) < 6:
@@ -2681,7 +2680,7 @@ def natDns(ctx, mach, nicnum, nat, args):
     """
     yesno = {0: 'off', 1: 'on'}
     if len(args) == 1:
-        msg = 'passdomain:{0}, proxy:{1}, usehostresolver:{2}'.format(yesno[int(nat.dnsPassDomain)], yesno[int(nat.dnsProxy)], yesno[int(nat.dnsUseHostResolver)])
+        msg = 'passdomain:%s, proxy:%s, usehostresolver:%s' % (yesno[int(nat.dnsPassDomain)], yesno[int(nat.dnsProxy)], yesno[int(nat.dnsUseHostResolver)])
         return (0, [msg])
     else:
         nat.dnsPassDomain = 'passdomain' in args
@@ -2701,19 +2700,19 @@ def natTftp(ctx, mach, nicnum, nat, args):
         if server is None:
             server = nat.network
             if server is None:
-                server = '10.0.{0}/24'.format(int(nicnum) + 2)
+                server = '10.0.%d/24' % (int(nicnum) + 2)
             (server,mask) = server.split('/')
             while server.count('.') != 3:
                 server += '.0'
             (a,b,c,d) = server.split('.')
-            server = '{0}.{1}.{2}.4'.format(a,b,c)
+            server = '%d.%d.%d.4' % (a,b,c)
         prefix = nat.tftpPrefix
         if prefix is None:
-            prefix = '{0}/TFTP/'.format(ctx['vb'].homeFolder)
+            prefix = '%s/TFTP/' % (ctx['vb'].homeFolder)
         bootfile = nat.tftpBootFile
         if bootfile is None:
-            bootfile = '{0}.pxe'.format(mach.name)
-        msg = 'server:{0}, prefix:{1}, bootfile:{2}'.format(server, prefix, bootfile)
+            bootfile = '%s.pxe' % (mach.name)
+        msg = 'server:%s, prefix:%s, bootfile:%s' % (server, prefix, bootfile)
         return (0, [msg])
     else:
 
@@ -2745,7 +2744,7 @@ def natPortForwarding(ctx, mach, nicnum, nat, args):
         pfs = ctx['global'].getArray(nat, 'redirects')
         for pf in pfs:
             (pfnme, pfp, pfhip, pfhp, pfgip, pfgp) = str(pf).split(',')
-            msg.append('{0}: {1} {2}:{3} => {4}:{5}'.format(pfnme, proto[int(pfp)], pfhip, pfhp, pfgip, pfgp))
+            msg.append('%s: %s %s:%s => %s:%s' % (pfnme, proto[int(pfp)], pfhip, pfhp, pfgip, pfgp))
         return (0, msg) # msg is array
     else:
         proto = {'udp': 0, 'tcp': 1}
@@ -2784,7 +2783,7 @@ def natNetwork(ctx, mach, nicnum, nat, args):
         if nat.network is not None and len(str(nat.network)) != 0:
             msg = '\'%s\'' % (nat.network)
         else:
-            msg = '10.0.{0}.0/24'.format(int(nicnum) + 2)
+            msg = '10.0.%d.0/24' % (int(nicnum) + 2)
         return (0, [msg])
     else:
         (addr, mask) = args[1].split('/')
@@ -2824,8 +2823,8 @@ def natCmd(ctx, args):
     if mach == None:
         print "please specify vm"
         return 0
-    if len(args) < 3 or not args[2].isdigit() or int(args[2]) not in range(0, ctx['vb'].systemProperties.networkAdapterCount):
-        print 'please specify adapter num {0} isn\'t in range [0-{1}]'.format(args[2], ctx['vb'].systemProperties.networkAdapterCount)
+    if len(args) < 3 or not args[2].isdigit() or int(args[2]) not in range(0, ctx['vb'].systemProperties.getMaxNetworkAdapters(mach.chipsetType)):
+        print 'please specify adapter num %d isn\'t in range [0-%d]' % (args[2], ctx['vb'].systemProperties.getMaxNetworkAdapters(mach.chipsetType))
         return 0
     nicnum = int(args[2])
     cmdargs = []
@@ -2851,7 +2850,7 @@ def natCmd(ctx, args):
         session.unlockMachine()
     elif report is not None:
         for r in report:
-            msg ='{0} nic{1} {2}: {3}'.format(mach.name, nicnum, func, r)
+            msg ='%s nic%d %s: %s' % (mach.name, nicnum, func, r)
             print msg
     return 0
 
@@ -2886,7 +2885,7 @@ def nicLineSpeedSubCmd(ctx, vm, nicnum, adapter, args):
         return (0, r)
     else:
         if not args[1].isdigit():
-            print '%s isn\'t a number'.format(args[1])
+            print '%s isn\'t a number' % (args[1])
             print (1, None)
         adapter.lineSpeed = int(args[1])
     return (0, None)
@@ -2923,16 +2922,17 @@ def nicTypeSubCmd(ctx, vm, nicnum, adapter, args):
 
 def nicAttachmentSubCmd(ctx, vm, nicnum, adapter, args):
     '''
-    usage: nic <vm> <nicnum> attachment [Null|NAT|Bridged <interface>|Internal <name>|HostOnly <interface>]
+    usage: nic <vm> <nicnum> attachment [Null|NAT|Bridged <interface>|Internal <name>|HostOnly <interface>
     '''
     if len(args) == 1:
         nicAttachmentType = {
             ctx['global'].constants.NetworkAttachmentType_Null: ('Null', ''),
             ctx['global'].constants.NetworkAttachmentType_NAT: ('NAT', ''),
-            ctx['global'].constants.NetworkAttachmentType_Bridged: ('Bridged', adapter.hostInterface),
+            ctx['global'].constants.NetworkAttachmentType_Bridged: ('Bridged', adapter.bridgedInterface),
             ctx['global'].constants.NetworkAttachmentType_Internal: ('Internal', adapter.internalNetwork),
-            ctx['global'].constants.NetworkAttachmentType_HostOnly: ('HostOnly', adapter.hostInterface),
-            #ctx['global'].constants.NetworkAttachmentType_VDE: ('VDE', adapter.VDENetwork)
+            ctx['global'].constants.NetworkAttachmentType_HostOnly: ('HostOnly', adapter.hostOnlyInterface),
+            # @todo show details of the generic network attachment type
+            ctx['global'].constants.NetworkAttachmentType_Generic: ('Generic', ''),
         }
         import types
         if type(adapter.attachmentType) != types.IntType:
@@ -2940,42 +2940,43 @@ def nicAttachmentSubCmd(ctx, vm, nicnum, adapter, args):
         else:
             t = adapter.attachmentType
         (r, p) = nicAttachmentType[t]
-        return (0, 'attachment:{0}, name:{1}'.format(r, p))
+        return (0, 'attachment:%s, name:%s' % (r, p))
     else:
         nicAttachmentType = {
             'Null': {
                 'v': lambda: len(args) == 2,
                 'p': lambda: 'do nothing',
-                'f': lambda: adapter.detach()},
+                'f': lambda: ctx['global'].constants.NetworkAttachmentType_Null},
             'NAT': {
                 'v': lambda: len(args) == 2,
                 'p': lambda: 'do nothing',
-                'f': lambda: adapter.attachToNAT()},
+                'f': lambda: ctx['global'].constants.NetworkAttachmentType_NAT},
             'Bridged': {
                 'v': lambda: len(args) == 3,
-                'p': lambda: adapter.__setattr__('hostInterface', args[2]),
-                'f': lambda: adapter.attachToBridgedInterface()},
+                'p': lambda: adapter.__setattr__('bridgedInterface', args[2]),
+                'f': lambda: ctx['global'].constants.NetworkAttachmentType_Bridged},
             'Internal': {
                 'v': lambda: len(args) == 3,
                 'p': lambda: adapter.__setattr__('internalNetwork', args[2]),
-                'f': lambda: adapter.attachToInternalNetwork()},
+                'f': lambda: ctx['global'].constants.NetworkAttachmentType_Internal},
             'HostOnly': {
                 'v': lambda: len(args) == 2,
-                'p': lambda: adapter.__setattr__('hostInterface', args[2]),
-                'f': lambda: adapter.attachToHostOnlyInterface()},
-            'VDE': {
+                'p': lambda: adapter.__setattr__('hostOnlyInterface', args[2]),
+                'f': lambda: ctx['global'].constants.NetworkAttachmentType_HostOnly},
+            # @todo implement setting the properties of a generic attachment
+            'Generic': {
                 'v': lambda: len(args) == 3,
-                'p': lambda: adapter.__setattr__('VDENetwork', args[2]),
-                'f': lambda: adapter.attachToVDE()}
+                'p': lambda: 'do nothing',
+                'f': lambda: ctx['global'].constants.NetworkAttachmentType_Generic}
         }
         if args[1] not in nicAttachmentType.keys():
-            print '{0} not in acceptable values ({1})'.format(args[1], nicAttachmentType.keys())
+            print '%s not in acceptable values (%s)' % (args[1], nicAttachmentType.keys())
             return (1, None)
         if not nicAttachmentType[args[1]]['v']():
             print nicAttachmentType.__doc__
             return (1, None)
         nicAttachmentType[args[1]]['p']()
-        nicAttachmentType[args[1]]['f']()
+        adapter.attachmentType = nicAttachmentType[args[1]]['f']()
     return (0, None)
 
 def nicCmd(ctx, args):
@@ -3009,8 +3010,8 @@ def nicCmd(ctx, args):
         return 0
 
     if    len(args) < 3 \
-       or int(args[2]) not in range(0, ctx['vb'].systemProperties.networkAdapterCount):
-            print 'please specify adapter num %d isn\'t in range [0-%d]'%(args[2], ctx['vb'].systemProperties.networkAdapterCount)
+       or int(args[2]) not in range(0, ctx['vb'].systemProperties.getMaxNetworkAdapters(vm.chipsetType)):
+            print 'please specify adapter num %d isn\'t in range [0-%d]'%(args[2], ctx['vb'].systemProperties.getMaxNetworkAdapters(vm.chipsetType))
             return 0
     nicnum = int(args[2])
     cmdargs = args[3:]

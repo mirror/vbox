@@ -361,7 +361,7 @@ int handleControlVM(HandlerArg *a)
                     }
                 }
                 else
-                    RTMsgError("The NIC %d is currently disabled and thus can't change its tracefile", n);
+                    RTMsgError("The NIC %d is currently disabled and thus its tracefile can't be changed", n);
             }
         }
         else if (!strncmp(a->argv[1], "nictrace", 8))
@@ -407,7 +407,7 @@ int handleControlVM(HandlerArg *a)
                     }
                 }
                 else
-                    RTMsgError("The NIC %d is currently disabled and thus can't change its trace flag", n);
+                    RTMsgError("The NIC %d is currently disabled and thus its trace flag can't be changed", n);
             }
         }
         else if(   a->argc > 2
@@ -505,6 +505,64 @@ int handleControlVM(HandlerArg *a)
             if (SUCCEEDED(rc))
                 CHECK_ERROR(sessionMachine, SaveSettings());
         }
+        else if (!strncmp(a->argv[1], "nicproperty", 11))
+        {
+            /* Get the number of network adapters */
+            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox,sessionMachine) ;
+            unsigned n = parseNum(&a->argv[1][11], NetworkAdapterCount, "NIC");
+            if (!n)
+            {
+                rc = E_FAIL;
+                break;
+            }
+            if (a->argc <= 2)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            /* get the corresponding network adapter */
+            ComPtr<INetworkAdapter> adapter;
+            CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
+            if (adapter)
+            {
+                BOOL fEnabled;
+                adapter->COMGETTER(Enabled)(&fEnabled);
+                if (fEnabled)
+                {
+                    /* Parse 'name=value' */
+                    char *pszProperty = RTStrDup(a->argv[2]);
+                    if (pszProperty)
+                    {
+                        char *pDelimiter = strchr(pszProperty, '=');
+                        if (pDelimiter)
+                        {
+                            *pDelimiter = '\0';
+
+                            Bstr bstrName = pszProperty;
+                            Bstr bstrValue = &pDelimiter[1];
+                            CHECK_ERROR(adapter, SetProperty(bstrName.raw(), bstrValue.raw()));
+                        }
+                        else
+                        {
+                            errorArgument("Invalid nicproperty%d argument '%s'", n, a->argv[2]);
+                            rc = E_FAIL;
+                        }
+                        RTStrFree(pszProperty);
+                    }
+                    else
+                    {
+                        RTStrmPrintf(g_pStdErr, "Error: Failed to allocate memory for nicproperty%d '%s'\n", n, a->argv[2]);
+                        rc = E_FAIL;
+                    }
+                    if (FAILED(rc))
+                        break;
+                }
+                else
+                    RTMsgError("The NIC %d is currently disabled and thus its properties can't be changed", n);
+            }
+        }
         else if (!strncmp(a->argv[1], "nic", 3))
         {
             /* Get the number of network adapters */
@@ -534,14 +592,14 @@ int handleControlVM(HandlerArg *a)
                     if (!strcmp(a->argv[2], "null"))
                     {
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, Detach(), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Null), 1);
                     }
                     else if (!strcmp(a->argv[2], "nat"))
                     {
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
                         if (a->argc == 4)
                             CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, AttachToNAT(), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_NAT), 1);
                     }
                     else if (  !strcmp(a->argv[2], "bridged")
                             || !strcmp(a->argv[2], "hostif")) /* backward compatibility */
@@ -553,8 +611,8 @@ int handleControlVM(HandlerArg *a)
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, AttachToBridgedInterface(), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(BridgedInterface)(Bstr(a->argv[3]).raw()), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Bridged), 1);
                     }
                     else if (!strcmp(a->argv[2], "intnet"))
                     {
@@ -566,7 +624,7 @@ int handleControlVM(HandlerArg *a)
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
                         CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, AttachToInternalNetwork(), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Internal), 1);
                     }
 #if defined(VBOX_WITH_NETFLT)
                     else if (!strcmp(a->argv[2], "hostonly"))
@@ -578,10 +636,35 @@ int handleControlVM(HandlerArg *a)
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, AttachToHostOnlyInterface(), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(HostOnlyInterface)(Bstr(a->argv[3]).raw()), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly), 1);
                     }
 #endif
+                    else if (!strcmp(a->argv[2], "generic"))
+                    {
+                        if (a->argc <= 3)
+                        {
+                            errorArgument("Missing argument to '%s'", a->argv[2]);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(GenericDriver)(Bstr(a->argv[3]).raw()), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic), 1);
+                    }
+                    /** @todo obsolete, remove eventually */
+                    else if (!strcmp(a->argv[2], "vde"))
+                    {
+                        if (a->argc <= 3)
+                        {
+                            errorArgument("Missing argument to '%s'", a->argv[2]);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic), 1);
+                        CHECK_ERROR_RET(adapter, SetProperty((CBSTR)L"name", Bstr(a->argv[3]).raw()), 1);
+                    }
                     else
                     {
                         errorArgument("Invalid type '%s' specfied for NIC %lu", Utf8Str(a->argv[2]).c_str(), n);
@@ -590,7 +673,7 @@ int handleControlVM(HandlerArg *a)
                     }
                 }
                 else
-                    RTMsgError("The NIC %d is currently disabled and thus can't change its attachment type", n);
+                    RTMsgError("The NIC %d is currently disabled and thus its attachment type can't be changed", n);
             }
         }
         else if (   !strcmp(a->argv[1], "vrde")
@@ -704,9 +787,8 @@ int handleControlVM(HandlerArg *a)
                     }
                     else
                     {
-                        errorArgument("Invalid --vrdeproperty argument '%s'", a->argv[2]);
+                        errorArgument("Invalid vrdeproperty argument '%s'", a->argv[2]);
                         rc = E_FAIL;
-                        break;
                     }
                     RTStrFree(pszProperty);
                 }

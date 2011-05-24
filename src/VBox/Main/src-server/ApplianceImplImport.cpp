@@ -404,7 +404,7 @@ STDMETHODIMP Appliance::Interpret()
                          && (strNetwork.compare("Bridged", Utf8Str::CaseInsensitive))
                          && (strNetwork.compare("Internal", Utf8Str::CaseInsensitive))
                          && (strNetwork.compare("HostOnly", Utf8Str::CaseInsensitive))
-                         && (strNetwork.compare("VDE", Utf8Str::CaseInsensitive))
+                         && (strNetwork.compare("Generic", Utf8Str::CaseInsensitive))
                        )
                         strNetwork = "Bridged";     // VMware assumes this is the default apparently
 
@@ -2044,7 +2044,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             if (pvsys->strExtraConfigCurrent.endsWith("type=Bridged", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
-                rc = pNetworkAdapter->AttachToBridgedInterface();
+                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Bridged);
                 if (FAILED(rc)) throw rc;
                 ComPtr<IHost> host;
                 rc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
@@ -2067,7 +2067,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
                         if (FAILED(rc)) throw rc;
                         /* Set the interface name to attach to */
-                        pNetworkAdapter->COMSETTER(HostInterface)(name.raw());
+                        pNetworkAdapter->COMSETTER(BridgedInterface)(name.raw());
                         if (FAILED(rc)) throw rc;
                         break;
                     }
@@ -2077,7 +2077,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             else if (pvsys->strExtraConfigCurrent.endsWith("type=HostOnly", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
-                rc = pNetworkAdapter->AttachToHostOnlyInterface();
+                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly);
                 if (FAILED(rc)) throw rc;
                 ComPtr<IHost> host;
                 rc = mVirtualBox->COMGETTER(Host)(host.asOutParam());
@@ -2100,7 +2100,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
                         if (FAILED(rc)) throw rc;
                         /* Set the interface name to attach to */
-                        pNetworkAdapter->COMSETTER(HostInterface)(name.raw());
+                        pNetworkAdapter->COMSETTER(HostOnlyInterface)(name.raw());
                         if (FAILED(rc)) throw rc;
                         break;
                     }
@@ -2110,14 +2110,14 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             else if (pvsys->strExtraConfigCurrent.endsWith("type=Internal", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
-                rc = pNetworkAdapter->AttachToInternalNetwork();
+                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Internal);
                 if (FAILED(rc)) throw rc;
             }
-            /* Next test for VDE interfaces */
-            else if (pvsys->strExtraConfigCurrent.endsWith("type=VDE", Utf8Str::CaseInsensitive))
+            /* Next test for Generic interfaces */
+            else if (pvsys->strExtraConfigCurrent.endsWith("type=Generic", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
-                rc = pNetworkAdapter->AttachToVDE();
+                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Generic);
                 if (FAILED(rc)) throw rc;
             }
         }

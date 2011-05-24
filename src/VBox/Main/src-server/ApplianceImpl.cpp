@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -266,7 +266,7 @@ Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type)
         case NetworkAttachmentType_Bridged: strType = "Bridged"; break;
         case NetworkAttachmentType_Internal: strType = "Internal"; break;
         case NetworkAttachmentType_HostOnly: strType = "HostOnly"; break;
-        case NetworkAttachmentType_VDE: strType = "VDE"; break;
+        case NetworkAttachmentType_Generic: strType = "Generic"; break;
         case NetworkAttachmentType_Null: strType = "Null"; break;
     }
     return strType;

@@ -1828,18 +1828,16 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                  * this name instead */
                 if (type == KNetworkAttachmentType_Bridged)
                     attType = attType.arg (tr ("Bridged adapter, %1",
-                        "details report (network)").arg (adapter.GetHostInterface()));
+                        "details report (network)").arg (adapter.GetBridgedInterface()));
                 else if (type == KNetworkAttachmentType_Internal)
                     attType = attType.arg (tr ("Internal network, '%1'",
                         "details report (network)").arg (adapter.GetInternalNetwork()));
                 else if (type == KNetworkAttachmentType_HostOnly)
                     attType = attType.arg (tr ("Host-only adapter, '%1'",
-                        "details report (network)").arg (adapter.GetHostInterface()));
-#ifdef VBOX_WITH_VDE
-                else if (type == KNetworkAttachmentType_VDE)
-                    attType = attType.arg (tr ("VDE network, '%1'",
-                        "details report (network)").arg (adapter.GetVDENetwork()));
-#endif
+                        "details report (network)").arg (adapter.GetHostOnlyInterface()));
+                else if (type == KNetworkAttachmentType_Generic)
+                    attType = attType.arg (tr ("Generic, '%1'",
+                        "details report (network)").arg (adapter.GetGenericDriver()));
                 else
                     attType = attType.arg (vboxGlobal().toString (type));
 
@@ -2968,10 +2966,8 @@ void VBoxGlobal::retranslateUi()
         tr ("Internal Network", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_HostOnly] =
         tr ("Host-only Adapter", "NetworkAttachmentType");
-#ifdef VBOX_WITH_VDE
-    mNetworkAttachmentTypes [KNetworkAttachmentType_VDE] =
-        tr ("VDE Adapter", "NetworkAttachmentType");
-#endif
+    mNetworkAttachmentTypes [KNetworkAttachmentType_Generic] =
+        tr ("Generic", "NetworkAttachmentType");
 
     mNetworkAdapterPromiscModePolicyTypes [KNetworkAdapterPromiscModePolicy_Deny] =
         tr ("Deny", "NetworkAdapterPromiscModePolicyType");
