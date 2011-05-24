@@ -399,7 +399,7 @@ typedef struct GMMCHUNK
     uint16_t            cMappingsX;
     /** The mapping lock this chunk is using using.  UINT16_MAX if nobody is
      *  mapping or freeing anything.  (Giant mtx.) */
-    uint8_t volatile    iMemLock;
+    uint8_t volatile    iChunkMtx;
     /** Flags field reserved for future use (like eliminating enmType).
      *  (Giant mtx.) */
     uint8_t             fFlags;
@@ -570,7 +570,13 @@ typedef struct GMM
     uint32_t            iNextChunkMtx;
     /** Chunk locks for reducing lock contention without having to allocate
      * one lock per chunk. */
-    RTSEMFASTMUTEX      ahChunkMtx[64];
+    struct
+    {
+        /** The mutex */
+        RTSEMFASTMUTEX      hMtx;
+        /** The number of threads currently using this mutex. */
+        uint32_t volatile   cUsers;
+    } aChunkMtx[64];
 } GMM;
 /** Pointer to the GMM instance. */
 typedef GMM *PGMM;
@@ -729,9 +735,9 @@ GMMR0DECL(int) GMMR0Init(void)
         if (RT_SUCCESS(rc))
         {
             unsigned iMtx;
-            for (iMtx = 0; iMtx < RT_ELEMENTS(pGMM->ahChunkMtx); iMtx++)
+            for (iMtx = 0; iMtx < RT_ELEMENTS(pGMM->aChunkMtx); iMtx++)
             {
-                rc = RTSemFastMutexCreate(&pGMM->ahChunkMtx[iMtx]);
+                rc = RTSemFastMutexCreate(&pGMM->aChunkMtx[iMtx].hMtx);
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -782,7 +788,7 @@ GMMR0DECL(int) GMMR0Init(void)
              * Bail out.
              */
             while (iMtx-- > 0)
-                RTSemFastMutexDestroy(pGMM->ahChunkMtx[iMtx]);
+                RTSemFastMutexDestroy(pGMM->aChunkMtx[iMtx].hMtx);
         }
         RTSemFastMutexDestroy(pGMM->hMtx);
     }
@@ -828,10 +834,11 @@ GMMR0DECL(void) GMMR0Term(void)
     RTAvlU32Destroy(&pGMM->pChunks, gmmR0TermDestroyChunk, pGMM);
 
     /* Destroy the chunk locks. */
-    for (unsigned iMtx = 0; iMtx++ < RT_ELEMENTS(pGMM->ahChunkMtx); iMtx++)
+    for (unsigned iMtx = 0; iMtx++ < RT_ELEMENTS(pGMM->aChunkMtx); iMtx++)
     {
-        RTSemFastMutexDestroy(pGMM->ahChunkMtx[iMtx]);
-        pGMM->ahChunkMtx[iMtx] = NIL_RTSEMFASTMUTEX;
+        Assert(pGMM->aChunkMtx[iMtx].cUsers == 0);
+        RTSemFastMutexDestroy(pGMM->aChunkMtx[iMtx].hMtx);
+        pGMM->aChunkMtx[iMtx].hMtx = NIL_RTSEMFASTMUTEX;
     }
 
     /* Finally the instance data itself. */
@@ -992,23 +999,43 @@ static bool gmmR0MutexYield(PGMM pGMM, uint64_t *puLockNanoTS)
 static int gmmR0ChunkMutexAcquire(PGMMR0CHUNKMTXSTATE pMtxState, PGMM pGMM, PGMMCHUNK pChunk, uint32_t fFlags)
 {
     Assert(fFlags > GMMR0CHUNK_MTX_INVALID && fFlags < GMMR0CHUNK_MTX_END);
+    Assert(pGMM->hMtxOwner == RTThreadNativeSelf());
+
     pMtxState->pGMM   = pGMM;
     pMtxState->fFlags = (uint8_t)fFlags;
 
     /*
-     * Get the lock index.
+     * Get the lock index and reference the lock.
      */
     Assert(pGMM->hMtxOwner == RTThreadNativeSelf());
-    uint32_t iChunkMtx = pChunk->iMemLock;
+    uint32_t iChunkMtx = pChunk->iChunkMtx;
     if (iChunkMtx == UINT8_MAX)
     {
-        /** @todo skip mutexes that are currently owned.  */
         iChunkMtx = pGMM->iNextChunkMtx++;
-        iChunkMtx %= RT_ELEMENTS(pGMM->ahChunkMtx);
-        pChunk->iMemLock = iChunkMtx;
+        iChunkMtx %= RT_ELEMENTS(pGMM->aChunkMtx);
+
+        /* Try get an unused one... */
+        if (pGMM->aChunkMtx[iChunkMtx].cUsers)
+        {
+            iChunkMtx = pGMM->iNextChunkMtx++;
+            iChunkMtx %= RT_ELEMENTS(pGMM->aChunkMtx);
+            if (pGMM->aChunkMtx[iChunkMtx].cUsers)
+            {
+                iChunkMtx = pGMM->iNextChunkMtx++;
+                iChunkMtx %= RT_ELEMENTS(pGMM->aChunkMtx);
+                if (pGMM->aChunkMtx[iChunkMtx].cUsers)
+                {
+                    iChunkMtx = pGMM->iNextChunkMtx++;
+                    iChunkMtx %= RT_ELEMENTS(pGMM->aChunkMtx);
+                }
+            }
+        }
+
+        pChunk->iChunkMtx = iChunkMtx;
     }
-    AssertCompile(RT_ELEMENTS(pGMM->ahChunkMtx) < UINT8_MAX);
+    AssertCompile(RT_ELEMENTS(pGMM->aChunkMtx) < UINT8_MAX);
     pMtxState->iChunkMtx = (uint8_t)iChunkMtx;
+    ASMAtomicIncU32(&pGMM->aChunkMtx[iChunkMtx].cUsers);
 
     /*
      * Drop the giant?
@@ -1023,7 +1050,7 @@ static int gmmR0ChunkMutexAcquire(PGMMR0CHUNKMTXSTATE pMtxState, PGMM pGMM, PGMM
     /*
      * Take the chunk mutex.
      */
-    int rc = RTSemFastMutexRequest(pGMM->ahChunkMtx[iChunkMtx]);
+    int rc = RTSemFastMutexRequest(pGMM->aChunkMtx[iChunkMtx].hMtx);
     AssertRC(rc);
     return rc;
 }
@@ -1035,17 +1062,47 @@ static int gmmR0ChunkMutexAcquire(PGMMR0CHUNKMTXSTATE pMtxState, PGMM pGMM, PGMM
  * @returns Assert status code from RTSemFastMutexRequest.
  * @param   pGMM        Pointer to the GMM instance.
  * @param   pChunk      Pointer to the chunk if it's still
- *                      alive, NULL if it isn't.  This is
- *                      inteded for later optimizations where we
- *                      will deassociate the chunk mutex if
- *                      considered safe.
+ *                      alive, NULL if it isn't.  This is used to deassociate
+ *                      the chunk from the mutex on the way out so a new one
+ *                      can be selected next time, thus avoiding contented
+ *                      mutexes.
  */
 static int gmmR0ChunkMutexRelease(PGMMR0CHUNKMTXSTATE pMtxState, PGMMCHUNK pChunk)
 {
-    int rc = RTSemFastMutexRelease(pMtxState->pGMM->ahChunkMtx[pMtxState->iChunkMtx]);
+    PGMM pGMM = pMtxState->pGMM;
+
+    /*
+     * Release the chunk mutex and reacquire the giant if requested.
+     */
+    int rc = RTSemFastMutexRelease(pGMM->aChunkMtx[pMtxState->iChunkMtx].hMtx);
     AssertRC(rc);
     if (pMtxState->fFlags == GMMR0CHUNK_MTX_RETAKE_GIANT)
-        rc = gmmR0MutexAcquire(pMtxState->pGMM);
+        rc = gmmR0MutexAcquire(pGMM);
+    else
+        Assert((pMtxState->fFlags != GMMR0CHUNK_MTX_DROP_GIANT) == (pGMM->hMtxOwner == RTThreadNativeSelf()));
+
+    /*
+     * Drop the chunk mutex user reference and deassociate it from the chunk
+     * when possible.
+     */
+    if (   ASMAtomicDecU32(&pGMM->aChunkMtx[pMtxState->iChunkMtx].cUsers) == 0
+        && pChunk
+        && RT_SUCCESS(rc) )
+    {
+        if (pMtxState->fFlags != GMMR0CHUNK_MTX_DROP_GIANT)
+            pChunk->iChunkMtx = UINT8_MAX;
+        else
+        {
+            rc = gmmR0MutexAcquire(pGMM);
+            if (RT_SUCCESS(rc))
+            {
+                if (pGMM->aChunkMtx[pMtxState->iChunkMtx].cUsers == 0)
+                    pChunk->iChunkMtx = UINT8_MAX;
+                rc = gmmR0MutexRelease(pGMM);
+            }
+        }
+    }
+
     pMtxState->pGMM = NULL;
     return rc;
 }
@@ -1877,6 +1934,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
         pChunk->hGVM        = hGVM;
         /*pChunk->iFreeHead = 0;*/
         pChunk->idNumaNode  = GMM_CHUNK_NUMA_ID_UNKNOWN;
+        pChunk->iChunkMtx   = UINT8_MAX;
         pChunk->fFlags      = fChunkFlags;
         for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
         {
