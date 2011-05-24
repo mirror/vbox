@@ -1835,9 +1835,9 @@ int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int)codecLoadV1(PCODECState pCodecState, PSSMHANDLE pSSMHandle, size_t cbOffset)
+static DECLCALLBACK(int)codecLoadV1(PCODECState pCodecState, PSSMHANDLE pSSMHandle, size_t cbOffset, size_t alignment)
 {
-    size_t cbRawNodesV1 = (sizeof(CODECNODE) + cbOffset) * pCodecState->cTotalNodes;
+    size_t cbRawNodesV1 = (sizeof(CODECNODE) + cbOffset + alignment) * pCodecState->cTotalNodes;
     uint8_t *pu8RawNodesV1 = (uint8_t *)RTMemAlloc(cbRawNodesV1);
     uint8_t *pu8NodeV1 = NULL;
     int idxNode = 0;
@@ -1855,7 +1855,7 @@ static DECLCALLBACK(int)codecLoadV1(PCODECState pCodecState, PSSMHANDLE pSSMHand
     {
         pCodecState->pNodes[idxNode].node.id = pu8NodeV1[0];
         memcpy(pCodecState->pNodes[idxNode].node.au32F00_param,
-               pu8NodeV1 + RT_OFFSETOF(CODECCOMMONNODE, au32F00_param),
+               pu8NodeV1 + RT_OFFSETOF(CODECCOMMONNODE, au32F00_param) + alignment,
                sizeof(CODECNODE) - RT_OFFSETOF(CODECCOMMONNODE,au32F00_param));
         pu8NodeV1 += sizeof(CODECNODE) + cbOffset;
     }
@@ -1871,14 +1871,14 @@ int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle, uint32_t uVer
     {
 #if RT_ARCH_X86
         if (SSMR3HandleHostBits(pSSMHandle) == 32)
-            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(long));
+            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(long), 0);
         else
-            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(uint64_t));
+            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(uint64_t), 4);
 #else
         if (SSMR3HandleHostBits(pSSMHandle) == 64)
-            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(long));
+            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(long), 4);
         else
-            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(uint32_t));
+            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(uint32_t), 0);
 #endif
     }
     else
