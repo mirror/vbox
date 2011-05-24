@@ -52,7 +52,6 @@ extern "C" {
 # error "Please specify your HDA device vendor/device IDs"
 #endif
 
-#define HDA_SSM_VERSION 2
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
@@ -1995,11 +1994,11 @@ static DECLCALLBACK(int) hdaLoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     /* Load Codec nodes states */
-    if (uVersion < HDA_SSM_VERSION)
+    if (uVersion > HDA_SSM_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert (uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    codecLoadState(&pThis->hda.Codec, pSSMHandle);
+    codecLoadState(&pThis->hda.Codec, pSSMHandle, uVersion);
     /* Load MMIO registers */
     SSMR3GetMem (pSSMHandle, pThis->hda.au32Regs, sizeof (pThis->hda.au32Regs));
     /* Load HDA dma counters */
