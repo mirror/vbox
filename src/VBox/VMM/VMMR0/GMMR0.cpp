@@ -370,14 +370,6 @@ typedef struct GMMCHUNKMAP
 /** Pointer to a GMM allocation chunk mapping. */
 typedef struct GMMCHUNKMAP *PGMMCHUNKMAP;
 
-typedef enum GMMCHUNKTYPE
-{
-    GMMCHUNKTYPE_INVALID        = 0,
-    GMMCHUNKTYPE_NON_CONTINUOUS = 1,      /* 4 kb pages */
-    GMMCHUNKTYPE_CONTINUOUS     = 2,      /* one 2 MB continuous physical range. */
-    GMMCHUNKTYPE_32BIT_HACK     = 0x7fffffff
-} GMMCHUNKTYPE;
-
 
 /**
  * A GMM allocation chunk.
@@ -428,11 +420,18 @@ typedef struct GMMCHUNK
     uint16_t            cPrivate;
     /** The number of shared pages.  (Giant mtx.) */
     uint16_t            cShared;
-    /** Chunk type.  (Giant mtx.) */
-    GMMCHUNKTYPE        enmType;
     /** The pages.  (Giant mtx.) */
     GMMPAGE             aPages[GMM_CHUNK_SIZE >> PAGE_SHIFT];
 } GMMCHUNK;
+
+/** Indicates that the NUMA properies of the memory is unknown. */
+#define GMM_CHUNK_NUMA_ID_UNKNOWN   UINT16_C(0xfffe)
+
+/** @name GMM_CHUNK_FLAGS_XXX - chunk flags.
+ * @{ */
+/** Indicates that the chunk is a large page (2MB). */
+#define GMM_CHUNK_FLAGS_LARGE_PAGE  UINT16_C(0x0001)
+/** @}  */
 
 
 /**
@@ -473,8 +472,6 @@ typedef GMMCHUNKTLB *PGMMCHUNKTLB;
 /** The number of lists in set. */
 #define GMM_CHUNK_FREE_SET_LISTS    (GMM_CHUNK_NUM_PAGES >> GMM_CHUNK_FREE_SET_SHIFT)
 
-/** Indicates that the NUMA properies of the memory is unknown. */
-#define GMM_CHUNK_NUMA_ID_UNKNOWN   UINT16_C(0xfffe)
 
 /**
  * A set of free chunks.
@@ -765,13 +762,13 @@ GMMR0DECL(int) GMMR0Init(void)
 #  if ARCH_BITS == 32
                 /* Don't reuse possibly partial chunks because of the virtual
                    address space limitation. */
-                pGMM->fBoundMemoryMode = true;
+                pGMM->fBoundMemoryMode      = true;
 #  else
-                pGMM->fBoundMemoryMode = false;
+                pGMM->fBoundMemoryMode      = false;
 #  endif
 # else
                 pGMM->fLegacyAllocationMode = true;
-                pGMM->fBoundMemoryMode = true;
+                pGMM->fBoundMemoryMode      = true;
 # endif
 #endif
 
@@ -1801,7 +1798,7 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
      * Try the next sequential one.
      */
     int32_t idChunk = ++pGMM->idChunkPrev;
-#if 0 /* test the fallback first */
+#if 0 /** @todo enable this code */
     if (    idChunk <= GMM_CHUNKID_LAST
         &&  idChunk > NIL_GMM_CHUNKID
         &&  !ASMAtomicBitTestAndSet(&pVMM->bmChunkId[0], idChunk))
@@ -1837,21 +1834,28 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
 /**
  * Registers a new chunk of memory.
  *
- * This is called by both gmmR0AllocateOneChunk and GMMR0SeedChunk. The caller
- * must own the global lock.
+ * This is called by both gmmR0AllocateOneChunk and GMMR0SeedChunk.
  *
- * @returns VBox status code.
+ * @returns VBox status code.  On success, the giant GMM lock will be held, the
+ *          caller must release it (ugly).
  * @param   pGMM            Pointer to the GMM instance.
  * @param   pSet            Pointer to the set.
  * @param   MemObj          The memory object for the chunk.
  * @param   hGVM            The affinity of the chunk. NIL_GVM_HANDLE for no
  *                          affinity.
- * @param   enmChunkType    Chunk type (continuous or non-continuous)
- * @param   ppChunk         Chunk address (out)
+ * @param   fChunkFlags     The chunk flags, GMM_CHUNK_FLAGS_XXX.
+ * @param   ppChunk         Chunk address (out).  Optional.
+ *
+ * @remarks The caller must not own the giant GMM mutex.
+ *          The giant GMM mutex will be acquired and returned acquired in
+ *          the success path.   On failure, no locks will be held.
  */
-static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemObj, uint16_t hGVM, GMMCHUNKTYPE enmChunkType, PGMMCHUNK *ppChunk = NULL)
+static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemObj, uint16_t hGVM, uint16_t fChunkFlags,
+                              PGMMCHUNK *ppChunk)
 {
+    Assert(pGMM->hMtxOwner != RTThreadNativeSelf());
     Assert(hGVM != NIL_GVM_HANDLE || pGMM->fBoundMemoryMode);
+    Assert(fChunkFlags == 0 || fChunkFlags == GMM_CHUNK_FLAGS_LARGE_PAGE);
 
     int rc;
     PGMMCHUNK pChunk = (PGMMCHUNK)RTMemAllocZ(sizeof(*pChunk));
@@ -1865,7 +1869,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
         pChunk->hGVM        = hGVM;
         /*pChunk->iFreeHead = 0;*/
         pChunk->idNumaNode  = GMM_CHUNK_NUMA_ID_UNKNOWN;
-        pChunk->enmType     = enmChunkType;
+        pChunk->fFlags      = fChunkFlags;
         for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
         {
             pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
@@ -1878,30 +1882,34 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
          * Allocate a Chunk ID and insert it into the tree.
          * This has to be done behind the mutex of course.
          */
-        if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+        rc = gmmR0MutexAcquire(pGMM);
+        if (RT_SUCCESS(rc))
         {
-            pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
-            if (    pChunk->Core.Key != NIL_GMM_CHUNKID
-                &&  pChunk->Core.Key <= GMM_CHUNKID_LAST
-                &&  RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+            if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
             {
-                pGMM->cChunks++;
-                RTListAppend(&pGMM->ChunkList, &pChunk->ListNode);
-                gmmR0LinkChunk(pChunk, pSet);
-                LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
+                pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
+                if (    pChunk->Core.Key != NIL_GMM_CHUNKID
+                    &&  pChunk->Core.Key <= GMM_CHUNKID_LAST
+                    &&  RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
+                {
+                    pGMM->cChunks++;
+                    RTListAppend(&pGMM->ChunkList, &pChunk->ListNode);
+                    gmmR0LinkChunk(pChunk, pSet);
+                    LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
 
-                if (ppChunk)
-                    *ppChunk = pChunk;
+                    if (ppChunk)
+                        *ppChunk = pChunk;
+                    GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+                    return VINF_SUCCESS;
+                }
 
-                GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
-                return VINF_SUCCESS;
+                /* bail out */
+                rc = VERR_INTERNAL_ERROR;
             }
-
-            /* bail out */
-            rc = VERR_INTERNAL_ERROR;
+            else
+                rc = VERR_INTERNAL_ERROR_5;
+            gmmR0MutexRelease(pGMM);
         }
-        else
-            rc = VERR_INTERNAL_ERROR_5;
 
         RTMemFree(pChunk);
     }
@@ -1918,40 +1926,34 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
  * @param   pGMM            Pointer to the GMM instance.
  * @param   pSet            Pointer to the set.
  * @param   hGVM            The affinity of the new chunk.
- * @param   enmChunkType    Chunk type (continuous or non-continuous)
- * @param   ppChunk         Chunk address (out)
  *
- * @remarks Called without owning the mutex.
+ * @remarks The giant mutex will be temporarily abandond during the allocation.
  */
-static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM, GMMCHUNKTYPE enmChunkType, PGMMCHUNK *ppChunk = NULL)
+static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM)
 {
     /*
      * Allocate the memory.
+     *
+     * Note! We leave the giant GMM lock temporarily as the allocation might
+     *       take a long time. gmmR0RegisterChunk reacquires it (ugly).
      */
-    RTR0MEMOBJ MemObj;
-    int        rc;
-
-    AssertCompile(GMM_CHUNK_SIZE == _2M);
-    AssertReturn(enmChunkType == GMMCHUNKTYPE_NON_CONTINUOUS || enmChunkType == GMMCHUNKTYPE_CONTINUOUS, VERR_INVALID_PARAMETER);
-
-    /* Leave the lock temporarily as the allocation might take long. */
     gmmR0MutexRelease(pGMM);
-    if (enmChunkType == GMMCHUNKTYPE_NON_CONTINUOUS)
-        rc = RTR0MemObjAllocPhysNC(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
-    else
-        rc = RTR0MemObjAllocPhysEx(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS, GMM_CHUNK_SIZE);
 
-    int rc2 = gmmR0MutexAcquire(pGMM);
-    AssertRCReturn(rc2, rc2);
-
-    if (RT_SUCCESS(rc))
-    {
-        rc = gmmR0RegisterChunk(pGMM, pSet, MemObj, hGVM, enmChunkType, ppChunk);
-        if (RT_FAILURE(rc))
-            RTR0MemObjFree(MemObj, false /* fFreeMappings */);
-    }
+    RTR0MEMOBJ hMemObj;
+    int rc = RTR0MemObjAllocPhysNC(&hMemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
     /** @todo Check that RTR0MemObjAllocPhysNC always returns VERR_NO_MEMORY on
      *        allocation failure. */
+    if (RT_SUCCESS(rc))
+    {
+        rc = gmmR0RegisterChunk(pGMM, pSet, hMemObj, hGVM, 0 /*fChunkFlags*/, NULL);
+        if (RT_SUCCESS(rc))
+            return rc;
+
+        RTR0MemObjFree(hMemObj, false /* fFreeMappings */);
+    }
+
+    int rc2 = gmmR0MutexAcquire(pGMM);
+    AssertRCReturn(rc2, RT_FAILURE(rc) ? rc : rc2);
     return rc;
 }
 
@@ -2000,7 +2002,7 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
          */
         while (pSet->cFreePages < cPages)
         {
-            int rc = gmmR0AllocateOneChunk(pGMM, pSet, pGVM->hSelf, GMMCHUNKTYPE_NON_CONTINUOUS);
+            int rc = gmmR0AllocateOneChunk(pGMM, pSet, pGVM->hSelf);
             if (RT_FAILURE(rc))
                 return rc;
             if (!GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
@@ -2033,7 +2035,7 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
                 break;
 
             /* Allocate more. */
-            int rc = gmmR0AllocateOneChunk(pGMM, pSet, hGVM, GMMCHUNKTYPE_NON_CONTINUOUS);
+            int rc = gmmR0AllocateOneChunk(pGMM, pSet, hGVM);
             if (RT_FAILURE(rc))
                 return rc;
             if (!GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
@@ -2635,10 +2637,8 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
         const unsigned cPages = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
-        PGMMCHUNK      pChunk;
-        GMMPAGEDESC    PageDesc;
-
-        if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages > pGVM->gmm.s.Reserved.cBasePages))
+        if (RT_UNLIKELY(  pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages
+                        > pGVM->gmm.s.Reserved.cBasePages))
         {
             Log(("GMMR0AllocateLargePage: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
                  pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, cPages));
@@ -2646,37 +2646,59 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
             return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
         }
 
-        /* Allocate a new continuous chunk. */
-        rc = gmmR0AllocateOneChunk(pGMM, &pGMM->Private, pGVM->hSelf, GMMCHUNKTYPE_CONTINUOUS, &pChunk);
-        if (RT_FAILURE(rc))
+        /*
+         * Allocate a new large page chunk.
+         *
+         * Note! We leave the giant GMM lock temporarily as the allocation might
+         *       take a long time.  gmmR0RegisterChunk will retake it (ugly).
+         */
+        AssertCompile(GMM_CHUNK_SIZE == _2M);
+        gmmR0MutexRelease(pGMM);
+
+        RTR0MEMOBJ hMemObj;
+        rc = RTR0MemObjAllocPhysEx(&hMemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS, GMM_CHUNK_SIZE);
+        if (RT_SUCCESS(rc))
         {
-            gmmR0MutexRelease(pGMM);
-            return rc;
+            PGMMCHUNK pChunk;
+            rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, hMemObj, pGVM->hSelf, GMM_CHUNK_FLAGS_LARGE_PAGE, &pChunk);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Allocate all the pages in the chunk.
+                 */
+                /* Unlink the new chunk from the free list. */
+                gmmR0UnlinkChunk(pChunk);
+
+                /** @todo rewrite this to skip the looping. */
+                /* Allocate all pages. */
+                GMMPAGEDESC PageDesc;
+                gmmR0AllocatePage(pGMM, pGVM->hSelf, pChunk, &PageDesc);
+
+                /* Return the first page as we'll use the whole chunk as one big page. */
+                *pIdPage = PageDesc.idPage;
+                *pHCPhys = PageDesc.HCPhysGCPhys;
+
+                for (unsigned i = 1; i < cPages; i++)
+                    gmmR0AllocatePage(pGMM, pGVM->hSelf, pChunk, &PageDesc);
+
+                /* Update accounting. */
+                pGVM->gmm.s.Allocated.cBasePages += cPages;
+                pGVM->gmm.s.cPrivatePages        += cPages;
+                pGMM->cAllocatedPages            += cPages;
+
+                gmmR0LinkChunk(pChunk, &pGMM->Private);
+                gmmR0MutexRelease(pGMM);
+            }
+            else
+                RTR0MemObjFree(hMemObj, false /* fFreeMappings */);
         }
-
-        /* Unlink the new chunk from the free list. */
-        gmmR0UnlinkChunk(pChunk);
-
-        /* Allocate all pages. */
-        gmmR0AllocatePage(pGMM, pGVM->hSelf, pChunk, &PageDesc);
-        /* Return the first page as we'll use the whole chunk as one big page. */
-        *pIdPage = PageDesc.idPage;
-        *pHCPhys = PageDesc.HCPhysGCPhys;
-
-        for (unsigned i = 1; i < cPages; i++)
-            gmmR0AllocatePage(pGMM, pGVM->hSelf, pChunk, &PageDesc);
-
-        /* Update accounting. */
-        pGVM->gmm.s.Allocated.cBasePages += cPages;
-        pGVM->gmm.s.cPrivatePages        += cPages;
-        pGMM->cAllocatedPages            += cPages;
-
-        gmmR0LinkChunk(pChunk, &pGMM->Private);
     }
     else
+    {
+        gmmR0MutexRelease(pGMM);
         rc = VERR_INTERNAL_ERROR_5;
+    }
 
-    gmmR0MutexRelease(pGMM);
     LogFlow(("GMMR0AllocateLargePage: returns %Rrc\n", rc));
     return rc;
 }
@@ -3846,30 +3868,24 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
     }
 
     /*
-     * Lock the memory before taking the semaphore.
+     * Lock the memory and add it as new chunk with our hGVM.
+     * (The GMM locking is done inside gmmR0RegisterChunk.)
      */
     RTR0MEMOBJ MemObj;
     rc = RTR0MemObjLockUser(&MemObj, pvR3, GMM_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
-        /* Grab the lock. */
-        rc = gmmR0MutexAcquire(pGMM);
+        rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf, 0 /*fChunkFlags*/, NULL);
         if (RT_SUCCESS(rc))
-        {
-            /*
-             * Add a new chunk with our hGVM.
-             */
-            rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf, GMMCHUNKTYPE_NON_CONTINUOUS);
             gmmR0MutexRelease(pGMM);
-        }
-
-        if (RT_FAILURE(rc))
+        else
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
     }
 
     LogFlow(("GMMR0SeedChunk: rc=%d (pvR3=%p)\n", rc, pvR3));
     return rc;
 }
+
 
 typedef struct
 {
