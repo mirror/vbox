@@ -3,7 +3,7 @@
 # libraries VBox OSE depends on.
 
 #
-# Copyright (C) 2006-2009 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -87,6 +87,7 @@ WITH_DBUS=1
 WITH_KMODS=1
 WITH_OPENGL=1
 WITH_HARDENING=1
+WITH_UDPTUNNEL=1
 WITH_VDE=0
 WITH_VNC=0
 WITH_DOCS=1
@@ -2179,6 +2180,7 @@ EOF
 [ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
+  --disable-udptunnel      disable UDP tunnel networking
   --disable-hardening      don't be strict about /dev/vboxdrv access
   --build-libxml2          build libxml2 from sources
   --build-libxslt          build libxslt from sources
@@ -2196,6 +2198,7 @@ Paths:
   --with-kbuild=DIR        kbuild directory [$KBUILDDIR]
   --with-iasl=PATH         location of the iasl compiler [$IASL]
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
+  --with-makeself=PATH     location of makeself [$MAKESELF]
 EOF
 [ "$OS"    = "linux" ] && echo "  --with-linux=DIR         Linux kernel source directory [$LINUX]"
 [ $WITH_QT4    -eq 1 ] && echo "  --with-qt-dir=DIR        directory for Qt4 headers/libraries [pkgconfig]"
@@ -2293,6 +2296,9 @@ for option in $*; do
     --with-mkisofs=*)
       MKISOFS=`echo $option | cut -d'=' -f2`
       ;;
+    --with-makeself=*)
+      MAKESELF=`echo $option | cut -d'=' -f2`
+      ;;
     --target-arch=*)
       TARGET_MACHINE=`echo $option | cut -d'=' -f2`
       ;;
@@ -2352,6 +2358,9 @@ for option in $*; do
       ;;
     --enable-hardening)
       WITH_HARDENING=2
+      ;;
+    --disable-udptunnel)
+      WITH_UDPTUNNEL=0
       ;;
     --enable-vde)
       WITH_VDE=1
@@ -2602,6 +2611,11 @@ if [ $OSE -ge 1 ]; then
   else
     cnf_append "VBOX_WITH_WEBSERVICES" ""
   fi
+fi
+
+# UDPTUNNEL
+if [ $WITH_UDPTUNNEL -eq 0 ]; then
+  cnf_append "VBOX_WITH_UDPTUNNEL" ""
 fi
 
 # VDE

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -199,6 +199,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_TRANSPORT_ASYNC,
     /** TUN network transport driver group */
     LOG_GROUP_DRV_TUN,
+    /** UDP tunnet network transport driver group. */
+    LOG_GROUP_DRV_UDPTUNNEL,
     /** USB Proxy driver group. */
     LOG_GROUP_DRV_USBPROXY,
     /** VBoxHDD media driver group. */
@@ -444,6 +446,7 @@ typedef enum LOGGROUP
     "DRV_SCSIHOST", \
     "DRV_TRANSPORT_ASYNC", \
     "DRV_TUN",      \
+    "DRV_UDPTUNNEL", \
     "DRV_USBPROXY", \
     "DRV_VBOXHDD",  \
     "DRV_VD",       \
