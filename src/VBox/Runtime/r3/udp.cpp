@@ -669,8 +669,6 @@ RTR3DECL(int) RTUdpServerDestroy(PRTUDPSERVER pServer)
  */
 static int rtUdpClose(RTSOCKET Sock, const char *pszMsg)
 {
-    int rc;
-
     /* ignore nil handles. */
     if (Sock == NIL_RTSOCKET)
         return VINF_SUCCESS;
