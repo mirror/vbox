@@ -663,7 +663,7 @@ int handleControlVM(HandlerArg *a)
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
                         CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic), 1);
-                        CHECK_ERROR_RET(adapter, SetProperty((CBSTR)L"name", Bstr(a->argv[3]).raw()), 1);
+                        CHECK_ERROR_RET(adapter, SetProperty(Bstr("name").raw(), Bstr(a->argv[3]).raw()), 1);
                     }
                     else
                     {

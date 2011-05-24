@@ -1277,7 +1277,7 @@ int handleModifyVM(HandlerArg *a)
                 /* remove it? */
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(BridgedInterface)((CBSTR)L""));
+                    CHECK_ERROR(nic, COMSETTER(BridgedInterface)(Bstr().raw()));
                 }
                 else
                 {
@@ -1296,7 +1296,7 @@ int handleModifyVM(HandlerArg *a)
                 /* remove it? */
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(HostOnlyInterface)((CBSTR)L""));
+                    CHECK_ERROR(nic, COMSETTER(HostOnlyInterface)(Bstr().raw()));
                 }
                 else
                 {
@@ -1315,7 +1315,7 @@ int handleModifyVM(HandlerArg *a)
                 /* remove it? */
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(InternalNetwork)((CBSTR)L""));
+                    CHECK_ERROR(nic, COMSETTER(InternalNetwork)(Bstr().raw()));
                 }
                 else
                 {
@@ -1594,7 +1594,7 @@ int handleModifyVM(HandlerArg *a)
                 /* generate one? */
                 if (!strcmp(ValueUnion.psz, "auto"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(MACAddress)((CBSTR)L""));
+                    CHECK_ERROR(nic, COMSETTER(MACAddress)(Bstr().raw()));
                 }
                 else
                 {
@@ -1918,7 +1918,7 @@ int handleModifyVM(HandlerArg *a)
                         CHECK_ERROR(vrdeServer, COMSETTER(VRDEExtPack)(bstr.raw()));
                     }
                     else
-                        CHECK_ERROR(vrdeServer, COMSETTER(VRDEExtPack)((CBSTR)L""));
+                        CHECK_ERROR(vrdeServer, COMSETTER(VRDEExtPack)(Bstr().raw()));
                 }
                 break;
             }
@@ -2034,7 +2034,7 @@ int handleModifyVM(HandlerArg *a)
                         CHECK_ERROR(vrdeServer, COMSETTER(AuthLibrary)(bstr.raw()));
                     }
                     else
-                        CHECK_ERROR(vrdeServer, COMSETTER(AuthLibrary)((CBSTR)L""));
+                        CHECK_ERROR(vrdeServer, COMSETTER(AuthLibrary)(Bstr().raw()));
                 }
                 break;
             }
@@ -2122,7 +2122,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_SNAPSHOTFOLDER:
             {
                 if (!strcmp(ValueUnion.psz, "default"))
-                    CHECK_ERROR(machine, COMSETTER(SnapshotFolder)((CBSTR)L""));
+                    CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(Bstr().raw()));
                 else
                     CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(Bstr(ValueUnion.psz).raw()));
                 break;
