@@ -461,7 +461,7 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
                                    Console*              pConsole)
 {
     HRESULT hrc = S_OK;
-    PCFGMNODE pDev, pInst, pCfg, pLunL0;
+    PCFGMNODE pInst, pCfg, pLunL0;
 
     SafeIfaceArray<IPciDeviceAttachment> assignments;
     ComPtr<IMachine> aMachine =  pConsole->machine();
@@ -3334,7 +3334,7 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 bool fHostIP = true;
                 SafeArray<BSTR> names;
                 SafeArray<BSTR> values;
-                hrc = pMedium->GetProperties((CBSTR)L"",
+                hrc = pMedium->GetProperties(Bstr().raw(),
                                              ComSafeArrayAsOutParam(names),
                                              ComSafeArrayAsOutParam(values));               H();
 
@@ -4384,7 +4384,7 @@ int Console::configNetwork(const char *pszDevice,
                 hrc = aNetworkAdapter->COMGETTER(GenericDriver)(bstr.asOutParam());         H();
                 SafeArray<BSTR> names;
                 SafeArray<BSTR> values;
-                hrc = aNetworkAdapter->GetProperties((CBSTR)L"",
+                hrc = aNetworkAdapter->GetProperties(Bstr().raw(),
                                                      ComSafeArrayAsOutParam(names),
                                                      ComSafeArrayAsOutParam(values));       H();
 
