@@ -2393,6 +2393,7 @@ Sub Main
    end if
    if blnOptDisableUDPTunnel = True then
       DisableUDPTunnel "--disable-udptunnel"
+   end if
    CheckSourcePath
    CheckForkBuild strOptkBuild
    CheckForWin2k3DDK strOptDDK
