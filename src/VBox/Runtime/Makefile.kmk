@@ -463,6 +463,7 @@ RuntimeR3_SOURCES       = \
 	r3/test.cpp \
 	r3/testi.cpp \
 	r3/tcp.cpp \
+	r3/udp.cpp \
 	r3/generic/semspinmutex-r3-generic.cpp
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
