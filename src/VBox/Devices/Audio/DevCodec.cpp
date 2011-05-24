@@ -31,6 +31,7 @@ extern "C" {
 
 #define CODECNODE_F0_PARAM_LENGTH 0x14
 #define CODECNODE_F02_PARAM_LENGTH 16
+
 typedef struct CODECCOMMONNODE
 {
     uint8_t id; /* 7 - bit format */
@@ -1834,9 +1835,54 @@ int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
     return VINF_SUCCESS;
 }
 
-int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int)codecLoadV1(PCODECState pCodecState, PSSMHANDLE pSSMHandle, size_t cbOffset)
 {
-    int rc = SSMR3GetMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * pCodecState->cTotalNodes);
+    size_t cbRawNodesV1 = (sizeof(CODECNODE) + cbOffset) * pCodecState->cTotalNodes;
+    uint8_t *pu8RawNodesV1 = (uint8_t *)RTMemAlloc(cbRawNodesV1);
+    uint8_t *pu8NodeV1 = NULL;
+    int idxNode = 0;
+    if (!pu8RawNodesV1)
+        return VERR_NO_MEMORY;
+    int rc = SSMR3GetMem (pSSMHandle, pu8RawNodesV1, cbRawNodesV1);
+
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pu8RawNodesV1);
+        AssertRCReturn(rc, rc);
+    }
+    pu8NodeV1 = &pu8RawNodesV1[0];
+    for (idxNode = 0; idxNode < pCodecState->cTotalNodes; ++idxNode)
+    {
+        pCodecState->pNodes[idxNode].node.id = pu8NodeV1[0];
+        memcpy(pCodecState->pNodes[idxNode].node.au32F00_param,
+               pu8NodeV1 + RT_OFFSETOF(CODECCOMMONNODE, au32F00_param),
+               sizeof(CODECNODE) - RT_OFFSETOF(CODECCOMMONNODE,au32F00_param));
+        pu8NodeV1 += sizeof(CODECNODE) + cbOffset;
+    }
+
+    RTMemFree(pu8RawNodesV1);
+    return rc;
+}
+
+int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle, uint32_t uVersion)
+{
+    int rc;
+    if (uVersion == 1)
+    {
+#if RT_ARCH_X86
+        if (SSMR3HandleHostBits(pSSMHandle) == 32)
+            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(long));
+        else
+            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(uint64_t));
+#else
+        if (SSMR3HandleHostBits(pSSMHandle) == 64)
+            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(long));
+        else
+            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(uint32_t));
+#endif
+    }
+    else
+        rc = SSMR3GetMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * pCodecState->cTotalNodes);
     if (codecIsDacNode(pCodecState, pCodecState->u8DacLineOut))
         codecToAudVolume(&pCodecState->pNodes[pCodecState->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
     else if (codecIsSpdifOutNode(pCodecState, pCodecState->u8DacLineOut))
