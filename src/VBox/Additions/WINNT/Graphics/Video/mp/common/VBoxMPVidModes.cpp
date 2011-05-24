@@ -429,12 +429,12 @@ VBoxMPFillModesTable(PVBOXMP_DEVEXT pExt, int iDisplay, PVIDEO_MODE_INFORMATION 
 }
 
 /* Returns if we're in the first mode change, ie doesn't have valid video mode set yet */
-static BOOLEAN VBoxMPIsStartingUp(PVBOXMP_DEVEXT pExt)
+static BOOLEAN VBoxMPIsStartingUp(PVBOXMP_DEVEXT pExt, uint32_t iDisplay)
 {
 #ifdef VBOX_XPDM_MINIPORT
     return (pExt->CurrentMode == 0);
 #else
-    return (!VBoxCommonFromDeviceExt(pExt)->cDisplays || !pExt->aSources[0].pPrimaryAllocation);
+    return (!VBoxCommonFromDeviceExt(pExt)->cDisplays || !pExt->aSources[iDisplay].pPrimaryAllocation);
 #endif
 }
 
@@ -446,7 +446,7 @@ static BOOLEAN
 VBoxMPValidateVideoModeParams(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, uint32_t &xres, uint32_t &yres, uint32_t &bpp)
 {
     /* Make sure all important video mode values are set */
-    if (VBoxMPIsStartingUp(pExt))
+    if (VBoxMPIsStartingUp(pExt, iDisplay))
     {
         /* Use stored custom values only if nothing was read from host. */
         xres = xres ? xres:g_CustomVideoModes[iDisplay].VisScreenWidth;
@@ -461,9 +461,9 @@ VBoxMPValidateVideoModeParams(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, uint32_t &
         yres = yres ? yres:pExt->CurrentModeHeight;
         bpp  = bpp  ? bpp :pExt->CurrentModeBPP;
 #else
-        xres = xres ? xres:pExt->aSources[0].pPrimaryAllocation->SurfDesc.width;
-        yres = yres ? yres:pExt->aSources[0].pPrimaryAllocation->SurfDesc.height;
-        bpp  = bpp  ? bpp :pExt->aSources[0].pPrimaryAllocation->SurfDesc.bpp;
+        xres = xres ? xres:pExt->aSources[iDisplay].pPrimaryAllocation->SurfDesc.width;
+        yres = yres ? yres:pExt->aSources[iDisplay].pPrimaryAllocation->SurfDesc.height;
+        bpp  = bpp  ? bpp :pExt->aSources[iDisplay].pPrimaryAllocation->SurfDesc.bpp;
 #endif
     }
 
@@ -636,7 +636,7 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
     bHaveSpecial = bPending && (pExt->iDevice == specialMode.ModeIndex);
 
     /* Check the startup case */
-    if (!bHaveSpecial && VBoxMPIsStartingUp(pExt))
+    if (!bHaveSpecial && VBoxMPIsStartingUp(pExt, pExt->iDevice))
     {
         uint32_t xres=0, yres=0, bpp=0;
         /* Check if we could make valid mode from values stored to registry */
@@ -698,7 +698,7 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
         }
 
         /* Check if we need to alternate the index */
-        if (!VBoxMPIsStartingUp(pExt))
+        if (!VBoxMPIsStartingUp(pExt, pExt->iDevice))
         {
             if (bChanged)
             {
@@ -730,7 +730,7 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
                     
         
         /* Make sure we've added 2nd mode if necessary to maintain table size */
-        if (VBoxMPIsStartingUp(pExt))
+        if (VBoxMPIsStartingUp(pExt, pExt->iDevice))
         {
             memcpy(&g_VideoModes[g_NumVideoModes], &g_VideoModes[g_NumVideoModes-1], sizeof(VIDEO_MODE_INFORMATION));
             g_VideoModes[g_NumVideoModes].ModeIndex = g_NumVideoModes+1;

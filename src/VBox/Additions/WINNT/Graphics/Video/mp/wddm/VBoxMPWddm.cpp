@@ -1109,7 +1109,7 @@ NTSTATUS DxgkDdiQueryChildRelations(
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.MonitorOrientationAwareness = D3DKMDT_MOA_INTERRUPTIBLE; /* ?? D3DKMDT_MOA_NONE*/
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.SupportsSdtvModes = FALSE;
         ChildRelations[i].ChildCapabilities.HpdAwareness = HpdAwarenessAlwaysConnected; //HpdAwarenessInterruptible; /* ?? HpdAwarenessAlwaysConnected; */
-        ChildRelations[i].AcpiUid =  i; /* */
+        ChildRelations[i].AcpiUid =  0; /* */
         ChildRelations[i].ChildUid = i; /* should be == target id */
     }
     LOGF(("LEAVE, context(0x%x)", MiniportDeviceContext));
@@ -3505,104 +3505,44 @@ DxgkDdiIsSupportedVidPn(
 
     NTSTATUS Status = STATUS_SUCCESS;
     BOOLEAN bSupported = TRUE;
-#if 1
-    /* always report it as supported and let DxgkDdiEnumVidPnCofuncModality deal with support info */
-#else
+
     PVBOXMP_DEVEXT pContext = (PVBOXMP_DEVEXT)hAdapter;
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
     Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pIsSupportedVidPnArg->hDesiredVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
-    if (Status == STATUS_SUCCESS)
+    if (!NT_SUCCESS(Status))
     {
+        WARN(("DxgkCbQueryVidPnInterface failed Status()0x%x\n", Status));
+        return Status;
+    }
+
 #ifdef VBOXWDDM_DEBUG_VIDPN
-        vboxVidPnDumpVidPn("\n>>>>IS SUPPORTED VidPN : >>>>", pContext, pIsSupportedVidPnArg->hDesiredVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<");
+    vboxVidPnDumpVidPn("\n>>>>IS SUPPORTED VidPN : >>>>", pContext, pIsSupportedVidPnArg->hDesiredVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<");
 #endif
 
-        D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
-        const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
-        Status = pVidPnInterface->pfnGetTopology(pIsSupportedVidPnArg->hDesiredVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
-        if (Status == STATUS_SUCCESS)
-        {
-            Status = vboxVidPnCheckTopology(pContext, pIsSupportedVidPnArg->hDesiredVidPn, hVidPnTopology, pVidPnTopologyInterface, &bSupported);
-            if (Status == STATUS_SUCCESS && bSupported)
-            {
-#if 0
-                for (int id = 0; id < VBoxCommonFromDeviceExt(pContext)->cDisplays; ++id)
-                {
-                    D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
-                    const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface;
-                    Status = pVidPnInterface->pfnAcquireSourceModeSet(pIsSupportedVidPnArg->hDesiredVidPn,
-                                    id,
-                                    &hNewVidPnSourceModeSet,
-                                    &pVidPnSourceModeSetInterface);
-                    if (Status == STATUS_SUCCESS)
-                    {
-                        Status = vboxVidPnCheckSourceModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnSourceModeSet, pVidPnSourceModeSetInterface, &bSupported);
-
-                        Assert(bSupported);
-
-                        pVidPnInterface->pfnReleaseSourceModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnSourceModeSet);
-
-                        if (Status != STATUS_SUCCESS || !bSupported)
-                            break;
-                    }
-                    else if (Status == STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE)
-                    {
-                        LOGREL(("Warning: pfnAcquireSourceModeSet returned STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE, continuing"));
-                        Status = STATUS_SUCCESS;
-                    }
-                    else
-                    {
-                        LOGREL(("pfnAcquireSourceModeSet failed Status(0x%x)"));
-                        break;
-                    }
-                }
-
-                if (Status == STATUS_SUCCESS && bSupported)
-                {
-                    for (int id = 0; id < VBoxCommonFromDeviceExt(pContext)->cDisplays; ++id)
-                    {
-                        D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet;
-                        CONST DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface;
-                        Status = pVidPnInterface->pfnAcquireTargetModeSet(pIsSupportedVidPnArg->hDesiredVidPn,
-                                        id, /*__in CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId */
-                                        &hNewVidPnTargetModeSet,
-                                        &pVidPnTargetModeSetInterface);
-                        if (Status == STATUS_SUCCESS)
-                        {
-                            Status = vboxVidPnCheckTargetModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnTargetModeSet, pVidPnTargetModeSetInterface, &bSupported);
-
-                            Assert(bSupported);
-
-                            pVidPnInterface->pfnReleaseTargetModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnTargetModeSet);
-
-                            if (Status != STATUS_SUCCESS || !bSupported)
-                                break;
-                        }
-                        else if (Status == STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE)
-                        {
-                            LOGREL(("Warning: pfnAcquireSourceModeSet returned STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE, continuing"));
-                            Status = STATUS_SUCCESS;
-                        }
-                        else
-                        {
-                            LOGREL(("pfnAcquireSourceModeSet failed Status(0x%x)"));
-                            break;
-                        }
-                    }
-                }
-#endif
-            }
-        }
-        else
-        {
-            LOGREL(("pfnGetTopology failed Status(0x%x)"));
-        }
-    }
-    else
+    D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+    const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+    Status = pVidPnInterface->pfnGetTopology(pIsSupportedVidPnArg->hDesiredVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+    if (!NT_SUCCESS(Status))
     {
-        LOGREL(("DxgkCbQueryVidPnInterface failed Status(0x%x)"));
+        WARN(("pfnGetTopology failed Status()0x%x\n", Status));
+        return Status;
     }
-#endif /* if 0 */
+
+    VBOXVIDPNPATHITEM aItems[VBOX_VIDEO_MAX_SCREENS];
+    BOOLEAN fDisabledFound = FALSE;
+    Status = vboxVidPnCheckTopology(hVidPnTopology, pVidPnTopologyInterface, TRUE /* fBreakOnDisabled */, RT_ELEMENTS(aItems), aItems, &fDisabledFound);
+    Assert(Status == STATUS_SUCCESS);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVidPnCheckTopology failed Status()0x%x\n", Status));
+        return Status;
+    }
+
+    if (fDisabledFound)
+    {
+        WARN(("found unsupported path"));
+        bSupported = FALSE;
+    }
 
     pIsSupportedVidPnArg->IsVidPnSupported = bSupported;
 
@@ -3633,7 +3573,7 @@ DxgkDdiRecommendFunctionalVidPn(
     NTSTATUS Status;
     PVBOXWDDM_RECOMMENDVIDPN pVidPnInfo = pRecommendFunctionalVidPnArg->PrivateDriverDataSize >= sizeof (VBOXWDDM_RECOMMENDVIDPN) ?
             (PVBOXWDDM_RECOMMENDVIDPN)pRecommendFunctionalVidPnArg->pPrivateDriverData : NULL;
-    PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmUpdateVideoModesInfo(pDevExt, pVidPnInfo);
+    PVBOXWDDM_VIDEOMODES_INFO pInfos = VBoxWddmUpdateVideoModesInfo(pDevExt, NULL /*pVidPnInfo*/);
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
     Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     Assert(Status == STATUS_SUCCESS);
@@ -3741,59 +3681,62 @@ DxgkDdiEnumVidPnCofuncModality(
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pEnumCofuncModalityArg->hConstrainingVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
-    if (Status == STATUS_SUCCESS)
+    if (!NT_SUCCESS(Status))
     {
+        WARN(("DxgkCbQueryVidPnInterface failed Status()0x%x\n", Status));
+        return Status;
+    }
 #ifdef VBOXWDDM_DEBUG_VIDPN
-        vboxVidPnDumpCofuncModalityArg(">>>>MODALITY Args: ", pEnumCofuncModalityArg, "\n");
-        vboxVidPnDumpVidPn(">>>>MODALITY VidPN (IN) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n");
+    vboxVidPnDumpCofuncModalityArg(">>>>MODALITY Args: ", pEnumCofuncModalityArg, "\n");
+    vboxVidPnDumpVidPn(">>>>MODALITY VidPN (IN) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n");
 #endif
 
-        D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
-        const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
-        NTSTATUS Status = pVidPnInterface->pfnGetTopology(pEnumCofuncModalityArg->hConstrainingVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
-        Assert(Status == STATUS_SUCCESS);
-        if (Status == STATUS_SUCCESS)
-        {
-            BOOLEAN bSupported = FALSE;
-            Status = vboxVidPnCheckTopology(pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, hVidPnTopology, pVidPnTopologyInterface, &bSupported);
-            Assert(Status == STATUS_SUCCESS);
-            Assert(bSupported);
+    D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+    const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+    Status = pVidPnInterface->pfnGetTopology(pEnumCofuncModalityArg->hConstrainingVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+    Assert(Status == STATUS_SUCCESS);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("pfnGetTopology failed Status()0x%x\n", Status));
+        return Status;
+    }
 
-            VBOXVIDPNCOFUNCMODALITY CbContext = {0};
-            CbContext.pDevExt = pDevExt;
-            CbContext.pVidPnInterface = pVidPnInterface;
-            CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
-            CbContext.pInfos = VBoxWddmGetAllVideoModesInfos(pDevExt);
+    VBOXVIDPNPATHITEM aItems[VBOX_VIDEO_MAX_SCREENS];
+    Status = vboxVidPnCheckTopology(hVidPnTopology, pVidPnTopologyInterface, FALSE /* fBreakOnDisabled */, RT_ELEMENTS(aItems), aItems, NULL /* *pfDisabledFound */);
+    Assert(Status == STATUS_SUCCESS);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVidPnCheckTopology failed Status()0x%x\n", Status));
+        return Status;
+    }
 
-#if 0
-            for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-            {
-                vboxVidPnCofuncModalityForPath(&CbContext, i, i, TRUE);
-            }
-#else
-            Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
+    VBOXVIDPNCOFUNCMODALITY CbContext = {0};
+    CbContext.pDevExt = pDevExt;
+    CbContext.pVidPnInterface = pVidPnInterface;
+    CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
+    CbContext.pInfos = VBoxWddmGetAllVideoModesInfos(pDevExt);
+    CbContext.cPathInfos = RT_ELEMENTS(aItems);
+    CbContext.apPathInfos = aItems;
+
+    Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
                     vboxVidPnCofuncModalityPathEnum, &CbContext);
-            Assert(Status == STATUS_SUCCESS);
-            if (Status == STATUS_SUCCESS)
-            {
-                Status = CbContext.Status;
-                Assert(Status == STATUS_SUCCESS);
-                if (Status != STATUS_SUCCESS)
-                    LOGREL(("vboxVidPnAdjustSourcesTargetsCallback failed Status(0x%x)", Status));
-            }
-            else
-                LOGREL(("vboxVidPnEnumPaths failed Status(0x%x)", Status));
-#endif
-        }
-        else
-            LOGREL(("pfnGetTopology failed Status(0x%x)", Status));
+    Assert(Status == STATUS_SUCCESS);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVidPnEnumPaths failed Status()0x%x\n", Status));
+        return Status;
+    }
+
+    Status = CbContext.Status;
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVidPnCofuncModalityPathEnum failed Status()0x%x\n", Status));
+        return Status;
+    }
 
 #ifdef VBOXWDDM_DEBUG_VIDPN
         vboxVidPnDumpVidPn("\n>>>>MODALITY VidPN (OUT) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
 #endif
-    }
-    else
-        LOGREL(("DxgkCbQueryVidPnInterface failed Status(0x%x)", Status));
 
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
 
