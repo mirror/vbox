@@ -513,10 +513,6 @@ typedef struct GMM
     /** @todo separate trees for distinctly different guest OSes. */
     PAVLGCPTRNODECORE   pGlobalSharedModuleTree;
 
-    /** The fast mutex protecting the GMM cleanup.
-     * This is serializes VMs cleaning up their memory, so that we can
-     * safely leave the primary mutex (hMtx). */
-    RTSEMFASTMUTEX      hMtxCleanup;
     /** The chunk list.  For simplifying the cleanup process. */
     RTLISTNODE          ChunkList;
 
@@ -696,7 +692,7 @@ static bool                  gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMC
 DECLINLINE(void)             gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet);
 DECLINLINE(void)             gmmR0UnlinkChunk(PGMMCHUNK pChunk);
 static uint32_t              gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uLineNo);
-static void                  gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
+static bool                  gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSem);
 static void                  gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage);
 static int                   gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
 static void                  gmmR0SharedModuleCleanup(PGMM pGMM, PGVM pGVM);
@@ -731,65 +727,61 @@ GMMR0DECL(int) GMMR0Init(void)
     int rc = RTSemFastMutexCreate(&pGMM->hMtx);
     if (RT_SUCCESS(rc))
     {
-        rc = RTSemFastMutexCreate(&pGMM->hMtxCleanup);
+        unsigned iMtx;
+        for (iMtx = 0; iMtx < RT_ELEMENTS(pGMM->aChunkMtx); iMtx++)
+        {
+            rc = RTSemFastMutexCreate(&pGMM->aChunkMtx[iMtx].hMtx);
+            if (RT_FAILURE(rc))
+                break;
+        }
         if (RT_SUCCESS(rc))
         {
-            unsigned iMtx;
-            for (iMtx = 0; iMtx < RT_ELEMENTS(pGMM->aChunkMtx); iMtx++)
-            {
-                rc = RTSemFastMutexCreate(&pGMM->aChunkMtx[iMtx].hMtx);
-                if (RT_FAILURE(rc))
-                    break;
-            }
+            /*
+             * Check and see if RTR0MemObjAllocPhysNC works.
+             */
+#if 0 /* later, see #3170. */
+            RTR0MEMOBJ MemObj;
+            rc = RTR0MemObjAllocPhysNC(&MemObj, _64K, NIL_RTHCPHYS);
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Check and see if RTR0MemObjAllocPhysNC works.
-                 */
-#if 0 /* later, see #3170. */
-                RTR0MEMOBJ MemObj;
-                rc = RTR0MemObjAllocPhysNC(&MemObj, _64K, NIL_RTHCPHYS);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = RTR0MemObjFree(MemObj, true);
-                    AssertRC(rc);
-                }
-                else if (rc == VERR_NOT_SUPPORTED)
-                    pGMM->fLegacyAllocationMode = pGMM->fBoundMemoryMode = true;
-                else
-                    SUPR0Printf("GMMR0Init: RTR0MemObjAllocPhysNC(,64K,Any) -> %d!\n", rc);
+                rc = RTR0MemObjFree(MemObj, true);
+                AssertRC(rc);
+            }
+            else if (rc == VERR_NOT_SUPPORTED)
+                pGMM->fLegacyAllocationMode = pGMM->fBoundMemoryMode = true;
+            else
+                SUPR0Printf("GMMR0Init: RTR0MemObjAllocPhysNC(,64K,Any) -> %d!\n", rc);
 #else
 # if defined(RT_OS_WINDOWS) || (defined(RT_OS_SOLARIS) && ARCH_BITS == 64) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
-                pGMM->fLegacyAllocationMode = false;
+            pGMM->fLegacyAllocationMode = false;
 #  if ARCH_BITS == 32
-                /* Don't reuse possibly partial chunks because of the virtual
-                   address space limitation. */
-                pGMM->fBoundMemoryMode      = true;
+            /* Don't reuse possibly partial chunks because of the virtual
+               address space limitation. */
+            pGMM->fBoundMemoryMode      = true;
 #  else
-                pGMM->fBoundMemoryMode      = false;
+            pGMM->fBoundMemoryMode      = false;
 #  endif
 # else
-                pGMM->fLegacyAllocationMode = true;
-                pGMM->fBoundMemoryMode      = true;
+            pGMM->fLegacyAllocationMode = true;
+            pGMM->fBoundMemoryMode      = true;
 # endif
 #endif
 
-                /*
-                 * Query system page count and guess a reasonable cMaxPages value.
-                 */
-                pGMM->cMaxPages = UINT32_MAX; /** @todo IPRT function for query ram size and such. */
-
-                g_pGMM = pGMM;
-                LogFlow(("GMMInit: pGMM=%p fLegacyAllocationMode=%RTbool fBoundMemoryMode=%RTbool\n", pGMM, pGMM->fLegacyAllocationMode, pGMM->fBoundMemoryMode));
-                return VINF_SUCCESS;
-            }
-
             /*
-             * Bail out.
+             * Query system page count and guess a reasonable cMaxPages value.
              */
-            while (iMtx-- > 0)
-                RTSemFastMutexDestroy(pGMM->aChunkMtx[iMtx].hMtx);
+            pGMM->cMaxPages = UINT32_MAX; /** @todo IPRT function for query ram size and such. */
+
+            g_pGMM = pGMM;
+            LogFlow(("GMMInit: pGMM=%p fLegacyAllocationMode=%RTbool fBoundMemoryMode=%RTbool\n", pGMM, pGMM->fLegacyAllocationMode, pGMM->fBoundMemoryMode));
+            return VINF_SUCCESS;
         }
+
+        /*
+         * Bail out.
+         */
+        while (iMtx-- > 0)
+            RTSemFastMutexDestroy(pGMM->aChunkMtx[iMtx].hMtx);
         RTSemFastMutexDestroy(pGMM->hMtx);
     }
 
@@ -827,8 +819,6 @@ GMMR0DECL(void) GMMR0Term(void)
     pGMM->u32Magic    = ~GMM_MAGIC;
     RTSemFastMutexDestroy(pGMM->hMtx);
     pGMM->hMtx        = NIL_RTSEMFASTMUTEX;
-    RTSemFastMutexDestroy(pGMM->hMtxCleanup);
-    pGMM->hMtxCleanup = NIL_RTSEMFASTMUTEX;
 
     /* Free any chunks still hanging around. */
     RTAvlU32Destroy(&pGMM->pChunks, gmmR0TermDestroyChunk, pGMM);
@@ -1113,9 +1103,8 @@ static int gmmR0ChunkMutexRelease(PGMMR0CHUNKMTXSTATE pMtxState, PGMMCHUNK pChun
  * chunk locked.
  *
  * This only works if gmmR0ChunkMutexAcquire was called with
- * GMMR0CHUNK_MTX_KEEP_GIANT.  Release will NOT retake the giant
- * when dropped this way, the behavior will be like if
- * GMMR0CHUNK_MTX_DROP_GIANT was used.
+ * GMMR0CHUNK_MTX_KEEP_GIANT.  gmmR0ChunkMutexRelease will retake the giant
+ * mutex, i.e. behave as if GMMR0CHUNK_MTX_RETAKE_GIANT was used.
  *
  * @returns VBox status code (assuming success is ok).
  * @param   pMtxState   Pointer to the chunk mutex state.
@@ -1124,7 +1113,7 @@ static int gmmR0ChunkMutexDropGiant(PGMMR0CHUNKMTXSTATE pMtxState)
 {
     AssertReturn(pMtxState->fFlags == GMMR0CHUNK_MTX_KEEP_GIANT, VERR_INTERNAL_ERROR_2);
     Assert(pMtxState->pGMM->hMtxOwner == RTThreadNativeSelf());
-    pMtxState->fFlags = GMMR0CHUNK_MTX_DROP_GIANT;
+    pMtxState->fFlags = GMMR0CHUNK_MTX_RETAKE_GIANT;
     /** @todo GMM life cycle cleanup (we may race someone
      *        destroying and cleaning up GMM)? */
     return gmmR0MutexRelease(pMtxState->pGMM);
@@ -1150,7 +1139,6 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
     gmmR0SharedModuleCleanup(pGMM, pGVM);
 #endif
 
-    int rc = RTSemFastMutexRequest(pGMM->hMtxCleanup); AssertRC(rc);
     gmmR0MutexAcquire(pGMM);
     uint64_t uLockNanoTS = RTTimeSystemNanoTS();
     GMM_CHECK_SANITY_UPON_ENTERING(pGMM);
@@ -1174,7 +1162,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
 
         /*
          * Walk the entire pool looking for pages that belong to this VM
-         * and left over mappings.  (This'll only catch private pages,
+         * and leftover mappings.  (This'll only catch private pages,
          * shared pages will be 'left behind'.)
          */
         uint64_t    cPrivatePages = pGVM->gmm.s.cPrivatePages; /* save */
@@ -1190,11 +1178,13 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
                 uint32_t const cFreeChunksOld = pGMM->cFreedChunks;
                 if (gmmR0CleanupVMScanChunk(pGMM, pGVM, pChunk))
                 {
-                    gmmR0MutexAcquire(pGMM);
+                    /* We left the giant mutex, so reset the yield counters. */
                     uLockNanoTS = RTTimeSystemNanoTS();
+                    iCountDown  = 64;
                 }
                 else
                 {
+                    /* Didn't leave it, so do normal yielding. */
                     if (!iCountDown)
                         gmmR0MutexYield(pGMM, &uLockNanoTS);
                     else
@@ -1215,6 +1205,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
          */
         do
         {
+            fRedoFromStart = false;
             iCountDown = 10240;
             pChunk = pGMM->Private.apLists[RT_ELEMENTS(pGMM->Private.apLists) - 1];
             while (pChunk)
@@ -1224,11 +1215,20 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
                     &&  (   !pGMM->fBoundMemoryMode
                          || pChunk->hGVM == pGVM->hSelf))
                 {
-                    gmmR0FreeChunk(pGMM, pGVM, pChunk);
-                    iCountDown = 1;
+                    uint64_t const idGenerationOld = pGMM->Private.idGeneration;
+                    if (gmmR0FreeChunk(pGMM, pGVM, pChunk, true /*fRelaxedSem*/))
+                    {
+                        /* We've left the giant mutex, restart? (+1 for our unlink) */
+                        fRedoFromStart = pGMM->Private.idGeneration != idGenerationOld + 1;
+                        if (fRedoFromStart)
+                            break;
+                        uLockNanoTS = RTTimeSystemNanoTS();
+                        iCountDown = 10240;
+                    }
                 }
-                pChunk = pNext;
 
+                /* Advance and maybe yield the lock. */
+                pChunk = pNext;
                 if (--iCountDown == 0)
                 {
                     uint64_t const idGenerationOld = pGMM->Private.idGeneration;
@@ -1280,7 +1280,6 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
 
     GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     gmmR0MutexRelease(pGMM);
-    RTSemFastMutexRelease(pGMM->hMtxCleanup);
 
     LogFlow(("GMMR0CleanupVM: returns\n"));
 }
@@ -1289,10 +1288,10 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
 /**
  * Scan one chunk for private pages belonging to the specified VM.
  *
- * @note    This function is ugly since may drop the ownership of the giant GMM
- *          mutex!
+ * @note    This function may drop the gian mutex!
  *
- * @returns @c true if we've dropped the giant mutex, @c false if we didn't.
+ * @returns @c true if we've temporarily dropped the giant mutex, @c false if
+ *          we didn't.
  * @param   pGMM        Pointer to the GMM instance.
  * @param   pGVM        The global VM handle.
  * @param   pChunk      The chunk to scan.
@@ -1409,6 +1408,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
                             pChunk, pChunk->Core.Key, i, hMemObj, rc);
                 AssertRC(rc);
             }
+
             gmmR0ChunkMutexRelease(&MtxState, pChunk);
             return true;
         }
@@ -2818,7 +2818,7 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage)
             Assert(pChunk->cPrivate > 0);
 
             /* Release the memory immediately. */
-            gmmR0FreeChunk(pGMM, NULL, pChunk);
+            gmmR0FreeChunk(pGMM, NULL, pChunk, false /*fRelaxedSem*/); /** @todo this can be relaxed too! */
 
             /* Update accounting. */
             pGVM->gmm.s.Allocated.cBasePages -= cPages;
@@ -2867,8 +2867,10 @@ GMMR0DECL(int) GMMR0FreeLargePageReq(PVM pVM, VMCPUID idCpu, PGMMFREELARGEPAGERE
  * @param   pGVM        This is set when called from GMMR0CleanupVM so we can
  *                      unmap and free the chunk in one go.
  * @param   pChunk      The chunk to free.
+ * @param   fRelaxedSem Whether we can release the semaphore while doing the
+ *                      freeing (@c true) or not.
  */
-static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
+static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSem)
 {
     Assert(pChunk->Core.Key != NIL_GMM_CHUNKID);
 
@@ -2877,6 +2879,7 @@ static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 
     /*
      * Cleanup hack! Unmap the chunk from the callers address space.
+     * This shouldn't happen, so screw lock contention...
      */
     if (    pChunk->cMappingsX
         &&  !pGMM->fLegacyAllocationMode
@@ -2893,57 +2896,60 @@ static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
         /** @todo R0 -> VM request */
         /* The chunk can be mapped by more than one VM if fBoundMemoryMode is false! */
         Log(("gmmR0FreeChunk: chunk still has %d/%d mappings; don't free!\n", pChunk->cMappingsX));
+        gmmR0ChunkMutexRelease(&MtxState, pChunk);
+        return false;
     }
-    else
+
+
+    /*
+     * Save and trash the handle.
+     */
+    RTR0MEMOBJ const hMemObj = pChunk->hMemObj;
+    pChunk->hMemObj = NIL_RTR0MEMOBJ;
+
+    /*
+     * Unlink it from everywhere.
+     */
+    gmmR0UnlinkChunk(pChunk);
+
+    RTListNodeRemove(&pChunk->ListNode);
+
+    PAVLU32NODECORE pCore = RTAvlU32Remove(&pGMM->pChunks, pChunk->Core.Key);
+    Assert(pCore == &pChunk->Core); NOREF(pCore);
+
+    PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(pChunk->Core.Key)];
+    if (pTlbe->pChunk == pChunk)
     {
-        /*
-         * Try free the memory object.
-         */
-/** @todo drop the giant lock here! */
-        int rc = RTR0MemObjFree(pChunk->hMemObj, false /* fFreeMappings */);
-        if (RT_SUCCESS(rc))
-        {
-            pChunk->hMemObj = NIL_RTR0MEMOBJ;
-
-            /*
-             * Unlink it from everywhere.
-             */
-            gmmR0UnlinkChunk(pChunk);
-
-            RTListNodeRemove(&pChunk->ListNode);
-
-            PAVLU32NODECORE pCore = RTAvlU32Remove(&pGMM->pChunks, pChunk->Core.Key);
-            Assert(pCore == &pChunk->Core); NOREF(pCore);
-
-            PGMMCHUNKTLBE pTlbe = &pGMM->ChunkTLB.aEntries[GMM_CHUNKTLB_IDX(pChunk->Core.Key)];
-            if (pTlbe->pChunk == pChunk)
-            {
-                pTlbe->idChunk = NIL_GMM_CHUNKID;
-                pTlbe->pChunk = NULL;
-            }
-
-            Assert(pGMM->cChunks > 0);
-            pGMM->cChunks--;
-
-            /*
-             * Free the Chunk ID and struct.
-             */
-            gmmR0FreeChunkId(pGMM, pChunk->Core.Key);
-            pChunk->Core.Key = NIL_GMM_CHUNKID;
-
-            RTMemFree(pChunk->paMappingsX);
-            pChunk->paMappingsX = NULL;
-
-            RTMemFree(pChunk);
-            pChunk = NULL;              /* (for gmmR0ChunkMutexRelease) */
-
-            pGMM->cFreedChunks++;
-        }
-        else
-            AssertRC(rc);
+        pTlbe->idChunk = NIL_GMM_CHUNKID;
+        pTlbe->pChunk = NULL;
     }
 
-    gmmR0ChunkMutexRelease(&MtxState, pChunk);
+    Assert(pGMM->cChunks > 0);
+    pGMM->cChunks--;
+
+    /*
+     * Free the Chunk ID before dropping the locks and freeing the rest.
+     */
+    gmmR0FreeChunkId(pGMM, pChunk->Core.Key);
+    pChunk->Core.Key = NIL_GMM_CHUNKID;
+
+    pGMM->cFreedChunks++;
+
+    gmmR0ChunkMutexRelease(&MtxState, NULL);
+    if (fRelaxedSem)
+        gmmR0MutexRelease(pGMM);
+
+    RTMemFree(pChunk->paMappingsX);
+    pChunk->paMappingsX = NULL;
+
+    RTMemFree(pChunk);
+
+    int rc = RTR0MemObjFree(hMemObj, false /* fFreeMappings */);
+    AssertLogRelRC(rc);
+
+    if (fRelaxedSem)
+        gmmR0MutexAcquire(pGMM);
+    return fRelaxedSem;
 }
 
 
@@ -2996,11 +3002,12 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
      * it won't be freed up instantly, which probably screws up this logic
      * a bit...
      */
+    /** @todo Do this on the way out. */
     if (RT_UNLIKELY(   pChunk->cFree == GMM_CHUNK_NUM_PAGES
                     && pChunk->pFreeNext
                     && pChunk->pFreePrev /** @todo this is probably misfiring, see reset... */
                     && !pGMM->fLegacyAllocationMode))
-        gmmR0FreeChunk(pGMM, NULL, pChunk);
+        gmmR0FreeChunk(pGMM, NULL, pChunk, false);
 
 }
 
@@ -3731,7 +3738,7 @@ static int gmmR0MapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR 
  * @param   pGVM        Pointer to the Global VM structure.
  * @param   pChunk      Pointer to the chunk to be mapped.
  * @param   fRelaxedSem Whether we can release the semaphore while doing the
- *                      locking (@c true) or not.
+ *                      mapping (@c true) or not.
  * @param   ppvR3       Where to store the ring-3 address of the mapping.
  *                      In the VERR_GMM_CHUNK_ALREADY_MAPPED case, this will be
  *                      contain the address of the existing mapping.
