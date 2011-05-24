@@ -9,7 +9,7 @@
 '
 
 '
-' Copyright (C) 2006-2007 Oracle Corporation
+' Copyright (C) 2006-2011 Oracle Corporation
 '
 ' This file is part of VirtualBox Open Source Edition (OSE), as
 ' available from http://www.virtualbox.org. This file is free software;
@@ -751,6 +751,18 @@ sub DisableCOM(strReason)
       CfgPrint "VBOX_WITH_VBOXSDL="
       CfgPrint "VBOX_WITH_DEBUGGER_GUI="
       CfgPrint "VBOX_WITHOUT_COM=1"
+   end if
+end sub
+
+
+''
+' No UDPTunnel
+sub DisableUDPTunnel(strReason)
+   if g_blnDisableUDPTunnel = False then
+      LogPrint "Disabled UDPTunnel network transport: " & strReason
+      g_blnDisableUDPTunnel = True
+      g_strDisableUDPTunnel = strReason
+      CfgPrint "VBOX_WITH_UDPTUNNEL="
    end if
 end sub
 
@@ -2227,6 +2239,7 @@ sub usage
    Print ""
    Print "Components:"
    Print "  --disable-COM"
+   Print "  --disable-UDPTunnel"
    Print ""
    Print "Locations:"
    Print "  --with-DDK=PATH       "
@@ -2282,6 +2295,7 @@ Sub Main
    strOptPython = ""
    strOptMkisofs = ""
    blnOptDisableCOM = False
+   blnOptDisableUDPTunnel = False
    for i = 1 to Wscript.Arguments.Count
       dim str, strArg, strPath
 
@@ -2336,6 +2350,8 @@ Sub Main
             blnOptDisableCOM = True
          case "--enable-com"
             blnOptDisableCOM = False
+         case "--disable-udptunnel"
+            blnOptDisableUDPTunnel = True
          case "--internal"
             g_blnInternalMode = True
          case "--internal-last"
@@ -2375,6 +2391,8 @@ Sub Main
    if blnOptDisableCOM = True then
       DisableCOM "--disable-com"
    end if
+   if blnOptDisableUDPTunnel = True then
+      DisableUDPTunnel "--disable-udptunnel"
    CheckSourcePath
    CheckForkBuild strOptkBuild
    CheckForWin2k3DDK strOptDDK
