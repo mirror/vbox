@@ -239,6 +239,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 #endif
+#ifdef VBOX_WITH_UDPTUNNEL
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvUDPTunnel);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
 #ifdef VBOX_WITH_VDE
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVDE);
     if (RT_FAILURE(rc))
