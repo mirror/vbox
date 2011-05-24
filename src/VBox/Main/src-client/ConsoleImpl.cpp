@@ -7779,7 +7779,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
         memset(&IfReq, 0, sizeof(IfReq));
         /* The name of the TAP interface we are using */
         Bstr tapDeviceName;
-        rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
+        rc = networkAdapter->COMGETTER(BridgedInterface)(tapDeviceName.asOutParam());
         if (FAILED(rc))
             tapDeviceName.setNull(); /* Is this necessary? */
         if (tapDeviceName.isEmpty())
@@ -7944,7 +7944,7 @@ HRESULT Console::detachFromTapInterface(INetworkAdapter *networkAdapter)
          */
         Bstr tapDeviceName, tapTerminateApplication;
         bool isStatic = true;
-        rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
+        rc = networkAdapter->COMGETTER(BridgedInterface)(tapDeviceName.asOutParam());
         if (FAILED(rc) || tapDeviceName.isEmpty())
         {
             /* If the name is empty, this is a dynamic TAP device, so close it now,
