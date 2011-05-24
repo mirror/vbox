@@ -193,10 +193,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #if defined(VBOX_WITH_NETFLT)
                      "|hostonly"
 #endif
-#ifdef VBOX_WITH_VDE
                      "|\n"
-                     "                                        vde"
-#endif
+                     "                                        generic"
                      "]\n"
                      "                            [--nictype<1-N> Am79C970A|Am79C973"
 #ifdef VBOX_WITH_E1000
@@ -209,6 +207,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--cableconnected<1-N> on|off]\n"
                      "                            [--nictrace<1-N> on|off]\n"
                      "                            [--nictracefile<1-N> <filename>]\n"
+                     "                            [--nicproperty<1-N> name=[value]]\n"
                      "                            [--nicspeed<1-N> <kbps>]\n"
                      "                            [--nicbootprio<1-N> <priority>]\n"
                      "                            [--nicpromisc<1-N> deny|allow-vms|allow-all]\n"
@@ -219,9 +218,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
                      "                            [--intnet<1-N> <network name>]\n"
                      "                            [--natnet<1-N> <network>|default]\n"
-#ifdef VBOX_WITH_VDE
-                     "                            [--vdenet<1-N> <network>|default]\n"
-#endif
+                     "                            [--nicgenericdrv<1-N> <driver>\n"
                      "                            [--natsettings<1-N> [<mtu>],[<socksnd>],\n"
                      "                                                [<sockrcv>],[<tcpsnd>],\n"
                      "                                                [<tcprcv>]]\n"
@@ -231,6 +228,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--nattftpprefix<1-N> <prefix>]\n"
                      "                            [--nattftpfile<1-N> <file>]\n"
                      "                            [--nattftpserver<1-N> <ip>]\n"
+                     "                            [--natbindip<1-N> <ip>\n"
                      "                            [--natdnspassdomain<1-N> on|off]\n"
                      "                            [--natdnsproxy<1-N> on|off]\n"
                      "                            [--natdnshostresolver<1-N> on|off]\n"
@@ -384,14 +382,16 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            keyboardputscancode <hex> [<hex> ...]|\n"
                      "                            setlinkstate<1-N> on|off |\n"
 #if defined(VBOX_WITH_NETFLT)
-                     "                            nic<1-N> null|nat|bridged|intnet|hostonly\n"
+                     "                            nic<1-N> null|nat|bridged|intnet|hostonly|generic"
+                     "\n"
                      "                                     [<devicename>] |\n"
-#else /* !RT_OS_LINUX && !RT_OS_DARWIN */
-                     "                            nic<1-N> null|nat|bridged|intnet\n"
+#else /* !VBOX_WITH_NETFLT */
+                     "                            nic<1-N> null|nat|bridged|intnet|generic\n"
                      "                                     [<devicename>] |\n"
-#endif /* !RT_OS_LINUX && !RT_OS_DARWIN  */
+#endif /* !VBOX_WITH_NETFLT */
                      "                            nictrace<1-N> on|off\n"
                      "                            nictracefile<1-N> <filename>\n"
+                     "                            nicproperty<1-N> name=[value]\n"
                      "                            natpf<1-N> [<rulename>],tcp|udp,[<hostip>],\n"
                      "                                          <hostport>,[<guestip>],<guestport>\n"
                      "                            natpf<1-N> delete <rulename>\n"

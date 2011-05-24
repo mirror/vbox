@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -739,18 +739,16 @@ void UIDetailsPagePrivate::sltUpdateNetwork()
                      * this name instead */
                     if (type == KNetworkAttachmentType_Bridged)
                         attType = attType.arg(tr("Bridged adapter, %1",
-                                                 "details report (network)").arg(adapter.GetHostInterface()));
+                                                 "details report (network)").arg(adapter.GetBridgedInterface()));
                     else if (type == KNetworkAttachmentType_Internal)
                         attType = attType.arg(tr("Internal network, '%1'",
                                                  "details report (network)").arg(adapter.GetInternalNetwork()));
                     else if (type == KNetworkAttachmentType_HostOnly)
                         attType = attType.arg(tr("Host-only adapter, '%1'",
-                                                 "details report (network)").arg(adapter.GetHostInterface()));
-#ifdef VBOX_WITH_VDE
-                    else if (type == KNetworkAttachmentType_VDE)
-                        attType = attType.arg(tr("VDE network, '%1'",
-                                                 "details report (network)").arg(adapter.GetVDENetwork()));
-#endif
+                                                 "details report (network)").arg(adapter.GetHostOnlyInterface()));
+                    else if (type == KNetworkAttachmentType_Generic)
+                        attType = attType.arg(tr("Generic, '%1'",
+                                                 "details report (network)").arg(adapter.GetGenericDriver()));
                     else
                         attType = attType.arg(vboxGlobal().toString(type));
 

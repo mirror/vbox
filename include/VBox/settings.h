@@ -17,7 +17,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -439,8 +439,7 @@ struct NetworkAdapter
           enmPromiscModePolicy(NetworkAdapterPromiscModePolicy_Deny),
           fTraceEnabled(false),
           mode(NetworkAttachmentType_Null),
-          ulBootPriority(0),
-          fHasDisabledNAT(false)
+          ulBootPriority(0)
     {}
 
     bool operator==(const NetworkAdapter &n) const;
@@ -458,12 +457,12 @@ struct NetworkAdapter
 
     NetworkAttachmentType_T             mode;
     NAT                                 nat;
-    /**
-     * @remarks NAT has own attribute with bridged: host interface or empty;
-     *          otherwise: network name (required) */
-    com::Utf8Str                        strName;
+    com::Utf8Str                        strBridgedName;
+    com::Utf8Str                        strHostOnlyName;
+    com::Utf8Str                        strInternalNetworkName;
+    com::Utf8Str                        strGenericDriver;
+    StringsMap                          genericProperties;
     uint32_t                            ulBootPriority;
-    bool                                fHasDisabledNAT;
     com::Utf8Str                        strBandwidthGroup; // requires settings version 1.13 (VirtualBox 4.2)
 };
 typedef std::list<NetworkAdapter> NetworkAdaptersList;
@@ -1035,7 +1034,7 @@ private:
     void readMachine(const xml::ElementNode &elmMachine);
 
     void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
-    void buildNetworkXML(NetworkAttachmentType_T mode, xml::ElementNode &elmParent, const NetworkAdapter &nic);
+    void buildNetworkXML(NetworkAttachmentType_T mode, xml::ElementNode &elmParent, bool fEnabled, const NetworkAdapter &nic);
     void buildStorageControllersXML(xml::ElementNode &elmParent,
                                     const Storage &st,
                                     bool fSkipRemovableMedia,

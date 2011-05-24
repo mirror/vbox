@@ -3334,9 +3334,9 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 bool fHostIP = true;
                 SafeArray<BSTR> names;
                 SafeArray<BSTR> values;
-                hrc = pMedium->GetProperties(NULL,
-                                            ComSafeArrayAsOutParam(names),
-                                            ComSafeArrayAsOutParam(values));               H();
+                hrc = pMedium->GetProperties((CBSTR)L"",
+                                             ComSafeArrayAsOutParam(names),
+                                             ComSafeArrayAsOutParam(values));               H();
 
                 if (names.size() != 0)
                 {
@@ -3503,6 +3503,7 @@ int Console::configNetwork(const char *pszDevice,
             default: AssertFailedReturn(VERR_INTERNAL_ERROR_4);
         }
 
+        Utf8Str strNetDriver;
         if (fAttachDetach && fSniffer)
         {
             const char *pszNetDriver = "IntNet";
@@ -3512,6 +3513,12 @@ int Console::configNetwork(const char *pszDevice,
             if (meAttachmentType[uInstance] == NetworkAttachmentType_Bridged)
                 pszNetDriver = "HostInterface";
 #endif
+            if (meAttachmentType[uInstance] == NetworkAttachmentType_Generic)
+            {
+                hrc = aNetworkAdapter->COMGETTER(GenericDriver)(bstr.asOutParam()); H();
+                strNetDriver = bstr;
+                pszNetDriver = strNetDriver.c_str();
+            }
 
             rc = PDMR3DriverDetach(pVM, pszDevice, uInstance, uLun, pszNetDriver, 0, 0 /*fFlags*/);
             if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
@@ -3762,21 +3769,21 @@ int Console::configNetwork(const char *pszDevice,
                     InsertConfigNode(pInst, "LUN#0", &pLunL0);
                 }
 
-                Bstr HifName;
-                hrc = aNetworkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
+                Bstr BridgedIfName;
+                hrc = aNetworkAdapter->COMGETTER(BridgedInterface)(BridgedIfName.asOutParam());
                 if (FAILED(hrc))
                 {
-                    LogRel(("NetworkAttachmentType_Bridged: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
+                    LogRel(("NetworkAttachmentType_Bridged: COMGETTER(BridgedInterface) failed, hrc (0x%x)", hrc));
                     H();
                 }
 
-                Utf8Str HifNameUtf8(HifName);
-                const char *pszHifName = HifNameUtf8.c_str();
+                Utf8Str BridgedIfNameUtf8(BridgedIfName);
+                const char *pszBridgedIfName = BridgedIfNameUtf8.c_str();
 
 # if defined(RT_OS_DARWIN)
                 /* The name is on the form 'ifX: long name', chop it off at the colon. */
                 char szTrunk[8];
-                RTStrCopy(szTrunk, sizeof(szTrunk), pszHifName);
+                RTStrCopy(szTrunk, sizeof(szTrunk), pszBridgedIfName);
                 char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
 // Quick fix for #5633
 //                 if (!pszColon)
@@ -3790,7 +3797,7 @@ int Console::configNetwork(const char *pszDevice,
 //                     */
 //                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
 //                                       N_("Malformed host interface networking name '%ls'"),
-//                                       HifName.raw());
+//                                       BridgedIfName.raw());
 //                 }
                 if (pszColon)
                     *pszColon = '\0';
@@ -3799,7 +3806,7 @@ int Console::configNetwork(const char *pszDevice,
 # elif defined(RT_OS_SOLARIS)
                 /* The name is on the form format 'ifX[:1] - long name, chop it off at space. */
                 char szTrunk[256];
-                strlcpy(szTrunk, pszHifName, sizeof(szTrunk));
+                strlcpy(szTrunk, pszBridgedIfName, sizeof(szTrunk));
                 char *pszSpace = (char *)memchr(szTrunk, ' ', sizeof(szTrunk));
 
                 /*
@@ -3819,14 +3826,14 @@ int Console::configNetwork(const char *pszDevice,
 
 # elif defined(RT_OS_WINDOWS)
                 ComPtr<IHostNetworkInterface> hostInterface;
-                hrc = host->FindHostNetworkInterfaceByName(HifName.raw(),
+                hrc = host->FindHostNetworkInterfaceByName(BridgedIfName.raw(),
                                                            hostInterface.asOutParam());
                 if (!SUCCEEDED(hrc))
                 {
                     AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: FindByName failed, rc=%Rhrc (0x%x)", hrc, hrc));
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                       N_("Nonexistent host networking interface, name '%ls'"),
-                                      HifName.raw());
+                                      BridgedIfName.raw());
                 }
 
                 HostNetworkInterfaceType_T eIfType;
@@ -3841,7 +3848,7 @@ int Console::configNetwork(const char *pszDevice,
                 {
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                       N_("Interface ('%ls') is not a Bridged Adapter interface"),
-                                      HifName.raw());
+                                      BridgedIfName.raw());
                 }
 
                 hrc = hostInterface->COMGETTER(Id)(bstr.asOutParam());
@@ -3929,7 +3936,7 @@ int Console::configNetwork(const char *pszDevice,
                  * This works and performs better than bridging a physical
                  * interface via the current FreeBSD vboxnetflt implementation.
                  */
-                if (!strncmp(pszHifName, "tap", sizeof "tap" - 1)) {
+                if (!strncmp(pszBridgedIfName, "tap", sizeof "tap" - 1)) {
                     hrc = attachToTapInterface(aNetworkAdapter);
                     if (FAILED(hrc))
                     {
@@ -3941,7 +3948,7 @@ int Console::configNetwork(const char *pszDevice,
                                                 "permissions of that node, and that the net.link.tap.user_open "
                                                 "sysctl is set.  Either run 'chmod 0666 /dev/%s' or "
                                                 "change the group of that node to vboxusers and make yourself "
-                                                "a member of that group.  Make sure that these changes are permanent."), pszHifName, pszHifName);
+                                                "a member of that group.  Make sure that these changes are permanent."), pszBridgedIfName, pszBridgedIfName);
                             default:
                                 AssertMsgFailed(("Could not attach to tap interface! Bad!\n"));
                                 return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
@@ -3960,7 +3967,7 @@ int Console::configNetwork(const char *pszDevice,
                 }
 #  endif
                 /** @todo Check for malformed names. */
-                const char *pszTrunk = pszHifName;
+                const char *pszTrunk = pszBridgedIfName;
 
                 /* Issue a warning if the interface is down */
                 {
@@ -3969,12 +3976,12 @@ int Console::configNetwork(const char *pszDevice,
                     {
                         struct ifreq Req;
                         RT_ZERO(Req);
-                        strncpy(Req.ifr_name, pszHifName, sizeof(Req.ifr_name) - 1);
+                        strncpy(Req.ifr_name, pszBridgedIfName, sizeof(Req.ifr_name) - 1);
                         if (ioctl(iSock, SIOCGIFFLAGS, &Req) >= 0)
                             if ((Req.ifr_flags & IFF_UP) == 0)
                                 setVMRuntimeErrorCallbackF(pVM, this, 0, "BridgedInterfaceDown",
                                                            "Bridged interface %s is down. Guest will not be able to use this interface",
-                                                           pszHifName);
+                                                           pszBridgedIfName);
 
                         close(iSock);
                     }
@@ -3991,7 +3998,7 @@ int Console::configNetwork(const char *pszDevice,
                 InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure);
                 InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
                 char szNetwork[INTNET_MAX_NETWORK_NAME];
-                RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
+                RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszBridgedIfName);
                 InsertConfigString(pCfg, "Network", szNetwork);
                 networkName = Bstr(szNetwork);
                 trunkName = Bstr(pszTrunk);
@@ -3999,8 +4006,8 @@ int Console::configNetwork(const char *pszDevice,
 
 # if defined(RT_OS_DARWIN)
                 /** @todo Come up with a better deal here. Problem is that IHostNetworkInterface is completely useless here. */
-                if (    strstr(pszHifName, "Wireless")
-                    ||  strstr(pszHifName, "AirPort" ))
+                if (    strstr(pszBridgedIfName, "Wireless")
+                    ||  strstr(pszBridgedIfName, "AirPort" ))
                     InsertConfigInteger(pCfg, "SharedMacOnWire", true);
 # elif defined(RT_OS_LINUX)
                 int iSock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -4009,7 +4016,7 @@ int Console::configNetwork(const char *pszDevice,
                     struct iwreq WRq;
 
                     memset(&WRq, 0, sizeof(WRq));
-                    strncpy(WRq.ifr_name, pszHifName, IFNAMSIZ);
+                    strncpy(WRq.ifr_name, pszBridgedIfName, IFNAMSIZ);
                     bool fSharedMacOnWire = ioctl(iSock, SIOCGIWNAME, &WRq) >= 0;
                     close(iSock);
                     if (fSharedMacOnWire)
@@ -4030,7 +4037,7 @@ int Console::configNetwork(const char *pszDevice,
                     uint8_t abData[32];
 
                     memset(&WReq, 0, sizeof(WReq));
-                    strncpy(WReq.i_name, pszHifName, sizeof(WReq.i_name));
+                    strncpy(WReq.i_name, pszBridgedIfName, sizeof(WReq.i_name));
                     WReq.i_type = IEEE80211_IOC_SSID;
                     WReq.i_val = -1;
                     WReq.i_data = abData;
@@ -4178,29 +4185,29 @@ int Console::configNetwork(const char *pszDevice,
                 InsertConfigString(pLunL0, "Driver", "IntNet");
                 InsertConfigNode(pLunL0, "Config", &pCfg);
 
-                Bstr HifName;
-                hrc = aNetworkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
+                Bstr HostOnlyName;
+                hrc = aNetworkAdapter->COMGETTER(HostOnlyInterface)(HostOnlyName.asOutParam());
                 if (FAILED(hrc))
                 {
-                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface) failed, hrc (0x%x)\n", hrc));
+                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostOnlyInterface) failed, hrc (0x%x)\n", hrc));
                     H();
                 }
 
-                Utf8Str HifNameUtf8(HifName);
-                const char *pszHifName = HifNameUtf8.c_str();
+                Utf8Str HostOnlyNameUtf8(HostOnlyName);
+                const char *pszHostOnlyName = HostOnlyNameUtf8.c_str();
                 ComPtr<IHostNetworkInterface> hostInterface;
-                rc = host->FindHostNetworkInterfaceByName(HifName.raw(),
+                rc = host->FindHostNetworkInterfaceByName(HostOnlyName.raw(),
                                                           hostInterface.asOutParam());
                 if (!SUCCEEDED(rc))
                 {
                     LogRel(("NetworkAttachmentType_HostOnly: FindByName failed, rc (0x%x)\n", rc));
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                       N_("Nonexistent host networking interface, name '%ls'"),
-                                      HifName.raw());
+                                      HostOnlyName.raw());
                 }
 
                 char szNetwork[INTNET_MAX_NETWORK_NAME];
-                RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
+                RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHostOnlyName);
 
 #if defined(RT_OS_WINDOWS)
 # ifndef VBOX_WITH_NETFLT
@@ -4221,7 +4228,7 @@ int Console::configNetwork(const char *pszDevice,
                 if (eIfType != HostNetworkInterfaceType_HostOnly)
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                       N_("Interface ('%ls') is not a Host-Only Adapter interface"),
-                                      HifName.raw());
+                                      HostOnlyName.raw());
 
                 hrc = hostInterface->COMGETTER(Id)(bstr.asOutParam());
                 if (FAILED(hrc))
@@ -4312,18 +4319,18 @@ int Console::configNetwork(const char *pszDevice,
                 trunkType   = TRUNKTYPE_NETADP;
 # endif /* defined VBOX_WITH_NETFLT*/
 #elif defined(RT_OS_DARWIN)
-                InsertConfigString(pCfg, "Trunk", pszHifName);
+                InsertConfigString(pCfg, "Trunk", pszHostOnlyName);
                 InsertConfigString(pCfg, "Network", szNetwork);
                 InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
                 networkName = Bstr(szNetwork);
-                trunkName   = Bstr(pszHifName);
+                trunkName   = Bstr(pszHostOnlyName);
                 trunkType   = TRUNKTYPE_NETADP;
 #else
-                InsertConfigString(pCfg, "Trunk", pszHifName);
+                InsertConfigString(pCfg, "Trunk", pszHostOnlyName);
                 InsertConfigString(pCfg, "Network", szNetwork);
                 InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
                 networkName = Bstr(szNetwork);
-                trunkName   = Bstr(pszHifName);
+                trunkName   = Bstr(pszHostOnlyName);
                 trunkType   = TRUNKTYPE_NETFLT;
 #endif
                 InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
@@ -4333,12 +4340,12 @@ int Console::configNetwork(const char *pszDevice,
                 Bstr tmpAddr, tmpMask;
 
                 hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPAddress",
-                                                       pszHifName).raw(),
+                                                       pszHostOnlyName).raw(),
                                                tmpAddr.asOutParam());
                 if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
                 {
                     hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPNetMask",
-                                                           pszHifName).raw(),
+                                                           pszHostOnlyName).raw(),
                                                    tmpMask.asOutParam());
                     if (SUCCEEDED(hrc) && !tmpMask.isEmpty())
                         hrc = hostInterface->EnableStaticIpConfig(tmpAddr.raw(),
@@ -4350,17 +4357,17 @@ int Console::configNetwork(const char *pszDevice,
                 else
                 {
                     /* Grab the IP number from the 'vboxnetX' instance number (see netif.h) */
-                    hrc = hostInterface->EnableStaticIpConfig(getDefaultIPv4Address(Bstr(pszHifName)).raw(),
+                    hrc = hostInterface->EnableStaticIpConfig(getDefaultIPv4Address(Bstr(pszHostOnlyName)).raw(),
                                                               Bstr(VBOXNET_IPV4MASK_DEFAULT).raw());
                 }
 
                 ComAssertComRC(hrc); /** @todo r=bird: Why this isn't fatal? (H()) */
 
                 hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6Address",
-                                                       pszHifName).raw(),
+                                                       pszHostOnlyName).raw(),
                                                tmpAddr.asOutParam());
                 if (SUCCEEDED(hrc))
-                    hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6NetMask", pszHifName).raw(),
+                    hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6NetMask", pszHostOnlyName).raw(),
                                                    tmpMask.asOutParam());
                 if (SUCCEEDED(hrc) && !tmpAddr.isEmpty() && !tmpMask.isEmpty())
                 {
@@ -4372,21 +4379,32 @@ int Console::configNetwork(const char *pszDevice,
                 break;
             }
 
-#if defined(VBOX_WITH_VDE)
-            case NetworkAttachmentType_VDE:
+            case NetworkAttachmentType_Generic:
             {
-                hrc = aNetworkAdapter->COMGETTER(VDENetwork)(bstr.asOutParam());            H();
-                InsertConfigNode(pInst, "LUN#0", &pLunL0);
-                InsertConfigString(pLunL0, "Driver", "VDE");
+                hrc = aNetworkAdapter->COMGETTER(GenericDriver)(bstr.asOutParam());         H();
+                SafeArray<BSTR> names;
+                SafeArray<BSTR> values;
+                hrc = aNetworkAdapter->GetProperties((CBSTR)L"",
+                                                     ComSafeArrayAsOutParam(names),
+                                                     ComSafeArrayAsOutParam(values));       H();
+
+                if (fSniffer)
+                    InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
+                else
+                    InsertConfigNode(pInst, "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver", bstr);
                 InsertConfigNode(pLunL0, "Config", &pCfg);
-                if (!bstr.isEmpty())
+                for (size_t ii = 0; ii < names.size(); ++ii)
                 {
-                    InsertConfigString(pCfg, "Network", bstr);
-                    networkName = bstr;
+                    if (values[ii] && *values[ii])
+                    {
+                        Utf8Str name = names[ii];
+                        Utf8Str value = values[ii];
+                        InsertConfigString(pCfg, name.c_str(), value);
+                    }
                 }
                 break;
             }
-#endif
 
             default:
                 AssertMsgFailed(("should not get here!\n"));
@@ -4405,9 +4423,7 @@ int Console::configNetwork(const char *pszDevice,
             case NetworkAttachmentType_Internal:
             case NetworkAttachmentType_HostOnly:
             case NetworkAttachmentType_NAT:
-#if defined(VBOX_WITH_VDE)
-            case NetworkAttachmentType_VDE:
-#endif
+            case NetworkAttachmentType_Generic:
             {
                 if (SUCCEEDED(hrc) && SUCCEEDED(rc))
                 {

@@ -271,8 +271,8 @@
       <tr><td>E_POINTER</td>
       <td>
         Returned if a memory pointer for the output argument is invalid (for
-        example, @c null). Note that when pointers representing input
-        arguments (such as strings) are invalid, E_INVALIDARG is returned.
+        example, @c null). When pointers representing input arguments (such
+        as strings) are invalid, E_INVALIDARG is returned.
       </td>
       </tr>
       <tr><td>E_ACCESSDENIED</td>
@@ -558,7 +558,7 @@
       When the virtual machine is in one of the online VM states (that is, being
       executed), only a few machine settings can be modified. Methods working
       with such settings contain an explicit note about that. An attempt to
-      change any oter setting or perform a modifying operation during this time
+      change any other setting or perform a modifying operation during this time
       will result in the @c VBOX_E_INVALID_VM_STATE error.
 
       All online states except Running, Paused and Stuck are transitional: they
@@ -1206,11 +1206,11 @@
       specifically for this purpose and allows to represent a chain of errors
       through a single IVirtualBoxErrorInfo object set after method invocation.
 
-      Note that errors are stored to a chain in the reverse order, i.e. the
+      <note>errors are stored to a chain in the reverse order, i.e. the
       initial error object you query right after method invocation is the last
       error set by the callee, the object it points to in the @a next attribute
       is the previous error and so on, up to the first error (which is the last
-      in the chain).
+      in the chain).</note>
     </desc>
 
     <attribute name="resultCode" type="long" readonly="yes">
@@ -1767,9 +1767,9 @@
         Creates a new base medium object that will use the given storage
         format and location for medium data.
 
-        Note that the actual storage unit is not created by this method. In
-        order to do it, and before you are able to attach the created medium
-        to virtual machines, you must call one of the following methods to
+        The actual storage unit is not created by this method. In order to
+        do it, and before you are able to attach the created medium to
+        virtual machines, you must call one of the following methods to
         allocate a format-specific storage unit at the specified location:
         <ul>
           <li><link to="IMedium::createBaseStorage"/></li>
@@ -10225,7 +10225,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
-    <!-- storage methods -->
+    <!-- property methods -->
 
     <method name="getProperty">
       <desc>
@@ -10234,8 +10234,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given medium format can
         be obtained with <link to="IMediumFormat::describeProperties"/>.
 
-        Note that if this method returns an empty string in @a value, the
-        requested property is supported but currently not assigned any value.
+        <note>If this method returns an empty string in @a value, the requested
+        property is supported but currently not assigned any value.</note>
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Requested property does not exist (not supported by the format).
@@ -10257,10 +10257,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all properties supported by the given medium format can
         be obtained with <link to="IMediumFormat::describeProperties"/>.
 
-        Note that setting the property value to @c null or an empty string is
+        <note>Setting the property value to @c null or an empty string is
         equivalent to deleting the existing value. A default value (if it is
         defined for this property) will be used by the format backend in this
-        case.
+        case.</note>
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Requested property does not exist (not supported by the format).
@@ -10281,22 +10281,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The names of the properties to get are specified using the @a names
         argument which is a list of comma-separated property names or
-        an empty string if all properties are to be returned. Note that currently
-        the value of this argument is ignored and the method always returns all
-        existing properties.
+        an empty string if all properties are to be returned.
+        <note>Currently the value of this argument is ignored and the method
+        always returns all existing properties.</note>
 
         The list of all properties supported by the given medium format can
         be obtained with <link to="IMediumFormat::describeProperties"/>.
 
         The method returns two arrays, the array of property names corresponding
         to the @a names argument and the current values of these properties.
-        Both arrays have the same number of elements with each elemend at the
+        Both arrays have the same number of elements with each element at the
         given index in the first array corresponds to an element at the same
         index in the second array.
 
-        Note that for properties that do not have assigned values,
-        an empty string is returned at the appropriate index in the
-        @a returnValues array.
+        For properties that do not have assigned values, an empty string is
+        returned at the appropriate index in the @a returnValues array.
 
       </desc>
       <param name="names" type="wstring" dir="in">
@@ -10318,7 +10317,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The names of the properties to set are passed in the @a names
         array along with the new values for them in the @a values array. Both
-        arrays have the same number of elements with each elemend at the given
+        arrays have the same number of elements with each element at the given
         index in the first array corresponding to an element at the same index
         in the second array.
 
@@ -10327,16 +10326,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         from the @a names array.
 
         Using this method over <link to="#setProperty"/> is preferred if you
-        need to set several properties at once since it will result into less
-        IPC calls.
+        need to set several properties at once since it is more efficient.
 
         The list of all properties supported by the given medium format can
         be obtained with <link to="IMediumFormat::describeProperties"/>.
 
-        Note that setting the property value to @c null or an empty string is
-        equivalent to deleting the existing value. A default value (if it is
-        defined for this property) will be used by the format backend in this
-        case.
+        Setting the property value to @c null or an empty string is equivalent
+        to deleting the existing value. A default value (if it is defined for
+        this property) will be used by the format backend in this case.
       </desc>
       <param name="names" type="wstring" safearray="yes" dir="in">
         <desc>Names of properties to set.</desc>
@@ -11844,7 +11841,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="NetworkAttachmentType"
-    uuid="44bce1ee-99f7-4e8e-89fc-80597fd9eeaf"
+    uuid="2ac4bc71-6b82-417a-acd1-f7426d2570d6"
     >
     <desc>
       Network attachment type.
@@ -11857,7 +11854,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Bridged"               value="2"/>
     <const name="Internal"              value="3"/>
     <const name="HostOnly"              value="4"/>
-    <const name="VDE"                   value="5"/>
+    <const name="Generic"               value="5"/>
   </enum>
 
   <enum
@@ -11918,7 +11915,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INetworkAdapter" extends="$unknown"
-    uuid="6aa240a1-dd58-478e-92e8-aac001ce5547"
+    uuid="b22f71f6-082e-4a1d-aaf2-3ce40e275dd9"
     wsmap="managed"
     >
     <desc>
@@ -11965,11 +11962,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="attachmentType" type="NetworkAttachmentType" readonly="yes"/>
-
-    <attribute name="hostInterface" type="wstring">
+    <attribute name="attachmentType" type="NetworkAttachmentType">
       <desc>
-        Name of the host network interface the VM is attached to.
+        Sets/Gets network attachment type of this network adapter.
+      </desc>
+    </attribute>
+
+    <attribute name="bridgedInterface" type="wstring">
+      <desc>
+        Name of the network interface the VM should be bridged to.
+      </desc>
+    </attribute>
+
+    <attribute name="hostOnlyInterface" type="wstring">
+      <desc>
+        Name of the host only network interface the VM is attached to.
       </desc>
     </attribute>
 
@@ -11985,9 +11992,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="VDENetwork" type="wstring">
+    <attribute name="genericDriver" type="wstring">
       <desc>
-        Name of the VDE switch the VM is attached to.
+        Name of the driver to use for the "Generic" network attachment type.
       </desc>
     </attribute>
 
@@ -12029,7 +12036,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Points to the NAT engine which handles the network address translation
         for this interface. This is active only when the interface actually uses
-        NAT (see <link to="#attachToNAT" />).
+        NAT.
       </desc>
     </attribute>
 
@@ -12044,41 +12051,71 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>The bandwidth group this network adapter is assigned to.</desc>
     </attribute>
 
-    <method name="attachToNAT">
+    <!-- property methods -->
+
+    <method name="getProperty">
       <desc>
-        Attach the network adapter to the Network Address Translation (NAT) interface.
+        Returns the value of the network attachment property with the given name.
+
+        If the requested data @a key does not exist, this function will
+        succeed and return an empty string in the @a value argument.
+
+        <result name="E_INVALIDARG">@a name is @c null or empty.</result>
       </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the property to get.</desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>Current property value.</desc>
+      </param>
     </method>
 
-    <method name="attachToBridgedInterface">
+    <method name="setProperty">
       <desc>
-        Attach the network adapter to a bridged host interface.
+        Sets the value of the network attachment property with the given name.
+
+        Setting the property value to @c null or an empty string is equivalent
+        to deleting the existing value.
+
+        <result name="E_INVALIDARG">@a name is @c null or empty.</result>
       </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the property to set.</desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>Property value to set.</desc>
+      </param>
     </method>
 
-    <method name="attachToInternalNetwork">
+    <method name="getProperties">
       <desc>
-        Attach the network adapter to an internal network.
+        Returns values for a group of properties in one call.
+
+        The names of the properties to get are specified using the @a names
+        argument which is a list of comma-separated property names or
+        an empty string if all properties are to be returned.
+        <note>Currently the value of this argument is ignored and the method
+        always returns all existing properties.</note>
+
+        The method returns two arrays, the array of property names corresponding
+        to the @a names argument and the current values of these properties.
+        Both arrays have the same number of elements with each element at the
+        given index in the first array corresponds to an element at the same
+        index in the second array.
       </desc>
+      <param name="names" type="wstring" dir="in">
+        <desc>
+          Names of properties to get.
+        </desc>
+      </param>
+      <param name="returnNames" type="wstring" safearray="yes" dir="out">
+        <desc>Names of returned properties.</desc>
+      </param>
+      <param name="returnValues" type="wstring" safearray="yes" dir="return">
+        <desc>Values of returned properties.</desc>
+      </param>
     </method>
 
-    <method name="attachToHostOnlyInterface">
-      <desc>
-        Attach the network adapter to the host-only network.
-      </desc>
-    </method>
-
-    <method name="attachToVDE">
-      <desc>
-        Attach the network adapter to a VDE network.
-      </desc>
-    </method>
-
-    <method name="detach">
-      <desc>
-        Detach the network adapter
-      </desc>
-    </method>
   </interface>
 
 
@@ -12245,7 +12282,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="path" type="wstring">
       <desc>
         Host parallel device name. If this parallel port is enabled, setting a
-        @c null or an empty string as this attribute's value will result into
+        @c null or an empty string as this attribute's value will result in
         an error.
       </desc>
     </attribute>

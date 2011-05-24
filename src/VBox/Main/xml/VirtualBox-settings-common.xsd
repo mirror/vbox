@@ -6,7 +6,7 @@
  *  Oracle VM VirtualBox Settings Schema
  *  Common definitions
 
-     Copyright (C) 2004-2010 Oracle Corporation
+     Copyright (C) 2004-2011 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -766,6 +766,18 @@
         <xsd:attribute name="name" type="xsd:string" use="required"/>
       </xsd:complexType>
     </xsd:element>
+    <xsd:element name="Generic">
+      <xsd:complexType>
+        <xsd:attribute name="driver" type="xsd:string" use="required"/>
+      </xsd:complexType>
+      <xsd:element name="Property" minOccurs="0" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:attribute name="name" type="xsd:token" use="required"/>
+          <xsd:attribute name="value" type="xsd:string" use="required"/>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:element>
+    <!-- The DisabledModes tag is not part of this XSD file right now. -->
   </xsd:choice>
   <xsd:attribute name="type" type="TNetworkAdapterType" default="Am79C970A"/>
   <xsd:attribute name="slot" use="required">

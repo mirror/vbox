@@ -42,9 +42,7 @@ struct UIDataSettingsMachineNetworkAdapter
         , m_strBridgedAdapterName(QString())
         , m_strInternalNetworkName(QString())
         , m_strHostInterfaceName(QString())
-#ifdef VBOX_WITH_VDE
-        , m_strVDENetworkName(QString())
-#endif /* VBOX_WITH_VDE */
+        , m_strGenericDriver(QString())
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
         , m_redirects(UIPortForwardingDataList()) {}
@@ -59,9 +57,7 @@ struct UIDataSettingsMachineNetworkAdapter
                (m_strBridgedAdapterName == other.m_strBridgedAdapterName) &&
                (m_strInternalNetworkName == other.m_strInternalNetworkName) &&
                (m_strHostInterfaceName == other.m_strHostInterfaceName) &&
-#ifdef VBOX_WITH_VDE
-               (m_strVDENetworkName == other.m_strVDENetworkName) &&
-#endif /* VBOX_WITH_VDE */
+               (m_strGenericDriver == other.m_strGenericDriver) &&
                (m_strMACAddress == other.m_strMACAddress) &&
                (m_fCableConnected == other.m_fCableConnected) &&
                (m_redirects == other.m_redirects);
@@ -78,9 +74,7 @@ struct UIDataSettingsMachineNetworkAdapter
     QString m_strBridgedAdapterName;
     QString m_strInternalNetworkName;
     QString m_strHostInterfaceName;
-#ifdef VBOX_WITH_VDE
-    QString m_strVDENetworkName;
-#endif /* VBOX_WITH_VDE */
+    QString m_strGenericDriver;
     QString m_strMACAddress;
     bool m_fCableConnected;
     UIPortForwardingDataList m_redirects;
@@ -148,9 +142,7 @@ private:
     QString m_strBrgName;
     QString m_strIntName;
     QString m_strHoiName;
-#ifdef VBOX_WITH_VDE
-    QString mVDEName;
-#endif /* VBOX_WITH_VDE */
+    QString m_strGenericDriver;
 
     bool m_fPolished;
     UIPortForwardingDataList m_portForwardingRules;

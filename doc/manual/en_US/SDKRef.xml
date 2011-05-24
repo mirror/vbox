@@ -557,7 +557,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
                 <para>Open a terminal and change to the directory where the
                 JAX-WS samples reside.<footnote>
                     <para>In
-                    <computeroutput>sdk/bindings/webservice/java/jax-ws/samples/</computeroutput>.</para>
+                    <computeroutput>sdk/bindings/glue/java/</computeroutput>.</para>
                   </footnote> Examine the header of
                 <computeroutput>Makefile</computeroutput> to see if the
                 supplied variables (Java compiler, Java executable) and a few
@@ -3447,6 +3447,20 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para>The <xref linkend="INetworkAdapter" xreflabel="INetworkAdapter"/>
+          interface has been cleaned up. The various methods to activate an
+          attachment type have been replaced by the
+          <xref linkend="INetworkAdapter__attachmentType" xreflabel="INetworkAdapter::attachmentType"/> setter.</para>
+          <para>Additionally each attachment mode now has its own attribute,
+          which means that host only networks no longer share the settings with
+          bridged interfaces.</para>
+          <para>To allow introducing new network attachment implementations
+          without making API changes, the concept of a generic network
+          attachment driver has been introduced, which is configurable through
+          key/value properties.</para>
+        </listitem>
+
+        <listitem>
           <para>This version introduces the guest facilities concept. A guest
           facility either represents a module or feature the guest is running or
           offering, which is defined by <xref linkend="AdditionsFacilityType"
@@ -4326,8 +4340,7 @@ AuthResult AUTHCALL AuthEntry(
 
             <listitem>
               <para>INetworkAdapter::attachToHostInterface() has been renamed
-              to <xref linkend="INetworkAdapter__attachToBridgedInterface"
-              xreflabel="INetworkAdapter::attachToBridgedInterface()" /></para>
+              to INetworkAdapter::attachToBridgedInterface</para>
             </listitem>
 
             <listitem>

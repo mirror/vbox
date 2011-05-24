@@ -954,7 +954,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     case NetworkAttachmentType_Bridged:
                     {
                         Bstr strBridgeAdp;
-                        nic->COMGETTER(HostInterface)(strBridgeAdp.asOutParam());
+                        nic->COMGETTER(BridgedInterface)(strBridgeAdp.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
                         {
                             RTPrintf("bridgeadapter%d=\"%lS\"\n", currentNIC + 1, strBridgeAdp.raw());
@@ -979,11 +979,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         break;
                     }
 
-#if defined(VBOX_WITH_NETFLT)
                     case NetworkAttachmentType_HostOnly:
                     {
                         Bstr strHostonlyAdp;
-                        nic->COMGETTER(HostInterface)(strHostonlyAdp.asOutParam());
+                        nic->COMGETTER(HostOnlyInterface)(strHostonlyAdp.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
                         {
                             RTPrintf("hostonlyadapter%d=\"%lS\"\n", currentNIC + 1, strHostonlyAdp.raw());
@@ -993,22 +992,19 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                             strAttachment = Utf8StrFmt("Host-only Interface '%lS'", strHostonlyAdp.raw());
                         break;
                     }
-#endif
-#ifdef VBOX_WITH_VDE
-                    case NetworkAttachmentType_VDE:
+                    case NetworkAttachmentType_Generic:
                     {
-                        Bstr strVDEAdp;
-                        nic->COMGETTER(VDENetwork)(strVDEAdp.asOutParam());
+                        Bstr strGenericDriver;
+                        nic->COMGETTER(GenericDriver)(strGenericDriver.asOutParam());
                         if (details == VMINFO_MACHINEREADABLE)
                         {
-                            RTPrintf("vdenet%d=\"%lS\"\n", currentNIC + 1, strVDEAdp.raw());
-                            strAttachment = "VDE";
+                            RTPrintf("generic%d=\"%lS\"\n", currentNIC + 1, strGenericDriver.raw());
+                            strAttachment = "Generic";
                         }
                         else
-                            strAttachment = Utf8StrFmt("VDE Network '%lS'", strVDEAdp.raw());
+                            strAttachment = Utf8StrFmt("Generic '%lS'", strGenericDriver.raw());
                         break;
                     }
-#endif
                     default:
                         strAttachment = "unknown";
                         break;
@@ -1817,7 +1813,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
              {
                  RTPrintf("\nAttached physical PCI devices:\n\n");
              }
-             
+
              for (size_t index = 0; index < assignments.size(); ++index)
              {
                  ComPtr<IPciDeviceAttachment> Assignment = assignments[index];
@@ -1836,7 +1832,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                  else
                      RTPrintf("   Host device %lS at %s attached as %s\n", DevName.raw(), szHostPciAddress, szGuestPciAddress);
              }
-             
+
              if (assignments.size() > 0 && (details != VMINFO_MACHINEREADABLE))
              {
                  RTPrintf("\n");

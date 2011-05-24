@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -100,6 +100,7 @@ enum
     MODIFYVM_FLOPPY,             // deprecated
     MODIFYVM_NICTRACEFILE,
     MODIFYVM_NICTRACE,
+    MODIFYVM_NICPROPERTY,
     MODIFYVM_NICTYPE,
     MODIFYVM_NICSPEED,
     MODIFYVM_NICBOOTPRIO,
@@ -111,9 +112,7 @@ enum
     MODIFYVM_HOSTONLYADAPTER,
     MODIFYVM_INTNET,
     MODIFYVM_NATNET,
-#ifdef VBOX_WITH_VDE
-    MODIFYVM_VDENET,
-#endif
+    MODIFYVM_GENERICDRV,
     MODIFYVM_NATBINDIP,
     MODIFYVM_NATSETTINGS,
     MODIFYVM_NATPF,
@@ -232,6 +231,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--floppy",                   MODIFYVM_FLOPPY,                    RTGETOPT_REQ_STRING },
     { "--nictracefile",             MODIFYVM_NICTRACEFILE,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nictrace",                 MODIFYVM_NICTRACE,                  RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
+    { "--nicproperty",              MODIFYVM_NICPROPERTY,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nictype",                  MODIFYVM_NICTYPE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--nicspeed",                 MODIFYVM_NICSPEED,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
     { "--nicbootprio",              MODIFYVM_NICBOOTPRIO,               RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
@@ -243,9 +243,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--hostonlyadapter",          MODIFYVM_HOSTONLYADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--intnet",                   MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natnet",                   MODIFYVM_NATNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-#ifdef VBOX_WITH_VDE
-    { "--vdenet",                   MODIFYVM_VDENET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-#endif
+    { "--nicgenericdrv",            MODIFYVM_GENERICDRV,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natbindip",                MODIFYVM_NATBINDIP,                 RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natsettings",              MODIFYVM_NATSETTINGS,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natpf",                    MODIFYVM_NATPF,                     RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
@@ -319,11 +317,11 @@ static int32_t parsePci(const char* szPciAddr)
     char* pszNext = (char*)szPciAddr;
     int rc;
     uint8_t aVals[3] = {0, 0, 0};
-    
+
     rc = RTStrToUInt8Ex(pszNext, &pszNext, 16, &aVals[0]);
     if (RT_FAILURE(rc) || pszNext == NULL || *pszNext != ':')
         return -1;
-    
+
     rc = RTStrToUInt8Ex(pszNext+1, &pszNext, 16, &aVals[1]);
     if (RT_FAILURE(rc) || pszNext == NULL || *pszNext != '.')
         return -1;
@@ -1037,6 +1035,43 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
+            case MODIFYVM_NICPROPERTY:
+            {
+                ComPtr<INetworkAdapter> nic;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                if (nic)
+                {
+                    /* Parse 'name=value' */
+                    char *pszProperty = RTStrDup(ValueUnion.psz);
+                    if (pszProperty)
+                    {
+                        char *pDelimiter = strchr(pszProperty, '=');
+                        if (pDelimiter)
+                        {
+                            *pDelimiter = '\0';
+
+                            Bstr bstrName = pszProperty;
+                            Bstr bstrValue = &pDelimiter[1];
+                            CHECK_ERROR(nic, SetProperty(bstrName.raw(), bstrValue.raw()));
+                        }
+                        else
+                        {
+                            errorArgument("Invalid --nicproperty%d argument '%s'", GetOptState.uIndex, ValueUnion.psz);
+                            rc = E_FAIL;
+                        }
+                        RTStrFree(pszProperty);
+                    }
+                    else
+                    {
+                        RTStrmPrintf(g_pStdErr, "Error: Failed to allocate memory for --nicproperty%d '%s'\n", GetOptState.uIndex, ValueUnion.psz);
+                        rc = E_FAIL;
+                    }
+                }
+                break;
+            }
             case MODIFYVM_NICTYPE:
             {
                 ComPtr<INetworkAdapter> nic;
@@ -1183,40 +1218,36 @@ int handleModifyVM(HandlerArg *a)
                 else if (!strcmp(ValueUnion.psz, "null"))
                 {
                     CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
-                    CHECK_ERROR(nic, Detach());
+                    CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_Null));
                 }
                 else if (!strcmp(ValueUnion.psz, "nat"))
                 {
                     CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
-                    CHECK_ERROR(nic, AttachToNAT());
+                    CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_NAT));
                 }
                 else if (  !strcmp(ValueUnion.psz, "bridged")
                         || !strcmp(ValueUnion.psz, "hostif")) /* backward compatibility */
                 {
                     CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
-                    CHECK_ERROR(nic, AttachToBridgedInterface());
+                    CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_Bridged));
                 }
                 else if (!strcmp(ValueUnion.psz, "intnet"))
                 {
                     CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
-                    CHECK_ERROR(nic, AttachToInternalNetwork());
+                    CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_Internal));
                 }
-#if defined(VBOX_WITH_NETFLT)
                 else if (!strcmp(ValueUnion.psz, "hostonly"))
                 {
 
                     CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
-                    CHECK_ERROR(nic, AttachToHostOnlyInterface());
+                    CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly));
                 }
-#endif
-#ifdef VBOX_WITH_VDE
-                else if (!strcmp(ValueUnion.psz, "vde"))
+                else if (!strcmp(ValueUnion.psz, "generic"))
                 {
 
                     CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
-                    CHECK_ERROR(nic, AttachToVDE());
+                    CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic));
                 }
-#endif
                 else
                 {
                     errorArgument("Invalid type '%s' specfied for NIC %u", ValueUnion.psz, GetOptState.uIndex);
@@ -1237,6 +1268,24 @@ int handleModifyVM(HandlerArg *a)
             }
 
             case MODIFYVM_BRIDGEADAPTER:
+            {
+                ComPtr<INetworkAdapter> nic;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                /* remove it? */
+                if (!strcmp(ValueUnion.psz, "none"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(BridgedInterface)((CBSTR)L""));
+                }
+                else
+                {
+                    CHECK_ERROR(nic, COMSETTER(BridgedInterface)(Bstr(ValueUnion.psz).raw()));
+                }
+                break;
+            }
+
             case MODIFYVM_HOSTONLYADAPTER:
             {
                 ComPtr<INetworkAdapter> nic;
@@ -1244,15 +1293,14 @@ int handleModifyVM(HandlerArg *a)
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
-                /** @todo NULL string deprecated */
                 /* remove it? */
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(HostInterface)(NULL));
+                    CHECK_ERROR(nic, COMSETTER(HostOnlyInterface)((CBSTR)L""));
                 }
                 else
                 {
-                    CHECK_ERROR(nic, COMSETTER(HostInterface)(Bstr(ValueUnion.psz).raw()));
+                    CHECK_ERROR(nic, COMSETTER(HostOnlyInterface)(Bstr(ValueUnion.psz).raw()));
                 }
                 break;
             }
@@ -1264,11 +1312,10 @@ int handleModifyVM(HandlerArg *a)
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
-                /** @todo NULL string deprecated */
                 /* remove it? */
                 if (!strcmp(ValueUnion.psz, "none"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(InternalNetwork)(NULL));
+                    CHECK_ERROR(nic, COMSETTER(InternalNetwork)((CBSTR)L""));
                 }
                 else
                 {
@@ -1277,27 +1324,17 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-#ifdef VBOX_WITH_VDE
-            case MODIFYVM_VDENET:
+            case MODIFYVM_GENERICDRV:
             {
                 ComPtr<INetworkAdapter> nic;
 
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
-                /** @todo NULL string deprecated */
-                /* remove it? */
-                if (!strcmp(ValueUnion.psz, "default"))
-                {
-                    CHECK_ERROR(nic, COMSETTER(VDENetwork)(NULL));
-                }
-                else
-                {
-                    CHECK_ERROR(nic, COMSETTER(VDENetwork)(Bstr(ValueUnion.psz).raw()));
-                }
+                CHECK_ERROR(nic, COMSETTER(GenericDriver)(Bstr(ValueUnion.psz).raw()));
                 break;
             }
-#endif
+
             case MODIFYVM_NATNET:
             {
                 ComPtr<INetworkAdapter> nic;
@@ -1557,7 +1594,7 @@ int handleModifyVM(HandlerArg *a)
                 /* generate one? */
                 if (!strcmp(ValueUnion.psz, "auto"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(MACAddress)(NULL));
+                    CHECK_ERROR(nic, COMSETTER(MACAddress)((CBSTR)L""));
                 }
                 else
                 {
@@ -1881,7 +1918,7 @@ int handleModifyVM(HandlerArg *a)
                         CHECK_ERROR(vrdeServer, COMSETTER(VRDEExtPack)(bstr.raw()));
                     }
                     else
-                        CHECK_ERROR(vrdeServer, COMSETTER(VRDEExtPack)(NULL));
+                        CHECK_ERROR(vrdeServer, COMSETTER(VRDEExtPack)((CBSTR)L""));
                 }
                 break;
             }
@@ -1997,7 +2034,7 @@ int handleModifyVM(HandlerArg *a)
                         CHECK_ERROR(vrdeServer, COMSETTER(AuthLibrary)(bstr.raw()));
                     }
                     else
-                        CHECK_ERROR(vrdeServer, COMSETTER(AuthLibrary)(NULL));
+                        CHECK_ERROR(vrdeServer, COMSETTER(AuthLibrary)((CBSTR)L""));
                 }
                 break;
             }
@@ -2085,7 +2122,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_SNAPSHOTFOLDER:
             {
                 if (!strcmp(ValueUnion.psz, "default"))
-                    CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(NULL));
+                    CHECK_ERROR(machine, COMSETTER(SnapshotFolder)((CBSTR)L""));
                 else
                     CHECK_ERROR(machine, COMSETTER(SnapshotFolder)(Bstr(ValueUnion.psz).raw()));
                 break;
@@ -2214,7 +2251,7 @@ int handleModifyVM(HandlerArg *a)
 
                 iHostAddr = parsePci(ValueUnion.psz);
                 iGuestAddr = pAt != NULL ? parsePci(pAt + 1) : iHostAddr;
-                
+
                 if (iHostAddr == -1 || iGuestAddr == -1)
                 {
                     errorArgument("Invalid --attachpci argument '%s' (valid: 'HB:HD.HF@GB:GD.GF' or just 'HB:HD.HF')", ValueUnion.psz);
