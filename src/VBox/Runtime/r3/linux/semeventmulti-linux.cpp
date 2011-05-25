@@ -174,7 +174,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
     /*
      * Invalidate the semaphore and wake up anyone waiting on it.
      */
-    ASMAtomicWriteSize(&pThis->u32Magic, RTSEMEVENTMULTI_MAGIC + 1);
+    ASMAtomicWriteU32(&pThis->u32Magic, RTSEMEVENTMULTI_MAGIC + 1);
     if (ASMAtomicXchgS32(&pThis->iState, -1) == 1)
     {
         sys_futex(&pThis->iState, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);

@@ -5139,8 +5139,7 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
      */
     if (enmEvent == RTMPEVENT_OFFLINE)
     {
-        RTCPUID idGipMaster;
-        ASMAtomicReadSize(&pDevExt->idGipMaster, &idGipMaster);
+        RTCPUID idGipMaster = ASMAtomicReadU32(&pDevExt->idGipMaster);
         if (idGipMaster == idCpu)
         {
             /*

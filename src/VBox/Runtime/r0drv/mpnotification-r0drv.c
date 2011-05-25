@@ -304,7 +304,7 @@ DECLHIDDEN(void) rtR0MpNotificationTerm(void)
 
     /* pick up the list and the spinlock. */
     RTSpinlockAcquire(hSpinlock, &Tmp);
-    ASMAtomicWriteSize(&g_hRTMpNotifySpinLock, NIL_RTSPINLOCK);
+    ASMAtomicWriteHandle(&g_hRTMpNotifySpinLock, NIL_RTSPINLOCK);
     pHead = g_pRTMpCallbackHead;
     g_pRTMpCallbackHead = NULL;
     ASMAtomicIncU32(&g_iRTMpGeneration);
