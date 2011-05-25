@@ -41,23 +41,8 @@
 
 RT_C_DECLS_BEGIN
 
-/** @todo r=bird: this is missing docs and magic. uXPos should be offX.
- *        cbBufSize should be cbBuf. */
-typedef struct RTCIRCBUF
-{
-    /** The current read position in the buffer. */
-    size_t uReadPos;
-    /** The current write position in the buffer. */
-    size_t uWritePos;
-    /** How much space of the buffer is currently in use. */
-    volatile size_t cbBufUsed;
-    /** How big is the buffer. */
-    size_t cbBufSize;
-    /** The buffer itself. */
-    void *pvBuf;
-} RTCIRCBUF;
-/* Pointer to a circular buffer structure */
-typedef RTCIRCBUF* PRTCIRCBUF;
+/** Pointer to a circular buffer (abstract). */
+typedef struct RTCIRCBUF *PRTCIRCBUF;
 
 /**
  * Create a circular buffer.
