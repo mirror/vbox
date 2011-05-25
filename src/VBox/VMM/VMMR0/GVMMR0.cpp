@@ -1293,7 +1293,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     ASMAtomicWriteNullPtr(&pHandle->pVM);
     ASMAtomicWriteNullPtr(&pHandle->pvObj);
     ASMAtomicWriteNullPtr(&pHandle->pSession);
-    ASMAtomicWriteSize(&pHandle->hEMT0,     NIL_RTNATIVETHREAD);
+    ASMAtomicWriteHandle(&pHandle->hEMT0,        NIL_RTNATIVETHREAD);
     ASMAtomicWriteSize(&pHandle->ProcId,         NIL_RTPROCESS);
 
     gvmmR0UsedUnlock(pGVMM);
