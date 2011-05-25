@@ -41,6 +41,8 @@
 
 RT_C_DECLS_BEGIN
 
+/** @todo r=bird: this is missing docs and magic. uXPos should be offX.
+ *        cbBufSize should be cbBuf. */
 typedef struct RTCIRCBUF
 {
     /** The current read position in the buffer. */
@@ -70,10 +72,9 @@ RTDECL(int) RTCircBufCreate(PRTCIRCBUF *ppBuf, size_t cbSize);
 /**
  * Destroy the circular buffer.
  *
- * @param   pBuf           The buffer to destroy.
+ * @param   pBuf           The buffer to destroy.  NULL is ignored.
  */
 RTDECL(void) RTCircBufDestroy(PRTCIRCBUF pBuf);
-
 
 /**
  * Reset all position information in the circular buffer.
@@ -145,5 +146,5 @@ RT_C_DECLS_END
 
 /** @} */
 
-#endif /* ___iprt_circbuf_h */
+#endif /* !___iprt_circbuf_h */
 
