@@ -2527,7 +2527,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
             break;
         for (PVMREQ pReq = pReqHead; pReq; pReq = pReq->pNext)
         {
-            ASMAtomicUoWriteSize(&pReq->iStatus, VERR_INTERNAL_ERROR);
+            ASMAtomicUoWriteS32(&pReq->iStatus, VERR_INTERNAL_ERROR);
             ASMAtomicWriteSize(&pReq->enmState, VMREQSTATE_INVALID);
             RTSemEventSignal(pReq->EventSem);
             RTThreadSleep(2);
@@ -2552,7 +2552,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
                 break;
             for (PVMREQ pReq = pReqHead; pReq; pReq = pReq->pNext)
             {
-                ASMAtomicUoWriteSize(&pReq->iStatus, VERR_INTERNAL_ERROR);
+                ASMAtomicUoWriteS32(&pReq->iStatus, VERR_INTERNAL_ERROR);
                 ASMAtomicWriteSize(&pReq->enmState, VMREQSTATE_INVALID);
                 RTSemEventSignal(pReq->EventSem);
                 RTThreadSleep(2);

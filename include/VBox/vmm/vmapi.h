@@ -246,7 +246,7 @@ typedef struct VMREQ
     /** Request state. */
     volatile VMREQSTATE     enmState;
     /** VBox status code for the completed request. */
-    volatile int            iStatus;
+    volatile int32_t        iStatus;
     /** Requester event sem.
      * The request can use this event semaphore to wait/poll for completion
      * of the request.
