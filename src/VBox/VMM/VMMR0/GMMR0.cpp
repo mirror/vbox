@@ -466,8 +466,12 @@ typedef struct GMMCHUNKTLB
 typedef GMMCHUNKTLB *PGMMCHUNKTLB;
 
 
-/** The GMMCHUNK::cFree shift count. */
+/** The GMMCHUNK::cFree shift count employed by gmmR0SelectFreeSetList. */
 #define GMM_CHUNK_FREE_SET_SHIFT    4
+/** Index of the list containing completely unused chunks.
+ * The code ASSUMES this is the last list. */
+#define GMM_CHUNK_FREE_SET_UNUSED_LIST  (GMM_CHUNK_NUM_PAGES >> GMM_CHUNK_FREE_SET_SHIFT)
+
 
 
 /**
@@ -480,8 +484,9 @@ typedef struct GMMCHUNKFREESET
     /** The generation ID for the set.  This is incremented whenever
      *  something is linked or unlinked from this set. */
     uint64_t            idGeneration;
-    /** Chunks ordered by increasing number of free pages. */
-    PGMMCHUNK           apLists[GMM_CHUNK_NUM_PAGES >> GMM_CHUNK_FREE_SET_SHIFT];
+    /** Chunks ordered by increasing number of free pages.
+     *  In the final list the chunks are completely unused. */
+    PGMMCHUNK           apLists[GMM_CHUNK_FREE_SET_UNUSED_LIST + 1];
 } GMMCHUNKFREESET;
 
 
@@ -1245,13 +1250,13 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
         {
             fRedoFromStart = false;
             iCountDown = 10240;
-            pChunk = pGMM->Private.apLists[RT_ELEMENTS(pGMM->Private.apLists) - 1];
+            pChunk = pGMM->Private.apLists[GMM_CHUNK_FREE_SET_UNUSED_LIST];
             while (pChunk)
             {
                 PGMMCHUNK pNext = pChunk->pFreeNext;
-                if (    pChunk->cFree == GMM_CHUNK_NUM_PAGES
-                    &&  (   !pGMM->fBoundMemoryMode
-                         || pChunk->hGVM == pGVM->hSelf))
+                Assert(pChunk->cFree == GMM_CHUNK_NUM_PAGES);
+                if (   !pGMM->fBoundMemoryMode
+                    || pChunk->hGVM == pGVM->hSelf)
                 {
                     uint64_t const idGenerationOld = pGMM->Private.idGeneration;
                     if (gmmR0FreeChunk(pGMM, pGVM, pChunk, true /*fRelaxedSem*/))
@@ -1799,11 +1804,14 @@ DECLINLINE(RTHCPHYS) gmmR0GetPageHCPhys(PGMM pGMM,  uint32_t idPage)
  * Selects the appropriate free list given the number of free pages.
  *
  * @returns Free list index.
- * @param
+ * @param   cFree       The number of free pages in the chunk.
  */
 DECLINLINE(unsigned) gmmR0SelectFreeSetList(unsigned cFree)
 {
-    return (cFree - 1) >> GMM_CHUNK_FREE_SET_SHIFT;
+    unsigned iList = cFree >> GMM_CHUNK_FREE_SET_SHIFT;
+    AssertMsg(iList < RT_SIZEOFMEMB(GMMCHUNKFREESET, apLists) / RT_SIZEOFMEMB(GMMCHUNKFREESET, apLists[0]),
+              ("%d (%u)\n", iList, cFree));
+    return iList;
 }
 
 
@@ -2295,7 +2303,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
     uint32_t iPage = 0;
 
     /* first round, pick from chunks with an affinity to the VM. */
-    for (unsigned i = 0; i < RT_ELEMENTS(pSet->apLists) && iPage < cPages; i++)
+    for (unsigned i = 0; i < GMM_CHUNK_FREE_SET_UNUSED_LIST && iPage < cPages; i++)
     {
         PGMMCHUNK pCurFree = NULL;
         PGMMCHUNK pCur = pSet->apLists[i];
@@ -2320,14 +2328,14 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
     {
         /* second round, pick pages from the 100% empty chunks we just skipped above. */
         PGMMCHUNK pCurFree = NULL;
-        PGMMCHUNK pCur = pSet->apLists[RT_ELEMENTS(pSet->apLists) - 1];
+        PGMMCHUNK pCur = pSet->apLists[GMM_CHUNK_FREE_SET_UNUSED_LIST];
         while (pCur && iPage < cPages)
         {
             PGMMCHUNK pNext = pCur->pFreeNext;
+            Assert(pCur->cFree == GMM_CHUNK_NUM_PAGES);
 
-            if (    pCur->cFree == GMM_CHUNK_NUM_PAGES
-                &&  (   pCur->hGVM == hGVM
-                     || !pGMM->fBoundMemoryMode))
+            if (   pCur->hGVM == hGVM
+                || !pGMM->fBoundMemoryMode)
             {
                 gmmR0UnlinkChunk(pCur);
                 for (; pCur->cFree && iPage < cPages; iPage++)
@@ -3046,7 +3054,9 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
      * Update statistics (the cShared/cPrivate stats are up to date already),
      * and relink the chunk if necessary.
      */
-    if (gmmR0SelectFreeSetList(pChunk->cFree) != gmmR0SelectFreeSetList(pChunk->cFree + 1))
+    unsigned const cFree = pChunk->cFree;
+    if (   !cFree
+        || gmmR0SelectFreeSetList(cFree) != gmmR0SelectFreeSetList(cFree + 1))
     {
         gmmR0UnlinkChunk(pChunk);
         pChunk->cFree++;
@@ -3054,7 +3064,7 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
     }
     else
     {
-        pChunk->cFree++;
+        pChunk->cFree = cFree + 1;
         pChunk->pSet->cFreePages++;
     }
 
