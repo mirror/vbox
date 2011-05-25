@@ -164,6 +164,7 @@
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
+#include <iprt/mp.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
@@ -606,6 +607,27 @@ typedef GMMR0CHUNKMTXSTATE *PGMMR0CHUNKMTXSTATE;
 #define GMMR0CHUNK_MTX_DROP_GIANT       UINT32_C(3)
 #define GMMR0CHUNK_MTX_END              UINT32_C(4)
 /** @} */
+
+
+/**
+ * Page allocation strategy sketches.
+ */
+typedef struct GMMR0ALLOCPAGESTRATEGY
+{
+    uint32_t cTries;
+#if 0
+    typedef enum GMMR0ALLOCPAGESTRATEGY
+    {
+        kGMMR0AllocPageStrategy_Invalid = 0,
+        kGMMR0AllocPageStrategy_VM,
+        kGMMR0AllocPageStrategy_NumaNode,
+        kGMMR0AllocPageStrategy_AnythingGoes,
+        kGMMR0AllocPageStrategy_End
+    } GMMR0ALLOCPAGESTRATEGY;
+#endif
+} GMMR0ALLOCPAGESTRATEGY;
+/** Pointer to a page allocation strategy structure. */
+typedef GMMR0ALLOCPAGESTRATEGY *PGMMR0ALLOCPAGESTRATEGY;
 
 
 /*******************************************************************************
@@ -1118,6 +1140,22 @@ static int gmmR0ChunkMutexDropGiant(PGMMR0CHUNKMTXSTATE pMtxState)
      *        destroying and cleaning up GMM)? */
     return gmmR0MutexRelease(pMtxState->pGMM);
 }
+
+
+/**
+ * For experimenting with NUMA affinity and such.
+ *
+ * @returns The current NUMA Node ID.
+ */
+static uint16_t gmmR0GetCurrentNumaNodeId(void)
+{
+#if 1
+    return GMM_CHUNK_NUMA_ID_UNKNOWN;
+#else
+    return RTMpCpuId() / 16;
+#endif
+}
+
 
 
 /**
@@ -1933,7 +1971,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
         pChunk->cFree       = GMM_CHUNK_NUM_PAGES;
         pChunk->hGVM        = hGVM;
         /*pChunk->iFreeHead = 0;*/
-        pChunk->idNumaNode  = GMM_CHUNK_NUMA_ID_UNKNOWN;
+        pChunk->idNumaNode  = gmmR0GetCurrentNumaNodeId();
         pChunk->iChunkMtx   = UINT8_MAX;
         pChunk->fFlags      = fChunkFlags;
         for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
@@ -2007,8 +2045,6 @@ static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM
 
     RTR0MEMOBJ hMemObj;
     int rc = RTR0MemObjAllocPhysNC(&hMemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
-    /** @todo Check that RTR0MemObjAllocPhysNC always returns VERR_NO_MEMORY on
-     *        allocation failure. */
     if (RT_SUCCESS(rc))
     {
         rc = gmmR0RegisterChunk(pGMM, pSet, hMemObj, hGVM, 0 /*fChunkFlags*/, NULL);
@@ -2032,11 +2068,14 @@ static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM
  * @param   pGVM        The calling VM.
  * @param   pSet        Pointer to the free set to grow.
  * @param   cPages      The number of pages needed.
+ * @param   pStrategy   Pointer to the allocation strategy data.  This is input
+ *                      and output.
  *
  * @remarks Called owning the mutex, but will leave it temporarily while
  *          allocating the memory!
  */
-static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, uint32_t cPages)
+static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, uint32_t cPages,
+                                   PGMMR0ALLOCPAGESTRATEGY pStrategy)
 {
     Assert(!pGMM->fLegacyAllocationMode);
 
@@ -2053,7 +2092,8 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
                &&   pOtherSet->cFreePages >= GMM_CHUNK_NUM_PAGES)
         {
             PGMMCHUNK pChunk = pOtherSet->apLists[RT_ELEMENTS(pOtherSet->apLists) - 1];
-            while (pChunk && pChunk->cFree != GMM_CHUNK_NUM_PAGES)
+            while (   pChunk
+                   && pChunk->cFree != GMM_CHUNK_NUM_PAGES)
                 pChunk = pChunk->pFreeNext;
             if (!pChunk)
                 break;
@@ -2178,8 +2218,11 @@ static void gmmR0AllocatePage(PGMM pGMM, uint32_t hGVM, PGMMCHUNK pChunk, PGMMPA
  * @param   paPages             Pointer to the page descriptors.
  *                              See GMMPAGEDESC for details on what is expected on input.
  * @param   enmAccount          The account to charge.
+ * @param   pStrategy           Pointer to the allocation strategy data.  This
+ *                              is input and output.
  */
-static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount)
+static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount,
+                              PGMMR0ALLOCPAGESTRATEGY pStrategy)
 {
     /*
      * Check allocation limits.
@@ -2190,7 +2233,8 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
     switch (enmAccount)
     {
         case GMMACCOUNT_BASE:
-            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages > pGVM->gmm.s.Reserved.cBasePages))
+            if (RT_UNLIKELY(  pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages
+                            > pGVM->gmm.s.Reserved.cBasePages))
             {
                 Log(("gmmR0AllocatePages:Base: Reserved=%#llx Allocated+Ballooned+Requested=%#llx+%#llx+%#x!\n",
                      pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, pGVM->gmm.s.cBalloonedPages, cPages));
@@ -2218,12 +2262,15 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
     }
 
     /*
-     * Check if we need to allocate more memory or not. In bound memory mode this
+     * Check if we need to allocate more memory or not.  In bound memory mode this
      * is a bit extra work but it's easier to do it upfront than bailing out later.
      */
     PGMMCHUNKFREESET pSet = &pGMM->Private;
     if (pSet->cFreePages < cPages)
         return VERR_GMM_SEED_ME;
+
+/** @todo Rewrite this to use the page array for storing chunk IDs and other
+ *        state info needed to avoid the multipass sillyness. */
     if (pGMM->fBoundMemoryMode)
     {
         uint16_t hGVM = pGVM->hSelf;
@@ -2341,6 +2388,20 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
      */
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Determins the initial page allocation strategy and initializes the data
+ * structure.
+ *
+ * @param   pGMM                Pointer to the GMM instance data.
+ * @param   pGVM                Pointer to the shared VM structure.
+ * @param   pStrategy           The data structure to initialize.
+ */
+static void gmmR0AllocatePagesInitStrategy(PGMM pGMM, PGVM pGVM, PGMMR0ALLOCPAGESTRATEGY pStrategy)
+{
+    pStrategy->cTries = 0;
 }
 
 
@@ -2522,13 +2583,15 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
              * Join paths with GMMR0AllocatePages for the allocation.
              * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
              */
+            GMMR0ALLOCPAGESTRATEGY Strategy;
+            gmmR0AllocatePagesInitStrategy(pGMM, pGVM, &Strategy);
             while (RT_SUCCESS(rc))
             {
-                rc = gmmR0AllocatePages(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
+                rc = gmmR0AllocatePages(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE, &Strategy);
                 if (    rc != VERR_GMM_SEED_ME
                     ||  pGMM->fLegacyAllocationMode)
                     break;
-                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPagesToAlloc);
+                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPagesToAlloc, &Strategy);
             }
         }
         else
@@ -2610,13 +2673,15 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMP
              * gmmR0AllocatePages seed loop.
              * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
              */
+            GMMR0ALLOCPAGESTRATEGY Strategy;
+            gmmR0AllocatePagesInitStrategy(pGMM, pGVM, &Strategy);
             while (RT_SUCCESS(rc))
             {
-                rc = gmmR0AllocatePages(pGMM, pGVM, cPages, paPages, enmAccount);
+                rc = gmmR0AllocatePages(pGMM, pGVM, cPages, paPages, enmAccount, &Strategy);
                 if (    rc != VERR_GMM_SEED_ME
                     ||  pGMM->fLegacyAllocationMode)
                     break;
-                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPages);
+                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPages, &Strategy);
             }
         }
         else
