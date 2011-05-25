@@ -25,18 +25,15 @@
  */
 
 
-/******************************************************************************
- *   Header Files                                                             *
- ******************************************************************************/
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/circbuf.h>
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
 
-/******************************************************************************
- *   Public Functions                                                         *
- ******************************************************************************/
 
 RTDECL(int) RTCircBufCreate(PRTCIRCBUF *ppBuf, size_t cbSize)
 {
@@ -49,48 +46,40 @@ RTDECL(int) RTCircBufCreate(PRTCIRCBUF *ppBuf, size_t cbSize)
     if (!pTmpBuf)
         return VERR_NO_MEMORY;
 
-    int rc = VINF_SUCCESS;
-    do
+    pTmpBuf->pvBuf = RTMemAlloc(cbSize);
+    if (pTmpBuf->pvBuf)
     {
-        pTmpBuf->pvBuf = RTMemAlloc(cbSize);
-        if (!pTmpBuf)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
         pTmpBuf->cbBufSize = cbSize;
         *ppBuf = pTmpBuf;
-    }while (0);
+        return VINF_SUCCESS;
+    }
 
-    if (RT_FAILURE(rc))
-        RTMemFree(pTmpBuf);
-
-    return rc;
+    RTMemFree(pTmpBuf);
+    return VERR_NO_MEMORY;
 }
+
 
 RTDECL(void) RTCircBufDestroy(PRTCIRCBUF pBuf)
 {
     /* Validate input. */
-    AssertPtrNull(pBuf);
-
-    if (pBuf)
-    {
-        if (pBuf->pvBuf)
-            RTMemFree(pBuf->pvBuf);
-        RTMemFree(pBuf);
-    }
+    if (!pBuf)
+        return;
+    AssertPtr(pBuf);
+    RTMemFree(pBuf->pvBuf);
+    RTMemFree(pBuf);
 }
+
 
 RTDECL(void) RTCircBufReset(PRTCIRCBUF pBuf)
 {
     /* Validate input. */
     AssertPtr(pBuf);
 
-    pBuf->uReadPos = 0;
+    pBuf->uReadPos  = 0;
     pBuf->uWritePos = 0;
     pBuf->cbBufUsed = 0;
 }
+
 
 RTDECL(size_t) RTCircBufFree(PRTCIRCBUF pBuf)
 {
@@ -102,6 +91,7 @@ RTDECL(size_t) RTCircBufFree(PRTCIRCBUF pBuf)
     return pBuf->cbBufSize - cbSize;
 }
 
+
 RTDECL(size_t) RTCircBufUsed(PRTCIRCBUF pBuf)
 {
     /* Validate input. */
@@ -112,6 +102,7 @@ RTDECL(size_t) RTCircBufUsed(PRTCIRCBUF pBuf)
     return cbSize;
 }
 
+
 RTDECL(size_t) RTCircBufSize(PRTCIRCBUF pBuf)
 {
     /* Validate input. */
@@ -119,6 +110,7 @@ RTDECL(size_t) RTCircBufSize(PRTCIRCBUF pBuf)
 
     return pBuf->cbBufSize;
 }
+
 
 RTDECL(void) RTCircBufAcquireReadBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void **ppvStart, size_t *pcbSize)
 {
@@ -145,11 +137,12 @@ RTDECL(void) RTCircBufAcquireReadBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void *
         {
             /* Return the pointer address which point to the current read
              * position. */
-            *ppvStart = (char*)pBuf->pvBuf + pBuf->uReadPos;
+            *ppvStart = (char *)pBuf->pvBuf + pBuf->uReadPos;
             *pcbSize = uSize;
         }
     }
 }
+
 
 RTDECL(void) RTCircBufReleaseReadBlock(PRTCIRCBUF pBuf, size_t cbSize)
 {
@@ -163,6 +156,7 @@ RTDECL(void) RTCircBufReleaseReadBlock(PRTCIRCBUF pBuf, size_t cbSize)
     ASMAtomicSubSize(&pBuf->cbBufUsed, cbSize, &cbOld);
 }
 
+
 RTDECL(void) RTCircBufAcquireWriteBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void **ppvStart, size_t *pcbSize)
 {
     /* Validate input. */
@@ -171,21 +165,18 @@ RTDECL(void) RTCircBufAcquireWriteBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void 
     AssertPtr(ppvStart);
     AssertPtr(pcbSize);
 
-    size_t uFree;
-    size_t uSize;
-
     *ppvStart = 0;
     *pcbSize = 0;
 
     /* How much is free? */
     size_t cbSize = 0;
     ASMAtomicReadSize(&pBuf->cbBufUsed, &cbSize);
-    uFree = pBuf->cbBufSize - cbSize;
+    size_t uFree = pBuf->cbBufSize - cbSize;
     if (uFree > 0)
     {
         /* Get the size out of the requested size, the write block till the end
          * of the buffer & the currently free size. */
-        uSize = RT_MIN(cbReqSize, RT_MIN(pBuf->cbBufSize - pBuf->uWritePos, uFree));
+        size_t uSize = RT_MIN(cbReqSize, RT_MIN(pBuf->cbBufSize - pBuf->uWritePos, uFree));
         if (uSize > 0)
         {
             /* Return the pointer address which point to the current write
@@ -196,6 +187,7 @@ RTDECL(void) RTCircBufAcquireWriteBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void 
     }
 }
 
+
 RTDECL(void) RTCircBufReleaseWriteBlock(PRTCIRCBUF pBuf, size_t cbSize)
 {
     /* Validate input. */
@@ -204,7 +196,7 @@ RTDECL(void) RTCircBufReleaseWriteBlock(PRTCIRCBUF pBuf, size_t cbSize)
     /* Split at the end of the buffer. */
     pBuf->uWritePos = (pBuf->uWritePos + cbSize) % pBuf->cbBufSize;
 
-    size_t cbOld = 0;
-    ASMAtomicAddSize(&pBuf->cbBufUsed, cbSize, &cbOld);
+    size_t cbOldIgnored = 0;
+    ASMAtomicAddSize(&pBuf->cbBufUsed, cbSize, &cbOldIgnored);
 }
 
