@@ -35,6 +35,27 @@
 #include <iprt/err.h>
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/** @todo r=bird: this is missing docs and magic. uXPos should be offX.
+ *        cbBufSize should be cbBuf. */
+typedef struct RTCIRCBUF
+{
+    /** The current read position in the buffer. */
+    size_t          uReadPos;
+    /** The current write position in the buffer. */
+    size_t          uWritePos;
+    /** How much space of the buffer is currently in use. */
+    volatile size_t cbBufUsed;
+    /** How big is the buffer. */
+    size_t          cbBufSize;
+    /** The buffer itself. */
+    void           *pvBuf;
+} RTCIRCBUF;
+
+
+
 RTDECL(int) RTCircBufCreate(PRTCIRCBUF *ppBuf, size_t cbSize)
 {
     /* Validate input. */
