@@ -1753,6 +1753,42 @@ DECLINLINE(int64_t) ASMAtomicUoReadS64(volatile int64_t *pi64)
 
 
 /**
+ * Atomically reads a size_t value, ordered.
+ *
+ * @returns Current *pcb value
+ * @param   pcb     Pointer to the size_t variable to read.
+ */
+DECLINLINE(size_t) ASMAtomicReadZ(size_t volatile *pcb)
+{
+#if ARCH_BITS == 64
+    return ASMAtomicReadU64((uint64_t volatile *)pcb);
+#elif ARCH_BITS == 32
+    return ASMAtomicReadU32((uint32_t volatile *)pcb);
+#else
+# error "Unsupported ARCH_BITS value"
+#endif
+}
+
+
+/**
+ * Atomically reads a size_t value, unordered.
+ *
+ * @returns Current *pcb value
+ * @param   pcb     Pointer to the size_t variable to read.
+ */
+DECLINLINE(size_t) ASMAtomicUoReadZ(size_t volatile *pcb)
+{
+#if ARCH_BITS == 64
+    return ASMAtomicUoReadU64((uint64_t volatile *)pcb);
+#elif ARCH_BITS == 32
+    return ASMAtomicUoReadU32((uint32_t volatile *)pcb);
+#else
+# error "Unsupported ARCH_BITS value"
+#endif
+}
+
+
+/**
  * Atomically reads a pointer value, ordered.
  *
  * @returns Current *pv value
