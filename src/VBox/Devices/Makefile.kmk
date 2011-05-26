@@ -648,6 +648,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDR0_DEFS           = IN_RT_R0 VBOX_WITH_HGCM # - WTF is IN_RT_R0 doing here?
  VBoxDDR0_INCS           = build
  VBoxDDR0_SOURCES        = \
+ 	build/VBoxDDR0.cpp \
  	Bus/DevPCI.cpp \
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
@@ -754,12 +755,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD2GC_DEFS           =
   VBoxDD2GC_INCS           = build
   VBoxDD2GC_SOURCES        = \
- 	PC/DevAPIC.cpp      \
- 	PC/DevSMC.cpp
+  	PC/DevAPIC.cpp \
+  	PC/DevSMC.cpp
   if1of ($(VBOX_LDR_FMT32), pe lx)
-  VBoxDD2GC_LIBS           = \
-  	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
-  	$(PATH_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
+   VBoxDD2GC_LIBS          = \
+   	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
+   	$(PATH_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
   endif
  endif
 
@@ -770,13 +771,14 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2R0_DEFS           = IN_RT_R0
  VBoxDD2R0_INCS           = build
  VBoxDD2R0_SOURCES        = \
-         PC/DevAPIC.cpp     \
-         PC/DevSMC.cpp
+ 	build/VBoxDD2R0.cpp \
+ 	PC/DevAPIC.cpp \
+ 	PC/DevSMC.cpp
 
  if1of ($(VBOX_LDR_FMT), pe lx)
- VBoxDD2R0_LIBS           = \
- 	$(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
- 	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+  VBoxDD2R0_LIBS          = \
+  	$(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
+  	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
  endif
 
 

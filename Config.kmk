@@ -146,8 +146,8 @@ ifndef USERNAME
  endif
 endif
 
-# 
-# Detect the darwin host version number so we can disable stuff that doesn't 
+#
+# Detect the darwin host version number so we can disable stuff that doesn't
 # currently build on Lion.
 #
 ifeq ($(KBUILD_HOST),darwin)
@@ -577,6 +577,9 @@ VBOX_X11_SEAMLESS_GUEST = 1
 VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Set this to skip installing the redistributable compiler runtime.
 #VBOX_WITHOUT_COMPILER_REDIST = 1
+# Enables VMMR0.r0 (++) loading using the native loader on solaris.
+# Good for debugging and analysis.  Experimental.
+#VBOX_WITH_NATIVE_SOLARIS_LOADING = 1
 # Set this to enable user mode dtrace probes (darwin & solaris only).
 if1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_DTRACE_R3 = 1
@@ -2694,6 +2697,9 @@ TEMPLATE_VBoxR0_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-ss
 TEMPLATE_VBoxR0_CXXFLAGS.amd64      = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -fno-asynchronous-unwind-tables
 ifeq ($(KBUILD_TARGET),solaris)
  TEMPLATE_VBoxR0_LDFLAGS            = -r
+ TEMPLATE_VBoxR0_LDFLAGS.solaris    = -u _init -u _info
+ TEMPLATE_VBoxR0_LIBS.solaris       = \
+	$(PATH_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
 else
  TEMPLATE_VBoxR0_LDFLAGS            = -nostdlib -Bsymbolic
  # temporarily, must fix the loader.
@@ -2963,7 +2969,9 @@ ifdef VBOX_WITH_VBOXDRV
  endif
 endif
 
-ifn1of (darwin os2 win, $(KBUILD_TARGET))
+ifn1of ($(KBUILD_TARGET), darwin os2 win solaris)
+ # This doesn't work if supdrv is natively loading VMMR0.r0 et al, but
+ # fortunately it isn't really necessary.
  TEMPLATE_VBOXR0DRV_CFLAGS    += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
  TEMPLATE_VBOXR0DRV_CXXFLAGS  += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
 endif

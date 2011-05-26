@@ -1688,6 +1688,29 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
     }
 
     /*
+     * Symbols that are undefined by convention.
+     */
+#ifdef RT_OS_SOLARIS
+    static const char * const s_apszConvSyms[] =
+    {
+        "", "mod_getctl",
+        "", "mod_install",
+        "", "mod_remove",
+        "", "mod_info",
+        "", "mod_miscops",
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_apszConvSyms); i += 2)
+    {
+        if (   !RTStrCmp(s_apszConvSyms[i],     pszModule)
+            && !RTStrCmp(s_apszConvSyms[i + 1], pszSymbol))
+        {
+            *pValue = ~(uintptr_t)0;
+            return VINF_SUCCESS;
+        }
+    }
+#endif
+
+    /*
      * Despair.
      */
     c = g_pFunctions->u.Out.cFunctions;
