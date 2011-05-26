@@ -180,7 +180,7 @@ static PSUPDRVSESSION       g_apSessionHashTab[19];
 /** Spinlock protecting g_apSessionHashTab. */
 static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
 /** Calculates bucket index into g_apSessionHashTab.*/
-#define SESSION_HASH(sfn) ((sfn) % RT_ELEMENTS(g_apSessionHashTab))
+#define SESSION_HASH(sfn)   ((sfn) % RT_ELEMENTS(g_apSessionHashTab))
 
 /**
  * Kernel entry points
