@@ -44,6 +44,7 @@ else ifdef VBOX_ONLY_TESTSUITE
  # Only build the testsuite.
  #
  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeR3 RuntimeR0
+ LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub
 
 else ifdef VBOX_ONLY_DOCS
@@ -58,6 +59,7 @@ else ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  # Build docs only - need just regular R3 runtime.
  #
  LIBRARIES += RuntimeBldProg
+ LIBRARIES.solaris += RuntimeR0Stub RuntimeRCStub
  LIBRARIES.win += RuntimeR0Stub RuntimeRCStub
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
@@ -73,6 +75,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
 
  BLDPROGS += uniread
  LIBRARIES += RuntimeR3 RuntimeBldProg RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
+ LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub
  ifdef VBOX_WITH_RAW_MODE
   LIBRARIES += RuntimeRC
@@ -1518,11 +1521,13 @@ RuntimeR0_SOURCES.os2 = \
 
 
 #
-# RuntimeR0Stub - Ring-0 context startup stub for Windows.
+# RuntimeR0Stub - Ring-0 context startup stub for Windows and Solaris.
 #
-RuntimeR0Stub_TEMPLATE    = VBoxR0
+RuntimeR0Stub_TEMPLATE    = $(if-expr "$(KBUILD_TARGET)" == "solaris",VBOXR0DRV,VBoxR0)
 RuntimeR0Stub_SOURCES.win = \
 	nt/NtProcessStartup-stub.cpp
+RuntimeR0Stub_SOURCES.solaris = \
+	r0drv/solaris/modulestub-r0drv-solaris.c
 
 
 #
@@ -1604,6 +1609,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
+	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \

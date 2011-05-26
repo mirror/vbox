@@ -34,6 +34,7 @@
 #include <sys/uio.h>
 #include <sys/buf.h>
 #include <sys/modctl.h>
+#include <sys/kobj.h>
 #include <sys/open.h>
 #include <sys/conf.h>
 #include <sys/cmn_err.h>
@@ -50,6 +51,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/spinlock.h>
 #include <iprt/mp.h>
+#include <iprt/path.h>
 #include <iprt/power.h>
 #include <iprt/process.h>
 #include <iprt/thread.h>
@@ -892,11 +894,158 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
     return false;
 }
 
+#if  defined(VBOX_WITH_NATIVE_SOLARIS_LOADING) \
+ && !defined(VBOX_WITHOUT_NATIVE_R0_LOADER)
 
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
 {
-    /** @todo This is something that shouldn't be impossible to implement
-     *  here and would make a few people happy. */
+    pImage->idSolMod   = -1;
+    pImage->pSolModCtl = NULL;
+
+# if 1 /* This approach requires _init/_fini/_info stubs. */
+    /*
+     * Construct a filename that escapes the module search path and let us
+     * specify a root path.
+     */
+    const char *pszName = RTPathFilename(pszFilename);
+    AssertReturn(pszName, VERR_INVALID_PARAMETER);
+    char *pszSubDir = RTStrAPrintf2("../../../../../../../../../../../%.*s", pszName - pszFilename, pszFilename);
+    if (!pszSubDir)
+        return VERR_NO_STR_MEMORY;
+
+    int idMod = modload(pszSubDir, pszName);
+    RTStrFree(pszSubDir);
+    if (idMod == -1)
+    {
+        LogRel(("modload(,%s): failed, could be anything...\n", pszFilename));
+        return VERR_LDR_GENERAL_FAILURE;
+    }
+
+    modctl_t *pModCtl = mod_hold_by_id(idMod);
+    if (!pModCtl)
+    {
+        LogRel(("mod_hold_by_id(,%s): failed, weird.\n", pszFilename));
+        /* No point in calling modunload. */
+        return VERR_LDR_GENERAL_FAILURE;
+    }
+    pModCtl->mod_loadflags |= MOD_NOAUTOUNLOAD | MOD_NOUNLOAD; /* paranoia */
+
+# else
+
+    const int idMod = -1;
+    modctl_t *pModCtl = mod_hold_by_name(pszFilename);
+    if (!pModCtl)
+    {
+        LogRel(("mod_hold_by_name failed for '%s'\n", pszFilename));
+        return VERR_LDR_GENERAL_FAILURE;
+    }
+
+    int rc = kobj_load_module(pModCtl, 0 /*use_path*/);
+    if (rc != 0)
+    {
+        LogRel(("kobj_load_module failed with rc=%d for '%s'\n", rc, pszFilename));
+        mod_release_mod(pModCtl);
+        return RTErrConvertFromErrno(rc);
+    }
+# endif
+
+    /*
+     * Get the module info.
+     */
+    struct modinfo ModInfo;
+    kobj_getmodinfo(pModCtl->mod_mp, &ModInfo);
+    pImage->pvImage    = ModInfo.mi_base;
+    pImage->idSolMod   = idMod;
+    pImage->pSolModCtl = pModCtl;
+
+    mod_release_mod(pImage->pSolModCtl);
+    LogRel(("supdrvOSLdrOpen: succeeded for '%s' (mi_base=%p mi_base=%#x), id=%d ctl=%p\n",
+            pszFilename, ModInfo.mi_base, ModInfo.mi_size, idMod, pModCtl));
+    return VINF_SUCCESS;
+}
+
+
+int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, void *pv, const uint8_t *pbImageBits)
+{
+    NOREF(pDevExt); NOREF(pImage); NOREF(pv); NOREF(pbImageBits);
+    if (kobj_addrcheck(pImage->pSolModCtl->mod_mp, pv))
+        return VERR_INVALID_PARAMETER;
+    return VINF_SUCCESS;
+}
+
+
+int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits)
+{
+    /*
+     * Comparing is very very difficult since text and data may be allocated
+     * separately.
+     */
+    size_t cbCompare = RT_MIN(pImage->cbImageBits, 64);
+    if (memcmp(pImage->pvImage, pbImageBits, cbCompare))
+    {
+        LogRel(("Image mismatch: %s\n", pImage->szName));
+        LogRel(("Native: %.*Rhxs\n", cbCompare, pImage->pvImage));
+        LogRel(("SUPLib: %.*Rhxs\n", cbCompare, pbImageBits));
+        return VERR_LDR_MISMATCH_NATIVE;
+    }
+
+
+    /*
+     * Get the symbol addresses.
+     */
+    int rc;
+    modctl_t *pModCtl = mod_hold_by_id(pImage->idSolMod);
+    if (pModCtl && pModCtl == pImage->pSolModCtl)
+    {
+        uint32_t iSym = pImage->cSymbols;
+        while (iSym-- > 0)
+        {
+            const char *pszSymbol = &pImage->pachStrTab[pImage->paSymbols[iSym].offName];
+            uintptr_t uValue = modlookup_by_modctl(pImage->pSolModCtl, pszSymbol);
+            if (!uValue)
+            {
+                LogRel(("supdrvOSLdrLoad on %s failed to resolve the exported symbol: '%s'\n", pImage->szName, pszSymbol));
+                break;
+            }
+            uintptr_t offSymbol = uValue - (uintptr_t)pImage->pvImage;
+            pImage->paSymbols[iSym].offSymbol = offSymbol;
+            if (pImage->paSymbols[iSym].offSymbol != (int32_t)offSymbol)
+            {
+                LogRel(("supdrvOSLdrLoad on %s symbol out of range: %p (%s) \n", pImage->szName, offSymbol, pszSymbol));
+                break;
+            }
+        }
+
+        rc = iSym == UINT32_MAX ? VINF_SUCCESS : VERR_LDR_GENERAL_FAILURE;
+        mod_release_mod(pImage->pSolModCtl);
+    }
+    else
+    {
+        LogRel(("mod_hold_by_id failed in supdrvOSLdrLoad on %s: %p\n", pImage->szName, pModCtl));
+        rc = VERR_LDR_MISMATCH_NATIVE;
+    }
+    return rc;
+}
+
+
+void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+# if 1
+    pImage->pSolModCtl->mod_loadflags &= ~MOD_NOUNLOAD;
+    int rc = modunload(pImage->idSolMod);
+    if (rc)
+        LogRel(("modunload(%u (%s)) failed: %d\n", pImage->idSolMod, pImage->szName, rc));
+# else
+    kobj_unload_module(pImage->pSolModCtl);
+# endif
+    pImage->pSolModCtl = NULL;
+    pImage->idSolMod   = NULL;
+}
+
+#else /* !VBOX_WITH_NATIVE_SOLARIS_LOADING */
+
+int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename)
+{
     NOREF(pDevExt); NOREF(pImage); NOREF(pszFilename);
     return VERR_NOT_SUPPORTED;
 }
@@ -920,6 +1069,8 @@ void VBOXCALL   supdrvOSLdrUnload(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
     NOREF(pDevExt); NOREF(pImage);
 }
+
+#endif /* !VBOX_WITH_NATIVE_SOLARIS_LOADING */
 
 
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)

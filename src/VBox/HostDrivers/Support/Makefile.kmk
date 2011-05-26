@@ -445,6 +445,9 @@ vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_R
 ifdef VBOX_WITH_NETFLT
  vboxdrv_DEFS        += VBOX_WITH_NETFLT
 endif
+ifdef VBOX_WITH_NATIVE_SOLARIS_LOADING
+ vboxdrv_DEFS        += VBOX_WITH_NATIVE_SOLARIS_LOADING
+endif
 vboxdrv_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)

@@ -298,6 +298,12 @@ typedef struct SUPDRVLDRIMAGE
     /** Lock object. */
     RTR0MEMOBJ                      hMemLock;
 #endif
+#if defined(RT_OS_SOLARIS) && defined(VBOX_WITH_NATIVE_SOLARIS_LOADING)
+    /** The Solaris module ID. */
+    int                             idSolMod;
+    /** Pointer to the module control structure. */
+    struct modctl                  *pSolModCtl;
+#endif
     /** Whether it's loaded by the native loader or not. */
     bool                            fNative;
     /** Image name. */

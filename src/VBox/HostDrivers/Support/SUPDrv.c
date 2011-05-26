@@ -4276,16 +4276,18 @@ static int supdrvIOCtl_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessi
 
     /*
      * Search the symbol strings.
+     *
+     * Note! The int32_t is for native loading on solaris where the data
+     *       and text segments are in very different places.
      */
     pchStrings = pImage->pachStrTab;
     paSyms     = pImage->paSymbols;
     for (i = 0; i < pImage->cSymbols; i++)
     {
-        if (    paSyms[i].offSymbol < pImage->cbImageBits /* paranoia */
-            &&  paSyms[i].offName + cbSymbol <= pImage->cbStrTab
+        if (    paSyms[i].offName + cbSymbol <= pImage->cbStrTab
             &&  !memcmp(pchStrings + paSyms[i].offName, pReq->u.In.szSymbol, cbSymbol))
         {
-            pvSymbol = (uint8_t *)pImage->pvImage + paSyms[i].offSymbol;
+            pvSymbol = (uint8_t *)pImage->pvImage + (int32_t)paSyms[i].offSymbol;
             rc = VINF_SUCCESS;
             break;
         }
@@ -4365,14 +4367,13 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
             PCSUPLDRSYM paSyms     = pImage->paSymbols;
             for (i = 0; i < pImage->cSymbols; i++)
             {
-                if (    paSyms[i].offSymbol < pImage->cbImageBits /* paranoia */
-                    &&  paSyms[i].offName + cbSymbol <= pImage->cbStrTab
+                if (    paSyms[i].offName + cbSymbol <= pImage->cbStrTab
                     &&  !memcmp(pchStrings + paSyms[i].offName, pszSymbol, cbSymbol))
                 {
                     /*
                      * Found it! Calc the symbol address and add a reference to the module.
                      */
-                    pReq->u.Out.pfnSymbol = (PFNRT)((uint8_t *)pImage->pvImage + paSyms[i].offSymbol);
+                    pReq->u.Out.pfnSymbol = (PFNRT)((uint8_t *)pImage->pvImage + (int32_t)paSyms[i].offSymbol);
                     rc = supdrvLdrAddUsage(pSession, pImage);
                     break;
                 }
