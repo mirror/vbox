@@ -991,6 +991,8 @@ void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
      * will still work as it should. */
     if (!(maFramebuffers[0].fDisabled))
     {
+        x1 = (int32_t)maFramebuffers[0].xOrigin;
+        y1 = (int32_t)maFramebuffers[0].yOrigin;
         x2 = mpDrv->IConnector.cx + (int32_t)maFramebuffers[0].xOrigin;
         y2 = mpDrv->IConnector.cy + (int32_t)maFramebuffers[0].yOrigin;
     }
