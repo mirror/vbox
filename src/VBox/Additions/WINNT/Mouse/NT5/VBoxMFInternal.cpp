@@ -42,11 +42,13 @@ typedef struct _VBoxGlobalContext
     PKTHREAD pThread;
     volatile PVBOXMOUSE_DEVEXT pCurrentDevExt;
     LIST_ENTRY DevExtList;
+    volatile bool fIsNewProtEnabled;
     MOUSE_INPUT_DATA LastReportedData;
 } VBoxGlobalContext;
 
 static VBoxGlobalContext g_ctx = {};
 
+/* Guest Device Communication API */
 NTSTATUS VBoxGdcInit()
 {
     UNICODE_STRING UniName;
@@ -206,7 +208,17 @@ static VOID vboxMouseEventPollerThread(PVOID pvContext)
     PsTerminateSystemThread(STATUS_SUCCESS);
 }
 
-static NTSTATUS vboxNewProtInit(PVBOXMOUSE_DEVEXT pCurrentDevExt)
+static BOOLEAN vboxNewProtIsInitialized()
+{
+    return !!g_ctx.pThread;
+}
+
+static BOOLEAN vboxNewProtIsStarted()
+{
+    return (BOOLEAN)ASMAtomicReadBool(&g_ctx.fIsNewProtEnabled);
+}
+
+NTSTATUS VBoxNewProtInit()
 {
     NTSTATUS Status = VBoxGdcInit();
     if (NT_SUCCESS(Status))
@@ -214,44 +226,32 @@ static NTSTATUS vboxNewProtInit(PVBOXMOUSE_DEVEXT pCurrentDevExt)
         KeInitializeSpinLock(&g_ctx.SyncLock);
         KeInitializeEvent(&g_ctx.TerminateEvent, NotificationEvent, FALSE);
         KeInitializeEvent(&g_ctx.MouseEvent, SynchronizationEvent, FALSE);
+        InitializeListHead(&g_ctx.DevExtList);
+        /* we assume the new prot data in g_ctx is zero-initialized (see g_ctx definition) */
 
-        Status = VBoxGdcSetMouseNotifyEvent(&g_ctx.MouseEvent);
+        Status = vboxCreateSystemThread(&g_ctx.pThread, vboxMouseEventPollerThread, NULL);
         if (NT_SUCCESS(Status))
         {
-            Status = vboxCreateSystemThread(&g_ctx.pThread, vboxMouseEventPollerThread, NULL);
-            if (NT_SUCCESS(Status))
-            {
-                g_ctx.pCurrentDevExt = pCurrentDevExt;
-                return STATUS_SUCCESS;
-            }
-            g_ctx.pThread = NULL;
-            NTSTATUS tmpStatus = VBoxGdcSetMouseNotifyEvent(NULL);
-            Assert(NT_SUCCESS(tmpStatus));
+            return STATUS_SUCCESS;
         }
+        g_ctx.pThread = NULL;
     }
 
     return Status;
 }
 
-static BOOLEAN vboxNewProtIsSupported()
+NTSTATUS VBoxNewProtTerm()
 {
-    return !!g_ctx.pThread;
-}
+    Assert(IsListEmpty(&g_ctx.DevExtList));
+    Assert(!vboxNewProtIsStarted());
+    if (!vboxNewProtIsInitialized())
+        return STATUS_SUCCESS;
 
-static NTSTATUS vboxNewProtTerm()
-{
     KeSetEvent(&g_ctx.TerminateEvent, 0, FALSE);
     NTSTATUS Status = KeWaitForSingleObject(g_ctx.pThread, Executive, KernelMode, FALSE, NULL);
     if (!NT_SUCCESS(Status))
     {
         WARN(("KeWaitForSingleObject failed, Status (0x%x)", Status));
-        return Status;
-    }
-
-    Status = VBoxGdcSetMouseNotifyEvent(NULL);
-    if (!NT_SUCCESS(Status))
-    {
-        WARN(("VBoxGdcSetMouseNotifyEvent failed, Status (0x%x)", Status));
         return Status;
     }
 
@@ -261,10 +261,101 @@ static NTSTATUS vboxNewProtTerm()
     return Status;
 }
 
-static NTSTATUS vboxNewProtSetCurrentDevExt(PVBOXMOUSE_DEVEXT pCurrentDevExt)
+static NTSTATUS vboxNewProtDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
 {
-    ASMAtomicWritePtrVoid((void * volatile *)&g_ctx.pCurrentDevExt, pCurrentDevExt);
-    return STATUS_SUCCESS;
+    if (!vboxNewProtIsInitialized())
+        return STATUS_UNSUCCESSFUL;
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    KIRQL Irql;
+    BOOLEAN fDoEventRegister = FALSE;
+    KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
+    InsertHeadList(&g_ctx.DevExtList, &pDevExt->ListEntry);
+    if (!g_ctx.pCurrentDevExt)
+    {
+        ASMAtomicWritePtr(&g_ctx.pCurrentDevExt, pDevExt);
+        /* ensure the object is not deleted while it is being used by a poller thread */
+        ObReferenceObject(pDevExt->pdoSelf);
+        fDoEventRegister = TRUE;
+    }
+    KeReleaseSpinLock(&g_ctx.SyncLock, Irql);
+
+    if (fDoEventRegister)
+    {
+        /* to ensure we do not concur with vboxNewProtDeviceRemoved cleaning the event,
+         * do it in a loop until the cauuent state of fIsNewProtEnabled is false,
+         * setting one and the same event multiple times will not hutr  */
+        do
+        {
+            Status = VBoxGdcSetMouseNotifyEvent(&g_ctx.MouseEvent);
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("VBoxGdcSetMouseNotifyEvent failed, Status (0x%x)", Status));
+                break;
+            }
+        } while (ASMAtomicCmpXchgBool(&g_ctx.fIsNewProtEnabled, true, false));
+
+        if (NT_SUCCESS(Status))
+        {
+            /* signal the event to ensure we did not miss anything */
+            KeSetEvent(&g_ctx.MouseEvent, 0, FALSE);
+            Status = STATUS_SUCCESS;
+        }
+    }
+#ifdef DEBUG_misha
+    else
+    {
+        Assert(g_ctx.fIsNewProtEnabled);
+    }
+#endif
+
+    return Status;
+}
+
+#define PVBOXMOUSE_DEVEXT_FROM_LE(_pLe) ( (PVBOXMOUSE_DEVEXT)(((uint8_t*)(_pLe)) - RT_OFFSETOF(VBOXMOUSE_DEVEXT, ListEntry)) )
+
+static NTSTATUS vboxNewProtDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
+{
+    if (!vboxNewProtIsInitialized())
+        return STATUS_UNSUCCESSFUL;
+
+    KIRQL Irql;
+    NTSTATUS Status = STATUS_SUCCESS;
+    BOOLEAN fDoEventUnregister = FALSE;
+    KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
+    RemoveEntryList(&pDevExt->ListEntry);
+    if (g_ctx.pCurrentDevExt == pDevExt)
+    {
+        ObDereferenceObject(pDevExt->pdoSelf);
+        g_ctx.pCurrentDevExt = NULL;
+        for (PLIST_ENTRY pCur = g_ctx.DevExtList.Flink; pCur != &g_ctx.DevExtList; pCur = pCur->Flink)
+        {
+            PVBOXMOUSE_DEVEXT pNewCurDevExt = PVBOXMOUSE_DEVEXT_FROM_LE(pCur);
+            ASMAtomicWritePtr(&g_ctx.pCurrentDevExt, pNewCurDevExt);
+            /* ensure the object is not deleted while it is being used by a poller thread */
+            ObReferenceObject(pNewCurDevExt->pdoSelf);
+            break;
+        }
+    }
+
+    fDoEventUnregister = IsListEmpty(&g_ctx.DevExtList);
+    KeReleaseSpinLock(&g_ctx.SyncLock, Irql);
+
+    if (fDoEventUnregister)
+    {
+        if (vboxNewProtIsStarted())
+        {
+            Status = VBoxGdcSetMouseNotifyEvent(NULL);
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("VBoxGdcSetMouseNotifyEvent failed, Status (0x%x)", Status));
+            }
+
+            ASMAtomicWriteBool(&g_ctx.fIsNewProtEnabled, false);
+        }
+    }
+
+    return Status;
 }
 
 VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDataStart, PMOUSE_INPUT_DATA InputDataEnd, PULONG  InputDataConsumed)
@@ -288,7 +379,7 @@ VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDa
                     pData->LastX = pDevExt->pSCReq->pointerXPos;
                     pData->LastY = pDevExt->pSCReq->pointerYPos;
                     pData->Flags = MOUSE_MOVE_ABSOLUTE;
-                    if (vboxNewProtIsSupported())
+                    if (vboxNewProtIsStarted())
                         pData->Flags |= MOUSE_VIRTUAL_DESKTOP;
                     pData++;
                 }
@@ -352,10 +443,10 @@ VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
                 InterlockedExchange (&g_ctx.fVBGLInitFailed, TRUE);
                 WARN(("VBGL init failed with rc=%#x", rc));
             }
-
-            vboxNewProtInit(pDevExt);
         }
     }
+
+    vboxNewProtDeviceAdded(pDevExt);
 
     if (!vboxIsHostMouseFound())
     {
@@ -453,7 +544,7 @@ VOID VBoxInformHost(PVBOXMOUSE_DEVEXT pDevExt)
         if (RT_SUCCESS(rc))
         {
             req->mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
-            if (vboxNewProtIsSupported())
+            if (vboxNewProtIsStarted())
                 req->mouseFeatures |= VMMDEV_MOUSE_NEW_PROTOCOL;
 
             req->pointerXPos = 0;
@@ -542,10 +633,10 @@ VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
 
     LONG callCnt = InterlockedDecrement(&g_ctx.cDevicesStarted);
 
+    vboxNewProtDeviceRemoved(pDevExt);
+
     if (callCnt == 0)
     {
-        vboxNewProtTerm();
-
         if (vboxIsVBGLInited())
         {
             /* Set the flag to prevent reinitializing of the VBGL. */

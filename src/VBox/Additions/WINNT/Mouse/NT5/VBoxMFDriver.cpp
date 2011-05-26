@@ -50,6 +50,12 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
     DriverObject->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = VBoxIrpInternalIOCTL;
     DriverObject->MajorFunction[IRP_MJ_PNP] = VBoxIrpPnP;
 
+    NTSTATUS tmpStatus = VBoxNewProtInit();
+    if (!NT_SUCCESS(tmpStatus))
+    {
+        WARN(("VBoxNewProtInit failed Status (0x%x)", tmpStatus));
+    }
+
     LOGF_LEAVE();
     return STATUS_SUCCESS;
 }
@@ -59,6 +65,13 @@ VOID VBoxDrvUnload(IN PDRIVER_OBJECT Driver)
     NOREF(Driver);
     PAGED_CODE();
     LOGF_ENTER();
+
+    NTSTATUS tmpStatus = VBoxNewProtTerm();
+    if (!NT_SUCCESS(tmpStatus))
+    {
+        WARN(("VBoxNewProtTerm failed Status (0x%x)", tmpStatus));
+    }
+
 
     RTR0Term();
 }
