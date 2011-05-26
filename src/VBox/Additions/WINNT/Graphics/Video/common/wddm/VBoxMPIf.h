@@ -457,6 +457,13 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
             return 32;
         case D3DDDIFMT_S8_LOCKABLE:
             return 8;
+        case D3DDDIFMT_DXT1:
+            return 4;
+        case D3DDDIFMT_DXT2:
+        case D3DDDIFMT_DXT3:
+        case D3DDDIFMT_DXT4:
+        case D3DDDIFMT_DXT5:
+            return 8;
         default:
             AssertBreakpoint();
             return 0;

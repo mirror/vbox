@@ -1379,6 +1379,7 @@ HGLRC (WINAPI *pwglGetCurrentContext)(void) DECLSPEC_HIDDEN;
 HDC (WINAPI *pwglGetCurrentDC)(void) DECLSPEC_HIDDEN;
 PROC (WINAPI *pwglGetProcAddress)(LPCSTR) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglMakeCurrent)(HDC, HGLRC) DECLSPEC_HIDDEN;
+BOOL (WINAPI *pwglSwapLayerBuffers)(HDC) DECLSPEC_HIDDEN;
 BOOL (WINAPI *pwglShareLists)(HGLRC, HGLRC) DECLSPEC_HIDDEN;
 
 #define GL_FUNCS_GEN \
@@ -1725,7 +1726,8 @@ BOOL (WINAPI *pwglShareLists)(HGLRC, HGLRC) DECLSPEC_HIDDEN;
     USE_WGL_FUNC(wglGetCurrentDC) \
     USE_WGL_FUNC(wglGetProcAddress) \
     USE_WGL_FUNC(wglMakeCurrent) \
-    USE_WGL_FUNC(wglShareLists)
+    USE_WGL_FUNC(wglShareLists) \
+    USE_WGL_FUNC(wglSwapLayerBuffers)
 
 /* OpenGL extensions. */
 typedef enum wined3d_gl_extension

@@ -291,8 +291,7 @@ BOOL APIENTRY DrvSwapLayerBuffers(HDC hdc, UINT fuPlanes)
 {
     if (fuPlanes == 1)
     {
-        DrvSwapBuffers(hdc);
-        return 1;
+        return DrvSwapBuffers(hdc);
     }
     else
     {

@@ -4950,6 +4950,22 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
         {
             PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
             CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
+
+            /*@fixme: Those formats are actually blocks of 4x4 pixels,
+             * for some reason we're getting pSurf->SysMemPitch as if took 4x1 column from this block,
+             * which leads us to having 4x times bigger pitch than actual line takes.
+             * Simply trying to read here provided pointer 
+             * at (byte*)pSurf->pSysMem + pSurf->pSurf->SysMemPitch*pSurf->Height - 1 causes access violation.
+             */
+            if (pResource->Format == D3DDDIFMT_DXT1
+                || pResource->Format == D3DDDIFMT_DXT2
+                || pResource->Format == D3DDDIFMT_DXT3
+                || pResource->Format == D3DDDIFMT_DXT4
+                || pResource->Format == D3DDDIFMT_DXT5)
+            {
+                *((UINT*)&pSurf->SysMemPitch) = pSurf->SysMemPitch >> 2;
+            }
+
             pAllocation->hAllocation = NULL;
             pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
             pAllocation->iAlloc = i;
