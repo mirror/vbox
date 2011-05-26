@@ -809,12 +809,12 @@ NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
     switch (uCmd)
     {
-        case VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_EVENT:
+        case VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_CALLBACK:
         {
             PVOID pvBuf = pStack->Parameters.Others.Argument1;
             size_t cbData = (size_t)pStack->Parameters.Others.Argument2;
             fProcessed = true;
-            if (cbData != sizeof (PKEVENT))
+            if (cbData != sizeof(VBoxGuestMouseSetNotifyCallback))
             {
                 AssertFailed();
                 Status = STATUS_INVALID_PARAMETER;
@@ -822,9 +822,11 @@ NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             }
 
             KIRQL OldIrql;
+            VBoxGuestMouseSetNotifyCallback *pInfo = (VBoxGuestMouseSetNotifyCallback*)pvBuf;
             /* we need a lock here to avoid concurrency with the set event functionality */
             KeAcquireSpinLock(&pDevExt->win.s.MouseEventAccessLock, &OldIrql);
-            pDevExt->win.s.pMouseEvent =  (PKEVENT)pvBuf;
+            pDevExt->win.s.pfnMouseNotify =  pInfo->pfnNotify;
+            pDevExt->win.s.pvMouseNotify =  pInfo->pvNotify;
             KeReleaseSpinLock(&pDevExt->win.s.MouseEventAccessLock, OldIrql);
 
             Status = STATUS_SUCCESS;
@@ -939,10 +941,9 @@ void vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj,
         /* we need a lock here to avoid concurrency with the set event ioctl handler thread,
          * i.e. to prevent the event from destroyed while we're using it */
         KeAcquireSpinLockAtDpcLevel(&pDevExt->win.s.MouseEventAccessLock);
-        PKEVENT pEvent = pDevExt->win.s.pMouseEvent;
-        if (pEvent)
+        if (pDevExt->win.s.pfnMouseNotify)
         {
-            KeSetEvent(pEvent, 0, FALSE);
+            pDevExt->win.s.pfnMouseNotify(pDevExt->win.s.pvMouseNotify);
         }
         KeReleaseSpinLockFromDpcLevel(&pDevExt->win.s.MouseEventAccessLock);
     }
