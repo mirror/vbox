@@ -1,0 +1,159 @@
+# $Id$
+## @file
+# VBox - rdesktop with VRDP enhancements sub-makefile.
+#
+
+#
+# Copyright (C) 2006-2010 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+# Globals
+VBOX_PATH_RDESKTOP_SRC := $(PATH_SUB_CURRENT)
+VBOX_PATH_DEVICES_USB  := $(PATH_ROOT)/src/VBox/Devices/USB
+VBOX_PATH_USB_LIB      := $(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB
+VBOX_PATH_MAIN_LINUX   := $(PATH_ROOT)/src/VBox/Main/src-server/linux
+VBOX_PATH_MAIN_INCLUDE := $(PATH_ROOT)/src/VBox/Main/include
+VBOX_RDESKTOP_SRC_SUBDIR = rdesktop-1.7.0-vrdp
+
+#
+# The rdesktop-vrdp program.
+#
+PROGRAMS += rdesktop-vrdp
+rdesktop-vrdp_TEMPLATE = VBOXR3NPEXE
+rdesktop-vrdp_SDKS = VBOX_OPENSSL
+rdesktop-vrdp_DEFS = \
+	PACKAGE_NAME=\"rdesktop-vrdp\" PACKAGE_TARNAME=\"rdesktop-vrdp\" PACKAGE_VERSION=\"1.7.0\" \
+	PACKAGE_STRING=\"rdesktop\ 1.7.0\" PACKAGE_BUGREPORT=\"\" STDC_HEADERS=1 L_ENDIAN=1 \
+	HAVE_SYS_TYPES_H=1 HAVE_SYS_STAT_H=1 HAVE_STDLIB_H=1 HAVE_STRING_H=1 HAVE_MEMORY_H=1 \
+	HAVE_STRINGS_H=1 HAVE_INTTYPES_H=1 HAVE_STDINT_H=1 HAVE_UNISTD_H=1 HAVE_SYS_SELECT_H=1 \
+	HAVE_LOCALE_H=1 HAVE_LANGINFO_H=1 HAVE_ICONV_H=1 \
+	EGD_SOCKET=\"/var/run/egd-pool\" WITH_RDPSND=1 HAVE_DIRENT_H=1 \
+	HAVE_ICONV=1 HAVE_SYS_STATVFS_H=1 \
+	HAVE_SYS_PARAM_H=1 HAVE_SYS_MOUNT_H=1 HAVE_STRUCT_STATVFS_F_NAMEMAX=1 \
+	KEYMAP_PATH=$(if $(findstring RTPATH_APP_PRIVATE,$(DEFS)),RTPATH_APP_PRIVATE,\"/opt/VirtualBox\")\"/rdesktop-vrdp-keymaps\" \
+	RDESKTOP=1
+
+rdesktop-vrdp_DEFS.linux = \
+	HAVE_MNTENT_H=1 HAVE_SETMNTENT=1 STAT_STATVFS=1 HAVE_SYS_VFS_H=1 HAVE_STRUCT_STATFS_F_NAMELEN=1 \
+	ICONV_CONST= RDPSND_OSS=1 WITH_RDPUSB=1 HAVE_SYS_STATFS_H=1
+# Solaris 10 doesn't have dirfd(), and as thus we go for the low tech solution.
+rdesktop-vrdp_DEFS.linux += \
+	HAVE_DIRFD=1 HAVE_DECL_DIRFD=1 VBOX_USB_WITH_SYSFS=1
+ifdef VBOX_WITH_LINUX_COMPILER_H
+ rdesktop-vrdp_DEFS.linux += VBOX_WITH_LINUX_COMPILER_H
+endif
+# @todo once rdp proxy is available on Solaris, add WITH_RDPUSB=1
+rdesktop-vrdp_DEFS.solaris = \
+	HAVE_SYS_FILIO_H=1 RDPSND_SUN=1 HAVE_ICONV_H=1 ICONV_CONST=const STAT_STATVFS64=1 _FILE_OFFSET_BITS=64 \
+	DIR_FD_MEMBER_NAME=dd_fd HAVE_SYS_VFS_H=1 HAVE_SYS_STATFS_H=1
+rdesktop-vrdp_DEFS.freebsd = \
+	RDPSND_OSS=1 HAVE_ICONV_H=1 ICONV_CONST=const HAVE_SYS_STATVFS_H=1 _FILE_OFFSET_BITS=64 HAVE_DIRFD=1
+
+rdesktop-vrdp_SOURCES = \
+	tcp.c \
+	iso.c \
+	mcs.c \
+	secure.c \
+	licence.c \
+	rdp.c \
+	orders.c \
+	bitmap.c \
+	cache.c \
+	rdp5.c \
+	channels.c \
+	rdpdr.c \
+	serial.c \
+	printer.c \
+	disk.c \
+	parallel.c \
+	printercache.c \
+	mppc.c \
+	pstcache.c \
+	lspci.c \
+	seamless.c \
+	ssl.c \
+	rdesktop.c \
+	xwin.c \
+	xkeymap.c \
+	ewmhints.c \
+	xclip.c \
+	cliprdr.c \
+	rdpsnd.c \
+	rdpsnd_dsp.c
+rdesktop-vrdp_SOURCES.linux = \
+	rdpsnd_oss.c \
+	vrdp/rdpusb.c \
+	$(VBOX_PATH_DEVICES_USB)/linux/USBProxyDevice-linux.cpp \
+	$(VBOX_PATH_MAIN_LINUX)/USBGetDevices.cpp \
+	$(VBOX_PATH_USB_LIB)/USBLib.cpp
+rdesktop-vrdp_INCS += \
+	$(VBOX_PATH_RDESKTOP_SRC) \
+	$(VBOX_PATH_RDESKTOP_SRC)/vrdp \
+	$(VBOX_PATH_DEVICES_USB) \
+	$(VBOX_PATH_MAIN_INCLUDE) \
+	$(PATH_ROOT)/include/VBox
+## @todo implement usb proxy for Solaris
+rdesktop-vrdp_SOURCES.solaris = \
+	rdpsnd_sun.c
+rdesktop-vrdp_SOURCES.freebsd = \
+	rdpsnd_oss.c
+rdesktop-vrdp_LIBPATH = \
+	/usr/lib \
+	$(VBOX_LIBPATH_X11)
+rdesktop-vrdp_LIBS = \
+	X11 \
+	$(LIB_RUNTIME)
+rdesktop-vrdp_LIBS.solaris = \
+	nsl
+
+#
+# The keymaps.
+#
+INSTALLS += rdesktop-vrdp-keymaps
+rdesktop-vrdp-keymaps_INST    = $(INST_BIN)rdesktop-vrdp-keymaps/
+rdesktop-vrdp-keymaps_MODE    = 644
+rdesktop-vrdp-keymaps_SOURCES = $(wildcard $(VBOX_PATH_RDESKTOP_SRC)/keymaps/*)
+
+
+#
+# The source tarball (further down).
+#
+## @todo change this to an INSTALLS target.
+OTHERS += $(PATH_BIN)/rdesktop-vrdp.tar.gz
+OTHER_CLEAN += $(OTHERS)
+
+INSTALLS += rdesktop-bin
+rdesktop-bin_INST    = obj/rdesktop-src/$(VBOX_RDESKTOP_SRC_SUBDIR)/
+rdesktop-bin_MODE    = a+rx,u+w
+rdesktop-bin_SOURCES = \
+	configure \
+	config.sub \
+	config.guess \
+	bootstrap \
+	install-sh
+
+INSTALLS += rdesktop-nonbin
+rdesktop-nonbin_INST    = obj/rdesktop-src/$(VBOX_RDESKTOP_SRC_SUBDIR)/
+rdesktop-nonbin_MODE    = a+r,u+w
+include $(PATH_SUB_CURRENT)/files_rdesktop-vrdp
+
+$(PATH_BIN)/rdesktop-vrdp.tar.gz: \
+		$$(rdesktop-bin_1_TARGET) \
+		$$(rdesktop-nonbin_1_TARGET)
+	$(call MSG_TOOL,tar/gzip,,$@)
+	$(QUIET)cd $(PATH_INS)/obj/rdesktop-src/ && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR)/ | gzip - > $@
+
+
+include $(KBUILD_PATH)/subfooter.kmk
+
