@@ -1534,9 +1534,9 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
   <sect1 id="vboxballoonctrl">
     <title>Memory Ballooning Service</title>
 
-    <para>Starting at VirtualBox 4.0.8 a new host executable called <computeroutput>VBoxBalloonCtrl</computeroutput> is
+    <para>Starting with VirtualBox 4.0.8 a new host executable called <computeroutput>VBoxBalloonCtrl</computeroutput> is
     available to automatically take care of a VM's configured memory balloon (see <xref linkend="guestadd-balloon" />
-    for an introduction to memory ballooning). This especially is useful for server environments where VMs may dynamically
+    for an introduction to memory ballooning). This is especially useful for server environments where VMs may dynamically
     require more or less memory during runtime.</para>
 
     <para>VBoxBalloonCtrl periodically checks a VM's current memory balloon and its free guest RAM and automatically adjusts
