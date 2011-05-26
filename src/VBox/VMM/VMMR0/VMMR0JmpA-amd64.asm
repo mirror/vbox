@@ -31,9 +31,6 @@
 %define STACK_PADDING   0eeeeeeeeeeeeeeeeh
 
 
-; For vmmR0LoggerWrapper. (The other architecture(s) use(s) C99 variadic macros.)
-extern NAME(RTLogLogger)
-
 
 BEGINCODE
 
