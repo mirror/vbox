@@ -118,8 +118,8 @@ typedef struct VBOXGUESTDEVEXTWIN
 
 
     KSPIN_LOCK MouseEventAccessLock;
-    /* event to be signalled on mouse event arrival from host */
-    PKEVENT pMouseEvent;
+    PFNVBOXMOUSENOTIFYCB pfnMouseNotify;
+    void *pvMouseNotify;
 } VBOXGUESTDEVEXTWIN, *PVBOXGUESTDEVEXTWIN;
 
 #define VBOXGUEST_UPDATE_DEVSTATE(_pDevExt, _newDevState) do {    \
