@@ -361,8 +361,15 @@ BOOL WINAPI wglUseFontOutlinesW_prox( HDC hdc, DWORD first, DWORD count, DWORD l
 
 BOOL WINAPI wglSwapLayerBuffers_prox( HDC hdc, UINT planes )
 {
-    crWarning( "wglSwapLayerBuffers: unsupported" );
-    return 0;
+    if (planes == WGL_SWAP_MAIN_PLANE)
+    {
+        return wglSwapBuffers_prox(hdc);
+    }
+    else
+    {
+        crWarning( "wglSwapLayerBuffers: unsupported" );
+        return 0;
+    }
 }
 
 BOOL WINAPI wglChoosePixelFormatEXT_prox

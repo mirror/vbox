@@ -558,7 +558,7 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
 
     if (array->a[VERT_ATTRIB_POS].enabled)
     {
-        crPackVertexAttrib(array, 0, index);
+        crPackVertexAttrib(array, VERT_ATTRIB_POS, index);
     }
     else if (array->v.enabled)
     {

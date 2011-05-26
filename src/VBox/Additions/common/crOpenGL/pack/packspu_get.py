@@ -114,10 +114,17 @@ for func_name in keys:
 #ifdef CR_ARB_texture_cube_map
         || pname == GL_TEXTURE_BINDING_CUBE_MAP_ARB
 #endif
+#ifdef CR_ARB_vertex_program
+        || pname == GL_MAX_VERTEX_ATTRIBS_ARB
+#endif
         )
         {
 #ifdef DEBUG
-            if (!crPackIsPixelStoreParm(pname))
+            if (!crPackIsPixelStoreParm(pname)
+#ifdef CR_ARB_vertex_program
+                && (pname!=GL_MAX_VERTEX_ATTRIBS_ARB)
+#endif
+               )
             {
                 %s localparams;
                 localparams = (%s) crAlloc(__numValues(pname) * sizeof(*localparams));

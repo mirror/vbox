@@ -45,7 +45,7 @@ static const char * const debug_classes[] = { "fixme", "err", "warn", "trace" };
 
 #define MAX_DEBUG_OPTIONS 256
 
-static unsigned char default_flags = (1 << __WINE_DBCL_ERR) | (1 << __WINE_DBCL_FIXME);
+static unsigned char default_flags = (1 << __WINE_DBCL_ERR) | (1 << __WINE_DBCL_FIXME) | (1 << __WINE_DBCL_WARN);
 static int nb_debug_options = -1;
 static struct __wine_debug_channel debug_options[MAX_DEBUG_OPTIONS];
 
@@ -394,7 +394,19 @@ static const char *default_dbgstr_wn( const WCHAR *str, int n )
 /* default implementation of wine_dbg_vprintf */
 static int default_dbg_vprintf( const char *format, va_list args )
 {
-    return vfprintf( stderr, format, args );
+#ifdef DEBUG_leo
+    static FILE *output=NULL;
+    static int first_time = 1;
+
+    if (first_time)
+    {   
+        first_time = 0;
+        output = fopen( "winelog.txt", "w" );
+    }
+
+    if (output) vfprintf( output, format, args );
+#endif
+    return vfprintf( stdout, format, args );
 }
 
 
@@ -405,7 +417,7 @@ static int default_dbg_vlog( enum __wine_debug_class cls, struct __wine_debug_ch
     int ret = 0;
 
     if (cls < sizeof(debug_classes)/sizeof(debug_classes[0]))
-        ret += wine_dbg_printf( "%s:%s:%s ", debug_classes[cls], channel->name, func );
+        ret += wine_dbg_printf( "%s:[%#x]:%s:%s ", debug_classes[cls], GetCurrentThreadId(), channel->name, func );
     if (format)
         ret += funcs.dbg_vprintf( format, args );
     return ret;

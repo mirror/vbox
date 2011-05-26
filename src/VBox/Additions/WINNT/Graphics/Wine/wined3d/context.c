@@ -733,7 +733,7 @@ static BOOL context_set_pixel_format(const struct wined3d_gl_info *gl_info, HDC 
     return TRUE;
 }
 
-static void context_update_window(struct wined3d_context *context
+void context_update_window(struct wined3d_context *context
 #ifdef VBOX_WITH_WDDM
         , IWineD3DSwapChainImpl *swapchain
 #endif
@@ -760,6 +760,18 @@ static void context_update_window(struct wined3d_context *context
     else context->valid = 1;
 
 #ifdef VBOX_WITH_WDDM
+# ifdef DEBUG
+    {
+        HWND wnd = WindowFromDC(swapchain->hDC);
+        if (wnd != swapchain->win_handle)
+        {
+            ERR("Lost swapchain dc %p for window %p.\n", swapchain->hDC, swapchain->win_handle);
+            swapchain->hDC = GetDC(swapchain->win_handle);
+            Assert(swapchain->hDC && (WindowFromDC(swapchain->hDC)==swapchain->win_handle));
+        }
+    }
+# endif
+
     context->win_handle = swapchain->win_handle;
     context->currentSwapchain = swapchain;
     context->hdc = swapchain->hDC;

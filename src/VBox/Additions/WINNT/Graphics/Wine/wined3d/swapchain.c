@@ -368,7 +368,33 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
 #else
     if (This->num_contexts > 1) wglFinish();
 #endif
+
+#if defined(VBOX_WITH_WDDM) && defined(DEBUG)
+    {
+        HWND wnd = WindowFromDC(context->hdc);
+        Assert(context->currentSwapchain && context->win_handle==swapchain->win_handle);
+        Assert(wnd==context->win_handle);
+        Assert(IsWindow(context->win_handle));
+
+        if (wnd != context->win_handle)
+        {
+            extern void context_update_window(struct wined3d_context *context, IWineD3DSwapChainImpl *swapchain);
+
+            context->valid = 0;
+            Assert(context->currentSwapchain == This);
+            context_update_window(context, context->currentSwapchain);
+        }
+    }
+#endif
+
+#ifdef VBOX_WITH_WDDM
+    /* We're directly using wglMakeCurrent calls skipping GDI layer, which causes GDI SwapBuffers to fail trying to
+     * call glFinish, which doesn't have any context set. So we use wglSwapLayerBuffers directly as well.
+     */
+    pwglSwapLayerBuffers(context->hdc, WGL_SWAP_MAIN_PLANE);
+#else
     SwapBuffers(context->hdc); /* TODO: cycle through the swapchain buffers */
+#endif
 
     TRACE("SwapBuffers called, Starting new frame\n");
     /* FPS support */

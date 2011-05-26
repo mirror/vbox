@@ -24,7 +24,7 @@
 
 /* generic debugging facilities & extra data checks */
 # define VBOXWDDMDISP_DEBUG
-# ifdef DEBUG_misha
+# if defined(DEBUG_misha) || defined(DEBUG_leo)
 /* for some reason when debugging with VirtualKD, user-mode DbgPrint's are discarded
  * the workaround so far is to pass the log info to the kernel driver and DbgPrint'ed from there,
  * which is enabled by this define */

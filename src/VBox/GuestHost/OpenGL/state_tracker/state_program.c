@@ -1594,7 +1594,7 @@ void STATE_APIENTRY crStateDisableVertexAttribArrayARB(GLuint index)
 
     if (index >= g->limits.maxVertexProgramAttribs) {
         crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
-                                 "glEnableVertexAttribArrayARB(index)");
+                                 "glDisableVertexAttribArrayARB(index)");
         return;
     }
     c->array.a[index].enabled = GL_FALSE;
