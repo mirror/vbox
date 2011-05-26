@@ -19,6 +19,10 @@
 #ifndef VBOXMOUSELOG_H
 #define VBOXMOUSELOG_H
 
+#ifdef DEBUG_misha
+#include <iprt/assert.h>
+#endif
+
 #define VBOX_MOUSE_LOG_NAME "VBoxMouse"
 
 /* Uncomment to show file/line info in the log */
@@ -43,12 +47,19 @@
         _logger((VBOX_MOUSE_LOG_SUFFIX_FMT  VBOX_MOUSE_LOG_SUFFIX_PARMS));  \
     } while (0)
 
+#ifdef DEBUG_misha
+# define BREAK_WARN() AssertFailed()
+#else
+# define BREAK_WARN() do {} while(0)
+#endif
+
 #define WARN(_a)                                                                  \
     do                                                                            \
     {                                                                             \
         Log((VBOX_MOUSE_LOG_PREFIX_FMT"WARNING! ", VBOX_MOUSE_LOG_PREFIX_PARMS)); \
         Log(_a);                                                                  \
         Log((VBOX_MOUSE_LOG_SUFFIX_FMT VBOX_MOUSE_LOG_SUFFIX_PARMS));             \
+        BREAK_WARN(); \
     } while (0)
 
 #define LOG(_a) _LOGMSG(Log, _a)

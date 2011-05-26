@@ -115,6 +115,11 @@ typedef struct VBOXGUESTDEVEXTWIN
     /** Pre-allocated kernel session data. This is needed
       * for handling kernel IOCtls. */
     PVBOXGUESTSESSION pKernelSession;
+
+
+    KSPIN_LOCK MouseEventAccessLock;
+    /* event to be signalled on mouse event arrival from host */
+    PKEVENT pMouseEvent;
 } VBOXGUESTDEVEXTWIN, *PVBOXGUESTDEVEXTWIN;
 
 #define VBOXGUEST_UPDATE_DEVSTATE(_pDevExt, _newDevState) do {    \

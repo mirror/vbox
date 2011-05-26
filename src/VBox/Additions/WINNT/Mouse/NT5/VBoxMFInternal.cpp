@@ -18,6 +18,15 @@
 
 #include "VBoxMF.h"
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/VBoxGuest.h>
+#include <iprt/assert.h>
+#include <iprt/asm.h>
+
+typedef struct VBOXGDC
+{
+    PDEVICE_OBJECT pDo;
+    PFILE_OBJECT pFo;
+} VBOXGDC, *PVBOXGDC;
 
 typedef struct _VBoxGlobalContext
 {
@@ -26,9 +35,280 @@ typedef struct _VBoxGlobalContext
     volatile LONG fVBGLInitFailed;
     volatile LONG fHostInformed;
     volatile LONG fHostMouseFound;
+    VBOXGDC Gdc;
+    KSPIN_LOCK SyncLock;
+    KEVENT TerminateEvent;
+    KEVENT MouseEvent;
+    PKTHREAD pThread;
+    volatile PVBOXMOUSE_DEVEXT pCurrentDevExt;
+    LIST_ENTRY DevExtList;
+    MOUSE_INPUT_DATA LastReportedData;
 } VBoxGlobalContext;
 
-static VBoxGlobalContext g_ctx = {0, FALSE, FALSE, FALSE, FALSE};
+static VBoxGlobalContext g_ctx = {};
+
+NTSTATUS VBoxGdcInit()
+{
+    UNICODE_STRING UniName;
+    RtlInitUnicodeString(&UniName, VBOXGUEST_DEVICE_NAME_NT);
+    NTSTATUS Status = IoGetDeviceObjectPointer(&UniName, FILE_ALL_ACCESS, &g_ctx.Gdc.pFo, &g_ctx.Gdc.pDo);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("IoGetDeviceObjectPointer failed Status(0x%x)", Status));
+        memset(&g_ctx.Gdc, 0, sizeof (g_ctx.Gdc));
+    }
+    return Status;
+}
+
+BOOLEAN VBoxGdcIsInitialized()
+{
+    return !!g_ctx.Gdc.pDo;
+}
+
+NTSTATUS VBoxGdcTerm()
+{
+    if (!g_ctx.Gdc.pFo)
+        return STATUS_SUCCESS;
+    /* this will dereference device object as well */
+    ObDereferenceObject(g_ctx.Gdc.pFo);
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS vboxGdcSubmitAsync(ULONG uCtl, PVOID pvBuffer, SIZE_T cbBuffer, PKEVENT pEvent, PIO_STATUS_BLOCK pIoStatus)
+{
+    NTSTATUS Status;
+    PIRP pIrp;
+    KIRQL Irql = KeGetCurrentIrql();
+    Assert(Irql == PASSIVE_LEVEL);
+
+    pIrp = IoBuildDeviceIoControlRequest(uCtl, g_ctx.Gdc.pDo, NULL, 0, NULL, 0, TRUE, pEvent, pIoStatus);
+    if (!pIrp)
+    {
+        WARN(("IoBuildDeviceIoControlRequest failed!!\n"));
+        pIoStatus->Status = STATUS_INSUFFICIENT_RESOURCES;
+        pIoStatus->Information = 0;
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    PIO_STACK_LOCATION pSl = IoGetNextIrpStackLocation(pIrp);
+    pSl->Parameters.Others.Argument1 = (PVOID)pvBuffer;
+    pSl->Parameters.Others.Argument2 = (PVOID)cbBuffer;
+    Status = IoCallDriver(g_ctx.Gdc.pDo, pIrp);
+
+    return Status;
+}
+
+static NTSTATUS vboxGdcSubmit(ULONG uCtl, PVOID pvBuffer, SIZE_T cbBuffer)
+{
+    IO_STATUS_BLOCK IoStatus = {0};
+    KEVENT Event;
+    NTSTATUS Status;
+
+    KeInitializeEvent(&Event, NotificationEvent, FALSE);
+
+    Status = vboxGdcSubmitAsync(uCtl, pvBuffer, cbBuffer, &Event, &IoStatus);
+    if (Status == STATUS_PENDING)
+    {
+        KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
+        Status = IoStatus.Status;
+    }
+
+    return Status;
+}
+
+/* overwrites the previously set one, can be NULL to clear the event */
+NTSTATUS VBoxGdcSetMouseNotifyEvent(PKEVENT pEvent)
+{
+    if (!VBoxGdcIsInitialized())
+    {
+        WARN(("Guest Device Communication not initialized"));
+        return STATUS_UNSUCCESSFUL;
+    }
+
+    NTSTATUS Status = vboxGdcSubmit(VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_EVENT, pEvent, sizeof (pEvent));
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxGdcSubmit failed Status(0x%x)", Status));
+    }
+    return Status;
+}
+
+/**
+ * helper function used for system thread creation
+ */
+static NTSTATUS vboxCreateSystemThread(PKTHREAD *ppThread, PKSTART_ROUTINE pfnStartRoutine, PVOID pvStartContext)
+{
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
+
+    InitializeObjectAttributes(&ObjectAttributes, NULL, OBJ_KERNEL_HANDLE, NULL, NULL);
+
+    HANDLE hThread;
+    NTSTATUS Status = PsCreateSystemThread(&hThread, THREAD_ALL_ACCESS, &ObjectAttributes, NULL, NULL, (PKSTART_ROUTINE)pfnStartRoutine, pvStartContext);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        Status = ObReferenceObjectByHandle(hThread, THREAD_ALL_ACCESS, NULL, KernelMode, (PVOID*)ppThread, NULL);
+        Assert(Status == STATUS_SUCCESS);
+        ZwClose(hThread);
+        if (Status == STATUS_SUCCESS)
+        {
+            return STATUS_SUCCESS;
+        }
+
+        /* @todo: how would we fail in this case ?*/
+    }
+    return Status;
+}
+
+static VOID vboxMouseEventPollerThread(PVOID pvContext)
+{
+    PKEVENT apEvents[] = {&g_ctx.MouseEvent, &g_ctx.TerminateEvent};
+    NTSTATUS Status;
+    while (1)
+    {
+        Status = KeWaitForMultipleObjects(RT_ELEMENTS(apEvents), (PVOID*)apEvents,
+                WaitAny, Executive, KernelMode, FALSE /* BOOLEAN  Alertable */,
+                NULL /* PLARGE_INTEGER Timeout */,
+                NULL /* PKWAIT_BLOCK WaitBlockArray */
+                );
+        Assert(NT_SUCCESS(Status));
+
+        if (Status != STATUS_WAIT_0)
+        {
+            /* terminate event */
+            Assert(Status == STATUS_WAIT_1);
+            break;
+        }
+
+        ULONG InputDataConsumed = 0;
+        PVBOXMOUSE_DEVEXT pDevExt = (PVBOXMOUSE_DEVEXT)ASMAtomicUoReadPtr((void * volatile *)&g_ctx.pCurrentDevExt);
+        if (pDevExt)
+        {
+#define VBOXMOUSE_POLLERTAG 'PMBV'
+            Status = IoAcquireRemoveLock(&pDevExt->RemoveLock, pDevExt);
+            if (NT_SUCCESS(Status))
+            {
+                VBoxDrvNotifyServiceCB(pDevExt, &g_ctx.LastReportedData, &g_ctx.LastReportedData + 1, &InputDataConsumed);
+                IoReleaseRemoveLock(&pDevExt->RemoveLock, pDevExt);
+            }
+            else
+            {
+                WARN(("IoAcquireRemoveLock failed, Status (0x%x)", Status));
+            }
+        }
+        else
+        {
+            WARN(("no current pDevExt specified"));
+        }
+    }
+
+    PsTerminateSystemThread(STATUS_SUCCESS);
+}
+
+static NTSTATUS vboxNewProtInit(PVBOXMOUSE_DEVEXT pCurrentDevExt)
+{
+    NTSTATUS Status = VBoxGdcInit();
+    if (NT_SUCCESS(Status))
+    {
+        KeInitializeSpinLock(&g_ctx.SyncLock);
+        KeInitializeEvent(&g_ctx.TerminateEvent, NotificationEvent, FALSE);
+        KeInitializeEvent(&g_ctx.MouseEvent, SynchronizationEvent, FALSE);
+
+        Status = VBoxGdcSetMouseNotifyEvent(&g_ctx.MouseEvent);
+        if (NT_SUCCESS(Status))
+        {
+            Status = vboxCreateSystemThread(&g_ctx.pThread, vboxMouseEventPollerThread, NULL);
+            if (NT_SUCCESS(Status))
+            {
+                g_ctx.pCurrentDevExt = pCurrentDevExt;
+                return STATUS_SUCCESS;
+            }
+            g_ctx.pThread = NULL;
+            NTSTATUS tmpStatus = VBoxGdcSetMouseNotifyEvent(NULL);
+            Assert(NT_SUCCESS(tmpStatus));
+        }
+    }
+
+    return Status;
+}
+
+static BOOLEAN vboxNewProtIsSupported()
+{
+    return !!g_ctx.pThread;
+}
+
+static NTSTATUS vboxNewProtTerm()
+{
+    KeSetEvent(&g_ctx.TerminateEvent, 0, FALSE);
+    NTSTATUS Status = KeWaitForSingleObject(g_ctx.pThread, Executive, KernelMode, FALSE, NULL);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("KeWaitForSingleObject failed, Status (0x%x)", Status));
+        return Status;
+    }
+
+    Status = VBoxGdcSetMouseNotifyEvent(NULL);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("VBoxGdcSetMouseNotifyEvent failed, Status (0x%x)", Status));
+        return Status;
+    }
+
+    ObDereferenceObject(g_ctx.pThread);
+    g_ctx.pThread = NULL;
+
+    return Status;
+}
+
+static NTSTATUS vboxNewProtSetCurrentDevExt(PVBOXMOUSE_DEVEXT pCurrentDevExt)
+{
+    ASMAtomicWritePtrVoid((void * volatile *)&g_ctx.pCurrentDevExt, pCurrentDevExt);
+    return STATUS_SUCCESS;
+}
+
+VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDataStart, PMOUSE_INPUT_DATA InputDataEnd, PULONG  InputDataConsumed)
+{
+    KIRQL Irql;
+    /* we need to avoid concurrency between the poller thread and our ServiceCB.
+     * this is perhaps not the best way of doing things, but the most easiest to avoid concurrency
+     * and to ensure the pfnServiceCB is invoked at DISPATCH_LEVEL */
+    KeAcquireSpinLock(&g_ctx.SyncLock, &Irql);
+    if (pDevExt->pSCReq)
+    {
+        int rc = VbglGRPerform(&pDevExt->pSCReq->header);
+
+        if (RT_SUCCESS(rc))
+        {
+            if (pDevExt->pSCReq->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
+            {
+                PMOUSE_INPUT_DATA pData = InputDataStart;
+                while (pData<InputDataEnd)
+                {
+                    pData->LastX = pDevExt->pSCReq->pointerXPos;
+                    pData->LastY = pDevExt->pSCReq->pointerYPos;
+                    pData->Flags = MOUSE_MOVE_ABSOLUTE;
+                    if (vboxNewProtIsSupported())
+                        pData->Flags |= MOUSE_VIRTUAL_DESKTOP;
+                    pData++;
+                }
+
+                /* get the last data & cache it */
+                --pData;
+                g_ctx.LastReportedData.UnitId = pData->UnitId;
+            }
+        }
+        else
+        {
+            WARN(("VbglGRPerform failed with rc=%#x", rc));
+        }
+    }
+
+    /* Call original callback */
+    pDevExt->OriginalConnectData.pfnServiceCB(pDevExt->OriginalConnectData.pDO,
+                                              InputDataStart, InputDataEnd, InputDataConsumed);
+    KeReleaseSpinLock(&g_ctx.SyncLock, Irql);
+}
 
 static BOOLEAN vboxIsVBGLInited(void)
 {
@@ -72,6 +352,8 @@ VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt)
                 InterlockedExchange (&g_ctx.fVBGLInitFailed, TRUE);
                 WARN(("VBGL init failed with rc=%#x", rc));
             }
+
+            vboxNewProtInit(pDevExt);
         }
     }
 
@@ -171,6 +453,9 @@ VOID VBoxInformHost(PVBOXMOUSE_DEVEXT pDevExt)
         if (RT_SUCCESS(rc))
         {
             req->mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
+            if (vboxNewProtIsSupported())
+                req->mouseFeatures |= VMMDEV_MOUSE_NEW_PROTOCOL;
+
             req->pointerXPos = 0;
             req->pointerYPos = 0;
 
@@ -259,6 +544,8 @@ VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt)
 
     if (callCnt == 0)
     {
+        vboxNewProtTerm();
+
         if (vboxIsVBGLInited())
         {
             /* Set the flag to prevent reinitializing of the VBGL. */

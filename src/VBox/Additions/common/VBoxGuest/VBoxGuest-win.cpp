@@ -50,6 +50,7 @@ static void     vboxguestwinUnload(PDRIVER_OBJECT pDrvObj);
 static NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
@@ -87,7 +88,6 @@ RT_C_DECLS_END
 
 /** The detected Windows version. */
 winVersion_t g_winVersion;
-
 
 /**
  * Driver entry point.
@@ -165,7 +165,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
         pDrvObj->MajorFunction[IRP_MJ_CREATE]                  = vboxguestwinCreate;
         pDrvObj->MajorFunction[IRP_MJ_CLOSE]                   = vboxguestwinClose;
         pDrvObj->MajorFunction[IRP_MJ_DEVICE_CONTROL]          = vboxguestwinIOCtl;
-        pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = vboxguestwinIOCtl;
+        pDrvObj->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = vboxguestwinInternalIOCtl;
         pDrvObj->MajorFunction[IRP_MJ_SHUTDOWN]                = vboxguestwinShutdown;
         pDrvObj->MajorFunction[IRP_MJ_READ]                    = vboxguestwinNotSupportedStub;
         pDrvObj->MajorFunction[IRP_MJ_WRITE]                   = vboxguestwinNotSupportedStub;
@@ -220,6 +220,8 @@ static NTSTATUS vboxguestwinAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDe
              */
             pDevExt = (PVBOXGUESTDEVEXT)pDeviceObject->DeviceExtension;
             RtlZeroMemory(pDevExt, sizeof(VBOXGUESTDEVEXT));
+
+            KeInitializeSpinLock(&pDevExt->win.s.MouseEventAccessLock);
 
             pDevExt->win.s.pDeviceObject = pDeviceObject;
             pDevExt->win.s.prevDevState = STOPPED;
@@ -794,6 +796,58 @@ NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     return Status;
 }
 
+/* we do not want to allow some IOCTLs to be originated from user mode,
+ * this is why we have a separate vboxguestwinInternalIOCtl for internal IOCTLs */
+NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
+    PIO_STACK_LOCATION pStack = IoGetCurrentIrpStackLocation(pIrp);
+    unsigned int uCmd = (unsigned int)pStack->Parameters.DeviceIoControl.IoControlCode;
+    BOOLEAN fProcessed = FALSE;
+    unsigned Info = 0;
+
+    switch (uCmd)
+    {
+        case VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_EVENT:
+        {
+            PVOID pvBuf = pStack->Parameters.Others.Argument1;
+            size_t cbData = (size_t)pStack->Parameters.Others.Argument2;
+            fProcessed = true;
+            if (cbData != sizeof (PKEVENT))
+            {
+                AssertFailed();
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            KIRQL OldIrql;
+            /* we need a lock here to avoid concurrency with the set event functionality */
+            KeAcquireSpinLock(&pDevExt->win.s.MouseEventAccessLock, &OldIrql);
+            pDevExt->win.s.pMouseEvent =  (PKEVENT)pvBuf;
+            KeReleaseSpinLock(&pDevExt->win.s.MouseEventAccessLock, OldIrql);
+
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        default:
+            break;
+    }
+
+
+    if (fProcessed)
+    {
+        pIrp->IoStatus.Status = Status;
+        pIrp->IoStatus.Information = Info;
+
+        IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+        return Status;
+    }
+
+    return vboxguestwinIOCtl(pDevObj, pIrp);
+}
+
 
 /**
  * IRP_MJ_SYSTEM_CONTROL handler.
@@ -878,6 +932,21 @@ void vboxguestwinDpcHandler(PKDPC pDPC, PDEVICE_OBJECT pDevObj,
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
     Log(("VBoxGuest::vboxguestwinGuestDpcHandler: pDevExt=0x%p\n", pDevExt));
 
+    /* test & reset the counter */
+    if (ASMAtomicXchgU32(&pDevExt->u32MousePosChangedSeq, 0))
+    {
+        Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
+        /* we need a lock here to avoid concurrency with the set event ioctl handler thread,
+         * i.e. to prevent the event from destroyed while we're using it */
+        KeAcquireSpinLockAtDpcLevel(&pDevExt->win.s.MouseEventAccessLock);
+        PKEVENT pEvent = pDevExt->win.s.pMouseEvent;
+        if (pEvent)
+        {
+            KeSetEvent(pEvent, 0, FALSE);
+        }
+        KeReleaseSpinLockFromDpcLevel(&pDevExt->win.s.MouseEventAccessLock);
+    }
+
     /* Process the wake-up list we were asked by the scheduling a DPC
      *  in vboxguestwinIsrHandler(). */
     VBoxGuestWaitDoWakeUps(pDevExt);
@@ -909,7 +978,7 @@ BOOLEAN vboxguestwinIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
     {
         Log(("VBoxGuest::vboxguestwinGuestIsrHandler: IRQ was taken! pInterrupt = 0x%p, pDevExt = 0x%p\n",
              pInterrupt, pDevExt));
-        if (!RTListIsEmpty(&pDevExt->WakeUpList))
+        if (ASMAtomicUoReadU32(&pDevExt->u32MousePosChangedSeq) || !RTListIsEmpty(&pDevExt->WakeUpList))
         {
             Log(("VBoxGuest::vboxguestwinGuestIsrHandler: Requesting DPC ...\n"));
             IoRequestDpc(pDevExt->win.s.pDeviceObject, pDevExt->win.s.pCurrentIrp, NULL);
@@ -920,14 +989,16 @@ BOOLEAN vboxguestwinIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
 
 
 /*
- * Overridden routine for mouse polling events.  Not
- * used at the moment on Windows.
+ * Overridden routine for mouse polling events.
  *
  * @param pDevExt     Device extension structure.
  */
 void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     NOREF(pDevExt);
+    /* nothing to do here - i.e. since we can not KeSetEvent from ISR level,
+     * we rely on the pDevExt->u32MousePosChangedSeq to be set to a non-zero value on a mouse event
+     * and queue the DPC in our ISR routine in that case doing KeSetEvent from the DPC routine */
 }
 
 
