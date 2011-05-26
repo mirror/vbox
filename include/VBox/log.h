@@ -183,6 +183,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_LWIP,
     /** Video Miniport driver group. */
     LOG_GROUP_DRV_MINIPORT,
+    /** Mouse driver group. */
+    LOG_GROUP_DRV_MOUSE,
     /** Mouse Queue driver group. */
     LOG_GROUP_DRV_MOUSE_QUEUE,
     /** Named Pipe stream driver group. */
@@ -438,6 +440,7 @@ typedef enum LOGGROUP
     "DRV_KBD_QUEUE", \
     "DRV_LWIP",     \
     "DRV_MINIPORT", \
+    "DRV_MOUSE", \
     "DRV_MOUSE_QUEUE", \
     "DRV_NAMEDPIPE", \
     "DRV_NAT",      \
