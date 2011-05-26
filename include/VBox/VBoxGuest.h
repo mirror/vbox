@@ -353,6 +353,11 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 
 #endif /* VBOX_WITH_HGCM */
 
+#ifdef RT_OS_WINDOWS
+# ifdef IN_RING0
+#  define VBOXGUEST_IOCTL_INTERNAL_SET_MOUSE_NOTIFY_EVENT   VBOXGUEST_IOCTL_CODE_(30, sizeof(PKEVENT))
+# endif
+#endif
 
 #ifdef RT_OS_OS2
 

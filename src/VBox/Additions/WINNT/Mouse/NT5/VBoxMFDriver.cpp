@@ -19,6 +19,7 @@
 #include "VBoxMF.h"
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/initterm.h>
+#include <iprt/assert.h>
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text(INIT, DriverEntry)
@@ -62,6 +63,8 @@ VOID VBoxDrvUnload(IN PDRIVER_OBJECT Driver)
     RTR0Term();
 }
 
+#define VBOXUSB_RLTAG 'LRBV'
+
 NTSTATUS VBoxDrvAddDevice(IN PDRIVER_OBJECT Driver, IN PDEVICE_OBJECT PDO)
 {
     NTSTATUS rc;
@@ -81,9 +84,21 @@ NTSTATUS VBoxDrvAddDevice(IN PDRIVER_OBJECT Driver, IN PDEVICE_OBJECT PDO)
     pDevExt = (PVBOXMOUSE_DEVEXT) pDO->DeviceExtension;
     RtlZeroMemory(pDevExt, sizeof(VBOXMOUSE_DEVEXT));
 
+    IoInitializeRemoveLock(&pDevExt->RemoveLock, VBOXUSB_RLTAG, 1, 100);
+
+    rc = IoAcquireRemoveLock(&pDevExt->RemoveLock, pDevExt);
+    if (!NT_SUCCESS(rc))
+    {
+        WARN(("IoAcquireRemoveLock failed with %#x", rc));
+        IoDeleteDevice(pDO);
+        return rc;
+    }
+
     pDOParent = IoAttachDeviceToDeviceStack(pDO, PDO);
     if (!pDOParent)
     {
+        IoReleaseRemoveLockAndWait(&pDevExt->RemoveLock, pDevExt);
+
         WARN(("IoAttachDeviceToDeviceStack failed"));
         IoDeleteDevice(pDO);
         return STATUS_DEVICE_NOT_CONNECTED;
@@ -104,11 +119,9 @@ NTSTATUS VBoxDrvAddDevice(IN PDRIVER_OBJECT Driver, IN PDEVICE_OBJECT PDO)
 
 NTSTATUS VBoxIrpPassthrough(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
-    PIO_STACK_LOCATION pStack;
     PVBOXMOUSE_DEVEXT pDevExt;
     LOGF_ENTER();
 
-    pStack = IoGetCurrentIrpStackLocation(Irp);
     pDevExt = (PVBOXMOUSE_DEVEXT) DeviceObject->DeviceExtension;
 
     IoSkipCurrentIrpStackLocation(Irp);
@@ -126,33 +139,7 @@ VBoxServiceCB(PDEVICE_OBJECT DeviceObject, PMOUSE_INPUT_DATA InputDataStart,
 
     pDevExt = (PVBOXMOUSE_DEVEXT) DeviceObject->DeviceExtension;
 
-    if (pDevExt->pSCReq)
-    {
-        int rc = VbglGRPerform(&pDevExt->pSCReq->header);
-
-        if (RT_SUCCESS(rc))
-        {
-            if (pDevExt->pSCReq->mouseFeatures & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE)
-            {
-                PMOUSE_INPUT_DATA pData = InputDataStart;
-                while (pData<InputDataEnd)
-                {
-                    pData->LastX = pDevExt->pSCReq->pointerXPos;
-                    pData->LastY = pDevExt->pSCReq->pointerYPos;
-                    pData->Flags = MOUSE_MOVE_ABSOLUTE;
-                    pData++;
-                }
-            }
-        }
-        else
-        {
-            WARN(("VbglGRPerform failed with rc=%#x", rc));
-        }
-    }
-
-    /* Call original callback */
-    pDevExt->OriginalConnectData.pfnServiceCB(pDevExt->OriginalConnectData.pDO,
-                                              InputDataStart, InputDataEnd, InputDataConsumed);
+    VBoxDrvNotifyServiceCB(pDevExt, InputDataStart, InputDataEnd, InputDataConsumed);
 
     LOGF_LEAVE();
 }
@@ -218,6 +205,9 @@ NTSTATUS VBoxIrpPnP(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
         case IRP_MN_REMOVE_DEVICE:
         {
             LOGF(("IRP_MN_REMOVE_DEVICE"));
+
+            IoReleaseRemoveLockAndWait(&pDevExt->RemoveLock, pDevExt);
+
             VBoxDeviceRemoved(pDevExt);
 
             Irp->IoStatus.Status = STATUS_SUCCESS;

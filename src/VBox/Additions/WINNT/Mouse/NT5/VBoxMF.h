@@ -55,6 +55,7 @@ typedef struct _VBOXMOUSE_DEVEXT
     INTERNAL_MOUSE_CONNECT_DATA OriginalConnectData; /* Original connect data intercepted in IOCTL_INTERNAL_MOUSE_CONNECT */
     VMMDevReqMouseStatus       *pSCReq;              /* Preallocated request to use in pfnServiceCB */
 
+    IO_REMOVE_LOCK RemoveLock;
 } VBOXMOUSE_DEVEXT, *PVBOXMOUSE_DEVEXT;
 
 /* Interface functions */
@@ -74,5 +75,7 @@ NTSTATUS VBoxIrpPnP(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt);
 VOID VBoxInformHost(PVBOXMOUSE_DEVEXT pDevExt);
 VOID VBoxDeviceRemoved(PVBOXMOUSE_DEVEXT pDevExt);
+
+VOID VBoxDrvNotifyServiceCB(PVBOXMOUSE_DEVEXT pDevExt, PMOUSE_INPUT_DATA InputDataStart, PMOUSE_INPUT_DATA InputDataEnd, PULONG  InputDataConsumed);
 
 #endif /*VBOXMF_H*/
