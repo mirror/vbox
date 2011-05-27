@@ -176,9 +176,6 @@
 /** Pointer to set of free chunks.  */
 typedef struct GMMCHUNKFREESET *PGMMCHUNKFREESET;
 
-/** Pointer to a GMM allocation chunk. */
-typedef struct GMMCHUNK *PGMMCHUNK;
-
 /**
  * The per-page tracking structure employed by the GMM.
  *
@@ -466,30 +463,6 @@ typedef struct GMMCHUNKTLB
 typedef GMMCHUNKTLB *PGMMCHUNKTLB;
 
 
-/** The GMMCHUNK::cFree shift count employed by gmmR0SelectFreeSetList. */
-#define GMM_CHUNK_FREE_SET_SHIFT    4
-/** Index of the list containing completely unused chunks.
- * The code ASSUMES this is the last list. */
-#define GMM_CHUNK_FREE_SET_UNUSED_LIST  (GMM_CHUNK_NUM_PAGES >> GMM_CHUNK_FREE_SET_SHIFT)
-
-
-
-/**
- * A set of free chunks.
- */
-typedef struct GMMCHUNKFREESET
-{
-    /** The number of free pages in the set. */
-    uint64_t            cFreePages;
-    /** The generation ID for the set.  This is incremented whenever
-     *  something is linked or unlinked from this set. */
-    uint64_t            idGeneration;
-    /** Chunks ordered by increasing number of free pages.
-     *  In the final list the chunks are completely unused. */
-    PGMMCHUNK           apLists[GMM_CHUNK_FREE_SET_UNUSED_LIST + 1];
-} GMMCHUNKFREESET;
-
-
 /**
  * The GMM instance data.
  */
@@ -511,7 +484,7 @@ typedef struct GMM
     /** The chunk TLB. */
     GMMCHUNKTLB         ChunkTLB;
     /** The private free set. */
-    GMMCHUNKFREESET     Private;
+    GMMCHUNKFREESET     PrivateX;
     /** The shared free set. */
     GMMCHUNKFREESET     Shared;
 
@@ -716,11 +689,12 @@ static PGMM g_pGMM = NULL;
 *******************************************************************************/
 static DECLCALLBACK(int)     gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGMM);
 static bool                  gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
-DECLINLINE(void)             gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet);
 DECLINLINE(void)             gmmR0UnlinkChunk(PGMMCHUNK pChunk);
+DECLINLINE(void)             gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet);
+DECLINLINE(void)             gmmR0SelectSetAndLinkChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
 static uint32_t              gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uLineNo);
 static bool                  gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSem);
-static void                  gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage);
+static void                  gmmR0FreeSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMMPAGE pPage);
 static int                   gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
 static void                  gmmR0SharedModuleCleanup(PGMM pGMM, PGVM pGVM);
 
@@ -1246,11 +1220,12 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
         /*
          * Free empty chunks.
          */
+        PGMMCHUNKFREESET pPrivateSet = pGMM->fBoundMemoryMode ? &pGVM->gmm.s.Private : &pGMM->PrivateX;
         do
         {
             fRedoFromStart = false;
             iCountDown = 10240;
-            pChunk = pGMM->Private.apLists[GMM_CHUNK_FREE_SET_UNUSED_LIST];
+            pChunk = pPrivateSet->apLists[GMM_CHUNK_FREE_SET_UNUSED_LIST];
             while (pChunk)
             {
                 PGMMCHUNK pNext = pChunk->pFreeNext;
@@ -1258,11 +1233,11 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
                 if (   !pGMM->fBoundMemoryMode
                     || pChunk->hGVM == pGVM->hSelf)
                 {
-                    uint64_t const idGenerationOld = pGMM->Private.idGeneration;
+                    uint64_t const idGenerationOld = pPrivateSet->idGeneration;
                     if (gmmR0FreeChunk(pGMM, pGVM, pChunk, true /*fRelaxedSem*/))
                     {
                         /* We've left the giant mutex, restart? (+1 for our unlink) */
-                        fRedoFromStart = pGMM->Private.idGeneration != idGenerationOld + 1;
+                        fRedoFromStart = pPrivateSet->idGeneration != idGenerationOld + 1;
                         if (fRedoFromStart)
                             break;
                         uLockNanoTS = RTTimeSystemNanoTS();
@@ -1274,9 +1249,9 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
                 pChunk = pNext;
                 if (--iCountDown == 0)
                 {
-                    uint64_t const idGenerationOld = pGMM->Private.idGeneration;
+                    uint64_t const idGenerationOld = pPrivateSet->idGeneration;
                     fRedoFromStart = gmmR0MutexYield(pGMM, &uLockNanoTS)
-                                  && pGMM->Private.idGeneration != idGenerationOld;
+                                  && pPrivateSet->idGeneration != idGenerationOld;
                     if (fRedoFromStart)
                         break;
                     iCountDown = 10240;
@@ -1386,7 +1361,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
             else
                 cShared++;
 
-        gmmR0LinkChunk(pChunk, pChunk->cShared ? &g_pGMM->Shared : &g_pGMM->Private);
+        gmmR0SelectSetAndLinkChunk(pGMM, pGVM, pChunk);
 
         /*
          * Did it add up?
@@ -1419,7 +1394,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
 
             gmmR0UnlinkChunk(pChunk);
             pChunk->cFree = GMM_CHUNK_NUM_PAGES;
-            gmmR0LinkChunk(pChunk, pChunk->cShared ? &g_pGMM->Shared : &g_pGMM->Private);
+            gmmR0SelectSetAndLinkChunk(pGMM, pGVM, pChunk);
         }
     }
 
@@ -1716,8 +1691,8 @@ static uint32_t gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uL
 {
     uint32_t cErrors = 0;
 
-    cErrors += gmmR0SanityCheckSet(pGMM, &pGMM->Private, "private", pszFunction, uLineNo);
-    cErrors += gmmR0SanityCheckSet(pGMM, &pGMM->Shared,  "shared",  pszFunction, uLineNo);
+    cErrors += gmmR0SanityCheckSet(pGMM, &pGMM->PrivateX, "private", pszFunction, uLineNo);
+    cErrors += gmmR0SanityCheckSet(pGMM, &pGMM->Shared,   "shared",  pszFunction, uLineNo);
     /** @todo add more sanity checks. */
 
     return cErrors;
@@ -1878,6 +1853,27 @@ DECLINLINE(void) gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet)
         pSet->idGeneration++;
     }
 }
+
+
+/**
+ * Links the chunk onto the appropriate free list in the specified free set.
+ *
+ * If no free entries, it's not linked into any list.
+ *
+ * @param   pChunk      The allocation chunk.
+ */
+DECLINLINE(void) gmmR0SelectSetAndLinkChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
+{
+    PGMMCHUNKFREESET pSet;
+    if (pGMM->fBoundMemoryMode)
+        pSet = &pGVM->gmm.s.Private;
+    else if (pChunk->cShared)
+        pSet = &pGMM->Shared;
+    else
+        pSet = &pGMM->PrivateX;
+    gmmR0LinkChunk(pChunk, pSet);
+}
+
 
 
 /**
@@ -2095,16 +2091,14 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
         /*
          * Try steal free chunks from the other set first. (Only take 100% free chunks.)
          */
-        PGMMCHUNKFREESET pOtherSet = pSet == &pGMM->Private ? &pGMM->Shared : &pGMM->Private;
+        PGMMCHUNKFREESET pOtherSet = pSet == &pGMM->PrivateX ? &pGMM->Shared : &pGMM->PrivateX;
         while (     pSet->cFreePages < cPages
                &&   pOtherSet->cFreePages >= GMM_CHUNK_NUM_PAGES)
         {
-            PGMMCHUNK pChunk = pOtherSet->apLists[RT_ELEMENTS(pOtherSet->apLists) - 1];
-            while (   pChunk
-                   && pChunk->cFree != GMM_CHUNK_NUM_PAGES)
-                pChunk = pChunk->pFreeNext;
+            PGMMCHUNK pChunk = pOtherSet->apLists[GMM_CHUNK_FREE_SET_UNUSED_LIST];
             if (!pChunk)
                 break;
+            Assert(pChunk->cFree != GMM_CHUNK_NUM_PAGES);
 
             gmmR0UnlinkChunk(pChunk);
             gmmR0LinkChunk(pChunk, pSet);
@@ -2273,7 +2267,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
      * Check if we need to allocate more memory or not.  In bound memory mode this
      * is a bit extra work but it's easier to do it upfront than bailing out later.
      */
-    PGMMCHUNKFREESET pSet = &pGMM->Private;
+    PGMMCHUNKFREESET pSet = pGMM->fBoundMemoryMode ? &pGVM->gmm.s.Private : &pGMM->PrivateX;
     if (pSet->cFreePages < cPages)
         return VERR_GMM_SEED_ME;
 
@@ -2560,9 +2554,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                             pGVM->gmm.s.cSharedPages--;
                             pGVM->gmm.s.Allocated.cBasePages--;
                             if (!--pPage->Shared.cRefs)
-                            {
-                                gmmR0FreeSharedPage(pGMM, paPages[iPage].idSharedPage, pPage);
-                            }
+                                gmmR0FreeSharedPage(pGMM, pGVM, paPages[iPage].idSharedPage, pPage);
                             else
                             {
                                 Assert(pGMM->cDuplicatePages);
@@ -2591,6 +2583,9 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
              * Join paths with GMMR0AllocatePages for the allocation.
              * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
              */
+#if 0
+            rc = gmmR0AllocatePagesNew(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
+#else
             GMMR0ALLOCPAGESTRATEGY Strategy;
             gmmR0AllocatePagesInitStrategy(pGMM, pGVM, &Strategy);
             while (RT_SUCCESS(rc))
@@ -2599,8 +2594,9 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                 if (    rc != VERR_GMM_SEED_ME
                     ||  pGMM->fLegacyAllocationMode)
                     break;
-                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPagesToAlloc, &Strategy);
+                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->PrivateX, cPagesToAlloc, &Strategy);
             }
+#endif
         }
         else
             rc = VERR_WRONG_ORDER;
@@ -2689,7 +2685,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMP
                 if (    rc != VERR_GMM_SEED_ME
                     ||  pGMM->fLegacyAllocationMode)
                     break;
-                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->Private, cPages, &Strategy);
+                rc = gmmR0AllocateMoreChunks(pGMM, pGVM, &pGMM->PrivateX, cPages, &Strategy);
             }
         }
         else
@@ -2798,8 +2794,9 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
         rc = RTR0MemObjAllocPhysEx(&hMemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS, GMM_CHUNK_SIZE);
         if (RT_SUCCESS(rc))
         {
+            PGMMCHUNKFREESET pSet = pGMM->fBoundMemoryMode ? &pGVM->gmm.s.Private : &pGMM->PrivateX;
             PGMMCHUNK pChunk;
-            rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, hMemObj, pGVM->hSelf, GMM_CHUNK_FLAGS_LARGE_PAGE, &pChunk);
+            rc = gmmR0RegisterChunk(pGMM, pSet, hMemObj, pGVM->hSelf, GMM_CHUNK_FLAGS_LARGE_PAGE, &pChunk);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -2825,7 +2822,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
                 pGVM->gmm.s.cPrivatePages        += cPages;
                 pGMM->cAllocatedPages            += cPages;
 
-                gmmR0LinkChunk(pChunk, &pGMM->Private);
+                gmmR0LinkChunk(pChunk, pSet);
                 gmmR0MutexRelease(pGMM);
             }
             else
@@ -3032,11 +3029,12 @@ static bool gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxed
  * The caller does all the statistic decrementing, we do all the incrementing.
  *
  * @param   pGMM        Pointer to the GMM instance data.
+ * @param   pGVM        Pointer to the GVM instance.
  * @param   pChunk      Pointer to the chunk this page belongs to.
  * @param   idPage      The Page ID.
  * @param   pPage       Pointer to the page.
  */
-static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PGMMPAGE pPage)
+static void gmmR0FreePageWorker(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, uint32_t idPage, PGMMPAGE pPage)
 {
     Log3(("F pPage=%p iPage=%#x/%#x u2State=%d iFreeHead=%#x\n",
           pPage, pPage - &pChunk->aPages[0], idPage, pPage->Common.u2State, pChunk->iFreeHead)); NOREF(idPage);
@@ -3060,7 +3058,7 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
     {
         gmmR0UnlinkChunk(pChunk);
         pChunk->cFree++;
-        gmmR0LinkChunk(pChunk, pChunk->cShared ? &pGMM->Shared : &pGMM->Private);
+        gmmR0SelectSetAndLinkChunk(pGMM, pGVM, pChunk);
     }
     else
     {
@@ -3091,10 +3089,11 @@ static void gmmR0FreePageWorker(PGMM pGMM, PGMMCHUNK pChunk, uint32_t idPage, PG
  * Frees a shared page, the page is known to exist and be valid and such.
  *
  * @param   pGMM        Pointer to the GMM instance.
+ * @param   pGVM        Pointer to the GVM instance.
  * @param   idPage      The Page ID
  * @param   pPage       The page structure.
  */
-DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
+DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMMPAGE pPage)
 {
     PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
     Assert(pChunk);
@@ -3107,10 +3106,10 @@ DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
     pChunk->cShared--;
     pGMM->cAllocatedPages--;
     pGMM->cSharedPages--;
-    gmmR0FreePageWorker(pGMM, pChunk, idPage, pPage);
+    gmmR0FreePageWorker(pGMM, pGVM, pChunk, idPage, pPage);
 }
 
-#ifdef VBOX_WITH_PAGE_SHARING
+#ifdef VBOX_WITH_PAGE_SHARING  /** @todo move this away from here, this has nothing to do with the free() code. */
 
 /**
  * Converts a private page to a shared page, the page is known to exist and be valid and such.
@@ -3168,10 +3167,11 @@ DECLINLINE(void) gmmR0UseSharedPage(PGMM pGMM, PGVM pGVM, PGMMPAGE pPage)
  * Frees a private page, the page is known to exist and be valid and such.
  *
  * @param   pGMM        Pointer to the GMM instance.
+ * @param   pGVM        Pointer to the GVM instance.
  * @param   idPage      The Page ID
  * @param   pPage       The page structure.
  */
-DECLINLINE(void) gmmR0FreePrivatePage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage)
+DECLINLINE(void) gmmR0FreePrivatePage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMMPAGE pPage)
 {
     PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
     Assert(pChunk);
@@ -3181,7 +3181,7 @@ DECLINLINE(void) gmmR0FreePrivatePage(PGMM pGMM, uint32_t idPage, PGMMPAGE pPage
 
     pChunk->cPrivate--;
     pGMM->cAllocatedPages--;
-    gmmR0FreePageWorker(pGMM, pChunk, idPage, pPage);
+    gmmR0FreePageWorker(pGMM, pGVM, pChunk, idPage, pPage);
 }
 
 
@@ -3249,7 +3249,7 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
                 {
                     Assert(pGVM->gmm.s.cPrivatePages);
                     pGVM->gmm.s.cPrivatePages--;
-                    gmmR0FreePrivatePage(pGMM, idPage, pPage);
+                    gmmR0FreePrivatePage(pGMM, pGVM, idPage, pPage);
                 }
                 else
                 {
@@ -3265,7 +3265,7 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
                 pGVM->gmm.s.cSharedPages--;
                 Assert(pPage->Shared.cRefs);
                 if (!--pPage->Shared.cRefs)
-                    gmmR0FreeSharedPage(pGMM, idPage, pPage);
+                    gmmR0FreeSharedPage(pGMM, pGVM, idPage, pPage);
                 else
                 {
                     Assert(pGMM->cDuplicatePages);
@@ -4024,7 +4024,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
     rc = RTR0MemObjLockUser(&MemObj, pvR3, GMM_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
-        rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf, 0 /*fChunkFlags*/, NULL);
+        rc = gmmR0RegisterChunk(pGMM, &pGVM->gmm.s.Private, MemObj, pGVM->hSelf, 0 /*fChunkFlags*/, NULL);
         if (RT_SUCCESS(rc))
             gmmR0MutexRelease(pGMM);
         else
