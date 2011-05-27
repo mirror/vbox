@@ -25,7 +25,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS += vditool
   vditool_TEMPLATE = VBOXR3TSTEXE
-  vditool_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
+  vditool_LIBS     = $(LIB_DDU)
   vditool_SOURCES  = vditool.cpp
 endif
 
@@ -34,20 +34,53 @@ endif
 #
 ifdef VBOX_WITH_TESTCASES
  PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable vbox-img tstVDIo
+
  tstVD_TEMPLATE = VBOXR3TSTEXE
+ tstVD_SOURCES = tstVD.cpp
+ tstVD_LIBS = $(LIB_DDU)
+
  tstVD-2_TEMPLATE = VBOXR3TSTEXE
+ tstVD-2_SOURCES  = tstVD-2.cpp
+ tstVD-2_LIBS = $(LIB_DDU)
+
  tstVDCopy_TEMPLATE = VBOXR3TSTEXE
- tstVDSnap_TEMPLATE = VBOXR3TSTEXE
- tstVDShareable_TEMPLATE = VBOXR3TSTEXE
+ tstVDCopy_SOURCES  = tstVDCopy.cpp
+ tstVDCopy_LIBS = $(LIB_DDU)
+
  tstVDIo_TEMPLATE = VBOXR3TSTEXE
+ tstVDIo_SOURCES  = tstVDIo.cpp \
+	VDIoBackendMem.cpp \
+	VDMemDisk.cpp \
+	VDIoRnd.cpp
+ tstVDIo_LIBS = $(LIB_DDU)
+
+ tstVDSetUuid_TEMPLATE = VBOXR3TSTEXE
+ tstVDSetUuid_LIBS = $(LIB_DDU)
+
+ tstVDShareable_TEMPLATE = VBOXR3TSTEXE
+ tstVDShareable_LIBS = $(LIB_DDU)
+ tstVDShareable_SOURCES = tstVDShareable.cpp
+
+ tstVDSnap_TEMPLATE = VBOXR3TSTEXE
+ tstVDSnap_LIBS = $(LIB_DDU)
+ tstVDSnap_SOURCES  = tstVDSnap.cpp
+
+ #
+ # vbox-img - static because it migth be used as at standalone tool.
+ #
  vbox-img_TEMPLATE = VBOXR3STATIC
- tstVD_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
- tstVD-2_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
- tstVDCopy_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
- tstVDSnap_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
- tstVDShareable_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
- tstVDSetUuid_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
- tstVDIo_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
+ vbox-img_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS IN_RT_R3
+ vbox-img_SOURCES = \
+	vbox-img.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VD.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VDI.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VMDK.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VHD.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/DMG.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/Parallels.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/ISCSI.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/RAW.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VCICache.cpp
  vbox-img_LIBS = \
 	$(VBOX_LIB_RUNTIME_STATIC)
  if1of ($(KBUILD_TARGET),os2 win)
@@ -66,29 +99,7 @@ ifdef VBOX_WITH_TESTCASES
  else ifeq ($(KBUILD_TARGET),win)
   vbox-img_SDKS.win = VBOX_NTDLL
  endif
- tstVD_SOURCES  = tstVD.cpp
- tstVD-2_SOURCES  = tstVD-2.cpp
- tstVDCopy_SOURCES  = tstVDCopy.cpp
- tstVDSnap_SOURCES  = tstVDSnap.cpp
- tstVDShareable_SOURCES = tstVDShareable.cpp
 
- vbox-img_SOURCES = \
-	vbox-img.cpp \
-	$(VBOX_PATH_STORAGE_SRC)/VD.cpp \
-	$(VBOX_PATH_STORAGE_SRC)/VDI.cpp \
-	$(VBOX_PATH_STORAGE_SRC)/VMDK.cpp \
-	$(VBOX_PATH_STORAGE_SRC)/VHD.cpp \
-	$(VBOX_PATH_STORAGE_SRC)/DMG.cpp \
-	$(VBOX_PATH_STORAGE_SRC)/Parallels.cpp \
-	$(VBOX_PATH_STORAGE_SRC)/ISCSI.cpp \
-	$(VBOX_PATH_STORAGE_SRC)/RAW.cpp \
-	$(VBOX_PATH_STORAGE_SRC)/VCICache.cpp
- vbox-img_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS IN_RT_R3
-
- tstVDIo_SOURCES  = tstVDIo.cpp \
-	VDIoBackendMem.cpp \
-	VDMemDisk.cpp \
-	VDIoRnd.cpp
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
