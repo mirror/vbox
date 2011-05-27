@@ -63,11 +63,42 @@ typedef struct GMMSHAREDMODULEPERVM
 /** Pointer to a GMMSHAREDMODULEPERVM. */
 typedef GMMSHAREDMODULEPERVM *PGMMSHAREDMODULEPERVM;
 
+
+/** Pointer to a GMM allocation chunk. */
+typedef struct GMMCHUNK *PGMMCHUNK;
+
+
+/** The GMMCHUNK::cFree shift count employed by gmmR0SelectFreeSetList. */
+#define GMM_CHUNK_FREE_SET_SHIFT    4
+/** Index of the list containing completely unused chunks.
+ * The code ASSUMES this is the last list. */
+#define GMM_CHUNK_FREE_SET_UNUSED_LIST  (GMM_CHUNK_NUM_PAGES >> GMM_CHUNK_FREE_SET_SHIFT)
+
+/**
+ * A set of free chunks.
+ */
+typedef struct GMMCHUNKFREESET
+{
+    /** The number of free pages in the set. */
+    uint64_t            cFreePages;
+    /** The generation ID for the set.  This is incremented whenever
+     *  something is linked or unlinked from this set. */
+    uint64_t            idGeneration;
+    /** Chunks ordered by increasing number of free pages.
+     *  In the final list the chunks are completely unused. */
+    PGMMCHUNK           apLists[GMM_CHUNK_FREE_SET_UNUSED_LIST + 1];
+} GMMCHUNKFREESET;
+
+
+
 /**
  * The per-VM GMM data.
  */
 typedef struct GMMPERVM
 {
+    /** Free set for use in bound mode. */
+    GMMCHUNKFREESET     Private;
+
     /** The reservations. */
     GMMVMSIZES          Reserved;
     /** The actual allocations.
