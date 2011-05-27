@@ -1109,6 +1109,88 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
 
 #endif
 
+/**
+ * If the user has just completed a control-alt-del combination then handle
+ * that.
+ * @returns true if handling should stop here, false otherwise
+ */
+bool UIKeyboardHandler::keyEventHandleCAD(uint8_t uScan)
+{
+    /* Check if it's C-A-D and GUI/PassCAD is not true: */
+    if (!m_fPassCAD &&
+        uScan == 0x53 /* Del */ &&
+        ((m_pressedKeys[0x38] & IsKeyPressed) /* Alt */ ||
+         (m_pressedKeys[0x38] & IsExtKeyPressed)) &&
+        ((m_pressedKeys[0x1d] & IsKeyPressed) /* Ctrl */ ||
+         (m_pressedKeys[0x1d] & IsExtKeyPressed)))
+    {
+        /* Use the C-A-D combination as a last resort to get the keyboard and mouse back
+         * to the host when the user forgets the Host Key. Note that it's always possible
+         * to send C-A-D to the guest using the Host+Del combination: */
+        if (uisession()->isRunning() && m_fIsKeyboardCaptured)
+        {
+            releaseKeyboard();
+            if (!uisession()->isMouseSupportsAbsolute() || !uisession()->isMouseIntegrated())
+                machineLogic()->mouseHandler()->releaseMouse();
+        }
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Handle a non-special (C-A-D, pause, print) key press or release
+ * @returns true if handling should stop here, false otherwise
+ */
+bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags, LONG *pCodes, uint *puCodesCount)
+{
+    /* Get host-combo key list: */
+    QSet<int> allHostComboKeys = UIHotKeyCombination::toKeyCodeList(m_globalSettings.hostCombo()).toSet();
+    /* Get the type of key - simple or extended: */
+    uint8_t uWhatPressed = fFlags & KeyExtended ? IsExtKeyPressed : IsKeyPressed;
+
+    /* If some key was pressed or some previously pressed key was released =>
+     * we are updating the list of pressed keys and preparing scancodes: */
+    if ((fFlags & KeyPressed) || (m_pressedKeys[uScan] & uWhatPressed))
+    {
+        /* Check if the guest has the same view on the modifier keys
+         * (NumLock, CapsLock, ScrollLock) as the X server.
+         * If not, send KeyPress events to synchronize the state: */
+        if (fFlags & KeyPressed)
+            fixModifierState(pCodes, puCodesCount);
+
+        /* Prepend 'extended' scancode if needed: */
+        if (fFlags & KeyExtended)
+            pCodes[(*puCodesCount)++] = 0xE0;
+
+        /* Process key-press: */
+        if (fFlags & KeyPressed)
+        {
+            /* Append scancode: */
+            pCodes[(*puCodesCount)++] = uScan;
+            m_pressedKeys[uScan] |= uWhatPressed;
+        }
+        /* Process key-release if that key was pressed before: */
+        else if (m_pressedKeys[uScan] & uWhatPressed)
+        {
+            /* Append scancode: */
+            pCodes[(*puCodesCount)++] = uScan | 0x80;
+            m_pressedKeys[uScan] &= ~uWhatPressed;
+        }
+
+        /* Update keyboard-captured flag: */
+        if (m_fIsKeyboardCaptured)
+            m_pressedKeys[uScan] |= IsKbdCaptured;
+        else
+            m_pressedKeys[uScan] &= ~IsKbdCaptured;
+    }
+    /* Ignore key-release if that key was NOT pressed before,
+     * but only if thats not one of the host-combination keys: */
+    else if (!allHostComboKeys.contains(iKey))
+        return true;
+    return false;
+}
+
 bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScreenId, wchar_t *pUniKey /* = 0 */)
 {
     /* Get host-combo key list: */
@@ -1144,25 +1226,8 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     }
 #endif /* Q_WS_WIN */
 
-    /* Check if it's C-A-D and GUI/PassCAD is not true: */
-    if (!m_fPassCAD &&
-        uScan == 0x53 /* Del */ &&
-        ((m_pressedKeys[0x38] & IsKeyPressed) /* Alt */ ||
-         (m_pressedKeys[0x38] & IsExtKeyPressed)) &&
-        ((m_pressedKeys[0x1d] & IsKeyPressed) /* Ctrl */ ||
-         (m_pressedKeys[0x1d] & IsExtKeyPressed)))
-    {
-        /* Use the C-A-D combination as a last resort to get the keyboard and mouse back
-         * to the host when the user forgets the Host Key. Note that it's always possible
-         * to send C-A-D to the guest using the Host+Del combination: */
-        if (uisession()->isRunning() && m_fIsKeyboardCaptured)
-        {
-            releaseKeyboard();
-            if (!uisession()->isMouseSupportsAbsolute() || !uisession()->isMouseIntegrated())
-                machineLogic()->mouseHandler()->releaseMouse();
-        }
+    if (keyEventHandleCAD(uScan))
         return true;
-    }
 
     /* Preparing the press/release scan-codes array for sending to the guest:
      * 1. if host-combo is NOT pressed, taking into account currently pressed key too,
@@ -1209,50 +1274,8 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         }
         /* Common flags handling: */
         else
-        {
-            /* Get the type of key - simple or extended: */
-            uint8_t uWhatPressed = fFlags & KeyExtended ? IsExtKeyPressed : IsKeyPressed;
-
-            /* If some key was pressed or some previously pressed key was released =>
-             * we are updating the list of pressed keys and preparing scancodes: */
-            if ((fFlags & KeyPressed) || (m_pressedKeys[uScan] & uWhatPressed))
-            {
-                /* Check if the guest has the same view on the modifier keys
-                 * (NumLock, CapsLock, ScrollLock) as the X server.
-                 * If not, send KeyPress events to synchronize the state: */
-                if (fFlags & KeyPressed)
-                    fixModifierState(pCodes, &uCodesCount);
-
-                /* Prepend 'extended' scancode if needed: */
-                if (fFlags & KeyExtended)
-                    pCodes[uCodesCount++] = 0xE0;
-
-                /* Process key-press: */
-                if (fFlags & KeyPressed)
-                {
-                    /* Append scancode: */
-                    pCodes[uCodesCount++] = uScan;
-                    m_pressedKeys[uScan] |= uWhatPressed;
-                }
-                /* Process key-release if that key was pressed before: */
-                else if (m_pressedKeys[uScan] & uWhatPressed)
-                {
-                    /* Append scancode: */
-                    pCodes[uCodesCount++] = uScan | 0x80;
-                    m_pressedKeys[uScan] &= ~uWhatPressed;
-                }
-
-                /* Update keyboard-captured flag: */
-                if (m_fIsKeyboardCaptured)
-                    m_pressedKeys[uScan] |= IsKbdCaptured;
-                else
-                    m_pressedKeys[uScan] &= ~IsKbdCaptured;
-            }
-            /* Ignore key-release if that key was NOT pressed before,
-             * but only if thats not one of the host-combination keys: */
-            else if (!allHostComboKeys.contains(iKey))
+            if (keyEventHandleNormal(iKey, uScan, fFlags, pCodes, &uCodesCount))
                 return true;
-        }
     }
 
     /* Process the host-combo funtionality: */
