@@ -38,7 +38,6 @@
 #include <iprt/asm.h>
 #include "../USBProxyDevice.h"
 #include <VBox/usblib.h>
-//#include "USBLibInternal.h"
 
 
 /*******************************************************************************
@@ -311,12 +310,7 @@ static int usbProxyWinSetConfig(PUSBPROXYDEV pProxyDev, int cfg)
         pProxyDev->fDetached = true;
     }
     else
-    {
-        /* do not use GetLastError() in AssertMsgFailed directly since the "real" err will be overwritten with the
-         * RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); call encapsulated by AssertMsgFailed */
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("lasterr=%d\n", winEr));
-    }
+        AssertMsgFailed(("lasterr=%u\n", GetLastError()));
 
     return 0;
 }
@@ -373,12 +367,7 @@ static int usbProxyWinSetInterface(PUSBPROXYDEV pProxyDev, int ifnum, int settin
         pProxyDev->fDetached = true;
     }
     else
-    {
-        /* do not use GetLastError() in AssertMsgFailed directly since the "real" err will be overwritten with the
-         * RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); call encapsulated by AssertMsgFailed */
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("lasterr=%d\n", winEr));
-    }
+        AssertMsgFailed(("lasterr=%d\n", GetLastError()));
     return 0;
 }
 
@@ -407,12 +396,7 @@ static bool usbProxyWinClearHaltedEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
         pProxyDev->fDetached = true;
     }
     else
-    {
-        /* do not use GetLastError() in AssertMsgFailed directly since the "real" err will be overwritten with the
-         * RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); call encapsulated by AssertMsgFailed */
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("lasterr=%d\n", winEr));
-    }
+        AssertMsgFailed(("lasterr=%d\n", GetLastError()));
     return 0;
 }
 
@@ -443,12 +427,7 @@ static int usbProxyWinAbortEndPt(PUSBPROXYDEV pProxyDev, unsigned int ep)
         pProxyDev->fDetached = true;
     }
     else
-    {
-        /* do not use GetLastError() in AssertMsgFailed directly since the "real" err will be overwritten with the
-         * RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); call encapsulated by AssertMsgFailed */
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("lasterr=%d\n", winEr));
-    }
+        AssertMsgFailed(("lasterr=%d\n", rc));
     return RTErrConvertFromWin32(rc);
 }
 
@@ -634,13 +613,16 @@ static PVUSBURB usbProxyWinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies
 
     /*
      * Wait/poll.
+     *
+     * ASSUMPTIONS:
+     *   1. The usbProxyWinUrbReap can not be run concurrently with each other
+     *      so racing the cQueuedUrbs access/modification can not occur.
+     *   2. The usbProxyWinUrbReap can not be run concurrently with
+     *      usbProxyWinUrbQueue so they can not race the pPriv->paHandles
+     *      access/realloc.
      */
-    PVUSBURB pUrb = NULL;
     unsigned cQueuedUrbs = ASMAtomicReadU32((volatile uint32_t *)&pPriv->cQueuedUrbs);
-
-    /* we assume here
-     * 1. the usbProxyWinUrbReap can not be run concurrently with each other so racing the cQueuedUrbs access/modification can not occur
-     * 2. the usbProxyWinUrbReap can not be run concurrently with usbProxyWinUrbQueue so they can not race the pPriv->paHandles access/realloc */
+    PVUSBURB pUrb = NULL;
     DWORD rc = WaitForMultipleObjects(cQueuedUrbs, pPriv->paHandles, FALSE, cMillies);
     if (rc >= WAIT_OBJECT_0 && rc < WAIT_OBJECT_0 + cQueuedUrbs)
     {
@@ -696,12 +678,7 @@ static PVUSBURB usbProxyWinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies
     }
     else if (   rc == WAIT_FAILED
              || (rc >= WAIT_ABANDONED_0 && rc < WAIT_ABANDONED_0 + cQueuedUrbs))
-    {
-        /* do not use GetLastError() in AssertMsgFailed directly since the "real" err will be overwritten with the
-         * RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); call encapsulated by AssertMsgFailed */
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("USB: WaitForMultipleObjects %d objects failed with rc=%d and last error %d\n", cQueuedUrbs, rc, winEr));
-    }
+        AssertMsgFailed(("USB: WaitForMultipleObjects %d objects failed with rc=%d and last error %d\n", cQueuedUrbs, rc, GetLastError()));
 
     return pUrb;
 }
@@ -822,12 +799,7 @@ static void usbProxyWinUrbCancel(PVUSBURB pUrb)
         pProxyDev->fDetached = true;
     }
     else
-    {
-        /* do not use GetLastError() in AssertMsgFailed directly since the "real" err will be overwritten with the
-         * RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); call encapsulated by AssertMsgFailed */
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("lasterr=%d\n", winEr));
-    }
+        AssertMsgFailed(("lasterr=%d\n", rc));
 }
 
 

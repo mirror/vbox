@@ -123,6 +123,7 @@ SRCS += \
 	RTSemEventMultiWaitNoResume-2-ex-generic.c \
 	RTTimerCreate-generic.c \
 	timer-generic.c \
+	errvars-generic.c \
 	mppresent-generic.c
 
 .PATH:	${.CURDIR}/r0drv

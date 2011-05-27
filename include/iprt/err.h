@@ -540,6 +540,57 @@ DECLINLINE(void)    RTErrInfoClear(PRTERRINFO pErrInfo)
     }
 }
 
+/**
+ * Storage for error variables.
+ *
+ * @remarks Do NOT touch the members!  They are platform specific and what's
+ *          where may change at any time!
+ */
+typedef union RTERRVARS
+{
+    int8_t  ai8Vars[32];
+    int16_t ai16Vars[16];
+    int32_t ai32Vars[8];
+    int64_t ai64Vars[4];
+} RTERRVARS;
+/** Pointer to an error variable storage union.  */
+typedef RTERRVARS *PRTERRVARS;
+/** Pointer to a const error variable storage union.  */
+typedef RTERRVARS const *PCRTERRVARS;
+
+/**
+ * Saves the error variables.
+ *
+ * @returns @a pVars.
+ * @param   pVars       The variable storage union.
+ */
+RTDECL(PRTERRVARS) RTErrVarsSave(PRTERRVARS pVars);
+
+/**
+ * Restores the error variables.
+ *
+ * @param   pVars       The variable storage union.
+ */
+RTDECL(void) RTErrVarsRestore(PCRTERRVARS pVars);
+
+/**
+ * Checks if the first variable set equals the second.
+ *
+ * @returns true if they are equal, false if not.
+ * @param   pVars1      The first variable storage union.
+ * @param   pVars2      The second variable storage union.
+ */
+RTDECL(bool) RTErrVarsAreEqual(PCRTERRVARS pVars1, PCRTERRVARS pVars2);
+
+/**
+ * Checks if the (live) error variables have changed since we saved them.
+ *
+ * @returns @c true if they have changed, @c false if not.
+ * @param   pVars       The saved variables to compare the current state
+ *                      against.
+ */
+RTDECL(bool) RTErrVarsHaveChanged(PCRTERRVARS pVars);
+
 RT_C_DECLS_END
 
 /** @} */

@@ -545,6 +545,7 @@ RuntimeR3_SOURCES.win = \
         r3/win/RTSystemQueryTotalRam-win.cpp \
 	r3/win/alloc-win.cpp \
 	r3/win/dir-win.cpp \
+	r3/win/errvars-win.cpp \
 	r3/win/fileio-win.cpp \
 	r3/win/fs-win.cpp \
 	r3/win/ldrNative-win.cpp \
@@ -610,6 +611,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
+	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/filelock-posix.cpp \
@@ -701,6 +703,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
+	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/fs-posix.cpp \
@@ -759,6 +762,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
+	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/fs-posix.cpp \
@@ -817,6 +821,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
+	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/filelock-posix.cpp \
@@ -873,6 +878,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
+	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/filelock-posix.cpp \
@@ -931,6 +937,7 @@ RuntimeR3L4_INCS          = \
 	$(L4_INCDIR)
 
 RuntimeR3L4_SOURCES = \
+	generic/errvars-generic.cpp \
 	generic/fs-stubs-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
@@ -1133,6 +1140,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	generic/critsect-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
+	generic/errvars-generic.cpp \
 	r3/alloc.cpp \
 	r3/alloc-ef.cpp \
 	r3/fileio.cpp \
@@ -1629,6 +1637,7 @@ RuntimeR0Drv_SOURCES    = \
  	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/errvars-generic.cpp \
 	generic/uuid-generic.cpp \
 	r0drv/alloc-r0drv.cpp \
 	r0drv/initterm-r0drv.cpp \
@@ -1949,6 +1958,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/time/timesup.cpp \
  	gc/initterm-gc.cpp \
  	generic/RTAssertShouldPanic-generic.cpp \
+	generic/errvars-generic.cpp \
  	\
  	$(RuntimeNoCrt_SOURCES)
 

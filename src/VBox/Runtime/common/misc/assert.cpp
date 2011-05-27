@@ -32,6 +32,7 @@
 #include "internal/iprt.h"
 
 #include <iprt/asm.h>
+#include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
@@ -121,6 +122,9 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
      */
     if (!RTAssertAreQuiet())
     {
+        RTERRVARS SavedErrVars;
+        RTErrVarsSave(&SavedErrVars);
+
 #ifdef IN_RING0
 # ifdef IN_GUEST_R0
         RTLogBackdoorPrintf("\n!!Assertion Failed!!\n"
@@ -181,6 +185,8 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
         fflush(stderr);
 # endif
 #endif /* !IN_RING0 */
+
+        RTErrVarsRestore(&SavedErrVars);
     }
 }
 RT_EXPORT_SYMBOL(RTAssertMsg1);
@@ -225,6 +231,9 @@ static void rtAssertMsg2Worker(bool fInitial, const char *pszFormat, va_list va)
      */
     if (!RTAssertAreQuiet())
     {
+        RTERRVARS SavedErrVars;
+        RTErrVarsSave(&SavedErrVars);
+
 #ifdef IN_RING0
 # ifdef IN_GUEST_R0
         va_copy(vaCopy, va);
@@ -273,8 +282,9 @@ static void rtAssertMsg2Worker(bool fInitial, const char *pszFormat, va_list va)
         fflush(stderr);
 # endif
 #endif /* !IN_RING0 */
-    }
 
+        RTErrVarsRestore(&SavedErrVars);
+    }
 }
 
 
