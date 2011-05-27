@@ -59,7 +59,7 @@ else ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  # Build docs only - need just regular R3 runtime.
  #
  LIBRARIES += RuntimeBldProg
- LIBRARIES.solaris += RuntimeR0Stub RuntimeRCStub
+ LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub RuntimeRCStub
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
