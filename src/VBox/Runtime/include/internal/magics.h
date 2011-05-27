@@ -58,6 +58,8 @@
 #define RTFILEAIOREQ_MAGIC              UINT32_C(0x19470921)
 /** The value of RTENVINTERNAL::u32Magic. (Rumiko Takahashi) */
 #define RTENV_MAGIC                     UINT32_C(0x19571010)
+/** The value of RTERRVARS::ai32Vars[0]. (Ryuichi Sakamoto) */
+#define RTERRVARS_MAGIC                 UINT32_C(0x19520117)
 /** Magic number for RTHANDLETABLEINT::u32Magic. (Hitomi Kanehara) */
 #define RTHANDLETABLE_MAGIC             UINT32_C(0x19830808)
 /** Magic number for RTHEAPOFFSETINTERNAL::u32Magic. (Neal Town Stephenson) */
