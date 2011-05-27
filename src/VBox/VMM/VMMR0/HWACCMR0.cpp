@@ -50,7 +50,7 @@ static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser
 static DECLCALLBACK(void) hwaccmR0InitCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static bool               hwaccmR0IsSubjectToVmxPreemptionTimerErratum(void);
 static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser);
-static DECLCALLBACK(void) hwaccmR0CpuCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData);
+static DECLCALLBACK(void) hwaccmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -498,10 +498,10 @@ VMMR0DECL(int) HWACCMR0Init(void)
 
     if (!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
     {
-        rc = RTMpNotificationRegister(hwaccmR0CpuCallback, 0);
+        rc = RTMpNotificationRegister(hwaccmR0MpEventCallback, NULL);
         AssertRC(rc);
 
-        rc = RTPowerNotificationRegister(hwaccmR0PowerCallback, 0);
+        rc = RTPowerNotificationRegister(hwaccmR0PowerCallback, NULL);
         AssertRC(rc);
     }
 
@@ -579,10 +579,8 @@ VMMR0DECL(int) HWACCMR0Term(void)
         if (!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
         {
             /* Doesn't really matter if this fails. */
-            rc = RTMpNotificationDeregister(hwaccmR0CpuCallback, 0);
-            AssertRC(rc);
-            rc = RTPowerNotificationDeregister(hwaccmR0PowerCallback, 0);
-            AssertRC(rc);
+            rc = RTMpNotificationDeregister(hwaccmR0MpEventCallback, NULL);  AssertRC(rc);
+            rc = RTPowerNotificationDeregister(hwaccmR0PowerCallback, NULL); AssertRC(rc);
         }
         else
             rc = VINF_SUCCESS;
@@ -602,7 +600,7 @@ VMMR0DECL(int) HWACCMR0Term(void)
         }
 
         /* Free the per-cpu pages used for VT-x and AMD-V */
-        for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
+        for (unsigned i = 0; i < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo); i++)
         {
             if (HWACCMR0Globals.aCpuInfo[i].pMemObj != NIL_RTR0MEMOBJ)
             {
@@ -734,11 +732,11 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
         else
         {
             /* Allocate one page per cpu for the global vt-x and amd-v pages */
-            for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
+            for (unsigned i = 0; i < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo); i++)
             {
                 Assert(!HWACCMR0Globals.aCpuInfo[i].pMemObj);
 
-                if (RTMpIsCpuPossible(RTMpCpuId()))
+                if (RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(i)))
                 {
                     rc = RTR0MemObjAllocCont(&HWACCMR0Globals.aCpuInfo[i].pMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
                     AssertRC(rc);
@@ -804,8 +802,7 @@ static int hwaccmR0EnableCpu(PVM pVM, RTCPUID idCpu)
     /* Should never happen */
     if (!pCpu->pMemObj)
     {
-        LogRel(("HWACCMR0: hwaccmR0EnableCpu failed idCpu=%d.\n", idCpu));
-        AssertFailed();
+        AssertLogRelMsgFailed(("hwaccmR0EnableCpu failed idCpu=%u.\n", idCpu));
         return VERR_INTERNAL_ERROR;
     }
 
@@ -899,7 +896,7 @@ static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser
  * @param   idCpu               The identifier for the CPU the function is called on.
  * @param   pvData              Opaque data (PVM pointer).
  */
-static DECLCALLBACK(void) hwaccmR0CpuCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData)
+static DECLCALLBACK(void) hwaccmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData)
 {
     /*
      * We only care about uninitializing a CPU that is going offline. When a
