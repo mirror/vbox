@@ -479,7 +479,7 @@ int main()
     GEN_CHECK_OFF(ACPIState, pm1a_en);
     GEN_CHECK_OFF(ACPIState, pm1a_sts);
     GEN_CHECK_OFF(ACPIState, pm1a_ctl);
-    GEN_CHECK_OFF(ACPIState, pm_timer_initial);
+    GEN_CHECK_OFF(ACPIState, u64PmTimerInitial);
     GEN_CHECK_OFF(ACPIState, tsR3);
     GEN_CHECK_OFF(ACPIState, tsR0);
     GEN_CHECK_OFF(ACPIState, tsRC);
