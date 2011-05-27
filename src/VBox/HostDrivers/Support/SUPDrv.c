@@ -4992,36 +4992,36 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
 
 
 /**
- * Helper for finding the CPU index from the CPU Id.
- *
- * @param    pGip               The GIP.
- * @param    idCpu              The CPU ID.
+ * Finds our (@a idCpu) entry, or allocates a new one if not found.
  *
  * @returns Index of the CPU in the cache set.
+ * @param   pGip                The GIP.
+ * @param   idCpu               The CPU ID.
  */
-DECLINLINE(uint32_t) supdrvGipCpuIndexFromCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
+static uint32_t supdrvGipCpuIndexFromCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
 {
-    uint32_t i = 0;
+    uint32_t i, cTries;
 
     /*
-     * Find our entry, or allocate one if not found.
      * ASSUMES that CPU IDs are constant.
      */
     for (i = 0; i < pGip->cCpus; i++)
         if (pGip->aCPUs[i].idCpu == idCpu)
-            break;
+            return i;
 
-    if (i >= pGip->cCpus)
+    cTries = 0;
+    do
+    {
         for (i = 0; i < pGip->cCpus; i++)
         {
             bool fRc;
             ASMAtomicCmpXchgSize(&pGip->aCPUs[i].idCpu, idCpu, NIL_RTCPUID, fRc);
             if (fRc)
-                break;
+                return i;
         }
-
-    AssertRelease(i < pGip->cCpus);
-    return i;
+    } while (cTries++ < 32);
+    AssertReleaseFailed();
+    return i - 1;
 }
 
 
@@ -5055,11 +5055,10 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
         RTCpuSetAddByIndex(&pGip->PresentCpuSet, iCpuSet);
     }
 
-    i = supdrvGipCpuIndexFromCpuId(pGip, idCpu);
-
     /*
      * Update the entry.
      */
+    i = supdrvGipCpuIndexFromCpuId(pGip, idCpu);
     idApic = ASMGetApicId();
     ASMAtomicUoWriteU16(&pGip->aCPUs[i].idApic,  idApic);
     ASMAtomicUoWriteS16(&pGip->aCPUs[i].iCpuSet, (int16_t)iCpuSet);
@@ -5071,6 +5070,7 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     ASMAtomicWriteU16(&pGip->aiCpuFromApicId[idApic],     i);
     ASMAtomicWriteU16(&pGip->aiCpuFromCpuSetIdx[iCpuSet], i);
 
+    /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
 }
 
@@ -5097,6 +5097,8 @@ static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
 
     Assert(RTCpuSetIsMemberByIndex(&pGip->PossibleCpuSet, iCpuSet));
     RTCpuSetDelByIndex(&pGip->OnlineCpuSet, iCpuSet);
+
+    /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
 }
 
@@ -5639,26 +5641,26 @@ static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_
 static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC,
                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick)
 {
+    uint32_t iCpu;
+
     /*
-     * Avoid a potential race when a CPU online notification doesn't fire on the onlined CPU
-     * but the tick creeps in before the event notification is run.
+     * Avoid a potential race when a CPU online notification doesn't fire on
+     * the onlined CPU but the tick creeps in before the event notification is
+     * run.
      */
-    unsigned iCpu = 0;
-    if (iTick == 1)
+    if (RT_UNLIKELY(iTick == 1))
     {
-        uint32_t i = supdrvGipCpuIndexFromCpuId(pGip, idCpu);
-        if (pGip->aCPUs[i].enmState == SUPGIPCPUSTATE_OFFLINE)
+        iCpu = supdrvGipCpuIndexFromCpuId(pGip, idCpu);
+        if (pGip->aCPUs[iCpu].enmState == SUPGIPCPUSTATE_OFFLINE)
             supdrvGipMpEventOnline(pGip, idCpu);
     }
 
     iCpu = pGip->aiCpuFromApicId[idApic];
-
     if (RT_LIKELY(iCpu < pGip->cCpus))
     {
         PSUPGIPCPU pGipCpu = &pGip->aCPUs[iCpu];
         if (pGipCpu->idCpu == idCpu)
         {
-
             /*
              * Start update transaction.
              */
@@ -5682,3 +5684,4 @@ static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, u
         }
     }
 }
+
