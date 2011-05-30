@@ -2401,7 +2401,9 @@ SDK_VBOX_OPENSSL      = .
 SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-headers/include
 SDK_VBOX_OPENSSL_INCS ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
 SDK_VBOX_OPENSSL_ORDERDEPS ?= $(crypto-headers_1_TARGET)
-SDK_VBOX_OPENSSL_LIBS ?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+SDK_VBOX_OPENSSL_LIBS ?= \
+	$(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
 # Build entire openssl library, not just the minimal subset.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_OPENSSL_ALL = 1

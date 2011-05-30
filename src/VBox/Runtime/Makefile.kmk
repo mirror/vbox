@@ -1268,7 +1268,8 @@ ifndef SDK_VBOX_LIBXML2_LIBS
 endif
 ifndef SDK_VBOX_OPENSSL_LIBS
  VBoxRT_LIBS                 += \
-	$(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
 endif
 ifdef IPRT_WITH_LZO
  VBoxRT_LIBS                  += lzo2
