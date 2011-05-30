@@ -1598,7 +1598,6 @@
     X509_sign
     X509_signature_print
     X509_STORE_CTX_cleanup
-    X509_STORE_CTX_cleanup
     X509_STORE_CTX_get_ex_new_index
     X509_STORE_CTX_get0_param
     X509_STORE_CTX_init
@@ -1617,7 +1616,6 @@
     X509_VAL_free
     X509_VAL_new
     X509_verify
-    X509_verify_cert
     X509_verify_cert
     X509_VERIFY_PARAM_free
     X509_VERIFY_PARAM_get_depth
