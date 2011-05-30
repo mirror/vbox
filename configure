@@ -2281,7 +2281,7 @@ for option in $*; do
     --with-openssl-dir=*)
       OPENSSLDIR=`echo $option | cut -d'=' -f2`
       INCCRYPTO="-I${OPENSSLDIR}/include"
-      LIBCRYPTO="${OPENSSLDIR}/lib/libcrypto.a"
+      LIBCRYPTO="${OPENSSLDIR}/lib/libcrypto.a ${OPENSSLDIR}/lib/libssl.a"
       ;;
     --with-gsoap-dir=*)
       GSOAP=`echo $option | cut -d'=' -f2`
