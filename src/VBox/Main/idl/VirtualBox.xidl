@@ -1391,7 +1391,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="d2de270c-1d4b-4c9e-843f-bbb9b47269ff"
+    uuid="bc166b9b-9b62-4145-b1f6-6c39068aaf00"
     wsmap="managed"
     >
     <desc>
@@ -1430,6 +1430,18 @@
         SOLARIS, DARWIN. ARCH is either 32BITS or 64BITS. DIST
         is either GENERIC, UBUNTU_606, UBUNTU_710, or something like
         this.
+      </desc>
+    </attribute>
+
+    <attribute name="APIVersion" type="wstring" readonly="yes">
+      <desc>
+        A string representing the VirtualBox API version number. The format is
+        2 integer numbers divided by an underscore (e.g. 1_0). After the
+        first public release of packages with a particular API version the
+        API will not be changed in an incompatible way. Note that this
+        guarantee does not apply to development builds, and also there is no
+        guarantee that this version is identical to the first two integer
+        numbers of the package version.
       </desc>
     </attribute>
 

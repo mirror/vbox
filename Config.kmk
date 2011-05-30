@@ -1059,11 +1059,12 @@ endif
 # Keep in sync with G_virtualBoxPackage in glue-jaxws.xsl and glue-java.xsl
 # Changed with every new version, so beware!
 if $(VBOX_VERSION_BUILD) < 51
-  VBOX_API_SUFFIX              = _$(VBOX_VERSION_MAJOR)_$(VBOX_VERSION_MINOR)
+  VBOX_API_VERSION          = $(VBOX_VERSION_MAJOR)_$(VBOX_VERSION_MINOR)
 else
-  VBOX_API_SUFFIX              = _$(VBOX_VERSION_MAJOR)_$(expr $(VBOX_VERSION_MINOR) + 1)
+  VBOX_API_VERSION          = $(VBOX_VERSION_MAJOR)_$(expr $(VBOX_VERSION_MINOR) + 1)
 endif
-VBOX_JAVA_PACKAGE             = org.virtualbox$(VBOX_API_SUFFIX)
+VBOX_API_SUFFIX             = _$(VBOX_API_VERSION)
+VBOX_JAVA_PACKAGE           = org.virtualbox$(VBOX_API_SUFFIX)
 
 #
 # Derived / helper config indicators.  Not configurable.
@@ -4637,7 +4638,7 @@ endif
 # directory. If you don't run it there, you get a consistent sub-tree only.
 #
 VBOX_BAD_CHAR_SET   = ,;:/\$(SP)$(TAB)$(HASH)=![]@%&''()*""<>?^{}|~
-VBOX_VERSION_STAMP  = $(PATH_OUT)/version-stamp-raw-$(translate $(VBOX_VERSION_STRING)-$(VBOX_C_YEAR)-$(VBOX_VENDOR)-$(VBOX_PRODUCT),$(VBOX_BAD_CHAR_SET),,_)
+VBOX_VERSION_STAMP  = $(PATH_OUT)/version-stamp-raw-api-$(translate $(VBOX_VERSION_STRING)-$(VBOX_C_YEAR)-$(VBOX_VENDOR)-$(VBOX_PRODUCT)-$(VBOX_API_VERSION),$(VBOX_BAD_CHAR_SET),,_)
 VBOX_VERSION_HEADER = $(PATH_OUT)/version-generated.h
 VBOX_VERSION_MK     = $(PATH_OUT)/version-generated.mk
 
@@ -4659,6 +4660,7 @@ $(VBOX_VERSION_HEADER): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VERSION_BUILD $(VBOX_VERSION_BUILD)'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VERSION_STRING_RAW "$(VBOX_VERSION_STRING_RAW)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VERSION_STRING "$(VBOX_VERSION_STRING)"'
+	$(QUIET)$(APPEND) $@.tmp '#define VBOX_API_VERSION_STRING "$(VBOX_API_VERSION)"'
 	$(QUIET)$(APPEND) $@.tmp ''
 	$(QUIET)$(APPEND) $@.tmp '#endif'
 	$(QUIET)$(MV) -f $@.tmp $@
