@@ -187,22 +187,18 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
  * @param   pszBuffer               Pointer to buffer which the queried string value gets stored into.
  * @param   cchBuffer               Size (in bytes) of buffer.
  */
-int vbglR3QueryRegistryString(HKEY hKey, const char *pszValName, char *pszBuffer, size_t cchBuffer)
+static int vbglR3QueryRegistryString(HKEY hKey, const char *pszValName, char *pszBuffer, size_t cchBuffer)
 {
     AssertReturn(pszValName, VERR_INVALID_PARAMETER);
     AssertReturn(pszBuffer, VERR_INVALID_POINTER);
     AssertReturn(cchBuffer, VERR_INVALID_PARAMETER);
 
-    int rc = VINF_SUCCESS;
-
+    int rc;
     DWORD dwType;
     DWORD dwSize = (DWORD)cchBuffer;
-    LONG lRet = RegQueryValueEx(hKey, pszValName, NULL, &dwType, (BYTE*)(LPCTSTR)pszBuffer, &dwSize);
+    LONG lRet = RegQueryValueEx(hKey, pszValName, NULL, &dwType, (BYTE *)pszBuffer, &dwSize);
     if (lRet == ERROR_SUCCESS)
-    {
-        rc = dwType == REG_SZ
-                     ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
-    }
+        rc = dwType == REG_SZ ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
     else
         rc = RTErrConvertFromWin32(lRet);
     return rc;
@@ -231,12 +227,11 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerExt, cha
      * Zap the return value up front.
      */
     if (ppszVer)
-        *ppszVer   = NULL;
+        *ppszVer    = NULL;
     if (ppszVerExt)
         *ppszVerExt = NULL;
     if (ppszRev)
-        *ppszRev   = NULL;
-
+        *ppszRev    = NULL;
 
 #ifdef RT_OS_WINDOWS
     HKEY hKey;
@@ -276,14 +271,15 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerExt, cha
         int rc2 = vbglR3CloseAdditionsWinStoragePath(hKey);
         if (RT_SUCCESS(rc))
             rc = rc2;
-        else
+
+        /* Clean up allocated strings on error. */
+        if (RT_FAILURE(rc))
         {
-            /* Clean up allocated strings on error. */
-            if (*ppszVer)
+            if (ppszVer)
                 RTStrFree(*ppszVer);
-            if (*ppszVerExt)
+            if (ppszVerExt)
                 RTStrFree(*ppszVerExt);
-            if (*ppszRev)
+            if (ppszRev)
                 RTStrFree(*ppszRev);
         }
     }
