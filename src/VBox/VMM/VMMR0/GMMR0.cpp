@@ -2814,7 +2814,6 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
      * Bound mode is also relatively straightforward.
      */
     int rc = VINF_SUCCESS;
-    PGMMCHUNK pChunk;
     if (pGMM->fBoundMemoryMode)
     {
         iPage = gmmR0AllocatePagesInBoundMode(pGMM, pGVM, iPage, cPages, paPages);
