@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2009-2010 Oracle Corporation
+# Copyright (C) 2009-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -215,10 +215,10 @@ def colDev(ctx,vm):
 def colSizeM(ctx,m):
     return colored(str(m)+'M', 'red')
 
-def createVm(ctx,name,kind,base):
+def createVm(ctx,name,kind):
     mgr = ctx['mgr']
     vb = ctx['vb']
-    mach = vb.createMachine(name, kind, base, "", False)
+    mach = vb.createMachine("", name, kind, "", False)
     mach.saveSettings()
     print "created machine with UUID",mach.id
     vb.registerMachine(mach)
@@ -1042,21 +1042,17 @@ def startCmd(ctx, args):
     return 0
 
 def createVmCmd(ctx, args):
-    if (len(args) < 3 or len(args) > 4):
-        print "usage: createvm name ostype <basefolder>"
+    if (len(args) != 3):
+        print "usage: createvm name ostype"
         return 0
     name = args[1]
     oskind = args[2]
-    if len(args) == 4:
-        base = args[3]
-    else:
-        base = ''
     try:
          ctx['vb'].getGuestOSType(oskind)
     except Exception, e:
         print 'Unknown OS type:',oskind
         return 0
-    createVm(ctx, name, oskind, base)
+    createVm(ctx, name, oskind)
     return 0
 
 def ginfoCmd(ctx,args):
