@@ -114,6 +114,8 @@ typedef struct GMMPERVM
     /** The VM priority for arbitrating VMs in low and out of memory situation.
      * Like which VMs to start squeezing first. */
     GMMPRIORITY         enmPriority;
+    /** Hints at the last chunk we allocated some memory from. */
+    uint32_t            idLastChunkHint;
 
     /** The current number of ballooned pages. */
     uint64_t            cBalloonedPages;
