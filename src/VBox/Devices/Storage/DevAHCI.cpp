@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -411,6 +411,8 @@ typedef struct AHCIPort
     bool                            fSpunUp;
     /** First D2H FIS was send. */
     bool                            fFirstD2HFisSend;
+    /** Mark the drive as having a non-rotational medium (i.e. as a SSD). */
+    bool                            fNonRotational;
     /** Attached device is a CD/DVD drive. */
     bool                            fATAPI;
     /** Passthrough SCSI commands. */
@@ -3071,6 +3073,8 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[101] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 16);
     p[102] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 32);
     p[103] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 48);
+    if (pAhciPort->fNonRotational)
+        p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
 
     /* The following are SATA specific */
     p[75] = RT_H2LE_U16(pAhciPort->CTX_SUFF(pAhci)->cCmdSlotsAvail-1); /* Number of commands we support, 0's based */
@@ -7078,7 +7082,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoopWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pT
 /* -=-=-=-=- DBGF -=-=-=-=- */
 
 /**
- * LsiLogic status info callback.
+ * AHCI status info callback.
  *
  * @param   pDevIns     The device instance.
  * @param   pHlp        The output helpers.
@@ -8488,6 +8492,11 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                             N_("AHCI configuration error: failed to read \"ModelNumber\" as string"));
             }
 
+            rc = CFGMR3QueryBoolDef(pCfgNode, "NonRotationalMedium", &pAhciPort->fNonRotational, false);
+            if (RT_FAILURE(rc))
+                return PDMDEV_SET_ERROR(pDevIns, rc,
+                            N_("PIIX3 configuration error: failed to read \"NonRotationalMedium\" as boolean"));
+
             /* There are three other identification strings for CD drives used for INQUIRY */
             if (pAhciPort->fATAPI)
             {
@@ -8622,10 +8631,24 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                    &pThis->ahciPort[iPortMaster].Led,
                                    &pThis->ahciPort[iPortMaster].StatBytesRead,
                                    &pThis->ahciPort[iPortMaster].StatBytesWritten,
+                                   pThis->ahciPort[iPortMaster].szSerialNumber,
+                                   pThis->ahciPort[iPortMaster].szFirmwareRevision,
+                                   pThis->ahciPort[iPortMaster].szModelNumber,
+                                   pThis->ahciPort[iPortMaster].szInquiryVendorId,
+                                   pThis->ahciPort[iPortMaster].szInquiryProductId,
+                                   pThis->ahciPort[iPortMaster].szInquiryRevision,
+                                   pThis->ahciPort[iPortMaster].fNonRotational,
                                    iPortSlave, pThis->ahciPort[iPortSlave].pDrvBase,
                                    &pThis->ahciPort[iPortSlave].Led,
                                    &pThis->ahciPort[iPortSlave].StatBytesRead,
                                    &pThis->ahciPort[iPortSlave].StatBytesWritten,
+                                   pThis->ahciPort[iPortSlave].szSerialNumber,
+                                   pThis->ahciPort[iPortSlave].szFirmwareRevision,
+                                   pThis->ahciPort[iPortSlave].szModelNumber,
+                                   pThis->ahciPort[iPortSlave].szInquiryVendorId,
+                                   pThis->ahciPort[iPortSlave].szInquiryProductId,
+                                   pThis->ahciPort[iPortSlave].szInquiryRevision,
+                                   pThis->ahciPort[iPortSlave].fNonRotational,
                                    &cbSSMState, szName);
             if (RT_FAILURE(rc))
                 return rc;

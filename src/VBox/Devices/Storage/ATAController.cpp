@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -684,23 +684,9 @@ static void ataCmdError(AHCIATADevState *s, uint8_t uErrorCode)
 static bool ataIdentifySS(AHCIATADevState *s)
 {
     uint16_t *p;
-    char aSerial[20];
-    int rc;
-    RTUUID Uuid;
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer == 512);
-    rc = s->pDrvBlock ? s->pDrvBlock->pfnGetUuid(s->pDrvBlock, &Uuid) : RTUuidClear(&Uuid);
-    if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
-    {
-        PAHCIATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
-        /* Generate a predictable serial for drives which don't have a UUID. */
-        RTStrPrintf(aSerial, sizeof(aSerial), "VB%x-%04x%04x",
-                    s->iLUN + ATADEVSTATE_2_DEVINS(s)->iInstance * 32,
-                    pCtl->IOPortBase1, pCtl->IOPortBase2);
-    }
-    else
-        RTStrPrintf(aSerial, sizeof(aSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
 
     p = (uint16_t *)s->CTXALLSUFF(pbIOBuffer);
     memset(p, 0, 512);
@@ -710,12 +696,12 @@ static bool ataIdentifySS(AHCIATADevState *s)
     /* Block size; obsolete, but required for the BIOS. */
     p[5] = RT_H2LE_U16(512);
     p[6] = RT_H2LE_U16(s->PCHSGeometry.cSectors);
-    ataPadString((uint8_t *)(p + 10), aSerial, 20); /* serial number */
+    ataPadString((uint8_t *)(p + 10), s->pszSerialNumber, ATA_SERIAL_NUMBER_LENGTH); /* serial number */
     p[20] = RT_H2LE_U16(3); /* XXX: retired, cache type */
     p[21] = RT_H2LE_U16(512); /* XXX: retired, cache size in sectors */
     p[22] = RT_H2LE_U16(0); /* ECC bytes per sector */
-    ataPadString((uint8_t *)(p + 23), "1.0", 8); /* firmware version */
-    ataPadString((uint8_t *)(p + 27), "VBOX HARDDISK", 40); /* model */
+    ataPadString((uint8_t *)(p + 23), s->pszFirmwareRevision, ATA_FIRMWARE_REVISION_LENGTH); /* firmware version */
+    ataPadString((uint8_t *)(p + 27), s->pszModelNumber, ATA_MODEL_NUMBER_LENGTH); /* model */
 #if ATA_MAX_MULT_SECTORS > 1
     p[47] = RT_H2LE_U16(0x8000 | ATA_MAX_MULT_SECTORS);
 #endif
@@ -776,6 +762,8 @@ static bool ataIdentifySS(AHCIATADevState *s)
         p[102] = RT_H2LE_U16(s->cTotalSectors >> 32);
         p[103] = RT_H2LE_U16(s->cTotalSectors >> 48);
     }
+    if (s->fNonRotational)
+        p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
     uint32_t uCsum = ataChecksum(p, 510);
     p[255] = RT_H2LE_U16(0xa5 | (uCsum << 8)); /* Integrity word */
 
@@ -811,33 +799,19 @@ static bool ataFlushSS(AHCIATADevState *s)
 static bool atapiIdentifySS(AHCIATADevState *s)
 {
     uint16_t *p;
-    char aSerial[20];
-    RTUUID Uuid;
-    int rc;
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer == 512);
-    rc = s->pDrvBlock ? s->pDrvBlock->pfnGetUuid(s->pDrvBlock, &Uuid) : RTUuidClear(&Uuid);
-    if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
-    {
-        PAHCIATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
-        /* Generate a predictable serial for drives which don't have a UUID. */
-        RTStrPrintf(aSerial, sizeof(aSerial), "VB%x-%04x%04x",
-                    s->iLUN + ATADEVSTATE_2_DEVINS(s)->iInstance * 32,
-                    pCtl->IOPortBase1, pCtl->IOPortBase2);
-    }
-    else
-        RTStrPrintf(aSerial, sizeof(aSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
 
     p = (uint16_t *)s->CTXALLSUFF(pbIOBuffer);
     memset(p, 0, 512);
     /* Removable CDROM, 50us response, 12 byte packets */
     p[0] = RT_H2LE_U16(2 << 14 | 5 << 8 | 1 << 7 | 2 << 5 | 0 << 0);
-    ataPadString((uint8_t *)(p + 10), aSerial, 20); /* serial number */
+    ataPadString((uint8_t *)(p + 10), s->pszSerialNumber, ATA_SERIAL_NUMBER_LENGTH); /* serial number */
     p[20] = RT_H2LE_U16(3); /* XXX: retired, cache type */
     p[21] = RT_H2LE_U16(512); /* XXX: retired, cache size in sectors */
-    ataPadString((uint8_t *)(p + 23), "1.0", 8); /* firmware version */
-    ataPadString((uint8_t *)(p + 27), "VBOX CD-ROM", 40); /* model */
+    ataPadString((uint8_t *)(p + 23), s->pszFirmwareRevision, ATA_FIRMWARE_REVISION_LENGTH); /* firmware version */
+    ataPadString((uint8_t *)(p + 27), s->pszModelNumber, ATA_MODEL_NUMBER_LENGTH); /* model */
     p[49] = RT_H2LE_U16(1 << 11 | 1 << 9 | 1 << 8); /* DMA and LBA supported */
     p[50] = RT_H2LE_U16(1 << 14);  /* No drive specific standby timer minimum */
     p[51] = RT_H2LE_U16(240); /* PIO transfer cycle */
@@ -1909,9 +1883,9 @@ static bool atapiInquirySS(AHCIATADevState *s)
     pbBuf[5] = 0; /* reserved */
     pbBuf[6] = 0; /* reserved */
     pbBuf[7] = 0; /* reserved */
-    ataSCSIPadStr(pbBuf + 8, "VBOX", 8);
-    ataSCSIPadStr(pbBuf + 16, "CD-ROM", 16);
-    ataSCSIPadStr(pbBuf + 32, "1.0", 4);
+    ataSCSIPadStr(pbBuf + 8, s->pszInquiryVendorId, 8);
+    ataSCSIPadStr(pbBuf + 16, s->pszInquiryProductId, 16);
+    ataSCSIPadStr(pbBuf + 32, s->pszInquiryRevision, 4);
     s->iSourceSink = ATAFN_SS_NULL;
     atapiCmdOK(s);
     return false;
@@ -5594,8 +5568,16 @@ int ataControllerLoadExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM)
 int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
                       unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster, PPDMLED pLedMaster,
                       PSTAMCOUNTER pStatBytesReadMaster, PSTAMCOUNTER pStatBytesWrittenMaster,
+                      const char *pszSerialNumberMaster, const char *pszFirmwareRevisionMaster,
+                      const char *pszModelNumberMaster, const char *pszInquiryVendorIdMaster,
+                      const char *pszInquiryProductIdMaster, const char *pszInquiryRevisionMaster,
+                      bool fNonRotationalMaster,
                       unsigned iLUNSlave, PPDMIBASE pDrvBaseSlave, PPDMLED pLedSlave,
                       PSTAMCOUNTER pStatBytesReadSlave, PSTAMCOUNTER pStatBytesWrittenSlave,
+                      const char *pszSerialNumberSlave, const char *pszFirmwareRevisionSlave,
+                      const char *pszModelNumberSlave, const char *pszInquiryVendorIdSlave,
+                      const char *pszInquiryProductIdSlave, const char *pszInquiryRevisionSlave,
+                      bool fNonRotationalSlave,
                       uint32_t *pcbSSMState, const char *szName)
 {
     int      rc;
@@ -5612,16 +5594,23 @@ int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
 
     for (uint32_t j = 0; j < RT_ELEMENTS(pCtl->aIfs); j++)
     {
-        pCtl->aIfs[j].iLUN              = j == 0 ? iLUNMaster : iLUNSlave;
-        pCtl->aIfs[j].pDevInsR3         = pDevIns;
-        pCtl->aIfs[j].pDevInsR0         = PDMDEVINS_2_R0PTR(pDevIns);
-        pCtl->aIfs[j].pDevInsRC         = PDMDEVINS_2_RCPTR(pDevIns);
-        pCtl->aIfs[j].pControllerR3     = pCtl;
-        pCtl->aIfs[j].pControllerR0     = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), pCtl);
-        pCtl->aIfs[j].pControllerRC     = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), pCtl);
-        pCtl->aIfs[j].pLed              = j == 0 ? pLedMaster : pLedSlave;
-        pCtl->aIfs[j].pStatBytesRead    = j == 0 ? pStatBytesReadMaster : pStatBytesReadSlave;
-        pCtl->aIfs[j].pStatBytesWritten = j == 0 ? pStatBytesWrittenMaster : pStatBytesWrittenSlave;
+        pCtl->aIfs[j].iLUN                  = j == 0 ? iLUNMaster : iLUNSlave;
+        pCtl->aIfs[j].pDevInsR3             = pDevIns;
+        pCtl->aIfs[j].pDevInsR0             = PDMDEVINS_2_R0PTR(pDevIns);
+        pCtl->aIfs[j].pDevInsRC             = PDMDEVINS_2_RCPTR(pDevIns);
+        pCtl->aIfs[j].pControllerR3         = pCtl;
+        pCtl->aIfs[j].pControllerR0         = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), pCtl);
+        pCtl->aIfs[j].pControllerRC         = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), pCtl);
+        pCtl->aIfs[j].pLed                  = j == 0 ? pLedMaster : pLedSlave;
+        pCtl->aIfs[j].pStatBytesRead        = j == 0 ? pStatBytesReadMaster : pStatBytesReadSlave;
+        pCtl->aIfs[j].pStatBytesWritten     = j == 0 ? pStatBytesWrittenMaster : pStatBytesWrittenSlave;
+        pCtl->aIfs[j].pszSerialNumber       = j == 0 ? pszSerialNumberMaster : pszSerialNumberSlave;
+        pCtl->aIfs[j].pszFirmwareRevision   = j == 0 ? pszFirmwareRevisionMaster : pszFirmwareRevisionSlave;
+        pCtl->aIfs[j].pszModelNumber        = j == 0 ? pszModelNumberMaster : pszModelNumberSlave;
+        pCtl->aIfs[j].pszInquiryVendorId    = j == 0 ? pszInquiryVendorIdMaster : pszInquiryVendorIdSlave;
+        pCtl->aIfs[j].pszInquiryProductId   = j == 0 ? pszInquiryProductIdMaster : pszInquiryProductIdSlave;
+        pCtl->aIfs[j].pszInquiryRevision    = j == 0 ? pszInquiryRevisionMaster : pszInquiryRevisionSlave;
+        pCtl->aIfs[j].fNonRotational        = j == 0 ? fNonRotationalMaster : fNonRotationalSlave;
     }
 
     /* Initialize per-controller critical section */

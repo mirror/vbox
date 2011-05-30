@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -212,6 +212,20 @@ typedef struct AHCIATADevState {
     /** Statistics: number of flush operations and the time spend flushing. */
     STAMPROFILE     StatFlushes;
 
+    /** The serial number to use for IDENTIFY DEVICE commands. */
+    R3PTRTYPE(const char *) pszSerialNumber;
+    /** The firmware revision to use for IDENTIFY DEVICE commands. */
+    R3PTRTYPE(const char *) pszFirmwareRevision;
+    /** The model number to use for IDENTIFY DEVICE commands. */
+    R3PTRTYPE(const char *) pszModelNumber;
+    /** The vendor identification string for SCSI INQUIRY commands. */
+    R3PTRTYPE(const char *) pszInquiryVendorId;
+    /** The product identification string for SCSI INQUIRY commands. */
+    R3PTRTYPE(const char *) pszInquiryProductId;
+    /** The revision string for SCSI INQUIRY commands. */
+    R3PTRTYPE(const char *) pszInquiryRevision;
+    /** Mark the drive as having a non-rotational medium (i.e. as a SSD). */
+    bool            fNonRotational;
     /** Enable passing through commands directly to the ATAPI drive. */
     bool            fATAPIPassthrough;
     /** Number of errors we've reported to the release log.
@@ -414,16 +428,46 @@ RT_C_DECLS_END
  * @returns VBox status code.
  * @param   pDevIns Pointer to the device instance which creates a controller.
  * @param   pCtl    Pointer to the unitialized ATA controller structure.
+ * @param   iLUNMaster     Port number of the master device.
  * @param   pDrvBaseMaster Pointer to the base driver interface which acts as the master.
+ * @param   pLedMaster     Pointer to LED state for master device.
+ * @param   pStatBytesReadMaster    Pointer to statistics structure for reads.
+ * @param   pStatBytesWrittenMaster Pointer to statistics structure for writes.
+ * @param   pszSerialNumberMaster       VPD serial number for master.
+ * @param   pszFirmwareRevisionMaster   VPD firmware revision for master
+ * @param   pszModelNumberMaster        VPD model number for master
+ * @param   pszInquiryVendorIdMaster    VPD vendor ID for master
+ * @param   pszInquiryProductIdMaster   VPD product ID for master
+ * @param   pszInquiryRevisionMaster    VPD revision for master
+ * @param   fNonRotationalMaster    Flag for non-rotational media.
+ * @param   iLUNSlave      Port number of the slave device.
  * @param   pDrvBaseSlave  Pointer to the base driver interface which acts as the slave.
+ * @param   pLedSlave      Pointer to LED state for slave device.
+ * @param   pStatBytesReadSlave     Pointer to statistics structure for reads.
+ * @param   pStatBytesWrittenSlave  Pointer to statistics structure for writes.
+ * @param   pszSerialNumberSlave        VPD serial number for slave.
+ * @param   pszFirmwareRevisionSlave    VPD firmware revision for slave
+ * @param   pszModelNumberSlave         VPD model number for slave
+ * @param   pszInquiryVendorIdSlave     VPD vendor ID for slave
+ * @param   pszInquiryProductIdSlave    VPD product ID for slave
+ * @param   pszInquiryRevisionSlave     VPD revision for slave
+ * @param   fNonRotationalSlave     Flag for non-rotational media.
  * @param   pcbSSMState    Where to store the size of the device state for loading/saving.
  * @param   szName         Name of the controller (Used to initialize the critical section).
  */
 int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
                       unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster, PPDMLED pLedMaster,
                       PSTAMCOUNTER pStatBytesReadMaster, PSTAMCOUNTER pStatBytesWrittenMaster,
+                      const char *pszSerialNumberMaster, const char *pszFirmwareRevisionMaster,
+                      const char *pszModelNumberMaster, const char *pszInquiryVendorIdMaster,
+                      const char *pszInquiryProductIdMaster, const char *pszInquiryRevisionMaster,
+                      bool fNonRotationalMaster,
                       unsigned iLUNSlave, PPDMIBASE pDrvBaseSlave, PPDMLED pLedSlave,
                       PSTAMCOUNTER pStatBytesReadSlave, PSTAMCOUNTER pStatBytesWrittenSlave,
+                      const char *pszSerialNumberSlave, const char *pszFirmwareRevisionSlave,
+                      const char *pszModelNumberSlave, const char *pszInquiryVendorIdSlave,
+                      const char *pszInquiryProductIdSlave, const char *pszInquiryRevisionSlave,
+                      bool fNonRotationalSlave,
                       uint32_t *pcbSSMState, const char *szName);
 
 /**
