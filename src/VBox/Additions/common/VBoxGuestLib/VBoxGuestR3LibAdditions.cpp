@@ -178,6 +178,28 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
 }
 
 
+int vbglR3QueryRegistryString(HKEY hKey, const char *pszValName, char *pszBuffer, size_t cchBuffer)
+{
+    AssertReturn(pszValName, VERR_INVALID_PARAMETER);
+    AssertReturn(pszBuffer, VERR_INVALID_POINTER);
+    AssertReturn(cchBuffer, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+
+    DWORD dwType;
+    DWORD dwSize = (DWORD)cchBuffer;
+    LONG lRet = RegQueryValueEx(hKey, pszValName, NULL, &dwType, (BYTE*)(LPCTSTR)pszBuffer, &dwSize);
+    if (lRet == ERROR_SUCCESS)
+    {
+        rc = dwType == REG_SZ
+                     ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
+    }
+    else
+        rc = RTErrConvertFromWin32(lRet);
+    return rc;
+}
+
+
 /**
  * Retrieves the installed Guest Additions version and/or revision.
  *
@@ -185,7 +207,7 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
  * @param   ppszVer     Receives pointer of allocated raw version string
  *                      (major.minor.build). NULL is accepted. The returned
  *                      pointer must be freed using RTStrFree().*
- * @param   ppszVerEx   Receives pointer of allocated full version string
+ * @param   ppszVerExt  Receives pointer of allocated full version string
  *                      (raw version + vendor suffix(es)). NULL is
  *                      accepted. The returned pointer must be freed using
  *                      RTStrFree().
@@ -193,15 +215,15 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
  *                      accepted. The returned pointer must be freed using
  *                      RTStrFree().
  */
-VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerEx, char **ppszRev)
+VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerExt, char **ppszRev)
 {
     /*
      * Zap the return value up front.
      */
     if (ppszVer)
         *ppszVer   = NULL;
-    if (ppszVerEx)
-        *ppszVerEx = NULL;
+    if (ppszVerExt)
+        *ppszVerExt = NULL;
     if (ppszRev)
         *ppszRev   = NULL;
 
@@ -214,94 +236,46 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerEx, char
         /*
          * Version.
          */
-        /** @todo r=bird: This code has broken error handling: 1. Errors are
-         *        overwritten and hidden, leaving return values undefined.
-         *        2. On error, memory could be leaked.
-         *  Also, just use a static 32-byte buffer instead of allocating
-         *  three!  In fact, why not just factor out the string value query? */
-        LONG l;
-        DWORD dwType;
-        DWORD dwSize = 32;
-        char *pszTmp;
+        char szTemp[32];
         if (ppszVer)
         {
-            pszTmp = (char*)RTMemAlloc(dwSize);
-            if (pszTmp)
-            {
-                l = RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
-                if (l == ERROR_SUCCESS)
-                {
-                    if (dwType == REG_SZ)
-                        rc = RTStrDupEx(ppszVer, pszTmp);
-                    else
-                        rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                {
-                    rc = RTErrConvertFromWin32(l);
-                }
-                RTMemFree(pszTmp);
-            }
-            else
-                rc = VERR_NO_MEMORY;
+            rc = vbglR3QueryRegistryString(hKey, "Version", szTemp, sizeof(szTemp));
+            if (RT_SUCCESS(rc))
+                rc = RTStrDupEx(ppszVer, szTemp);
         }
-        if (ppszVerEx)
+
+        if (   RT_SUCCESS(rc)
+            && ppszVerExt)
         {
-            dwSize = 32; /* Reset */
-            pszTmp = (char*)RTMemAlloc(dwSize);
-            if (pszTmp)
-            {
-                l = RegQueryValueEx(hKey, "VersionEx", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
-                if (l == ERROR_SUCCESS)
-                {
-                    if (dwType == REG_SZ)
-                        rc = RTStrDupEx(ppszVerEx, pszTmp);
-                    else
-                        rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                {
-                    rc = RTErrConvertFromWin32(l);
-                }
-                RTMemFree(pszTmp);
-            }
-            else
-                rc = VERR_NO_MEMORY;
+            rc = vbglR3QueryRegistryString(hKey, "VersionExt", szTemp, sizeof(szTemp));
+            if (RT_SUCCESS(rc))
+                rc = RTStrDupEx(ppszVerExt, szTemp);
         }
 
         /*
          * Revision.
          */
-        if (ppszRev)
+        if (   RT_SUCCESS(rc)
+            && ppszRev)
         {
-            dwSize = 32; /* Reset */
-            pszTmp = (char*)RTMemAlloc(dwSize);
-            if (pszTmp)
-            {
-                l = RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszTmp, &dwSize);
-                if (l == ERROR_SUCCESS)
-                {
-                    if (dwType == REG_SZ)
-                        rc = RTStrDupEx(ppszRev, pszTmp);
-                    else
-                        rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                {
-                    rc = RTErrConvertFromWin32(l);
-                }
-                RTMemFree(pszTmp);
-            }
-            else
-                rc = VERR_NO_MEMORY;
-
-            if (RT_FAILURE(rc) && ppszVer)
-            {
-                RTStrFree(*ppszVer);
-                *ppszVer = NULL;
-            }
+            rc = vbglR3QueryRegistryString(hKey, "Revision", szTemp, sizeof(szTemp));
+            if (RT_SUCCESS(rc))
+                rc = RTStrDupEx(ppszRev, szTemp);
         }
-        rc = vbglR3CloseAdditionsWinStoragePath(hKey);
+
+        int rc2 = vbglR3CloseAdditionsWinStoragePath(hKey);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+        else
+        {
+            /* Clean up allocated strings on error. */
+            if (*ppszVer)
+                RTStrFree(*ppszVer);
+            if (*ppszVerExt)
+                RTStrFree(*ppszVerExt);
+            if (*ppszRev)
+                RTStrFree(*ppszRev);
+        }
     }
     else
     {
@@ -309,7 +283,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerEx, char
          * No registry entries found, return the version string compiled
          * into this binary.
          */
-        rc = vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszVerEx, ppszRev);
+        rc = vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszVerExt, ppszRev);
     }
     return rc;
 
@@ -317,7 +291,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszVerEx, char
     /*
      * On non-Windows platforms just return the compile-time version string.
      */
-    return vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszVerEx, ppszRev);
+    return vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszVerExt, ppszRev);
 #endif /* !RT_OS_WINDOWS */
 }
 
