@@ -19,14 +19,15 @@ LangString VBOX_UNINSTALL_START ${LANG_ENGLISH}          "Press OK to start the 
 LangString VBOX_UNINSTALL_REBOOT ${LANG_ENGLISH}         "It is strongly recommended that you reboot this virtual machine before installing the new version of the Guest Additions.$\r$\nPlease start the Guest Additions setup again after rebooting.$\r$\n$\r$\nRestart now?"
 
 LangString VBOX_COMPONENT_MAIN ${LANG_ENGLISH}                      "VirtualBox Guest Additions"
-LangString VBOX_COMPONENT_MAIN_DESC ${LANG_ENGLISH}                 "Main Files of VirtualBox Guest Additions"
-LangString VBOX_COMPONENT_AUTOLOGON ${LANG_ENGLISH}                 "Auto-Logon Support"
+LangString VBOX_COMPONENT_MAIN_DESC ${LANG_ENGLISH}                 "Main files of VirtualBox Guest Additions"
+LangString VBOX_COMPONENT_AUTOLOGON ${LANG_ENGLISH}                 "Auto-Logon support"
 LangString VBOX_COMPONENT_AUTOLOGON_DESC ${LANG_ENGLISH}            "Enables auto-logon support for guests"
 LangString VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY ${LANG_ENGLISH}   "There already is a component installed for providing auto-logon support.$\r$\nIf you replace this component with the one from VirtualBox, the system could become unstable.$\r$\nReplace it anyway?"
 LangString VBOX_COMPONENT_D3D  ${LANG_ENGLISH}                      "Direct3D Support (Experimental)"
-LangString VBOX_COMPONENT_D3D_DESC  ${LANG_ENGLISH}                 "Enables Direct3D Support for guests (Experimental)"
+LangString VBOX_COMPONENT_D3D_DESC  ${LANG_ENGLISH}                 "Enables Direct3D support for guests (Experimental)"
 LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_ENGLISH}                 "Windows is currently not started in safe mode.$\r$\nTherefore the D3D support cannot be installed."
 LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_ENGLISH}         "Direct3D guest support not available on Windows $g_strWinVersion!"
+LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_ENGLISH}               "On this guest Windows Aero (WDDM) is supported.$\r$\nThis feature is experimental and therefore should not be used on productive systems yet.$\r$\n$\r$\nDo you want to install the regular Direct3D support instead?"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_ENGLISH}         "The setup just has replaced some system files in order to make ${PRODUCT_NAME} work correctly.$\r$\nIn case Windows File Protection shows a warning dialog, please cancel its suggestion of restoring the original files."
 LangString VBOX_REBOOT_REQUIRED ${LANG_ENGLISH}          "To apply all changes, the system must be restarted. Restart Windows now?"
