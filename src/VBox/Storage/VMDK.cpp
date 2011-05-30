@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2703,7 +2703,8 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
-        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading extent header in '%s'"), pExtent->pszFullname);
+        vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading extent header in '%s'"), pExtent->pszFullname);
+        rc = VERR_VD_VMDK_INVALID_HEADER;
         goto out;
     }
     rc = vmdkValidateHeader(pImage, pExtent, &Header);
@@ -2741,7 +2742,8 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
-            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading extent footer in '%s'"), pExtent->pszFullname);
+            vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading extent footer in '%s'"), pExtent->pszFullname);
+            rc = VERR_VD_VMDK_INVALID_HEADER;
             goto out;
         }
         rc = vmdkValidateHeader(pImage, pExtent, &Header);
@@ -3024,7 +3026,11 @@ static int vmdkReadMetaESXSparseExtent(PVMDKEXTENT pExtent)
     int rc = vmdkFileReadSync(pImage, pExtent->pFile, 0, &Header, sizeof(Header), NULL);
     AssertRC(rc);
     if (RT_FAILURE(rc))
+    {
+        vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading ESX sparse extent header in '%s'"), pExtent->pszFullname);
+        rc = VERR_VD_VMDK_INVALID_HEADER;
         goto out;
+    }
     if (    RT_LE2H_U32(Header.magicNumber) != VMDK_ESX_SPARSE_MAGICNUMBER
         ||  RT_LE2H_U32(Header.version) != 1
         ||  RT_LE2H_U32(Header.flags) != 3)
@@ -3239,7 +3245,8 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     rc = vmdkFileReadSync(pImage, pFile, 0, &u32Magic, sizeof(u32Magic), NULL);
     if (RT_FAILURE(rc))
     {
-        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading the magic number in '%s'"), pImage->pszFilename);
+        vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error reading the magic number in '%s'"), pImage->pszFilename);
+        rc = VERR_VD_VMDK_INVALID_HEADER;
         goto out;
     }
 
