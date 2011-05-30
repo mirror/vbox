@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * DrvUDPTunnel - UDP tunnel network transport driver
+ *
+ * Based on code contributed by Christophe Devriese
  */
 
 /*
