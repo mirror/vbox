@@ -224,6 +224,7 @@
     BIO_dump_indent_cb
     BIO_dump_indent_fp
     BIO_dup_chain
+    BIO_f_buffer
     BIO_find_type
     BIO_free
     BIO_free_all
@@ -241,6 +242,7 @@
     BIO_new
     BIO_new_file
     BIO_new_fp
+    BIO_new_socket
     BIO_next
     BIO_number_read
     BIO_number_written
@@ -250,6 +252,7 @@
     BIO_puts
     BIO_read
     BIO_s_file
+    BIO_s_socket
     BIO_set
     BIO_set_callback
     BIO_set_callback_arg
@@ -533,6 +536,7 @@
     d2i_BASIC_CONSTRAINTS
     d2i_CERTIFICATEPOLICIES
     d2i_CRL_DIST_POINTS
+    d2i_DHparams
     d2i_DIRECTORYSTRING
     d2i_DISPLAYTEXT
     d2i_DIST_POINT
@@ -759,6 +763,7 @@
     ECDSA_sign_ex
     ECDSA_sign_setup
     ECDSA_size
+    ECDSA_verify
     ECParameters_print
     ECParameters_print_fp
     ECPKParameters_print
@@ -799,6 +804,9 @@
     ERR_unload_strings
     EVP_add_cipher
     EVP_add_digest
+    EVP_aes_128_cbc
+    EVP_aes_192_cbc
+    EVP_aes_256_cbc
     EVP_BytesToKey
     EVP_Cipher
     EVP_CIPHER_asn1_to_param
@@ -851,6 +859,8 @@
     EVP_DigestInit
     EVP_DigestInit_ex
     EVP_DigestUpdate
+    EVP_ecdsa
+    EVP_enc_null
     EVP_EncodeBlock
     EVP_EncodeFinal
     EVP_EncodeInit
@@ -910,6 +920,7 @@
     EVP_PKEY_set1_RSA
     EVP_PKEY_size
     EVP_PKEY_type
+    EVP_rc4
     EVP_read_pw_string
     EVP_set_pw_prompt
     EVP_sha1
@@ -971,6 +982,7 @@
     i2d_BASIC_CONSTRAINTS
     i2d_CERTIFICATEPOLICIES
     i2d_CRL_DIST_POINTS
+    i2d_DHparams
     i2d_DIRECTORYSTRING
     i2d_DISPLAYTEXT
     i2d_DIST_POINT
@@ -1181,7 +1193,9 @@
     PEM_proc_type
     PEM_read_bio
     PEM_read_bio_PrivateKey
+    PEM_read_bio_RSAPrivateKey
     PEM_read_bio_X509
+    PEM_read_bio_X509_AUX
     PEM_write_bio
     PEM_write_bio_X509
     PKCS7_DIGEST_free
@@ -1416,6 +1430,7 @@
     X509_CERT_AUX_print
     X509_CERT_PAIR_free
     X509_CERT_PAIR_new
+    X509_certificate_type
     X509_check_ca
     X509_check_issued
     X509_check_private_key
@@ -1582,6 +1597,18 @@
     X509_SIG_new
     X509_sign
     X509_signature_print
+    X509_STORE_CTX_cleanup
+    X509_STORE_CTX_cleanup
+    X509_STORE_CTX_get_ex_new_index
+    X509_STORE_CTX_get0_param
+    X509_STORE_CTX_init
+    X509_STORE_CTX_set_default
+    X509_STORE_CTX_set_ex_data
+    X509_STORE_CTX_set_verify_cb
+    X509_STORE_free
+    X509_STORE_load_locations
+    X509_STORE_new
+    X509_STORE_set_default_paths
     X509_subject_name_cmp
     X509_subject_name_hash
     X509_supported_extension
@@ -1590,6 +1617,16 @@
     X509_VAL_free
     X509_VAL_new
     X509_verify
+    X509_verify_cert
+    X509_verify_cert
+    X509_VERIFY_PARAM_free
+    X509_VERIFY_PARAM_get_depth
+    X509_VERIFY_PARAM_inherit
+    X509_VERIFY_PARAM_new
+    X509_VERIFY_PARAM_set_depth
+    X509_VERIFY_PARAM_set_purpose
+    X509_VERIFY_PARAM_set_trust
+    X509_VERIFY_PARAM_set1
     X509at_add1_attr
     X509at_add1_attr_by_NID
     X509at_add1_attr_by_OBJ
