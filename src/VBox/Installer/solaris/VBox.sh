@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-# VirtualBox startup script, Solaris hosts.
+# Oracle VM VirtualBox startup script, Solaris hosts.
 #
-# Copyright (C) 2007-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -19,32 +19,36 @@ if test "$CURRENT_ISA" = "amd64"; then
 else
     INSTALL_DIR="/opt/VirtualBox/i386"
 fi
-APP=`which $0`
-APP=`basename $APP`
-case "$APP" in
-  VirtualBox)
-    exec "$INSTALL_DIR/VirtualBox" "$@"
-  ;;
-  VBoxManage)
-    exec "$INSTALL_DIR/VBoxManage" "$@"
-  ;;
-  VBoxSDL)
-    exec "$INSTALL_DIR/VBoxSDL" "$@"
-  ;;
-  VBoxVRDP)
-    exec "$INSTALL_DIR/VBoxHeadless" "$@"
-  ;;
-  VBoxHeadless)
-    exec "$INSTALL_DIR/VBoxHeadless" "$@"
-  ;;
-  VBoxQtconfig)
-    exec "$INSTALL_DIR/VBoxQtconfig" "$@"
-  ;;
-  VBoxBFE)
-    exec "$INSTALL_DIR/VBoxBFE" "$@"
-  ;;
-  *)
-    echo "Unknown application - $APP"
-  ;;
-esac
 
+APP=`basename $0`
+case "$APP" in
+    VirtualBox|virtualbox)
+        exec "$INSTALL_DIR/VirtualBox" "$@"
+        ;;
+    VBoxManage|vboxmanage)
+        exec "$INSTALL_DIR/VBoxManage" "$@"
+        ;;
+    VBoxSDL|vboxsdl)
+        exec "$INSTALL_DIR/VBoxSDL" "$@"
+        ;;
+    VBoxVRDP|VBoxHeadless|vboxheadless)
+        exec "$INSTALL_DIR/VBoxHeadless" "$@"
+        ;;
+    VBoxBalloonCtrl|vboxballoonctrl)
+        exec "$INSTALL_DIR/VBoxBalloonCtrl" "$@"
+        ;;
+    vboxwebsrv)
+        exec "$INSTALL_DIR/vboxwebsrv" "$@"
+        ;;
+    VBoxBFE|vboxbfe)
+        exec "$INSTALL_DIR/VBoxBFE" "$@"
+        ;;
+    VBoxQtconfig)
+        exec "$INSTALL_DIR/VBoxQtconfig" "$@"
+        ;;
+    *)
+        echo "Unknown application - $APP"
+        exit 1
+        ;;
+esac
+exit 0

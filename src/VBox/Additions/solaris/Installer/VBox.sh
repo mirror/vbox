@@ -2,7 +2,7 @@
 #
 # VirtualBox startup script for Solaris Guests Additions
 #
-# Copyright (C) 2008-2010 Oracle Corporation
+# Copyright (C) 2008-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -22,27 +22,27 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
-CPUTYPE=`isainfo -k`
-ISADIR=""
-if test "$CPUTYPE" = "amd64"; then
-    ISADIR="amd64"
+CURRENT_ISA=`isainfo -k`
+if test "$CURRENT_ISA" = "amd64"; then
+    INSTALL_DIR="/opt/VirtualBoxAdditions/amd64"
+else
+    INSTALL_DIR="/opt/VirtualBoxAdditions"
 fi
 
-INSTALL_DIR="/opt/VirtualBoxAdditions"
-APP=`which $0`
-APP=`basename $APP`
+APP=`basename $0`
 case "$APP" in
-  VBoxClient)
-    exec "$INSTALL_DIR/$ISADIR/VBoxClient" "$@"
-  ;;
-  VBoxService)
-    exec "$INSTALL_DIR/$ISADIR/VBoxService" "$@"
-  ;;
-  VBoxControl)
-    exec "$INSTALL_DIR/$ISADIR/VBoxControl" "$@"
-  ;;
-  *)
-    echo "Unknown application - $APP"
-  ;;
+    VBoxClient)
+        exec "$INSTALL_DIR/VBoxClient" "$@"
+        ;;
+    VBoxService)
+        exec "$INSTALL_DIR/VBoxService" "$@"
+        ;;
+    VBoxControl)
+        exec "$INSTALL_DIR/VBoxControl" "$@"
+        ;;
+    *)
+        echo "Unknown application - $APP"
+        exit 1
+        ;;
 esac
-
+exit 0

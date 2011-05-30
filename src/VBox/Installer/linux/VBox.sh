@@ -1,8 +1,8 @@
 #!/bin/sh
 #
-# Oracle VM VirtualBox
+# Oracle VM VirtualBox startup script, Linux hosts.
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -77,29 +77,32 @@ if [ "$SHUTDOWN" = "true" ]; then
     exit 0
 fi
 
-APP=`which $0`
-APP=`basename $APP`
-APP=${APP##/*/}
+APP=`basename $0`
 case "$APP" in
-  VirtualBox|virtualbox)
-    exec "$INSTALL_DIR/VirtualBox" "$@"
-    ;;
-  VBoxManage|vboxmanage)
-    exec "$INSTALL_DIR/VBoxManage" "$@"
-    ;;
-  VBoxSDL|vboxsdl)
-    exec "$INSTALL_DIR/VBoxSDL" "$@"
-    ;;
-  VBoxVRDP|VBoxHeadless|vboxheadless)
-    exec "$INSTALL_DIR/VBoxHeadless" "$@"
-    ;;
-  VBoxBalloonCtrl|vboxballoonctrl)
-    exec "$INSTALL_DIR/VBoxBalloonCtrl" "$@"
-    ;;
-  vboxwebsrv)
-    exec "$INSTALL_DIR/vboxwebsrv" "$@"
-    ;;
-  *)
-    echo "Unknown application - $APP"
-    ;;
+    VirtualBox|virtualbox)
+        exec "$INSTALL_DIR/VirtualBox" "$@"
+        ;;
+    VBoxManage|vboxmanage)
+        exec "$INSTALL_DIR/VBoxManage" "$@"
+        ;;
+    VBoxSDL|vboxsdl)
+        exec "$INSTALL_DIR/VBoxSDL" "$@"
+        ;;
+    VBoxVRDP|VBoxHeadless|vboxheadless)
+        exec "$INSTALL_DIR/VBoxHeadless" "$@"
+        ;;
+    VBoxBalloonCtrl|vboxballoonctrl)
+        exec "$INSTALL_DIR/VBoxBalloonCtrl" "$@"
+        ;;
+    vboxwebsrv)
+        exec "$INSTALL_DIR/vboxwebsrv" "$@"
+        ;;
+    VBoxBFE|vboxbfe)
+        exec "$INSTALL_DIR/VBoxBFE" "$@"
+        ;;
+    *)
+        echo "Unknown application - $APP"
+        exit 1
+        ;;
 esac
+exit 0
