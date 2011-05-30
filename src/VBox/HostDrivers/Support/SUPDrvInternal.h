@@ -576,11 +576,13 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
  *
  * @returns IPRT status code.
  * @param   pDevExt             The device globals.
- * @param   pImage              The image data (up to date except for some
- *                              entry point pointers).
+ * @param   pImage              The image data (up to date). Adjust entrypoints
+ *                              and exports if necessary.
  * @param   pbImageBits         The image bits as loaded by ring-3.
+ * @param   pReq                Pointer to the request packet so that the VMMR0
+ *                              entry points can be adjusted.
  */
-int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits);
+int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, PSUPLDRLOAD pReq);
 
 
 /**

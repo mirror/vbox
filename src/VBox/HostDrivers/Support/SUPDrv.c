@@ -4064,7 +4064,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         pImage->pfnModuleTerm = pReq->u.In.pfnModuleTerm;
 
         if (pImage->fNative)
-            rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.abImage);
+            rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.abImage, pReq);
         else
             memcpy(pImage->pvImage, &pReq->u.In.abImage[0], pImage->cbImageBits);
     }

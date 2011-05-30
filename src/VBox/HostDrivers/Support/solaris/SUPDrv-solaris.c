@@ -35,6 +35,7 @@
 #include <sys/buf.h>
 #include <sys/modctl.h>
 #include <sys/kobj.h>
+#include <sys/kobj_impl.h>
 #include <sys/open.h>
 #include <sys/conf.h>
 #include <sys/cmn_err.h>
@@ -951,6 +952,11 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
 
     /*
      * Get the module info.
+     *
+     * Note! The text section is actually not at mi_base, but and the next
+     *       alignment boundrary and there seems to be no easy way of
+     *       getting at this address.  This sabotages supdrvOSLdrLoad.
+     *       Bastards!
      */
     struct modinfo ModInfo;
     kobj_getmodinfo(pModCtl->mod_mp, &ModInfo);
@@ -959,7 +965,7 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
     pImage->pSolModCtl = pModCtl;
 
     mod_release_mod(pImage->pSolModCtl);
-    LogRel(("supdrvOSLdrOpen: succeeded for '%s' (mi_base=%p mi_base=%#x), id=%d ctl=%p\n",
+    LogRel(("supdrvOSLdrOpen: succeeded for '%s' (mi_base=%p mi_size=%#x), id=%d ctl=%p\n",
             pszFilename, ModInfo.mi_base, ModInfo.mi_size, idMod, pModCtl));
     return VINF_SUCCESS;
 }
@@ -974,8 +980,35 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
 }
 
 
-int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits)
+/**
+ * Resolves a module entry point address.
+ *
+ * @returns VBox status code.
+ * @param   pImage              The image.
+ * @param   pszSymbol           The symbol name.
+ * @param   ppvValue            Where to store the value.  On input this holds
+ *                              the symbol value SUPLib calculated.
+ */
+static int supdrvSolLdrResolvEp(PSUPDRVLDRIMAGE pImage, const char *pszSymbol, void **ppvValue)
 {
+    /* Don't try resolve symbols which, according to SUPLib, aren't there. */
+    if (!*ppvValue)
+        return VINF_SUCCESS;
+
+    uintptr_t uValue = modlookup_by_modctl(pImage->pSolModCtl, pszSymbol);
+    if (!uValue)
+    {
+        LogRel(("supdrvOSLdrLoad on %s failed to resolve %s\n", pImage->szName, pszSymbol));
+        return VERR_SYMBOL_NOT_FOUND;
+    }
+    *ppvValue = (void *)uValue;
+    return VINF_SUCCESS;
+}
+
+
+int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, PSUPLDRLOAD pReq)
+{
+#if 0 /* This doesn't work because of text alignment. */
     /*
      * Comparing is very very difficult since text and data may be allocated
      * separately.
@@ -983,15 +1016,15 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
     size_t cbCompare = RT_MIN(pImage->cbImageBits, 64);
     if (memcmp(pImage->pvImage, pbImageBits, cbCompare))
     {
-        LogRel(("Image mismatch: %s\n", pImage->szName));
+        LogRel(("Image mismatch: %s (%p)\n", pImage->szName, pImage->pvImage));
         LogRel(("Native: %.*Rhxs\n", cbCompare, pImage->pvImage));
         LogRel(("SUPLib: %.*Rhxs\n", cbCompare, pbImageBits));
         return VERR_LDR_MISMATCH_NATIVE;
     }
-
+#endif
 
     /*
-     * Get the symbol addresses.
+     * Get the exported symbol addresses.
      */
     int rc;
     modctl_t *pModCtl = mod_hold_by_id(pImage->idSolMod);
@@ -1017,6 +1050,37 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
         }
 
         rc = iSym == UINT32_MAX ? VINF_SUCCESS : VERR_LDR_GENERAL_FAILURE;
+
+        /*
+         * Get the standard module entry points.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            rc = supdrvSolLdrResolvEp(pImage, "ModuleInit", (void **)&pImage->pfnModuleInit);
+            if (RT_SUCCESS(rc))
+                rc = supdrvSolLdrResolvEp(pImage, "ModuleTerm", (void **)&pImage->pfnModuleTerm);
+
+            switch (pReq->u.In.eEPType)
+            {
+                case SUPLDRLOADEP_VMMR0:
+                {
+                    if (RT_SUCCESS(rc))
+                        rc = supdrvSolLdrResolvEp(pImage, "VMMR0EntryInt",  (void **)&pReq->u.In.EP.VMMR0.pvVMMR0EntryInt);
+                    if (RT_SUCCESS(rc))
+                        rc = supdrvSolLdrResolvEp(pImage, "VMMR0EntryFast", (void **)&pReq->u.In.EP.VMMR0.pvVMMR0EntryFast);
+                    if (RT_SUCCESS(rc))
+                        rc = supdrvSolLdrResolvEp(pImage, "VMMR0EntryEx",   (void **)&pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
+                    break;
+                }
+
+                case SUPLDRLOADEP_SERVICE:
+                {
+                    /** @todo we need the name of the entry point. */
+                    return VERR_NOT_SUPPORTED;
+                }
+            }
+        }
+
         mod_release_mod(pImage->pSolModCtl);
     }
     else
@@ -1058,9 +1122,9 @@ int  VBOXCALL   supdrvOSLdrValidatePointer(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAG
 }
 
 
-int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits)
+int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const uint8_t *pbImageBits, PSUPLDRLOAD pReq)
 {
-    NOREF(pDevExt); NOREF(pImage); NOREF(pbImageBits);
+    NOREF(pDevExt); NOREF(pImage); NOREF(pbImageBits); NOREF(pReq);
     return VERR_NOT_SUPPORTED;
 }
 
