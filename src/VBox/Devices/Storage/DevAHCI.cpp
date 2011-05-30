@@ -1524,6 +1524,8 @@ static int PortFisAddr_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_
 {
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
+    Assert(!(u32Value & ~AHCI_PORT_FB_RESERVED));
+
     pAhciPort->regFB = (u32Value & AHCI_PORT_FB_RESERVED);
     pAhciPort->GCPhysAddrFb = AHCI_RTGCPHYS_FROM_U32(pAhciPort->regFBU, pAhciPort->regFB);
 
@@ -1569,6 +1571,8 @@ static int PortCmdLstAddr_r(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint
 static int PortCmdLstAddr_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
+
+    Assert(!(u32Value & ~AHCI_PORT_CLB_RESERVED));
 
     pAhciPort->regCLB = (u32Value & AHCI_PORT_CLB_RESERVED);
     pAhciPort->GCPhysAddrClb = AHCI_RTGCPHYS_FROM_U32(pAhciPort->regCLBU, pAhciPort->regCLB);
@@ -2389,6 +2393,8 @@ PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
         {
             Assert(iReg == 1);
             rc = ahciRegisterWrite(pAhci, pAhci->regIdx, &u32, cb);
+            if (rc == VINF_IOM_HC_MMIO_WRITE)
+                rc = VINF_IOM_HC_IOPORT_WRITE;
         }
     }
     /* else: ignore */
@@ -2429,6 +2435,8 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         {
             Assert(iReg == 1);
             rc = ahciRegisterRead(pAhci, pAhci->regIdx, pu32, cb);
+            if (rc == VINF_IOM_HC_MMIO_READ)
+                rc = VINF_IOM_HC_IOPORT_READ;
         }
     }
     else
@@ -8158,6 +8166,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     bool       fR0Enabled = false;
     uint32_t   cbTotalBufferSize = 0;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+
+    LogFlowFunc(("pThis=%#p\n", pThis));
 
     /*
      * Validate and read configuration.
