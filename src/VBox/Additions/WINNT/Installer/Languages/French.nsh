@@ -27,6 +27,7 @@ LangString VBOX_COMPONENT_D3D  ${LANG_FRENCH}                       "Support Dir
 LangString VBOX_COMPONENT_D3D_DESC  ${LANG_FRENCH}                  "Active le support Direct3D pour invités (experimental)"
 LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_FRENCH}                  "Windows ne fonctionne pas en mode sans échec.$\r$\nDe ce fait, le support D3D ne peut être installé."
 LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_FRENCH}          "Le support invité pour Direct3D n'est pas disponible sur Windows $g_strWinVersion!"
+LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_FRENCH}                "On this guest Windows Aero (WDDM) is supported.$\r$\nThis feature is experimental and therefore should not be used on productive systems yet.$\r$\n$\r$\nDo you want to install the regular Direct3D support instead?"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_FRENCH}          "Le programme d'installation vient de remplacer certains fichiers systèmes afin de faire fonctionner correctement ${PRODUCT_NAME}.$\r$\nPour le cas qu'un avertissement de la Protection de fichiers Windows apparaisse, veuiller l'annuler sans restaurer les fichiers originaux!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_FRENCH}           "Le système doit être redémarré pourque les changements prennent effet. Redémarrer Windows maintenant?"
