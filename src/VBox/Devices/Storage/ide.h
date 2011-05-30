@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -167,6 +167,13 @@ typedef enum ATACMD
     (   ((1 << (maxspeed + 1)) - 1) \
      |  ((((thismode ^ currmode) & 0xf8) == 0) ? 1 << ((currmode & 0x07) + 8) : 0))
 
+/**
+ * Length of the ATA VPD data (without termination)
+ */
+#define ATA_SERIAL_NUMBER_LENGTH        20
+#define ATA_FIRMWARE_REVISION_LENGTH     8
+#define ATA_MODEL_NUMBER_LENGTH         40
+
 
 /* ATAPI defines */
 
@@ -177,6 +184,17 @@ typedef enum ATACMD
 #define ATAPI_INT_REASON_IO             0x02 /* 1 = transfer to the host */
 #define ATAPI_INT_REASON_REL            0x04
 #define ATAPI_INT_REASON_TAG_MASK       0xf8
+
+
+/**
+ * Length of the ATAPI VPD data (without termination)
+ *
+ * @todo move to scsi.h
+ */
+#define ATAPI_INQUIRY_VENDOR_ID_LENGTH   8
+#define ATAPI_INQUIRY_PRODUCT_ID_LENGTH 16
+#define ATAPI_INQUIRY_REVISION_LENGTH    4
+
 
 #if defined(DEBUG) && defined(IN_RING3)
 const char * ATACmdText(uint8_t uCmd);

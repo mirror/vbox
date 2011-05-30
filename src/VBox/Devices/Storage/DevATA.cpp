@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -102,16 +102,6 @@
 #define ATA_MEDIA_TYPE_UNKNOWN                  0    /**< unknown CD type */
 #define ATA_MEDIA_TYPE_DATA                     1    /**< Data CD */
 #define ATA_MEDIA_TYPE_CDDA                     2    /**< CD-DA  (audio) CD type */
-
-/**
- * Length of the configurable VPD data (without termination)
- */
-#define ATA_SERIAL_NUMBER_LENGTH        20
-#define ATA_FIRMWARE_REVISION_LENGTH     8
-#define ATA_MODEL_NUMBER_LENGTH         40
-#define ATAPI_INQUIRY_VENDOR_ID_LENGTH   8
-#define ATAPI_INQUIRY_PRODUCT_ID_LENGTH 16
-#define ATAPI_INQUIRY_REVISION_LENGTH    4
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -256,6 +246,8 @@ typedef struct ATADevState
     /** Statistics: number of flush operations and the time spend flushing. */
     STAMPROFILE     StatFlushes;
 
+    /** Mark the drive as having a non-rotational medium (i.e. as a SSD). */
+    bool            fNonRotational;
     /** Enable passing through commands directly to the ATAPI drive. */
     bool            fATAPIPassthrough;
     /** Number of errors we've reported to the release log.
@@ -1245,6 +1237,8 @@ static bool ataIdentifySS(ATADevState *s)
         p[102] = RT_H2LE_U16(s->cTotalSectors >> 32);
         p[103] = RT_H2LE_U16(s->cTotalSectors >> 48);
     }
+    if (s->fNonRotational)
+        p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
     uint32_t uCsum = ataChecksum(p, 510);
     p[255] = RT_H2LE_U16(0xa5 | (uCsum << 8)); /* Integrity word */
     s->iSourceSink = ATAFN_SS_NULL;
@@ -7160,6 +7154,11 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                         return PDMDEV_SET_ERROR(pDevIns, rc,
                                     N_("PIIX3 configuration error: failed to read \"ModelNumber\" as string"));
                     }
+
+                    rc = CFGMR3QueryBoolDef(pCfgNode, "NonRotationalMedium", &pIf->fNonRotational, false);
+                    if (RT_FAILURE(rc))
+                        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                    N_("PIIX3 configuration error: failed to read \"NonRotationalMedium\" as boolean"));
 
                     /* There are three other identification strings for CD drives used for INQUIRY */
                     if (pIf->fATAPI)

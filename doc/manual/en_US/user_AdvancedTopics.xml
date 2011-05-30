@@ -878,6 +878,23 @@ VBoxManage setextradata "VM name"
       alphanumeric string. Instead of "Port0" (referring to the first port),
       specify the desired SATA hard disk port.</para>
 
+      <para>The above commands apply to virtual machines with an AHCI (SATA)
+      controller. The commands for virtual machines with an IDE controller
+      are:</para>
+
+      <screen>VBoxManage setextradata "VM name"
+      "VBoxInternal/Devices/piix3ide/0/Config/PrimaryMaster/SerialNumber" "serial"
+VBoxManage setextradata "VM name"
+      "VBoxInternal/Devices/piix3ide/0/Config/PrimaryMaster/FirmwareRevision" "firmware"
+VBoxManage setextradata "VM name"
+      "VBoxInternal/Devices/piix3ide/0/Config/PrimaryMaster/ModelNumber" "model"</screen>
+
+      <para>For hard disks it's also possible (experimental!) to mark the drive
+      as having a non-rotational medium with:</para>
+
+      <screen>VBoxManage setextradata "VM name"
+      "VBoxInternal/Devices/ahci/0/Config/Port0/NonRotational" "1"</screen>
+
       <para>Additional three parameters are needed for CD/DVD drives to report
       the vendor product data:</para>
 
