@@ -110,7 +110,7 @@ XSLTPROC="xsltproc"
 GENISOIMAGE="genisoimage"
 MKISOFS="mkisofs"
 INCCRYPTO=""
-LIBCRYPTO="-lcrypto"
+LIBCRYPTO="-lcrypto -lssl"
 LIBPTHREAD="-lpthread"
 LIBCAP="-lcap"
 GSOAP=""
@@ -838,9 +838,11 @@ check_ssl()
     cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <openssl/opensslv.h>
+#include <openssl/ssl.h>
 extern "C" int main(void)
 {
   printf("found version %s", OPENSSL_VERSION_TEXT);
+  SSL_library_init();
 #if OPENSSL_VERSION_NUMBER >= 0x00908000
   printf(", OK.\n");
   return 0;
