@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -102,6 +102,9 @@ ULONG VirtualBox::sRevision;
 
 // static
 Bstr VirtualBox::sPackageType;
+
+// static
+Bstr VirtualBox::sAPIVersion;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -389,7 +392,9 @@ HRESULT VirtualBox::init()
     sRevision = RTBldCfgRevision();
     if (sPackageType.isEmpty())
         sPackageType = VBOX_PACKAGE_STRING;
-    LogFlowThisFunc(("Version: %ls, Package: %ls\n", sVersion.raw(), sPackageType.raw()));
+    if (sAPIVersion.isEmpty())
+        sAPIVersion = VBOX_API_VERSION_STRING;
+    LogFlowThisFunc(("Version: %ls, Package: %ls, API Version: %ls\n", sVersion.raw(), sPackageType.raw(), sAPIVersion.raw()));
 
     /* Get the VirtualBox home directory. */
     {
@@ -884,6 +889,17 @@ STDMETHODIMP VirtualBox::COMGETTER(PackageType)(BSTR *aPackageType)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     sPackageType.cloneTo(aPackageType);
+    return S_OK;
+}
+
+STDMETHODIMP VirtualBox::COMGETTER(APIVersion)(BSTR *aAPIVersion)
+{
+    CheckComArgNotNull(aAPIVersion);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    sAPIVersion.cloneTo(aAPIVersion);
     return S_OK;
 }
 
