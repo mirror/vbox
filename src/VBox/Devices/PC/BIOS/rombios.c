@@ -777,12 +777,6 @@ typedef struct {
     } scsi_t;
 #endif
 
-#ifdef VBOX_WITH_BIOS_AHCI
-  typedef struct {
-    Bit16u iobase;
-    } ahci_t;
-#endif
-
   // for access to EBDA area
   //     The EBDA structure should conform to
   //     http://www.frontiernet.net/~fys/rombios.htm document
@@ -812,7 +806,8 @@ typedef struct {
 # endif
 
 #ifdef VBOX_WITH_BIOS_AHCI
-    ahci_t ahci;
+    // AHCI driver data segment;
+    Bit16u SegAhci;
 #endif
 
     unsigned char uForceBootDrive;
@@ -1289,10 +1284,14 @@ ASM_START
   push bp
   mov  bp, sp
 
-    push dx
+    push bx
     mov  dx, 4[bp]
     in   eax, dx
-    pop  dx
+    mov bx, ax   ; Save lower 16 bits
+    shr eax, #16
+    mov dx, ax
+    mov ax, bx
+    pop bx
 
   pop  bp
 ASM_END
@@ -2730,6 +2729,9 @@ void ata_detect( )
       cdcount++;
       }
 
+#ifdef VBOX
+      // we don't want any noisy output for now
+#else /* !VBOX */
       {
       Bit32u sizeinmb;
       Bit16u ataversion;
@@ -2763,9 +2765,6 @@ void ata_detect( )
           break;
         }
 
-#ifdef VBOX
-      // we don't want any noisy output for now
-#else /* !VBOX */
       switch (type) {
         case ATA_TYPE_ATA:
           printf("ata%d %s: ",channel,slave?" slave":"master");
@@ -2784,8 +2783,8 @@ void ata_detect( )
           printf("ata%d %s: Unknown device\n",channel,slave?" slave":"master");
           break;
         }
-#endif /* !VBOX */
       }
+#endif /* !VBOX */
     }
 
   // Store the devices counts
@@ -4850,7 +4849,10 @@ ASM_END
                         /* Mark the BIOS as reserved. VBox doesn't currently
                          * use the 0xe0000-0xeffff area. It does use the
                          * 0xd0000-0xdffff area for the BIOS logo, but it's
-                         * not worth marking it as reserved. Note that various
+                         * not worth marking it as reserved. (this is not
+                         * true anymore because the VGA adapter handles the logo stuff)
+                         * The whole 0xe0000-0xfffff can be used for the BIOS.
+                         * Note that various
                          * Windows versions don't accept (read: in debug builds
                          * they trigger the "Too many similar traps" assertion)
                          * a single reserved range from 0xd0000 to 0xffffff.

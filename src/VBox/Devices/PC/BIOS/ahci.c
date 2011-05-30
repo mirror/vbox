@@ -15,6 +15,66 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define AHCI_MAX_STORAGE_DEVICES 4
+
+typedef struct
+{
+    Bit8u  type;         // Detected type of ata (ata/atapi/none/unknown/scsi)
+    Bit8u  device;       // Detected type of attached devices (hd/cd/none)
+#if 0
+    Bit8u  removable;    // Removable device flag
+    Bit8u  lock;         // Locks for removable devices
+#endif
+    Bit16u blksize;      // block size
+
+    Bit8u  translation;  // type of translation
+    chs_t  lchs;         // Logical CHS
+    chs_t  pchs;         // Physical CHS
+
+    Bit32u sectors;      // Total sectors count
+    Bit8u  port;         // Port this device is on.
+} ahci_device_t;
+
+/**
+ * AHCI controller data.
+ */
+typedef struct
+{
+    /** The AHCI command list as defined by chapter 4.2.2 of the Intel AHCI spec.
+     *  Because the BIOS doesn't support NCQ only the first command header is defined
+     *  to save memory. - Must be aligned on a 1K boundary.
+     */
+    Bit32u        abCmdHdr[0x8];
+    /** Align the next structure on a 128 byte boundary. */
+    Bit8u         abAlignment1[0x60];
+    /** The command table of one request as defined by chapter 4.2.3 of the Intel AHCI spec.
+     *  Must be aligned on 128 byte boundary.
+     */
+    Bit8u         abCmd[0x90];
+    /** Alignment */
+    Bit8u         abAlignment2[0xF0];
+    /** Memory for the received command FIS area as specified by chapter 4.2.1
+     *  of the Intel AHCI spec. This area is normally 256 bytes big but to save memory
+     *  only the first 96 bytes are used because it is assumed that the controller
+     *  never writes to the UFIS or reserved area. - Must be aligned on a 256byte boundary.
+     */
+    Bit8u         abFisRecv[0x60];
+    /** Base I/O port for the index/data register pair. */
+    Bit16u        iobase;
+    /** Current port which uses the memory to communicate with the controller. */
+    Bit8u         port;
+    /** AHCI device information. */
+    ahci_device_t aDevices[AHCI_MAX_STORAGE_DEVICES];
+    /** Map between (bios hd id - 0x80) and ahci devices. */
+    Bit8u         cHardDisks;
+    Bit8u         aHdIdMap[AHCI_MAX_STORAGE_DEVICES];
+    /** Map between (bios cd id - 0xE0) and ahci_devices. */
+    Bit8u         cCdDrives;
+    Bit8u         aCdIdMap[AHCI_MAX_STORAGE_DEVICES];
+} ahci_t;
+
+#define AhciData ((ahci_t *) 0)
+
 /** Supported methods of the PCI BIOS. */
 #define PCIBIOS_ID                      0xb1
 #define PCIBIOS_PCI_BIOS_PRESENT        0x01
@@ -75,6 +135,7 @@
 #define AHCI_REG_PORT_FB   0x08
 #define AHCI_REG_PORT_FBU  0x0c
 #define AHCI_REG_PORT_IS   0x10
+# define AHCI_REG_PORT_IS_DHRS RT_BIT_32(0)
 #define AHCI_REG_PORT_IE   0x14
 #define AHCI_REG_PORT_CMD  0x18
 # define AHCI_REG_PORT_CMD_ST  RT_BIT_32(0)
@@ -107,11 +168,13 @@
 
 /** Writes to the given port register. */
 #define VBOXAHCI_PORT_WRITE_REG(iobase, port, reg, val) \
-    VBOX_AHCI_WRITE_REG((iobase), VBOXAHCI_PORT_REG((port), (reg)), val)
+    VBOXAHCI_WRITE_REG((iobase), VBOXAHCI_PORT_REG((port), (reg)), val)
 
 /** Reads from the given port register. */
 #define VBOXAHCI_PORT_READ_REG(iobase, port, reg, val) \
-    VBOX_AHCI_READ_REG((iobase), VBOXAHCI_PORT_REG((port), (reg)), val)
+    VBOXAHCI_READ_REG((iobase), VBOXAHCI_PORT_REG((port), (reg)), val)
+
+#define ATA_CMD_IDENTIFY_DEVICE 0xEC
 
 /**
  * Returns the bus/device/function of a PCI device with
@@ -497,10 +560,197 @@ ASM_START
 ASM_END
 }
 
-static int ahci_port_init(u16IoBase, u8Port)
+/**
+ * Converts a segment:offset pair into a 32bit physical address.
+ */
+static Bit32u ahci_addr_to_phys(u16Segment, u16Offset)
+    Bit16u u16Segment, u16Offset;
+{
+ASM_START
+    push bp
+    mov bp, sp
+
+    push bx
+    push eax
+
+    xor eax, eax
+    xor ebx, ebx
+    mov ax, _ahci_addr_to_phys.u16Segment + 2[bp]
+    shl eax, #4
+    add bx, _ahci_addr_to_phys.u16Offset + 2[bp]
+    add eax, ebx
+
+    mov bx, ax
+    shr eax, #16
+    mov dx, ax
+
+    pop eax
+    mov ax, bx
+    pop bx
+
+    pop bp
+ASM_END
+}
+
+/**
+ * Issues a command to the SATA controller and waits for completion.
+ */
+static void ahci_port_cmd_sync(SegAhci, u16IoBase, fWrite, fAtapi, cFisDWords, cbData)
+    Bit16u SegAhci;
+    Bit16u u16IoBase;
+    bx_bool fWrite;
+    bx_bool fAtapi;
+    Bit8u   cFisDWords;
+    Bit16u  cbData;
+{
+    Bit8u u8Port;
+
+    u8Port = read_byte(SegAhci, &AhciData->port);
+
+    if (u8Port != 0xff)
+    {
+        Bit32u u32Val;
+
+        /* Prepare the command header. */
+        u32Val = (1L << 16) | RT_BIT_32(7);
+        if (fWrite)
+            u32Val |= RT_BIT_32(6);
+
+        if (fAtapi)
+            u32Val |= RT_BIT_32(5);
+
+        u32Val |= cFisDWords;
+
+        write_dword(SegAhci, &AhciData->abCmdHdr[0], u32Val);
+        write_dword(SegAhci, &AhciData->abCmdHdr[1], (Bit32u)cbData);
+        write_dword(SegAhci, &AhciData->abCmdHdr[2],
+                    ahci_addr_to_phys(SegAhci, &AhciData->abCmd[0]));
+
+        /* Enable Command engine. */
+        ahci_ctrl_set_bits(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
+                           AHCI_REG_PORT_CMD_ST);
+
+        /* Queue command. */
+        VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_CI, 0x1L);
+
+        /* Wait for a D2H Fis. */
+        while (ahci_ctrl_is_bit_set(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_IS),
+                                    AHCI_REG_PORT_IS_DHRS) == 0)
+        {
+            VBOXAHCI_DEBUG("AHCI: Waiting for a D2H Fis\n");
+        }
+
+        ahci_ctrl_set_bits(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_IS),
+                           AHCI_REG_PORT_IS_DHRS); /* Acknowledge received D2H FIS. */
+
+        /* Disable command engine. */
+        ahci_ctrl_clear_bits(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
+                             AHCI_REG_PORT_CMD_ST);
+
+        /** @todo: Examine status. */
+    }
+    else
+        VBOXAHCI_DEBUG("AHCI: Invalid port given\n");
+}
+
+/**
+ * Issue command to device.
+ */
+static void ahci_cmd_data(SegAhci, u16IoBase, u8Cmd, u8Feat, u8Device, u8CylHigh, u8CylLow, u8Sect,
+                          u8FeatExp, u8CylHighExp, u8CylLowExp, u8SectExp, u8SectCount, u8SectCountExp,
+                          SegData, OffData, cbData, fWrite)
+    Bit16u SegAhci;
+    Bit16u u16IoBase;
+    Bit8u  u8Cmd, u8Feat, u8Device, u8CylHigh, u8CylLow, u8Sect, u8FeatExp,
+           u8CylHighExp, u8CylLowExp, u8SectExp, u8SectCount, u8SectCountExp;
+    Bit16u SegData, OffData, cbData;
+    bx_bool fWrite;
+{
+    memsetb(SegAhci, &AhciData->abCmd[0], 0, sizeof(AhciData->abCmd));
+
+    /* Prepare the FIS. */
+    write_byte(SegAhci, &AhciData->abCmd[0], 0x27);   /* FIS type H2D. */
+    write_byte(SegAhci, &AhciData->abCmd[1], 1 << 7); /* Command update. */
+    write_byte(SegAhci, &AhciData->abCmd[2], u8Cmd);
+    write_byte(SegAhci, &AhciData->abCmd[3], u8Feat);
+
+    write_byte(SegAhci, &AhciData->abCmd[4], u8Sect);
+    write_byte(SegAhci, &AhciData->abCmd[5], u8CylLow);
+    write_byte(SegAhci, &AhciData->abCmd[6], u8CylHigh);
+    write_byte(SegAhci, &AhciData->abCmd[7], u8Device);
+
+    write_byte(SegAhci, &AhciData->abCmd[8], u8SectExp);
+    write_byte(SegAhci, &AhciData->abCmd[9], u8CylLowExp);
+    write_byte(SegAhci, &AhciData->abCmd[10], u8CylHighExp);
+    write_byte(SegAhci, &AhciData->abCmd[11], u8FeatExp);
+
+    write_byte(SegAhci, &AhciData->abCmd[12], u8SectCount);
+    write_byte(SegAhci, &AhciData->abCmd[13], u8SectCountExp);
+
+    /* Prepare PRDT. */
+    write_dword(SegAhci, &AhciData->abCmd[0x80], ahci_addr_to_phys(SegData, OffData));
+    write_dword(SegAhci, &AhciData->abCmd[0x8c], (Bit32u)cbData);
+
+    ahci_port_cmd_sync(SegAhci, u16IoBase, fWrite, 0, 5, cbData);
+}
+
+/**
+ * Deinits the curent active port.
+ */
+static void ahci_port_deinit_current(SegAhci, u16IoBase)
+    Bit16u SegAhci;
+    Bit16u u16IoBase;
+{
+    Bit8u u8Port;
+
+    u8Port = read_byte(SegAhci, &AhciData->port);
+
+    if (u8Port != 0xff)
+    {
+        /* Put the port into an idle state. */
+        ahci_ctrl_clear_bits(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
+                             AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST);
+
+        while (ahci_ctrl_is_bit_set(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
+                                    AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST | AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_CR) == 1)
+        {
+            VBOXAHCI_DEBUG("AHCI: Waiting for the port to idle\n");
+        }
+
+        /*
+         * Port idles, set up memory for commands and received FIS and program the
+         * address registers.
+         */
+        memsetb(SegAhci, &AhciData->abFisRecv[0], 0, 0x60);
+        memsetb(SegAhci, &AhciData->abCmdHdr[0], 0, 0x20);
+        memsetb(SegAhci, &AhciData->abCmd[0], 0, 0x84);
+
+        VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_FB, 0L);
+        VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_FBU, 0L);
+
+        VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_CLB, 0L);
+        VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_CLBU, 0L);
+
+        /* Disable all interrupts. */
+        VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_IE, 0L);
+
+        write_byte(SegAhci, &AhciData->port, 0xff);
+    }
+}
+
+/**
+ * Brings a port into a minimal state to make device detection possible
+ * or to queue requests.
+ */
+static void ahci_port_init(SegAhci, u16IoBase, u8Port)
+    Bit16u SegAhci;
     Bit16u u16IoBase;
     Bit8u u8Port;
 {
+    Bit32u u32PhysAddr;
+
+    /* Deinit any other port first. */
+    ahci_port_deinit_current(SegAhci, u16IoBase);
 
     /* Put the port into an idle state. */
     ahci_ctrl_clear_bits(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
@@ -516,21 +766,135 @@ static int ahci_port_init(u16IoBase, u8Port)
      * Port idles, set up memory for commands and received FIS and program the
      * address registers.
      */
+    memsetb(SegAhci, &AhciData->abFisRecv[0], 0, 0x60);
+    memsetb(SegAhci, &AhciData->abCmdHdr[0], 0, 0x20);
+    memsetb(SegAhci, &AhciData->abCmd[0], 0, 0x84);
 
-    return -1;
+    u32PhysAddr = ahci_addr_to_phys(SegAhci, &AhciData->abFisRecv);
+    VBOXAHCI_DEBUG("AHCI: FIS receive area %lx from %x:%x\n", u32PhysAddr, SegAhci, &AhciData->abFisRecv);
+    VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_FB, u32PhysAddr);
+    VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_FBU, 0L);
+
+    u32PhysAddr = ahci_addr_to_phys(SegAhci, &AhciData->abCmdHdr);
+    VBOXAHCI_DEBUG("AHCI: CMD list area %lx\n", u32PhysAddr);
+    VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_CLB, u32PhysAddr);
+    VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_CLBU, 0L);
+
+    /* Disable all interrupts. */
+    VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_IE, 0L);
+    VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_IS, 0xffffffffL);
+    /* Clear all errors. */
+    VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_SERR, 0xffffffffL);
+
+    write_byte(SegAhci, &AhciData->port, u8Port);
+}
+
+static void ahci_port_detect_device(SegAhci, u16IoBase, u8Port)
+    Bit16u SegAhci;
+    Bit16u u16IoBase;
+    Bit8u u8Port;
+{
+    Bit32u val;
+
+    ahci_port_init(SegAhci, u16IoBase, u8Port);
+
+    /* Reset connection. */
+    VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_SCTL, 0x01L);
+    /*
+     * According to the spec we should wait at least 1msec until the reset
+     * is cleared but this is a virtual controller so we don't have to.
+     */
+    VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_SCTL, 0x00L);
+
+    /* Check if there is a device on the port. */
+    VBOXAHCI_PORT_READ_REG(u16IoBase, u8Port, AHCI_REG_PORT_SSTS, val);
+    if (ahci_ctrl_extract_bits(val, 0xfL, 0) == 0x3L)
+    {
+        VBOXAHCI_DEBUG("AHCI: Device detected on port %d\n", u8Port);
+
+        /* Device detected, enable FIS receive. */
+        ahci_ctrl_set_bits(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
+                           AHCI_REG_PORT_CMD_FRE);
+
+        /* Check signature to determine device type. */
+        VBOXAHCI_PORT_READ_REG(u16IoBase, u8Port, AHCI_REG_PORT_SIG, val);
+        if (val == 0x101L)
+        {
+            Bit8u idxHdCurr = read_byte(SegAhci, &AhciData->cHardDisks);
+            if (idxHdCurr < AHCI_MAX_STORAGE_DEVICES)
+            {
+                Bit32u cSectors;
+                Bit8u  abBuffer[0x0200];
+
+                VBOXAHCI_DEBUG("AHCI: Detected hard disk\n");
+
+                /* Identify device. */
+                ahci_cmd_data(SegAhci, u16IoBase, ATA_CMD_IDENTIFY_DEVICE, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, get_SS(), abBuffer, sizeof(abBuffer), 0);
+
+                write_byte(SegAhci, &AhciData->aDevices[idxHdCurr].port, u8Port);
+                VBOXAHCI_DEBUG("AHCI: %lld sectors\n", cSectors);
+
+
+                idxHdCurr++;
+                write_byte(SegAhci, &AhciData->cHardDisks, idxHdCurr);
+            }
+            else
+                VBOXAHCI_DEBUG("AHCI: Reached maximum hard disk count, skipping\n");
+        }
+        else if (val == 0xeb140101)
+        {
+            VBOXAHCI_DEBUG("AHCI: Detected ATAPI device\n");
+        }
+        else
+            VBOXAHCI_DEBUG("AHCI: Unknown device ignoring\n");
+    }
+}
+
+static Bit16u ahci_mem_alloc()
+{
+    Bit16u cBaseMem1K;
+    Bit16u SegStart;
+
+    cBaseMem1K = read_byte(0x00, 0x0413);
+
+    VBOXAHCI_DEBUG("AHCI: %x K of base memory available\n", cBaseMem1K);
+
+    if (cBaseMem1K == 0)
+        return 0;
+
+    cBaseMem1K--; /* Allocate one block. */
+    SegStart = (Bit16u)(((Bit32u)cBaseMem1K * 1024) >> 4); /* Calculate start segment. */
+
+    write_byte(0x00, 0x0413, cBaseMem1K);
+
+    return SegStart;
 }
 
 static int ahci_ctrl_init(u16IoBase)
     Bit16u u16IoBase;
 {
-    int rc = 0;
     Bit8u i, cPorts;
     Bit32u val;
+    Bit16u ebda_seg;
+    Bit16u SegAhci;
+
+    ebda_seg = read_word(0x0040, 0x000E);
 
     VBOXAHCI_READ_REG(u16IoBase, AHCI_REG_VS, val);
     VBOXAHCI_DEBUG("AHCI: Controller has version: 0x%x (major) 0x%x (minor)\n",
                    ahci_ctrl_extract_bits(val, 0xffff0000, 16),
                    ahci_ctrl_extract_bits(val, 0x0000ffff,  0));
+
+    /* Allocate 1K of base memory. */
+    SegAhci = ahci_mem_alloc();
+    if (SegAhci == 0)
+    {
+        VBOXAHCI_DEBUG("AHCI: Could not allocate 1K of memory, can't boot from controller\n");
+        return 0;
+    }
+
+    write_word(ebda_seg, &EbdaData->SegAhci, SegAhci);
+    write_byte(SegAhci, &AhciData->port, 0xff);
 
     /* Reset the controller. */
     ahci_ctrl_set_bits(u16IoBase, AHCI_REG_GHC, AHCI_GHC_HR);
@@ -551,7 +915,7 @@ static int ahci_ctrl_init(u16IoBase)
         if (ahci_ctrl_is_bit_set(u16IoBase, AHCI_REG_PI, RT_BIT_32(i)) != 0)
         {
             VBOXAHCI_DEBUG("AHCI: Port %u is present\n", i);
-            rc = ahci_port_init(u16IoBase, i);
+            ahci_port_detect_device(SegAhci, u16IoBase, i);
             cPorts--;
             if (cPorts == 0)
                 break;
@@ -559,7 +923,7 @@ static int ahci_ctrl_init(u16IoBase)
         i++;
     }
 
-    return rc;
+    return 0;
 }
 
 /**
