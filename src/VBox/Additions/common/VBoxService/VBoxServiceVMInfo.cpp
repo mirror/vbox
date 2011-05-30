@@ -189,19 +189,19 @@ static void vboxserviceVMInfoWriteFixedProperties(void)
      * Retrieve version information about Guest Additions and installed files (components).
      */
     char *pszAddVer;
-    char *pszAddVerEx;
+    char *pszAddVerExt;
     char *pszAddRev;
-    rc = VbglR3GetAdditionsVersion(&pszAddVer, &pszAddVerEx, &pszAddRev);
+    rc = VbglR3GetAdditionsVersion(&pszAddVer, &pszAddVerExt, &pszAddRev);
     VBoxServiceWritePropF(g_uVMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version",
                           "%s", RT_FAILURE(rc) ? "" : pszAddVer);
-    VBoxServiceWritePropF(g_uVMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/VersionEx",
-                          "%s", RT_FAILURE(rc) ? "" : pszAddVerEx);
+    VBoxServiceWritePropF(g_uVMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/VersionExt",
+                          "%s", RT_FAILURE(rc) ? "" : pszAddVerExt);
     VBoxServiceWritePropF(g_uVMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision",
                           "%s", RT_FAILURE(rc) ? "" : pszAddRev);
     if (RT_SUCCESS(rc))
     {
         RTStrFree(pszAddVer);
-        RTStrFree(pszAddVerEx);
+        RTStrFree(pszAddVerExt);
         RTStrFree(pszAddRev);
     }
 
