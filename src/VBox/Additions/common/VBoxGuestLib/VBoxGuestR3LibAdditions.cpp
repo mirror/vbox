@@ -176,6 +176,7 @@ VBGLR3DECL(int) VbglR3ReportAdditionsStatus(VBoxGuestFacilityType enmFacility,
     return rc;
 }
 
+#ifdef RT_OS_WINDOWS
 
 /**
  * Queries a string value from a specified registry key.
@@ -207,6 +208,7 @@ int vbglR3QueryRegistryString(HKEY hKey, const char *pszValName, char *pszBuffer
     return rc;
 }
 
+#endif /* RT_OS_WINDOWS */
 
 /**
  * Retrieves the installed Guest Additions version and/or revision.
