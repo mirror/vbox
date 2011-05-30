@@ -226,6 +226,11 @@ typedef RTDVMFMTOPS *PRTDVMFMTOPS;
 /** Pointer to a const DVM ops table. */
 typedef const RTDVMFMTOPS *PCRTDVMFMTOPS;
 
+/** Converts a LBA number to the byte offset. */
+#define RTDVM_LBA2BYTE(lba, disk) ((lba) * (disk)->cbSector)
+/** Converts a Byte offset to the LBA number. */
+#define RTDVM_BYTE2LBA(off, disk) ((off) / (disk)->cbSector)
+
 /**
  * Returns the number of sectors in the disk.
  *
