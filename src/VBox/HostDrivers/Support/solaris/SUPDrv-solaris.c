@@ -908,13 +908,24 @@ int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
      * Construct a filename that escapes the module search path and let us
      * specify a root path.
      */
+    /** @todo change this to use modctl and use_path=0. */
     const char *pszName = RTPathFilename(pszFilename);
     AssertReturn(pszName, VERR_INVALID_PARAMETER);
-    char *pszSubDir = RTStrAPrintf2("../../../../../../../../../../../%.*s", pszName - pszFilename, pszFilename);
+    char *pszSubDir = RTStrAPrintf2("../../../../../../../../../../..%.*s", pszName - pszFilename - 1, pszFilename);
     if (!pszSubDir)
         return VERR_NO_STR_MEMORY;
-
     int idMod = modload(pszSubDir, pszName);
+    if (idMod == -1)
+    {
+        /* This is an horrible hack for avoiding the mod-present check in
+           modrload on S10.  Fortunately, nobody else seems to be using that
+           variable... */
+        extern int swaploaded;
+        int saved_swaploaded = swaploaded;
+        swaploaded = 0;
+        idMod = modload(pszSubDir, pszName);
+        swaploaded = saved_swaploaded;
+    }
     RTStrFree(pszSubDir);
     if (idMod == -1)
     {
