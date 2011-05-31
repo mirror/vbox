@@ -137,7 +137,7 @@ extern void *vbi_proc(void);
  * thread functions
  */
 extern void vbi_set_priority(void *thread, int priority);
-extern void *vbi_thread_create(void *func, void *arg, size_t len, int priority);
+extern void *vbi_thread_create(void (*func)(void *), void *arg, size_t len, int priority);
 extern void vbi_thread_exit(void);
 
 /*
@@ -248,7 +248,7 @@ extern uint_t vbi_revision_level;
  * Note there is no guarantee about which CPU the function is invoked on.
  */
 typedef struct vbi_cpu_watch vbi_cpu_watch_t;
-extern vbi_cpu_watch_t *vbi_watch_cpus(void (*func)(void), void *arg,
+extern vbi_cpu_watch_t *vbi_watch_cpus(void (*func)(void *, int, int), void *arg,
     int current_too);
 extern void vbi_ignore_cpus(vbi_cpu_watch_t *);
 #pragma weak vbi_watch_cpus
@@ -344,7 +344,7 @@ extern int vbi_is_preempt_pending(void);
 
 /* begin interfaces defined for version 7 */
 /*
- * Allocate and free physically limited, aligned as specified continuous or non-continuous memory. 
+ * Allocate and free physically limited, aligned as specified continuous or non-continuous memory.
  *
  * return value is a) NULL if memory below "phys" not available or
  * b) virtual address of memory in kernel heap
@@ -368,7 +368,7 @@ extern void vbi_phys_free(void *va, size_t size);
  *
  * phys on input is set to the physical address of the first page allocated.
  *
- * size is the amount to allocate and must be a multiple of PAGESIZE
+ * size is the amount to allocate and must be a multiple of PAGESIZE.
  */
 extern page_t **vbi_pages_alloc(uint64_t *phys, size_t size);
 
@@ -398,6 +398,17 @@ extern int vbi_pages_premap(page_t **pp_pages, size_t size, uint64_t *physaddrs)
  */
 extern uint64_t vbi_page_to_pa(page_t **pp_pages, pgcnt_t i);
 /* end of interfaces defined for version 8 */
+
+/*
+ * Allocate, free and map one large page.
+ *
+ * The size of the large page is hardware specific and must be specified
+ * correctly or we'll panic. :-)
+ */
+extern page_t *vbi_large_page_alloc(uint64_t *pphys, size_t pgsize);
+extern void vbi_large_page_free(page_t *ppage, size_t pgsize);
+extern int vbi_large_page_premap(page_t *pproot, size_t pgsize);
+
 
 #ifdef	__cplusplus
 }
