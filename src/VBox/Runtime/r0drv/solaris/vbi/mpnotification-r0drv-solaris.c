@@ -100,8 +100,6 @@ static void rtMpNotificationSolarisCallback(void *pvUser, int iCpu, int online)
 
 DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 {
-    if (vbi_revision_level < 2)
-        return VERR_NOT_SUPPORTED;
     if (g_hVbiCpuWatch != NULL)
         return VERR_WRONG_ORDER;
 
@@ -118,7 +116,7 @@ DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 
 DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void)
 {
-    if (vbi_revision_level >= 2 && g_hVbiCpuWatch != NULL)
+    if (g_hVbiCpuWatch != NULL)
         vbi_ignore_cpus(g_hVbiCpuWatch);
     g_hVbiCpuWatch = NULL;
 }
