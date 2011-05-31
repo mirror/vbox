@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,6 +42,7 @@
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 #include <openssl/rsa.h>
+#include <openssl/ssl.h>
 
 
 /*******************************************************************************
@@ -67,6 +68,11 @@ PFNRT g_VBoxRTDeps[] =
     (PFNRT)ASMAtomicReadU64,
     (PFNRT)ASMAtomicCmpXchgU64,
     (PFNRT)RTBldCfgRevision,
+    (PFNRT)SSL_free,
+    (PFNRT)SSL_library_init,
+    (PFNRT)SSL_CTX_free,
+    (PFNRT)SSL_CTX_use_certificate_file,
+    (PFNRT)TLSv1_server_method,
     NULL
 };
 

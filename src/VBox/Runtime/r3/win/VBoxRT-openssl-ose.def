@@ -9,7 +9,7 @@
 ;
 
 ;
-; Copyright (C) 2009 Oracle Corporation
+; Copyright (C) 2009-2011 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -1333,6 +1333,21 @@
     sk_zero
     SSLeay
     SSLeay_version
+    SSL_accept
+    SSL_CTX_free
+    SSL_CTX_load_verify_locations
+    SSL_CTX_new
+    SSL_CTX_set_verify
+    SSL_CTX_use_certificate_file
+    SSL_CTX_use_PrivateKey_file
+    SSL_free
+    SSL_library_init
+    SSL_new
+    SSL_pending
+    SSL_read
+    SSL_set_bio
+    SSL_set_read_ahead
+    SSL_write
     string_to_hex
     SXNET_add_id_asc
     SXNET_add_id_INTEGER
@@ -1344,6 +1359,7 @@
     SXNET_new
     SXNETID_free
     SXNETID_new
+    TLSv1_server_method
     UI_add_error_string
     UI_add_info_string
     UI_add_input_boolean
