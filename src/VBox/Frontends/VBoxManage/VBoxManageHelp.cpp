@@ -136,7 +136,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "VBoxManage createvm         --name <name>\n"
                      "                            [--ostype <ostype>]\n"
                      "                            [--register]\n"
-                     "                            [--basefolder <path> | --settingsfile <path>]\n"
+                     "                            [--basefolder <path>]\n"
                      "                            [--uuid <uuid>]\n"
                      "\n");
 
