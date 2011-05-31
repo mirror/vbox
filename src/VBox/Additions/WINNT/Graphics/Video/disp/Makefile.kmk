@@ -32,6 +32,9 @@ VBoxDisp_DEFS         += LOG_TO_BACKDOOR #LOG_ENABLED
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxDisp_DEFS        += VBOX_WITH_VIDEOHWACCEL
 endif
+ifdef VBOX_WITH_CROGL
+ VBoxDisp_DEFS        += VBOX_WITH_CROGL
+endif
 #VBoxDisp_DEFS         += VBOX_VBVA_ADJUST_RECT
 VBoxDisp_INCS          = ../../../include ..
 VBoxDisp_LDFLAGS.x86   = /Entry:DrvEnableDriver@12
