@@ -110,6 +110,15 @@ static DRVFN g_aDrvFnTableNT5[] =
 #endif
 };
 
+#ifdef VBOX_WITH_CROGL
+typedef struct
+{
+    DWORD dwVersion;
+    DWORD dwDriverVersion;
+    WCHAR szDriverName[256];
+} OPENGL_INFO, *POPENGL_INFO;
+#endif
+
 RT_C_DECLS_BEGIN
 ULONG __cdecl DbgPrint(PCH pszFormat, ...)
 {
@@ -863,6 +872,57 @@ ULONG APIENTRY VBoxDispDrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvI
 
     switch (iEsc)
     {
+#ifdef VBOX_WITH_CROGL
+        case OPENGL_GETINFO:
+        {
+            if (pvOut && cjOut >= sizeof(OPENGL_INFO))
+            {
+                POPENGL_INFO pInfo = (POPENGL_INFO)pvOut;
+
+                pInfo->dwVersion        = 2;
+                pInfo->dwDriverVersion  = 1;
+                pInfo->szDriverName[0]  = 'V';
+                pInfo->szDriverName[1]  = 'B';
+                pInfo->szDriverName[2]  = 'o';
+                pInfo->szDriverName[3]  = 'x';
+                pInfo->szDriverName[4]  = 'O';
+                pInfo->szDriverName[5]  = 'G';
+                pInfo->szDriverName[6]  = 'L';
+                pInfo->szDriverName[7]  = 0;
+
+                LOG(("OPENGL_GETINFO ok"));
+                return cjOut;
+            }
+            else
+            {
+                WARN(("OPENGL_GETINFO invalid parms"));
+                return 0;
+            }
+        }
+        case QUERYESCSUPPORT:
+        {
+            if (pvIn && cjIn == sizeof(DWORD))
+            {
+                DWORD nEscapeQuery = *(DWORD *)pvIn;
+
+                if (nEscapeQuery==OPENGL_GETINFO)
+                {
+                    LOG(("QUERYESCSUPPORT OPENGL_GETINFO"));
+                    return 1;
+                }
+                else
+                {
+                    LOG(("QUERYESCSUPPORT unsupported query %d", nEscapeQuery));
+                    return 0;
+                }
+            }
+            else
+            {
+                WARN(("QUERYESCSUPPORT invalid parms"));
+                return 0;
+            }
+        }
+#endif
         case VBOXESC_ISVRDPACTIVE:
         {
             if (pDev && pDev->vbvaCtx.pVBVA && pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents&VBVA_F_MODE_VRDP)
