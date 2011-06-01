@@ -148,12 +148,15 @@ HRESULT vboxDispKmtAdpHdcCreate(HDC *phDc)
         else
         {
             DWORD winEr = GetLastError();
-#ifdef DEBUG_misha
-            Assert(0);
-#endif
-            Log((__FUNCTION__": EnumDisplayDevices failed, winEr (%d)\n", winEr));
+            WARN_BREAK();
             hr = HRESULT_FROM_WIN32(winEr);
+#ifdef DEBUG_misha
             Assert(FAILED(hr));
+#endif
+            if (!FAILED(hr))
+            {
+                hr = E_FAIL;
+            }
             break;
         }
     }

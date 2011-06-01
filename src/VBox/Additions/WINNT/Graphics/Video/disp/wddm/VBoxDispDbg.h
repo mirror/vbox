@@ -75,6 +75,17 @@ void vboxVDbgVEHandlerUnregister();
 # define DbgPrintUsrRel(_m) do { } while (0)
 # define DbgPrintUsrFlow(_m) do { } while (0)
 #endif
+#ifdef DEBUG_misha
+# define WARN_BREAK() do { AssertFailed(); } while (0)
+#else
+# define WARN_BREAK() do { } while (0)
+#endif
+#define WARN(_m) do { \
+        Log(_m); \
+        DbgPrintUsr(_m); \
+        DbgPrintDrv(_m); \
+        WARN_BREAK(); \
+    } while (0)
 #define vboxVDbgPrint(_m) do { \
         Log(_m); \
         DbgPrintUsr(_m); \
