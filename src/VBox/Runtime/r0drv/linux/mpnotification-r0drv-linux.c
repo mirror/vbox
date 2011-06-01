@@ -34,6 +34,7 @@
 #include <iprt/mp.h>
 #include <iprt/err.h>
 #include <iprt/cpuset.h>
+#include <iprt/thread.h>
 #include "r0drv/mp-r0drv.h"
 
 
@@ -67,17 +68,21 @@ static RTCPUSET g_MpPendingOfflineSet;
 
 
 /**
- * The native callback.
+ * Notification wrapper that updates CPU states and invokes our notification
+ * callbacks.
  *
- * @returns 0.
- * @param   pNotifierBlock  Pointer to g_NotifierBlock.
- * @param   ulNativeEvent   The native event.
- * @param   pvCpu           The cpu id cast into a pointer value.
+ * @param idCpu             The CPU Id.
+ * @param pvUser1           Pointer to the notifier_block (unused).
+ * @param pvUser2           The notification event.
+ * @remarks This can be invoked in interrupt context.
  */
-static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, unsigned long ulNativeEvent, void *pvCpu)
+static void rtMpNotificationLinuxOnCurrentCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    RTCPUID idCpu = (uintptr_t)pvCpu;
-    NOREF(pNotifierBlock);
+    unsigned long ulNativeEvent = *(unsigned long *)pvUser2;
+    NOREF(pvUser1);
+
+    AssertRelease(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    AssertRelease(idCpu == RTMpCpuId());   /* ASSUMES iCpu == RTCPUID */
 
     /*
      * Note that redhat/CentOS ported _some_ of the FROZEN macros
@@ -99,7 +104,7 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
         case CPU_DOWN_FAILED_FROZEN:
 #  endif
             if (!RTCpuSetIsMember(&g_MpPendingOfflineSet, idCpu))
-                return 0;
+                return;
         /* fall thru */
 # endif
         case CPU_ONLINE:
@@ -134,7 +139,29 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
 # endif
             break;
     }
+}
 
+
+/**
+ * The native callback.
+ *
+ * @returns NOTIFY_DONE.
+ * @param   pNotifierBlock  Pointer to g_NotifierBlock.
+ * @param   ulNativeEvent   The native event.
+ * @param   pvCpu           The cpu id cast into a pointer value.
+ * @remarks This can fire with preemption enabled and on any CPU.
+ */
+static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, unsigned long ulNativeEvent, void *pvCpu)
+{
+    int rc;
+    RTCPUID idCpu = (uintptr_t)pvCpu;
+    NOREF(pNotifierBlock);
+
+    /*
+     * Reschedule the callbacks to fire on the specific CPU with preemption disabled.
+     */
+    rc = RTMpOnSpecific(idCpu, rtMpNotificationLinuxOnCurrentCpu, pNotifierBlock, &ulNativeEvent);
+    Assert(RT_SUCCESS(rc));
     return NOTIFY_DONE;
 }
 
