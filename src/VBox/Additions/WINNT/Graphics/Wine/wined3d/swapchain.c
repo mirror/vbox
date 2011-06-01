@@ -372,7 +372,7 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
 #if defined(VBOX_WITH_WDDM) && defined(DEBUG)
     {
         HWND wnd = WindowFromDC(context->hdc);
-        Assert(context->currentSwapchain && context->win_handle==swapchain->win_handle);
+        Assert(context->currentSwapchain && context->win_handle==context->currentSwapchain->win_handle);
         Assert(wnd==context->win_handle);
         Assert(IsWindow(context->win_handle));
 

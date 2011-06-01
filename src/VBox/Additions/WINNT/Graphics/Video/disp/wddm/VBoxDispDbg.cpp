@@ -96,21 +96,20 @@ PVBOXDISPDBG vboxDispDbgGet()
 void vboxDispLogDrv(char * szString)
 {
     PVBOXDISPDBG pDbg = vboxDispDbgGet();
-#ifdef DEBUG_misha
-    Assert(pDbg);
-#endif
     if (!pDbg)
+    {
+        /* do not use WARN her esince this would lead to a recursion */
+        WARN_BREAK();
         return;
+    }
 
     VBOXDISPKMT_ADAPTER Adapter;
     HRESULT hr = vboxDispKmtOpenAdapter(&pDbg->KmtCallbacks, &Adapter);
-    Assert(hr == S_OK);
     if (hr == S_OK)
     {
         uint32_t cbString = (uint32_t)strlen(szString) + 1;
         uint32_t cbCmd = RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[cbString]);
         PVBOXDISPIFESCAPE_DBGPRINT pCmd = (PVBOXDISPIFESCAPE_DBGPRINT)RTMemAllocZ(cbCmd);
-        Assert(pCmd);
         if (pCmd)
         {
             pCmd->EscapeHdr.escapeCode = VBOXESC_DBGPRINT;
@@ -126,12 +125,22 @@ void vboxDispLogDrv(char * szString)
             //EscapeData.hContext = NULL;
 
             int Status = pDbg->KmtCallbacks.pfnD3DKMTEscape(&EscapeData);
-            Assert(!Status);
+            if (Status)
+            {
+                WARN_BREAK();
+            }
 
             RTMemFree(pCmd);
         }
+        else
+        {
+            WARN_BREAK();
+        }
         hr = vboxDispKmtCloseAdapter(&Adapter);
-        Assert(hr == S_OK);
+        if(hr != S_OK)
+        {
+            WARN_BREAK();
+        }
     }
 }
 

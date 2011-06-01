@@ -20,6 +20,7 @@
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include <stdio.h>
 
+/* simple handle -> value table API */
 NTSTATUS vboxWddmHTableCreate(PVBOXWDDM_HTABLE pTbl, uint32_t cSize)
 {
     memset(pTbl, 0, sizeof (*pTbl));
@@ -34,6 +35,9 @@ NTSTATUS vboxWddmHTableCreate(PVBOXWDDM_HTABLE pTbl, uint32_t cSize)
 
 VOID vboxWddmHTableDestroy(PVBOXWDDM_HTABLE pTbl)
 {
+    if (!pTbl->paData)
+        return;
+
     vboxWddmMemFree(pTbl->paData);
 }
 
@@ -53,14 +57,23 @@ NTSTATUS vboxWddmHTableRealloc(PVBOXWDDM_HTABLE pTbl, uint32_t cNewSize)
     if (cNewSize > pTbl->cSize)
     {
         PVOID *pvNewData = (PVOID*)vboxWddmMemAllocZero(sizeof (pTbl->paData[0]) * cNewSize);
+        if (!pvNewData)
+        {
+            WARN(("vboxWddmMemAllocZero failed for size (%d)", sizeof (pTbl->paData[0]) * cNewSize));
+            return STATUS_NO_MEMORY;
+        }
         memcpy(pvNewData, pTbl->paData, sizeof (pTbl->paData[0]) * pTbl->cSize);
+        vboxWddmMemFree(pTbl->paData);
         pTbl->iNext2Search = pTbl->cSize;
         pTbl->cSize = cNewSize;
         pTbl->paData = pvNewData;
         return STATUS_SUCCESS;
     }
     else if (cNewSize >= pTbl->cData)
+    {
+        AssertFailed();
         return STATUS_NOT_IMPLEMENTED;
+    }
     return STATUS_INVALID_PARAMETER;
 
 }
@@ -323,7 +336,6 @@ static VOID vboxWddmSwapchainCtxRemoveLocked(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_C
     void * pTst = vboxWddmHTableRemove(&pContext->Swapchains, pSwapchain->hSwapchainKm);
     Assert(pTst == pSwapchain);
     RemoveEntryList(&pSwapchain->DevExtListEntry);
-//    pSwapchain->pContext = NULL;
     pSwapchain->hSwapchainKm = NULL;
     if (pSwapchain->pLastReportedRects)
     {
@@ -333,6 +345,8 @@ static VOID vboxWddmSwapchainCtxRemoveLocked(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_C
     vboxWddmSwapchainRelease(pSwapchain);
 }
 
+/* adds the given swapchain to the context's swapchain list
+ * @return true on success */
 BOOLEAN vboxWddmSwapchainCtxAdd(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
     BOOLEAN bRc;
@@ -342,6 +356,8 @@ BOOLEAN vboxWddmSwapchainCtxAdd(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pConte
     return bRc;
 }
 
+/* removes the given swapchain from the context's swapchain list
+ * */
 VOID vboxWddmSwapchainCtxRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
     ExAcquireFastMutex(&pDevExt->ContextMutex);
@@ -349,6 +365,8 @@ VOID vboxWddmSwapchainCtxRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pConte
     ExReleaseFastMutex(&pDevExt->ContextMutex);
 }
 
+/* destroys all swapchains for the given context
+ * */
 VOID vboxWddmSwapchainCtxDestroyAll(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext)
 {
     VBOXWDDM_HTABLE_ITERATOR Iter;
@@ -369,6 +387,7 @@ VOID vboxWddmSwapchainCtxDestroyAll(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
     ExReleaseFastMutex(&pDevExt->ContextMutex);
 }
 
+/* process the swapchain info passed from user-mode display driver & synchronizes the driver state with it */
 NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, PVBOXDISPIFESCAPE_SWAPCHAININFO pSwapchainInfo, UINT cbSize)
 {
     Assert((cbSize >= RT_OFFSETOF(VBOXDISPIFESCAPE_SWAPCHAININFO, SwapchainInfo.ahAllocs[0])));
@@ -402,7 +421,6 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
 
     if (pSwapchainInfo->SwapchainInfo.hSwapchainKm)
     {
-//            ExAcquireFastMutex(&pContext->SwapchainMutex);
         ExAcquireFastMutex(&pDevExt->ContextMutex);
         pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmHTableGet(&pContext->Swapchains, (VBOXWDDM_HANDLE)pSwapchainInfo->SwapchainInfo.hSwapchainKm);
         Assert(pSwapchain);
@@ -454,7 +472,6 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
         vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
     }
 
-//    ExReleaseFastMutex(&pContext->SwapchainMutex);
     ExReleaseFastMutex(&pDevExt->ContextMutex);
 
     if (pSwapchainInfo->SwapchainInfo.cAllocs)
@@ -470,6 +487,24 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
     }
 
     return STATUS_SUCCESS;
+}
+
+NTSTATUS vboxWddmSwapchainCtxInit(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext)
+{
+    NTSTATUS Status = vboxWddmHTableCreate(&pContext->Swapchains, 4);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxWddmHTableCreate failes, Status (x%x)", Status));
+        return Status;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+VOID vboxWddmSwapchainCtxTerm(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext)
+{
+    vboxWddmSwapchainCtxDestroyAll(pDevExt, pContext);
+    vboxWddmHTableDestroy(&pContext->Swapchains);
 }
 
 #define VBOXWDDM_REG_DRVKEY_PREFIX L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Class\\"

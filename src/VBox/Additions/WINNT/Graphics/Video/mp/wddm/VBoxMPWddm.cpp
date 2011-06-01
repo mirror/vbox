@@ -1227,11 +1227,20 @@ VOID DxgkDdiUnload(
 {
     /* DxgkDdiUnload should be made pageable. */
     PAGED_CODE();
-    LOGF(("ENTER"));
+    LOGF((": unloading"));
 
     vboxVDbgBreakFv();
 
-    LOGF(("LEAVE"));
+    PRTLOGGER pLogger = RTLogRelSetDefaultInstance(NULL);
+    if (pLogger)
+    {
+        RTLogDestroy(pLogger);
+    }
+    pLogger = RTLogSetDefaultInstance(NULL);
+    if (pLogger)
+    {
+        RTLogDestroy(pLogger);
+    }
 }
 
 NTSTATUS DxgkDdiQueryInterface(
@@ -3585,12 +3594,16 @@ DxgkDdiRecommendFunctionalVidPn(
         for (i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
         {
             /* @todo: check that we actually need the current source->target */
-            D3DKMDT_2DREGION Resolution;
             PVBOXWDDM_VIDEOMODES_INFO pInfo = &pInfos[i];
             VIDEO_MODE_INFORMATION *pModeInfo = &pInfo->aModes[pInfo->iPreferredMode];
+#if 1
+            D3DKMDT_2DREGION Resolution;
             Resolution.cx = pModeInfo->VisScreenWidth;
             Resolution.cy = pModeInfo->VisScreenHeight;
             Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, &Resolution, 1);
+#else
+            Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, pInfo->aResolutions, pInfo->cResolutions);
+#endif
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
             {
@@ -5052,8 +5065,7 @@ DxgkDdiCreateContext(
                         Assert(Status == STATUS_SUCCESS);
                         if (Status == STATUS_SUCCESS)
                         {
-                            ExInitializeFastMutex(&pContext->SwapchainMutex);
-                            Status = vboxWddmHTableCreate(&pContext->Swapchains, 4);
+                            Status = vboxWddmSwapchainCtxInit(pDevExt, pContext);
                             Assert(Status == STATUS_SUCCESS);
                             if (Status == STATUS_SUCCESS)
                             {
@@ -5068,7 +5080,8 @@ DxgkDdiCreateContext(
         //                            ExReleaseFastMutex(&pDevExt->ContextMutex);
                                     break;
                                 }
-                                vboxWddmHTableDestroy(&pContext->Swapchains);
+
+                                vboxWddmSwapchainCtxTerm(pDevExt, pContext);
                             }
                         }
                         break;
@@ -5148,7 +5161,7 @@ DxgkDdiDestroyContext(
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
-            vboxWddmSwapchainCtxDestroyAll(pDevExt, pContext);
+            vboxWddmSwapchainCtxTerm(pDevExt, pContext);
             vboxWddmMemFree(pContext);
         }
     }
