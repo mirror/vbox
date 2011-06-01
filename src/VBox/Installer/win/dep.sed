@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -16,9 +16,9 @@
 #
 
 # drop all lines not including a src property.
-/src=\"/!d
+/Source=\"/!d
 # extract the file spec
-s/^.*src="\([^"]*\).*$/\1 /
+s/^.*Source="\([^"]*\).*$/\1 /
 # convert to unix slashes
 s/\\/\//g
 # $(env.PATH_OUT stuff.

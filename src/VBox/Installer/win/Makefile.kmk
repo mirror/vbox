@@ -106,7 +106,8 @@ OTHER_CLEAN += \
 		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj \
 		$(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi) \
 	$(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi \
-	$(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi
+	$(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi \
+	$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi
 
 ifdef VBOX_WITH_COMBINED_PACKAGE
  ifeq ($(KBUILD_TARGET_ARCH),x86)
@@ -145,6 +146,13 @@ ifdef VBOX_WITH_BUNDLED_INSTALLER
  PACKING.win += $(VBOX_PATH_PACK_BUNDLE_ZIP)
 endif
 
+#
+# Surpress/skip the following ICE (internal consistency evaluators):
+# - ICE64: Checks that new directories in the user profile are removed correctly in roaming scenarios.
+#          -> We don't want to remove system folders (like "Microsoft/Internet Explorer/Quick Launch").
+#
+VBOX_MSI_ICE_IGNORE := \
+	-ice:64
 
 #
 # Create intermediate XML file for languages (needed for .MSI linking).
@@ -181,7 +189,7 @@ define def_vbox_license_xml
 $(VBOX_WIN_INST_OUT_DIR)/Languages/License_$(lang).wxl: $(license_file) $(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
 	$$(call MSG_GENERATE,,$$@,$$<)
 	$(APPEND) -t $$@ '<?xml version="1.0" encoding="utf-8"?>'
-	$(APPEND) $$@ '<WixLocalization xmlns="http://schemas.microsoft.com/wix/2003/11/localization" Codepage="1252">'
+	$(APPEND) $$@ '<WixLocalization xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="1252" Culture="$(lang)">'
 
 	$(REDIRECT) -a+to $$@ -- $(ECHO_EXT) -n '<String Id=\"LicenseText\">'
 	$(REDIRECT) -a+to $$@ -- $(SED) -e "s|<|\&lt;|g" -e "s|>|\&gt;|g" $(license_file)
@@ -209,40 +217,64 @@ $(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
 $(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
-	$(APPEND) $@ '<Include>'
+	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
   ifdef VBOX_WITH_DOCS_CHM
-		$(APPEND) $@ '	<File Id="VirtualBox.chm" Name="VBox.chm" LongName="VirtualBox.chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/VirtualBox.chm"></File>'
+		$(APPEND) $@ '	<File Id="file_VirtualBox.chm" Name="VirtualBox.chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/VirtualBox.chm"></File>'
 		$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
-		             '	<File Id="VirtualBox_$(lang).chm" Name="VB_$(lang).chm" LongName="VirtualBox_$(lang).chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/VirtualBox_$(lang).chm"></File>')
+		             '	<File Id="file_VirtualBox_$(lang).chm" Name="VirtualBox_$(lang).chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/VirtualBox_$(lang).chm"></File>')
   endif
 	$(APPEND) $@ '</Include>'
 
 $(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi:	$(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
-	$(APPEND) $@ '<Include>'
-	$(APPEND) $@ '	<File Id="UserManual.pdf" Name="Manual.pdf" LongName="UserManual.pdf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/UserManual.pdf">'
-	$(APPEND) $@ '		<Shortcut Id="startmenuManPDF_en_US" Directory="ProgramMenuDir" Name="M_en_US" LongName="$$(loc.StartMenu_UserManual) (English)" WorkingDirectory="INSTALLDIR"/>'
+	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
+	$(APPEND) $@ '	<File Id="file_UserManual.pdf" Name="UserManual.pdf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/UserManual.pdf">'
 	$(APPEND) $@ '	</File>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
-	             '	<File Id="UserManual_$(lang).pdf" Name="Mn_$(lang).pdf" LongName="UserManual_$(lang).pdf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/UserManual_$(lang).pdf">' \
-	             '		<Shortcut Id="startmenuManPDF_$(lang)" Directory="ProgramMenuDir" Name="M_$(lang)" LongName="$$(loc.StartMenu_UserManual) ($(VBOX_BRAND_$(lang)_LANG_NAME))" WorkingDirectory="INSTALLDIR"/>' \
+	             '	<File Id="file_UserManual_$(lang).pdf" Name="UserManual_$(lang).pdf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/UserManual_$(lang).pdf">' \
 	             '	</File>')
 	$(APPEND) $@ '</Include>'
 
 $(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
-	$(APPEND) $@ '<Include>'
-	$(APPEND) $@ '	<File Id="License_en_US.rtf" Name="Li_en_US.rtf" LongName="License_en_US.rtf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(VBOX_BRAND_LICENSE_RTF)">'
-	$(APPEND) $@ '		<Shortcut Id="startmenuLicRTF_en_US" Directory="ProgramMenuDir" Name="L_en_US" LongName="$$(loc.StartMenu_License) (English)" WorkingDirectory="INSTALLDIR"/>'
-	$(APPEND) $@ '	</File>'
+	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
+	$(APPEND) $@ '	<File Id="file_License_en_US.rtf" Name="License_en_US.rtf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(VBOX_BRAND_LICENSE_RTF)">' \
+	             '	</File>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
-	             '	<File Id="License_$(lang).rtf" Name="Li_$(lang).rtf" LongName="License_$(lang).rtf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(VBOX_BRAND_$(lang)_LICENSE_RTF)">' \
-	             '		<Shortcut Id="startmenuLicRTF_$(lang)" Directory="ProgramMenuDir" Name="L_$(lang)" LongName="$$(loc.StartMenu_License) ($(VBOX_BRAND_$(lang)_LANG_NAME))" WorkingDirectory="INSTALLDIR"/>' \
+	             '	<File Id="file_License_$(lang).rtf" Name="License_$(lang).rtf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(VBOX_BRAND_$(lang)_LICENSE_RTF)"/>' \
 	             '	</File>')
 	$(APPEND) $@ '</Include>'
 
+$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$<)
+	$(APPEND) -t $@ '<?xml version="1.0" ?>'
+	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
+	#
+	# Documentation (PDF/CHM)
+	#
+  ifdef VBOX_WITH_DOCS_CHM
+	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_ManualCHM_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_UserManual) (CHM, English)" Description="!(loc.StartMenu_UserManual)"' \
+	             '            Target="[INSTALLDIR]VirtualBox.chm" WorkingDirectory="INSTALLDIR" Advertise="no"/>'
+	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
+	             '	<Shortcut Id="sc_StartMenu_ManualCHM_$(lang)" Directory="dir_StartMenuVBox" Name="$!(loc.StartMenu_UserManual) (CHM, $(VBOX_BRAND_$(lang)_LANG_NAME))"' \
+		     '            Description="$!(loc.StartMenu_UserManual) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="VirtualBox_$(lang).chm" WorkingDirectory="INSTALLDIR"/>')
+  endif
+	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_ManualPDF_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_UserManual) (PDF, English)" Description="!(loc.StartMenu_UserManual)"' \
+	             '            Target="[INSTALLDIR]UserManual.pdf" WorkingDirectory="INSTALLDIR" Advertise="no"/>'
+	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
+	             '	<Shortcut Id="sc_StartMenu_ManualPDF_$(lang)" Directory="dir_StartMenuVBox" Name="$!(loc.StartMenu_UserManual) (PDF, $(VBOX_BRAND_$(lang)_LANG_NAME))"' \
+		     '            Description="$!(loc.StartMenu_UserManual) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="UserManual_$(lang).pdf" WorkingDirectory="INSTALLDIR"/>')
+	#
+	# License(s) (RTF)
+	#
+	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_License_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_License) (English)" Description="!(loc.StartMenu_License)"' \
+	             '            Target="[INSTALLDIR]License_en_US.rtf" WorkingDirectory="INSTALLDIR" Advertise="no"/>'
+	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
+	             '	<Shortcut Id="sc_StartMenu_License_$(lang)" Directory="dir_StartMenuVBox" Name="$!(loc.StartMenu_License) ($(VBOX_BRAND_$(lang)_LANG_NAME))"' \
+		     '            Description="$!(loc.StartMenu_License) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="License_$(lang).rtf" WorkingDirectory="INSTALLDIR"/>')
+	$(APPEND) $@ '</Include>'
 
 #
 # .MSI link (all languages).
@@ -263,10 +295,14 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi: \
 	$(VBOX_PATH_WIX)/light.exe -nologo \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/Languages/Language_$(lang).wxl \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/Languages/License_$(lang).wxl \
+		-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
+		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+		$(VBOX_MSI_ICE_IGNORE) \
 		-out $$@ \
 		$$< \
-		$(VBOX_PATH_WIX)/wixca.wixlib \
-		$(VBOX_PATH_DIFX)/DIFxApp.wixlib
+		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86", \
+			$(VBOX_PATH_WIX)/difxapp_x86.wixlib, \
+			$(VBOX_PATH_WIX)/difxapp_x64.wixlib)
 	$(RM) -f $(VBOX_WIN_INST_OUT_DIR)/Languages/$(lang).mst
 	$(call VBOX_SIGN_FILE_FN,$$@)
 endef
@@ -280,7 +316,6 @@ $(foreach lang,$(VBOX_INSTALLER_LANGUAGES), $(eval $(def_vbox_link_msi)))
 -include $(VBOX_WIN_INST_OUT_DIR)/VirtualBox.wixobj.dep
 
 # Filter out some files depending on build type and compiler.
-VBOX_MSI_DEPENDENCIES := $(filter-out wixca.dll, $(VBOX_MSI_DEPENDENCIES))
 ifeq ($(KBUILD_TYPE),release)
  VBOX_MSI_DEPENDENCIES := $(filer-out $(PATH_OUT)/bin/VBoxDbg3.dll, $(VBOX_MSI_DEPENDENCIES))
 endif
@@ -302,6 +337,39 @@ else
 	$(PATH_OUT)/bin/Microsoft.VC80.CRT/msvcm80.dll \
 	, $(VBOX_MSI_DEPENDENCIES))
 endif
+# TODO: Add filtering out more dependencies here!
+ifndef VBOX_WITH_QTGUI
+	$(PATH_OUT)/bin/VirtualBox.exe \
+	$(PATH_OUT)/bin/VBoxTestOGL.exe \
+	$(PATH_OUT)/bin/QtCoreVBox4.dll \
+	$(PATH_OUT)/bin/QtGuiVBox4.dll \
+	$(PATH_OUT)/bin/QtNetworkVBox4.dll \
+	$(PATH_OUT)/bin/QtOpenGLVBox4.dll \
+	$(PATH_OUT)/bin/accessible/qtaccessiblewidgets4.dll \
+	, $(VBOX_MSI_DEPENDENCIES))
+endif
+ifndef VBOX_WITH_PYTHON
+ VBOX_MSI_DEPENDENCIES := $(filer-out $ \
+	$(PATH_OUT)/bin/sdk/installer/vboxapisetup.py \
+	$(PATH_OUT)/bin/sdk/installer/vboxapi/__init__.py \
+	$(PATH_OUT)/bin/sdk/installer/vboxapi/VirtualBox_constants.py \
+	, $(VBOX_MSI_DEPENDENCIES))
+endif
+ifndef VBOX_WITH_CROGL
+ VBOX_MSI_DEPENDENCIES := $(filer-out $ \
+	$(PATH_OUT)/bin/VBoxOGLhostcrutil.dll \
+	$(PATH_OUT)/bin/VBoxOGLhosterrorspu.dll \
+	$(PATH_OUT)/bin/VBoxOGLrenderspu.dll \
+	$(PATH_OUT)/bin/VBoxSharedCrOpenGL.dll \
+	, $(VBOX_MSI_DEPENDENCIES))
+endif
+ifndef VBOX_WITH_SECURELABEL
+ VBOX_MSI_DEPENDENCIES := $(filer-out $(PATH_OUT)/bin/SDL_ttf.dll, $(VBOX_MSI_DEPENDENCIES))
+endif
+ifndef VBOX_WITH_WEBSERVICES
+ VBOX_MSI_DEPENDENCIES := $(filer-out $(PATH_OUT)/bin/vboxwebsrv.exe, $(VBOX_MSI_DEPENDENCIES))
+endif
+
 ifneq ($(KBUILD_TARGET_ARCH),amd64)
  VBOX_MSI_DEPENDENCIES := $(filter-out \
 	$(PATH_OUT)/bin/VBoxREM2.rel \
@@ -383,7 +451,10 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 		-E 'BUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
 		-E 'VBOX_USE_VCC80=$(if $(VBOX_USE_VCC80),yes,no)' \
 		-- \
-		$(VBOX_PATH_WIX)/candle.exe $(filter-out $(VBOX_VERSION_STAMP),$$<) -out $$@
+		$(VBOX_PATH_WIX)/candle.exe $(filter-out $(VBOX_VERSION_STAMP),$$<) \
+			-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
+			-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+			-out $$@
 ifeq ($(lang),en_US)
 #
 # Generate dependency file, we share this between all the languages.
@@ -419,8 +490,8 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi: $(PATH_ROOT)/src/VBox/Frontends/Virtual
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
 	$(APPEND) $@ '<Include>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_APPROVED_GUI_LANGUAGES), \
-	             '  <File Id="nlsqt${lang}"  Name="qt_${lang}.qm" LongName="qt_${lang}.qm"         DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" src="$$(env.PATH_OUT)\bin\nls\qt_${lang}.qm"         />' \
-	             '  <File Id="nlsgui${lang}" Name="vb_${lang}.qm" LongName="VirtualBox_${lang}.qm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" src="$$(env.PATH_OUT)\bin\nls\VirtualBox_${lang}.qm" />')
+	             '  <File Id="nlsqt${lang}"  Name="qt_${lang}.qm"         DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$$(env.PATH_OUT)\bin\nls\qt_${lang}.qm"         />' \
+	             '  <File Id="nlsgui${lang}" Name="VirtualBox_${lang}.qm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$$(env.PATH_OUT)\bin\nls\VirtualBox_${lang}.qm" />')
 	$(APPEND) $@ '</Include>'
 
 #
@@ -475,6 +546,7 @@ $(PACKAGE_NAME_FINAL): \
 		$(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi \
 		$(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi \
 		$(VBOX_WIN_INST_OUT_DIR)/Files_License.wxi \
+		$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi \
 		$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi) \
 		$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),	$(VBOX_WIN_INST_OUT_DIR)/Languages/$(lang).mst) \
 		| $$(dir $$@)
