@@ -55,7 +55,9 @@
 #include "USBDeviceImpl.h"
 #include "RemoteUSBDeviceImpl.h"
 #include "SharedFolderImpl.h"
-#include "AudioSnifferInterface.h"
+#ifdef VBOX_WITH_USB_VIDEO
+# include "AudioSnifferInterface.h"
+#endif
 #include "UsbWebcamInterface.h"
 #include "ProgressCombinedImpl.h"
 #include "ConsoleVRDPServer.h"
