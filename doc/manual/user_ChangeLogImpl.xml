@@ -20,6 +20,10 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: raised the memory limit for 64-bit hosts to 2TB</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: when reverting to a snapshot, ask for taking a snapshot
           of the current state</para>
       </listitem>
@@ -49,8 +53,17 @@
       </listitem>
 
       <listitem>
+        <para>USB: many fixes for the Windows USB driver</para>
+      </listitem>
+
+      <listitem>
         <para>Serial: announce the serial devices in the ACPI tables to make
           Windows guests find the virtual hardware (bug #7411)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: fixed copy'n'paste in the GUI and for the VM
+          window (bug #4491)</para>
       </listitem>
 
       <listitem>
@@ -60,14 +73,6 @@
        <listitem>
         <para>Guest Additions: fixed high CPU usage while executing guest programs
           from the host</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: fixed Gnome3 rendering under Ubuntu 11.04</para>
-      </listitem>
-
-      <listitem>
-        <para>Webservice: use own log file, with log rotation to limit size</para>
       </listitem>
 
     </itemizedlist>
