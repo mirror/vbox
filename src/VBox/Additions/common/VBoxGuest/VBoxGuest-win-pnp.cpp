@@ -242,8 +242,8 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                 rc = vboxguestwinSendIrpSynchronously(pDevExt->win.s.pNextLowerDriver, pIrp, TRUE);
 
-                /* Do not complete the IRP. */
-                return rc;
+                /* We MUST do IRP completion here!!! because vboxguestwinSendIrpSynchronously
+                 * has done STATUS_MORE_PROCESSING_REQUIRED in its IRP completion */
             }
 
             /* Complete the IRP on failure. */
@@ -332,8 +332,8 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
                 rc = vboxguestwinSendIrpSynchronously(pDevExt->win.s.pNextLowerDriver, pIrp, TRUE);
 
-                /* Do not complete the IRP. */
-                return rc;
+                /* We MUST do IRP completion here!!! because vboxguestwinSendIrpSynchronously
+                 * has done STATUS_MORE_PROCESSING_REQUIRED in its IRP completion */
             }
 
             /* Complete the IRP on failure. */
