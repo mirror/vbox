@@ -24,6 +24,9 @@
 #include "DisplayImpl.h"
 #include "VMMDev.h"
 #include "AudioSnifferInterface.h"
+#ifdef VBOX_WITH_USB_VIDEO
+# include "UsbWebcamInterface.h"
+#endif
 #include "ConsoleImpl.h"
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
 # include "PciRawDevImpl.h"
@@ -65,6 +68,12 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &AudioSniffer::DrvReg);
     if (RT_FAILURE(rc))
         return rc;
+
+#ifdef VBOX_WITH_USB_VIDEO
+    rc = pCallbacks->pfnRegister(pCallbacks, &UsbWebcamInterface::DrvReg);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
 
     rc = pCallbacks->pfnRegister(pCallbacks, &Console::DrvStatusReg);
     if (RT_FAILURE(rc))
