@@ -2288,7 +2288,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 # else
                 InsertConfigString(pLunL0,    "Driver", "UsbWebcamInterface");
                 InsertConfigNode(pLunL0,    "Config", &pCfg);
-                InsertConfigInteger(pCfg,   "Object", &mUsbWebcamInterface);
+                InsertConfigInteger(pCfg,   "Object", mUsbWebcamInterface);
 # endif
 #endif
 # if 0  /* Virtual MSD*/
