@@ -245,6 +245,9 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 rc = IoCallDriver(pDevExt->win.s.pNextLowerDriver, pIrp);
                 Log(("VBoxGuest::vboxguestwinGuestPnp: QUERY_REMOVE_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
 
+                /* we must not do anything here after doing IoSkip & CallDriver
+                 * since the driver below us will complete (or already have completed) the IRP.
+                 * I.e. just return the status we got from IoCallDriver */
                 return rc;
             }
 
@@ -337,6 +340,9 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 rc = IoCallDriver(pDevExt->win.s.pNextLowerDriver, pIrp);
                 Log(("VBoxGuest::vboxguestwinGuestPnp: QUERY_STOP_DEVICE: Next lower driver replied rc = 0x%x\n", rc));
 
+                /* we must not do anything here after doing IoSkip & CallDriver
+                 * since the driver below us will complete (or already have completed) the IRP.
+                 * I.e. just return the status we got from IoCallDriver */
                 return rc;
             }
 
