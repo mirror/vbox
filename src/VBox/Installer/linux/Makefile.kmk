@@ -379,7 +379,7 @@ $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX
 # to the module source directories.
 #
 local arch_deps = \
-		$(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/, $(VBOX_LNX_arch_deps)) \
+		$(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/, $(VBOX_LNX_ARCH_FILES)) \
 		$(VBOX_LNX_INST_DEP_ON_MAKEFILE) \
 		$(VBOX_VERSION_STAMP) \
 		$(wildcard $(PATH_BIN)/src/*) \
