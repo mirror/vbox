@@ -84,60 +84,29 @@ static void rtMpNotificationLinuxOnCurrentCpu(RTCPUID idCpu, void *pvUser1, void
     AssertRelease(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     AssertRelease(idCpu == RTMpCpuId());   /* ASSUMES iCpu == RTCPUID */
 
-    /*
-     * Note that redhat/CentOS ported _some_ of the FROZEN macros
-     * back to their 2.6.18-92.1.10.el5 kernel but actually don't
-     * use them. Thus we have to test for both CPU_TASKS_FROZEN and
-     * the individual event variants.
-     */
-
-    /* ASSUMES iCpu == RTCPUID */
     switch (ulNativeEvent)
     {
-        /*
-         * Pick up online events or failures to go offline.
-         * Ignore failure events for CPUs we didn't see go offline.
-         */
 # ifdef CPU_DOWN_FAILED
         case CPU_DOWN_FAILED:
 #  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_FAILED_FROZEN)
         case CPU_DOWN_FAILED_FROZEN:
 #  endif
-            if (!RTCpuSetIsMember(&g_MpPendingOfflineSet, idCpu))
-                return;
-        /* fall thru */
 # endif
         case CPU_ONLINE:
 # if defined(CPU_TASKS_FROZEN) && defined(CPU_ONLINE_FROZEN)
         case CPU_ONLINE_FROZEN:
 # endif
-# ifdef CPU_DOWN_FAILED
-            RTCpuSetDel(&g_MpPendingOfflineSet, idCpu);
-# endif
             rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
             break;
 
-        /*
-         * Pick the earliest possible offline event.
-         * The only important thing here is that we get the event and that
-         * it's exactly one.
-         */
 # ifdef CPU_DOWN_PREPARE
         case CPU_DOWN_PREPARE:
 #  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_PREPARE_FROZEN)
         case CPU_DOWN_PREPARE_FROZEN:
 #  endif
-# else
-        case CPU_DEAD:
-#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DEAD_FROZEN)
-        case CPU_DEAD_FROZEN:
-#  endif
-# endif
             rtMpNotificationDoCallbacks(RTMPEVENT_OFFLINE, idCpu);
-# ifdef CPU_DOWN_FAILED
-            RTCpuSetAdd(&g_MpPendingOfflineSet, idCpu);
-# endif
             break;
+# endif
     }
 }
 
@@ -154,8 +123,67 @@ static void rtMpNotificationLinuxOnCurrentCpu(RTCPUID idCpu, void *pvUser1, void
 static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, unsigned long ulNativeEvent, void *pvCpu)
 {
     int rc;
-    RTCPUID idCpu = (uintptr_t)pvCpu;
+    bool fProcessEvent = false;
+    RTCPUID idCpu      = (uintptr_t)pvCpu;
     NOREF(pNotifierBlock);
+
+    /*
+     * Note that redhat/CentOS ported _some_ of the FROZEN macros
+     * back to their 2.6.18-92.1.10.el5 kernel but actually don't
+     * use them. Thus we have to test for both CPU_TASKS_FROZEN and
+     * the individual event variants.
+     */
+    switch (ulNativeEvent)
+    {
+        /*
+         * Pick up online events or failures to go offline.
+         * Ignore failure events for CPUs we didn't see go offline.
+         */
+# ifdef CPU_DOWN_FAILED
+        case CPU_DOWN_FAILED:
+#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_FAILED_FROZEN)
+        case CPU_DOWN_FAILED_FROZEN:
+#  endif
+            if (!RTCpuSetIsMember(&g_MpPendingOfflineSet, idCpu))
+                break;      /* fProcessEvents = false */
+        /* fall thru */
+# endif
+        case CPU_ONLINE:
+# if defined(CPU_TASKS_FROZEN) && defined(CPU_ONLINE_FROZEN)
+        case CPU_ONLINE_FROZEN:
+# endif
+# ifdef CPU_DOWN_FAILED
+            RTCpuSetDel(&g_MpPendingOfflineSet, idCpu);
+# endif
+            fProcessEvent = true;
+            break;
+
+        /*
+         * Pick the earliest possible offline event.
+         * The only important thing here is that we get the event and that
+         * it's exactly one.
+         */
+# ifdef CPU_DOWN_PREPARE
+        case CPU_DOWN_PREPARE:
+#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_PREPARE_FROZEN)
+        case CPU_DOWN_PREPARE_FROZEN:
+#  endif
+            fProcessEvent = true;
+# else
+        case CPU_DEAD:
+#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DEAD_FROZEN)
+        case CPU_DEAD_FROZEN:
+#  endif
+            /* Don't process CPU_DEAD notifications. */
+# endif
+# ifdef CPU_DOWN_FAILED
+            RTCpuSetAdd(&g_MpPendingOfflineSet, idCpu);
+# endif
+            break;
+    }
+
+    if (!fProcessEvent)
+        return NOTIFY_DONE;
 
     /*
      * Reschedule the callbacks to fire on the specific CPU with preemption disabled.
