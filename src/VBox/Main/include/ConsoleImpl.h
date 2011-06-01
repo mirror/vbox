@@ -34,6 +34,9 @@ class RemoteUSBDevice;
 class SharedFolder;
 class VRDEServerInfo;
 class AudioSniffer;
+#ifdef VBOX_WITH_USB_VIDEO
+class UsbWebcamInterface;
+#endif
 class ConsoleVRDPServer;
 class VMMDev;
 class Progress;
@@ -718,6 +721,9 @@ private:
 
     VMMDev * m_pVMMDev;
     AudioSniffer * const mAudioSniffer;
+#ifdef VBOX_WITH_USB_VIDEO
+    UsbWebcamInterface * const mUsbWebcamInterface;
+#endif
     BusAssignmentManager* mBusMgr;
 
     enum

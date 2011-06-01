@@ -135,6 +135,10 @@ public:
                             uint32_t cBits);
 
     void SendAudioInputEnd(void *pvUserCtx);
+#ifdef VBOX_WITH_USB_VIDEO
+    int GetVideoFrameDimensions(uint16_t *pu16Heigh, uint16_t *pu16Width);
+    int SendVideoSreamOn(bool fFetch);
+#endif
 
 private:
     /* Note: This is not a ComObjPtr here, because the ConsoleVRDPServer object

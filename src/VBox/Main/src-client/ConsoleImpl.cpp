@@ -56,6 +56,7 @@
 #include "RemoteUSBDeviceImpl.h"
 #include "SharedFolderImpl.h"
 #include "AudioSnifferInterface.h"
+#include "UsbWebcamInterface.h"
 #include "ProgressCombinedImpl.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
@@ -367,6 +368,9 @@ Console::Console()
     , mpVmm2UserMethods(NULL)
     , m_pVMMDev(NULL)
     , mAudioSniffer(NULL)
+#ifdef VBOX_WITH_USB_VIDEO
+    , mUsbWebcamInterface(NULL)
+#endif
     , mBusMgr(NULL)
     , mVMStateChangeCallbackDisabled(false)
     , mMachineState(MachineState_PoweredOff)
@@ -503,6 +507,10 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 
     unconst(mAudioSniffer) = new AudioSniffer(this);
     AssertReturn(mAudioSniffer, E_FAIL);
+#ifdef VBOX_WITH_USB_VIDEO
+    unconst(mUsbWebcamInterface) = new UsbWebcamInterface(this);
+    AssertReturn(mUsbWebcamInterface, E_FAIL);
+#endif
 
     /* VirtualBox events registration. */
     {
@@ -593,6 +601,14 @@ void Console::uninit()
         RTMemFree((void *)mpVmm2UserMethods);
         mpVmm2UserMethods = NULL;
     }
+
+#ifdef VBOX_WITH_USB_VIDEO
+    if (mUsbWebcamInterface)
+    {
+        delete mUsbWebcamInterface;
+        unconst(mUsbWebcamInterface) = NULL;
+    }
+#endif
 
     if (mAudioSniffer)
     {

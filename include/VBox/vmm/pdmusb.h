@@ -902,7 +902,6 @@ DECLINLINE(void) PDMUsbHlpMMHeapFree(PPDMUSBINS pUsbIns, void *pv)
     NOREF(pUsbIns);
     MMR3HeapFree(pv);
 }
-
 #endif /* IN_RING3 */
 
 

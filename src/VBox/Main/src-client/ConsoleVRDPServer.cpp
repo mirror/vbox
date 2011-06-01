@@ -2770,6 +2770,23 @@ void ConsoleVRDPServer::SendAudioInputEnd(void *pvUserCtx)
     }
 }
 
+#ifdef VBOX_WITH_USB_VIDEO
+int ConsoleVRDPServer::GetVideoFrameDimensions(uint16_t *pu16Heigh, uint16_t *pu16Width)
+{
+    *pu16Heigh = 640;
+    *pu16Width = 480;
+    return VINF_SUCCESS;
+}
+
+int ConsoleVRDPServer::SendVideoSreamOn(bool fFetch)
+{
+    /* Here we inform server that guest is starting/stopping
+     * the stream
+     */
+    return VINF_SUCCESS;
+}
+#endif
+
 
 
 void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const
