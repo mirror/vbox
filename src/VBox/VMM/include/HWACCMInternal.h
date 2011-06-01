@@ -894,18 +894,6 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char 
 # define HWACCMR0DumpDescriptor(a, b, c)    do { } while (0)
 #endif
 
-/* Dummy callback handlers. */
-VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu);
-VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
-VMMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
-VMMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM);
-VMMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM);
-VMMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM);
-VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-
 # ifdef VBOX_WITH_KERNEL_USING_XMM
 DECLASM(int)   hwaccmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHWACCMVMXSTARTVM pfnStartVM);
 DECLASM(int)   hwaccmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHWACCMSVMVMRUN pfnVMRun);

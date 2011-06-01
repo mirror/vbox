@@ -208,6 +208,63 @@ static RTCPUID hwaccmR0FirstRcGetCpuId(PHWACCMR0FIRSTRC pFirstRc)
 }
 
 
+/** @name Dummy callback handlers.
+ * @{ */
+
+static DECLCALLBACK(int) hwaccmR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu)
+{
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hwaccmR0DummyLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hwaccmR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+{
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hwaccmR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+{
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hwaccmR0DummyInitVM(PVM pVM)
+{
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hwaccmR0DummyTermVM(PVM pVM)
+{
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hwaccmR0DummySetupVM(PVM pVM)
+{
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hwaccmR0DummyRunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hwaccmR0DummySaveHostState(PVM pVM, PVMCPU pVCpu)
+{
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hwaccmR0DummyLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    return VINF_SUCCESS;
+}
+
+/** @} */
+
+
+
 /**
  * Does global Ring-0 HWACCM initialization.
  *
@@ -223,16 +280,16 @@ VMMR0DECL(int) HWACCMR0Init(void)
         HWACCMR0Globals.aCpuInfo[i].pMemObj = NIL_RTR0MEMOBJ;
 
     /* Fill in all callbacks with placeholders. */
-    HWACCMR0Globals.pfnEnterSession     = HWACCMR0DummyEnter;
-    HWACCMR0Globals.pfnLeaveSession     = HWACCMR0DummyLeave;
-    HWACCMR0Globals.pfnSaveHostState    = HWACCMR0DummySaveHostState;
-    HWACCMR0Globals.pfnLoadGuestState   = HWACCMR0DummyLoadGuestState;
-    HWACCMR0Globals.pfnRunGuestCode     = HWACCMR0DummyRunGuestCode;
-    HWACCMR0Globals.pfnEnableCpu        = HWACCMR0DummyEnableCpu;
-    HWACCMR0Globals.pfnDisableCpu       = HWACCMR0DummyDisableCpu;
-    HWACCMR0Globals.pfnInitVM           = HWACCMR0DummyInitVM;
-    HWACCMR0Globals.pfnTermVM           = HWACCMR0DummyTermVM;
-    HWACCMR0Globals.pfnSetupVM          = HWACCMR0DummySetupVM;
+    HWACCMR0Globals.pfnEnterSession     = hwaccmR0DummyEnter;
+    HWACCMR0Globals.pfnLeaveSession     = hwaccmR0DummyLeave;
+    HWACCMR0Globals.pfnSaveHostState    = hwaccmR0DummySaveHostState;
+    HWACCMR0Globals.pfnLoadGuestState   = hwaccmR0DummyLoadGuestState;
+    HWACCMR0Globals.pfnRunGuestCode     = hwaccmR0DummyRunGuestCode;
+    HWACCMR0Globals.pfnEnableCpu        = hwaccmR0DummyEnableCpu;
+    HWACCMR0Globals.pfnDisableCpu       = hwaccmR0DummyDisableCpu;
+    HWACCMR0Globals.pfnInitVM           = hwaccmR0DummyInitVM;
+    HWACCMR0Globals.pfnTermVM           = hwaccmR0DummyTermVM;
+    HWACCMR0Globals.pfnSetupVM          = hwaccmR0DummySetupVM;
 
     /* Default is global VT-x/AMD-V init */
     HWACCMR0Globals.fGlobalInit         = true;
@@ -706,6 +763,11 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
     if (ASMAtomicReadBool(&HWACCMR0Globals.fSuspended))
         return VERR_HWACCM_SUSPEND_PENDING;
 
+/** @todo r=bird: Here be dragons and they are racing one another...
+ *  The problem is that allocating memory for the 128 CPUs might take longer
+ *  than for the 2nd and 3rd cpu to get into the HWACCMR0SetupVM code. So, they
+ *  may end up there without having enabled VT-x and #UD on a VMCLEAN for
+ *  instance.   Or that's what it looks like at least. */
     if (ASMAtomicCmpXchgU32((volatile uint32_t *)&HWACCMR0Globals.enmHwAccmState, HWACCMSTATE_ENABLED, HWACCMSTATE_UNINITIALIZED))
     {
         int rc;
@@ -1820,53 +1882,3 @@ VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 #endif /* VBOX_STRICT */
 
-/* Dummy callback handlers. */
-VMMR0DECL(int) HWACCMR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu)
-{
-    return VINF_SUCCESS;
-}
-
-VMMR0DECL(int) HWACCMR0DummyLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    return VINF_SUCCESS;
-}
-
-VMMR0DECL(int) HWACCMR0DummyEnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
-{
-    return VINF_SUCCESS;
-}
-
-VMMR0DECL(int) HWACCMR0DummyDisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
-{
-    return VINF_SUCCESS;
-}
-
-VMMR0DECL(int) HWACCMR0DummyInitVM(PVM pVM)
-{
-    return VINF_SUCCESS;
-}
-
-VMMR0DECL(int) HWACCMR0DummyTermVM(PVM pVM)
-{
-    return VINF_SUCCESS;
-}
-
-VMMR0DECL(int) HWACCMR0DummySetupVM(PVM pVM)
-{
-    return VINF_SUCCESS;
-}
-
-VMMR0DECL(int) HWACCMR0DummyRunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    return VINF_SUCCESS;
-}
-
-VMMR0DECL(int) HWACCMR0DummySaveHostState(PVM pVM, PVMCPU pVCpu)
-{
-    return VINF_SUCCESS;
-}
-
-VMMR0DECL(int) HWACCMR0DummyLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    return VINF_SUCCESS;
-}
