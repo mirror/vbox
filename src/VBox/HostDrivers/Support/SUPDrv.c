@@ -5118,6 +5118,7 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pvUser;
     PSUPGLOBALINFOPAGE  pGip    = pDevExt->pGip;
 
+    AssertRelease(idCpu == RTMpCpuId());
     AssertRelease(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /*
