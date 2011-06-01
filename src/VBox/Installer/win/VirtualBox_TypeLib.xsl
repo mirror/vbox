@@ -58,6 +58,9 @@
   <Include>
     <TypeLib>
       <xsl:attribute name="Id"><xsl:value-of select="@uuid"/></xsl:attribute>
+      <xsl:attribute name="Advertise">yes</xsl:attribute>
+      <xsl:attribute name="MajorVersion">1</xsl:attribute>
+      <xsl:attribute name="MinorVersion">0</xsl:attribute>
       <xsl:attribute name="Language">0</xsl:attribute>
       <xsl:attribute name="Description"><xsl:value-of select="@desc"/></xsl:attribute>
       <AppId>

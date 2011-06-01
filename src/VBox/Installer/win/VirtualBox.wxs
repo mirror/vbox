@@ -13,7 +13,8 @@
     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 -->
 
-<?define Property_RegKey ="Software\$(env.VBOX_VENDOR_SHORT)\VirtualBox" ?>
+<?define Property_RegKey = "Software\$(env.VBOX_VENDOR_SHORT)\VirtualBox" ?>
+<?define Property_RegKeyInstall = "Software\$(env.VBOX_VENDOR_SHORT)\VirtualBox\Install" ?>
 <?define Property_Version = "$(env.VBOX_VERSION_STRING_RAW)" ?>
 <?define Property_VersionExt = "$(env.VBOX_VERSION_STRING)" ?>
 <?define Property_Upgrade = "yes" ?>
@@ -31,7 +32,7 @@
 
 <?else ?>
     <?define Property_ProgramFiles = "ProgramFilesFolder" ?>
-    <?define Property_Platform     = "Intel" ?>
+    <?define Property_Platform     = "x86" ?>
     <?define Property_Win64        = "no" ?>
 
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
@@ -49,7 +50,8 @@
     <?define Property_DiskIdCommon = "1" ?>
 <?endif ?>
 
-<Wix xmlns="http://schemas.microsoft.com/wix/2003/01/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:difxapp="http://schemas.microsoft.com/wix/DifxAppExtension">
 
     <!-- Note: GUIDs in WiX *must* be uppercase! -->
     <!-- Always include an upgrade ID or otherwise upgrade installation will not be possible. When doing
@@ -64,23 +66,23 @@
     <!-- Old product ID: <Product Id="B59FE77B-738F-4f1c-AB48-3104895AF676"
          Old upgrade code of innotek: UpgradeCode="F5FFAEBF-97AE-4038-8F91-4DE719456127" -->
 
-    <Product Id="????????-????-????-????-????????????"
+    <Product Id="*"
              UpgradeCode="C4BAD770-BFE8-4D2C-A592-693028A7215B"
              Name="$(env.VBOX_PRODUCT) $(env.VBOX_VERSION_STRING)"
-             Language="$(loc.LANG)"
+             Language="!(loc.LANG)"
              Codepage="1252"
              Version="$(var.Property_Version)"
              Manufacturer="$(env.VBOX_VENDOR)">
 
         <!-- Package GUIDs must be different for each package. The "???" directs WiX to create one. -->
-        <Package Id="????????-????-????-????-????????????" Keywords="Installer"
+        <Package Id="*" Keywords="Installer"
                  Description="$(env.VBOX_PRODUCT) $(var.Property_VersionExt) installation package"
                  Comments="$(env.VBOX_PRODUCT) installation package"
                  Manufacturer="$(env.VBOX_VENDOR)"
                  InstallerVersion="200"
                  Compressed="yes"
                  InstallPrivileges="elevated"
-                 Platforms="$(var.Property_Platform)"/>
+                 Platform="$(var.Property_Platform)"/>
 
         <!-- *************************** Upgrade packages only ******************************* -->
         <!-- Minimum and Maximum specify the range of versions we are supposed to update with this upgrade.
@@ -117,91 +119,91 @@
 
         <!-- Make sure installation will not start on anything other but the NT family -->
 <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
-        <Condition Message="$(loc.Only64Bit)">
+        <Condition Message="!(loc.Only64Bit)">
             VersionNT64
         </Condition>
 <?else ?>
-        <Condition Message="$(loc.Only32Bit)">
+        <Condition Message="!(loc.Only32Bit)">
             NOT VersionNT64
         </Condition>
 
-        <Condition Message="$(loc.WrongOS)">
+        <Condition Message="!(loc.WrongOS)">
             NOT VersionNT=500 AND NOT Version9X AND NOT VersionNT64
         </Condition>
 
 <?endif ?>
 
-        <Condition Message="$(loc.NeedAdmin)">
+        <Condition Message="!(loc.NeedAdmin)">
             Privileged
         </Condition>
 
-        <!-- Force overwriting all files and re-create shortcuts to guarantee a working environment. -->
+        <!-- Force overwriting all files and re-create shortcuts to guarantee a working environment -->
         <Property Id='REINSTALLMODE' Value='amus'/>
 
         <!-- Custom actions -->
 
         <!-- Figure out where a previous installation was, if any -->
 <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
-        <CustomAction Id="OriginalTargetDir" Execute="firstSequence" Property="INSTALLDIR" Value="[ProgramFiles64Folder]\$(env.VBOX_VENDOR_SHORT)\VirtualBox" />
+        <CustomAction Id="ca_OriginalTargetDir" Execute="firstSequence" Property="INSTALLDIR" Value="[ProgramFiles64Folder]\$(env.VBOX_VENDOR_SHORT)\VirtualBox" />
 
         <Property Id="EXISTINGINSTALLDIR" Secure="yes">
             <RegistrySearch Id="RegistryGetInstallPath" Root="HKLM" Key="$(var.Property_RegKey)" Name="InstallDir" Type="raw" Win64="$(var.Property_Win64)"/>
         </Property>
-        <CustomAction Id="DefaultTargetDir" Execute="firstSequence" Property="INSTALLDIR" Value="[EXISTINGINSTALLDIR]" />
+        <CustomAction Id="ca_DefaultTargetDir" Execute="firstSequence" Property="INSTALLDIR" Value="[EXISTINGINSTALLDIR]" />
 <?else ?>
-        <CustomAction Id="OriginalTargetDir" Execute="firstSequence" Property="INSTALLDIR" Value="[ProgramFilesFolder]\$(env.VBOX_VENDOR_SHORT)\VirtualBox" />
+        <CustomAction Id="ca_OriginalTargetDir" Execute="firstSequence" Property="INSTALLDIR" Value="[ProgramFilesFolder]\$(env.VBOX_VENDOR_SHORT)\VirtualBox" />
 
         <Property Id="EXISTINGINSTALLDIR" Secure="yes">
             <RegistrySearch Id="RegistryGetInstallPath" Root="HKLM" Key="$(var.Property_RegKey)" Name="InstallDir" Type="raw" Win64="$(var.Property_Win64)"/>
         </Property>
-        <CustomAction Id="DefaultTargetDir" Execute="firstSequence" Property="INSTALLDIR" Value="[EXISTINGINSTALLDIR]" />
+        <CustomAction Id="ca_DefaultTargetDir" Execute="firstSequence" Property="INSTALLDIR" Value="[EXISTINGINSTALLDIR]" />
 <?endif ?>
 
         <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
-        <CustomAction Id="CheckSerial" BinaryKey="VBoxInstallHelper" DllEntry="CheckSerial" Impersonate="no"/>
-        <CustomAction Id="InstallPythonAPI" BinaryKey="VBoxInstallHelper" DllEntry="InstallPythonAPI" Impersonate="no"/>
-        <CustomAction Id="InstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="InstallBranding" Impersonate="no"/>
-        <CustomAction Id="UninstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="UninstallBranding" Impersonate="no"/>
+        <CustomAction Id="ca_CheckSerial" BinaryKey="VBoxInstallHelper" DllEntry="CheckSerial" Impersonate="no"/>
+        <CustomAction Id="ca_InstallPythonAPI" BinaryKey="VBoxInstallHelper" DllEntry="InstallPythonAPI" Execute="deferred" Impersonate="no"/>
+        <CustomAction Id="ca_InstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="InstallBranding" Execute="deferred" Impersonate="no"/>
+        <CustomAction Id="ca_UninstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="UninstallBranding" Execute="deferred" Impersonate="no"/>
 
-        <CustomAction Id="UninstallTAPInstances" BinaryKey="VBoxInstallHelper"
-            DllEntry="UninstallTAPInstances" Execute="deferred" Return="check" Impersonate="no"/>
+        <CustomAction Id="ca_UninstallTAPInstances" BinaryKey="VBoxInstallHelper"
+                      DllEntry="UninstallTAPInstances" Execute="deferred" Return="check" Impersonate="no"/>
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-        <CustomAction Id="CreateHostOnlyInterfaceArgs" Property="CreateHostOnlyInterface" Value="[INSTALLDIR]" Execute="immediate"/>
-        <CustomAction Id="CreateHostOnlyInterface"  BinaryKey="VBoxInstallHelper"  DllEntry="CreateHostOnlyInterface"   Execute="deferred" Return="check" Impersonate="no"/>
+        <CustomAction Id="ca_CreateHostOnlyInterfaceArgs" Property="ca_CreateHostOnlyInterface" Value="[INSTALLDIR]" Execute="immediate"/>
+        <CustomAction Id="ca_CreateHostOnlyInterface"  BinaryKey="VBoxInstallHelper"  DllEntry="CreateHostOnlyInterface" Execute="deferred" Return="check" Impersonate="no"/>
 
-        <CustomAction Id="RemoveHostOnlyInterfaces" BinaryKey="VBoxInstallHelper"  DllEntry="RemoveHostOnlyInterfaces"  Execute="deferred" Return="check" Impersonate="no"/>
+        <CustomAction Id="ca_RemoveHostOnlyInterfaces" BinaryKey="VBoxInstallHelper"  DllEntry="RemoveHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
 
-        <CustomAction Id="InstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="InstallNetFlt" Execute="deferred" Return="check" Impersonate="no"/>
-        <CustomAction Id="InstallNetFltArgs" Property="InstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
+        <CustomAction Id="ca_InstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="InstallNetFlt" Execute="deferred" Return="check" Impersonate="no"/>
+        <CustomAction Id="ca_InstallNetFltArgs" Property="ca_InstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
 
-        <CustomAction Id="RollbackInstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetFlt" Execute="rollback" Impersonate="no"/>
-        <CustomAction Id="RollbackInstallNetFltArgs" Property="RollbackInstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
+        <CustomAction Id="ca_RollbackInstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetFlt" Execute="rollback" Impersonate="no"/>
+        <CustomAction Id="ca_RollbackInstallNetFltArgs" Property="ca_RollbackInstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
 
-        <CustomAction Id="UninstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetFlt" Execute="deferred" Return="check" Impersonate="no"/>
-        <CustomAction Id="UninstallNetFltArgs" Property="UninstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
+        <CustomAction Id="ca_UninstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="UninstallNetFlt" Execute="deferred" Return="check" Impersonate="no"/>
+        <CustomAction Id="ca_UninstallNetFltArgs" Property="ca_UninstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
 
-        <CustomAction Id="RollbackUninstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="InstallNetFlt" Execute="rollback" Impersonate="no"/>
-        <CustomAction Id="RollbackUninstallNetFltArgs" Property="RollbackUninstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
+        <CustomAction Id="ca_RollbackUninstallNetFlt" BinaryKey="VBoxInstallHelper" DllEntry="InstallNetFlt" Execute="rollback" Impersonate="no"/>
+        <CustomAction Id="ca_RollbackUninstallNetFltArgs" Property="ca_RollbackUninstallNetFlt" Value="[INSTALLDIR]" Execute="immediate"/>
 <?endif ?>
 
-        <CustomAction Id="StartVBox" FileKey="vbox" ExeCommand="" Return="asyncNoWait" Impersonate="yes" />
+        <CustomAction Id="ca_StartVBox" FileKey="file_VirtualBox.exe" ExeCommand="" Return="asyncNoWait" Impersonate="yes" />
 
-        <!-- Detect old Sun installation. -->
-        <!-- Force a manual uninstall of an already installed Sun VirtualBox version first. -->
+        <!-- Detect old Sun installation -->
+        <!-- Force a manual uninstall of an already installed Sun VirtualBox version first -->
         <!--<Property Id="VBOXSUN">
             <RegistrySearch Id="RegSearchSunVersion" Root="HKLM" Key="SOFTWARE\Sun\VirtualBox" Name="Version" Type="raw" Win64="$(var.Property_Win64)"/>
         </Property>
-        <Condition Message="$(loc.SunFound)">
+        <Condition Message="!(loc.SunFound)">
             NOT VBOXSUN
         </Condition>-->
 
-        <!-- Detect old innotek installation. -->
-        <!-- Force a manual uninstall of an already installed innotek VirtualBox version first. -->
+        <!-- Detect old innotek installation -->
+        <!-- Force a manual uninstall of an already installed innotek VirtualBox version first -->
         <Property Id="VBOXINNOTEK">
             <RegistrySearch Id="RegSearchInnotekVersion" Root="HKLM" Key="SOFTWARE\Innotek\VirtualBox" Name="Version" Type="raw" Win64="$(var.Property_Win64)"/>
         </Property>
-        <Condition Message="$(loc.InnotekFound)">
+        <Condition Message="!(loc.InnotekFound)">
             NOT VBOXINNOTEK
         </Condition>
 
@@ -213,110 +215,106 @@
         <!-- Here comes the file/directory list. -->
         <Directory Id="TARGETDIR" Name="SourceDir">
            <Directory Id="$(var.Property_ProgramFiles)" Name="PFiles">
-                <Directory Id="INSTALLDIR" Name="VirtualB" LongName="$(env.VBOX_PRODUCT)">
+                <Directory Id="INSTALLDIR" Name="$(env.VBOX_PRODUCT)">
 
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
-                    <Directory Id="documents" Name="doc">
+                    <Directory Id="dir_Documents" Name="doc">
                         <!-- The documentation is a separate component. This allows to split the install process
                              into pieces if ever necessary. Maintenance is easier, too. The following component
                              will be installed in the "doc" folder. -->
-                        <Component Id="docs" Guid="40BD12C5-89A8-4B81-8A5E-5EEE2C2763C4">
+                        <Component Id="cp_Docs" Guid="40BD12C5-89A8-4B81-8A5E-5EEE2C2763C4">
                             <?include $(env.PATH_TARGET)\Files_Doc.wxi ?>
                         </Component>
-
                     </Directory>
 <?endif ?>
                     <!-- Device driver directory -->
-                    <Directory Id="drivers" Name="drivers">
-
-                        <Directory Id="vboxdrv" Name="vboxdrv">
-                            <Component Id="VBoxDrv" Guid="D3E2F2BB-569F-46A2-836C-BDF30FF1EDF8"
-                                       DriverSequence="2" DriverLegacy="$(var.Property_DriverLegacy)" DriverForceInstall="yes"
-                                       DriverAddRemovePrograms="no" DriverPlugAndPlayPrompt="no" Win64="$(var.Property_Win64)">
-                                <File Id="vboxdrvsys" Name="VBoxDrv.sys" DiskId="1" Vital="yes" KeyPath="yes"
+                    <Directory Id="dir_Drivers" Name="drivers">
+                        <Directory Id="dir_VBoxDrv" Name="vboxdrv">
+                            <Component Id="cp_VBoxDrv" Guid="D3E2F2BB-569F-46A2-836C-BDF30FF1EDF8" Win64="$(var.Property_Win64)">
+                                <difxapp:Driver AddRemovePrograms="no" ForceInstall="yes"
+                                                Legacy="$(var.Property_DriverLegacy)" Sequence="2" PlugAndPlayPrompt="no"/>
+                                <File Id="file_VBoxDrv.sys" Name="VBoxDrv.sys"   KeyPath="yes"
                                       Source="$(env.PATH_OUT)\bin\VBoxDrv.sys"/>
-                                <File Id="vboxdrvinf" Name="VBoxDrv.inf" DiskId="1" Vital="yes"
+                                <File Id="file_VBoxDrv.inf" Name="VBoxDrv.inf"
                                       Source="$(env.PATH_OUT)\bin\VBoxDrv.inf" />
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
-                                <File Id="vboxdrvcat" Name="VBoxDrv.cat" DiskId="1" Vital="yes"
+                                <File Id="file_VBoxDrv.cat" Name="VBoxDrv.cat"
                                       Source="$(env.PATH_OUT)\bin\VBoxDrv.cat" />
 <?endif ?>
-                            </Component> <!-- Directory "drivers\vboxdrv" -->
+                            </Component>
                         </Directory>
 
-                        <Directory Id="usbdrv" Name="USB">
-                            <Directory Id="usbfilter" Name="filter">
-                                <Component Id="USBFilterDriver" Guid="B7D782D2-96DF-4775-A0E1-A76CF7B04B65"
-                                           DriverSequence="0" DriverLegacy="$(var.Property_DriverLegacy)" DriverForceInstall="yes"
-                                           DriverAddRemovePrograms="no" DriverPlugAndPlayPrompt="no" Win64="$(var.Property_Win64)">
-                                    <File Id="vboxusbmon"  Name="VBoxUSBM.sys" LongName="VBoxUSBMon.sys" DiskId="1"  Vital="yes"
+                        <Directory Id="dir_USB" Name="USB">
+                            <Directory Id="dir_USBFilter" Name="filter">
+                                <Component Id="cp_USBFilterDriver" Guid="B7D782D2-96DF-4775-A0E1-A76CF7B04B65" Win64="$(var.Property_Win64)">
+                                    <difxapp:Driver AddRemovePrograms="no" ForceInstall="yes"
+                                                    Legacy="$(var.Property_DriverLegacy)" Sequence="0" PlugAndPlayPrompt="no"/>
+                                    <File Id="file_VBoxUSBMon.sys" Name="VBoxUSBMon.sys"
                                           Source="$(env.PATH_OUT)\bin\VBoxUSBMon.sys" />
-                                    <File Id="vboxusbmoninf"  Name="VBoxUSBM.inf" LongName="VBoxUSBMon.inf" DiskId="1"  Vital="yes"
+                                    <File Id="file_VBoxUSBMon.inf" Name="VBoxUSBMon.inf"
                                           Source="$(env.PATH_OUT)\bin\VBoxUSBMon.inf" />
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
-                                    <File Id="vboxusbmoncat" Name="VBoxUSBM.cat" LongName="VBoxUSBMon.cat" DiskId="1" Vital="yes"
+                                    <File Id="file_VBoxUSBMon.cat" Name="VBoxUSBMon.cat"
                                           Source="$(env.PATH_OUT)\bin\VBoxUSBMon.cat" />
 <?endif ?>
-                                </Component> <!-- USBFilterDriver -->
-                            </Directory> <!-- Directory "drivers\usb\filter" -->
+                                </Component>
+                            </Directory>
 
-                            <Directory Id="usbdevice" Name="device">
-                                <Component Id="USBDeviceDriver" Guid="010FE46A-E358-43E2-8BDC-38BC8BEC82E0"
-                                           DriverSequence="0" DriverLegacy="$(var.Property_DriverLegacy)" DriverForceInstall="yes"
-                                           DriverAddRemovePrograms="no" DriverPlugAndPlayPrompt="no" Win64="$(var.Property_Win64)">
-                                    <File Id="vboxusbdrv" Name="VBoxUSB.sys" DiskId="1"  Vital="yes"
+                            <Directory Id="dir_USBDevice" Name="device">
+                                <Component Id="cp_USBDeviceDriver" Guid="010FE46A-E358-43E2-8BDC-38BC8BEC82E0" Win64="$(var.Property_Win64)">
+                                    <difxapp:Driver AddRemovePrograms="no" ForceInstall="yes"
+                                                    Legacy="$(var.Property_DriverLegacy)" Sequence="0" PlugAndPlayPrompt="no"/>
+                                    <File Id="file_VBoxUSB.sys" Name="VBoxUSB.sys"
                                           Source="$(env.PATH_OUT)\bin\VBoxUSB.sys" />
-                                    <File Id="vboxusbinf" Name="VBoxUSB.inf" DiskId="1"  Vital="yes"
+                                    <File Id="file_VBoxUSB.inf" Name="VBoxUSB.inf"
                                           Source="$(env.PATH_OUT)\bin\VBoxUSB.inf" />
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
-                                    <File Id="vboxusbcat" Name="VBoxUSB.cat" DiskId="1" Vital="yes"
+                                    <File Id="file_VBoxUSB.cat" Name="VBoxUSB.cat"
                                           Source="$(env.PATH_OUT)\bin\VBoxUSB.cat" />
 <?endif ?>
-                                </Component> <!-- USBDeviceDriver -->
-                            </Directory> <!-- Directory "drivers\usb\device" -->
-                        </Directory> <!-- Directory "drivers\usb" -->
+                                </Component>
+                            </Directory>
+                        </Directory>
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-                        <Directory Id="network" Name="network">
-                            <Directory Id="NetFltDir" Name="netflt">
-                                <Component Id="NetFltDriver" Guid="F0A02F6B-A349-42f8-A2EB-569DCAAAF846" Win64="$(var.Property_Win64)">
-                                            <File Id="vboxnetfltsys" Name="VBoxNFlt.sys" LongName="VBoxNetFlt.sys" DiskId="1" Vital="yes" KeyPath="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetFlt.sys"
-                                                  Checksum="yes"/>
-                                            <File Id="vboxnetfltnobjdll" Name="VBoxNob.dll" LongName="VBoxNetFltNobj.dll" DiskId="1" Vital="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetFltNobj.dll"
-                                                  Checksum="yes"/>
-                                            <File Id="vboxnetfltminf" Name="VBoxNFlM.inf" LongName="VBoxNetFltM.inf" DiskId="1" Vital="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetFltM.inf" />
-                                            <File Id="vboxnetfltinf" Name="VBoxNFlt.inf" LongName="VBoxNetFlt.inf" DiskId="1" Vital="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetFlt.inf" />
+                        <Directory Id="dir_Network" Name="network">
+                            <Directory Id="dir_NetFlt" Name="netflt">
+                                <Component Id="cp_NetFltDriver" Guid="F0A02F6B-A349-42f8-A2EB-569DCAAAF846" Win64="$(var.Property_Win64)">
+                                    <File Id="file_VBoxNetFlt.sys" Name="VBoxNetFlt.sys"   KeyPath="yes"
+                                          Source="$(env.PATH_OUT)\bin\VBoxNetFlt.sys" Checksum="yes"/>
+                                    <File Id="file_VBoxNetFltNobj.sys" Name="VBoxNetFltNobj.dll"
+                                          Source="$(env.PATH_OUT)\bin\VBoxNetFltNobj.dll" Checksum="yes"/>
+                                    <File Id="file_VBoxNetFltM.inf" Name="VBoxNetFltM.inf"
+                                          Source="$(env.PATH_OUT)\bin\VBoxNetFltM.inf" />
+                                    <File Id="file_VBoxNetFlt.inf" Name="VBoxNetFlt.inf"
+                                          Source="$(env.PATH_OUT)\bin\VBoxNetFlt.inf" />
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
-                                            <File Id="vboxnetfltcat" Name="VBoxNFlt.cat" LongName="VBoxNetFlt.cat" DiskId="1" Vital="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetFlt.cat" />
+                                    <File Id="file_VBoxNetFlt.cat" Name="VBoxNetFlt.cat"
+                                          Source="$(env.PATH_OUT)\bin\VBoxNetFlt.cat" />
 <?endif ?>
                                 </Component>
-                            </Directory> <!-- Directory "drivers\network\netflt" -->
-                            <Directory Id="NetAdpDir" Name="netadp">
-                                    <Component Id="NetAdpDriver" Guid="7adf3e12-af3c-4d36-8bec-36d5064cf84f" Win64="$(var.Property_Win64)">
-                                            <File Id="vboxnetadpsys" Name="VBoxNAdp.sys" LongName="VBoxNetAdp.sys" DiskId="1" Vital="yes" KeyPath="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetAdp.sys"
-                                                  Checksum="yes"/>
-                                            <File Id="vboxnetadpinf" Name="VBoxNAdp.inf" LongName="VBoxNetAdp.inf" DiskId="1" Vital="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetAdp.inf" />
+                            </Directory>
+
+                            <Directory Id="dir_NetAdp" Name="netadp">
+                                <Component Id="cp_NetAdpDriver" Guid="7adf3e12-af3c-4d36-8bec-36d5064cf84f" Win64="$(var.Property_Win64)">
+                                    <File Id="file_VBoxNetAdp.sys" Name="VBoxNetAdp.sys" KeyPath="yes"
+                                          Source="$(env.PATH_OUT)\bin\VBoxNetAdp.sys" Checksum="yes"/>
+                                    <File Id="file_VBoxNetAdp.inf" Name="VBoxNetAdp.inf"
+                                          Source="$(env.PATH_OUT)\bin\VBoxNetAdp.inf" />
 <?if $(env.VBOX_SIGNING_MODE) != none ?>
-                                            <File Id="vboxnetadpcat" Name="VBoxNAdp.cat" LongName="VBoxNetAdp.cat" DiskId="1" Vital="yes"
-                                                  Source="$(env.PATH_OUT)\bin\VBoxNetAdp.cat" />
+                                    <File Id="file_VBoxNetAdp.cat" Name="VBoxNetAdp.cat"
+                                          Source="$(env.PATH_OUT)\bin\VBoxNetAdp.cat" />
 <?endif ?>
-                                    </Component> <!-- NetAdpDriver -->
-                            </Directory> <!-- Directory "drivers\network\netadp" -->
-                        </Directory> <!-- Directory "drivers\network" -->
+                                </Component>
+                            </Directory>
+                        </Directory>
 <?endif ?>
                     </Directory> <!-- Directory "drivers" -->
 
 
                     <!-- National Language Support directory -->
-                    <Directory Id="nls" Name="nls">
-                        <Component Id="nls" Guid="D63517D7-1CF3-4D06-B3EE-C561E323069B">
+                    <Directory Id="dir_NLS" Name="nls">
+                        <Component Id="cp_NLS" Guid="D63517D7-1CF3-4D06-B3EE-C561E323069B" Win64="$(var.Property_Win64)">
                             <!-- Include the autogenerated NLS file list -->
                             <?include $(env.PATH_TARGET)\VBoxGuiNLS.wxi ?>
                         </Component>
@@ -324,18 +322,19 @@
 
                     <!-- COM components have a separate entry mainly because of the KeyPath attribute (that hints the
                          TypeLib element where to take the TLB resource from) may appear only once per Component. -->
-                    <Component Id="MainCOM" Guid="CD4A3C6C-C2D5-428D-90A1-B6DA3D0777D6" Win64="$(var.Property_Win64)">
+                    <Component Id="cp_MainCOM" Guid="CD4A3C6C-C2D5-428D-90A1-B6DA3D0777D6" Win64="$(var.Property_Win64)">
 
-                        <File Id="VBoxSVC" Name="VBoxSVC.exe" DiskId="1" Vital="yes"
+                        <!-- File ID *must not* be changed because of our typelib template generation file! -->
+                        <File Id="VBoxSVC" Name="VBoxSVC.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxSVC.exe">
                         </File>
 
                         <!-- We set KeyPath on this file to instruct TypeLib to read the TLB resource from it
                              and create appropriate Interface registry entries. Note that the same TLB is present
                              in VBoxSVC.exe - it's just a matter of choice which one to use -->
-                        <File Id="VBoxC" Name="VBoxC.dll" DiskId="1" Vital="yes"
-                              Source="$(env.PATH_OUT)\bin\VBoxC.dll"
-                              KeyPath="yes">
+                        <!-- File ID *must not* be changed because of our typelib template generation file! -->
+                        <File Id="VBoxC" Name="VBoxC.dll"
+                              Source="$(env.PATH_OUT)\bin\VBoxC.dll" KeyPath="yes">
                         </File>
 
                         <!-- Include the autogenerated TypeLib block -->
@@ -343,59 +342,51 @@
 
                     </Component>
 
-                    <Component Id="DesktopShortcut" Guid="668F8A1A-F5CE-48B3-BB1A-3042EE27B279" Win64="$(var.Property_Win64)">
-                        <Condition>INSTALLDESKTOPSHORTCUT</Condition>
-                        <CreateFolder/>
-                        <Shortcut Id="VBoxDesktopShortcut" Directory="DesktopFolder"
-                            Name="VBox" LongName="$(env.VBOX_PRODUCT)" WorkingDirectory="INSTALLDIR"
-                            Advertise="no" Target="[#vbox]" />
-                    </Component>
+                    <!--
 
-                    <Component Id="QuicklaunchShortcut" Guid="CC19E026-938A-41CB-8E77-3F33296244B6" Win64="$(var.Property_Win64)">
-                        <Condition>INSTALLQUICKLAUNCHSHORTCUT</Condition>
-                        <CreateFolder/>
-                        <Shortcut Id="VBoxQuicklaunchShortcut" Directory="QuicklaunchFolder"
-                            Name="VBox" LongName="$(env.VBOX_PRODUCT)" WorkingDirectory="INSTALLDIR"
-                            Advertise="no" Target="[#vbox]" />
-                    </Component>
+                    <Component Id="Cp_StartMenuShortcut" Guid="1C137D24-E599-47BD-98D0-2F62F202A8EA" Win64="$(var.Property_Win64)">
+                        <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)" Type="string"
+                                       Value="installed" KeyPath="yes" />
+                        <Shortcut Id="ShortcutStartMenuVBox" Directory="ProgramMenuDir"
+                                  Name="VirtualBox" WorkingDirectory="INSTALLDIR" Advertise="no" Target="VirtualBox.exe" />
+                        <RemoveFolder Id="ShortcutStartMenuVBoxRemove" On="uninstall" />
+                    </Component>-->
+
+                    <!---->
 
                     <!-- All Binaries, DLLs (except COM) and drivers are in one component because they belong together. Additional
                          binaries e.g. test tools, utilities etc. should be in another component so they"re clearly separated. -->
-                    <Component Id="MainBinaries" Guid="5C8FE57A-F744-4DE0-AA3F-A563F486AD98" Win64="$(var.Property_Win64)">
+                    <Component Id="cp_MainBinaries" Guid="5C8FE57A-F744-4DE0-AA3F-A563F486AD98" Win64="$(var.Property_Win64)">
+
                         <!-- Set required environment variables. -->
-                        <Environment Id="EnvVBoxInstallDir" Action="set" Name="VBOX_INSTALL_PATH"
-                            System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]" />
+                        <Environment Id="env_VBoxInstallDir" Action="set" Name="VBOX_INSTALL_PATH"
+                                     System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]" />
+
                         <!-- Register file extensions. Note: Extension Id's *must not* be changed! These specify the actual
                              file extension to handle. Also, here would be the place to add more fancy DDE stuff later.
                              Important: The IDs in "IconIndex" *must* be matching "Resources\resource.h". -->
-                        <ProgId Id="VirtualBox.Shell.vbox" Description="VirtualBox Machine Definition" Icon="[#vboxresdll]" IconIndex="-201">
+                        <ProgId Id="progId_VirtualBox.Shell.vbox" Description="VirtualBox Machine Definition" Icon="file_VBoxRes.dll" IconIndex="-201">
                             <Extension Id="vbox" ContentType="application/x-virtualbox-vbox">
-                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="&quot;%1&quot;" />
+                                <Verb Id="open" Command="Open" TargetFile="file_VirtualBox.exe" Argument="&quot;%1&quot;" />
                             </Extension>
                         </ProgId>
-                        <ProgId Id="VirtualBox.Shell.vbox-extpack" Description="VirtualBox Extension Pack" Icon="[#vboxresdll]" IconIndex="-202">
+                        <ProgId Id="progId_VirtualBox.Shell.vbox-extpack" Description="VirtualBox Extension Pack" Icon="file_VBoxRes.dll" IconIndex="-202">
                             <Extension Id="vbox-extpack" ContentType="application/x-virtualbox-vbox-extpack">
-                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="&quot;%1&quot;" />
+                                <Verb Id="open" Command="Open" TargetFile="file_VirtualBox.exe" Argument="&quot;%1&quot;" />
                             </Extension>
                         </ProgId>
-                        <ProgId Id="VirtualBox.Shell.ovf" Description="Open Virtualization Format" Icon="[#vboxresdll]" IconIndex="-301">
+                        <ProgId Id="progId_VirtualBox.Shell.ovf" Description="Open Virtualization Format" Icon="file_VBoxRes.dll" IconIndex="-301">
                             <Extension Id="ovf" ContentType="application/x-virtualbox-ovf">
-                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="&quot;%1&quot;" />
+                                <Verb Id="open" Command="Open" TargetFile="file_VirtualBox.exe" Argument="&quot;%1&quot;" />
                             </Extension>
                         </ProgId>
-                        <ProgId Id="VirtualBox.Shell.ova" Description="Open Virtualization Format Archive" Icon="[#vboxresdll]" IconIndex="-302">
+                        <ProgId Id="progId_VirtualBox.Shell.ova" Description="Open Virtualization Format Archive" Icon="file_VBoxRes.dll" IconIndex="-302">
                             <Extension Id="ova" ContentType="application/x-virtualbox-ova">
-                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="&quot;%1&quot;" />
+                                <Verb Id="open" Command="Open" TargetFile="file_VirtualBox.exe" Argument="&quot;%1&quot;" />
                             </Extension>
                         </ProgId>
-                        <!-- The "Name" attribute must always be present. If the name is longer than 8.3 the additional "LongName"
-                             attribute can be used. -->
-                        <File Id="vbox" Name="vbox.exe" LongName="VirtualBox.exe" DiskId="1"  Vital="yes"
-                              Source="$(env.PATH_OUT)\bin\VirtualBox.exe">
-                            <!-- The target folder for the shortcut in the "Programs" menu is defined below. -->
-                            <Shortcut Id="startmenuVBox" Directory="ProgramMenuDir" Name="VBox"
-                                      LongName="VirtualBox" WorkingDirectory="INSTALLDIR"/>
-                        </File>
+
+                        <!-- Files -->
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
                         <!-- Include all user manual .CHM files (file is generated by makefile). -->
                         <?include $(env.PATH_TARGET)\Files_Main.wxi ?>
@@ -403,142 +394,143 @@
                         <!-- Include all license files (file is generated by makefile). -->
                         <?include $(env.PATH_TARGET)\Files_License.wxi ?>
 
-<?if $(env.VBOX_WITH_DEBUGGER_GUI) = "yes" ?>
-                        <File Id="vboxdbgdll" Name="VBoxDbg.dll" DiskId="1" Vital="yes"
-                              Source="$(env.PATH_OUT)\bin\VBoxDbg.dll" />
-<?endif ?>
-
-                        <File Id="vboxmanage" Name="VBoxMan.exe" LongName="VBoxManage.exe" DiskId="1" Vital="yes"
+                        <!-- Frontends -->
+                        <File Id="file_VBoxManage.exe" Name="VBoxManage.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxManage.exe" />
-                        <File Id="vboxheadless" Name="VBoxHead.exe" LongName="VBoxHeadless.exe" DiskId="1" Vital="yes"
+                        <File Id="file_VBoxHeadless.exe" Name="VBoxHeadless.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxHeadless.exe">
-
                             <!-- Create a simple shortcut for VBoxVRDP, which is not present anymore, pointing to VBoxHeadless.exe -->
-                            <Shortcut Id="ShortcutVBoxVRDP" Directory="INSTALLDIR" Name="VBoxVRDP" Show="normal" WorkingDirectory="INSTALLDIR"/>
-
+                       <!--     <Shortcut Id="ShortcutVBoxVRDP" Directory="INSTALLDIR" Name="VBoxVRDP" Show="normal" WorkingDirectory="INSTALLDIR"/> -->
                         </File>
-
-                        <File Id="vboxnetdhcp" Name="VBoxDHCP.exe" LongName="VBoxNetDHCP.exe" DiskId="1" Vital="yes"
-                              Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.exe"/>
-<?if $(env.VBOX_WITH_EXTPACK) = "yes" ?>
-                        <File Id="vboxepha" Name="VBoxEPHA.exe" LongName="VBoxExtPackHelperApp.exe" DiskId="1" Vital="yes"
-                              Source="$(env.PATH_OUT)\bin\VBoxExtPackHelperApp.exe"/>
-<?endif ?>
-                        <File Id="vboxballoonctrl" Name="VBoxBCtl.exe" LongName="VBoxBalloonCtrl.exe" DiskId="1" Vital="yes"
+                        <File Id="file_VBoxBalloonCtrl.exe" Name="VBoxBalloonCtrl.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
 
+                        <!-- Misc tools -->
+                        <File Id="file_VBoxNetDHCP.exe" Name="VBoxNetDHCP.exe"
+                              Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.exe"/>
+<?if $(env.VBOX_WITH_EXTPACK) = "yes" ?>
+                        <File Id="file_VBoxExtPackHelperApp.exe" Name="VBoxExtPackHelperApp.exe"
+                              Source="$(env.PATH_OUT)\bin\VBoxExtPackHelperApp.exe"/>
+<?endif ?>
                         <!-- VBox DLL files -->
-                        <File Id="vboxdddll" Name="VBoxDD.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxDD.dll" Name="VBoxDD.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxDD.dll" />
-                        <File Id="vboxdd2dll" Name="VBoxDD2.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxDD2.dll" Name="VBoxDD2.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxDD2.dll" />
-                        <File Id="vboxddudll" Name="VBoxDDU.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxDDU.dll" Name="VBoxDDU.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxDDU.dll" />
-                        <File Id="vboxrtdll" Name="VBoxRT.dll" DiskId="1"   Vital="yes"
+                        <File Id="file_VBoxRT.dll" Name="VBoxRT.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxRT.dll" />
-                        <File Id="vboxremdll" Name="VBoxREM.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxREM.dll" Name="VBoxREM.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxREM.dll" />
 <?if $(env.BUILD_TARGET_ARCH) = "amd64" ?>
-                        <File Id="vboxrem2rel" Name="VBoxREM2.rel" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxREM2.rel" Name="VBoxREM2.rel"
                               Source="$(env.PATH_OUT)\bin\VBoxREM2.rel" />
 <?else ?>
-                        <File Id="vboxrem32dll" Name="VBoxREM3.dll" LongName="VBoxREM32.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxREM32.dll" Name="VBoxREM32.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxREM32.dll" />
-                        <File Id="vboxrem64dll" Name="VBoxREM6.dll" LongName="VBoxREM64.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxREM64.dll" Name="VBoxREM64.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxREM64.dll" />
 <?endif ?>
-                        <File Id="vboxvmmdll" Name="VBoxVMM.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxVMM.dll" Name="VBoxVMM.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxVMM.dll" />
 <?if $(env.VBOX_WITH_VRDP) = "yes" ?>
-                        <File Id="vboxvrdpdll" Name="VBoxVRDP.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxVRDP.dll" Name="VBoxVRDP.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxVRDP.dll" />
 <?endif ?>
-                        <File Id="vboxshfolderdll" Name="VBoxSF.dll" LongName="VBoxSharedFolders.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxSharedFolders.dll" Name="VBoxSharedFolders.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxSharedFolders.dll" />
-                        <File Id="vboxshclpbrddll" Name="VBoxClip.dll" LongName="VBoxSharedClipboard.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxSharedClipboard.dll" Name="VBoxSharedClipboard.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxSharedClipboard.dll" />
 <?if $(env.VBOX_WITH_GUEST_PROPS) = "yes" ?>
-                        <File Id="vboxguestpropdll" Name="VBoxProp.dll" LongName="VBoxGuestPropSvc.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxGuestPropSvc.dll" Name="VBoxGuestPropSvc.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxGuestPropSvc.dll" />
 <?endif ?>
 <?if $(env.VBOX_WITH_GUEST_CONTROL) = "yes" ?>
-                        <File Id="vboxguestctrldll" Name="VBoxCtrl.dll" LongName="VBoxGuestControlSvc.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxGuestControlSvc.dll" Name="VBoxGuestControlSvc.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxGuestControlSvc.dll" />
 <?endif ?>
-                        <File Id="vboxauthdll" Name="VBoxAuth.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxAuth.dll" Name="VBoxAuth.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxAuth.dll" />
-                        <File Id="vboxauthsimpledll" Name="VBoxASim.dll" LongName="VBoxAuthSimple.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxAuthSimple.dll" Name="VBoxAuthSimple.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxAuthSimple.dll" />
 
                         <!-- Include resource DLL (icons, ...). -->
-                        <File Id="vboxresdll" LongName="VBoxRes.dll" Name="VBoxRes.dll" DiskId="$(var.Property_DiskIdCommon)" Vital="yes"
+                        <File Id="file_VBoxRes.dll" Name="VBoxRes.dll" DiskId="$(var.Property_DiskIdCommon)"
                               Source="$(env.PATH_OUT)\bin\VBoxRes.dll" />
 
-                        <File Id="vmmgc" Name="VMMGC.gc" DiskId="1"  Vital="yes"
+                        <File Id="file_VMMGC.gc" Name="VMMGC.gc"
                               Source="$(env.PATH_OUT)\bin\VMMGC.gc" />
-                        <File Id="vboxddgc" Name="VBoxDDGC.gc" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxDDGC.gc" Name="VBoxDDGC.gc"
                               Source="$(env.PATH_OUT)\bin\VBoxDDGC.gc" />
-                        <File Id="vboxdd2gc" Name="VBoxDD2.gc" LongName="VBoxDD2GC.gc" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxDD2GC.gc" Name="VBoxDD2GC.gc"
                               Source="$(env.PATH_OUT)\bin\VBoxDD2GC.gc" />
 
-                        <File Id="vmmr0" Name="VMMR0.r0" DiskId="1"  Vital="yes"
+                        <File Id="file_VMMR0.r0" Name="VMMR0.r0"
                               Source="$(env.PATH_OUT)\bin\VMMR0.r0" />
-                        <File Id="vboxddr0" Name="VBoxDDR0.r0" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxDDR0.r0" Name="VBoxDDR0.r0"
                               Source="$(env.PATH_OUT)\bin\VBoxDDR0.r0" />
-                        <File Id="vboxdd2r0" Name="VBDD2R0.r0" LongName="VBoxDD2R0.r0" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxDD2R0.r0" Name="VBoxDD2R0.r0"
                               Source="$(env.PATH_OUT)\bin\VBoxDD2R0.r0" />
 
 <?if $(env.VBOX_WITH_CROGL) = "yes" ?>
-                        <File Id="vboxtestogl" Name="VBTstOGL.exe" LongName="VBoxTestOGL.exe" DiskId="1"  Vital="yes"
+                        <File Id="file_VBoxTestOGL.exe" Name="VBoxTestOGL.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxTestOGL.exe" />
 <?endif ?>
-                        <!-- Qt stuff -->
-                        <File Id="qtcore4dll" Name="QtCrVBx4.dll" LongName="QtCoreVBox4.dll" DiskId="1"  Vital="yes"
+                        <!-- Qt frontend -->
+                        <File Id="file_VirtualBox.exe" Name="VirtualBox.exe"
+                              Source="$(env.PATH_OUT)\bin\VirtualBox.exe">
+                        </File>
+                        <File Id="file_QtCoreVBox4.dll" Name="QtCoreVBox4.dll"
                               Source="$(env.PATH_OUT)\bin\QtCoreVBox4.dll" />
-                        <File Id="qtgui4dll" Name="QtGuVbx4.dll" LongName="QtGuiVBox4.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_QtGuiVBox4.dll" Name="QtGuiVBox4.dll"
                               Source="$(env.PATH_OUT)\bin\QtGuiVBox4.dll" />
-                        <File Id="qtnetwork4dll" Name="QtNwVBx4.dll" LongName="QtNetworkVBox4.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_QtNetworkVBox4.dll" Name="QtNetworkVBox4.dll"
                               Source="$(env.PATH_OUT)\bin\QtNetworkVBox4.dll" />
+<?if $(env.VBOX_WITH_DEBUGGER_GUI) = "yes" ?>
+                        <File Id="file_VBoxDbg.dll" Name="VBoxDbg.dll"
+                              Source="$(env.PATH_OUT)\bin\VBoxDbg.dll" />
+<?endif ?>
 <?if $(env.VBOX_GUI_USE_QGL) = "yes" ?>
-                        <File Id="qtopengl4dll" Name="QtGlVBx4.dll" LongName="QtOpenGLVBox4.dll" DiskId="1"  Vital="yes"
+                        <File Id="file_QtOpenGLVBox4.dll" Name="QtOpenGLVBox4.dll"
                               Source="$(env.PATH_OUT)\bin\QtOpenGLVBox4.dll" />
 <?endif?>
 
 <?if $(env.VBOX_USE_VCC80) = "yes" ?>
                         <!-- MS v8 Runtime DLL files (private assembly) -->
-                        <File Id="vc80crtmft" Name="VC80CRT.mft" LongName="Microsoft.VC80.CRT.manifest" DiskId="1" Vital="yes"
+                        <File Id="file_Microsoft.VC80.CRT.manifest" Name="Microsoft.VC80.CRT.manifest"
                               Source="$(env.PATH_OUT)\bin\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest" />
-                        <File Id="msvcr80dll" Name="msvcr80.dll" DiskId="1" Vital="yes"
+                        <File Id="file_msvcr80.dll" Name="msvcr80.dll"
                               Source="$(env.PATH_OUT)\bin\Microsoft.VC80.CRT\msvcr80.dll" />
-                        <File Id="msvcp80dll" Name="msvcp80.dll" DiskId="1" Vital="yes"
+                        <File Id="file_msvcp80.dll" Name="msvcp80.dll"
                               Source="$(env.PATH_OUT)\bin\Microsoft.VC80.CRT\msvcp80.dll" />
 <?endif?>
 
                         <!-- MS v7 Runtime DLL files -->
 <?if $(env.VBOX_USE_VCC80) != "yes" ?>
-                        <File Id="msvcpdll" Name="msvcp71.dll" DiskId="1" Vital="yes"
+                        <File Id="file_msvcp71.dll" Name="msvcp71.dll"
                               Source="$(env.PATH_OUT)\bin\msvcp71.dll" />
-                        <File Id="msvcrtdll" Name="msvcrt.dll" DiskId="1" Vital="yes"
+                        <File Id="file_msvcrt.dll" Name="msvcrt.dll"
                               Source="$(env.PATH_OUT)\bin\msvcrt.dll" />
 <?endif?>
 <?if $(env.BUILD_TARGET_ARCH) != "amd64" ?>
-                        <File Id="msvcrdll" Name="msvcr71.dll" DiskId="1" Vital="yes"
+                        <File Id="msvcrdll" Name="msvcr71.dll"
                               Source="$(env.PATH_OUT)\bin\msvcr71.dll" />
 <?endif?>
                         <!-- EFI firmware -->
 <?if $(env.VBOX_WITH_EFIFW_PACKING) = "yes" ?>
-                        <File Id="vboxefifd32" LongName="VBoxEFI32.fd" Name="efi32.fd" DiskId="$(var.Property_DiskIdCommon)" Vital="yes"
+                        <File Id="file_VBoxEFI32.fd" Name="VBoxEFI32.fd" DiskId="$(var.Property_DiskIdCommon)"
                               Source="$(env.PATH_OUT)\bin\VBoxEFI32.fd" />
-                        <File Id="vboxefifd64" LongName="VBoxEFI64.fd" Name="efi64.fd" DiskId="$(var.Property_DiskIdCommon)" Vital="yes"
+                        <File Id="file_VBoxEFI64.fd" Name="VBoxEFI64.fd" DiskId="$(var.Property_DiskIdCommon)"
                               Source="$(env.PATH_OUT)\bin\VBoxEFI64.fd" />
 <?endif?>
                         <!-- VBox guest additions -->
 <?if $(env.VBOX_WITH_ADDITIONS_PACKING) = "yes" ?>
     <?if $(env.VBOX_WITH_COMBINED_PACKAGE) = "yes" ?>
-                        <File Id="VBoxGuestAdditions.iso" Name="VBoxAdd.iso" LongName="VBoxGuestAdditions.iso" DiskId="2" Vital="yes"
+                        <File Id="file_VBoxGuestAdditions.iso" Name="VBoxGuestAdditions.iso" DiskId="2"
                               Source="$(env.PATH_MULTIARCH_GUEST_ADDITIONS_ISO)\VBoxGuestAdditions.iso" />
     <?else ?>
-                        <File Id="vboxguest" Name="VBoxAdd.iso" LongName="VBoxGuestAdditionsiso" DiskId="1" Vital="yes"
+                        <File Id="file_VBoxGuestAdditions.iso" Name="VBoxGuestAdditions.iso"
                               Source="$(env.PATH_OUT)\bin\additions\VBoxGuestAdditions.iso" />
     <?endif ?>
 <?endif ?>
@@ -549,154 +541,180 @@
 
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
                     <!-- Qt accessible plugins -->
-                    <Directory Id="accessible" Name="accessbl" LongName="accessible">
-                        <Component Id="qtaccessible" Guid="12040EF9-D4A8-4FB2-A69C-CA2F5C354A45">
-                            <File Id="qtaccessibleplugindll" Name="qtacsw4.dll" LongName="qtaccessiblewidgets4.dll" DiskId="1"  Vital="yes"
+                    <Directory Id="dir_Accessible" Name="accessible">
+                        <Component Id="cp_QtAccessible" Guid="12040EF9-D4A8-4FB2-A69C-CA2F5C354A45" Win64="$(var.Property_Win64)">
+                            <File Id="file_qtaccessiblewidgets4.dll" Name="qtaccessiblewidgets4.dll"
                                   Source="$(env.PATH_OUT)\bin\accessible\qtaccessiblewidgets4.dll" />
                         </Component>
-                    </Directory> <!-- Qt accessible plugins -->
+                    </Directory>
 <?endif?>
 
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
                     <!-- Python bindings -->
-                    <Directory Id="sdk" Name="sdk">
-                        <Directory Id="installer" Name="install">
-                            <Component Id="VBoxPyInst" Guid="C9A40306-5102-11DE-A7BA-C3C555D89593">
-                                 <File Id="vboxapisetup" Name="pysetup.py" LongName="vboxapisetup.py" DiskId="$(var.Property_DiskIdCommon)" Vital="yes"
-                                      Source="$(env.PATH_OUT)\bin\sdk\installer\vboxapisetup.py" />
+                    <Directory Id="dir_SDK" Name="sdk">
+                        <Directory Id="dir_SDKInstall" Name="install">
+                            <Component Id="cp_VBoxPyInst" Guid="C9A40306-5102-11DE-A7BA-C3C555D89593" Win64="$(var.Property_Win64)">
+                                 <File Id="file_vboxapisetup.py" Name="vboxapisetup.py" DiskId="$(var.Property_DiskIdCommon)"
+                                       Source="$(env.PATH_OUT)\bin\sdk\installer\vboxapisetup.py" />
                             </Component>
-                            <Directory Id="vboxapi" Name="vboxapi">
-                                <Component Id="VBoxPyMod" Guid="DF19CB76-5102-11DE-943B-13C755D89593">
-                                    <File Id="__init__.py" Name="__init__.py" DiskId="$(var.Property_DiskIdCommon)" Vital="yes"
-                                      Source="$(env.PATH_OUT)\bin\sdk\installer\vboxapi\__init__.py" />
-                                    <File Id="VirtualBox_constants.py" Name="vbconst.py" LongName="VirtualBox_constants.py" DiskId="$(var.Property_DiskIdCommon)" Vital="yes"
-                                      Source="$(env.PATH_OUT)\bin\sdk\installer\vboxapi\VirtualBox_constants.py" />
+                            <Directory Id="dir_SDKVBoxAPI" Name="vboxapi">
+                                <Component Id="cp_VBoxPyMod" Guid="DF19CB76-5102-11DE-943B-13C755D89593" Win64="$(var.Property_Win64)">
+                                    <File Id="file___init__.py" Name="__init__.py" DiskId="$(var.Property_DiskIdCommon)"
+                                          Source="$(env.PATH_OUT)\bin\sdk\installer\vboxapi\__init__.py" />
+                                    <File Id="file_VirtualBox_constants.py" Name="VirtualBox_constants.py" DiskId="$(var.Property_DiskIdCommon)"
+                                          Source="$(env.PATH_OUT)\bin\sdk\installer\vboxapi\VirtualBox_constants.py" />
                                 </Component>
                             </Directory>
                         </Directory>
                     </Directory>
-                    <!-- Python bindings -->
 <?endif?>
 
 <?if $(env.VBOX_WITH_CROGL) = "yes" ?>
-                    <Component Id="VBoxCROpenGL" Guid="874A1297-835A-491D-8A9D-7E723BC29EE7" Win64="$(var.Property_Win64)">
-                        <File Id="vboxoglhostcrutil" Name="VbGlHCRU.dll" LongName="VBoxOGLhostcrutil.dll" DiskId="1" Vital="yes"
+                    <Component Id="cp_VBoxCROpenGL" Guid="874A1297-835A-491D-8A9D-7E723BC29EE7" Win64="$(var.Property_Win64)">
+                        <File Id="file_VBoxOGLhostcrutil.dll" Name="VBoxOGLhostcrutil.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxOGLhostcrutil.dll" />
-                        <File Id="vboxoglhosterrorspu" Name="VbGlHers.dll" LongName="VBoxOGLhosterrorspu.dll" DiskId="1" Vital="yes"
+                        <File Id="file_VBoxOGLhosterrorspu.dll" Name="VBoxOGLhosterrorspu.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxOGLhosterrorspu.dll" />
-                        <File Id="vboxoglrenderspu" Name="VbGlRndr.dll" LongName="VBoxOGLrenderspu.dll" DiskId="1" Vital="yes"
+                        <File Id="file_VBoxOGLrenderspu.dll" Name="VBoxOGLrenderspu.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxOGLrenderspu.dll" />
-                        <File Id="vboxsharedcropengl" Name="VbShCRGL.dll" LongName="VBoxSharedCrOpenGL.dll" DiskId="1" Vital="yes"
+                        <File Id="file_VBoxSharedCrOpenGL.dll" Name="VBoxSharedCrOpenGL.dll"
                               Source="$(env.PATH_OUT)\bin\VBoxSharedCrOpenGL.dll" />
                     </Component>
 <?endif?>
                     <!-- SDL plugins -->
-                    <Component Id="VBoxSDLBinaries" Guid="F09D5FD9-E176-42B0-90A9-481BB18B0CB4" Win64="$(var.Property_Win64)">
-                        <File Id="vboxsdl" Name="VBoxSDL.exe" DiskId="1" Vital="yes"
+                    <Component Id="cp_VBoxSDLBinaries" Guid="F09D5FD9-E176-42B0-90A9-481BB18B0CB4" Win64="$(var.Property_Win64)">
+                        <File Id="file_VBoxSDL.exe" Name="VBoxSDL.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxSDL.exe" />
-                        <File Id="sdldll" Name="SDL.dll" DiskId="1" Vital="yes"
+                        <File Id="file_SDL.dll" Name="SDL.dll"
                               Source="$(env.PATH_OUT)\bin\SDL.dll" />
 <?if $(env.VBOX_WITH_SECURELABEL) = "yes" ?>
-                        <File Id="sdlttfdll" Name="SDL_ttf.dll" DiskId="1" Vital="yes"
+                        <File Id="file_SDL_ttf.dll" Name="SDL_ttf.dll"
                               Source="$(env.PATH_OUT)\bin\SDL_ttf.dll" />
 <?endif?>
                     </Component> <!-- SDL plugins -->
 
 <?if $(env.VBOX_WITH_WEBSERVICES) = "yes" ?>
                     <!-- Webservice -->
-                    <Component Id="VBoxWebService" Guid="DD404F04-9874-43E9-AEE2-7762924D922E">
-                        <File Id="vboxweb" Name="vboxwebs.exe" LongName="vboxwebsrv.exe" DiskId="1" Vital="yes"
+                    <Component Id="cp_VBoxWebService" Guid="DD404F04-9874-43E9-AEE2-7762924D922E">
+                        <File Id="file_VBoxWebSrv.exe" Name="VBoxWebSrv.exe"
                               Source="$(env.PATH_OUT)\bin\vboxwebsrv.exe" />
-                    </Component> <!-- Webservice -->
+                    </Component>
 <?endif?>
 
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-                    <!--Python -->
-                    <Component Id="VBoxPythonBinding" Guid="293D7E11-78DA-4C31-AEED-AE2FE42F6881">
-                        <Condition>PYTHONINSTALLED</Condition>
-                        <!-- Nothing in here yet. -->
+                    <Component Id="cp_VBoxPythonBinding" Guid="293D7E11-78DA-4C31-AEED-AE2FE42F6881">
+                        <Condition>PYTHON_INSTALLED</Condition>
                     </Component>
 <?endif?>
                 </Directory> <!-- Installation directory -->
             </Directory> <!-- Windows program files directory -->
 
-            <!-- Create a subdirectory in the "Programs" start menu -->
-            <Directory Id="ProgramMenuFolder" Name="PMenu" LongName="Programs">
-                <Directory Id="ProgramMenuDir" Name="vbox" LongName="$(env.VBOX_PRODUCT)" />
+            <!-- Set up special directory IDs for referencing to the start menu
+                 or the Quick Launch bar.
+                 See: http://msdn.microsoft.com/en-us/library/aa368276.aspx
+                      http://wix.mindcapers.com/wiki/Shortcuts_in_WiX -->
+            <Directory Id="ProgramMenuFolder">
+                <Directory Id="dir_StartMenuVBox" Name="$(env.VBOX_PRODUCT)"/>
             </Directory>
 
-            <Directory Id="DesktopFolder" Name="Desktop" />
+            <Directory Id="DesktopFolder" Name="Desktop"/>
 
             <Directory Id="AppDataFolder" Name="AppData">
-                <Directory Id="AppDataMicrosoft" Name="MS" LongName="Microsoft">
-                    <Directory Id="AppDataMSIE" Name="IE" LongName="Internet Explorer">
-                        <Directory Id="QuicklaunchFolder" Name="QL" LongName="Quick Launch"/>
+                <Directory Id="dir_AppDataMicrosoft" Name="Microsoft">
+                    <Directory Id="dir_AppDataMSIE" Name="Internet Explorer">
+                        <Directory Id="dir_QuicklaunchFolder" Name="Quick Launch"/>
                     </Directory>
                 </Directory>
             </Directory>
-        </Directory>
+
+            <!-- Shortcut(s) in start menu -->
+            <Component Id="cp_StartMenuVBox" Guid="C2DC321A-CE63-40EE-8A98-724DF8BD12FB" Win64="$(var.Property_Win64)">
+                <Shortcut Id="sc_StartMenuVBox" Directory="dir_StartMenuVBox" Name="$(env.VBOX_PRODUCT)" Description="$(env.VBOX_PRODUCT)"
+                          Target="[INSTALLDIR]VirtualBox.exe" WorkingDirectory="INSTALLDIR"/>
+                <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)"
+                               Type="string" Value="installed" KeyPath="yes" />
+                <?include $(env.PATH_TARGET)\Shortcuts_StartMenu.wxi ?>
+            </Component>
+
+            <Component Id="cp_DesktopShortcut" Guid="668F8A1A-F5CE-48B3-BB1A-3042EE27B279" Win64="$(var.Property_Win64)">
+                <Condition>INSTALLDESKTOPSHORTCUT</Condition>
+                <Shortcut Id="sc_DesktopVBox" Directory="DesktopFolder" Name="$(env.VBOX_PRODUCT)" Description="$(env.VBOX_PRODUCT)"
+                          Target="[INSTALLDIR]VirtualBox.exe" WorkingDirectory="INSTALLDIR"/>
+                <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)" Type="string"
+                               Value="installed" KeyPath="yes" />
+            </Component>
+
+            <Component Id="cp_QuickLaunchVBox" Guid="CC19E026-938A-41CB-8E77-3F33296244B6" Win64="$(var.Property_Win64)">
+                <CreateFolder/>
+                <Condition>INSTALLQUICKLAUNCHSHORTCUT</Condition>
+                <Shortcut Id="sc_QuickLaunchVBox" Directory="dir_QuicklaunchFolder" Name="$(env.VBOX_PRODUCT)" Description="$(env.VBOX_PRODUCT)"
+                          Target="[INSTALLDIR]VirtualBox.exe" WorkingDirectory="INSTALLDIR"/>
+                <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)"
+                               Type="string" Value="installed" KeyPath="yes" />
+            </Component>
+        </Directory> <!-- TARGETDIR -->
 
         <Feature Id="VBoxApplication" Title="VirtualBox Application" Level="1"
-                 Description="$(loc.VB_App)"
+                 Description="!(loc.VB_App)"
                  ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
                  Absent="disallow">
 
-            <ComponentRef Id="DesktopShortcut" />
-            <ComponentRef Id="QuicklaunchShortcut" />
+            <ComponentRef Id="cp_StartMenuVBox" />
+            <ComponentRef Id="cp_DesktopShortcut" />
+            <ComponentRef Id="cp_QuickLaunchVBox" />
 
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
-            <ComponentRef Id="docs" />
+            <ComponentRef Id="cp_Docs" />
 <?endif?>
-            <ComponentRef Id="nls" />
-            <ComponentRef Id="MainCOM" />
-            <ComponentRef Id="MainBinaries" />
+            <ComponentRef Id="cp_NLS" />
+            <ComponentRef Id="cp_MainCOM" />
+            <ComponentRef Id="cp_MainBinaries" />
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-            <ComponentRef Id="qtaccessible" />
+            <ComponentRef Id="cp_QtAccessible" />
 <?endif?>
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-            <ComponentRef Id="VBoxPyInst" />
-            <ComponentRef Id="VBoxPyMod" />
+            <ComponentRef Id="cp_VBoxPyInst" />
+            <ComponentRef Id="cp_VBoxPyMod" />
 <?endif?>
 
 <?if $(env.VBOX_WITH_CROGL) = "yes" ?>
-            <ComponentRef Id="VBoxCROpenGL" />
+            <ComponentRef Id="cp_VBoxCROpenGL" />
 <?endif?>
-            <ComponentRef Id="VBoxSDLBinaries" />
+            <ComponentRef Id="cp_VBoxSDLBinaries" />
 <?if $(env.VBOX_WITH_WEBSERVICES) = "yes" ?>
-            <ComponentRef Id="VBoxWebService" />
+            <ComponentRef Id="cp_VBoxWebService" />
 <?endif?>
-            <ComponentRef Id="VBoxDrv" />
+            <ComponentRef Id="cp_VBoxDrv" />
 
-            <Feature Id="VBoxUSB" Title="VirtualBox USB Support" Level="1"
-                     Description="$(loc.VB_USBDriver)"
+            <Feature Id="ft_VBoxUSB" Title="VirtualBox USB Support" Level="1"
+                     Description="!(loc.VB_USBDriver)"
                      ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
-                <ComponentRef Id="USBFilterDriver" />
-                <ComponentRef Id="USBDeviceDriver" />
+                <ComponentRef Id="cp_USBFilterDriver" />
+                <ComponentRef Id="cp_USBDeviceDriver" />
             </Feature>
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-            <Feature Id="VBoxNetwork" Title="VirtualBox Networking" Level="1"
-                     Description="$(loc.VB_Network)"
+            <Feature Id="ft_VBoxNetwork" Title="VirtualBox Networking" Level="1"
+                     Description="!(loc.VB_Network)"
                      ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
-                 <Feature Id="VBoxNetworkFlt" Title="VirtualBox Bridged Networking" Level="1"
-                     Description="$(loc.VB_NetFltDriver)"
-                     ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
-                       <ComponentRef Id="NetFltDriver" />
+                 <Feature Id="ft_VBoxNetworkFlt" Title="VirtualBox Bridged Networking" Level="1"
+                          Description="!(loc.VB_NetFltDriver)"
+                          ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
+                     <ComponentRef Id="cp_NetFltDriver" />
                  </Feature>
-                 <Feature Id="VBoxNetworkAdp" Title="VirtualBox Host-Only Networking" Level="1"
-                     Description="$(loc.VB_NetAdpDriver)"
-                     ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
-                       <ComponentRef Id="NetAdpDriver" />
+                 <Feature Id="ft_VBoxNetworkAdp" Title="VirtualBox Host-Only Networking" Level="1"
+                          Description="!(loc.VB_NetAdpDriver)"
+                          ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
+                     <ComponentRef Id="cp_NetAdpDriver" />
                  </Feature>
             </Feature>
 <?endif?>
 
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-
-            <Feature Id="VBoxPython" Title="VirtualBox Python Support" Level="1"
-                    Description="$(loc.VB_Python)"
+            <Feature Id="ft_VBoxPython" Title="VirtualBox Python Support" Level="1"
+                    Description="!(loc.VB_Python)"
                     ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
-                <ComponentRef Id="VBoxPythonBinding" />
+                <ComponentRef Id="cp_VBoxPythonBinding" />
             </Feature>
 <?endif?>
 
@@ -712,30 +730,31 @@
             <LaunchConditions After="AppSearch" />
             <RemoveExistingProducts After="InstallValidate"><![CDATA[NEWERVERSIONDETECTED OR PREVIOUSVERSIONSINSTALLED]]></RemoveExistingProducts>
 
-            <Custom Action="OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
-            <Custom Action="DefaultTargetDir" Before="FileCost" ><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
+            <Custom Action="ca_OriginalTargetDir" After="FileCost"><![CDATA[(NOT INSTALLDIR) AND (NOT EXISTINGINSTALLDIR)]]></Custom>
+            <Custom Action="ca_DefaultTargetDir" Before="FileCost" ><![CDATA[NOT Installed AND (NOT INSTALLDIR) AND EXISTINGINSTALLDIR]]></Custom>
 
-            <Custom Action="UninstallTAPInstances" Before="InstallFiles" >1</Custom>
+            <Custom Action="ca_UninstallTAPInstances" Before="InstallFiles" >1</Custom>
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-            <Custom Action="CreateHostOnlyInterfaceArgs" Before="CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
-            <Custom Action="CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
-            <Custom Action="RemoveHostOnlyInterfaces" After="UninstallNetFlt" ></Custom>
+            <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&ft_VBoxNetworkAdp=3]]></Custom>
+            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&ft_VBoxNetworkAdp=3]]></Custom>
+            <Custom Action="ca_RemoveHostOnlyInterfaces" After="ca_UninstallNetFlt" ></Custom>
 
-            <Custom Action="RollbackInstallNetFltArgs" Before="RollbackInstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
-            <Custom Action="RollbackInstallNetFlt" Before="InstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
-            <Custom Action="InstallNetFltArgs" Before="InstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
-            <Custom Action="InstallNetFlt" Before="CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
+            <Custom Action="ca_RollbackInstallNetFltArgs" Before="ca_RollbackInstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=3]]></Custom>
+            <Custom Action="ca_RollbackInstallNetFlt" Before="ca_InstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=3]]></Custom>
+            <Custom Action="ca_InstallNetFltArgs" Before="ca_InstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=3]]></Custom>
+            <Custom Action="ca_InstallNetFlt" Before="ca_CreateHostOnlyInterface" ><![CDATA[&ft_VBoxNetworkFlt=3]]></Custom>
 
-            <Custom Action="RollbackUninstallNetFltArgs" Before="RollbackUninstallNetFlt" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
-            <Custom Action="RollbackUninstallNetFlt" Before="UninstallNetFlt" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
-            <Custom Action="UninstallNetFltArgs" Before="UninstallNetFlt" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
-            <Custom Action="UninstallNetFlt" After="InstallInitialize" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
+            <Custom Action="ca_RollbackUninstallNetFltArgs" Before="ca_RollbackUninstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
+            <Custom Action="ca_RollbackUninstallNetFlt" Before="ca_UninstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
+            <Custom Action="ca_UninstallNetFltArgs" Before="ca_UninstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
+            <Custom Action="ca_UninstallNetFlt" After="InstallInitialize" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
 <?endif?>
-            <Custom Action="InstallPythonAPI" After="InstallFinalize" ><![CDATA[&VBoxPython=3]]></Custom>
-            <Custom Action="InstallBranding" After="InstallFinalize" ><![CDATA[NOT REMOVE]]></Custom>
-            <Custom Action="UninstallBranding" After="InstallFinalize" ><![CDATA[REMOVE]]></Custom>
+            <Custom Action="ca_InstallPythonAPI" Before="InstallFinalize" ><![CDATA[&ft_VBoxPython=3]]></Custom>
+            <Custom Action="ca_InstallBranding" Before="InstallFinalize" ><![CDATA[NOT REMOVE]]></Custom>
+            <Custom Action="ca_UninstallBranding" Before="InstallFinalize" ><![CDATA[REMOVE]]></Custom>
 
         </InstallExecuteSequence>
 
     </Product>
 </Wix>
+

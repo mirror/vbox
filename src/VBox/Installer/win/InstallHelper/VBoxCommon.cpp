@@ -51,7 +51,6 @@ UINT VBoxGetProperty(MSIHANDLE a_hModule, TCHAR* a_pszName, TCHAR* a_pValue, DWO
         ZeroMemory(a_pValue, a_dwSize);
         uiRet = MsiGetProperty(a_hModule, a_pszName, a_pValue, &dwBuffer);
     }
-
     return uiRet;
 }
 

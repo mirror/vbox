@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<WixLocalization xmlns="http://schemas.microsoft.com/wix/2003/11/localization" Codepage='1252'>
+﻿﻿<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization xmlns="http://schemas.microsoft.com/wix/2003/11/localization" Codepage="1252" Culture="de_DE">
 
     <!--
             Language Definition Include for VirtualBox WiX script.
 
-            Copyright (C) 2010 Oracle Corporation
+            Copyright (C) 2011 Oracle Corporation
 
             All rights reserved.
     -->

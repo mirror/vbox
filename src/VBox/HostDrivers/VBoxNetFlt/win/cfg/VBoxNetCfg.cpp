@@ -49,6 +49,7 @@ static LOG_ROUTINE g_Logger = NULL;
 
 static VOID DoLogging(LPCSTR szString, ...);
 #define Log DoLogging
+#define LogFlow(x) DoLogging x
 
 #define DbgLog
 
@@ -56,28 +57,26 @@ static VOID DoLogging(LPCSTR szString, ...);
 
 
 static HRESULT vboxNetCfgWinINetCfgLock(IN INetCfg *pNetCfg,
-                          IN LPCWSTR pszwClientDescription,
-                          IN DWORD cmsTimeout,
-                          OUT LPWSTR *ppszwClientDescription)
+                                        IN LPCWSTR pszwClientDescription,
+                                        IN DWORD cmsTimeout,
+                                        OUT LPWSTR *ppszwClientDescription)
 {
     INetCfgLock *pLock;
     HRESULT hr = pNetCfg->QueryInterface(IID_INetCfgLock, (PVOID*)&pLock);
-    Assert(hr == S_OK);
-    if (hr != S_OK)
+    if (FAILED(hr))
     {
-        Log(__FUNCTION__ ": QueryInterface failed, hr (0x%x)\n", hr);
+        LogFlow(("QueryInterface failed, hr (0x%x)\n", hr));
         return hr;
     }
 
     hr = pLock->AcquireWriteLock(cmsTimeout, pszwClientDescription, ppszwClientDescription);
-    Assert(hr == S_OK || hr == S_FALSE);
     if (hr == S_FALSE)
     {
-        Log(__FUNCTION__ ": write lock busy\n");
+        LogFlow(("Write lock busy\n"));
     }
-    else if (hr != S_OK)
+    else if (FAILED(hr))
     {
-        Log(__FUNCTION__ ": AcquireWriteLock failed hr (0x%x)\n", hr);
+        LogFlow(("AcquireWriteLock failed, hr (0x%x)\n", hr));
     }
 
     pLock->Release();
@@ -88,63 +87,54 @@ static HRESULT vboxNetCfgWinINetCfgUnlock(IN INetCfg *pNetCfg)
 {
     INetCfgLock *pLock;
     HRESULT hr = pNetCfg->QueryInterface(IID_INetCfgLock, (PVOID*)&pLock);
-    Assert(hr == S_OK);
-    if (hr != S_OK)
+    if (FAILED(hr))
     {
-        Log(__FUNCTION__ ": QueryInterface failed, hr (0x%x)\n", hr);
+        LogFlow(("QueryInterface failed, hr (0x%x)\n", hr));
         return hr;
     }
 
     hr = pLock->ReleaseWriteLock();
-    Assert(hr == S_OK);
-    if (hr != S_OK)
-    {
-        Log(__FUNCTION__ ": ReleaseWriteLock failed hr (0x%x)\n", hr);
-    }
+    if (FAILED(hr))
+        LogFlow(("ReleaseWriteLock failed, hr (0x%x)\n", hr));
 
     pLock->Release();
     return hr;
 }
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinQueryINetCfg(OUT INetCfg **ppNetCfg,
-                          IN BOOL fGetWriteLock,
-                          IN LPCWSTR pszwClientDescription,
-                          IN DWORD cmsTimeout,
-                          OUT LPWSTR *ppszwClientDescription)
+                                                      IN BOOL fGetWriteLock,
+                                                      IN LPCWSTR pszwClientDescription,
+                                                      IN DWORD cmsTimeout,
+                                                      OUT LPWSTR *ppszwClientDescription)
 {
     INetCfg *pNetCfg;
     HRESULT hr = CoCreateInstance(CLSID_CNetCfg, NULL, CLSCTX_INPROC_SERVER, IID_INetCfg, (PVOID*)&pNetCfg);
-    Assert(hr == S_OK);
-    if (hr != S_OK)
+    if (FAILED(hr))
     {
-        Log(__FUNCTION__ ": CoCreateInstance failed, hr (0x%x)\n", hr);
+        LogFlow(("CoCreateInstance failed, hr (0x%x)\n", hr));
         return hr;
     }
 
     if (fGetWriteLock)
     {
         hr = vboxNetCfgWinINetCfgLock(pNetCfg, pszwClientDescription, cmsTimeout, ppszwClientDescription);
-        Assert(hr == S_OK || hr == S_FALSE);
         if (hr == S_FALSE)
         {
-            Log(__FUNCTION__ ": write lock is busy\n", hr);
+            LogFlow(("Write lock is busy\n", hr));
             hr = NETCFG_E_NO_WRITE_LOCK;
         }
     }
 
-    if (hr == S_OK)
+    if (SUCCEEDED(hr))
     {
         hr = pNetCfg->Initialize(NULL);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
+        if (SUCCEEDED(hr))
         {
             *ppNetCfg = pNetCfg;
             return S_OK;
         }
         else
-        {
-            Log(__FUNCTION__ ": Initialize failed, hr (0x%x)\n", hr);
-        }
+            LogFlow(("Initialize failed, hr (0x%x)\n", hr));
     }
 
     pNetCfg->Release();
@@ -154,51 +144,47 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinQueryINetCfg(OUT INetCfg **ppNetCfg,
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinReleaseINetCfg(IN INetCfg *pNetCfg, IN BOOL fHasWriteLock)
 {
     HRESULT hr = pNetCfg->Uninitialize();
-    Assert(hr == S_OK);
-    if (hr != S_OK)
+    if (FAILED(hr))
     {
-        Log(__FUNCTION__ ": Uninitialize failed, hr (0x%x)\n", hr);
+        LogFlow(("Uninitialize failed, hr (0x%x)\n", hr));
         return hr;
     }
 
     if (fHasWriteLock)
     {
         hr = vboxNetCfgWinINetCfgUnlock(pNetCfg);
-        Assert(hr == S_OK);
-        if (hr != S_OK)
-        {
-            Log(__FUNCTION__ ": vboxNetCfgWinINetCfgUnlock failed, hr (0x%x)\n", hr);
-        }
+        if (FAILED(hr))
+            LogFlow(("vboxNetCfgWinINetCfgUnlock failed, hr (0x%x)\n", hr));
     }
 
     pNetCfg->Release();
     return hr;
 }
 
-static HRESULT vboxNetCfgWinGetComponentByGuidEnum(IEnumNetCfgComponent *pEnumNcc, IN const GUID * pGuid, OUT INetCfgComponent ** ppNcc)
+static HRESULT vboxNetCfgWinGetComponentByGuidEnum(IEnumNetCfgComponent *pEnumNcc,
+                                                   IN const GUID *pGuid,
+                                                   OUT INetCfgComponent **ppNcc)
 {
-    INetCfgComponent * pNcc;
-    GUID NccGuid;
-
     HRESULT hr = pEnumNcc->Reset();
-    Assert(hr == S_OK);
-    if (hr != S_OK)
+    if (FAILED(hr))
     {
-        Log(__FUNCTION__": Reset failed, hr (0x%x)\n", hr);
+        LogFlow(("Reset failed, hr (0x%x)\n", hr));
         return hr;
     }
 
+    INetCfgComponent *pNcc;
     while ((hr = pEnumNcc->Next(1, &pNcc, NULL)) == S_OK)
     {
         ULONG uComponentStatus;
         hr = pNcc->GetDeviceStatus(&uComponentStatus);
-        if (hr == S_OK)
+        if (SUCCEEDED(hr))
         {
             if (uComponentStatus == 0)
             {
+                GUID NccGuid;
                 hr = pNcc->GetInstanceGuid(&NccGuid);
-                Assert(hr == S_OK);
-                if (hr == S_OK)
+
+                if (SUCCEEDED(hr))
                 {
                     if (NccGuid == *pGuid)
                     {
@@ -208,135 +194,116 @@ static HRESULT vboxNetCfgWinGetComponentByGuidEnum(IEnumNetCfgComponent *pEnumNc
                     }
                 }
                 else
-                {
-                    Log(__FUNCTION__": GetInstanceGuid failed, hr (0x%x)\n", hr);
-                }
+                    LogFlow(("GetInstanceGuid failed, hr (0x%x)\n", hr));
             }
         }
 
         pNcc->Release();
     }
-
-    Assert(hr == S_OK || hr == S_FALSE);
     return hr;
 }
 
-VBOXNETCFGWIN_DECL(HRESULT)
-VBoxNetCfgWinGetComponentByGuid(IN INetCfg *pNc,
-                                IN const GUID *pguidClass,
-                                IN const GUID * pComponentGuid,
-                                OUT INetCfgComponent **ppncc)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGetComponentByGuid(IN INetCfg *pNc,
+                                                            IN const GUID *pguidClass,
+                                                            IN const GUID * pComponentGuid,
+                                                            OUT INetCfgComponent **ppncc)
 {
     IEnumNetCfgComponent *pEnumNcc;
     HRESULT hr = pNc->EnumComponents(pguidClass, &pEnumNcc);
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+
+    if (SUCCEEDED(hr))
     {
         hr = vboxNetCfgWinGetComponentByGuidEnum(pEnumNcc, pComponentGuid, ppncc);
-        Assert(hr == S_OK || hr == S_FALSE);
         if (hr == S_FALSE)
         {
-            Log(__FUNCTION__": component not found \n");
+            LogFlow(("Component not found\n"));
         }
-        else if (hr != S_OK)
+        else if (FAILED(hr))
         {
-            Log(__FUNCTION__": vboxNetCfgWinGetComponentByGuidEnum failed, hr (0x%x)\n", hr);
+            LogFlow(("vboxNetCfgWinGetComponentByGuidEnum failed, hr (0x%x)\n", hr));
         }
         pEnumNcc->Release();
     }
     else
-    {
-        Log(__FUNCTION__": EnumComponents failed, hr (0x%x)\n", hr);
-    }
+        LogFlow(("EnumComponents failed, hr (0x%x)\n", hr));
     return hr;
 }
 
 static HRESULT vboxNetCfgWinQueryInstaller(IN INetCfg *pNetCfg, IN const GUID *pguidClass, INetCfgClassSetup **ppSetup)
 {
     HRESULT hr = pNetCfg->QueryNetCfgClass(pguidClass, IID_INetCfgClassSetup, (void**)ppSetup);
-    Assert(hr == S_OK);
-    if (hr != S_OK)
-    {
-        Log(__FUNCTION__ ": QueryNetCfgClass failed hr (0x%x)\n", hr);
-    }
+    if (FAILED(hr))
+        LogFlow(("QueryNetCfgClass failed, hr (0x%x)\n", hr));
     return hr;
 }
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallComponent(IN INetCfg *pNetCfg, IN LPCWSTR pszwComponentId, IN const GUID *pguidClass,
-        OUT INetCfgComponent **ppComponent)
+                                                          OUT INetCfgComponent **ppComponent)
 {
     INetCfgClassSetup *pSetup;
     HRESULT hr = vboxNetCfgWinQueryInstaller(pNetCfg, pguidClass, &pSetup);
-    Assert(hr == S_OK);
-    if (hr != S_OK)
+    if (FAILED(hr))
     {
-        Log(__FUNCTION__ ": vboxNetCfgWinQueryInstaller failed hr (0x%x)\n", hr);
+        LogFlow(("vboxNetCfgWinQueryInstaller failed, hr (0x%x)\n", hr));
         return hr;
     }
 
     OBO_TOKEN Token;
-    memset(&Token, 0, sizeof (Token));
+    ZeroMemory(&Token, sizeof (Token));
     Token.Type = OBO_USER;
 
     hr = pSetup->Install(pszwComponentId, &Token,
-            0,    /* IN DWORD dwSetupFlags */
-            0,    /* IN DWORD dwUpgradeFromBuildNo */
-            NULL, /* IN LPCWSTR pszwAnswerFile */
-            NULL, /* IN LPCWSTR pszwAnswerSections */
-            ppComponent);
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+                         0,    /* IN DWORD dwSetupFlags */
+                         0,    /* IN DWORD dwUpgradeFromBuildNo */
+                         NULL, /* IN LPCWSTR pszwAnswerFile */
+                         NULL, /* IN LPCWSTR pszwAnswerSections */
+                         ppComponent);
+    if (SUCCEEDED(hr))
     {
         /* ignore the apply failure */
         HRESULT tmpHr = pNetCfg->Apply();
         Assert(tmpHr == S_OK);
         if (tmpHr != S_OK)
-        {
-            Log(__FUNCTION__ ": Apply failed, hr (0x%x)\n", tmpHr);
-        }
+            LogFlow(("Apply failed, hr (0x%x)\n", tmpHr));
     }
     else
-    {
-        Log(__FUNCTION__ ": Install failed hr (0x%x)\n", hr);
-    }
+        LogFlow(("Install failed, hr (0x%x)\n", hr));
+
     pSetup->Release();
     return hr;
 }
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallInfAndComponent(IN INetCfg *pNetCfg, IN LPCWSTR pszwComponentId, IN const GUID *pguidClass,
-        IN LPCWSTR * apInfPaths, IN UINT cInfPaths,
-        OUT INetCfgComponent **ppComponent)
+                                                                IN LPCWSTR * apInfPaths, IN UINT cInfPaths,
+                                                                OUT INetCfgComponent **ppComponent)
 {
     HRESULT hr = S_OK;
     UINT i = 0;
 
+    LogFlow(("Installing %u INF files ...\n", cInfPaths));
+
     for (; i < cInfPaths; i++)
     {
+        LogFlow(("Installing INF file \"%ws\" ...\n", apInfPaths[i]));
         hr = VBoxDrvCfgInfInstall(apInfPaths[i]);
-        Assert(hr == S_OK);
-        if (hr != S_OK)
+        if (FAILED(hr))
         {
-            Log(__FUNCTION__ ": VBoxNetCfgWinInfInstall failed hr (0x%x)\n", hr);
+            LogFlow(("VBoxNetCfgWinInfInstall failed, hr (0x%x)\n", hr));
             break;
         }
     }
 
-    if (hr == S_OK)
+    if (SUCCEEDED(hr))
     {
         hr = VBoxNetCfgWinInstallComponent(pNetCfg, pszwComponentId, pguidClass, ppComponent);
-        Assert(hr == S_OK);
-        if (hr != S_OK)
-        {
-            Log(__FUNCTION__ ": VBoxNetCfgWinInstallComponent failed hr (0x%x)\n", hr);
-        }
+        if (FAILED(hr))
+            LogFlow(("VBoxNetCfgWinInstallComponent failed, hr (0x%x)\n", hr));
     }
 
-    if (hr != S_OK)
+    if (FAILED(hr))
     {
-        for (UINT j = i-1; j != 0; j--)
-        {
+        for (UINT j = i - 1; j != 0; j--)
             VBoxDrvCfgInfUninstall(apInfPaths[j], 0);
-        }
     }
 
     return hr;
@@ -346,92 +313,82 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUninstallComponent(IN INetCfg *pNetCfg,
 {
     GUID GuidClass;
     HRESULT hr = pComponent->GetClassGuid(&GuidClass);
-    Assert(hr == S_OK);
-    if (hr != S_OK)
+    if (FAILED(hr))
     {
-        Log(__FUNCTION__ ": GetClassGuid failed hr (0x%x)\n", hr);
+        LogFlow(("GetClassGuid failed, hr (0x%x)\n", hr));
         return hr;
     }
 
-    INetCfgClassSetup *pSetup;
+    INetCfgClassSetup *pSetup = NULL;
     hr = vboxNetCfgWinQueryInstaller(pNetCfg, &GuidClass, &pSetup);
-    Assert(hr == S_OK);
-    if (hr != S_OK)
+    if (FAILED(hr))
     {
-        Log(__FUNCTION__ ": vboxNetCfgWinQueryInstaller failed hr (0x%x)\n", hr);
+        LogFlow(("vboxNetCfgWinQueryInstaller failed, hr (0x%x)\n", hr));
         return hr;
     }
 
     OBO_TOKEN Token;
-    memset(&Token, 0, sizeof (Token));
+    ZeroMemory(&Token, sizeof(Token));
     Token.Type = OBO_USER;
 
     hr = pSetup->DeInstall(pComponent, &Token, NULL /* OUT LPWSTR *pmszwRefs */);
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+    if (SUCCEEDED(hr))
     {
-        HRESULT tmpHr = pNetCfg->Apply();
-        Assert(tmpHr == S_OK);
-        if (tmpHr != S_OK)
-        {
-            Log(__FUNCTION__ ": Apply failed, hr (0x%x)\n", tmpHr);
-        }
+        hr = pNetCfg->Apply();
+        if (FAILED(hr))
+            LogFlow(("Apply failed, hr (0x%x)\n", hr));
     }
     else
-    {
-        Log(__FUNCTION__ ": DeInstall failed hr (0x%x)\n", hr);
-    }
-    pSetup->Release();
+        LogFlow(("DeInstall failed, hr (0x%x)\n", hr));
+
+    if (pSetup)
+        pSetup->Release();
     return hr;
 }
 
-typedef BOOL (*VBOXNETCFGWIN_NETCFGENUM_CALLBACK) (IN INetCfg *pNc, IN INetCfgComponent *pNcc, PVOID pContext);
+typedef BOOL (*VBOXNETCFGWIN_NETCFGENUM_CALLBACK) (IN INetCfg *pNetCfg, IN INetCfgComponent *pNetCfgComponent, PVOID pContext);
 
-static HRESULT vboxNetCfgWinEnumNetCfgComponents(IN INetCfg *pNc,
-        IN const GUID *pguidClass,
-        VBOXNETCFGWIN_NETCFGENUM_CALLBACK callback,
-        PVOID pContext)
+static HRESULT vboxNetCfgWinEnumNetCfgComponents(IN INetCfg *pNetCfg,
+                                                 IN const GUID *pguidClass,
+                                                 VBOXNETCFGWIN_NETCFGENUM_CALLBACK callback,
+                                                 PVOID pContext)
 {
     IEnumNetCfgComponent *pEnumComponent;
-    HRESULT hr = pNc->EnumComponents(pguidClass, &pEnumComponent);
-    bool bBreak = false;
-    Assert(hr == S_OK);
-    if (hr == S_OK)
+    HRESULT hr = pNetCfg->EnumComponents(pguidClass, &pEnumComponent);
+    if (SUCCEEDED(hr))
     {
-        INetCfgComponent *pNcc;
+        INetCfgComponent *pNetCfgComponent;
         hr = pEnumComponent->Reset();
-        Assert(hr == S_OK);
         do
         {
-            hr = pEnumComponent->Next(1, &pNcc, NULL);
-            Assert(hr == S_OK || hr == S_FALSE);
-            if (hr == S_OK)
+            hr = pEnumComponent->Next(1, &pNetCfgComponent, NULL);
+            if (SUCCEEDED(hr))
             {
 //                ULONG uComponentStatus;
 //                hr = pNcc->GetDeviceStatus(&uComponentStatus);
-//                if (hr == S_OK)
+//                if (SUCCEEDED(hr))
+                BOOL fResult = FALSE;
+                if (pNetCfgComponent)
                 {
-                    if (!callback(pNc, pNcc, pContext))
-                    {
-                        bBreak = true;
-                    }
+                    if (pContext)
+                        fResult = callback(pNetCfg, pNetCfgComponent, pContext);
+                    pNetCfgComponent->Release();
                 }
-                pNcc->Release();
+
+                if (!fResult)
+                    break;
             }
             else
             {
-                if (hr ==S_FALSE)
+                if (hr == S_FALSE)
                 {
                     hr = S_OK;
                 }
                 else
-                {
-                    Log(__FUNCTION__": Next failed, hr (0x%x)\n", hr);
-                }
+                    LogFlow(("Next failed, hr (0x%x)\n", hr));
                 break;
             }
-        } while (!bBreak);
-
+        } while (true);
         pEnumComponent->Release();
     }
     return hr;
@@ -439,13 +396,14 @@ static HRESULT vboxNetCfgWinEnumNetCfgComponents(IN INetCfg *pNc,
 
 static BOOL vboxNetCfgWinRemoveAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext)
 {
-    DWORD winEr;
     HRESULT hr = S_OK;
     SP_REMOVEDEVICE_PARAMS rmdParams;
+
     rmdParams.ClassInstallHeader.cbSize = sizeof(SP_CLASSINSTALL_HEADER);
     rmdParams.ClassInstallHeader.InstallFunction = DIF_REMOVE;
     rmdParams.Scope = DI_REMOVEDEVICE_GLOBAL;
     rmdParams.HwProfile = 0;
+
     if (SetupDiSetClassInstallParams(hDevInfo,pDev,&rmdParams.ClassInstallHeader,sizeof(rmdParams)))
     {
         if (SetupDiSetSelectedDevice (hDevInfo, pDev))
@@ -459,29 +417,29 @@ static BOOL vboxNetCfgWinRemoveAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_
                     if (devParams.Flags & (DI_NEEDRESTART|DI_NEEDREBOOT))
                     {
                         hr = S_FALSE;
-                        Log(__FUNCTION__": !!!REBOOT REQUIRED!!!\n");
+                        Log(("!!!REBOOT REQUIRED!!!\n"));
                     }
                 }
             }
             else
             {
-                winEr = GetLastError();
-                Log(__FUNCTION__": SetupDiCallClassInstaller failed winErr(%d)\n", winEr);
-                hr = HRESULT_FROM_WIN32(winEr);
+                DWORD dwErr = GetLastError();
+                LogFlow(("SetupDiCallClassInstaller failed with %ld\n", dwErr));
+                hr = HRESULT_FROM_WIN32(dwErr);
             }
         }
         else
         {
-            winEr = GetLastError();
-            Log(__FUNCTION__": SetupDiSetSelectedDevice failed winErr(%d)\n", winEr);
-            hr = HRESULT_FROM_WIN32(winEr);
+            DWORD dwErr = GetLastError();
+            LogFlow(("SetupDiSetSelectedDevice failed with %ld\n", dwErr));
+            hr = HRESULT_FROM_WIN32(dwErr);
         }
     }
     else
     {
-        winEr = GetLastError();
-        Log(__FUNCTION__": SetupDiSetClassInstallParams failed winErr(%d)\n", winEr);
-        hr = HRESULT_FROM_WIN32(winEr);
+        DWORD dwErr = GetLastError();
+        LogFlow(("SetupDiSetClassInstallParams failed with %ld\n", dwErr));
+        hr = HRESULT_FROM_WIN32(dwErr);
     }
 
     return TRUE;
@@ -527,29 +485,27 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pPnPId, VBOXNETC
                 winEr = GetLastError();
                 if (winEr != ERROR_INSUFFICIENT_BUFFER)
                 {
-                    Log(__FUNCTION__": SetupDiGetDeviceRegistryPropertyW (1) failed winErr(%d)\n", winEr);
+                    LogFlow(("SetupDiGetDeviceRegistryPropertyW (1) failed winErr(%d)\n", winEr));
                     hr = HRESULT_FROM_WIN32(winEr);
                     break;
                 }
 
                 if (pBuffer)
-                {
                     free(pBuffer);
-                }
 
                 pBuffer = (PBYTE)malloc(cbRequired);
                 cbBuffer = cbRequired;
 
                 if (!SetupDiGetDeviceRegistryPropertyW(hDevInfo,&Dev,
-                          SPDRP_HARDWAREID, /* IN DWORD Property,*/
-                          NULL, /*OUT PDWORD PropertyRegDataType, OPTIONAL*/
-                          pBuffer, /*OUT PBYTE PropertyBuffer,*/
-                          cbBuffer, /* IN DWORD PropertyBufferSize,*/
-                          &cbRequired /*OUT PDWORD RequiredSize OPTIONAL*/
-                        ))
+                                                       SPDRP_HARDWAREID, /* IN DWORD Property,*/
+                                                       NULL, /*OUT PDWORD PropertyRegDataType, OPTIONAL*/
+                                                       pBuffer, /*OUT PBYTE PropertyBuffer,*/
+                                                       cbBuffer, /* IN DWORD PropertyBufferSize,*/
+                                                       &cbRequired /*OUT PDWORD RequiredSize OPTIONAL*/
+                                                       ))
                 {
                     winEr = GetLastError();
-                    Log(__FUNCTION__": SetupDiGetDeviceRegistryPropertyW (2) failed winErr(%d)\n", winEr);
+                    LogFlow(("SetupDiGetDeviceRegistryPropertyW (2) failed winErr(%d)\n", winEr));
                     hr = HRESULT_FROM_WIN32(winEr);
                     break;
                 }
@@ -584,7 +540,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pPnPId, VBOXNETC
     else
     {
         DWORD winEr = GetLastError();
-        Log(__FUNCTION__": SetupDiGetClassDevsExW failed winErr(%d)\n", winEr);
+        LogFlow(("SetupDiGetClassDevsExW failed winErr(%d)\n", winEr));
         hr = HRESULT_FROM_WIN32(winEr);
     }
 
@@ -867,14 +823,12 @@ static HRESULT netIfWinFindAdapterClassById(IWbemServices * pSvc, const GUID * p
             }
         }
         else
-        {
-            Log(__FUNCTION__": ExecQuery fail hr (0x%x)\n", hr);
-        }
+            LogFlow(("ExecQuery failed (0x%x)\n", hr));
     }
     else
     {
         DWORD winEr = GetLastError();
-        Log(__FUNCTION__": StringFromGUID2 fail winEr (%d)\n", winEr);
+        LogFlow(("StringFromGUID2 failed winEr (%d)\n", winEr));
         hr = HRESULT_FROM_WIN32( winEr );
     }
 
@@ -1001,9 +955,7 @@ static HRESULT netIfWinHasIpSettings(IWbemClassObject * pAdapterConfig, SAFEARRA
                         if (!wcsicmp(pCurIp, pIp))
                         {
                             if (!wcsicmp(pCurMask, pMask))
-                            {
                                 *pFound = true;
-                            }
                             break;
                         }
                     }
@@ -1075,24 +1027,16 @@ static HRESULT netIfWinCreateIWbemServices(IWbemServices ** ppSvc)
                 return hr;
             }
             else
-            {
-                Log(__FUNCTION__": CoSetProxyBlanket failed hr (0x%x)\n", hr);
-            }
+                LogFlow(("CoSetProxyBlanket failed, hr (0x%x)\n", hr));
 
             pSvc->Release();
         }
         else
-        {
-            Log(__FUNCTION__": ConnectServer failed hr (0x%x)\n", hr);
-        }
-
+            LogFlow(("ConnectServer failed, hr (0x%x)\n", hr));
         pLoc->Release();
     }
     else
-    {
-        Log(__FUNCTION__": CoCreateInstance failed hr (0x%x)\n", hr);
-    }
-
+        LogFlow(("CoCreateInstance failed, hr (0x%x)\n", hr));
     return hr;
 }
 
@@ -1107,12 +1051,7 @@ static HRESULT netIfWinAdapterConfigPath(IWbemClassObject *pObj, BSTR * pStr)
         *pStr = (bstr_t(L"Win32_NetworkAdapterConfiguration.Index='") + strIndex + "'").copy();
     }
     else
-    {
-        DWORD winEr = GetLastError();
-        Log(__FUNCTION__": Get failed winEr (%d)\n", winEr);
-        Assert(0);
-        hr = HRESULT_FROM_WIN32(winEr);
-    }
+        LogFlow(("Get failed, hr (0x%x)\n", hr));
     return hr;
 }
 
@@ -1138,9 +1077,7 @@ static HRESULT netIfExecMethod(IWbemServices * pSvc, IWbemClassObject *pClass, B
                     hr = pClassInstance->Put(pArgNames[i], 0,
                         pArgs[i], 0);
                     if (FAILED(hr))
-                    {
                         break;
-                    }
                 }
             }
         }
@@ -1186,11 +1123,7 @@ static HRESULT netIfWinCreateIpArray(SAFEARRAY **ppArray, in_addr* aIp, UINT cIp
         }
     }
     else
-    {
-        DWORD dwError = GetLastError();
-        Assert(0);
-        hr = HRESULT_FROM_WIN32( dwError );
-    }
+        hr = HRESULT_FROM_WIN32(GetLastError());
 
     return hr;
 }
@@ -1217,11 +1150,7 @@ static HRESULT netIfWinCreateIpArrayV4V6(SAFEARRAY **ppArray, BSTR Ip)
         }
     }
     else
-    {
-        DWORD dwError = GetLastError();
-        Assert(0);
-        hr = HRESULT_FROM_WIN32( dwError );
-    }
+        hr = HRESULT_FROM_WIN32(GetLastError());
 
     return hr;
 }
@@ -1299,11 +1228,7 @@ static HRESULT netIfWinEnableStatic(IWbemServices * pSvc, const GUID * pGuid, BS
         SysFreeString(ClassName);
     }
     else
-    {
-        DWORD winEr = GetLastError();
-        Assert(0);
-        hr = HRESULT_FROM_WIN32(winEr);
-    }
+        hr = HRESULT_FROM_WIN32(GetLastError());
 
     return hr;
 }
@@ -1380,15 +1305,12 @@ static HRESULT netIfWinSetGateways(IWbemServices * pSvc, BSTR ObjPath, VARIANT *
                         break;
                     }
                 }
-            }        }
+            }
+        }
         SysFreeString(ClassName);
     }
     else
-    {
-        DWORD dwError = GetLastError();
-        Assert(0);
-        hr = HRESULT_FROM_WIN32( dwError );
-    }
+        hr = HRESULT_FROM_WIN32(GetLastError());
 
     return hr;
 }
@@ -1457,11 +1379,7 @@ static HRESULT netIfWinEnableDHCP(IWbemServices * pSvc, BSTR ObjPath)
         SysFreeString(ClassName);
     }
     else
-    {
-        DWORD dwError = GetLastError();
-        Assert(0);
-        hr = HRESULT_FROM_WIN32( dwError );
-    }
+        hr = HRESULT_FROM_WIN32(GetLastError());
 
     return hr;
 }
@@ -1501,31 +1419,21 @@ static HRESULT netIfWinDhcpRediscover(IWbemServices * pSvc, BSTR ObjPath)
             //                    Assert(varReturnValue.vt == VT_UINT);
                                 int winEr = varReturnValue.uintVal;
                                 if (winEr == 0)
-                                {
                                     hr = S_OK;
-                                }
                                 else
-                                {
                                     hr = HRESULT_FROM_WIN32( winEr );
-                                }
                             }
                         }
                     }
                     else
-                    {
                         hr = HRESULT_FROM_WIN32( winEr );
-                    }
                 }
             }
         }
         SysFreeString(ClassName);
     }
     else
-    {
-        DWORD dwError = GetLastError();
-        Assert(0);
-        hr = HRESULT_FROM_WIN32(dwError);
-    }
+        hr = HRESULT_FROM_WIN32(GetLastError());
 
     return hr;
 }
@@ -1535,9 +1443,7 @@ static HRESULT vboxNetCfgWinIsDhcpEnabled(IWbemClassObject * pAdapterConfig, BOO
     VARIANT vtEnabled;
     HRESULT hr = pAdapterConfig->Get(L"DHCPEnabled", 0, &vtEnabled, 0, 0);
     if (SUCCEEDED(hr))
-    {
         *pEnabled = vtEnabled.boolVal;
-    }
     return hr;
 }
 
@@ -1550,13 +1456,11 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGetAdapterSettings(IN const GUID * pGui
     {
         ComPtr <IWbemClassObject> pAdapterConfig;
         hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
-        if (hr == S_OK)
+        if (SUCCEEDED(hr))
         {
             hr = vboxNetCfgWinIsDhcpEnabled(pAdapterConfig, &pSettings->bDhcp);
             if (SUCCEEDED(hr))
-            {
                 hr = netIfWinGetIpSettings(pAdapterConfig, &pSettings->ip, &pSettings->mask);
-            }
         }
     }
 
@@ -1572,14 +1476,12 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinIsDhcpEnabled(const GUID * pGuid, BOOL 
         {
             ComPtr <IWbemClassObject> pAdapterConfig;
             hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
-            if (hr == S_OK)
+            if (SUCCEEDED(hr))
             {
                 VARIANT vtEnabled;
                 hr = pAdapterConfig->Get(L"DHCPEnabled", 0, &vtEnabled, 0, 0);
                 if (SUCCEEDED(hr))
-                {
                     *pEnabled = vtEnabled.boolVal;
-                }
             }
         }
 
@@ -1595,7 +1497,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnableStaticIpConfig(IN const GUID *pGu
         {
             ComPtr <IWbemClassObject> pAdapterConfig;
             hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
-            if (hr == S_OK)
+            if (SUCCEEDED(hr))
             {
                 BOOL bIsHostOnly;
                 hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
@@ -1648,7 +1550,7 @@ static HRESULT netIfEnableStaticIpConfigV6(const GUID *pGuid, IN_BSTR aIPV6Addre
         {
             ComPtr <IWbemClassObject> pAdapterConfig;
             hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
-            if (hr == S_OK)
+            if (SUCCEEDED(hr))
             {
                 BSTR ObjPath;
                 hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
@@ -1696,7 +1598,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnableDynamicIpConfig(IN const GUID *pG
         {
             ComPtr <IWbemClassObject> pAdapterConfig;
             hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
-            if (hr == S_OK)
+            if (SUCCEEDED(hr))
             {
                 BOOL bIsHostOnly;
                 hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
@@ -1737,7 +1639,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinDhcpRediscover(IN const GUID *pGuid)
         {
             ComPtr <IWbemClassObject> pAdapterConfig;
             hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
-            if (hr == S_OK)
+            if (SUCCEEDED(hr))
             {
                 BOOL bIsHostOnly;
                 hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
@@ -1901,10 +1803,10 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostOnlyNetworkNetworkIp(OUT PULONG 
             dwRc = ERROR_DHCP_ADDRESS_CONFLICT;
     }
     else
-    {
-        Log(__FUNCTION__": GetAdaptersAddresses err (%d)\n", dwRc);
-    }
-    free(pAddresses);
+        LogFlow(("GetAdaptersAddresses err (%d)\n", dwRc));
+
+    if (pAddresses)
+        free(pAddresses);
 
     if (dwRc != NO_ERROR)
     {
@@ -1926,7 +1828,7 @@ static HRESULT vboxNetCfgWinNetFltUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
     HRESULT hr = pNc->FindComponent(VBOXNETCFGWIN_NETFLT_ID, &pNcc);
     if (hr == S_OK)
     {
-        Log("NetFlt Is Installed currently\n");
+        Log("NetFlt is installed currently, uninstalling ...\n");
 
         hr = VBoxNetCfgWinUninstallComponent(pNc, pNcc);
 
@@ -1934,12 +1836,12 @@ static HRESULT vboxNetCfgWinNetFltUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
     }
     else if (hr == S_FALSE)
     {
-        Log("NetFlt Is Not Installed currently\n");
+        Log("NetFlt is not installed currently\n");
         hr = S_OK;
     }
     else
     {
-        Log("vboxNetCfgWinNetFltUninstall: FindComponent for NetFlt failed, hr (0x%x)\n", hr);
+        LogFlow(("FindComponent failed, hr (0x%x)\n", hr));
         hr = S_OK;
     }
 
@@ -1949,28 +1851,29 @@ static HRESULT vboxNetCfgWinNetFltUninstall(IN INetCfg *pNc, DWORD InfRmFlags)
     return hr;
 }
 
-VBOXNETCFGWIN_DECL(HRESULT)
-VBoxNetCfgWinNetFltUninstall(IN INetCfg *pNc)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltUninstall(IN INetCfg *pNc)
 {
     return vboxNetCfgWinNetFltUninstall(pNc, 0);
 }
 
-VBOXNETCFGWIN_DECL(HRESULT)
-VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc, IN LPCWSTR * apInfFullPaths, IN UINT cInfFullPaths)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc,
+                                                       IN LPCWSTR * apInfFullPaths, IN UINT cInfFullPaths)
 {
     HRESULT hr = vboxNetCfgWinNetFltUninstall(pNc, SUOI_FORCEDELETE);
-
-    hr = VBoxNetCfgWinInstallInfAndComponent(pNc, VBOXNETCFGWIN_NETFLT_ID,
-                                     &GUID_DEVCLASS_NETSERVICE,
-                                     apInfFullPaths,
-                                     cInfFullPaths,
-                                     NULL);
-
+    if (SUCCEEDED(hr))
+    {
+        Log("NetFlt will be installed ...\n");
+        hr = VBoxNetCfgWinInstallInfAndComponent(pNc, VBOXNETCFGWIN_NETFLT_ID,
+                                                 &GUID_DEVCLASS_NETSERVICE,
+                                                 apInfFullPaths,
+                                                 cInfFullPaths,
+                                                 NULL);
+    }
     return hr;
 }
 
 #define VBOX_CONNECTION_NAME L"VirtualBox Host-Only Network"
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostonlyConnectionName (PCWSTR DevName, WCHAR *pBuf, PULONG pcbBuf)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostonlyConnectionName(PCWSTR DevName, WCHAR *pBuf, PULONG pcbBuf)
 {
     const WCHAR * pSuffix = wcsrchr( DevName, L'#' );
     ULONG cbSize = sizeof(VBOX_CONNECTION_NAME);
@@ -1998,126 +1901,97 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGenHostonlyConnectionName (PCWSTR DevNa
     return S_OK;
 }
 
-static BOOL vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority (IN INetCfg *pNc, IN INetCfgComponent *pNcc, PVOID pContext)
+static BOOL vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority(IN INetCfg *pNc, IN INetCfgComponent *pNcc, PVOID pContext)
 {
-    INetCfgComponentBindings *pNccb = NULL;
-    IEnumNetCfgBindingPath  *pEnumNccbp;
+    INetCfgComponentBindings *pNetCfgBindings;
     GUID *pGuid = (GUID*)pContext;
-    HRESULT hr;
-    bool bFound = false;
 
     /* Get component's binding. */
-    hr = pNcc->QueryInterface(IID_INetCfgComponentBindings, (PVOID*)&pNccb);
-    Assert(hr == S_OK);
-    if ( hr == S_OK )
+    HRESULT hr = pNcc->QueryInterface(IID_INetCfgComponentBindings, (PVOID*)&pNetCfgBindings);
+    if (SUCCEEDED(hr))
     {
         /* Get binding path enumerator reference. */
-        hr = pNccb->EnumBindingPaths(EBP_BELOW, &pEnumNccbp);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
+        IEnumNetCfgBindingPath *pEnumNetCfgBindPath;
+        hr = pNetCfgBindings->EnumBindingPaths(EBP_BELOW, &pEnumNetCfgBindPath);
+        if (SUCCEEDED(hr))
         {
-            INetCfgBindingPath *pNccbp;
-            hr = pEnumNccbp->Reset();
-            Assert(hr == S_OK);
+            bool bFoundIface = false;
+            hr = pEnumNetCfgBindPath->Reset();
             do
             {
-                hr = pEnumNccbp->Next(1, &pNccbp, NULL);
-                Assert(hr == S_OK || hr == S_FALSE);
+                INetCfgBindingPath *pNetCfgBindPath;
+                hr = pEnumNetCfgBindPath->Next(1, &pNetCfgBindPath, NULL);
                 if (hr == S_OK)
                 {
-//                   if (pNccbp->IsEnabled() == S_OK)
+                    IEnumNetCfgBindingInterface *pEnumNetCfgBindIface;
+                    hr = pNetCfgBindPath->EnumBindingInterfaces(&pEnumNetCfgBindIface);
+                    if (hr == S_OK)
                     {
-                        IEnumNetCfgBindingInterface *pEnumNcbi;
-                        hr = pNccbp->EnumBindingInterfaces(&pEnumNcbi);
-                        Assert(hr == S_OK);
-                        if (hr == S_OK)
+                        pEnumNetCfgBindIface->Reset();
+                        do
                         {
-                            INetCfgBindingInterface *pNcbi;
-                            hr = pEnumNcbi->Reset();
-                            Assert(hr == S_OK);
-                            do
+                            INetCfgBindingInterface *pNetCfgBindIfce;
+                            hr = pEnumNetCfgBindIface->Next(1, &pNetCfgBindIfce, NULL);
+                            if (hr == S_OK)
                             {
-                                hr = pEnumNcbi->Next(1, &pNcbi, NULL);
-                                Assert(hr == S_OK || hr == S_FALSE);
+                                INetCfgComponent *pNetCfgCompo;
+                                hr = pNetCfgBindIfce->GetLowerComponent(&pNetCfgCompo);
                                 if (hr == S_OK)
                                 {
-                                    INetCfgComponent * pNccBoud;
-                                    hr = pNcbi->GetLowerComponent(&pNccBoud);
-                                    Assert(hr == S_OK);
+                                    ULONG uComponentStatus;
+                                    hr = pNetCfgCompo->GetDeviceStatus(&uComponentStatus);
                                     if (hr == S_OK)
                                     {
-                                        ULONG uComponentStatus;
-                                        hr = pNccBoud->GetDeviceStatus(&uComponentStatus);
-                                        if (hr == S_OK)
+                                        GUID guid;
+                                        hr = pNetCfgCompo->GetInstanceGuid(&guid);
+                                        if (   hr == S_OK
+                                            && guid == *pGuid)
                                         {
-//                                            if (uComponentStatus == 0)
-                                            {
-                                                GUID guid;
-                                                hr = pNccBoud->GetInstanceGuid(&guid);
-                                                if (guid == *pGuid)
-                                                {
-                                                    hr = pNccb->MoveAfter(pNccbp, NULL);
-                                                    Assert(hr == S_OK);
-                                                    bFound = true;
-                                                }
-                                            }
+                                            hr = pNetCfgBindings->MoveAfter(pNetCfgBindPath, NULL);
+                                            if (FAILED(hr))
+                                                LogFlow(("Unable to move interface, hr (0x%x)\n", hr));
+                                            bFoundIface = true;
                                         }
-                                        pNccBoud->Release();
                                     }
-                                    pNcbi->Release();
+                                    pNetCfgCompo->Release();
                                 }
                                 else
-                                {
-                                    if (hr == S_FALSE)
-                                    {
-                                        hr = S_OK;
-                                    }
-                                    else
-                                    {
-                                        Log(__FUNCTION__": Next failed, hr (0x%x)\n", hr);
-                                    }
-                                    break;
-                                }
-                            } while (!bFound);
-                            pEnumNcbi->Release();
-                        }
-                        else
-                        {
-                            Log(__FUNCTION__": EnumBindingInterfaces failed, hr (0x%x)\n", hr);
-                        }
+                                    LogFlow(("GetLowerComponent failed, hr (0x%x)\n", hr));
+                                pNetCfgBindIfce->Release();
+                            }
+                            else
+                            {
+                                if (hr == S_FALSE) /* No more binding interfaces? */
+                                    hr = S_OK;
+                                else
+                                    LogFlow(("Next binding interface failed, hr (0x%x)\n", hr));
+                                break;
+                            }
+                        } while (!bFoundIface);
+                        pEnumNetCfgBindIface->Release();
                     }
-
-                    pNccbp->Release();
+                    else
+                        LogFlow(("EnumBindingInterfaces failed, hr (0x%x)\n", hr));
+                    pNetCfgBindPath->Release();
                 }
                 else
                 {
-                    if (hr = S_FALSE)
-                    {
+                    if (hr = S_FALSE) /* No more binding paths? */
                         hr = S_OK;
-                    }
                     else
-                    {
-                        Log(__FUNCTION__": Next failed, hr (0x%x)\n", hr);
-                    }
+                        LogFlow(("Next bind path failed, hr (0x%x)\n", hr));
                     break;
                 }
-            } while (!bFound);
-
-            pEnumNccbp->Release();
+            } while (!bFoundIface);
+            pEnumNetCfgBindPath->Release();
         }
         else
-        {
-            Log(__FUNCTION__": EnumBindingPaths failed, hr (0x%x)\n", hr);
-        }
-
-        pNccb->Release();
+            LogFlow(("EnumBindingPaths failed, hr (0x%x)\n", hr));
+        pNetCfgBindings->Release();
     }
     else
-    {
-        Log(__FUNCTION__": QueryInterface for IID_INetCfgComponentBindings failed, hr (0x%x)\n", hr);
-    }
-
-    return true;
+        LogFlow(("QueryInterface for IID_INetCfgComponentBindings failed, hr (0x%x)\n", hr));
+    return TRUE;
 }
 
 static UINT WINAPI vboxNetCfgWinPspFileCallback(
@@ -2256,12 +2130,10 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRenameConnection (LPWSTR pGuid, PCWSTR 
     if (1) { \
         hrc = E_FAIL; \
         Log strAndArgs; \
-        Assert(0); \
         break; \
     } else do {} while (0)
 
-
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface (IN const GUID *pGUID, OUT BSTR *pErrMsg)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const GUID *pGUID, OUT BSTR *pErrMsg)
 {
     HRESULT hrc = S_OK;
 
@@ -2466,8 +2338,8 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface (IN cons
     return hrc;
 }
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCWSTR pInfPath, IN bool bIsInfPathFile,
-        OUT GUID *pGuid, OUT BSTR *lppszName, OUT BSTR *pErrMsg)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile,
+                                                                        OUT GUID *pGuid, OUT BSTR *lppszName, OUT BSTR *pErrMsg)
 {
     HRESULT hrc = S_OK;
 
@@ -2483,7 +2355,6 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
 
     do
     {
-        BOOL ok;
         GUID netGuid;
         SP_DRVINFO_DATA DriverInfoData;
         SP_DEVINSTALL_PARAMS DeviceInstallParams;
@@ -2507,29 +2378,29 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
         memcpy(&netGuid, &GUID_DEVCLASS_NET, sizeof(GUID_DEVCLASS_NET));
 
         /* create an empty device info set associated with the net class GUID */
-        hDeviceInfo = SetupDiCreateDeviceInfoList (&netGuid, NULL);
+        hDeviceInfo = SetupDiCreateDeviceInfoList(&netGuid, NULL);
         if (hDeviceInfo == INVALID_HANDLE_VALUE)
             SetErrBreak (("SetupDiCreateDeviceInfoList failed (0x%08X)",
                           GetLastError()));
 
         /* get the class name from GUID */
-        ok = SetupDiClassNameFromGuid (&netGuid, className, MAX_PATH, NULL);
-        if (!ok)
+        BOOL fResult = SetupDiClassNameFromGuid (&netGuid, className, MAX_PATH, NULL);
+        if (!fResult)
             SetErrBreak (("SetupDiClassNameFromGuid failed (0x%08X)",
                           GetLastError()));
 
         /* create a device info element and add the new device instance
          * key to registry */
-        ok = SetupDiCreateDeviceInfo (hDeviceInfo, className, &netGuid, NULL, NULL,
+        fResult = SetupDiCreateDeviceInfo (hDeviceInfo, className, &netGuid, NULL, NULL,
                                      DICD_GENERATE_ID, &DeviceInfoData);
-        if (!ok)
+        if (!fResult)
             SetErrBreak (("SetupDiCreateDeviceInfo failed (0x%08X)",
                           GetLastError()));
 
         /* select the newly created device info to be the currently
            selected member */
-        ok = SetupDiSetSelectedDevice (hDeviceInfo, &DeviceInfoData);
-        if (!ok)
+        fResult = SetupDiSetSelectedDevice (hDeviceInfo, &DeviceInfoData);
+        if (!fResult)
             SetErrBreak (("SetupDiSetSelectedDevice failed (0x%08X)",
                           GetLastError()));
 
@@ -2537,9 +2408,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
         {
             /* get the device install parameters and disable filecopy */
             DeviceInstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
-            ok = SetupDiGetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
+            fResult = SetupDiGetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
                                                 &DeviceInstallParams);
-            if (ok)
+            if (fResult)
             {
                 memset(DeviceInstallParams.DriverPath, 0, sizeof(DeviceInstallParams.DriverPath));
                 size_t pathLenght = wcslen(pInfPath) + 1/* null terminator */;
@@ -2552,36 +2423,32 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
                         DeviceInstallParams.Flags |= DI_ENUMSINGLEINF;
                     }
 
-                    ok = SetupDiSetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
-                                                        &DeviceInstallParams);
-                    if (!ok)
+                    fResult = SetupDiSetDeviceInstallParams(hDeviceInfo, &DeviceInfoData,
+                                                       &DeviceInstallParams);
+                    if (!fResult)
                     {
                         DWORD winEr = GetLastError();
-                        Log("SetupDiSetDeviceInstallParams: SetupDiSetDeviceInstallParams failed, winEr (%d)\n", winEr);
-                        Assert(0);
+                        LogFlow(("SetupDiSetDeviceInstallParams failed, winEr (%d)\n", winEr));
                         break;
                     }
                 }
                 else
                 {
-                    Log("SetupDiSetDeviceInstallParams: inf path is too long\n");
-                    Assert(0);
+                    LogFlow(("SetupDiSetDeviceInstallParams faileed: INF path is too long\n"));
                     break;
                 }
             }
             else
             {
                 DWORD winEr = GetLastError();
-                Assert(0);
-                Log("VBoxNetCfgWinCreateHostOnlyNetworkInterface: SetupDiGetDeviceInstallParams failed, winEr (%d)\n", winEr);
+                LogFlow(("SetupDiGetDeviceInstallParams failed, winEr (%d)\n", winEr));
             }
-
         }
 
         /* build a list of class drivers */
-        ok = SetupDiBuildDriverInfoList (hDeviceInfo, &DeviceInfoData,
-                                        SPDIT_CLASSDRIVER);
-        if (!ok)
+        fResult = SetupDiBuildDriverInfoList (hDeviceInfo, &DeviceInfoData,
+                                              SPDIT_CLASSDRIVER);
+        if (!fResult)
             SetErrBreak (("SetupDiBuildDriverInfoList failed (0x%08X)",
                           GetLastError()));
 
@@ -2646,20 +2513,19 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
         }
 
         if (!found)
-            SetErrBreak (("Could not find Host Interface Networking driver! "
-                              "Please reinstall"));
+            SetErrBreak(("Could not find Host Interface Networking driver! Please reinstall"));
 
         /* set the loopback driver to be the currently selected */
-        ok = SetupDiSetSelectedDriver (hDeviceInfo, &DeviceInfoData,
+        fResult = SetupDiSetSelectedDriver (hDeviceInfo, &DeviceInfoData,
                                        &DriverInfoData);
-        if (!ok)
-            SetErrBreak (("SetupDiSetSelectedDriver failed (0x%08X)",
-                          GetLastError()));
+        if (!fResult)
+            SetErrBreak(("SetupDiSetSelectedDriver failed (0x%08X)",
+                         GetLastError()));
 
         /* register the phantom device to prepare for install */
-        ok = SetupDiCallClassInstaller (DIF_REGISTERDEVICE, hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
+        fResult = SetupDiCallClassInstaller (DIF_REGISTERDEVICE, hDeviceInfo,
+                                             &DeviceInfoData);
+        if (!fResult)
         {
             DWORD err = GetLastError();
             SetErrBreak (("SetupDiCallClassInstaller failed (0x%08X)",
@@ -2670,9 +2536,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
         registered = TRUE;
 
         /* ask the installer if we can install the device */
-        ok = SetupDiCallClassInstaller (DIF_ALLOW_INSTALL, hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
+        fResult = SetupDiCallClassInstaller (DIF_ALLOW_INSTALL, hDeviceInfo,
+                                             &DeviceInfoData);
+        if (!fResult)
         {
             if (GetLastError() != ERROR_DI_DO_DEFAULT)
                 SetErrBreak (("SetupDiCallClassInstaller (DIF_ALLOW_INSTALL) failed (0x%08X)",
@@ -2682,56 +2548,52 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
 
         /* get the device install parameters and disable filecopy */
         DeviceInstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
-        ok = SetupDiGetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
-                                            &DeviceInstallParams);
-        if (ok)
+        fResult = SetupDiGetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
+                                                 &DeviceInstallParams);
+        if (fResult)
         {
             pQueueCallbackContext = SetupInitDefaultQueueCallback(NULL);
             if (pQueueCallbackContext)
             {
                 DeviceInstallParams.InstallMsgHandlerContext = pQueueCallbackContext;
                 DeviceInstallParams.InstallMsgHandler = (PSP_FILE_CALLBACK)vboxNetCfgWinPspFileCallback;
-                ok = SetupDiSetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
+                fResult = SetupDiSetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
                                                     &DeviceInstallParams);
-                if (!ok)
+                if (!fResult)
                 {
                     DWORD winEr = GetLastError();
-                    Assert(0);
-                    Log("SetupDiSetDeviceInstallParams: SetupDiSetDeviceInstallParams failed, winEr (%d)\n", winEr);
+                    LogFlow(("SetupDiSetDeviceInstallParams failed, winEr (%d)\n", winEr));
                 }
-                Assert(ok);
+                Assert(fResult);
             }
             else
             {
                 DWORD winEr = GetLastError();
-                Assert(0);
-                Log("VBoxNetCfgWinCreateHostOnlyNetworkInterface: SetupInitDefaultQueueCallback failed, winEr (%d)\n", winEr);
+                LogFlow(("SetupInitDefaultQueueCallback failed, winEr (%d)\n", winEr));
             }
         }
         else
         {
             DWORD winEr = GetLastError();
-            Assert(0);
-            Log("VBoxNetCfgWinCreateHostOnlyNetworkInterface: SetupDiGetDeviceInstallParams failed, winEr (%d)\n", winEr);
+            LogFlow(("SetupDiGetDeviceInstallParams failed, winEr (%d)\n", winEr));
         }
 
         /* install the files first */
-        ok = SetupDiCallClassInstaller (DIF_INSTALLDEVICEFILES, hDeviceInfo,
+        fResult = SetupDiCallClassInstaller (DIF_INSTALLDEVICEFILES, hDeviceInfo,
                                         &DeviceInfoData);
-        if (!ok)
+        if (!fResult)
             SetErrBreak (("SetupDiCallClassInstaller (DIF_INSTALLDEVICEFILES) failed (0x%08X)",
                           GetLastError()));
-
         /* get the device install parameters and disable filecopy */
         DeviceInstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
-        ok = SetupDiGetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
+        fResult = SetupDiGetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
                                             &DeviceInstallParams);
-        if (ok)
+        if (fResult)
         {
             DeviceInstallParams.Flags |= DI_NOFILECOPY;
-            ok = SetupDiSetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
-                                                &DeviceInstallParams);
-            if (!ok)
+            fResult = SetupDiSetDeviceInstallParams(hDeviceInfo, &DeviceInfoData,
+                                                    &DeviceInstallParams);
+            if (!fResult)
                 SetErrBreak (("SetupDiSetDeviceInstallParams failed (0x%08X)",
                               GetLastError()));
         }
@@ -2739,11 +2601,10 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
         /*
          * Register any device-specific co-installers for this device,
          */
-
-        ok = SetupDiCallClassInstaller (DIF_REGISTER_COINSTALLERS,
-                                        hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
+        fResult = SetupDiCallClassInstaller(DIF_REGISTER_COINSTALLERS,
+                                            hDeviceInfo,
+                                            &DeviceInfoData);
+        if (!fResult)
             SetErrBreak (("SetupDiCallClassInstaller (DIF_REGISTER_COINSTALLERS) failed (0x%08X)",
                           GetLastError()));
 
@@ -2751,27 +2612,27 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
          * install any installer-specified interfaces.
          * and then do the real install
          */
-        ok = SetupDiCallClassInstaller (DIF_INSTALLINTERFACES,
-                                        hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
+        fResult = SetupDiCallClassInstaller(DIF_INSTALLINTERFACES,
+                                            hDeviceInfo,
+                                            &DeviceInfoData);
+        if (!fResult)
             SetErrBreak (("SetupDiCallClassInstaller (DIF_INSTALLINTERFACES) failed (0x%08X)",
                           GetLastError()));
 
-        ok = SetupDiCallClassInstaller (DIF_INSTALLDEVICE,
-                                        hDeviceInfo,
-                                        &DeviceInfoData);
-        if (!ok)
+        fResult = SetupDiCallClassInstaller(DIF_INSTALLDEVICE,
+                                            hDeviceInfo,
+                                            &DeviceInfoData);
+        if (!fResult)
             SetErrBreak (("SetupDiCallClassInstaller (DIF_INSTALLDEVICE) failed (0x%08X)",
                           GetLastError()));
 
         /* Figure out NetCfgInstanceId */
-        hkey = SetupDiOpenDevRegKey (hDeviceInfo,
-                                     &DeviceInfoData,
-                                     DICS_FLAG_GLOBAL,
-                                     0,
-                                     DIREG_DRV,
-                                     KEY_READ);
+        hkey = SetupDiOpenDevRegKey(hDeviceInfo,
+                                    &DeviceInfoData,
+                                    DICS_FLAG_GLOBAL,
+                                    0,
+                                    DIREG_DRV,
+                                    KEY_READ);
         if (hkey == INVALID_HANDLE_VALUE)
             SetErrBreak (("SetupDiOpenDevRegKey failed (0x%08X)",
                           GetLastError()));
@@ -2784,12 +2645,11 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
         RegCloseKey (hkey);
 
         if (!SetupDiGetDeviceRegistryPropertyW(hDeviceInfo, &DeviceInfoData,
-                SPDRP_FRIENDLYNAME , /* IN DWORD Property,*/
-                  NULL, /*OUT PDWORD PropertyRegDataType, OPTIONAL*/
-                  (PBYTE)DevName, /*OUT PBYTE PropertyBuffer,*/
-                  sizeof(DevName), /* IN DWORD PropertyBufferSize,*/
-                  NULL /*OUT PDWORD RequiredSize OPTIONAL*/
-                ))
+                                               SPDRP_FRIENDLYNAME , /* IN DWORD Property,*/
+                                               NULL, /*OUT PDWORD PropertyRegDataType, OPTIONAL*/
+                                               (PBYTE)DevName, /*OUT PBYTE PropertyBuffer,*/
+                                               sizeof(DevName), /* IN DWORD PropertyBufferSize,*/
+                                               NULL /*OUT PDWORD RequiredSize OPTIONAL*/))
         {
             int err = GetLastError();
             if (err != ERROR_INVALID_DATA)
@@ -2818,22 +2678,20 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
      * cleanup
      */
     if (pQueueCallbackContext)
-    {
         SetupTermDefaultQueueCallback(pQueueCallbackContext);
-    }
 
     if (hDeviceInfo != INVALID_HANDLE_VALUE)
     {
         /* an error has occurred, but the device is registered, we must remove it */
         if (ret != 0 && registered)
-            SetupDiCallClassInstaller (DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
+            SetupDiCallClassInstaller(DIF_REMOVE, hDeviceInfo, &DeviceInfoData);
 
-        found = SetupDiDeleteDeviceInfo (hDeviceInfo, &DeviceInfoData);
+        found = SetupDiDeleteDeviceInfo(hDeviceInfo, &DeviceInfoData);
 
         /* destroy the driver info list */
         if (destroyList)
-            SetupDiDestroyDriverInfoList (hDeviceInfo, &DeviceInfoData,
-                                          SPDIT_CLASSDRIVER);
+            SetupDiDestroyDriverInfoList(hDeviceInfo, &DeviceInfoData,
+                                         SPDIT_CLASSDRIVER);
         /* clean up the device info set */
         SetupDiDestroyDeviceInfoList (hDeviceInfo);
     }
@@ -2844,19 +2702,16 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
         WCHAR ConnectoinName[128];
         ULONG cbName = sizeof(ConnectoinName);
 
-        HRESULT hr = VBoxNetCfgWinGenHostonlyConnectionName (DevName, ConnectoinName, &cbName);
-        if (hr == S_OK)
-        {
-            hr = VBoxNetCfgWinRenameConnection (pWCfgGuidString, ConnectoinName);
-        }
+        HRESULT hr = VBoxNetCfgWinGenHostonlyConnectionName(DevName, ConnectoinName, &cbName);
+        if (SUCCEEDED(hr))
+            hr = VBoxNetCfgWinRenameConnection(pWCfgGuidString, ConnectoinName);
 
         if (lppszName)
         {
-            *lppszName = ::SysAllocString ((const OLECHAR *) DevName);
+            *lppszName = ::SysAllocString((const OLECHAR *) DevName);
             if (!*lppszName)
             {
-                Log("VBoxNetCfgWinCreateHostOnlyNetworkInterface: SysAllocString failed\n");
-                Assert(0);
+                LogFlow(("SysAllocString failed\n"));
                 hrc = HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
             }
         }
@@ -2864,61 +2719,53 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (IN LPCW
         if (pGuid)
         {
             hrc = CLSIDFromString(pWCfgGuidString, (LPCLSID)pGuid);
-            if (hrc != S_OK)
-            {
-                Log("VBoxNetCfgWinCreateHostOnlyNetworkInterface: CLSIDFromString failed, hrc (0x%x)\n", hrc);
-                Assert(0);
-            }
+            if (FAILED(hrc))
+                LogFlow(("CLSIDFromString failed, hrc (0x%x)\n", hrc));
         }
 
-        INetCfg *pNc;
+        INetCfg *pNetCfg = NULL;
         LPWSTR lpszApp = NULL;
-
-        hr = VBoxNetCfgWinQueryINetCfg(&pNc, TRUE, L"VirtualBox Host-Only Creation",
-                           30000, /* on Vista we often get 6to4svc.dll holding the lock, wait for 30 sec,  */
-                                  /* TODO: special handling for 6to4svc.dll ???, i.e. several retrieves */
-                           &lpszApp);
-        Assert(hr == S_OK);
+        hr = VBoxNetCfgWinQueryINetCfg(&pNetCfg, TRUE, L"VirtualBox Host-Only Creation",
+                                       30 * 1000, /* on Vista we often get 6to4svc.dll holding the lock, wait for 30 sec.  */
+                                       /* TODO: special handling for 6to4svc.dll ???, i.e. several retrieves */
+                                       &lpszApp);
         if (hr == S_OK)
         {
-            hr = vboxNetCfgWinEnumNetCfgComponents(pNc,
-                    &GUID_DEVCLASS_NETSERVICE,
-                    vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority,
-                    pGuid);
-            Assert(hr == S_OK);
-
-            hr = vboxNetCfgWinEnumNetCfgComponents(pNc,
-                    &GUID_DEVCLASS_NETTRANS,
-                    vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority,
-                    pGuid);
-            Assert(hr == S_OK);
-
-            hr = vboxNetCfgWinEnumNetCfgComponents(pNc,
-                    &GUID_DEVCLASS_NETCLIENT,
-                    vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority,
-                    pGuid);
-            Assert(hr == S_OK);
-
-            if (hr == S_OK)
+            hr = vboxNetCfgWinEnumNetCfgComponents(pNetCfg,
+                                                   &GUID_DEVCLASS_NETSERVICE,
+                                                   vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority,
+                                                   pGuid);
+            if (SUCCEEDED(hr))
             {
-                hr = pNc->Apply();
-                Assert(hr == S_OK);
+                hr = vboxNetCfgWinEnumNetCfgComponents(pNetCfg,
+                                                       &GUID_DEVCLASS_NETTRANS,
+                                                       vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority,
+                                                       pGuid);
+                if (SUCCEEDED(hr))
+                    hr = vboxNetCfgWinEnumNetCfgComponents(pNetCfg,
+                                                           &GUID_DEVCLASS_NETCLIENT,
+                                                           vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority,
+                                                           pGuid);
             }
 
-            VBoxNetCfgWinReleaseINetCfg(pNc, TRUE);
+            if (SUCCEEDED(hr))
+            {
+                hr = pNetCfg->Apply();
+            }
+            else
+                LogFlow(("Enumeration failed, hr 0x%x\n", hr));
+            VBoxNetCfgWinReleaseINetCfg(pNetCfg, TRUE);
         }
         else if (hr == NETCFG_E_NO_WRITE_LOCK && lpszApp)
         {
-            Log("VBoxNetCfgWinCreateHostOnlyNetworkInterface: app %S is holding the lock, failed\n", lpszApp);
+            LogFlow(("Application %ws is holding the lock, failed\n", lpszApp));
             CoTaskMemFree(lpszApp);
         }
         else
-        {
-            Log("VBoxNetCfgWinCreateHostOnlyNetworkInterface: VBoxNetCfgWinQueryINetCfg failed, hr 0x%x\n", hr);
-        }
+            LogFlow(("VBoxNetCfgWinQueryINetCfg failed, hr 0x%x\n", hr));
     }
-
     return hrc;
 }
 
 #undef SetErrBreak
+
