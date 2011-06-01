@@ -35,6 +35,7 @@
 #include <iprt/cpuset.h>
 #include <iprt/err.h>
 #include <iprt/asm.h>
+#include <iprt/thread.h>
 #include "r0drv/mp-r0drv.h"
 
 
@@ -287,6 +288,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     int rc;
     RTMPARGS Args;
 
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
@@ -296,9 +298,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     if (!RTMpIsCpuPossible(idCpu))
         return VERR_CPU_NOT_FOUND;
 
-# ifdef preempt_disable
-    preempt_disable();
-# endif
+    RTThreadPreemptDisable(&PreemptState);
     if (idCpu != RTMpCpuId())
     {
         if (RTMpIsCpuOnline(idCpu))
@@ -321,9 +321,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
         rtmpLinuxWrapper(&Args);
         rc = VINF_SUCCESS;
     }
-# ifdef preempt_enable
-    preempt_enable();
-# endif
+    RTThreadPreemptRestore(&PreemptState);;
 
     NOREF(rc);
     return rc;
