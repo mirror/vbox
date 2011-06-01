@@ -362,7 +362,7 @@ static HRESULT vboxNetCfgWinEnumNetCfgComponents(IN INetCfg *pNetCfg,
         do
         {
             hr = pEnumComponent->Next(1, &pNetCfgComponent, NULL);
-            if (SUCCEEDED(hr))
+            if (hr == S_OK)
             {
 //                ULONG uComponentStatus;
 //                hr = pNcc->GetDeviceStatus(&uComponentStatus);
