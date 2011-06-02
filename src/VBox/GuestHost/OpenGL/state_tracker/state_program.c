@@ -2105,8 +2105,7 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
         if (from->vpPointSize != to->vpPointSize) {
             able[to->vpPointSize](GL_VERTEX_PROGRAM_POINT_SIZE_NV);
         }
-
-        CLEARDIRTY(b->vpEnable, nbitID);
+        DIRTY(b->vpEnable, nbitID);
     }
 
     /* fragment program enable */
@@ -2120,7 +2119,7 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
         if (from->fpEnabledARB != to->fpEnabledARB) {
             able[to->fpEnabledARB](GL_FRAGMENT_PROGRAM_ARB);
         }
-        CLEARDIRTY(b->fpEnable, nbitID);
+        DIRTY(b->fpEnable, nbitID);
     }
 
     /* program/track matrices */
@@ -2132,7 +2131,7 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
                                                                  to->TrackMatrix[i],
                                                                  to->TrackMatrixTransform[i]);
                 }
-                CLEARDIRTY(b->trackMatrix[i], nbitID);
+                DIRTY(b->trackMatrix[i], nbitID);
             }
         }
     }
@@ -2148,23 +2147,18 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
                 else
                     diff_api.BindProgramNV(GL_VERTEX_PROGRAM_NV, toProg->id);
             }
-            CLEARDIRTY(b->vpBinding, nbitID);
+            DIRTY(b->vpBinding, nbitID);
         }
 
         if (toProg) {
             /* vertex program text */
             if (CHECKDIRTY(toProg->dirtyProgram, bitID)) {
                 if (toProg->isARBprogram)
-                    diff_api.ProgramStringARB( GL_VERTEX_PROGRAM_ARB,
-                                                                         toProg->format,
-                                                                         toProg->length,
-                                                                         toProg->string );
+                    diff_api.ProgramStringARB(GL_VERTEX_PROGRAM_ARB, toProg->format, toProg->length, toProg->string);
                 else
-                    diff_api.LoadProgramNV( GL_VERTEX_PROGRAM_NV,
-                                                                    toProg->id,
-                                                                    toProg->length,
-                                                                    toProg->string );
-                CLEARDIRTY(toProg->dirtyProgram, nbitID);
+                    diff_api.LoadProgramNV(GL_VERTEX_PROGRAM_NV, toProg->id, toProg->length, toProg->string);
+
+                DIRTY(toProg->dirtyProgram, nbitID);
             }
 
             /* vertex program global/env parameters */
@@ -2172,15 +2166,14 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
                 for (i = 0; i < toCtx->limits.maxVertexProgramEnvParams; i++) {
                     if (CHECKDIRTY(b->vertexEnvParameter[i], bitID)) {
                         if (toProg->isARBprogram)
-                            diff_api.ProgramEnvParameter4fvARB(GL_VERTEX_PROGRAM_ARB, i,
-                                                                                                 to->vertexParameters[i]);
+                            diff_api.ProgramEnvParameter4fvARB(GL_VERTEX_PROGRAM_ARB, i, to->vertexParameters[i]);
                         else
-                            diff_api.ProgramParameter4fvNV(GL_VERTEX_PROGRAM_NV, i,
-                                                                                         to->vertexParameters[i]);
-                        CLEARDIRTY(b->vertexEnvParameter[i], nbitID);
+                            diff_api.ProgramParameter4fvNV(GL_VERTEX_PROGRAM_NV, i, to->vertexParameters[i]);
+
+                        DIRTY(b->vertexEnvParameter[i], nbitID);
                     }
                 }
-                CLEARDIRTY(b->vertexEnvParameters, nbitID);
+                DIRTY(b->vertexEnvParameters, nbitID);
             }
 
             /* vertex program local parameters */
@@ -2195,7 +2188,7 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
                             diff_api.ProgramLocalParameter4fvARB(GL_VERTEX_PROGRAM_NV, i, toProg->parameters[i]);
                     }
                 }
-                CLEARDIRTY(toProg->dirtyParams, nbitID);
+                DIRTY(toProg->dirtyParams, nbitID);
             }
         }
     }
@@ -2211,15 +2204,14 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
             if (fromProg->id != toProg->id) {
                 diff_api.BindProgramNV(GL_FRAGMENT_PROGRAM_NV, toProg->id);
             }
-            CLEARDIRTY(b->fpBinding, nbitID);
+            DIRTY(b->fpBinding, nbitID);
         }
 
         if (toProg) {
             /* fragment program text */
             if (CHECKDIRTY(toProg->dirtyProgram, bitID)) {
-                diff_api.LoadProgramNV( GL_FRAGMENT_PROGRAM_NV, toProg->id,
-                                                                toProg->length, toProg->string );
-                CLEARDIRTY(toProg->dirtyProgram, nbitID);
+                diff_api.LoadProgramNV(GL_FRAGMENT_PROGRAM_NV, toProg->id, toProg->length, toProg->string);
+                DIRTY(toProg->dirtyProgram, nbitID);
             }
 
             /* fragment program global/env parameters */
@@ -2228,10 +2220,10 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
                     if (CHECKDIRTY(b->fragmentEnvParameter[i], bitID)) {
                         diff_api.ProgramParameter4fvNV(GL_FRAGMENT_PROGRAM_NV, i,
                                                        to->fragmentParameters[i]);
-                        CLEARDIRTY(b->fragmentEnvParameter[i], nbitID);
+                        DIRTY(b->fragmentEnvParameter[i], nbitID);
                     }
                 }
-                CLEARDIRTY(b->fragmentEnvParameters, nbitID);
+                DIRTY(b->fragmentEnvParameters, nbitID);
             }
 
             /* named local parameters */
@@ -2243,10 +2235,10 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
                         diff_api.ProgramNamedParameter4fvNV(toProg->id, len,
                                                             (const GLubyte *) symbol->name,
                                                             symbol->value);
-                        CLEARDIRTY(symbol->dirty, nbitID);
+                        DIRTY(symbol->dirty, nbitID);
                     }
                 }
-                CLEARDIRTY(toProg->dirtyNamedParams, nbitID);
+                DIRTY(toProg->dirtyNamedParams, nbitID);
             }
 
             /* numbered local parameters */
@@ -2254,14 +2246,12 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
                 for (i = 0; i < CR_MAX_FRAGMENT_PROGRAM_LOCAL_PARAMS; i++) {
                     if (CHECKDIRTY(toProg->dirtyParam[i], bitID)) {
                         if (toProg->isARBprogram)
-                            diff_api.ProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, i,
-                                                                                                     toProg->parameters[i]);
+                            diff_api.ProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, i, toProg->parameters[i]);
                         else
-                            diff_api.ProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_NV, i,
-                                                                                                     toProg->parameters[i]);
+                            diff_api.ProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_NV, i, toProg->parameters[i]);
                     }
                 }
-                CLEARDIRTY(toProg->dirtyParams, nbitID);
+                DIRTY(toProg->dirtyParams, nbitID);
             }
         }
     }
@@ -2273,44 +2263,41 @@ crStateProgramSwitch(CRProgramBits *b, CRbitvalue *bitID,
             if (fromProg->id != toProg->id) {
                 diff_api.BindProgramARB(GL_FRAGMENT_PROGRAM_ARB, toProg->id);
             }
-            CLEARDIRTY(b->fpBinding, nbitID);
+            DIRTY(b->fpBinding, nbitID);
         }
 
         if (toProg) {
             /* fragment program text */
             if (CHECKDIRTY(toProg->dirtyProgram, bitID)) {
-                diff_api.ProgramStringARB( GL_FRAGMENT_PROGRAM_ARB, toProg->format,
-                                                                         toProg->length, toProg->string );
-                CLEARDIRTY(toProg->dirtyProgram, nbitID);
+                diff_api.ProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, toProg->format, toProg->length, toProg->string);
+                DIRTY(toProg->dirtyProgram, nbitID);
             }
 
             /* fragment program global/env parameters */
             if (CHECKDIRTY(b->fragmentEnvParameters, bitID)) {
                 for (i = 0; i < toCtx->limits.maxFragmentProgramEnvParams; i++) {
                     if (CHECKDIRTY(b->fragmentEnvParameter[i], bitID)) {
-                        diff_api.ProgramEnvParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, i,
-                                                                                             to->fragmentParameters[i]);
-                        CLEARDIRTY(b->fragmentEnvParameter[i], nbitID);
+                        diff_api.ProgramEnvParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, i, to->fragmentParameters[i]);
+                        DIRTY(b->fragmentEnvParameter[i], nbitID);
                     }
                 }
-                CLEARDIRTY(b->fragmentEnvParameters, nbitID);
+                DIRTY(b->fragmentEnvParameters, nbitID);
             }
 
             /* numbered local parameters */
             if (CHECKDIRTY(toProg->dirtyParams, bitID)) {
                 for (i = 0; i < CR_MAX_FRAGMENT_PROGRAM_LOCAL_PARAMS; i++) {
                     if (CHECKDIRTY(toProg->dirtyParam[i], bitID)) {
-                        diff_api.ProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, i,
-                                                                                                 toProg->parameters[i]);
-                        CLEARDIRTY(toProg->dirtyParam[i], nbitID);
+                        diff_api.ProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, i, toProg->parameters[i]);
+                        DIRTY(toProg->dirtyParam[i], nbitID);
                     }
                 }
-                CLEARDIRTY(toProg->dirtyParams, nbitID);
+                DIRTY(toProg->dirtyParams, nbitID);
             }
         }
     }
 
-    CLEARDIRTY(b->dirty, nbitID);
+    DIRTY(b->dirty, nbitID);
 
     /* Resend program data */
     if (toCtx->program.bResyncNeeded)
