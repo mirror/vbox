@@ -240,6 +240,7 @@ void Host::FinalRelease()
  */
 HRESULT Host::init(VirtualBox *aParent)
 {
+    HRESULT hrc;
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -269,7 +270,7 @@ HRESULT Host::init(VirtualBox *aParent)
 # else
     m->pUSBProxyService = new USBProxyService(this);
 # endif
-    HRESULT hrc = m->pUSBProxyService->init();
+    hrc = m->pUSBProxyService->init();
     AssertComRCReturn(hrc, hrc);
 #endif /* VBOX_WITH_USB */
 
@@ -1691,7 +1692,7 @@ HRESULT Host::getDrives(DeviceType_T mediumType,
                 Medium *pNew = *itNew;
                 const Utf8Str strLocationNew = pNew->getLocationFull();
                 bool fFound = false;
-                for (MediaList::iterator itCached = pllCached->begin();
+                for (itCached = pllCached->begin();
                      itCached != pllCached->end();
                      ++itCached)
                 {
