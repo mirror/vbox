@@ -1692,7 +1692,7 @@ HRESULT Host::getDrives(DeviceType_T mediumType,
                 Medium *pNew = *itNew;
                 const Utf8Str strLocationNew = pNew->getLocationFull();
                 bool fFound = false;
-                for (itCached = pllCached->begin();
+                for (MediaList::iterator itCached = pllCached->begin();
                      itCached != pllCached->end();
                      ++itCached)
                 {
