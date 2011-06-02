@@ -313,7 +313,9 @@ DECLINLINE(void) rtR0SemBsdBroadcast(void *pvWaitChan)
 {
     sleepq_lock(pvWaitChan);
     sleepq_broadcast(pvWaitChan, SLEEPQ_CONDVAR, 0, 0);
+#if __FreeBSD_version >= 800000 /* Broadcast releases the sleep queue lock on FreeBSD 7.x */
     sleepq_release(pvWaitChan);
+#endif
 }
 
 /**
