@@ -1061,8 +1061,27 @@ static DECLCALLBACK(int) vdScriptHandlerFlush(PVDTESTGLOB pGlob, PVDSCRIPTARG pa
             rc = VERR_NOT_FOUND;
         else if (fAsync)
         {
-            /** @todo  */
-            rc = VERR_NOT_IMPLEMENTED;
+            VDIOREQ IoReq;
+            RTSEMEVENT EventSem;
+
+            rc = RTSemEventCreate(&EventSem);
+            if (RT_SUCCESS(rc))
+            {
+                memset(&IoReq, 0, sizeof(VDIOREQ));
+                IoReq.enmTxDir = VDIOREQTXDIR_FLUSH;
+                IoReq.pvUser   = pDisk;
+                IoReq.idx      = 0;
+                rc = VDAsyncFlush(pDisk->pVD, tstVDIoTestReqComplete, &IoReq, EventSem);
+                if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                {
+                    rc = RTSemEventWait(EventSem, RT_INDEFINITE_WAIT);
+                    AssertRC(rc);
+                }
+                else if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                    rc = VINF_SUCCESS;
+
+                RTSemEventDestroy(EventSem);
+            }
         }
         else
             rc = VDFlush(pDisk->pVD);
