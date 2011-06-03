@@ -103,7 +103,7 @@ static void VMXR0CheckError(PVM pVM, PVMCPU pVCpu, int rc)
  * @param   pvCpuPage       Pointer to the global cpu page.
  * @param   HCPhysCpuPage   Physical address of the global cpu page.
  */
-VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
     AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
@@ -142,7 +142,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
  * @param   pvCpuPage       Pointer to the global cpu page.
  * @param   HCPhysCpuPage   Physical address of the global cpu page.
  */
-VMMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
     AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
@@ -2143,7 +2143,7 @@ static void vmxR0SetupTLBDummy(PVM pVM, PVMCPU pVCpu)
  */
 static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu)
 {
-    PHWACCM_CPUINFO pCpu;
+    PHMGLOBLCPUINFO pCpu;
 
     Assert(pVM->hwaccm.s.fNestedPaging);
     Assert(!pVM->hwaccm.s.vmx.fVPID);
@@ -2206,7 +2206,7 @@ static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu)
  */
 static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
 {
-    PHWACCM_CPUINFO pCpu;
+    PHMGLOBLCPUINFO pCpu;
 
     Assert(pVM->hwaccm.s.vmx.fVPID);
     Assert(!pVM->hwaccm.s.fNestedPaging);
@@ -2589,7 +2589,7 @@ ResumeExecution:
 # endif /* HWACCM_VTX_WITH_VPID */
         )
     {
-        PHWACCM_CPUINFO pCpu;
+        PHMGLOBLCPUINFO pCpu;
 
         pCpu = HWACCMR0GetCurrentCpu();
         if (    pVCpu->hwaccm.s.idLastCpu   != pCpu->idCpu
@@ -4265,7 +4265,7 @@ end:
  * @param   pVCpu       The VMCPU to operate on.
  * @param   pCpu        CPU info struct
  */
-VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHWACCM_CPUINFO pCpu)
+VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
 
@@ -4614,7 +4614,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc, 
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu)
 {
     uint32_t        aParam[6];
-    PHWACCM_CPUINFO pCpu;
+    PHMGLOBLCPUINFO pCpu;
     RTHCPHYS        HCPhysCpuPage;
     int             rc;
 
@@ -4682,7 +4682,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam, uint32_t *paParam)
 {
     int             rc, rc2;
-    PHWACCM_CPUINFO pCpu;
+    PHMGLOBLCPUINFO pCpu;
     RTHCPHYS        HCPhysCpuPage;
     RTHCUINTREG     uOldEFlags;
 

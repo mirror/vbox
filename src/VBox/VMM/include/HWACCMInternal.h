@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * HWACCM - Internal header file.
+ * HM - Internal header file.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -139,35 +139,35 @@ RT_C_DECLS_BEGIN
 /** Total guest mapped memory needed. */
 #define HWACCM_VTX_TOTAL_DEVHEAP_MEM        (HWACCM_EPT_IDENTITY_PG_TABLE_SIZE + HWACCM_VTX_TSS_SIZE)
 
-/* Enable for TPR guest patching. */
+/** Enable for TPR guest patching. */
 #define VBOX_HWACCM_WITH_GUEST_PATCHING
 
 /** HWACCM SSM version
  */
 #ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
-#define HWACCM_SSM_VERSION                  5
-#define HWACCM_SSM_VERSION_NO_PATCHING      4
+# define HWACCM_SSM_VERSION                 5
+# define HWACCM_SSM_VERSION_NO_PATCHING     4
 #else
-#define HWACCM_SSM_VERSION                  4
-#define HWACCM_SSM_VERSION_NO_PATCHING      4
+# define HWACCM_SSM_VERSION                 4
+# define HWACCM_SSM_VERSION_NO_PATCHING     4
 #endif
 #define HWACCM_SSM_VERSION_2_0_X            3
 
 /**
  * Global per-cpu information. (host)
  */
-typedef struct
+typedef struct HMGLOBLCPUINFO
 {
     /** The CPU ID. */
     RTCPUID             idCpu;
     /** The memory object   */
     RTR0MEMOBJ          hMemObj;
-    /* Current ASID (AMD-V)/VPID (Intel) */
+    /** Current ASID (AMD-V) / VPID (Intel). */
     uint32_t            uCurrentASID;
-    /* TLB flush count */
+    /** TLB flush count. */
     uint32_t            cTLBFlushes;
 
-    /* Set the first time a cpu is used to make sure we start with a clean TLB. */
+    /** Set the first time a cpu is used to make sure we start with a clean TLB. */
     bool                fFlushTLB;
 
     /** Configured for VT-x or AMD-V. */
@@ -178,8 +178,9 @@ typedef struct
 
     /** In use by our code. (for power suspend) */
     volatile bool       fInUse;
-} HWACCM_CPUINFO;
-typedef HWACCM_CPUINFO *PHWACCM_CPUINFO;
+} HMGLOBLCPUINFO;
+/** Pointer to the per-cpu global information. */
+typedef HMGLOBLCPUINFO *PHMGLOBLCPUINFO;
 
 typedef enum
 {
@@ -885,8 +886,8 @@ typedef HWACCMCPU *PHWACCMCPU;
 
 #ifdef IN_RING0
 
-VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpu(void);
-VMMR0DECL(PHWACCM_CPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu);
+VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpu(void);
+VMMR0DECL(PHMGLOBLCPUINFO) HWACCMR0GetCurrentCpuEx(RTCPUID idCpu);
 
 
 #ifdef VBOX_STRICT
