@@ -16,10 +16,10 @@
 
 %define VMX_USE_CACHED_VMCS_ACCESSES
 
-;Maximum number of cached entries. 
+;Maximum number of cached entries.
 %define VMCSCACHE_MAX_ENTRY                             128
 
-; Structure for storing read and write VMCS actions. 
+; Structure for storing read and write VMCS actions.
 struc VMCSCACHE
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     .aMagic                   resb    16
@@ -42,11 +42,11 @@ struc VMCSCACHE
     .Read.aField              resd    VMCSCACHE_MAX_ENTRY
     .Read.aFieldVal           resq    VMCSCACHE_MAX_ENTRY
 %ifdef DEBUG
-    .TestIn.pPageCpuPhys      resq    1
-    .TestIn.pVMCSPhys         resq    1
+    .TestIn.HCPhysCpuPage     resq    1
+    .TestIn.HCPhysVMCS        resq    1
     .TestIn.pCache            resq    1
     .TestIn.pCtx              resq    1
-    .TestOut.pVMCSPhys        resq    1
+    .TestOut.HCPhysVMCS       resq    1
     .TestOut.pCache           resq    1
     .TestOut.pCtx             resq    1
     .TestOut.eflags           resq    1

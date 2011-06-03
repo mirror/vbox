@@ -90,8 +90,8 @@ BITS 64
 ; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ; *
 ; * @returns VBox status code
-; * @param   pPageCpuPhys   VMXON physical address  [rsp+8]
-; * @param   pVMCSPhys      VMCS physical address   [rsp+16]
+; * @param   HCPhysCpuPage  VMXON physical address  [rsp+8]
+; * @param   HCPhysVMCS     VMCS physical address   [rsp+16]
 ; * @param   pCache         VMCS cache              [rsp+24]
 ; * @param   pCtx           Guest context (rsi)
 ; */
@@ -144,10 +144,10 @@ BEGINPROC VMXGCStartVM64
 %endif
 
 %ifdef DEBUG
-    mov     rax, [rbp + 8 + 8]                              ; pPageCpuPhys
-    mov     [rbx + VMCSCACHE.TestIn.pPageCpuPhys], rax
-    mov     rax, [rbp + 16 + 8]                             ; pVMCSPhys
-    mov     [rbx + VMCSCACHE.TestIn.pVMCSPhys], rax
+    mov     rax, [rbp + 8 + 8]                              ; HCPhysCpuPage
+    mov     [rbx + VMCSCACHE.TestIn.HCPhysCpuPage], rax
+    mov     rax, [rbp + 16 + 8]                             ; HCPhysVMCS
+    mov     [rbx + VMCSCACHE.TestIn.HCPhysVMCS], rax
     mov     [rbx + VMCSCACHE.TestIn.pCache], rbx
     mov     [rbx + VMCSCACHE.TestIn.pCtx], rsi
 %endif
@@ -360,8 +360,8 @@ ALIGN(16)
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
  %ifdef DEBUG
-    mov     rdx, [rsp]                             ; pVMCSPhys
-    mov     [rdi + VMCSCACHE.TestOut.pVMCSPhys], rdx
+    mov     rdx, [rsp]                             ; HCPhysVMCS
+    mov     [rdi + VMCSCACHE.TestOut.HCPhysVMCS], rdx
  %endif
 %endif
 
