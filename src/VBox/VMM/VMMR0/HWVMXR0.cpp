@@ -100,18 +100,18 @@ static void VMXR0CheckError(PVM pVM, PVMCPU pVCpu, int rc)
  * @returns VBox status code.
  * @param   pCpu            CPU info struct
  * @param   pVM             The VM to operate on. (can be NULL after a resume!!)
- * @param   pvPageCpu       Pointer to the global cpu page
- * @param   pPageCpuPhys    Physical address of the global cpu page
+ * @param   pvCpuPage       Pointer to the global cpu page.
+ * @param   HCPhysCpuPage   Physical address of the global cpu page.
  */
-VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
-    AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
-    AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
+    AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
+    AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
 
     if (pVM)
     {
         /* Set revision dword at the beginning of the VMXON structure. */
-        *(uint32_t *)pvPageCpu = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
+        *(uint32_t *)pvCpuPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
     }
 
     /** @todo we should unmap the two pages from the virtual address space in order to prevent accidental corruption.
@@ -124,8 +124,8 @@ VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
     /* Make sure the VMX instructions don't cause #UD faults. */
     ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
 
-    /* Enter VMX Root Mode */
-    int rc = VMXEnable(pPageCpuPhys);
+    /* Enter VMX Root Mode. */
+    int rc = VMXEnable(HCPhysCpuPage);
     if (RT_FAILURE(rc))
     {
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
@@ -139,13 +139,13 @@ VMMR0DECL(int) VMXR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
  *
  * @returns VBox status code.
  * @param   pCpu            CPU info struct
- * @param   pvPageCpu       Pointer to the global cpu page
- * @param   pPageCpuPhys    Physical address of the global cpu page
+ * @param   pvCpuPage       Pointer to the global cpu page.
+ * @param   HCPhysCpuPage   Physical address of the global cpu page.
  */
-VMMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys)
+VMMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
-    AssertReturn(pPageCpuPhys, VERR_INVALID_PARAMETER);
-    AssertReturn(pvPageCpu, VERR_INVALID_PARAMETER);
+    AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
+    AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
 
     /* If we're somehow not in VMX root mode, then we shouldn't dare leaving it. */
     if (!(ASMGetCR4() & X86_CR4_VMXE))
@@ -154,7 +154,7 @@ VMMR0DECL(int) VMXR0DisableCpu(PHWACCM_CPUINFO pCpu, void *pvPageCpu, RTHCPHYS p
     /* Leave VMX Root Mode. */
     VMXDisable();
 
-    /* And clear the X86_CR4_VMXE bit */
+    /* And clear the X86_CR4_VMXE bit. */
     ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
     return VINF_SUCCESS;
 }
@@ -2258,7 +2258,7 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
         {
             /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
-            for (unsigned i=0;i<pVCpu->hwaccm.s.TlbShootdown.cPages;i++)
+            for (unsigned i = 0; i < pVCpu->hwaccm.s.TlbShootdown.cPages; i++)
                 vmxR0FlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushPage, pVCpu->hwaccm.s.TlbShootdown.aPages[i]);
         }
     }
@@ -2275,12 +2275,12 @@ static void vmxR0SetupTLBVPID(PVM pVM, PVMCPU pVCpu)
     if (pVCpu->hwaccm.s.fForceTLBFlush)
         vmxR0FlushVPID(pVM, pVCpu, pVM->hwaccm.s.vmx.enmFlushContext, 0);
 
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     if (pVCpu->hwaccm.s.fForceTLBFlush)
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBWorldSwitch);
     else
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatNoFlushTLBWorldSwitch);
-#endif
+# endif
 }
 #endif /* HWACCM_VTX_WITH_VPID */
 
@@ -4615,11 +4615,11 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 {
     uint32_t        aParam[6];
     PHWACCM_CPUINFO pCpu;
-    RTHCPHYS        pPageCpuPhys;
+    RTHCPHYS        HCPhysCpuPage;
     int             rc;
 
     pCpu = HWACCMR0GetCurrentCpu();
-    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
+    HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     pCache->uPos = 1;
@@ -4628,7 +4628,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 #endif
 
 #ifdef DEBUG
-    pCache->TestIn.pPageCpuPhys = 0;
+    pCache->TestIn.HCPhysCpuPage= 0;
     pCache->TestIn.pVMCSPhys    = 0;
     pCache->TestIn.pCache       = 0;
     pCache->TestOut.pVMCSPhys   = 0;
@@ -4637,8 +4637,8 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     pCache->TestOut.eflags      = 0;
 #endif
 
-    aParam[0] = (uint32_t)(pPageCpuPhys);                                   /* Param 1: VMXON physical address - Lo. */
-    aParam[1] = (uint32_t)(pPageCpuPhys >> 32);                             /* Param 1: VMXON physical address - Hi. */
+    aParam[0] = (uint32_t)(HCPhysCpuPage);                                  /* Param 1: VMXON physical address - Lo. */
+    aParam[1] = (uint32_t)(HCPhysCpuPage >> 32);                            /* Param 1: VMXON physical address - Hi. */
     aParam[2] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys);                  /* Param 2: VMCS physical address - Lo. */
     aParam[3] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys >> 32);            /* Param 2: VMCS physical address - Hi. */
     aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache);
@@ -4657,7 +4657,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 #endif
 
 #ifdef DEBUG
-    AssertMsg(pCache->TestIn.pPageCpuPhys == pPageCpuPhys, ("%RHp vs %RHp\n", pCache->TestIn.pPageCpuPhys, pPageCpuPhys));
+    AssertMsg(pCache->TestIn.HCPhysCpuPage== HCPhysCpuPage, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysCpuPage, HCPhysCpuPage));
     AssertMsg(pCache->TestIn.pVMCSPhys    == pVCpu->hwaccm.s.vmx.pVMCSPhys, ("%RHp vs %RHp\n", pCache->TestIn.pVMCSPhys, pVCpu->hwaccm.s.vmx.pVMCSPhys));
     AssertMsg(pCache->TestIn.pVMCSPhys    == pCache->TestOut.pVMCSPhys, ("%RHp vs %RHp\n", pCache->TestIn.pVMCSPhys, pCache->TestOut.pVMCSPhys));
     AssertMsg(pCache->TestIn.pCache       == pCache->TestOut.pCache, ("%RGv vs %RGv\n", pCache->TestIn.pCache, pCache->TestOut.pCache));
@@ -4683,7 +4683,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 {
     int             rc, rc2;
     PHWACCM_CPUINFO pCpu;
-    RTHCPHYS        pPageCpuPhys;
+    RTHCPHYS        HCPhysCpuPage;
     RTHCUINTREG     uOldEFlags;
 
     AssertReturn(pVM->hwaccm.s.pfnHost32ToGuest64R0, VERR_INTERNAL_ERROR);
@@ -4703,7 +4703,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     uOldEFlags = ASMIntDisableFlags();
 
     pCpu = HWACCMR0GetCurrentCpu();
-    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
+    HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
 
     /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
     VMXClearVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
@@ -4727,7 +4727,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
 
     /* Enter VMX Root Mode */
-    rc2 = VMXEnable(pPageCpuPhys);
+    rc2 = VMXEnable(HCPhysCpuPage);
     if (RT_FAILURE(rc2))
     {
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);

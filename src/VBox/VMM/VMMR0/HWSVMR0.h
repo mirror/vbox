@@ -66,7 +66,7 @@ VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
  * @param   pvPageCpu       Pointer to the global cpu page
  * @param   pPageCpuPhys    Physical address of the global cpu page
  */
-VMMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+VMMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS HCPhysCpuPage);
 
 /**
  * Deactivates AMD-V on the current CPU

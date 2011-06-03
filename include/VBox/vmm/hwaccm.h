@@ -35,21 +35,6 @@
  * @{
  */
 
-/**
- * HWACCM state
- */
-typedef enum HWACCMSTATE
-{
-    /* Not yet set */
-    HWACCMSTATE_UNINITIALIZED = 0,
-    /* Enabled */
-    HWACCMSTATE_ENABLED,
-    /* Disabled */
-    HWACCMSTATE_DISABLED,
-    /** The usual 32-bit hack. */
-    HWACCMSTATE_32BIT_HACK = 0x7fffffff
-} HWACCMSTATE;
-
 RT_C_DECLS_BEGIN
 
 /**
