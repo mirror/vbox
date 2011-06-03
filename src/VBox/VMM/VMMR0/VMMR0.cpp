@@ -920,12 +920,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
          * Setup the hardware accelerated session.
          */
         case VMMR0_DO_HWACC_SETUP_VM:
-        {
-            RTCCUINTREG fFlags = ASMIntDisableFlags();
-            int rc = HWACCMR0SetupVM(pVM);
-            ASMSetFlags(fFlags);
-            return rc;
-        }
+            return HWACCMR0SetupVM(pVM);
 
         /*
          * Switch to RC to execute Hypervisor function.
