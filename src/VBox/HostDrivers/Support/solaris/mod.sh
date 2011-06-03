@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2006-2009 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -70,7 +70,6 @@ old_id=`/usr/sbin/modinfo | /usr/xpg4/bin/grep vbox | grep -v vboxguest | grep -
 if test -n "$old_id"; then
     echo "* unloading $old_id..."
     sync
-    sync
     $SUDO /usr/sbin/modunload -i $old_id
 #else
 #    echo "* If it fails below, run: $SUDO add_drv -m'* 0666 root sys' vboxdrv"
@@ -90,7 +89,6 @@ else
 fi
 
 echo "* loading vboxdrv..."
-sync
 sync
 $SUDO /usr/sbin/modload $VBOXDRV_DIR/vboxdrv
 /usr/sbin/modinfo | /usr/xpg4/bin/grep vboxdrv
