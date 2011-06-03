@@ -29,6 +29,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_PROCESS
+#include <iprt/asm.h> /* hack */
 
 #include <Userenv.h>
 #include <Windows.h>
