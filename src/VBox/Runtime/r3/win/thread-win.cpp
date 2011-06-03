@@ -88,10 +88,10 @@ DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
     if (pThread == (PRTTHREADINT)TlsGetValue(g_dwSelfTLS))
         TlsSetValue(g_dwSelfTLS, NULL);
 
-    if (pThread->hThread != INVALID_HANDLE_VALUE)
+    if ((HANDLE)pThread->hThread != INVALID_HANDLE_VALUE)
     {
-        CloseHandle(pThread->hThread);
-        pThread->hThread = INVALID_HANDLE_VALUE;
+        CloseHandle((HANDLE)pThread->hThread);
+        pThread->hThread = (uintptr_t)INVALID_HANDLE_VALUE;
     }
 }
 
