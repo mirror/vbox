@@ -1996,7 +1996,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     /* Create Link Up Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetLinkUpTimer, pState,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
+                                TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "VirtioNet Link Up Timer", &pState->pLinkUpTimer);
     if (RT_FAILURE(rc))
         return rc;
@@ -2004,7 +2004,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 #ifdef VNET_TX_DELAY
     /* Create Transmit Delay Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetTxTimer, pState,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
+                                TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "VirtioNet TX Delay Timer", &pState->pTxTimerR3);
     if (RT_FAILURE(rc))
         return rc;

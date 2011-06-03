@@ -1314,7 +1314,9 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
+VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock,
+                                        PFNTMTIMERDEV pfnCallback, void *pvUser,
+                                        uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     AssertReturn(!(fFlags & ~(TMTIMER_FLAGS_NO_CRIT_SECT)), VERR_INVALID_PARAMETER);
 
@@ -1328,7 +1330,7 @@ VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enm
         (*ppTimer)->u.Dev.pfnTimer  = pfnCallback;
         (*ppTimer)->u.Dev.pDevIns   = pDevIns;
         (*ppTimer)->pvUser          = pvUser;
-        if (fFlags & TMTIMER_FLAGS_DEFAULT_CRIT_SECT)
+        if (!(fFlags & TMTIMER_FLAGS_NO_CRIT_SECT))
         {
             if (pDevIns->pCritSectR3)
                 (*ppTimer)->pCritSect = pDevIns->pCritSectR3;

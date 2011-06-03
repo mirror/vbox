@@ -363,7 +363,7 @@ static void hpetProgramTimer(HpetTimer *pTimer)
         u32TillWrap = 0xffffffff - (uint32_t)u64Ticks + 1;
         if (u32TillWrap < (uint32_t)u64Diff)
         {
-            Log(("wrap on timer %d: till=%u ticks=%lld diff64=%lld\n", 
+            Log(("wrap on timer %d: till=%u ticks=%lld diff64=%lld\n",
                  pTimer->u8TimerNumber, u32TillWrap, u64Ticks, u64Diff));
             u64Diff = u32TillWrap;
             pTimer->u8Wrap = 1;
@@ -1062,7 +1062,7 @@ static DECLCALLBACK(void) hpetTimer(PPDMDEVINS pDevIns,
     HpetState *pThis      = PDMINS_2_DATA(pDevIns, HpetState *);
     HpetTimer *pTimer     = (HpetTimer *)pvUser;
     uint64_t   u64Period  = pTimer->u64Period;
-    uint64_t   u64CurTick = hpetGetTicks(pThis);
+    uint64_t   u64CurTick = hpetGetTicks(pThis); /** @todo this should be done AFTER locking the HPET. */
     uint64_t   u64Diff;
     int        rc;
 
@@ -1145,13 +1145,13 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
         pTimer->u8TimerNumber = i;
         /* capable of periodic operations and 64-bits */
         if (pThis->fIch9)
-            pTimer->u64Config = (i == 0) ?  
-                    (HPET_TN_PERIODIC_CAP | HPET_TN_SIZE_CAP) 
-                    : 
+            pTimer->u64Config = (i == 0) ?
+                    (HPET_TN_PERIODIC_CAP | HPET_TN_SIZE_CAP)
+                    :
                     0;
         else
             pTimer->u64Config = HPET_TN_PERIODIC_CAP | HPET_TN_SIZE_CAP;
-        
+
         /* We can do all IRQs */
         uint32_t u32RoutingCap = 0xffffffff;
         pTimer->u64Config |= ((uint64_t)u32RoutingCap) << 32;
@@ -1185,25 +1185,23 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
  */
 static int hpetInit(PPDMDEVINS pDevIns)
 {
-    unsigned   i;
-    int        rc;
     HpetState *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
 
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0  = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
 
-    for (i = 0; i < HPET_NUM_TIMERS; i++)
+    for (unsigned i = 0; i < HPET_NUM_TIMERS; i++)
     {
-        HpetTimer *timer = &pThis->aTimers[i];
+        HpetTimer *pTimer = &pThis->aTimers[i];
 
-        timer->pHpetR3 = pThis;
-        timer->pHpetR0 = PDMINS_2_DATA_R0PTR(pDevIns);
-        timer->pHpetRC = PDMINS_2_DATA_RCPTR(pDevIns);
+        pTimer->pHpetR3 = pThis;
+        pTimer->pHpetR0 = PDMINS_2_DATA_R0PTR(pDevIns);
+        pTimer->pHpetRC = PDMINS_2_DATA_RCPTR(pDevIns);
 
-        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hpetTimer, timer,
-                                    TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "HPET Timer",
-                                    &pThis->aTimers[i].pTimerR3);
+        int rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hpetTimer, pTimer,
+                                        TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "HPET Timer",
+                                        &pThis->aTimers[i].pTimerR3);
         if (RT_FAILURE(rc))
             return rc;
         pThis->aTimers[i].pTimerRC = TMTimerRCPtr(pThis->aTimers[i].pTimerR3);

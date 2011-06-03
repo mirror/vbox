@@ -1426,6 +1426,7 @@ static DECLCALLBACK(void) apicTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     APICState      *pThis = (APICState *)pvUser;
     Assert(pThis->pTimerR3 == pTimer);
     Assert(pThis->fTimerArmed);
+    Assert(PDMCritSectIsOwned(dev->pCritSectR3));
 
     if (!(pThis->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
         LogFlow(("apic_timer: trigger irq\n"));

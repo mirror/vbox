@@ -3915,6 +3915,8 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
 static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PCNetState *pThis = (PCNetState *)pvUser;
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+
     STAM_PROFILE_ADV_START(&pThis->StatTimer, a);
     pcnetPollTimer(pThis);
     STAM_PROFILE_ADV_STOP(&pThis->StatTimer, a);
@@ -3931,8 +3933,8 @@ static DECLCALLBACK(void) pcnetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
 static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PCNetState *pThis = (PCNetState *)pvUser;
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
-/** @todo why aren't we taking any critsect here?!? */
     pThis->aCSR[7] |= 0x0800; /* STINT */
     pcnetUpdateIrq(pThis);
     TMTimerSetNano(pThis->CTX_SUFF(pTimerSoftInt), 12800U * (pThis->aBCR[BCR_STVAL] & 0xffff));
@@ -5200,11 +5202,12 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         /* Software Interrupt timer */
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerSoftInt, pThis, /** @todo r=bird: the locking here looks bogus now with SMP... */
-                                    TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PCNet SoftInt Timer", &pThis->pTimerSoftIntR3);
+                                    TMTIMER_FLAGS_NO_CRIT_SECT, "PCNet SoftInt Timer", &pThis->pTimerSoftIntR3);
         if (RT_FAILURE(rc))
             return rc;
         pThis->pTimerSoftIntR0 = TMTimerR0Ptr(pThis->pTimerSoftIntR3);
         pThis->pTimerSoftIntRC = TMTimerRCPtr(pThis->pTimerSoftIntR3);
+        TMR3TimerSetCritSect(pThis->pTimerSoftIntR3, &pThis->CritSect);
     }
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimerRestore, pThis,
                                 TMTIMER_FLAGS_NO_CRIT_SECT, "PCNet Restore Timer", &pThis->pTimerRestore);

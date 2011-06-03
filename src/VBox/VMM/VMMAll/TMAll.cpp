@@ -52,9 +52,15 @@
     do { \
         if ((pTimer)->pCritSect) \
         { \
+            VMSTATE      enmState; \
             PPDMCRITSECT pCritSect = (PPDMCRITSECT)MMHyperR3ToCC((pTimer)->CTX_SUFF(pVM), (pTimer)->pCritSect); \
-            AssertMsg(pCritSect && PDMCritSectIsOwner(pCritSect), \
-                      ("pTimer=%p (%s) pCritSect=%p\n", pTimer, R3STRING(pTimer->pszDesc), (pTimer)->pCritSect)); \
+            AssertMsg(   pCritSect \
+                      && (   PDMCritSectIsOwner(pCritSect) \
+                          || (enmState = (pTimer)->CTX_SUFF(pVM)->enmVMState) == VMSTATE_CREATING \
+                          || enmState == VMSTATE_RESETTING \
+                          || enmState == VMSTATE_RESETTING_LS ),\
+                      ("pTimer=%p (%s) pCritSect=%p (%s)\n", pTimer, R3STRING(pTimer->pszDesc), \
+                       (pTimer)->pCritSect, R3STRING(PDMR3CritSectName((pTimer)->pCritSect)) )); \
         } \
     } while (0)
 #else
