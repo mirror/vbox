@@ -5832,7 +5832,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 #ifdef E1K_USE_TX_TIMERS
     /* Create Transmit Interrupt Delay Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxIntDelayTimer, pState,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
+                                TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "E1000 Transmit Interrupt Delay Timer", &pState->pTIDTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -5842,7 +5842,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 # ifndef E1K_NO_TAD
     /* Create Transmit Absolute Delay Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxAbsDelayTimer, pState,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
+                                TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "E1000 Transmit Absolute Delay Timer", &pState->pTADTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -5854,7 +5854,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 #ifdef E1K_USE_RX_TIMERS
     /* Create Receive Interrupt Delay Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kRxIntDelayTimer, pState,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
+                                TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "E1000 Receive Interrupt Delay Timer", &pState->pRIDTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -5863,7 +5863,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     /* Create Receive Absolute Delay Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kRxAbsDelayTimer, pState,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
+                                TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "E1000 Receive Absolute Delay Timer", &pState->pRADTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -5873,7 +5873,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     /* Create Late Interrupt Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kLateIntTimer, pState,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
+                                TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "E1000 Late Interrupt Timer", &pState->pIntTimerR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -5882,7 +5882,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     /* Create Link Up Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kLinkUpTimer, pState,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
+                                TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "E1000 Link Up Timer", &pState->pLUTimerR3);
     if (RT_FAILURE(rc))
         return rc;

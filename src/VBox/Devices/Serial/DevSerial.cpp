@@ -826,14 +826,13 @@ static DECLCALLBACK(int) serialNotifyBreak(PPDMICHARPORT pInterface)
  */
 static DECLCALLBACK(void) serialFifoTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    SerialState *s = (SerialState*)pvUser;
-    PDMCritSectEnter(&s->CritSect, VERR_PERMISSION_DENIED);
-    if (s->recv_fifo.count)
+    SerialState *pThis = (SerialState *)pvUser;
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    if (pThis->recv_fifo.count)
     {
-        s->timeout_ipending = 1;
-        serial_update_irq(s);
+        pThis->timeout_ipending = 1;
+        serial_update_irq(pThis);
     }
-    PDMCritSectLeave(&s->CritSect);
 }
 
 /**
@@ -846,10 +845,9 @@ static DECLCALLBACK(void) serialFifoTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
  */
 static DECLCALLBACK(void) serialTransmitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    SerialState *s = (SerialState*)pvUser;
-    PDMCritSectEnter(&s->CritSect, VERR_PERMISSION_DENIED);
-    serial_xmit(s, true);
-    PDMCritSectLeave(&s->CritSect);
+    SerialState *pThis = (SerialState *)pvUser;
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    serial_xmit(pThis, true);
 }
 
 /**
@@ -905,20 +903,19 @@ PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                                      RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     SerialState *pThis = PDMINS_2_DATA(pDevIns, SerialState *);
-    int          rc = VINF_SUCCESS;
+    int          rc;
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
     if (cb == 1)
     {
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_WRITE);
-        if (rc == VINF_SUCCESS)
-        {
-            Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, u32));
-            rc = serial_ioport_write(pThis, Port, u32);
-            PDMCritSectLeave(&pThis->CritSect);
-        }
+        Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, u32));
+        rc = serial_ioport_write(pThis, Port, u32);
     }
     else
+    {
         AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -938,17 +935,13 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                                     RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     SerialState *pThis = PDMINS_2_DATA(pDevIns, SerialState *);
-    int          rc = VINF_SUCCESS;
+    int          rc;
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
     if (cb == 1)
     {
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_READ);
-        if (rc == VINF_SUCCESS)
-        {
-            *pu32 = serial_ioport_read(pThis, Port, &rc);
-            Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, *pu32));
-            PDMCritSectLeave(&pThis->CritSect);
-        }
+        *pu32 = serial_ioport_read(pThis, Port, &rc);
+        Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, *pu32));
     }
     else
         rc = VERR_IOM_IOPORT_UNUSED;
@@ -1196,6 +1189,11 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 #endif /* VBOX_SERIAL_PCI */
 
     /*
+     * We have a critical section make TM and IOM take it for callbacks.
+     */
+    pDevIns->pCritSectR3 = &pThis->CritSect;
+
+    /*
      * Validate and read the configuration.
      */
     if (!CFGMR3AreValuesValid(pCfg, "IRQ\0"
@@ -1272,24 +1270,25 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /*
      * Initialize critical section and the semaphore.
-     * This must of course be done before attaching drivers or anything else which can call us back..
+     * This must of be done before attaching drivers or doing anything else
+     * which can call us back.
      */
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "Serial#%d", iInstance);
     if (RT_FAILURE(rc))
         return rc;
 
     rc = RTSemEventCreate(&pThis->ReceiveSem);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, serialFifoTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "Serial Fifo Timer",
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "Serial Fifo Timer",
                                 &pThis->fifo_timeout_timer);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, serialTransmitTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "Serial Transmit Timer",
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "Serial Transmit Timer",
                                 &pThis->transmit_timerR3);
-    AssertRC(rc);
+    AssertRCReturn(rc, rc);
     pThis->transmit_timerR0 = TMTimerR0Ptr(pThis->transmit_timerR3);
     pThis->transmit_timerRC = TMTimerRCPtr(pThis->transmit_timerR3);
 
