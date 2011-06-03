@@ -28,6 +28,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/asm.h>
 #include <iprt/err.h>
 
 RT_C_DECLS_BEGIN
@@ -119,7 +120,29 @@ typedef FNRTONCE *PFNRTONCE;
  * @param   pvUser1         The first user parameter for pfnOnce.
  * @param   pvUser2         The second user parameter for pfnOnce.
  */
-RTDECL(int) RTOnce(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser2);
+RTDECL(int) RTOnceSlow(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser2);
+
+/**
+ * Serializes execution of the pfnOnce function, making sure it's
+ * executed exactly once and that nobody returns from RTOnce before
+ * it has executed successfully.
+ *
+ * @returns IPRT like status code returned by pfnOnce.
+ *
+ * @param   pOnce           Pointer to the execute once variable.
+ * @param   pfnOnce         The function to executed once.
+ * @param   pvUser1         The first user parameter for pfnOnce.
+ * @param   pvUser2         The second user parameter for pfnOnce.
+ */
+DECLINLINE(int) RTOnce(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser2)
+{
+    int32_t iState = ASMAtomicUoReadS32(&pOnce->iState);
+    if (RT_LIKELY(   iState == RTONCESTATE_DONE
+                  || iState == RTONCESTATE_DONE_CREATING_SEM
+                  || iState == RTONCESTATE_DONE_HAVE_SEM ))
+        return ASMAtomicUoReadS32(&pOnce->rc);
+    return RTOnceSlow(pOnce, pfnOnce, pvUser1, pvUser2);
+}
 
 /**
  * Resets an execute once variable.
