@@ -516,14 +516,14 @@ typedef struct VMCSCACHE
 #ifdef DEBUG
     struct
     {
-        RTHCPHYS    pPageCpuPhys;
-        RTHCPHYS    pVMCSPhys;
+        RTHCPHYS    HCPhysCpuPage;
+        RTHCPHYS    HCPhysVMCS;
         RTGCPTR     pCache;
         RTGCPTR     pCtx;
     } TestIn;
     struct
     {
-        RTHCPHYS    pVMCSPhys;
+        RTHCPHYS    HCPhysVMCS;
         RTGCPTR     pCache;
         RTGCPTR     pCtx;
         uint64_t    eflags;
@@ -591,11 +591,11 @@ typedef struct HWACCMCPU
     struct
     {
         /** Physical address of the VM control structure (VMCS). */
-        RTHCPHYS                    pVMCSPhys;
+        RTHCPHYS                    HCPhysVMCS;
         /** R0 memory object for the VM control structure (VMCS). */
-        RTR0MEMOBJ                  pMemObjVMCS;
+        RTR0MEMOBJ                  hMemObjVMCS;
         /** Virtual address of the VM control structure (VMCS). */
-        R0PTRTYPE(void *)           pVMCS;
+        R0PTRTYPE(void *)           pvVMCS;
 
         /** Ring 0 handlers for VT-x. */
         PFNHWACCMVMXSTARTVM         pfnStartVM;
@@ -611,11 +611,11 @@ typedef struct HWACCMCPU
         uint64_t                    proc_ctls2;
 
         /** Physical address of the virtual APIC page for TPR caching. */
-        RTHCPHYS                    pVAPICPhys;
+        RTHCPHYS                    HCPhysVAPIC;
         /** R0 memory object for the virtual APIC page for TPR caching. */
-        RTR0MEMOBJ                  pMemObjVAPIC;
+        RTR0MEMOBJ                  hMemObjVAPIC;
         /** Virtual address of the virtual APIC page for TPR caching. */
-        R0PTRTYPE(uint8_t *)        pVAPIC;
+        R0PTRTYPE(uint8_t *)        pbVAPIC;
 
         /** Current CR0 mask. */
         uint64_t                    cr0_mask;

@@ -178,7 +178,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
     if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
     {
         /* Allocate one page for the APIC physical page (serves for filtering accesses). */
-        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjAPIC, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjAPIC, PAGE_SIZE, true /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -196,7 +196,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     {
-        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjScratch, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.vmx.pMemObjScratch, PAGE_SIZE, true /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -215,35 +215,35 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        pVCpu->hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
+        pVCpu->hwaccm.s.vmx.hMemObjVMCS = NIL_RTR0MEMOBJ;
 
         /* Allocate one page for the VM control structure (VMCS). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjVMCS, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.hMemObjVMCS, PAGE_SIZE, true /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVCpu->hwaccm.s.vmx.pVMCS     = RTR0MemObjAddress(pVCpu->hwaccm.s.vmx.pMemObjVMCS);
-        pVCpu->hwaccm.s.vmx.pVMCSPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.vmx.pMemObjVMCS, 0);
-        ASMMemZero32(pVCpu->hwaccm.s.vmx.pVMCS, PAGE_SIZE);
+        pVCpu->hwaccm.s.vmx.pvVMCS     = RTR0MemObjAddress(pVCpu->hwaccm.s.vmx.hMemObjVMCS);
+        pVCpu->hwaccm.s.vmx.HCPhysVMCS = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.vmx.hMemObjVMCS, 0);
+        ASMMemZeroPage(pVCpu->hwaccm.s.vmx.pvVMCS);
 
         pVCpu->hwaccm.s.vmx.cr0_mask = 0;
         pVCpu->hwaccm.s.vmx.cr4_mask = 0;
 
         /* Allocate one page for the virtual APIC page for TPR caching. */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjVAPIC, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.hMemObjVAPIC, PAGE_SIZE, true /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
 
-        pVCpu->hwaccm.s.vmx.pVAPIC     = (uint8_t *)RTR0MemObjAddress(pVCpu->hwaccm.s.vmx.pMemObjVAPIC);
-        pVCpu->hwaccm.s.vmx.pVAPICPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.vmx.pMemObjVAPIC, 0);
-        ASMMemZero32(pVCpu->hwaccm.s.vmx.pVAPIC, PAGE_SIZE);
+        pVCpu->hwaccm.s.vmx.pbVAPIC     = (uint8_t *)RTR0MemObjAddress(pVCpu->hwaccm.s.vmx.hMemObjVAPIC);
+        pVCpu->hwaccm.s.vmx.HCPhysVAPIC = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.vmx.hMemObjVAPIC, 0);
+        ASMMemZeroPage(pVCpu->hwaccm.s.vmx.pbVAPIC);
 
         /* Allocate the MSR bitmap if this feature is supported. */
         if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
         {
-            rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjMSRBitmap, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+            rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjMSRBitmap, PAGE_SIZE, true /* executable R0 mapping */);
             AssertRC(rc);
             if (RT_FAILURE(rc))
                 return rc;
@@ -255,7 +255,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Allocate one page for the guest MSR load area (for preloading guest MSRs during the world switch). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjGuestMSR, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjGuestMSR, PAGE_SIZE, true /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -265,7 +265,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         memset(pVCpu->hwaccm.s.vmx.pGuestMSR, 0, PAGE_SIZE);
 
         /* Allocate one page for the host MSR load area (for restoring host MSRs after the world switch back). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjHostMSR, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjHostMSR, PAGE_SIZE, true /* executable R0 mapping */);
         AssertRC(rc);
         if (RT_FAILURE(rc))
             return rc;
@@ -279,7 +279,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
 
 #ifdef LOG_ENABLED
-        SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x)\n", pVM, pVCpu->hwaccm.s.vmx.pVMCS, (uint32_t)pVCpu->hwaccm.s.vmx.pVMCSPhys);
+        SUPR0Printf("VMXR0InitVM %x VMCS=%x (%x)\n", pVM, pVCpu->hwaccm.s.vmx.pvVMCS, (uint32_t)pVCpu->hwaccm.s.vmx.HCPhysVMCS);
 #endif
     }
 
@@ -298,19 +298,19 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        if (pVCpu->hwaccm.s.vmx.pMemObjVMCS != NIL_RTR0MEMOBJ)
+        if (pVCpu->hwaccm.s.vmx.hMemObjVMCS != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hwaccm.s.vmx.pMemObjVMCS, false);
-            pVCpu->hwaccm.s.vmx.pMemObjVMCS = NIL_RTR0MEMOBJ;
-            pVCpu->hwaccm.s.vmx.pVMCS       = 0;
-            pVCpu->hwaccm.s.vmx.pVMCSPhys   = 0;
+            RTR0MemObjFree(pVCpu->hwaccm.s.vmx.hMemObjVMCS, false);
+            pVCpu->hwaccm.s.vmx.hMemObjVMCS = NIL_RTR0MEMOBJ;
+            pVCpu->hwaccm.s.vmx.pvVMCS      = 0;
+            pVCpu->hwaccm.s.vmx.HCPhysVMCS  = 0;
         }
-        if (pVCpu->hwaccm.s.vmx.pMemObjVAPIC != NIL_RTR0MEMOBJ)
+        if (pVCpu->hwaccm.s.vmx.hMemObjVAPIC != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hwaccm.s.vmx.pMemObjVAPIC, false);
-            pVCpu->hwaccm.s.vmx.pMemObjVAPIC = NIL_RTR0MEMOBJ;
-            pVCpu->hwaccm.s.vmx.pVAPIC       = 0;
-            pVCpu->hwaccm.s.vmx.pVAPICPhys   = 0;
+            RTR0MemObjFree(pVCpu->hwaccm.s.vmx.hMemObjVAPIC, false);
+            pVCpu->hwaccm.s.vmx.hMemObjVAPIC = NIL_RTR0MEMOBJ;
+            pVCpu->hwaccm.s.vmx.pbVAPIC      = 0;
+            pVCpu->hwaccm.s.vmx.HCPhysVAPIC  = 0;
         }
         if (pVCpu->hwaccm.s.vmx.pMemObjMSRBitmap != NIL_RTR0MEMOBJ)
         {
@@ -373,19 +373,19 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        Assert(pVCpu->hwaccm.s.vmx.pVMCS);
+        AssertPtr(pVCpu->hwaccm.s.vmx.pvVMCS);
 
         /* Set revision dword at the beginning of the VMCS structure. */
-        *(uint32_t *)pVCpu->hwaccm.s.vmx.pVMCS  = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
+        *(uint32_t *)pVCpu->hwaccm.s.vmx.pvVMCS = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hwaccm.s.vmx.msr.vmx_basic_info);
 
         /* Clear VM Control Structure. */
-        Log(("pVMCSPhys  = %RHp\n", pVCpu->hwaccm.s.vmx.pVMCSPhys));
-        rc = VMXClearVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+        Log(("HCPhysVMCS  = %RHp\n", pVCpu->hwaccm.s.vmx.HCPhysVMCS));
+        rc = VMXClearVMCS(pVCpu->hwaccm.s.vmx.HCPhysVMCS);
         if (RT_FAILURE(rc))
             goto vmx_end;
 
         /* Activate the VM Control Structure. */
-        rc = VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+        rc = VMXActivateVMCS(pVCpu->hwaccm.s.vmx.HCPhysVMCS);
         if (RT_FAILURE(rc))
             goto vmx_end;
 
@@ -560,7 +560,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             Assert(pVM->hwaccm.s.vmx.pMemObjAPIC);
             /* Optional */
             rc  = VMXWriteVMCS(VMX_VMCS_CTRL_TPR_THRESHOLD, 0);
-            rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVCpu->hwaccm.s.vmx.pVAPICPhys);
+            rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_VAPIC_PAGEADDR_FULL, pVCpu->hwaccm.s.vmx.HCPhysVAPIC);
 
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
                 rc |= VMXWriteVMCS64(VMX_VMCS_CTRL_APIC_ACCESSADDR_FULL, pVM->hwaccm.s.vmx.pAPICPhys);
@@ -573,7 +573,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertRC(rc);
 
         /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
-        rc = VMXClearVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+        rc = VMXClearVMCS(pVCpu->hwaccm.s.vmx.HCPhysVMCS);
         AssertRC(rc);
 
         /* Configure the VMCS read cache. */
@@ -2319,7 +2319,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     uint64_t    u64LastTime = RTTimeMilliTS();
 #endif
 
-    Assert(!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) || (pVCpu->hwaccm.s.vmx.pVAPIC && pVM->hwaccm.s.vmx.pAPIC));
+    Assert(!(pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) || (pVCpu->hwaccm.s.vmx.pbVAPIC && pVM->hwaccm.s.vmx.pAPIC));
 
     /* Check if we need to use TPR shadowing. */
     if (    CPUMIsGuestInLongModeEx(pCtx)
@@ -2550,7 +2550,7 @@ ResumeExecution:
         rc2 = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
         AssertRC(rc2);
         /* The TPR can be found at offset 0x80 in the APIC mmio page. */
-        pVCpu->hwaccm.s.vmx.pVAPIC[0x80] = u8LastTPR;
+        pVCpu->hwaccm.s.vmx.pbVAPIC[0x80] = u8LastTPR;
 
         /* Two options here:
          * - external interrupt pending, but masked by the TPR value.
@@ -2716,7 +2716,7 @@ ResumeExecution:
     if (pVM->hwaccm.s.fTPRPatchingActive)
     {
         Assert(pVM->hwaccm.s.fTPRPatchingActive);
-        pVCpu->hwaccm.s.vmx.pVAPIC[0x80] = pCtx->msrLSTAR = ASMRdMsr(MSR_K8_LSTAR);
+        pVCpu->hwaccm.s.vmx.pbVAPIC[0x80] = pCtx->msrLSTAR = ASMRdMsr(MSR_K8_LSTAR);
         ASMWrMsr(MSR_K8_LSTAR, u64OldLSTAR);
     }
 
@@ -2816,9 +2816,9 @@ ResumeExecution:
 
     /* Sync back the TPR if it was changed. */
     if (    fSetupTPRCaching
-        &&  u8LastTPR != pVCpu->hwaccm.s.vmx.pVAPIC[0x80])
+        &&  u8LastTPR != pVCpu->hwaccm.s.vmx.pbVAPIC[0x80])
     {
-        rc2 = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pVAPIC[0x80]);
+        rc2 = PDMApicSetTPR(pVCpu, pVCpu->hwaccm.s.vmx.pbVAPIC[0x80]);
         AssertRC(rc2);
     }
 
@@ -4235,7 +4235,7 @@ end:
     if (rc == VERR_VMX_INVALID_VMCS_PTR)
     {
         VMXGetActivateVMCS(&pVCpu->hwaccm.s.vmx.lasterror.u64VMCSPhys);
-        pVCpu->hwaccm.s.vmx.lasterror.ulVMCSRevision = *(uint32_t *)pVCpu->hwaccm.s.vmx.pVMCS;
+        pVCpu->hwaccm.s.vmx.lasterror.ulVMCSRevision = *(uint32_t *)pVCpu->hwaccm.s.vmx.pvVMCS;
         pVCpu->hwaccm.s.vmx.lasterror.idEnteredCpu   = pVCpu->hwaccm.s.idEnteredCpu;
         pVCpu->hwaccm.s.vmx.lasterror.idCurrentCpu   = RTMpCpuId();
     }
@@ -4277,7 +4277,7 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
     }
 
     /* Activate the VM Control Structure. */
-    int rc = VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+    int rc = VMXActivateVMCS(pVCpu->hwaccm.s.vmx.HCPhysVMCS);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4323,7 +4323,7 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT);
 
     /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
-    int rc = VMXClearVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+    int rc = VMXClearVMCS(pVCpu->hwaccm.s.vmx.HCPhysVMCS);
     AssertRC(rc);
 
     return VINF_SUCCESS;
@@ -4629,9 +4629,9 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
 #ifdef DEBUG
     pCache->TestIn.HCPhysCpuPage= 0;
-    pCache->TestIn.pVMCSPhys    = 0;
+    pCache->TestIn.HCPhysVMCS   = 0;
     pCache->TestIn.pCache       = 0;
-    pCache->TestOut.pVMCSPhys   = 0;
+    pCache->TestOut.HCPhysVMCS  = 0;
     pCache->TestOut.pCache      = 0;
     pCache->TestOut.pCtx        = 0;
     pCache->TestOut.eflags      = 0;
@@ -4639,8 +4639,8 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
     aParam[0] = (uint32_t)(HCPhysCpuPage);                                  /* Param 1: VMXON physical address - Lo. */
     aParam[1] = (uint32_t)(HCPhysCpuPage >> 32);                            /* Param 1: VMXON physical address - Hi. */
-    aParam[2] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys);                  /* Param 2: VMCS physical address - Lo. */
-    aParam[3] = (uint32_t)(pVCpu->hwaccm.s.vmx.pVMCSPhys >> 32);            /* Param 2: VMCS physical address - Hi. */
+    aParam[2] = (uint32_t)(pVCpu->hwaccm.s.vmx.HCPhysVMCS);                 /* Param 2: VMCS physical address - Lo. */
+    aParam[3] = (uint32_t)(pVCpu->hwaccm.s.vmx.HCPhysVMCS >> 32);           /* Param 2: VMCS physical address - Hi. */
     aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache);
     aParam[5] = 0;
 
@@ -4658,8 +4658,8 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 
 #ifdef DEBUG
     AssertMsg(pCache->TestIn.HCPhysCpuPage== HCPhysCpuPage, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysCpuPage, HCPhysCpuPage));
-    AssertMsg(pCache->TestIn.pVMCSPhys    == pVCpu->hwaccm.s.vmx.pVMCSPhys, ("%RHp vs %RHp\n", pCache->TestIn.pVMCSPhys, pVCpu->hwaccm.s.vmx.pVMCSPhys));
-    AssertMsg(pCache->TestIn.pVMCSPhys    == pCache->TestOut.pVMCSPhys, ("%RHp vs %RHp\n", pCache->TestIn.pVMCSPhys, pCache->TestOut.pVMCSPhys));
+    AssertMsg(pCache->TestIn.HCPhysVMCS   == pVCpu->hwaccm.s.vmx.HCPhysVMCS, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVMCS, pVCpu->hwaccm.s.vmx.HCPhysVMCS));
+    AssertMsg(pCache->TestIn.HCPhysVMCS   == pCache->TestOut.HCPhysVMCS, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVMCS, pCache->TestOut.HCPhysVMCS));
     AssertMsg(pCache->TestIn.pCache       == pCache->TestOut.pCache, ("%RGv vs %RGv\n", pCache->TestIn.pCache, pCache->TestOut.pCache));
     AssertMsg(pCache->TestIn.pCache       == VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache), ("%RGv vs %RGv\n", pCache->TestIn.pCache, VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hwaccm.s.vmx.VMCSCache)));
     AssertMsg(pCache->TestIn.pCtx         == pCache->TestOut.pCtx, ("%RGv vs %RGv\n", pCache->TestIn.pCtx, pCache->TestOut.pCtx));
@@ -4706,7 +4706,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
 
     /* Clear VM Control Structure. Marking it inactive, clearing implementation specific data and writing back VMCS data to memory. */
-    VMXClearVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+    VMXClearVMCS(pVCpu->hwaccm.s.vmx.HCPhysVMCS);
 
     /* Leave VMX Root Mode. */
     VMXDisable();
@@ -4735,7 +4735,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         return VERR_VMX_VMXON_FAILED;
     }
 
-    rc2 = VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
+    rc2 = VMXActivateVMCS(pVCpu->hwaccm.s.vmx.HCPhysVMCS);
     AssertRC(rc2);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     ASMSetFlags(uOldEFlags);
