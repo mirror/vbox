@@ -1190,7 +1190,6 @@ RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProc
     /*
      * Wait for it to terminate.
      */
-    int rc;
     DWORD Millies = fFlags == RTPROCWAIT_FLAGS_BLOCK ? INFINITE : 0;
     DWORD WaitRc = WaitForSingleObjectEx(hProcess, Millies, TRUE);
     while (WaitRc == WAIT_IO_COMPLETION)
