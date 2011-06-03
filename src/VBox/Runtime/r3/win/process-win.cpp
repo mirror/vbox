@@ -1173,63 +1173,81 @@ RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProc
      * Try find the process among the ones we've spawned, otherwise, attempt
      * opening the specified process.
      */
+    HANDLE hOpenedProc = NULL;
     HANDLE hProcess = rtProcWinFindPid(Process);
     if (hProcess == NULL)
-        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, FALSE, Process);
-    if (hProcess != NULL)
     {
-        /*
-         * Wait for it to terminate.
-         */
-        DWORD Millies = fFlags == RTPROCWAIT_FLAGS_BLOCK ? INFINITE : 0;
-        DWORD WaitRc = WaitForSingleObjectEx(hProcess, Millies, TRUE);
-        while (WaitRc == WAIT_IO_COMPLETION)
-            WaitRc = WaitForSingleObjectEx(hProcess, Millies, TRUE);
-        switch (WaitRc)
+        hProcess = hOpenedProc = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, FALSE, Process);
+        if (hProcess == NULL)
         {
-            /*
-             * It has terminated.
-             */
-            case WAIT_OBJECT_0:
-            {
-                DWORD dwExitCode;
-                if (GetExitCodeProcess(hProcess, &dwExitCode))
-                {
-                    /** @todo the exit code can be special statuses. */
-                    if (pProcStatus)
-                    {
-                        pProcStatus->enmReason = RTPROCEXITREASON_NORMAL;
-                        pProcStatus->iStatus = (int)dwExitCode;
-                    }
-                    rtProcWinRemovePid(Process);
-                    return VINF_SUCCESS;
-                }
-                break;
-            }
-
-            /*
-             * It hasn't terminated just yet.
-             */
-            case WAIT_TIMEOUT:
-                return VERR_PROCESS_RUNNING;
-
-            /*
-             * Something went wrong...
-             */
-            case WAIT_FAILED:
-                break;
-            case WAIT_ABANDONED:
-                AssertFailed();
-                return VERR_GENERAL_FAILURE;
-            default:
-                AssertMsgFailed(("WaitRc=%RU32\n", WaitRc));
-                return VERR_GENERAL_FAILURE;
+            DWORD dwErr = GetLastError();
+            if (dwErr == ERROR_INVALID_PARAMETER)
+                return VERR_PROCESS_NOT_FOUND;
+            return RTErrConvertFromWin32(dwErr);
         }
     }
-    DWORD dwErr = GetLastError();
-    if (dwErr == ERROR_INVALID_PARAMETER)
-        return VERR_PROCESS_NOT_FOUND;
-    return RTErrConvertFromWin32(dwErr);
+
+    /*
+     * Wait for it to terminate.
+     */
+    int rc;
+    DWORD Millies = fFlags == RTPROCWAIT_FLAGS_BLOCK ? INFINITE : 0;
+    DWORD WaitRc = WaitForSingleObjectEx(hProcess, Millies, TRUE);
+    while (WaitRc == WAIT_IO_COMPLETION)
+        WaitRc = WaitForSingleObjectEx(hProcess, Millies, TRUE);
+    switch (WaitRc)
+    {
+        /*
+         * It has terminated.
+         */
+        case WAIT_OBJECT_0:
+        {
+            DWORD dwExitCode;
+            if (GetExitCodeProcess(hProcess, &dwExitCode))
+            {
+                /** @todo the exit code can be special statuses. */
+                if (pProcStatus)
+                {
+                    pProcStatus->enmReason = RTPROCEXITREASON_NORMAL;
+                    pProcStatus->iStatus = (int)dwExitCode;
+                }
+                if (hOpenedProc == NULL)
+                    rtProcWinRemovePid(Process);
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
+            break;
+        }
+
+        /*
+         * It hasn't terminated just yet.
+         */
+        case WAIT_TIMEOUT:
+            rc = VERR_PROCESS_RUNNING;
+            break;
+
+        /*
+         * Something went wrong...
+         */
+        case WAIT_FAILED:
+            rc = RTErrConvertFromWin32(GetLastError());
+            break;
+
+        case WAIT_ABANDONED:
+            AssertFailed();
+            rc = VERR_GENERAL_FAILURE;
+            break;
+
+        default:
+            AssertMsgFailed(("WaitRc=%RU32\n", WaitRc));
+            rc = VERR_GENERAL_FAILURE;
+            break;
+    }
+
+    if (hOpenedProc != NULL)
+        CloseHandle(hOpenedProc);
+    return rc;
 }
 
 
