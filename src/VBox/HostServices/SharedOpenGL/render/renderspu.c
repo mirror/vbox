@@ -1094,7 +1094,6 @@ void renderspuDrawBuffer(GLenum mode)
 
 void renderspuReadBuffer(GLenum mode)
 {
-    printf("read win id: %d\n", render_spu.window_id);
     renderspu_SystemReadBuffer(mode);
 }
 # endif

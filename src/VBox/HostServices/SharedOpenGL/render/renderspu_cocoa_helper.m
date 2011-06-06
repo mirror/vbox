@@ -72,8 +72,10 @@
 
 /* Debug macros */
 #define FBO 1 /* Disable this to see how the output is without the FBO in the middle of the processing chain. */
-//#define SHOW_WINDOW_BACKGROUND 1 /* Define this to see the window background even if the window is clipped */
-//#define DEBUG_VERBOSE /* Define this to get some debug info about the messages flow. */
+#if 0
+#define SHOW_WINDOW_BACKGROUND 1 /* Define this to see the window background even if the window is clipped */
+#define DEBUG_VERBOSE /* Define this to get some debug info about the messages flow. */
+#endif
 
 #ifdef DEBUG_poetzsch
 #define DEBUG_MSG(text) \
@@ -1222,7 +1224,7 @@ while(0);
     {
         /* Only reset if we aren't currently front. */
         glGetIntegerv(GL_DRAW_BUFFER, &drawId);
-        if (drawId != m_FBOAttFrontId)
+        if ((GLuint)drawId != m_FBOAttFrontId)
             m_fFrontDrawing = false;
         [self tryDraw];
     }
@@ -1253,7 +1255,6 @@ while(0);
         case GL_READ_FRAMEBUFFER_EXT:
         case GL_DRAW_FRAMEBUFFER_EXT:
         {
-//            DEBUG_MSG_1(("StateInfo current Framebuffer: %d\n", *params));
             if ((GLuint)*params == m_FBOId)
                 *params = 0;
             break;
@@ -1261,7 +1262,6 @@ while(0);
         case GL_READ_BUFFER:
         case GL_DRAW_BUFFER:
         {
-//            DEBUG_MSG_1(("StateInfo current read/draw buffer: %d\n", *params));
             if ((GLuint)*params == m_FBOAttFrontId)
                 *params = GL_FRONT;
             else
@@ -1405,7 +1405,9 @@ while(0);
                                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
             }
 #endif
-//            glFinish();
+            /*
+            glFinish();
+            */
             [m_pSharedGLCtx flushBuffer];
 
             [m_pGLCtx makeCurrentContext];
@@ -1416,7 +1418,6 @@ while(0);
             glReadBuffer(oldReadId);
             if (   (GLuint)oldDrawId == m_FBOAttBackId
                 || (GLuint)oldDrawId == m_FBOAttFrontId)
-//                glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, oldDrawFBOId);
                 glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, m_FBOId);
             glDrawBuffer(oldDrawId);
         }
@@ -1472,7 +1473,7 @@ while(0);
 
                 glBlitFramebufferEXT(x1, y1 + m_RootShift.y, x2, y2 + m_RootShift.y,
                                      x1 * m_FBOThumbScaleX, y1 * m_FBOThumbScaleY, x2 * m_FBOThumbScaleX, y2 * m_FBOThumbScaleY,
-                                     GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                                     GL_COLOR_BUFFER_BIT, GL_LINEAR);
             }
             glFinish();
 
@@ -1594,7 +1595,6 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams)
         DEBUG_MSG(("CR_DEPTH_BIT requested\n"));
         attribs[i++] = NSOpenGLPFADepthSize;
         attribs[i++] = 24;
-//        attribs[i++] = 32;
     }
     if (fVisParams & CR_STENCIL_BIT)
     {
@@ -1660,7 +1660,9 @@ void cocoaGLCtxDestroy(NativeNSOpenGLContextRef pCtx)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-//    [pCtx release];
+    /*
+    [pCtx release];
+    */
 
     [pPool release];
 }
@@ -1915,11 +1917,11 @@ void cocoaBindFramebufferEXT(GLenum target, GLuint framebuffer)
 void cocoaCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    GLbitfield mask = GL_COLOR_BUFFER_BIT;
 
     DEBUG_MSG_1(("glCopyPixels called: %d,%d-%dx%d type: %d\n", x, y, width, height, type));
 
 #ifdef FBO
-    GLbitfield mask = GL_COLOR_BUFFER_BIT;
     if (type == GL_DEPTH)
         mask = GL_DEPTH_BUFFER_BIT;
     else if (type == GL_STENCIL)
