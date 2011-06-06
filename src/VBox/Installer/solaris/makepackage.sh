@@ -162,6 +162,10 @@ filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxdrv"'      
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxflt"'                                   '$6 = "sys"'
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxflt"'                             '$6 = "sys"'
 
+# NetFilter vboxbow
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxbow"'                                   '$6 = "sys"'
+filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxbow"'                             '$6 = "sys"'
+
 # NetAdapter vboxnet
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/vboxnet"'                                   '$6 = "sys"'
 filelist_fixup prototype '$3 == "platform/i86pc/kernel/drv/amd64/vboxnet"'                             '$6 = "sys"'
