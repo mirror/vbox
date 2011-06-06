@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2009-2010 Oracle Corporation
+     Copyright (C) 2009-2011 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -13,8 +13,8 @@
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <class>UINewHDWzdPage2</class>
- <widget class="QWidget" name="UINewHDWzdPage2">
+ <class>UINewHDWizardPageVariant</class>
+ <widget class="QWidget" name="UINewHDWizardPageVariant">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -29,45 +29,30 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
-  <layout class="QVBoxLayout" name="m_pLayout1">
+  <layout class="QVBoxLayout" name="m_pMainLayout">
    <property name="bottomMargin" >
     <number>0</number>
    </property>
    <item>
-    <widget class="QILabel" name="m_pPage2Text1">
-     <property name="text">
-      <string>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</string>
-     </property>
+    <widget class="QILabel" name="m_pLabel">
      <property name="wordWrap">
       <bool>true</bool>
      </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="m_pTypeCnt">
-     <property name="title">
-      <string>Storage Type</string>
+     <property name="text">
+      <string>&lt;p&gt;Please choose whether the new virtual disk file should expand as it is used or be created fully expanded.&lt;/p&gt;</string>
      </property>
-     <layout class="QVBoxLayout" name="m_pLayout2">
-      <item>
-       <widget class="QRadioButton" name="m_pTypeDynamic">
-        <property name="text">
-         <string>&amp;Dynamically expanding storage</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="m_pTypeFixed">
-        <property name="text">
-         <string>&amp;Fixed-size storage</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </widget>
    </item>
    <item>
-    <spacer name="m_pSpacer1">
+    <widget class="QGroupBox" name="m_pVariantContainer">
+     <property name="title">
+      <string>Storage details</string>
+     </property>
+     <layout class="QVBoxLayout" name="m_pVariantsLayout"/>
+    </widget>
+   </item>
+   <item>
+    <spacer name="m_pSpacer">
      <property name="sizeHint" stdset="0">
       <size>
        <width>0</width>

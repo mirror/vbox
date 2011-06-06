@@ -319,7 +319,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/machine/UIMachineSettingsSF.h \
 	src/settings/machine/UIMachineSettingsSFDetails.h \
 	src/wizards/newvm/UINewVMWzd.h \
-	src/wizards/newhd/UINewHDWzd.h \
+	src/wizards/newhd/UINewHDWizard.h \
 	src/wizards/firstrun/UIFirstRunWzd.h \
 	src/wizards/exportappliance/UIExportApplianceWzd.h \
 	src/wizards/importappliance/UIImportApplianceWzd.h \
@@ -393,7 +393,8 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
-	src/runtime/UIMachineMenuBar.cpp
+	src/runtime/UIMachineMenuBar.cpp \
+	src/wizards/newhd/UINewHDWizard.cpp
 
 VirtualBox_QT_MOCSRCS.darwin += \
     src/platform/darwin/UIWindowMenuManager.cpp
@@ -484,7 +485,7 @@ VirtualBox_SOURCES = \
 	src/settings/machine/UIMachineSettingsSF.cpp \
 	src/settings/machine/UIMachineSettingsSFDetails.cpp \
 	src/wizards/newvm/UINewVMWzd.cpp \
-	src/wizards/newhd/UINewHDWzd.cpp \
+	src/wizards/newhd/UINewHDWizard.cpp \
 	src/wizards/firstrun/UIFirstRunWzd.cpp \
 	src/wizards/exportappliance/UIExportApplianceWzd.cpp \
 	src/wizards/importappliance/UIImportApplianceWzd.cpp \

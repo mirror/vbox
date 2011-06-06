@@ -36,7 +36,7 @@
 /* Local includes */
 #include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
-#include "UINewHDWzd.h"
+#include "UINewHDWizard.h"
 #include "VBoxProblemReporter.h"
 #include "UIToolBar.h"
 #include "QIFileDialog.h"
@@ -951,7 +951,7 @@ void VBoxMediaManagerDlg::doNewMedium()
 {
     AssertReturnVoid (currentTreeWidgetType() == VBoxDefs::MediumType_HardDisk);
 
-    UINewHDWzd dlg (this);
+    UINewHDWizard dlg (this);
 
     if (dlg.exec() == QDialog::Accepted)
     {

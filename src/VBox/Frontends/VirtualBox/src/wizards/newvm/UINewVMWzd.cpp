@@ -22,7 +22,7 @@
 
 /* Local includes */
 #include "UIIconPool.h"
-#include "UINewHDWzd.h"
+#include "UINewHDWizard.h"
 #include "UINewVMWzd.h"
 #include "QIFileDialog.h"
 #include "VBoxProblemReporter.h"
@@ -560,10 +560,7 @@ void UINewVMWzdPage4::getWithFileOpenDialog()
 
 bool UINewVMWzdPage4::getWithNewHardDiskWizard()
 {
-    UINewHDWzd dlg(this);
-    dlg.setRecommendedName(field("name").toString());
-    dlg.setRecommendedSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
-    dlg.setDefaultPath(field("machineFolder").toString());
+    UINewHDWizard dlg(this, field("name").toString(), field("machineFolder").toString(), field("type").value<CGuestOSType>().GetRecommendedHDD());
 
     if (dlg.exec() == QDialog::Accepted)
     {
