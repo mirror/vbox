@@ -52,7 +52,10 @@ DESC_VBOXNET="NetAdapter"
 MOD_VBOXNET_INST=32
 
 MOD_VBOXFLT=vboxflt
-DESC_VBOXFLT="NetFilter"
+DESC_VBOXFLT="NetFilter (STREAMS)"
+
+MOD_VBOXBOW=vboxbow
+DESC_VBOXBOW="NetFilter (Crossbow)"
 
 # No Separate VBI since (3.1)
 #MOD_VBI=vbi
@@ -490,10 +493,19 @@ install_drivers()
         load_module "drv/$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
     fi
 
-    # Load VBoxNetFlt
-    if test -f "$DIR_CONF/vboxflt.conf"; then
-        add_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
-        load_module "drv/$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
+    # If vboxinst_vboxflt exists or if host is Solaris 10 or S11 versions < snv_159 then load vboxflt driver.
+    if test -f /etc/vboxinst_vboxflt || test "$HOST_OS_MAJORVERSION" = "5.10" || test "$HOST_OS_MINORVERSION" -lt 159;  then
+        # Load VBoxNetFlt
+        if test -f "$DIR_CONF/vboxflt.conf"; then
+            add_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
+            load_module "drv/$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
+        fi
+    else
+        # Load VBoxNetBow
+        if test -f "$DIR_CONF/vboxbow.conf"; then
+            add_driver "$MOD_VBOXBOW" "$DESC_VBOXBOW" "$FATALOP"
+            load_module "drv/$MOD_VBOXBOW" "$DESC_VBOXBOW" "$FATALOP"
+        fi
     fi
 
     # Load VBoxUSBMon, VBoxUSB
@@ -567,6 +579,9 @@ remove_drivers()
 
     unload_module "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$fatal"
     rem_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$fatal"
+
+    unload_module "$MOD_VBOXBOW" "$DESC_VBOXBOW" "$fatal"
+    rem_driver "$MOD_VBOXBOW" "$DESC_VBOXBOW" "$fatal"
 
     unload_module "$MOD_VBOXNET" "$DESC_VBOXNET" "$fatal"
     rem_driver "$MOD_VBOXNET" "$DESC_VBOXNET" "$fatal"
