@@ -302,6 +302,10 @@ extern void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects);
 extern void renderspu_SystemFlush();
 extern void renderspu_SystemFinish();
 extern void renderspu_SystemBindFramebufferEXT(GLenum target, GLuint framebuffer);
+extern void renderspu_SystemCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
+extern void renderspu_SystemGetIntegerv(GLenum pname, GLint *params);
+extern void renderspu_SystemReadBuffer(GLenum mode);
+extern void renderspu_SystemDrawBuffer(GLenum mode);
 # endif
 #endif
 extern void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt );

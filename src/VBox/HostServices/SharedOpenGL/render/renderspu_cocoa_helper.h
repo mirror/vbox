@@ -48,6 +48,10 @@ void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, GLint* paRec
 void cocoaFlush(void);
 void cocoaFinish(void);
 void cocoaBindFramebufferEXT(GLenum target, GLuint framebuffer);
+void cocoaCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
+void cocoaGetIntegerv(GLenum pname, GLint *params);
+void cocoaReadBuffer(GLenum mode);
+void cocoaDrawBuffer(GLenum mode);
 
 RT_C_DECLS_END
 

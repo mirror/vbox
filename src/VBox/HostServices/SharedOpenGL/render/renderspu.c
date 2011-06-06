@@ -1076,6 +1076,27 @@ void renderspuBindFramebufferEXT(GLenum target, GLuint framebuffer)
 {
     renderspu_SystemBindFramebufferEXT(target, framebuffer);
 }
+
+void renderspuCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
+{
+    renderspu_SystemCopyPixels(x, y, width, height, type);
+}
+
+void renderspuGetIntegerv(GLenum pname, GLint * params)
+{
+    renderspu_SystemGetIntegerv(pname, params);
+}
+
+void renderspuDrawBuffer(GLenum mode)
+{
+    renderspu_SystemDrawBuffer(mode);
+}
+
+void renderspuReadBuffer(GLenum mode)
+{
+    printf("read win id: %d\n", render_spu.window_id);
+    renderspu_SystemReadBuffer(mode);
+}
 # endif
 #endif
 
@@ -1120,6 +1141,10 @@ renderspuCreateFunctions(SPUNamedFunctionTable table[])
     FILLIN( "Flush", renderspuFlush );
     FILLIN( "Finish", renderspuFinish );
     FILLIN( "BindFramebufferEXT", renderspuBindFramebufferEXT );
+    FILLIN( "CopyPixels", renderspuCopyPixels );
+    FILLIN( "GetIntegerv", renderspuGetIntegerv );
+    FILLIN( "ReadBuffer", renderspuReadBuffer );
+    FILLIN( "DrawBuffer", renderspuDrawBuffer );
 # endif
 #endif
     return i;
