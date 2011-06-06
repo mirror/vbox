@@ -19,8 +19,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD
-#define RT_STRICT
-#define LOG_ENABLED
 #include <VBox/vd.h>
 #include <VBox/err.h>
 #include <VBox/sup.h>
