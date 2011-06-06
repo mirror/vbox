@@ -879,7 +879,14 @@ static DECLCALLBACK(int) pdmR3BlkCacheLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_
 
     SSMR3GetU32(pSSM, &cRefs);
 
-    if (cRefs == pBlkCacheGlobal->cRefs)
+    /*
+     * Fewer users in the saved state than in the current VM are allowed
+     * because that means that there are only new ones which don't have any saved state
+     * which can get lost.
+     * More saved entries that current ones are not allowed because this could result in
+     * lost data.
+     */
+    if (cRefs <= pBlkCacheGlobal->cRefs)
     {
         char *pszId = NULL;
 
