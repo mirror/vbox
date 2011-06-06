@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2009-2010 Oracle Corporation
+     Copyright (C) 2009-2011 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -13,8 +13,8 @@
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <class>UINewHDWzdPage4</class>
- <widget class="QWidget" name="UINewHDWzdPage4">
+ <class>UINewHDWizardPageSummary</class>
+ <widget class="QWidget" name="UINewHDWizardPageSummary">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -29,17 +29,17 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
-  <layout class="QVBoxLayout" name="m_pLayout1">
+  <layout class="QVBoxLayout" name="m_pMainLayout">
    <property name="bottomMargin" >
     <number>0</number>
    </property>
    <item>
-    <widget class="QILabel" name="m_pPage4Text1">
-     <property name="text">
-      <string>You are going to create a new virtual hard disk with the following parameters:</string>
-     </property>
+    <widget class="QILabel" name="m_pLabel1">
      <property name="wordWrap">
       <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>You are going to create a new virtual disk with the following parameters:</string>
      </property>
     </widget>
    </item>
@@ -66,14 +66,14 @@
     </widget>
    </item>
    <item>
-    <widget class="QILabel" name="m_pPage4Text2">
+    <widget class="QILabel" name="m_pLabel2">
      <property name="wordWrap">
       <bool>true</bool>
      </property>
     </widget>
    </item>
    <item>
-    <spacer name="m_pSpacer1">
+    <spacer name="m_pSpacer">
      <property name="sizeHint" stdset="0">
       <size>
        <width>0</width>

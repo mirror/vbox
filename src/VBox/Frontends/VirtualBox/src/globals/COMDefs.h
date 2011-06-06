@@ -632,27 +632,27 @@ public:
 
     // constructors & destructor
 
-    CInterface() 
+    CInterface()
     {
         clear();
     }
 
     CInterface (const CInterface &that) : B (that)
-    {   
-        clear(); 
+    {
+        clear();
         mIface = that.mIface;
         addref(ptr());
     }
 
-    CInterface (I *aIface) 
-    { 
+    CInterface (I *aIface)
+    {
         clear();
         setPtr (aIface);
-        addref (aIface); 
+        addref (aIface);
     }
 
-    virtual ~CInterface() 
-    { 
+    virtual ~CInterface()
+    {
         detach();
 #ifdef DEBUG
         mDead = true;
@@ -676,12 +676,12 @@ public:
                 B::mRC = manager->CreateInstance (aClsId, nsnull, NS_GET_IID (I),
                                                   (void **) &pObj);
 #endif
-             
+
             if (SUCCEEDED (B::mRC))
                setPtr(pObj);
             else
                setPtr(NULL);
-            
+
             /* fetch error info, but don't assert if it's missing -- many other
              * reasons can lead to an error (w/o providing error info), not only
              * the instance initialization code (that should always provide it) */
@@ -731,22 +731,22 @@ public:
     };
 
     /** Detaches from the underlying interface pointer. */
-    void detach() 
-    { 
+    void detach()
+    {
 #ifdef DEBUG
        Assert(!mDead);
 #endif
-       release (ptr()); 
-       setPtr(NULL); 
+       release (ptr());
+       setPtr(NULL);
     }
 
     /** Returns @c true if not attached to any interface pointer. */
-    bool isNull() const 
-    { 
+    bool isNull() const
+    {
 #ifdef DEBUG
        Assert(!mDead);
 #endif
-       return mIface == NULL; 
+       return mIface == NULL;
     }
 
     /**
@@ -785,7 +785,7 @@ public:
      * Returns the raw interface pointer. Not intended to be used for anything
      * else but in generated wrappers and for debugging. You've been warned.
      */
-    I *raw() const 
+    I *raw() const
     {
        return ptr();
     }
@@ -818,7 +818,7 @@ private:
 
     void clear()
     {
-       mIface = NULL;       
+       mIface = NULL;
 #ifdef DEBUG
        mDead = false;
 #endif
@@ -909,6 +909,7 @@ Q_DECLARE_METATYPE(CHost);
 Q_DECLARE_METATYPE(CMachine);
 Q_DECLARE_METATYPE(CConsole);
 Q_DECLARE_METATYPE(CHostNetworkInterface);
+Q_DECLARE_METATYPE(CMediumFormat);
 
 /** @} */
 

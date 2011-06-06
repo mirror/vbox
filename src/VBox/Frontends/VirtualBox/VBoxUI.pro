@@ -52,10 +52,11 @@ FORMS = \
     src/wizards/newvm/UINewVMWzdPage3.ui \
     src/wizards/newvm/UINewVMWzdPage4.ui \
     src/wizards/newvm/UINewVMWzdPage5.ui \
-    src/wizards/newhd/UINewHDWzdPage1.ui \
-    src/wizards/newhd/UINewHDWzdPage2.ui \
-    src/wizards/newhd/UINewHDWzdPage3.ui \
-    src/wizards/newhd/UINewHDWzdPage4.ui \
+    src/wizards/newhd/UINewHDWizardPageWelcome.ui \
+    src/wizards/newhd/UINewHDWizardPageFormat.ui \
+    src/wizards/newhd/UINewHDWizardPageVariant.ui \
+    src/wizards/newhd/UINewHDWizardPageOptions.ui \
+    src/wizards/newhd/UINewHDWizardPageSummary.ui \
     src/wizards/firstrun/UIFirstRunWzdPage1.ui \
     src/wizards/firstrun/UIFirstRunWzdPage2.ui \
     src/wizards/firstrun/UIFirstRunWzdPage3.ui \
