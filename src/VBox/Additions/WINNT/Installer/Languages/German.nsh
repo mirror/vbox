@@ -28,6 +28,7 @@ LangString VBOX_COMPONENT_D3D_DESC  ${LANG_GERMAN}                  "Ermöglicht 
 LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_GERMAN}                  "Windows befindet sich aktuell nicht im abgesicherten Modus.$\r$\nDaher kann die D3D-Unterstützung nicht installiert werden."
 LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_GERMAN}          "Direct3D Gast-Unterstützung nicht verfügbar unter Windows $g_strWinVersion!"
 LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_GERMAN}                "Für diesen Gast ist Windows Aero (WDDM)-Unterstützung verfügbar.$\r$\nDieses Feature ist jedoch noch experimentell und sollte daher noch nicht auf produktiven Systemen eingesetzt werden.$\r$\n$\r$\nMöchten Sie stattdessen die reguläre Direct3D-Unterstützung installieren?"
+LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_GERMAN}              "Bitte beachten Sie, dass der Grafikspeicher der VM mindestens 128 MB für einen Monitor und bis zu 256 MB für Multi-Monitor-Benutzung betragen sollte.$\r$\n$\r$\nSie können den Grafikspeicher in den VM-Einstellungen in der Kategorie $\"Anzeige$\" konfigurieren."
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_GERMAN}         "Das Setup hat gerade Systemdateien ersetzt um die ${PRODUCT_NAME} korrekt installieren zu können.$\r$\nFalls nun ein Warn-Dialog des Windows-Dateischutzes erscheint, diesen bitte abbrechen und die Dateien nicht wiederherstellen lassen!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}          "Um alle Änderungen durchführen zu können, muss das System neu gestartet werden. Jetzt neu starten?"
