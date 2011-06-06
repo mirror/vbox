@@ -200,3 +200,23 @@ void renderspu_SystemBindFramebufferEXT(GLenum target, GLuint framebuffer)
     cocoaBindFramebufferEXT(target, framebuffer);
 }
 
+void renderspu_SystemCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
+{
+    cocoaCopyPixels(x, y, width, height, type);
+}
+
+void renderspu_SystemGetIntegerv(GLenum pname, GLint * params)
+{
+    cocoaGetIntegerv(pname, params);
+}
+
+void renderspu_SystemReadBuffer(GLenum mode)
+{
+    cocoaReadBuffer(mode);
+}
+
+void renderspu_SystemDrawBuffer(GLenum mode)
+{
+    cocoaDrawBuffer(mode);
+}
+
