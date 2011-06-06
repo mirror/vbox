@@ -7875,7 +7875,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
      */
     /* The name of the TAP interface we are using */
     Bstr tapDeviceName;
-    rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
+    rc = networkAdapter->COMGETTER(BridgedInterface)(tapDeviceName.asOutParam());
     if (FAILED(rc))
         tapDeviceName.setNull(); /* Is this necessary? */
     if (tapDeviceName.isEmpty())
