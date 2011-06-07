@@ -482,29 +482,15 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
          * See public ticket #3894: Apparently this makes problems with newer versions of Qt
          * and this hack is probably not necessary anymore. So disable it for Qt >= 4.5.0. */
         case XFocusOut:
-        case XFocusIn:
         {
             if (isSessionRunning())
             {
                 if (VBoxGlobal::qtRTVersion() < ((4 << 16) | (5 << 8) | 0))
                 {
-                    if (pEvent->type == XFocusIn)
-                    {
-#if 0
-                        /* Capture keyboard by chosen view number: */
-                        captureKeyboard(uScreenId);
-                        /* Reset the single-time disable capture flag: */
-                        if (isAutoCaptureDisabled())
-                            setAutoCaptureDisabled(false);
-#endif
-                    }
-                    else
-                    {
-                        /* Release keyboard: */
-                        releaseKeyboard();
-                        /* And all pressed keys including host-one: */
-                        releaseAllPressedKeys(true);
-                    }
+                    /* Release keyboard: */
+                    releaseKeyboard();
+                    /* And all pressed keys including host-one: */
+                    releaseAllPressedKeys(true);
                 }
             }
             fResult = false;
@@ -603,32 +589,6 @@ void UIKeyboardHandler::sltMachineStateChanged()
             releaseAllPressedKeys(false /* release host-key? */);
             break;
         }
-#if 0
-        case KMachineState_Running:
-        {
-            /* Capture the keyboard by the first focused view: */
-            QList<ulong> theListOfViewIds = m_views.keys();
-            for (int i = 0; i < theListOfViewIds.size(); ++i)
-            {
-                if (viewHasFocus(theListOfViewIds[i]))
-                {
-                    /* Capture keyboard: */
-#ifdef Q_WS_WIN
-                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
-                        GetAncestor(m_views[theListOfViewIds[i]]->winId(), GA_ROOT) == GetForegroundWindow())
-#else /* Q_WS_WIN */
-                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
-#endif /* !Q_WS_WIN */
-                        captureKeyboard(theListOfViewIds[i]);
-                    /* Reset the single-time disable capture flag: */
-                    if (isAutoCaptureDisabled())
-                        setAutoCaptureDisabled(false);
-                    break;
-                }
-            }
-            break;
-        }
-#endif
         default:
             break;
     }
@@ -829,24 +789,6 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
         /* Handle view events: */
         switch (pEvent->type())
         {
-#if 0
-            case QEvent::FocusIn:
-                if (isSessionRunning())
-                {
-                    /* Capture keyboard: */
-#ifdef Q_WS_WIN
-                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
-                        GetAncestor(pWatchedView->winId(), GA_ROOT) == GetForegroundWindow())
-#else /* Q_WS_WIN */
-                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
-#endif /* !Q_WS_WIN */
-                        captureKeyboard(uScreenId);
-                    /* Reset the single-time disable capture flag: */
-                    if (isAutoCaptureDisabled())
-                        setAutoCaptureDisabled(false);
-                }
-                break;
-#endif
             case QEvent::FocusOut:
                 /* Release keyboard: */
                 if (isSessionRunning())
