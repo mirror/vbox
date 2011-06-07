@@ -712,15 +712,25 @@ static void signal_handler(int sig)
     }
 }
 
-static nsresult vboxsvcSpawnDaemonByReExec(const char *pszPath)
+static nsresult vboxsvcSpawnDaemonByReExec(const char *pszPath, bool fAutoShutdown, const char *pszPidFile)
 {
     PRFileDesc *readable = nsnull, *writable = nsnull;
     PRProcessAttr *attr = nsnull;
     nsresult rv = NS_ERROR_FAILURE;
     PRFileDesc *devNull;
+    unsigned args_index = 0;
     // The ugly casts are necessary because the PR_CreateProcessDetached has
     // a const array of writable strings as a parameter. It won't write. */
-    char * const args[] = { (char *)pszPath, (char *)"--auto-shutdown", 0 };
+    char * args[1 + 1 + 2 + 1];
+    args[args_index++] = (char *)pszPath;
+    if (fAutoShutdown)
+        args[args_index++] = (char *)"--auto-shutdown";
+    if (pszPidFile)
+    {
+        args[args_index++] = (char *)"--pidfile";
+        args[args_index++] = (char *)pszPidFile;
+    }
+    args[args_index++] = 0;
 
     // Use a pipe to determine when the daemon process is in the position
     // to actually process requests. The daemon will write "READY" to the pipe.
@@ -743,7 +753,7 @@ static nsresult vboxsvcSpawnDaemonByReExec(const char *pszPath)
     PR_ProcessAttrSetStdioRedirect(attr, PR_StandardOutput, devNull);
     PR_ProcessAttrSetStdioRedirect(attr, PR_StandardError, devNull);
 
-    if (PR_CreateProcessDetached(pszPath, args, nsnull, attr) != PR_SUCCESS)
+    if (PR_CreateProcessDetached(pszPath, (char * const *)args, nsnull, attr) != PR_SUCCESS)
         goto end;
 
     // Close /dev/null
@@ -847,7 +857,7 @@ int main(int argc, char **argv)
 
     if (fDaemonize)
     {
-        vboxsvcSpawnDaemonByReExec(argv[0]);
+        vboxsvcSpawnDaemonByReExec(argv[0], gAutoShutdown, g_pszPidFile);
         exit(126);
     }
 
