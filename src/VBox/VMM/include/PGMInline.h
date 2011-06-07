@@ -512,9 +512,9 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS G
 DECLINLINE(void) pgmPhysPageWriteMonitor(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage)
 {
     Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
 
-    PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_WRITE_MONITORED);
+    PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_WRITE_MONITORED);
     pVM->pgm.s.cMonitoredPages++;
 
     /* Large pages must disabled. */
@@ -524,7 +524,7 @@ DECLINLINE(void) pgmPhysPageWriteMonitor(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhy
         AssertFatal(pFirstPage);
         if (PGM_PAGE_GET_PDE_TYPE(pFirstPage) == PGM_PAGE_PDE_TYPE_PDE)
         {
-            PGM_PAGE_SET_PDE_TYPE(pFirstPage, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
+            PGM_PAGE_SET_PDE_TYPE(pVM, pFirstPage, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
             pVM->pgm.s.cLargePagesDisabled++;
         }
         else
@@ -1373,6 +1373,9 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
     /*
      * Just deal with the simple case here.
      */
+# ifdef VBOX_STRICT
+    PVM pVM = pPool->CTX_SUFF(pVM); NOREF(pVM);
+# endif
 # ifdef LOG_ENABLED
     const unsigned uOrg = PGM_PAGE_GET_TRACKING(pPhysPage);
 # endif
@@ -1382,7 +1385,7 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
         Assert(pPoolPage->idx == PGM_PAGE_GET_TD_IDX(pPhysPage));
         Assert(iPte == PGM_PAGE_GET_PTE_INDEX(pPhysPage));
         /* Invalidate the tracking data. */
-        PGM_PAGE_SET_TRACKING(pPhysPage, 0);
+        PGM_PAGE_SET_TRACKING(pVM, pPhysPage, 0);
     }
     else
         pgmPoolTrackPhysExtDerefGCPhys(pPool, pPoolPage, pPhysPage, iPte);
@@ -1400,7 +1403,7 @@ DECLINLINE(void) pgmTrackDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPG
  */
 DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    Assert(PGMIsLockOwner(pPool->CTX_SUFF(pVM)));
+    PGM_LOCK_ASSERT_OWNER(pPool->CTX_SUFF(pVM));
 
     /*
      * Move to the head of the age list.
@@ -1431,7 +1434,7 @@ DECLINLINE(void) pgmPoolCacheUsed(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 DECLINLINE(void) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    Assert(PGMIsLockOwner(pPool->CTX_SUFF(pVM)));
+    PGM_LOCK_ASSERT_OWNER(pPool->CTX_SUFF(pVM));
     ASMAtomicIncU32(&pPage->cLocked);
 }
 
@@ -1444,7 +1447,7 @@ DECLINLINE(void) pgmPoolLockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 DECLINLINE(void) pgmPoolUnlockPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
-    Assert(PGMIsLockOwner(pPool->CTX_SUFF(pVM)));
+    PGM_LOCK_ASSERT_OWNER(pPool->CTX_SUFF(pVM));
     Assert(pPage->cLocked);
     ASMAtomicDecU32(&pPage->cLocked);
 }

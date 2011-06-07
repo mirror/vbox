@@ -808,7 +808,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
     {
         iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
-            PGM_PAGE_SET_TRACKING(&pRam->aPages[iPage], 0);
+            PGM_PAGE_SET_TRACKING(pVM, &pRam->aPages[iPage], 0);
     }
 
     pPool->iPhysExtFreeHead = 0;
@@ -905,7 +905,7 @@ void pgmR3PoolClearAll(PVM pVM, bool fFlushRemTlb)
  */
 void pgmR3PoolWriteProtectPages(PVM pVM)
 {
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     unsigned cLeft = pPool->cUsedPages;
     unsigned iPage = pPool->cCurPages;

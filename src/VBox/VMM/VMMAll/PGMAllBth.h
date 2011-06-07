@@ -1119,7 +1119,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
 
     LogFlow(("InvalidatePage %RGv\n", GCPtrPage));
 
@@ -1480,14 +1480,14 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackAddref)(PVMCPU pVCpu, PPGMPOOLP
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatTrackVirgin);
         u16 = PGMPOOL_TD_MAKE(1, pShwPage->idx);
         /* Save the page table index. */
-        PGM_PAGE_SET_PTE_INDEX(pPage, iPTDst);
+        PGM_PAGE_SET_PTE_INDEX(pVM, pPage, iPTDst);
     }
     else
         u16 = pgmPoolTrackPhysExtAddref(pVM, pPage, u16, pShwPage->idx, iPTDst);
 
     /* write back */
     Log2(("SyncPageWorkerTrackAddRef: u16=%#x->%#x  iPTDst=%#x\n", u16, PGM_PAGE_GET_TRACKING(pPage), iPTDst));
-    PGM_PAGE_SET_TRACKING(pPage, u16);
+    PGM_PAGE_SET_TRACKING(pVM, pPage, u16);
 
     /* update statistics. */
     pVM->pgm.s.CTX_SUFF(pPool)->cPresent++;
@@ -1805,7 +1805,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     LogFlow(("SyncPage: GCPtrPage=%RGv cPages=%u uErr=%#x\n", GCPtrPage, cPages, uErr));
 
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
 
 #if    (   PGM_GST_TYPE == PGM_TYPE_32BIT  \
         || PGM_GST_TYPE == PGM_TYPE_PAE    \
@@ -2353,7 +2353,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
     PVM         pVM   = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL    pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
 
     /*
      * Handle big page.
@@ -2544,7 +2544,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 #endif
     LogFlow(("SyncPT: GCPtrPage=%RGv\n", GCPtrPage));
 
-    Assert(PGMIsLocked(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
 
 #if (   PGM_GST_TYPE == PGM_TYPE_32BIT \
      || PGM_GST_TYPE == PGM_TYPE_PAE \

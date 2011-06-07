@@ -1716,7 +1716,7 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 {
     unsigned idxFree;
 
-    Assert(PGMIsLocked(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     AssertCompile(RT_ELEMENTS(pPool->aDirtyPages) == 8 || RT_ELEMENTS(pPool->aDirtyPages) == 16);
     Assert(!pPage->fDirty);
 
@@ -1790,7 +1790,7 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    Assert(PGMIsLocked(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     if (!pPool->cDirtyPages)
         return false;
 
@@ -1819,7 +1819,7 @@ bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
 void pgmPoolResetDirtyPages(PVM pVM)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    Assert(PGMIsLocked(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aDirtyPages));
 
     if (!pPool->cDirtyPages)
@@ -1858,7 +1858,7 @@ void pgmPoolResetDirtyPages(PVM pVM)
 void pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    Assert(PGMIsLocked(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aDirtyPages));
 
     if (!pPool->cDirtyPages)
@@ -1879,7 +1879,7 @@ void pgmPoolResetDirtyPage(PVM pVM, RTGCPTR GCPtrPage)
 void pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    Assert(PGMIsLocked(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aDirtyPages));
     unsigned idxDirtyPage = RT_ELEMENTS(pPool->aDirtyPages);
 
@@ -3354,7 +3354,7 @@ static void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPT
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPT, f);
     bool fKeptPTEs = pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, fFlushPTEs, iShw, PGM_PAGE_GET_PTE_INDEX(pPhysPage));
     if (!fKeptPTEs)
-        PGM_PAGE_SET_TRACKING(pPhysPage, 0);
+        PGM_PAGE_SET_TRACKING(pVM, pPhysPage, 0);
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPT, f);
 }
 
@@ -3369,7 +3369,7 @@ static void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPT
  */
 static void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPTEs, uint16_t iPhysExt)
 {
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     bool     fKeepList = false;
 
@@ -3406,7 +3406,7 @@ static void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, bool fFlushP
         pPhysExt->iNext = pPool->iPhysExtFreeHead;
         pPool->iPhysExtFreeHead = iPhysExtStart;
         /* Invalidate the tracking data. */
-        PGM_PAGE_SET_TRACKING(pPhysPage, 0);
+        PGM_PAGE_SET_TRACKING(pVM, pPhysPage, 0);
     }
 
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPTs, f);
@@ -3461,7 +3461,7 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
         if (PGM_PAGE_GET_PDE_TYPE(pLargePage) == PGM_PAGE_PDE_TYPE_PDE)
         {
             /* Mark the large page as disabled as we need to break it up to change a single page in the 2 MB range. */
-            PGM_PAGE_SET_PDE_TYPE(pLargePage, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
+            PGM_PAGE_SET_PDE_TYPE(pVM, pLargePage, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
             pVM->pgm.s.cLargePagesDisabled++;
 
             /* Update the base as that *only* that one has a reference and there's only one PDE to clear. */
@@ -3665,7 +3665,7 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
         }
     }
 
-    PGM_PAGE_SET_TRACKING(pPhysPage, 0);
+    PGM_PAGE_SET_TRACKING(pVM, pPhysPage, 0);
     STAM_PROFILE_STOP(&pPool->StatTrackFlushGCPhysPTsSlow, s);
 
     /*
@@ -3851,7 +3851,7 @@ static void pgmPoolTrackClearPageUsers(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
 {
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     uint16_t iPhysExt = pPool->iPhysExtFreeHead;
     if (iPhysExt == NIL_PGMPOOL_PHYSEXT_INDEX)
@@ -3875,7 +3875,7 @@ PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt)
  */
 void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
 {
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     Assert(iPhysExt < pPool->cMaxPhysExts);
     PPGMPOOLPHYSEXT pPhysExt = &pPool->CTX_SUFF(paPhysExts)[iPhysExt];
@@ -3897,7 +3897,7 @@ void pgmPoolTrackPhysExtFree(PVM pVM, uint16_t iPhysExt)
  */
 void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
 {
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     const uint16_t  iPhysExtStart = iPhysExt;
@@ -3934,7 +3934,7 @@ void pgmPoolTrackPhysExtFreeList(PVM pVM, uint16_t iPhysExt)
  */
 static uint16_t pgmPoolTrackPhysExtInsert(PVM pVM, uint16_t iPhysExt, uint16_t iShwPT, uint16_t iPte)
 {
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPHYSEXT paPhysExts = pPool->CTX_SUFF(paPhysExts);
 
@@ -4068,13 +4068,13 @@ uint16_t pgmPoolTrackPhysExtAddref(PVM pVM, PPGMPAGE pPhysPage, uint16_t u16, ui
  */
 void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE pPhysPage, uint16_t iPte)
 {
+    PVM            pVM = pPool->CTX_SUFF(pVM);
     const unsigned cRefs = PGM_PAGE_GET_TD_CREFS(pPhysPage);
     AssertFatalMsg(cRefs == PGMPOOL_TD_CREFS_PHYSEXT, ("cRefs=%d pPhysPage=%R[pgmpage] pPage=%p:{.idx=%d}\n", cRefs, pPhysPage, pPage, pPage->idx));
 
     uint16_t iPhysExt = PGM_PAGE_GET_TD_IDX(pPhysPage);
     if (iPhysExt != PGMPOOL_TD_IDX_OVERFLOWED)
     {
-        PVM pVM = pPool->CTX_SUFF(pVM);
         pgmLock(pVM);
 
         uint16_t        iPhysExtPrev = NIL_PGMPOOL_PHYSEXT_INDEX;
@@ -4110,13 +4110,13 @@ void pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PPGMPAGE
                         /* lonely node */
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                         Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d lonely\n", pPhysPage, pPage->idx));
-                        PGM_PAGE_SET_TRACKING(pPhysPage, 0);
+                        PGM_PAGE_SET_TRACKING(pVM, pPhysPage, 0);
                     }
                     else if (iPhysExtPrev == NIL_PGMPOOL_PHYSEXT_INDEX)
                     {
                         /* head */
                         Log2(("pgmPoolTrackPhysExtDerefGCPhys: pPhysPage=%R[pgmpage] idx=%d head\n", pPhysPage, pPage->idx));
-                        PGM_PAGE_SET_TRACKING(pPhysPage, PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExtNext));
+                        PGM_PAGE_SET_TRACKING(pVM, pPhysPage, PGMPOOL_TD_MAKE(PGMPOOL_TD_CREFS_PHYSEXT, iPhysExtNext));
                         pgmPoolTrackPhysExtFree(pVM, iPhysExt);
                     }
                     else
@@ -4162,7 +4162,8 @@ static void pgmPoolTracDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS 
     /*
      * Lookup the page and check if it checks out before derefing it.
      */
-    PPGMPAGE pPhysPage = pgmPhysGetPage(pPool->CTX_SUFF(pVM), GCPhys);
+    PVM      pVM       = pPool->CTX_SUFF(pVM);
+    PPGMPAGE pPhysPage = pgmPhysGetPage(pVM, GCPhys);
     if (pPhysPage)
     {
         Assert(PGM_PAGE_GET_HCPHYS(pPhysPage));
@@ -4204,7 +4205,8 @@ void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCP
      * Try the hint first.
      */
     RTHCPHYS HCPhysHinted;
-    PPGMPAGE pPhysPage = pgmPhysGetPage(pPool->CTX_SUFF(pVM), GCPhysHint);
+    PVM      pVM       = pPool->CTX_SUFF(pVM);
+    PPGMPAGE pPhysPage = pgmPhysGetPage(pVM, GCPhysHint);
     if (pPhysPage)
     {
         HCPhysHinted = PGM_PAGE_GET_HCPHYS(pPhysPage);
@@ -5093,8 +5095,7 @@ void pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable)
 PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
 {
     PVM pVM = pPool->CTX_SUFF(pVM);
-
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
 
     /*
      * Look up the page.
@@ -5116,7 +5117,7 @@ PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
 PPGMPOOLPAGE pgmPoolQueryPageForDbg(PPGMPOOL pPool, RTHCPHYS HCPhys)
 {
     PVM pVM = pPool->CTX_SUFF(pVM);
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     return (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK);
 }
 
@@ -5236,7 +5237,7 @@ void pgmR3PoolReset(PVM pVM)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
     STAM_PROFILE_START(&pPool->StatR3Reset, a);
     LogFlow(("pgmR3PoolReset:\n"));
 
@@ -5320,7 +5321,7 @@ void pgmR3PoolReset(PVM pVM)
     {
         unsigned iPage = pRam->cb >> PAGE_SHIFT;
         while (iPage-- > 0)
-            PGM_PAGE_SET_TRACKING(&pRam->aPages[iPage], 0);
+            PGM_PAGE_SET_TRACKING(pVM, &pRam->aPages[iPage], 0);
     }
 
     pPool->iPhysExtFreeHead = 0;
