@@ -1344,6 +1344,52 @@ VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enm
 }
 
 
+
+
+/**
+ * Creates a USB device timer.
+ *
+ * @returns VBox status.
+ * @param   pVM             The VM to create the timer in.
+ * @param   pUsbIns         The USB device instance.
+ * @param   enmClock        The clock to use on this timer.
+ * @param   pfnCallback     Callback function.
+ * @param   pvUser          The user argument to the callback.
+ * @param   fFlags          Timer creation flags, see grp_tm_timer_flags.
+ * @param   pszDesc         Pointer to description string which must stay around
+ *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
+ * @param   ppTimer         Where to store the timer on success.
+ */
+VMM_INT_DECL(int) TMR3TimerCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, TMCLOCK enmClock,
+                                     PFNTMTIMERUSB pfnCallback, void *pvUser,
+                                     uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
+{
+    AssertReturn(!(fFlags & ~(TMTIMER_FLAGS_NO_CRIT_SECT)), VERR_INVALID_PARAMETER);
+
+    /*
+     * Allocate and init stuff.
+     */
+    int rc = tmr3TimerCreate(pVM, enmClock, pszDesc, ppTimer);
+    if (RT_SUCCESS(rc))
+    {
+        (*ppTimer)->enmType         = TMTIMERTYPE_USB;
+        (*ppTimer)->u.Usb.pfnTimer  = pfnCallback;
+        (*ppTimer)->u.Usb.pUsbIns   = pUsbIns;
+        (*ppTimer)->pvUser          = pvUser;
+        //if (!(fFlags & TMTIMER_FLAGS_NO_CRIT_SECT))
+        //{
+        //    if (pDevIns->pCritSectR3)
+        //        (*ppTimer)->pCritSect = pUsbIns->pCritSectR3;
+        //    else
+        //        (*ppTimer)->pCritSect = IOMR3GetCritSect(pVM);
+        //}
+        Log(("TM: Created USB device timer %p clock %d callback %p '%s'\n", (*ppTimer), enmClock, pfnCallback, pszDesc));
+    }
+
+    return rc;
+}
+
+
 /**
  * Creates a driver timer.
  *
@@ -1641,6 +1687,39 @@ VMM_INT_DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
 
 
 /**
+ * Destroy all timers owned by a USB device.
+ *
+ * @returns VBox status.
+ * @param   pVM             VM handle.
+ * @param   pUsbIns         USB device which timers should be destroyed.
+ */
+VMM_INT_DECL(int) TMR3TimerDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns)
+{
+    LogFlow(("TMR3TimerDestroyUsb: pUsbIns=%p\n", pUsbIns));
+    if (!pUsbIns)
+        return VERR_INVALID_PARAMETER;
+
+    tmTimerLock(pVM);
+    PTMTIMER    pCur = pVM->tm.s.pCreated;
+    while (pCur)
+    {
+        PTMTIMER pDestroy = pCur;
+        pCur = pDestroy->pBigNext;
+        if (    pDestroy->enmType == TMTIMERTYPE_USB
+            &&  pDestroy->u.Usb.pUsbIns == pUsbIns)
+        {
+            int rc = TMR3TimerDestroy(pDestroy);
+            AssertRC(rc);
+        }
+    }
+    tmTimerUnlock(pVM);
+
+    LogFlow(("TMR3TimerDestroyUsb: returns VINF_SUCCESS\n"));
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Destroy all timers owned by a driver.
  *
  * @returns VBox status.
@@ -1930,6 +2009,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
             switch (pTimer->enmType)
             {
                 case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
+                case TMTIMERTYPE_USB:       pTimer->u.Usb.pfnTimer(pTimer->u.Usb.pUsbIns, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->pvUser); break;
@@ -2112,6 +2192,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             switch (pTimer->enmType)
             {
                 case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
+                case TMTIMERTYPE_USB:       pTimer->u.Usb.pfnTimer(pTimer->u.Usb.pUsbIns, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_DRV:       pTimer->u.Drv.pfnTimer(pTimer->u.Drv.pDrvIns, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_INTERNAL:  pTimer->u.Internal.pfnTimer(pVM, pTimer, pTimer->pvUser); break;
                 case TMTIMERTYPE_EXTERNAL:  pTimer->u.External.pfnTimer(pTimer->pvUser); break;

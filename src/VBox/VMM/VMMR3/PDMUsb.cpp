@@ -945,7 +945,7 @@ static void pdmR3UsbDestroyDevice(PVM pVM, PPDMUSBINS pUsbIns)
         Log(("PDM: Destructing USB device '%s' instance %d...\n", pUsbIns->pReg->szName, pUsbIns->iInstance));
         pUsbIns->pReg->pfnDestruct(pUsbIns);
     }
-    //TMR3TimerDestroyUsb(pVM, pUsbIns);
+    TMR3TimerDestroyUsb(pVM, pUsbIns);
     //SSMR3DeregisterUsb(pVM, pUsbIns, NULL, 0);
     pdmR3ThreadDestroyUsb(pVM, pUsbIns);
 
@@ -1328,9 +1328,7 @@ static DECLCALLBACK(int) pdmR3UsbHlp_TMTimerCreate(PPDMUSBINS pUsbIns, TMCLOCK e
              pszDesc = pszDesc2;
     }
 
-    /** @todo
-    int rc = TMR3TimerCreateUsb(pVM, pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer); */
-    int rc = VERR_NOT_IMPLEMENTED; AssertFailed();
+    int rc = TMR3TimerCreateUsb(pVM, pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 
     LogFlow(("pdmR3UsbHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));
     return rc;

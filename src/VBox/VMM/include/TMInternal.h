@@ -48,6 +48,8 @@ typedef enum TMTIMERTYPE
 {
     /** Device timer. */
     TMTIMERTYPE_DEV = 1,
+    /** USB device timer. */
+    TMTIMERTYPE_USB,
     /** Driver timer. */
     TMTIMERTYPE_DRV,
     /** Internal timer . */
@@ -133,6 +135,15 @@ typedef struct TMTIMER
             /** Device instance. */
             PPDMDEVINSR3                pDevIns;
         } Dev;
+
+        /** TMTIMERTYPE_DEV. */
+        struct
+        {
+            /** Callback. */
+            R3PTRTYPE(PFNTMTIMERUSB)    pfnTimer;
+            /** USB device instance. */
+            PPDMUSBINS                  pUsbIns;
+        } Usb;
 
         /** TMTIMERTYPE_DRV. */
         struct
