@@ -1148,7 +1148,8 @@ void UIKeyboardHandler::keyEventHandleCapturing(uint8_t uScan, int fFlags,
         && uScan != 0x5b /* left win */ && uScan != 0x5c /* right win */)
     {
         /* Capture keyboard by chosen view number: */
-        captureKeyboard(uScreenId);
+        if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
+            captureKeyboard(uScreenId);
         /* Reset the single-time disable capture flag: */
         if (isAutoCaptureDisabled())
             setAutoCaptureDisabled(false);
