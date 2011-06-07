@@ -2219,7 +2219,7 @@ RT_C_DECLS_END
  * @param   rcRet   What is to be presented to return.
  * @remark  rc is referenced multiple times.
  */
-#define AssertLogRelRCReturnStmt(rc, stmt, rcRet) AssertLogRelMsgRCReturnStmt(rc, ("%Rra\n", (rc)), rcRet, stmt)
+#define AssertLogRelRCReturnStmt(rc, stmt, rcRet) AssertLogRelMsgRCReturnStmt(rc, ("%Rra\n", (rc)), stmt, rcRet)
 
 /** @def AssertLogRelRCReturnVoid
  * Asserts a iprt status code successful, returning (void) if it isn't.
