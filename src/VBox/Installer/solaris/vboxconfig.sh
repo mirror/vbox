@@ -18,6 +18,8 @@
 # Never use exit 2 or exit 20 etc., the return codes are used in
 # SRv4 postinstall procedures which carry special meaning. Just use exit 1 for failure.
 
+export LANG=C
+
 # S10 or OpenSoalris
 HOST_OS_MAJORVERSION=`uname -r`
 # Which OpenSolaris version (snv_xxx or oi_xxx)?
