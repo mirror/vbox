@@ -190,11 +190,9 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
             case UIVisualStateType_Fullscreen:
             case UIVisualStateType_Seamless:
             {
-                /* Keyboard grabbing can fail because of some keyboard shortcut is still grabbed by window manager.
-                 * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
-                 * and after we will just ignore that issue: */
-                int cTriesLeft = 50;
-                while (cTriesLeft && XGrabKeyboard(QX11Info::display(), m_windows[m_iKeyboardCaptureViewIndex]->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
+                /* Keyboard grabbing can fail temporarily because some keyboard shortcut is still grabbed by window manager. */
+                if (XGrabKeyboard(QX11Info::display(), m_windows[m_iKeyboardCaptureViewIndex]->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime))
+                    m_fIsKeyboardCaptured = false;
                 break;
             }
             /* Should we try to grab keyboard in default case? I think - NO. */
@@ -211,7 +209,8 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 #endif
 
         /* Notify all the listeners: */
-        emit keyboardStateChanged(keyboardState());
+        if (m_fIsKeyboardCaptured)
+            emit keyboardStateChanged(keyboardState());
     }
 }
 
