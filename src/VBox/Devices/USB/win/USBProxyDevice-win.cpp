@@ -543,7 +543,7 @@ static int usbProxyWinUrbQueue(PVUSBURB pUrb)
 #ifdef DEBUG_misha
     else
     {
-        AssertMsgFailed((__FUNCTION__": FAILED!!\n"));
+        AssertMsgFailed(("FAILED!!, hEvent(0x%p), cPendingUrbs(%d)\n", pQUrbWin->overlapped.hEvent, pPriv->cPendingUrbs));
     }
 #endif
 
