@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,6 +45,12 @@
 
 #define CAT_OPT_NO_CONTENT_INDEXED              1000
 
+/* Enable the following define to be able to debug/invoke the toolbox
+ * commandos directly from command line, e.g. VBoxService vbox_cat [args] */
+#ifdef DEBUG
+//# define VBOXSERVICE_TOOLBOX_DEBUG
+#endif
+
 /**
  * An file/directory entry. Used to cache
  * file names/paths for later processing.
@@ -67,7 +73,11 @@ static void VBoxServiceToolboxShowUsage(void)
              "cat [FILE] - Concatenate FILE(s), or standard input, to standard output.\n"
              "\n"
              /** @todo Document options! */
-             "mkdir [OPTION] DIRECTORY... - Create the DIRECTORY(ies), if they do not already exist.\n"
+             "mkdir [OPTION]... DIRECTORY... - Create the DIRECTORY(ies), if they do not already exist.\n"
+             "\n"
+             /** @todo Document options! */
+             "stat [OPTION]... FILE... - Display file or file system status.\n"
+             "\n"
              /** @todo Document options! */
              "\n");
 }
@@ -225,7 +235,13 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
      RTGETOPTSTATE GetState;
      RTGetOptInit(&GetState, argc, argv,
                   s_aOptions, RT_ELEMENTS(s_aOptions),
-                  1 /* Index of argv to start with. */, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+                  /* Index of argv to start with. */
+#ifdef VBOXSERVICE_TOOLBOX_DEBUG
+                  2,
+#else
+                  1,
+#endif
+                  RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
      int rc = VINF_SUCCESS;
      bool fMakeParentDirs = false;
@@ -356,7 +372,16 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
      int ch;
      RTGETOPTUNION ValueUnion;
      RTGETOPTSTATE GetState;
-     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+
+     RTGetOptInit(&GetState, argc, argv,
+                  s_aOptions, RT_ELEMENTS(s_aOptions),
+                  /* Index of argv to start with. */
+#ifdef VBOXSERVICE_TOOLBOX_DEBUG
+                  2,
+#else
+                  1,
+#endif
+                  0);
 
      int rc = VINF_SUCCESS;
      bool fUsageOK = true;
@@ -482,6 +507,117 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
 
 
 /**
+ * Main function for tool "vbox_stat".
+ *
+ * @return  RTEXITCODE.
+ * @param   argc                    Number of arguments.
+ * @param   argv                    Pointer to argument array.
+ */
+static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
+{
+     static const RTGETOPTDEF s_aOptions[] =
+     {
+         { "--file-system",     'f', RTGETOPT_REQ_NOTHING },
+         { "--dereference",     'L', RTGETOPT_REQ_NOTHING },
+         { "--terse",           't', RTGETOPT_REQ_NOTHING },
+         { "--verbose",         'v', RTGETOPT_REQ_NOTHING }
+     };
+
+     int ch;
+     RTGETOPTUNION ValueUnion;
+     RTGETOPTSTATE GetState;
+     RTGetOptInit(&GetState, argc, argv,
+                  s_aOptions, RT_ELEMENTS(s_aOptions),
+                   /* Index of argv to start with. */
+#ifdef VBOXSERVICE_TOOLBOX_DEBUG
+                  2,
+#else
+                  1,
+#endif
+                  RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+     int rc = VINF_SUCCESS;
+     bool fVerbose = false;
+
+     /* Init file list. */
+     RTLISTNODE fileList;
+     RTListInit(&fileList);
+
+     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+            && RT_SUCCESS(rc))
+     {
+         /* For options that require an argument, ValueUnion has received the value. */
+         switch (ch)
+         {
+             case 'h':
+                 VBoxServiceToolboxShowUsage();
+                 return RTEXITCODE_SUCCESS;
+
+             case 'f':
+             case 'L':
+                 RTMsgError("stat: Sorry, option '%s' is not implemented yet!\n",
+                            ValueUnion.pDef->pszLong);
+                 rc = VERR_INVALID_PARAMETER;
+                 break;
+
+             case 'v':
+                 fVerbose = true;
+                 break;
+
+             case 'V':
+                 VBoxServiceToolboxShowVersion();
+                 return RTEXITCODE_SUCCESS;
+
+             case VINF_GETOPT_NOT_OPTION:
+             {
+                 /* Add file(s) to buffer. This enables processing multiple files
+                  * at once.
+                  *
+                  * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
+                  * processing this loop it's safe to immediately exit on syntax errors
+                  * or showing the help text (see above). */
+                 rc = VBoxServiceToolboxPathBufAddPathEntry(&fileList, ValueUnion.psz);
+                 break;
+             }
+
+             default:
+                 return RTGetOptPrintError(ch, &ValueUnion);
+         }
+     }
+
+     if (RT_SUCCESS(rc))
+     {
+         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
+         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
+         {
+             /* Only check for file existence for now. */
+             if (RTFileExists(pNodeIt->pszName))
+             {
+                 /** @todo Do some more work (query size etc.) here later.
+                  *        Not needed for now. */
+             }
+             else
+             {
+                 RTMsgError("stat: Cannot stat for '%s': No such file or directory\n",
+                            pNodeIt->pszName);
+                 rc = VERR_FILE_NOT_FOUND;
+                 /* Do not break here -- process every file in the list
+                  * and keep failing rc. */
+             }
+         }
+
+         if (RTListIsEmpty(&fileList))
+             RTMsgError("stat: Missing operand\n");
+     }
+     else if (fVerbose)
+         RTMsgError("stat: Failed with rc=%Rrc\n", rc);
+
+     VBoxServiceToolboxPathBufDestroy(&fileList);
+     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/**
  * Entry point for internal toolbox.
  *
  * @return  True if an internal tool was handled, false if not.
@@ -494,17 +630,28 @@ bool VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
 {
     if (argc > 0) /* Do we have at least a main command? */
     {
-        if (   !strcmp(argv[0], "cat")
-            || !strcmp(argv[0], "vbox_cat"))
+        int iCmdIdx = 0;
+#ifdef VBOXSERVICE_TOOLBOX_DEBUG
+        iCmdIdx = 1;
+#endif
+        if (   !strcmp(argv[iCmdIdx], "cat")
+            || !strcmp(argv[iCmdIdx], "vbox_cat"))
         {
             *prcExit = VBoxServiceToolboxCat(argc, argv);
             return true;
         }
 
-        if (   !strcmp(argv[0], "mkdir")
-            || !strcmp(argv[0], "vbox_mkdir"))
+        if (   !strcmp(argv[iCmdIdx], "mkdir")
+            || !strcmp(argv[iCmdIdx], "vbox_mkdir"))
         {
             *prcExit = VBoxServiceToolboxMkDir(argc, argv);
+            return true;
+        }
+
+        if (   !strcmp(argv[iCmdIdx], "stat")
+            || !strcmp(argv[iCmdIdx], "vbox_stat"))
+        {
+            *prcExit = VBoxServiceToolboxStat(argc, argv);
             return true;
         }
     }
