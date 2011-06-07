@@ -211,6 +211,8 @@ typedef struct VUSBDEV
     RTTHREAD            hResetThread;
     /** Pointer to the reset thread arguments. */
     void               *pvResetArgs;
+    /** The reset timer handle. */
+    PTMTIMER            pResetTimer;
 } VUSBDEV;
 
 
