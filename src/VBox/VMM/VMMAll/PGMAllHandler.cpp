@@ -434,14 +434,14 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
     /*
      * Make it an MMIO/Zero page.
      */
-    PGM_PAGE_SET_HCPHYS(pPage, pVM->pgm.s.HCPhysZeroPg);
-    PGM_PAGE_SET_TYPE(pPage, PGMPAGETYPE_MMIO);
-    PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ZERO);
-    PGM_PAGE_SET_PAGEID(pPage, NIL_GMM_PAGEID);
+    PGM_PAGE_SET_HCPHYS(pVM, pPage, pVM->pgm.s.HCPhysZeroPg);
+    PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_MMIO);
+    PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ZERO);
+    PGM_PAGE_SET_PAGEID(pVM, pPage, NIL_GMM_PAGEID);
     PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_ALL);
 
     /* Flush its TLB entry. */
-    PGMPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
+    pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
 
     /*
      * Do accounting for pgmR3PhysRamReset.
@@ -1093,16 +1093,16 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
              */
             LogFlow(("PGMHandlerPhysicalPageAlias: %RGp (%R[pgmpage]) alias for %RGp (%R[pgmpage])\n",
                      GCPhysPage, pPage, GCPhysPageRemap, pPageRemap ));
-            PGM_PAGE_SET_HCPHYS(pPage, PGM_PAGE_GET_HCPHYS(pPageRemap));
-            PGM_PAGE_SET_TYPE(pPage, PGMPAGETYPE_MMIO2_ALIAS_MMIO);
-            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
-            PGM_PAGE_SET_PAGEID(pPage, PGM_PAGE_GET_PAGEID(pPageRemap));
+            PGM_PAGE_SET_HCPHYS(pVM, pPage, PGM_PAGE_GET_HCPHYS(pPageRemap));
+            PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_MMIO2_ALIAS_MMIO);
+            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
+            PGM_PAGE_SET_PAGEID(pVM, pPage, PGM_PAGE_GET_PAGEID(pPageRemap));
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
             pCur->cAliasedPages++;
             Assert(pCur->cAliasedPages <= pCur->cPages);
 
             /* Flush its TLB entry. */
-            PGMPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
+            pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
 
             LogFlow(("PGMHandlerPhysicalPageAlias: => %R[pgmpage]\n", pPage));
             pgmUnlock(pVM);
@@ -1194,20 +1194,20 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
              */
             LogFlow(("PGMHandlerPhysicalPageAlias: %RGp (%R[pgmpage]) alias for %RHp\n",
                      GCPhysPage, pPage, HCPhysPageRemap));
-            PGM_PAGE_SET_HCPHYS(pPage, HCPhysPageRemap);
-            PGM_PAGE_SET_TYPE(pPage, PGMPAGETYPE_MMIO2_ALIAS_MMIO);
-            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+            PGM_PAGE_SET_HCPHYS(pVM, pPage, HCPhysPageRemap);
+            PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_MMIO2_ALIAS_MMIO);
+            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
             /** @todo hack alert
              *  This needs to be done properly. Currently we get away with it as the recompiler directly calls
              *  IOM read and write functions. Access through PGMPhysRead/Write will crash the process.
              */
-            PGM_PAGE_SET_PAGEID(pPage, NIL_GMM_PAGEID);
+            PGM_PAGE_SET_PAGEID(pVM, pPage, NIL_GMM_PAGEID);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
             pCur->cAliasedPages++;
             Assert(pCur->cAliasedPages <= pCur->cPages);
 
             /* Flush its TLB entry. */
-            PGMPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
+            pgmPhysInvalidatePageMapTLBEntry(pVM, GCPhysPage);
 
             LogFlow(("PGMHandlerPhysicalPageAliasHC: => %R[pgmpage]\n", pPage));
             pgmUnlock(pVM);
@@ -1411,7 +1411,8 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)pNode;
     PVM             pVM = (PVM)pvUser;
 
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
+
     /*
      * Iterate the pages and apply the new state.
      */
@@ -1677,7 +1678,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
     State.cErrors = 0;
     State.pVM = pVM;
 
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
 
     /*
      * Check the RAM flags against the handlers.

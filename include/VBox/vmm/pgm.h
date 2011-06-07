@@ -285,7 +285,6 @@ typedef enum PGMMODE
 
 
 
-VMMDECL(bool)           PGMIsLocked(PVM pVM);
 VMMDECL(bool)           PGMIsLockOwner(PVM pVM);
 
 VMMDECL(int)            PGMRegisterStringFormatTypes(void);
@@ -366,8 +365,6 @@ VMMDECL(bool)       PGMPhysIsA20Enabled(PVMCPU pVCpu);
 VMMDECL(bool)       PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(int)        PGMPhysGCPtr2GCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
-VMMDECL(void)       PGMPhysInvalidatePageMapTLB(PVM pVM);
-VMMDECL(void)       PGMPhysInvalidatePageMapTLBEntry(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
 VMMDECL(int)        PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
 VMMDECL(int)        PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
@@ -395,7 +392,7 @@ VMMDECL(uint32_t)   PGMRZDynMapPushAutoSubset(PVMCPU pVCpu);
 VMMDECL(void)       PGMRZDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
 #endif
 
-VMMDECL(void) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages);
+VMMDECL(int)        PGMSetLargePageUsage(PVM pVM, bool fUseLargePages);
 
 /**
  * Query large page usage state

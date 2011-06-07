@@ -281,7 +281,7 @@ static int pgmR3SaveRomRanges(PVM pVM, PSSMHANDLE pSSM)
  */
 static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
 {
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
 
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
         pRom->idSavedState = UINT8_MAX;
@@ -672,7 +672,7 @@ static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
  */
 static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
 {
-    Assert(PGMIsLockOwner(pVM));
+    PGM_LOCK_ASSERT_OWNER(pVM);
 
     for (PPGMMMIO2RANGE pMmio2 = pVM->pgm.s.pMmio2RangesR3; pMmio2; pMmio2 = pMmio2->pNextR3)
         pMmio2->idSavedState = UINT8_MAX;
@@ -1343,7 +1343,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 if (PGM_PAGE_IS_WRITTEN_TO(&pCur->aPages[iPage]))
                                 {
                                     Assert(paLSPages[iPage].fWriteMonitored);
-                                    PGM_PAGE_CLEAR_WRITTEN_TO(&pCur->aPages[iPage]);
+                                    PGM_PAGE_CLEAR_WRITTEN_TO(pVM, &pCur->aPages[iPage]);
                                     Assert(pVM->pgm.s.cWrittenToPages > 0);
                                     pVM->pgm.s.cWrittenToPages--;
                                 }
@@ -1471,13 +1471,13 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                             if (RT_UNLIKELY(PGM_PAGE_GET_STATE(&pCur->aPages[iPage]) == PGM_PAGE_STATE_WRITE_MONITORED))
                             {
                                 AssertMsgFailed(("%R[pgmpage]", &pCur->aPages[iPage])); /* shouldn't happen. */
-                                PGM_PAGE_SET_STATE(&pCur->aPages[iPage], PGM_PAGE_STATE_ALLOCATED);
+                                PGM_PAGE_SET_STATE(pVM, &pCur->aPages[iPage], PGM_PAGE_STATE_ALLOCATED);
                                 Assert(pVM->pgm.s.cMonitoredPages > 0);
                                 pVM->pgm.s.cMonitoredPages--;
                             }
                             if (PGM_PAGE_IS_WRITTEN_TO(&pCur->aPages[iPage]))
                             {
-                                PGM_PAGE_CLEAR_WRITTEN_TO(&pCur->aPages[iPage]);
+                                PGM_PAGE_CLEAR_WRITTEN_TO(pVM, &pCur->aPages[iPage]);
                                 Assert(pVM->pgm.s.cWrittenToPages > 0);
                                 pVM->pgm.s.cWrittenToPages--;
                             }
@@ -1638,7 +1638,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                                         SSMR3PutGCPhys(pSSM, GCPhys);
                                     }
                                     rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
-                                    PGM_PAGE_CLEAR_WRITTEN_TO(pCurPage);
+                                    PGM_PAGE_CLEAR_WRITTEN_TO(pVM, pCurPage);
                                     PGM_PAGE_CLEAR_FT_DIRTY(pCurPage);
                                 }
                                 /* else nothing changed, so skip it. */
@@ -1767,10 +1767,10 @@ static void pgmR3DoneRamPages(PVM pVM)
                 while (iPage--)
                 {
                     PPGMPAGE pPage = &pCur->aPages[iPage];
-                    PGM_PAGE_CLEAR_WRITTEN_TO(pPage);
+                    PGM_PAGE_CLEAR_WRITTEN_TO(pVM, pPage);
                     if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED)
                     {
-                        PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+                        PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
                         cMonitoredPages++;
                     }
                 }
@@ -2666,7 +2666,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             Assert(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM);
                             if (uVersion == PGM_SAVED_STATE_VERSION_BALLOON_BROKEN)
                                 break;
-                            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ZERO);
+                            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ZERO);
                             break;
                         }
 
@@ -2713,7 +2713,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             AssertRCReturn(rc, rc);
                         }
                         Assert(PGM_PAGE_IS_ZERO(pPage));
-                        PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_BALLOONED);
+                        PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_BALLOONED);
                         break;
                     }
 

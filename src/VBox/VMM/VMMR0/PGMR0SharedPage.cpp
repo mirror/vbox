@@ -52,7 +52,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
 
     Log(("PGMR0SharedModuleCheck: check %s %s base=%RGv size=%x\n", pModule->szName, pModule->szVersion, pModule->Core.Key, pModule->cbModule));
 
-    Assert(PGMIsLockOwner(pVM));    /* This cannot fail as we grab the lock in pgmR3SharedModuleRegRendezvous before calling into ring-0. */
+    PGM_LOCK_ASSERT_OWNER(pVM);     /* This cannot fail as we grab the lock in pgmR3SharedModuleRegRendezvous before calling into ring-0. */
 
     /* Check every region of the shared module. */
     for (unsigned idxRegion = 0; idxRegion < cRegions; idxRegion++)
@@ -103,18 +103,18 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
                                     fFlushTLBs |= fFlush;
 
                                 /* Update the physical address and page id now. */
-                                PGM_PAGE_SET_HCPHYS(pPage, PageDesc.HCPhys);
-                                PGM_PAGE_SET_PAGEID(pPage, PageDesc.uHCPhysPageId);
+                                PGM_PAGE_SET_HCPHYS(pVM, pPage, PageDesc.HCPhys);
+                                PGM_PAGE_SET_PAGEID(pVM, pPage, PageDesc.uHCPhysPageId);
 
                                 /* Invalidate page map TLB entry for this page too. */
-                                PGMPhysInvalidatePageMapTLBEntry(pVM, PageDesc.GCPhys);
+                                pgmPhysInvalidatePageMapTLBEntry(pVM, PageDesc.GCPhys);
                                 pVM->pgm.s.cReusedSharedPages++;
                             }
                             /* else nothing changed (== this page is now a shared page), so no need to flush anything. */
 
                             pVM->pgm.s.cSharedPages++;
                             pVM->pgm.s.cPrivatePages--;
-                            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_SHARED);
+                            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_SHARED);
                         }
                     }
                     else
