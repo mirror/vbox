@@ -305,11 +305,11 @@ UINewHDWizardPageFormat::UINewHDWizardPageFormat()
 QString UINewHDWizardPageFormat::fullFormatName(const QString &strBaseFormatName)
 {
     if (strBaseFormatName == "VDI")
-        return tr("&VDI (VirtualBox hard disk file)");
-    else if (strBaseFormatName == "VHD")
-        return tr("V&HD");
+        return tr("&VDI (VirtualBox Disk Image)");
     else if (strBaseFormatName == "VMDK")
-        return tr("V&MDK");
+        return tr("V&MDK (Virtual Machine Disk)");
+    else if (strBaseFormatName == "VHD")
+        return tr("V&HD (Virtual Hard Disk)");
     return strBaseFormatName;
 }
 
