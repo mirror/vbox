@@ -484,7 +484,7 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
         case XFocusOut:
         case XFocusIn:
         {
-            if (uisession()->isRunning())
+            if (isSessionRunning())
             {
                 if (VBoxGlobal::qtRTVersion() < ((4 << 16) | (5 << 8) | 0))
                 {
@@ -493,8 +493,8 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
                         /* Capture keyboard by chosen view number: */
                         captureKeyboard(uScreenId);
                         /* Reset the single-time disable capture flag: */
-                        if (uisession()->isAutoCaptureDisabled())
-                            uisession()->setAutoCaptureDisabled(false);
+                        if (isAutoCaptureDisabled())
+                            setAutoCaptureDisabled(false);
                     }
                     else
                     {
@@ -607,19 +607,19 @@ void UIKeyboardHandler::sltMachineStateChanged()
             QList<ulong> theListOfViewIds = m_views.keys();
             for (int i = 0; i < theListOfViewIds.size(); ++i)
             {
-                if (m_views[theListOfViewIds[i]]->hasFocus())
+                if (viewHasFocus(theListOfViewIds[i]))
                 {
                     /* Capture keyboard: */
 #ifdef Q_WS_WIN
-                    if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture() &&
+                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
                         GetAncestor(m_views[theListOfViewIds[i]]->winId(), GA_ROOT) == GetForegroundWindow())
 #else /* Q_WS_WIN */
-                    if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture())
+                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
 #endif /* !Q_WS_WIN */
                         captureKeyboard(theListOfViewIds[i]);
                     /* Reset the single-time disable capture flag: */
-                    if (uisession()->isAutoCaptureDisabled())
-                        uisession()->setAutoCaptureDisabled(false);
+                    if (isAutoCaptureDisabled())
+                        setAutoCaptureDisabled(false);
                     break;
                 }
             }
@@ -826,24 +826,24 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
         switch (pEvent->type())
         {
             case QEvent::FocusIn:
-                if (uisession()->isRunning())
+                if (isSessionRunning())
                 {
                     /* Capture keyboard: */
 #ifdef Q_WS_WIN
-                    if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture() &&
+                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
                         GetAncestor(pWatchedView->winId(), GA_ROOT) == GetForegroundWindow())
 #else /* Q_WS_WIN */
-                    if (!uisession()->isAutoCaptureDisabled() && m_globalSettings.autoCapture())
+                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
 #endif /* !Q_WS_WIN */
                         captureKeyboard(uScreenId);
                     /* Reset the single-time disable capture flag: */
-                    if (uisession()->isAutoCaptureDisabled())
-                        uisession()->setAutoCaptureDisabled(false);
+                    if (isAutoCaptureDisabled())
+                        setAutoCaptureDisabled(false);
                 }
                 break;
             case QEvent::FocusOut:
                 /* Release keyboard: */
-                if (uisession()->isRunning())
+                if (isSessionRunning())
                     releaseKeyboard();
                 /* And all pressed keys: */
                 releaseAllPressedKeys(true);
@@ -1127,7 +1127,7 @@ bool UIKeyboardHandler::keyEventCADHandled(uint8_t uScan)
         /* Use the C-A-D combination as a last resort to get the keyboard and mouse back
          * to the host when the user forgets the Host Key. Note that it's always possible
          * to send C-A-D to the guest using the Host+Del combination: */
-        if (uisession()->isRunning() && m_fIsKeyboardCaptured)
+        if (isSessionRunning() && m_fIsKeyboardCaptured)
         {
             releaseKeyboard();
             if (!uisession()->isMouseSupportsAbsolute() || !uisession()->isMouseIntegrated())
@@ -1206,7 +1206,7 @@ bool UIKeyboardHandler::keyEventHostComboHandled(int iKey, wchar_t *pUniKey, boo
             m_bIsHostComboPressed = true;
             m_bIsHostComboAlone = true;
             m_bIsHostComboProcessed = false;
-            if (uisession()->isRunning())
+            if (isSessionRunning())
                 saveKeyStates();
         }
     }
@@ -1240,7 +1240,7 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
         /* Capturing/releasing keyboard/mouse if necessary: */
         if (m_bIsHostComboAlone && !m_bIsHostComboProcessed)
         {
-            if (uisession()->isRunning())
+            if (isSessionRunning())
             {
                 bool ok = true;
                 if (!m_fIsKeyboardCaptured)
@@ -1248,11 +1248,11 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                     /* Temporarily disable auto-capture that will take place after
                      * this dialog is dismissed because the capture state is to be
                      * defined by the dialog result itself: */
-                    uisession()->setAutoCaptureDisabled(true);
+                    setAutoCaptureDisabled(true);
                     bool fIsAutoConfirmed = false;
                     ok = vboxProblem().confirmInputCapture(&fIsAutoConfirmed);
                     if (fIsAutoConfirmed)
-                        uisession()->setAutoCaptureDisabled(false);
+                        setAutoCaptureDisabled(false);
                     /* Otherwise, the disable flag will be reset in the next
                      * machine-view's focus-in event (since may happen asynchronously
                      * on some platforms, after we return from this code): */
@@ -1279,7 +1279,7 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                 }
             }
         }
-        if (uisession()->isRunning())
+        if (isSessionRunning())
             sendChangedKeyStates();
     }
 }
@@ -1612,6 +1612,31 @@ void UIKeyboardHandler::sendChangedKeyStates()
     }
 }
 
+bool UIKeyboardHandler::isAutoCaptureDisabled()
+{
+    return uisession()->isAutoCaptureDisabled();
+}
+
+void UIKeyboardHandler::setAutoCaptureDisabled(bool fIsAutoCaptureDisabled)
+{
+    uisession()->setAutoCaptureDisabled(fIsAutoCaptureDisabled);
+}
+
+bool UIKeyboardHandler::autoCaptureSetGlobally()
+{
+    return m_globalSettings.autoCapture();
+}
+
+bool UIKeyboardHandler::viewHasFocus(ulong uScreenId)
+{
+    return m_views[uScreenId]->hasFocus();
+}
+
+bool UIKeyboardHandler::isSessionRunning()
+{
+    return uisession()->isRunning();
+}
+
 UIMachineWindow* UIKeyboardHandler::isItListenedWindow(QObject *pWatchedObject) const
 {
     UIMachineWindow *pResultWindow = 0;
@@ -1645,4 +1670,3 @@ UIMachineView* UIKeyboardHandler::isItListenedView(QObject *pWatchedObject) cons
     }
     return pResultView;
 }
-
