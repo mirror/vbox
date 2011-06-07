@@ -17,6 +17,9 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+# Constant, from the USB specifications
+usb_class_hub=9
+
 do_remove=0
 case "$1" in "--remove")
   do_remove=1; shift;;
@@ -25,22 +28,21 @@ bus=`expr "$2" '/' 128 + 1`
 device=`expr "$2" '%' 128 + 1`
 class="$3"
 group="$4"
-if test "$class" -eq 9; then
-  exit 0
-fi
 devdir="`printf "/dev/vboxusb/%.3d" $bus`"
 devpath="`printf "/dev/vboxusb/%.3d/%.3d" $bus $device`"
-if test "$do_remove" -eq 0; then
-  if test -z "$group"; then
-    group="vboxusers"
-  fi
+case "$do_remove" in
+  0)
+  case "$class" in "$usb_class_hub") exit 0;; esac
+  case "$group" in "") group="vboxusers";; esac
   mkdir /dev/vboxusb -m 0750 2>/dev/null
   chown root:$group /dev/vboxusb 2>/dev/null
   mkdir "$devdir" -m 0750 2>/dev/null
   chown root:$group "$devdir" 2>/dev/null
   mknod "$devpath" c $1 $2 -m 0660 2>/dev/null
   chown root:$group "$devpath" 2>/dev/null
-else
+  ;;
+  1)
   rm -f "$devpath"
-fi
+  ;;
+esac
 
