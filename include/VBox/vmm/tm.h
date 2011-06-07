@@ -156,7 +156,7 @@ typedef DECLCALLBACK(void) FNTMTIMERDEV(PPDMDEVINS pDevIns, PTMTIMER pTimer, voi
 typedef FNTMTIMERDEV *PFNTMTIMERDEV;
 
 /**
- * Device timer callback function.
+ * USB device timer callback function.
  *
  * @param   pUsbIns         The USB device instance the timer is associated
  *                          with.
@@ -250,11 +250,13 @@ VMM_INT_DECL(int)       TMR3Term(PVM pVM);
 VMM_INT_DECL(void)      TMR3Reset(PVM pVM);
 VMM_INT_DECL(int)       TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
 VMM_INT_DECL(int)       TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer);
+VMM_INT_DECL(int)       TMR3TimerCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMM_INT_DECL(int)       TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMMR3DECL(int)          TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERR3 ppTimer);
 VMMR3DECL(PTMTIMERR3)   TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
 VMMR3DECL(int)          TMR3TimerDestroy(PTMTIMER pTimer);
 VMM_INT_DECL(int)       TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
+VMM_INT_DECL(int)       TMR3TimerDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
 VMM_INT_DECL(int)       TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
 VMMR3DECL(int)          TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
 VMMR3DECL(int)          TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
