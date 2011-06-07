@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -882,28 +882,12 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                 break;
 
             /*
-             * The guest notifies the host that some output at stdout/stderr is available.
+             * For all other regular commands we call our notifyHost
+             * function. If the current command does not support notifications
+             * notifyHost will return VERR_NOT_SUPPORTED.
              */
-            case GUEST_EXEC_SEND_OUTPUT:
-                LogFlowFunc(("GUEST_EXEC_SEND_OUTPUT\n"));
-                rc = notifyHost(eFunction, cParms, paParms);
-                break;
-
-            /*
-             * The guest notifies the host of the executed process status.
-             */
-            case GUEST_EXEC_SEND_STATUS:
-                LogFlowFunc(("GUEST_EXEC_SEND_STATUS\n"));
-                rc = notifyHost(eFunction, cParms, paParms);
-                break;
-
-            case GUEST_EXEC_SEND_INPUT_STATUS:
-                LogFlowFunc(("GUEST_EXEC_SEND_INPUT_STATUS\n"));
-                rc = notifyHost(eFunction, cParms, paParms);
-                break;
-
             default:
-                rc = VERR_NOT_SUPPORTED;
+                rc = notifyHost(eFunction, cParms, paParms);
                 break;
         }
         if (rc != VINF_HGCM_ASYNC_EXECUTE)
@@ -927,40 +911,12 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
  */
 int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_NOT_SUPPORTED;
     LogFlowFunc(("fn = %d, cParms = %d, pparms = %d\n",
                  eFunction, cParms, paParms));
     try
     {
-        switch (eFunction)
-        {
-            case HOST_CANCEL_PENDING_WAITS:
-                LogFlowFunc(("HOST_CANCEL_PENDING_WAITS\n"));
-                rc = processHostCmd(eFunction, cParms, paParms);
-                break;
-
-            /* The host wants to execute something. */
-            case HOST_EXEC_CMD:
-                LogFlowFunc(("HOST_EXEC_CMD\n"));
-                rc = processHostCmd(eFunction, cParms, paParms);
-                break;
-
-            /* The host wants to send something to the
-             * started process' stdin pipe. */
-            case HOST_EXEC_SET_INPUT:
-                LogFlowFunc(("HOST_EXEC_SET_INPUT\n"));
-                rc = processHostCmd(eFunction, cParms, paParms);
-                break;
-
-            case HOST_EXEC_GET_OUTPUT:
-                LogFlowFunc(("HOST_EXEC_GET_OUTPUT\n"));
-                rc = processHostCmd(eFunction, cParms, paParms);
-                break;
-
-            default:
-                rc = VERR_NOT_SUPPORTED;
-                break;
-        }
+        rc = processHostCmd(eFunction, cParms, paParms);
     }
     catch (std::bad_alloc)
     {
