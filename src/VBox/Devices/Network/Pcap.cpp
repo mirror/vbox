@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,7 +58,6 @@ struct pcaprec_hdr_init
 {
     uint32_t            u32Magic;
     struct pcap_hdr     pcap;
-    struct pcaprec_hdr  rec0;
 };
 
 
@@ -69,11 +68,9 @@ static pcaprec_hdr_init const s_Hdr =
 {
     PCAP_MAGIC,
     { 2, 4, 0, 0, 0xffff, 1 },
-    /* force ethereal to start at 0.000000. */
-    { 0, 1, 0, 60 }
-
 };
 
+static const char s_szDummyData[] = { 0, 0, 0, 0 };
 
 /**
  * Internal helper.
@@ -108,9 +105,9 @@ static void pcapUpdateHeader(struct pcaprec_hdr *pHdr, size_t cbFrame, size_t cb
  */
 int PcapStreamHdr(PRTSTREAM pStream, uint64_t StartNanoTS)
 {
-    pcaprec_hdr_init Hdr = s_Hdr;
-    pcapCalcHeader(&Hdr.rec0, StartNanoTS, 60, 0);
-    return RTStrmWrite(pStream, &Hdr, sizeof(Hdr));
+    int rc1 = RTStrmWrite(pStream, &s_Hdr, sizeof(s_Hdr));
+    int rc2 = PcapStreamFrame(pStream, StartNanoTS, s_szDummyData, 60, sizeof(s_szDummyData));
+    return RT_SUCCESS(rc1) ? rc2 : rc1;
 }
 
 
@@ -188,9 +185,9 @@ int PcapStreamGsoFrame(PRTSTREAM pStream, uint64_t StartNanoTS, PCPDMNETWORKGSO 
  */
 int PcapFileHdr(RTFILE File, uint64_t StartNanoTS)
 {
-    pcaprec_hdr_init Hdr = s_Hdr;
-    pcapCalcHeader(&Hdr.rec0, StartNanoTS, 60, 0);
-    return RTFileWrite(File, &Hdr, sizeof(Hdr), NULL);
+    int rc1 = RTFileWrite(File, &s_Hdr, sizeof(s_Hdr), NULL);
+    int rc2 = PcapFileFrame(File, StartNanoTS, s_szDummyData, 60, sizeof(s_szDummyData));
+    return RT_SUCCESS(rc1) ? rc2 : rc1;
 }
 
 
