@@ -2819,7 +2819,7 @@ VMMDECL(int) PGMPhysSimpleWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *p
 VMMDECL(int) PGMPhysSimpleReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    VMCPU_ASSERT_EMT(pVCpu);
+    VMCPU_ASSERT_EMT_OR_GURU(pVCpu);
 
     /*
      * Treat the first page as a special case.
