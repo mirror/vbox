@@ -627,6 +627,40 @@ typedef struct VMCPU
               (rc))
 #endif
 
+/** @def VMCPU_ASSERT_EMT_OR_GURU
+ * Asserts that the current thread IS the emulation thread (EMT) of the
+ * specified virtual CPU.
+ */
+#if defined(IN_RC) || defined(IN_RING0)
+# define VMCPU_ASSERT_EMT_OR_GURU(pVCpu)    Assert(   VMCPU_IS_EMT(pVCpu) \
+                                                   || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_GURU_MEDITATION \
+                                                   || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_GURU_MEDITATION_LS )
+#else
+# define VMCPU_ASSERT_EMT_OR_GURU(pVCpu) \
+    AssertMsg(   VMCPU_IS_EMT(pVCpu) \
+              || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_GURU_MEDITATION \
+              || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_GURU_MEDITATION_LS, \
+              ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
+               RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu))
+#endif
+
+/** @def VMCPU_ASSERT_EMT_OR_RESET
+ * Asserts that the current thread IS the emulation thread (EMT) of the
+ * specified virtual CPU.
+ */
+#if defined(IN_RC) || defined(IN_RING0)
+# define VMCPU_ASSERT_EMT_OR_RESET(pVCpu)   Assert(   VMCPU_IS_EMT(pVCpu) \
+                                                   || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RESETTING \
+                                                   || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RESETTING_LS )
+#else
+# define VMCPU_ASSERT_EMT_OR_RESET(pVCpu) \
+    AssertMsg(   VMCPU_IS_EMT(pVCpu) \
+              || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RESETTING \
+              || pVCpu->CTX_SUFF(pVM)->enmVMState == VMSTATE_RESETTING_LS, \
+              ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%#x\n", \
+               RTThreadNativeSelf(), (pVCpu)->hNativeThread, (pVCpu)->idCpu))
+#endif
+
 /** @def VM_ASSERT_EMT0
  * Asserts that the current thread IS emulation thread \#0 (EMT0).
  */

@@ -902,6 +902,15 @@ DECLINLINE(void) PDMUsbHlpMMHeapFree(PPDMUSBINS pUsbIns, void *pv)
     NOREF(pUsbIns);
     MMR3HeapFree(pv);
 }
+
+/**
+ * @copydoc PDMUSBHLP::pfnTMTimerCreate
+ */
+DECLINLINE(int) PDMUsbHlpTMTimerCreate(PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback, void *pvUser,
+                                       uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
+{
+    return pUsbIns->pHlpR3->pfnTMTimerCreate(pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
+}
 #endif /* IN_RING3 */
 
 
