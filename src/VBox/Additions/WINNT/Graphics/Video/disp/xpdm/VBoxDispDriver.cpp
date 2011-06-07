@@ -942,7 +942,7 @@ ULONG APIENTRY VBoxDispDrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvI
                 &&  pvIn
                 &&  lpRgnData->rdh.dwSize == sizeof(RGNDATAHEADER)
                 &&  lpRgnData->rdh.iType  == RDH_RECTANGLES
-                &&  cjIn == lpRgnData->rdh.nCount * sizeof(RECT) + sizeof(RGNDATAHEADER))
+                &&  cjIn == ((uint64_t)lpRgnData->rdh.nCount) * sizeof(RECT) + sizeof(RGNDATAHEADER))
             {
                 DWORD   i;
                 PRTRECT pRTRect;
