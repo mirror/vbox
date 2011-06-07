@@ -490,11 +490,13 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
                 {
                     if (pEvent->type == XFocusIn)
                     {
+#if 0
                         /* Capture keyboard by chosen view number: */
                         captureKeyboard(uScreenId);
                         /* Reset the single-time disable capture flag: */
                         if (isAutoCaptureDisabled())
                             setAutoCaptureDisabled(false);
+#endif
                     }
                     else
                     {
@@ -601,6 +603,7 @@ void UIKeyboardHandler::sltMachineStateChanged()
             releaseAllPressedKeys(false /* release host-key? */);
             break;
         }
+#if 0
         case KMachineState_Running:
         {
             /* Capture the keyboard by the first focused view: */
@@ -625,6 +628,7 @@ void UIKeyboardHandler::sltMachineStateChanged()
             }
             break;
         }
+#endif
         default:
             break;
     }
@@ -825,6 +829,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
         /* Handle view events: */
         switch (pEvent->type())
         {
+#if 0
             case QEvent::FocusIn:
                 if (isSessionRunning())
                 {
@@ -841,6 +846,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                         setAutoCaptureDisabled(false);
                 }
                 break;
+#endif
             case QEvent::FocusOut:
                 /* Release keyboard: */
                 if (isSessionRunning())
@@ -1140,7 +1146,7 @@ bool UIKeyboardHandler::keyEventCADHandled(uint8_t uScan)
 
 /**
  * Handle a non-special (C-A-D, pause, print) key press or release
- * @returns true if handling should stop here, false otherwise
+ * @returns true if handling should stop here (spurious event), false otherwise
  */
 bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags, LONG *pCodes, uint *puCodesCount)
 {
@@ -1189,6 +1195,23 @@ bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags
     else if (!allHostComboKeys.contains(iKey))
         return true;
     return false;
+}
+
+/** Capture the keyboard if a non-modifier key was pressed. */
+void UIKeyboardHandler::keyEventHandleCapturing(uint8_t uScan, int fFlags,
+                                                ulong uScreenId)
+{
+    if (   (fFlags & KeyPressed)
+        && uScan != 0x1d /* ctrl */ && uScan != 0x2a /* left shift */
+        && uScan != 0x36 /* right shift */ && uScan != 0x38 /* alt */
+        && uScan != 0x5b /* left win */ && uScan != 0x5c /* right win */)
+    {
+        /* Capture keyboard by chosen view number: */
+        captureKeyboard(uScreenId);
+        /* Reset the single-time disable capture flag: */
+        if (isAutoCaptureDisabled())
+            setAutoCaptureDisabled(false);
+    }
 }
 
 /**
@@ -1392,6 +1415,9 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
             if (keyEventHandleNormal(iKey, uScan, fFlags, pCodes, &uCodesCount))
                 return true;
     }
+    
+    /* This must come before host key handling */
+    keyEventHandleCapturing(uScan, fFlags, uScreenId);
 
     /* Process the host-combo funtionality: */
     if (fFlags & KeyPressed)
