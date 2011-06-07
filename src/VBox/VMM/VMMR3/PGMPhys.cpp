@@ -2813,7 +2813,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
     pCur->fMapped = false;
 
     /* Force a PGM pool flush as guest ram references have been changed. */
-    /** todo; not entirely SMP safe; assuming for now the guest takes care of this internally (not touch mapped mmio while changing the mapping). */
+    /** @todo not entirely SMP safe; assuming for now the guest takes care
+     *  of this internally (not touch mapped mmio while changing the
+     *  mapping). */
     PVMCPU pVCpu = VMMGetCpu(pVM);
     pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
@@ -3684,14 +3686,13 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
 }
 
 #ifdef PGM_WITH_LARGE_ADDRESS_SPACE_ON_32_BIT_HOST
+
 /**
  * Tree enumeration callback for dealing with age rollover.
  * It will perform a simple compression of the current age.
  */
 static DECLCALLBACK(int) pgmR3PhysChunkAgeingRolloverCallback(PAVLU32NODECORE pNode, void *pvUser)
 {
-    PGM_LOCK_ASSERT_OWNER(pVM);
-
     /* Age compression - ASSUMES iNow == 4. */
     PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)pNode;
     if (pChunk->iAge >= UINT32_C(0xffffff00))
@@ -3936,6 +3937,7 @@ void pgmR3PhysUnmapChunk(PVM pVM)
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysUnmapChunkRendezvous, NULL);
     AssertRC(rc);
 }
+
 #endif /* PGM_WITH_LARGE_ADDRESS_SPACE_ON_32_BIT_HOST */
 
 /**
