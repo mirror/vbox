@@ -57,8 +57,6 @@ typedef struct vusb_reset_args
     PFNVUSBRESETDONE    pfnDone;
     /** User argument to pfnDone. */
     void               *pvUser;
-    /** The timer used to notify EMT. */
-    PTMTIMER            pTimer;
 } VUSBRESETARGS, *PVUSBRESETARGS;
 
 
@@ -1167,8 +1165,6 @@ void vusbDevDestroy(PVUSBDEV pDev)
         {
             PVUSBRESETARGS pArgs = (PVUSBRESETARGS)pDev->pvResetArgs;
             Assert(pArgs->pDev == pDev);
-            TMR3TimerDestroy(pArgs->pTimer);
-            pArgs->pTimer = NULL;
             RTMemTmpFree(pArgs);
 
             pDev->hResetThread = NIL_RTTHREAD;
@@ -1184,6 +1180,7 @@ void vusbDevDestroy(PVUSBDEV pDev)
         vusbDevDetach(pDev);
     RTMemFree(pDev->paIfStates);
     pDev->enmState = VUSB_DEVICE_STATE_DESTROYED;
+    TMR3TimerDestroy(pDev->pResetTimer);
 }
 
 
@@ -1251,13 +1248,16 @@ static void vusbDevResetDone(PVUSBDEV pDev, int rc, PFNVUSBRESETDONE pfnDone, vo
 /**
  * Timer callback for doing reset completion.
  *
+ * @param   pUsbIns     The USB device instance.
+ * @param   pTimer      The timer instance.
+ * @param   pvUser      The VUSB device data.
  * @thread EMT
  */
-static DECLCALLBACK(void) vusbDevResetDoneTimer(void *pvUser)
+static DECLCALLBACK(void) vusbDevResetDoneTimer(PPDMUSBINS pUsbIns, PTMTIMER pTimer, void *pvUser)
 {
-    PVUSBRESETARGS pArgs = (PVUSBRESETARGS)pvUser;
-    PVUSBDEV pDev = pArgs->pDev;
-    Assert(pDev->pvResetArgs == pArgs);
+    PVUSBDEV        pDev  = (PVUSBDEV)pvUser;
+    PVUSBRESETARGS  pArgs = (PVUSBRESETARGS)pDev->pvResetArgs;
+    AssertPtr(pArgs); Assert(pArgs->pDev == pDev); Assert(pDev->pUsbIns == pUsbIns);
 
     /*
      * Release the thread and update the device structure.
@@ -1265,14 +1265,13 @@ static DECLCALLBACK(void) vusbDevResetDoneTimer(void *pvUser)
     int rc = RTThreadWait(pDev->hResetThread, 2, NULL);
     AssertRC(rc);
     pDev->hResetThread = NIL_RTTHREAD;
-    pDev->pvResetArgs = NULL;
+    pDev->pvResetArgs  = NULL;
 
     /*
      * Reset-done processing and cleanup.
      */
     vusbDevResetDone(pArgs->pDev, pArgs->rc, pArgs->pfnDone, pArgs->pvUser);
 
-    TMR3TimerDestroy(pArgs->pTimer);
     RTMemTmpFree(pArgs);
 }
 
@@ -1290,22 +1289,23 @@ static DECLCALLBACK(void) vusbDevResetDoneTimer(void *pvUser)
 static DECLCALLBACK(int) vusbDevResetThread(RTTHREAD Thread, void *pvUser)
 {
     PVUSBRESETARGS  pArgs = (PVUSBRESETARGS)pvUser;
+    PVUSBDEV        pDev  = pArgs->pDev;
     LogFlow(("vusb: reset thread started\n"));
 
     /*
      * Tell EMT that we're in flow and then perform the reset.
      */
-    uint64_t u64EndTS = TMTimerGet(pArgs->pTimer) + TMTimerFromMilli(pArgs->pTimer, 10);
+    uint64_t u64EndTS = TMTimerGet(pDev->pResetTimer) + TMTimerFromMilli(pDev->pResetTimer, 10);
     RTThreadUserSignal(Thread);
 
-    int rc = pArgs->rc = vusbDevResetWorker(pArgs->pDev, pArgs->fResetOnLinux);
+    int rc = pArgs->rc = vusbDevResetWorker(pDev, pArgs->fResetOnLinux);
 
     /*
      * We use a timer to communicate the result back to EMT.
      * This avoids suspend + poweroff issues, and it should give
      * us more accurate scheduling than making this thread sleep.
      */
-    int rc2 = TMTimerSet(pArgs->pTimer, u64EndTS);
+    int rc2 = TMTimerSet(pDev->pResetTimer, u64EndTS);
     AssertReleaseRC(rc2);
 
     LogFlow(("vusb: reset thread exiting, rc=%Rrc\n", rc));
@@ -1317,7 +1317,7 @@ static DECLCALLBACK(int) vusbDevResetThread(RTTHREAD Thread, void *pvUser)
  * Resets a device.
  *
  * Since a device reset shall take at least 10ms from the guest point of view,
- * it must be performed asynchronously. We create a thread which performs this
+ * it must be performed asynchronously.  We create a thread which performs this
  * operation and ensures it will take at least 10ms.
  *
  * At times - like init - a synchronous reset is required, this can be done
@@ -1370,27 +1370,22 @@ DECLCALLBACK(int) vusbDevReset(PVUSBIDEVICE pDevice, bool fResetOnLinux, PFNVUSB
         PVUSBRESETARGS pArgs = (PVUSBRESETARGS)RTMemTmpAlloc(sizeof(*pArgs));
         if (pArgs)
         {
-            pArgs->pTimer = TMR3TimerCreateExternal(pVM, TMCLOCK_VIRTUAL, vusbDevResetDoneTimer, pArgs, "USB Device Reset Timer.");
-            if (pArgs->pTimer)
+            pDev->pvResetArgs = pArgs;
+            pArgs->pDev = pDev;
+            pArgs->fResetOnLinux = fResetOnLinux;
+            pArgs->rc = VERR_INTERNAL_ERROR;
+            pArgs->pfnDone = pfnDone;
+            pArgs->pvUser = pvUser;
+            int rc = RTThreadCreate(&pDev->hResetThread, vusbDevResetThread, pArgs, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "USBRESET");
+            if (RT_SUCCESS(rc))
             {
-                pDev->pvResetArgs = pArgs;
-                pArgs->pDev = pDev;
-                pArgs->fResetOnLinux = fResetOnLinux;
-                pArgs->rc = VERR_INTERNAL_ERROR;
-                pArgs->pfnDone = pfnDone;
-                pArgs->pvUser = pvUser;
-                int rc = RTThreadCreate(&pDev->hResetThread, vusbDevResetThread, pArgs, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "USBRESET");
-                if (RT_SUCCESS(rc))
-                {
-                    /* give the thread a chance to get started. */
-                    RTThreadUserWait(pDev->hResetThread, 2);
-                    return rc;
-                }
-
-                pDev->pvResetArgs = NULL;
-                pDev->hResetThread = NIL_RTTHREAD;
-                TMR3TimerDestroy(pArgs->pTimer);
+                /* give the thread a chance to get started. */
+                RTThreadUserWait(pDev->hResetThread, 2);
+                return rc;
             }
+
+            pDev->pvResetArgs  = NULL;
+            pDev->hResetThread = NIL_RTTHREAD;
             RTMemTmpFree(pArgs);
         }
         /* fall back to sync on failure */
@@ -1553,6 +1548,14 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
     memset(&pDev->aPipes[0], 0, sizeof(pDev->aPipes));
     pDev->hResetThread = NIL_RTTHREAD;
     pDev->pvResetArgs = NULL;
+    pDev->pResetTimer = NULL;
+
+    /*
+     * Create the reset timer.
+     */
+    int rc = PDMUsbHlpTMTimerCreate(pUsbIns, TMCLOCK_VIRTUAL, vusbDevResetDoneTimer, pDev, 0 /*fFlags*/,
+                                    "USB Device Reset Timer",  &pDev->pResetTimer);
+    AssertRCReturn(rc, rc);
 
     /*
      * Get the descriptor cache from the device. (shall cannot fail)
