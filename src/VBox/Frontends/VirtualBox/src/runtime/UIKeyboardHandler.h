@@ -136,6 +136,11 @@ protected:
     void fixModifierState(LONG *piCodes, uint *puCount);
     void saveKeyStates();
     void sendChangedKeyStates();
+    bool isAutoCaptureDisabled();
+    void setAutoCaptureDisabled(bool fIsAutoCaptureDisabled);
+    bool autoCaptureSetGlobally();
+    bool viewHasFocus(ulong uScreenId);
+    bool isSessionRunning();
 
     UIMachineWindow* isItListenedWindow(QObject *pWatchedObject) const;
     UIMachineView* isItListenedView(QObject *pWatchedObject) const;
