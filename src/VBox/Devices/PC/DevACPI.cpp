@@ -1924,8 +1924,8 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
         do
         {
             u64Seen = ASMAtomicReadU64(&s->u64PmTimerLastSeen);
-            if (u64Now < s->u64PmTimerLastSeen)
-                u64Now = s->u64PmTimerLastSeen + 1;
+            if (u64Now < u64Seen)
+                u64Now = u64Seen + 1;
         } while (!ASMAtomicCmpXchgU64(&s->u64PmTimerLastSeen, u64Now, u64Seen));
 
         uint64_t u64Elapsed = u64Now - s->u64PmTimerInitial;
