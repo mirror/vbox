@@ -489,7 +489,7 @@
     </const>
 
     <const name="Future"     value="99999">
-      <desc>Settings version greater than "1.11", written by a future VirtualBox version.</desc>
+      <desc>Settings version greater than "1.12", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
@@ -2391,7 +2391,7 @@
           </li>
 
           <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for each
-              virtual system (machine) to override the suggestions made by the interpret() routine.
+              virtual system (machine) to override the suggestions made by the <link to="#interpret" /> routine.
           </li>
 
           <li>Finally, call <link to="#importMachines" /> to  create virtual machines in
@@ -2414,7 +2414,7 @@
             </li>
 
             <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for each
-                virtual system (machine) to override the suggestions made by the export() routine.
+                virtual system (machine) to override the suggestions made by the <link to="IMachine::export"/> routine.
             </li>
 
             <li>Finally, call <link to="#write" /> with a path specification to have the OVF
@@ -2865,8 +2865,8 @@
         and SoundCard.
 
         For the "vbox" and "extra configuration" values, if you pass in the same arrays
-        as returned in the aVBoxValues and aExtraConfigValues arrays from getDescription(),
-        the configuration remains unchanged. Please see the documentation for getDescription()
+        as returned in the aVBoxValues and aExtraConfigValues arrays from <link to="#getDescription"/>,
+        the configuration remains unchanged. Please see the documentation for <link to="#getDescription"/>
         for valid configuration values for the individual array item types. If the
         corresponding item in the aEnabled array is @c false, the configuration value is ignored.
       </desc>
@@ -3134,7 +3134,7 @@
 
     <method name="adoptSavedState">
       <desc>
-        Gets called by IConsole::adoptSavedState.
+        Gets called by <link to="IConsole::adoptSavedState"/>.
         <result name="VBOX_E_FILE_ERROR">
           Invalid saved state file path.
         </result>
@@ -3205,9 +3205,11 @@
 
     <method name="deleteSnapshot">
       <desc>
-        Gets called by IConsole::deleteSnapshot.
+        Gets called by <link to="IConsole::deleteSnapshot"/> and
+        <link to="IConsole::deleteSnapshotAndAllChildren"/>.
         <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Snapshot has more than one child snapshot.
+          Snapshot has more than one child snapshot. Only possible if the
+          delete operation does not delete all children.
         </result>
       </desc>
       <param name="initiator" type="IConsole" dir="in">
@@ -3215,6 +3217,9 @@
       </param>
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the snapshot to delete.</desc>
+      </param>
+      <param name="deleteAllChildren" type="boolean" dir="in">
+        <desc>Whether all children should be deleted.</desc>
       </param>
       <param name="machineState" type="MachineState" dir="out">
         <desc>New machine state after this operation is started.</desc>
@@ -3226,7 +3231,7 @@
 
     <method name="finishOnlineMergeMedium">
       <desc>
-        Gets called by IConsole::onlineMergeMedium.
+        Gets called by <link to="IInternalSessionControl::onlineMergeMedium"/>.
       </desc>
       <param name="mediumAttachment" type="IMediumAttachment" dir="in">
         <desc>The medium attachment which needs to be cleaned up.</desc>
@@ -3251,7 +3256,7 @@
 
     <method name="restoreSnapshot">
       <desc>
-        Gets called by IConsole::RestoreSnapshot.
+        Gets called by <link to="IConsole::restoreSnapshot"/>.
       </desc>
       <param name="initiator" type="IConsole" dir="in">
         <desc>The console object that initiated this call.</desc>
@@ -3510,7 +3515,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="59d09c78-2558-45c8-a95e-8761d70fdc95"
+    uuid="84208466-c072-4e64-b993-c35c096cc837"
     wsmap="managed"
     >
     <desc>
@@ -3546,7 +3551,7 @@
       execution (such as start the machine, or power it down) -- these methods
       are grouped in a separate interface called <link to="IConsole" />.
 
-      <see>ISession, IConsole</see>
+      <see><link to="ISession"/>, <link to="IConsole"/></see>
     </desc>
 
     <attribute name="parent" type="IVirtualBox" readonly="yes">
@@ -3678,7 +3683,7 @@
       </desc>
     </attribute>
 
-    <attribute name="HardwareVersion" type="wstring">
+    <attribute name="hardwareVersion" type="wstring">
       <desc>Hardware version identifier. Internal use only for now.</desc>
     </attribute>
 
@@ -3718,7 +3723,7 @@
       <desc>Memory balloon size in megabytes.</desc>
     </attribute>
 
-    <attribute name="PageFusionEnabled" type="boolean">
+    <attribute name="pageFusionEnabled" type="boolean">
       <desc>
         This setting determines whether VirtualBox allows page
         fusion for this machine (64 bits host only).
@@ -4110,11 +4115,12 @@
     </attribute>
 
     <attribute name="pciDeviceAssignments" type="IPciDeviceAttachment" readonly="yes" safearray="yes">
-      <desc>Array of PCI devices assigned to this machine, to get list of all PCI devices
-            attached to the machine use IConsole::attachedPciDevices attribute, as
-            this attribute is intended to list only devices additional to what
-            described in virtual hardware config. Usually, this list keeps host's
-            physical devices assigned to the particular machine.
+      <desc>Array of PCI devices assigned to this machine, to get list of all
+        PCI devices attached to the machine use
+        <link to="IConsole::attachedPciDevices"/> attribute, as this attribute
+        is intended to list only devices additional to what described in
+        virtual hardware config. Usually, this list keeps host's physical
+        devices assigned to the particular machine.
       </desc>
     </attribute>
 
@@ -4721,7 +4727,7 @@
         and most information will be delivered as IHostPciDevicePlugEvent
         on IVirtualBox event source.
 
-        <see>IHostPciDevicePlugEvent</see>
+        <see><link to="IHostPciDevicePlugEvent"/></see>
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine state is not stopped (PCI hotplug not yet implemented).
@@ -4752,7 +4758,7 @@
         will be delivered. As currently we don't support hot device
         unplug, IHostPciDevicePlugEvent event is delivered immediately.
 
-        <see>IHostPciDevicePlugEvent</see>
+        <see><link to="IHostPciDevicePlugEvent"/></see>
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine state is not stopped (PCI hotplug not yet implemented).
@@ -5279,7 +5285,7 @@
         registry, the other machine cannot find its media any more and would become inaccessible.
 
         This API implicitly calls <link to="#saveSettings"/> to save all current machine settings
-        before unregistering it. It may also silently call saveSettings() on other machines
+        before unregistering it. It may also silently call <link to="#saveSettings"/> on other machines
         if media are moved to other machines' media registries.
 
         After successful method invocation, the <link to="IMachineRegisteredEvent"/> event
@@ -5327,7 +5333,7 @@
             for each online snapshot that the machine had.</li>
           <li>On each medium object passed in the @a aMedia array, this will call
             <link to="IMedium::close" />. If that succeeds, this will attempt to delete the
-            medium's storage on disk. Since the close() call will fail if the medium is still
+            medium's storage on disk. Since the <link to="IMedium::close"/> call will fail if the medium is still
             in use, e.g. because it is still attached to a second machine; in that case the
             storage will not be deleted.</li>
           <li>Finally, the machine's own XML file will be deleted.</li>
@@ -5651,7 +5657,7 @@
       </param>
     </method>
 
-    <method name="enumerateGuestProperties">
+    <method name="enumerateGuestProperties" const="yes">
       <desc>
         Return a list of the guest properties matching a set of patterns along
         with their values, time stamps and flags.
@@ -5687,7 +5693,7 @@
       </param>
     </method>
 
-    <method name="querySavedGuestSize">
+    <method name="querySavedGuestSize" const="yes">
       <desc>
         Returns the guest dimensions from the saved state.
       </desc>
@@ -6081,7 +6087,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="515e8e8d-f932-4d8e-9f32-79a52aead882"
+    uuid="acf265ea-0433-4fda-9619-efa40275899c"
     wsmap="managed"
     >
     <desc>
@@ -6098,7 +6104,7 @@
       the machine state or take a snapshot, attach and detach removable media
       and so on.
 
-      <see>ISession</see>
+      <see><link to="ISession"/></see>
     </desc>
 
     <attribute name="machine" type="IMachine" readonly="yes">
@@ -6247,7 +6253,7 @@
         last three operations of the progress objected returned by
         <link to="IMachine::launchVMProcess"/> as well.
 
-        <see>#saveState</see>
+        <see><link to="#saveState"/></see>
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine already running.
@@ -6270,7 +6276,7 @@
         <link to="MachineState_Paused"/> state, instead of
         <link to="MachineState_Running"/>.
 
-        <see>#powerUp</see>
+        <see><link to="#powerUp"/></see>
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine already running.
         </result>
@@ -6503,7 +6509,8 @@
         <link to="USBDeviceState_Busy">Busy</link>, an error may also
         be returned if the host computer refuses to release it for some reason.
 
-        <see>IUSBController::deviceFilters, USBDeviceState</see>
+        <see><link to="IUSBController::deviceFilters"/>,
+          <link to="USBDeviceState"/></see>
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine state neither Running nor Paused.
         </result>
@@ -6526,7 +6533,8 @@
         to the host, but filters of this machine are ignored to avoid
         a possible automatic re-attachment.
 
-        <see>IUSBController::deviceFilters, USBDeviceState</see>
+        <see><link to="IUSBController::deviceFilters"/>,
+          <link to="USBDeviceState"/></see>
 
         <result name="VBOX_E_PDM_ERROR">
           Virtual machine does not have a USB controller.
@@ -6551,7 +6559,7 @@
           Given @c name does not correspond to any USB device.
         </result>
 
-        <see>IUSBDevice::address</see>
+        <see><link to="IUSBDevice::address"/></see>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>
@@ -6572,7 +6580,7 @@
           Given @c id does not correspond to any USB device.
         </result>
 
-        <see>IUSBDevice::id</see>
+        <see><link to="IUSBDevice::id"/></see>
       </desc>
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the USB device to search for.</desc>
@@ -6694,19 +6702,21 @@
 
         <ul>
           <li>Child media of all normal media of the deleted snapshot
-            must be accessible (see <link to="IMedium::state"/>) for this
-            operation to succeed.  In particular, this means that all virtual
-            machines whose media are directly or indirectly based on the
-            media of deleted snapshot must be powered off.</li>
+          must be accessible (see <link to="IMedium::state"/>) for this
+          operation to succeed. If only one running VM refers to all images
+          which participates in merging the operation can be performed while
+          the VM is running. Otherwise all virtual machines whose media are
+          directly or indirectly based on the media of deleted snapshot must
+          be powered off. In any case, online snapshot deleting usually is
+          slower than the same operation without any running VM.</li>
 
           <li>You cannot delete the snapshot if a medium attached to it has
-          more than once child medium (differencing images) because otherwise
+          more than one child medium (differencing images) because otherwise
           merging would be impossible. This might be the case if there is
           more than one child snapshot or differencing images were created
           for other reason (e.g. implicitly because of multiple machine
           attachments).</li>
         </ul>
-
 
         The virtual machine's <link to="IMachine::state">state</link> is
         changed to "DeletingSnapshot", "DeletingSnapshotOnline" or
@@ -6728,6 +6738,39 @@
       </desc>
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the snapshot to delete.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="deleteSnapshotAndAllChildren">
+      <desc>
+        Starts deleting the specified snapshot and all its children
+        asynchronously. See <link to="ISnapshot" /> for an introduction to
+        snapshots. The conditions and many details are the same as with
+        <link to="#deleteSnapshot"/>.
+
+        This operation is very fast if the snapshot subtree does not include
+        the current state. It is still significantly faster than deleting the
+        snapshots one by one if the current state is in the subtree and there
+        are more than one snapshots from current state to the snapshot which
+        marks the subtree, since it eliminates the incremental image merging.
+
+        <note>This API method is right now not implemented!</note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          The running virtual machine prevents deleting this snapshot. This
+          happens only in very specific situations, usually snapshots can be
+          deleted without trouble while a VM is running. The error message
+          text explains the reason for the failure.
+        </result>
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
+      </desc>
+      <param name="id" type="uuid" mod="string" dir="in">
+        <desc>UUID of the snapshot to delete, including all its children.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -6826,7 +6869,7 @@
     <desc>
       Type of encapsulation. Ethernet encapsulation includes both wired and
       wireless Ethernet connections.
-      <see>IHostNetworkInterface</see>
+      <see><link to="IHostNetworkInterface"/></see>
     </desc>
 
     <const name="Unknown" value="0">
@@ -6857,7 +6900,7 @@
     >
     <desc>
       Current status of the interface.
-      <see>IHostNetworkInterface</see>
+      <see><link to="IHostNetworkInterface"/></see>
     </desc>
 
     <const name="Unknown" value="0">
@@ -7045,7 +7088,8 @@
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
         </note>
 
-        <see>IHostUSBDeviceFilter, USBDeviceState</see>
+        <see><link to="IHostUSBDeviceFilter"/>,
+          <link to="USBDeviceState"/></see>
       </desc>
     </attribute>
 
@@ -7234,7 +7278,7 @@
         The created filter can be added to the list of filters using
         <link to="#insertUSBDeviceFilter"/>.
 
-        <see>#USBDeviceFilters</see>
+        <see><link to="#USBDeviceFilters"/></see>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>
@@ -7264,7 +7308,7 @@
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
         </note>
 
-        <see>#USBDeviceFilters</see>
+        <see><link to="#USBDeviceFilters"/></see>
 
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           USB device filter is not created within this VirtualBox instance.
@@ -7296,7 +7340,7 @@
           VirtualBox, this method will set the result code to @c E_NOTIMPL.
         </note>
 
-        <see>#USBDeviceFilters</see>
+        <see><link to="#USBDeviceFilters"/></see>
 
         <result name="E_INVALIDARG">
           USB device filter list empty or invalid @a position.
@@ -7394,7 +7438,7 @@
           Given @c id does not correspond to any USB device.
         </result>
 
-        <see>IHostUSBDevice::id</see>
+        <see><link to="IUSBDevice::id"/></see>
       </desc>
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the USB device to search for.</desc>
@@ -7412,7 +7456,7 @@
           Given @c name does not correspond to any USB device.
         </result>
 
-        <see>IHostUSBDevice::address</see>
+        <see><link to="IUSBDevice::address"/></see>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>
@@ -7444,7 +7488,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="2f89cdfe-2d10-43d4-b37f-61760f877f29"
+    uuid="8a0ab9ab-48c1-4d04-954b-4a751413d084"
     wsmap="managed"
     >
     <desc>
@@ -7557,9 +7601,7 @@
         the list of supported formats depends on what backends are currently
         installed.
 
-        <see>
-          <link to="IMediumFormat"/>,
-        </see>
+        <see><link to="IMediumFormat"/></see>
       </desc>
     </attribute>
 
@@ -7685,7 +7727,7 @@
       </desc>
     </attribute>
 
-    <attribute name="LogHistoryCount" type="unsigned long">
+    <attribute name="logHistoryCount" type="unsigned long">
       <desc>
         This value specifies how many old release log files are kept.
       </desc>
@@ -8518,7 +8560,7 @@
       </desc>
       <param name="pid" type="unsigned long" dir="in">
         <desc>
-          Process id returned by earlier executeProcess() call.
+          Process id returned by earlier <link to="#executeProcess"/> call.
         </desc>
       </param>
       <param name="flags" type="unsigned long" dir="in">
@@ -8558,7 +8600,7 @@
       </desc>
       <param name="pid" type="unsigned long" dir="in">
         <desc>
-          Process id returned by earlier executeProcess() call.
+          Process id returned by earlier <link to="#executeProcess"/> call.
         </desc>
       </param>
       <param name="exitcode" type="unsigned long" dir="out">
@@ -8824,7 +8866,7 @@
       </desc>
       <param name="pid" type="unsigned long" dir="in">
         <desc>
-          Process id returned by earlier executeProcess() call.
+          Process id returned by earlier <link to="#executeProcess"/> call.
         </desc>
       </param>
       <param name="flags" type="unsigned long" dir="in">
@@ -9294,7 +9336,7 @@
     >
     <desc>
       Virtual medium state.
-      <see>IMedium</see>
+      <see><link to="IMedium"/></see>
     </desc>
 
     <const name="NotCreated" value="0">
@@ -9400,7 +9442,7 @@
     >
     <desc>
       Virtual medium image variant. More than one flag may be set.
-      <see>IMedium</see>
+      <see><link to="IMedium"/></see>
     </desc>
 
     <const name="Standard"          value="0">
@@ -9659,7 +9701,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="9edda847-1279-4b0a-9af7-9d66251ccc18"
+    uuid="f55ce3ec-b856-4d07-ae33-826072b332c3"
     wsmap="managed"
     >
     <desc>
@@ -9742,7 +9784,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       See <link to="IVirtualBox::openMedium" /> for more information.
 
-      Media are removed from media registries by the <link to="#close"/>,
+      Media are removed from media registries by the <link to="IMedium::close"/>,
       <link to="#deleteStorage"/> and  <link to="#mergeTo"/> methods.
 
       <h3>Accessibility checks</h3>
@@ -10422,7 +10464,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <!-- property methods -->
 
-    <method name="getProperty">
+    <method name="getProperty" const="yes">
       <desc>
         Returns the value of the custom medium property with the given name.
 
@@ -10470,7 +10512,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="getProperties">
+    <method name="getProperties" const="yes">
       <desc>
         Returns values for a group of properties in one call.
 
@@ -10596,7 +10638,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="MediumState_NotCreated"/> and you will be able to use one of
         the storage creation methods to create it again.
 
-        <see>#close()</see>
+        <see><link to="#close"/></see>
 
         <result name="VBOX_E_OBJECT_IN_USE">
           Medium is attached to a virtual machine.
@@ -10981,7 +11023,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMediumFormat" extends="$unknown"
-    uuid="4e9a873f-0599-434a-8345-619ef3fb3111"
+    uuid="9bd5b655-ea47-4637-99f3-aad0948be35b"
     wsmap="managed"
     >
     <desc>
@@ -10999,7 +11041,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The list of all supported medium formats can be obtained using
         <link to="ISystemProperties::mediumFormats"/>.
 
-        <see>IMedium</see>
+        <see><link to="IMedium"/></see>
     </desc>
 
     <attribute name="id" type="wstring" readonly="yes">
@@ -11048,7 +11090,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Note that some backends do not work on files, so this array may be
         empty.
 
-        <see>IMediumFormat::capabilities</see>
+        <see><link to="IMediumFormat::capabilities"/></see>
       </desc>
       <param  name="extensions" type="wstring" safearray="yes" dir="out">
         <desc>The array of supported extensions.</desc>
@@ -11058,7 +11100,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="describeProperties">
+    <method name="describeProperties" const="yes">
       <desc>
         Returns several arrays describing the properties supported by this
         format.
@@ -11071,8 +11113,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="MediumFormatCapabilities_Properties"/> flag is set.
         All arguments must be non-@c null.
 
-        <see>DataType</see>
-        <see>DataFlags</see>
+        <see><link to="DataType"/>, <link to="DataFlags"/></see>
       </desc>
 
       <param name="names" type="wstring" safearray="yes" dir="out">
@@ -12110,7 +12151,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INetworkAdapter" extends="$unknown"
-    uuid="b22f71f6-082e-4a1d-aaf2-3ce40e275dd9"
+    uuid="8b2e705c-0547-4008-b7bc-788757346092"
     wsmap="managed"
     >
     <desc>
@@ -12248,7 +12289,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <!-- property methods -->
 
-    <method name="getProperty">
+    <method name="getProperty" const="yes">
       <desc>
         Returns the value of the network attachment property with the given name.
 
@@ -12282,7 +12323,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="getProperties">
+    <method name="getProperties" const="yes">
       <desc>
         Returns values for a group of properties in one call.
 
@@ -12369,7 +12410,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       detect the serial port, but all port write operations will be discarded
       and all port read operations will return no data.
 
-      <see>IMachine::getSerialPort</see>
+      <see><link to="IMachine::getSerialPort"/></see>
     </desc>
 
     <attribute name="slot" type="unsigned long" readonly="yes">
@@ -12448,7 +12489,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       IRQ number that will be reported to the guest operating system and used
       to operate the given parallel port from within the virtual machine.
 
-      <see>IMachine::getParallelPort</see>
+      <see><link to="IMachine::getParallelPort"/></see>
     </desc>
 
     <attribute name="slot" type="unsigned long" readonly="yes">
@@ -12985,7 +13026,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         device is automatically captured (attached to) the virtual USB
         controller of this machine.
 
-        <see>IUSBDeviceFilter, ::IUSBController</see>
+        <see><link to="IUSBDeviceFilter"/>, <link to="IUSBController"/></see>
       </desc>
     </attribute>
 
@@ -13002,7 +13043,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           The virtual machine is not mutable.
         </result>
 
-        <see>#deviceFilters</see>
+        <see><link to="#deviceFilters"/></see>
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>
@@ -13040,7 +13081,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           USB device filter already in list.
         </result>
 
-        <see>#deviceFilters</see>
+        <see><link to="#deviceFilters"/></see>
       </desc>
       <param name="position" type="unsigned long" dir="in">
         <desc>Position to insert the filter to.</desc>
@@ -13059,7 +13100,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         position equal to or greater than the number of elements in
         the list will produce an error.
 
-        <see>#deviceFilters</see>
+        <see><link to="#deviceFilters"/></see>
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine is not mutable.
@@ -13244,7 +13285,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <i>any match</i> no matter what string expression is specified.
       </note>
 
-      <see>IUSBController::deviceFilters, IHostUSBDeviceFilter</see>
+      <see><link to="IUSBController::deviceFilters"/>,
+        <link to="IHostUSBDeviceFilter"/></see>
     </desc>
 
     <attribute name="name" type="wstring">
@@ -13380,7 +13422,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         device state is USBDeviceState_Held.
       </note>
 
-      <see>IHostUSBDevice, IHostUSBDeviceFilter</see>
+      <see><link to="IHostUSBDevice"/>, <link to="IHostUSBDeviceFilter"/></see>
     </desc>
 
     <const name="NotSupported"          value="0">
@@ -13432,7 +13474,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <link to="#state"/> property that holds the current state of the USB
       device.
 
-      <see>IHost::USBDevices, IHost::USBDeviceFilters</see>
+      <see><link to="IHost::USBDevices"/>,
+        <link to="IHost::USBDeviceFilters"/></see>
     </desc>
 
     <attribute name="state" type="USBDeviceState" readonly="yes">
@@ -13457,7 +13500,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     >
     <desc>
       Actions for host USB device filters.
-      <see>IHostUSBDeviceFilter, USBDeviceState</see>
+      <see><link to="IHostUSBDeviceFilter"/>, <link to="USBDeviceState"/></see>
     </desc>
 
     <const name="Null"          value="0">
@@ -13491,7 +13534,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="IUSBController::deviceFilters">machine USB filters</link>.
       </note>
 
-      <see>IHost::USBDeviceFilters</see>
+      <see><link to="IHost::USBDeviceFilters"/></see>
     </desc>
 
     <attribute name="action" type="USBDeviceFilterAction">
@@ -13610,7 +13653,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVRDEServer" extends="$unknown"
-    uuid="be24e0db-e1d6-4d58-b85b-21053d1511b4"
+    uuid="d38de40a-c2c1-4e95-b5a4-167b05f5694c"
     wsmap="managed"
     >
     <attribute name="enabled" type="boolean">
@@ -13647,7 +13690,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="AuthLibrary" type="wstring">
+    <attribute name="authLibrary" type="wstring">
       <desc>
         Library used for authentication of RDP clients by this VM. Overrides
         <link to="ISystemProperties::VRDEAuthLibrary"/>.
@@ -13676,7 +13719,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="getVRDEProperty">
+    <method name="getVRDEProperty" const="yes">
       <desc>
         Returns a VRDE specific property string.
 
@@ -13808,7 +13851,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="3a975b65-27e7-42fa-9176-d097d7bd78d4"
+    uuid="0bdda5da-67c8-47be-a610-b83a7fa3e8b6"
     internal="yes"
     wsmap="suppress"
     >
@@ -14163,7 +14206,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="retFlags" type="wstring" dir="out"/>
     </method>
 
-    <method name="enumerateGuestProperties">
+    <method name="enumerateGuestProperties" const="yes">
       <desc>
         Return a list of the guest properties matching a set of patterns along
         with their values, time stamps and flags.
@@ -14678,7 +14721,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns a managed object reference to the internal ISession object that was created
         for this web service session when the client logged on.
 
-        <see>ISession</see>
+        <see><link to="ISession"/></see>
       </desc>
       <param name="refIVirtualBox" type="IVirtualBox" dir="in"/>
       <param name="return" type="ISession" dir="return"/>
@@ -15404,9 +15447,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     >
     <desc>
       Extension pack file (aka tarball, .vbox-extpack) representation returned
-      by IExtPackManager::openExtPackFile.  This provides the base extension
-      pack information with the addition of the file name.  It also provides an
-      alternative to IExtPackManager::install.
+      by <link to="IExtPackManager::openExtPackFile"/>.  This provides the base
+      extension pack information with the addition of the file name.
     </desc>
     <attribute name="filePath" type="wstring" readonly="yes">
       <desc>
@@ -15439,7 +15481,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackManager" extends="$unknown"
-    uuid="2451b1ba-ab1c-42fb-b453-c58433bea8c7"
+    uuid="3295e6ce-b051-47b2-9514-2c588bfe7554"
     wsmap="suppress"
     >
     <desc>
@@ -15511,7 +15553,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Cleans up failed installs and uninstalls</desc>
     </method>
 
-    <method name="QueryAllPlugInsForFrontend">
+    <method name="queryAllPlugInsForFrontend">
       <desc>
         Gets the path to all the plug-in modules for a given frontend.
 
@@ -15526,7 +15568,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="IsExtPackUsable">
+    <method name="isExtPackUsable">
       <desc>Check if the given extension pack is loaded and usable.</desc>
       <param name="name" type="wstring" dir="in">
         <desc>The name of the extension pack to check for.</desc>
@@ -15606,7 +15648,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="IBandwidthControl" extends="$unknown"
-    uuid="d0a24db0-f756-11df-98cf-0800200c9a66"
+    uuid="e2eb3930-d2f4-4f87-be17-0707e30f019f"
     wsmap="managed"
     >
     <desc>
@@ -15620,7 +15662,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <method name="CreateBandwidthGroup">
+    <method name="createBandwidthGroup">
       <desc>
         Creates a new bandwidth group.
       </desc>
@@ -15637,7 +15679,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="DeleteBandwidthGroup">
+    <method name="deleteBandwidthGroup">
       <desc>
         Deletes a new bandwidth group.
       </desc>
@@ -15647,7 +15689,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="GetBandwidthGroup" const="yes">
+    <method name="getBandwidthGroup" const="yes">
       <desc>
         Get a bandwidth group by name.
       </desc>
@@ -15660,7 +15702,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="GetAllBandwidthGroups" const="yes">
+    <method name="getAllBandwidthGroups" const="yes">
       <desc>
         Get all managed bandwidth groups.
       </desc>
@@ -15734,28 +15776,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Wildcard for all events.
         Events of this type are never delivered, and only used in
-        registerListener() call to simplify registration.
+        <link to="IEventSource::registerListener"/> call to simplify registration.
       </desc>
     </const>
 
     <const name="Vetoable" value="2">
       <desc>
         Wildcard for all vetoable events. Events of this type are never delivered, and only
-        used in registerListener() call to simplify registration.
+        used in <link to="IEventSource::registerListener"/> call to simplify registration.
       </desc>
     </const>
 
     <const name="MachineEvent" value="3">
       <desc>
         Wildcard for all machine events. Events of this type are never delivered, and only used in
-        registerListener() call to simplify registration.
+        <link to="IEventSource::registerListener"/> call to simplify registration.
       </desc>
     </const>
 
     <const name="SnapshotEvent" value="4">
       <desc>
         Wildcard for all snapshot events. Events of this type are never delivered, and only used in
-        registerListener() call to simplify registration.
+        <link to="IEventSource::registerListener"/> call to simplify registration.
       </desc>
     </const>
 
@@ -15763,7 +15805,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Wildcard for all input device (keyboard, mouse) events.
         Events of this type are never delivered, and only used in
-        registerListener() call to simplify registration.
+        <link to="IEventSource::registerListener"/> call to simplify registration.
       </desc>
     </const>
 
@@ -16010,7 +16052,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Creates an aggregator event source, collecting events from multiple sources.
         This way a single listener can listen for events coming from multiple sources,
-        using a single blocking getEvent() on the returned aggregator.
+        using a single blocking <link to="#getEvent"/> on the returned aggregator.
       </desc>
       <param name="subordinates" type="IEventSource" dir="in" safearray="yes">
         <desc>
@@ -16140,10 +16182,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="handleEvent">
       <desc>
-        Handle event callback for active listeners. It is not called for passive listeners. After
-        calling handleEvent() on all active listeners and having received acknowledgement from all
-        passive listeners via IEventSource::eventProcessed(), the event is marked as processed and
-        IEvent::waitProcessed() will return immediately.
+        Handle event callback for active listeners. It is not called for
+        passive listeners. After calling <link to="#handleEvent"/> on all active listeners
+        and having received acknowledgement from all passive listeners via
+        <link to="IEventSource::eventProcessed"/>, the event is marked as
+        processed and <link to="IEvent::waitProcessed"/> will return
+        immediately.
       </desc>
       <param name="event" type="IEvent" dir="in">
         <desc>Event available.</desc>
@@ -16213,7 +16257,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       an object implementing the <link to="IEventListener" /> interface must be provided.
       For active listeners, such an object is typically created by the consumer, while for
       passive listeners <link to="IEventSource::createListener" /> should  be used. Please
-      note that a listener created with @c createListener() must not be used as an active listener.
+      note that a listener created with <link to="IEventSource::createListener"/> must not be used as an active listener.
 
       Once created, the listener must be registered to listen for the desired events
       (see <link to="IEventSource::registerListener" />), providing an array of
@@ -16245,8 +16289,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="waitable" readonly="yes" type="boolean">
       <desc>
-        If we can wait for this event being processed. If false, waitProcessed() returns immediately,
-        and setProcessed() doesn't make sense. Non-waitable events are generally better performing,
+        If we can wait for this event being processed. If false, <link to="#waitProcessed"/> returns immediately,
+        and <link to="#setProcessed"/> doesn't make sense. Non-waitable events are generally better performing,
         as no additional overhead associated with waitability imposed.
         Waitable events are needed when one need to be able to wait for particular event processed,
         for example for vetoable changes, or if event refers to some resource which need to be kept immutable
@@ -16384,7 +16428,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     >
     <desc>
       The state of the session for the given machine was changed.
-      <see>IMachine::sessionState</see>
+      <see><link to="IMachine::sessionState"/></see>
     </desc>
 
     <attribute name="state" type="SessionState" readonly="yes">
@@ -16443,7 +16487,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     >
     <desc>
       A new snapshot of the machine has been taken.
-      <see>ISnapshot</see>
+      <see><link to="ISnapshot"/></see>
     </desc>
   </interface>
 
@@ -16461,7 +16505,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         attempt to call its methods will return an error).
       </note>
 
-      <see>ISnapshot</see>
+      <see><link to="ISnapshot"/></see>
     </desc>
   </interface>
 
@@ -16472,7 +16516,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     >
     <desc>
       Snapshot properties (name and/or description) have been changed.
-      <see>ISnapshot</see>
+      <see><link to="ISnapshot"/></see>
     </desc>
   </interface>
 
@@ -17228,9 +17272,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Notification when host PCI device is plugged/unplugged. Plugging
       usually takes place on VM startup, unplug - when
-      IMachine::DetachHostPciDevice is called.
+      <link to="IMachine::detachHostPciDevice"/> is called.
 
-      <see>IMachine::DetachHostPciDevice</see>
+      <see><link to="IMachine::detachHostPciDevice"/></see>
 
     </desc>
 

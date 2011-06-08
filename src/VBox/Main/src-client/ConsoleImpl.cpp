@@ -3218,9 +3218,31 @@ STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
                         tr("Cannot delete a snapshot of the machine while it is changing the state (machine state: %s)"),
                         Global::stringifyMachineState(mMachineState));
 
+    MachineState_T machineState = MachineState_Null;
+    HRESULT rc = mControl->DeleteSnapshot(this, aId, FALSE /* fDeleteAllChildren */, &machineState, aProgress);
+    if (FAILED(rc)) return rc;
+
+    setMachineStateLocally(machineState);
+    return S_OK;
+}
+
+STDMETHODIMP Console::DeleteSnapshotAndAllChildren(IN_BSTR aId, IProgress **aProgress)
+{
+    CheckComArgExpr(aId, Guid(aId).isEmpty() == false);
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (Global::IsTransient(mMachineState))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Cannot delete a snapshot of the machine while it is changing the state (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot(this, aId, &machineState, aProgress);
+    HRESULT rc = mControl->DeleteSnapshot(this, aId, TRUE /* fDeleteAllChildren */, &machineState, aProgress);
     if (FAILED(rc)) return rc;
 
     setMachineStateLocally(machineState);
