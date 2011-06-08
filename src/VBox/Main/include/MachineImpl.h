@@ -966,6 +966,7 @@ public:
                                    BSTR *aStateFilePath);
     STDMETHOD(EndTakingSnapshot)(BOOL aSuccess);
     STDMETHOD(DeleteSnapshot)(IConsole *aInitiator, IN_BSTR aId,
+                              BOOL fDeleteAllChildren,
                               MachineState_T *aMachineState, IProgress **aProgress);
     STDMETHOD(FinishOnlineMergeMedium)(IMediumAttachment *aMediumAttachment,
                                        IMedium *aSource, IMedium *aTarget,

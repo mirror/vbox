@@ -2005,6 +2005,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
  */
 STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
                                             IN_BSTR aId,
+                                            BOOL fDeleteAllChildren,
                                             MachineState_T *aMachineState,
                                             IProgress **aProgress)
 {
@@ -2013,6 +2014,10 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     Guid id(aId);
     AssertReturn(aInitiator && !id.isEmpty(), E_INVALIDARG);
     AssertReturn(aMachineState && aProgress, E_POINTER);
+
+    /** @todo implement the "and all children" variant */
+    if (fDeleteAllChildren)
+        ReturnComNotImplemented();
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
