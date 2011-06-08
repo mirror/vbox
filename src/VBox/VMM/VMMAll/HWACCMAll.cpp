@@ -133,6 +133,11 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
         else
             STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatSpinPokeFailed, z);
 
+/** @todo If more than one CPU is going to be poked, we could optimize this
+ *        operation by poking them first and wait afterwards.  Would require
+ *        recording who to poke and their current cWorldSwitchExits values,
+ *        that's something not suitable for stack... So, pVCpu->hm.s.something
+ *        then. */
         /* Spin until the VCPU has switched back (poking is async). */
         while (   ASMAtomicUoReadBool(&pVCpu->hwaccm.s.fCheckedTLBFlush)
                && cWorldSwitchExits == ASMAtomicUoReadU32(&pVCpu->hwaccm.s.cWorldSwitchExits))
@@ -166,9 +171,7 @@ static void hmPokeCpuForTlbFlush(PVMCPU pVCpu, bool fAccountFlushStat)
 #ifdef IN_RING0
         RTCPUID idHostCpu = pVCpu->hwaccm.s.idEnteredCpu;
         if (idHostCpu != NIL_RTCPUID)
-        {
             hmR0PokeCpu(pVCpu, idHostCpu);
-        }
 #else
         VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_POKE);
 #endif
