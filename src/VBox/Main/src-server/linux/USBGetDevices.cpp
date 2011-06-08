@@ -848,6 +848,7 @@ static unsigned usbGetBusFromSysfsPath(const char *pcszPath)
  * drivers/usb/core/hub.c:usb_new_device as of Linux 2.6.20. */
 static dev_t usbMakeDevNum(unsigned bus, unsigned device)
 {
+    AssertReturn(bus > 0, 0);
     AssertReturn(((device - 1) & ~127) == 0, 0);
     AssertReturn(device > 0, 0);
     return makedev(USBDEVICE_MAJOR, ((bus - 1) << 7) + device - 1);
