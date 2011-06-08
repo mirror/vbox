@@ -344,10 +344,12 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
 
 #ifndef IPRT_TARGET_NT4
 
-ULONG_PTR rtMpIpiGenericCall(ULONG_PTR  Argument)
+ULONG_PTR rtMpIpiGenericCall(ULONG_PTR Argument)
 {
+    NOREF(Argument);
     return 0;
 }
+
 
 int rtMpSendIpiVista(RTCPUID idCpu)
 {
@@ -356,18 +358,22 @@ int rtMpSendIpiVista(RTCPUID idCpu)
     return VINF_SUCCESS;
 }
 
+
 int rtMpSendIpiWin7(RTCPUID idCpu)
 {
     g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
 ////    g_pfnrtNtHalSendSoftwareInterrupt(idCpu, DISPATCH_LEVEL);
     return VINF_SUCCESS;
 }
+
 #endif /* IPRT_TARGET_NT4 */
+
 
 int rtMpSendIpiDummy(RTCPUID idCpu)
 {
     return VERR_NOT_IMPLEMENTED;
 }
+
 
 RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
