@@ -22,7 +22,8 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
-export LANG=C
+LANG=C
+export LANG
 
 # uncompress(directory, file)
 # Updates package metadata and uncompresses the file.
