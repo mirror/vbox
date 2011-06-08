@@ -530,7 +530,7 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
                 if (mpfnHostCallback)
                 {
                     CALLBACKDATACLIENTDISCONNECTED data;
-                    data.hdr.u32Magic = CALLBACKDATAMAGICCLIENTDISCONNECTED;
+                    data.hdr.u32Magic = CALLBACKDATAMAGIC_CLIENT_DISCONNECTED;
                     data.hdr.u32ContextID = (*itContext);
                     rc = mpfnHostCallback(mpvHostData, GUEST_DISCONNECTED, (void *)(&data), sizeof(data));
                     if (RT_FAILURE(rc))
@@ -717,7 +717,7 @@ int Service::notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paP
         && cParms    == 5)
     {
         CALLBACKDATAEXECSTATUS data;
-        data.hdr.u32Magic = CALLBACKDATAMAGICEXECSTATUS;
+        data.hdr.u32Magic = CALLBACKDATAMAGIC_EXEC_STATUS;
         paParms[0].getUInt32(&data.hdr.u32ContextID);
 
         paParms[1].getUInt32(&data.u32PID);
@@ -733,7 +733,7 @@ int Service::notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paP
              && cParms    == 5)
     {
         CALLBACKDATAEXECOUT data;
-        data.hdr.u32Magic = CALLBACKDATAMAGICEXECOUT;
+        data.hdr.u32Magic = CALLBACKDATAMAGIC_EXEC_OUT;
         paParms[0].getUInt32(&data.hdr.u32ContextID);
 
         paParms[1].getUInt32(&data.u32PID);
@@ -749,13 +749,40 @@ int Service::notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paP
              && cParms    == 5)
     {
         CALLBACKDATAEXECINSTATUS data;
-        data.hdr.u32Magic = CALLBACKDATAMAGICEXECINSTATUS;
+        data.hdr.u32Magic = CALLBACKDATAMAGIC_EXEC_IN_STATUS;
         paParms[0].getUInt32(&data.hdr.u32ContextID);
 
         paParms[1].getUInt32(&data.u32PID);
         paParms[2].getUInt32(&data.u32Status);
         paParms[3].getUInt32(&data.u32Flags);
         paParms[4].getUInt32(&data.cbProcessed);
+
+        if (mpfnHostCallback)
+            rc = mpfnHostCallback(mpvHostData, eFunction,
+                                  (void *)(&data), sizeof(data));
+    }
+    else if (   eFunction == GUEST_DIR_SEND_OPEN
+             && cParms    == 2)
+    {
+        CALLBACKDATADIROPEN data;
+        data.hdr.u32Magic = CALLBACKDATAMAGIC_DIR_OPEN;
+        paParms[0].getUInt32(&data.hdr.u32ContextID);
+
+        paParms[1].getUInt32(&data.u32Handle);
+
+        if (mpfnHostCallback)
+            rc = mpfnHostCallback(mpvHostData, eFunction,
+                                  (void *)(&data), sizeof(data));
+    }
+    else if (   eFunction == GUEST_DIR_SEND_READ
+             && cParms    == 3)
+    {
+        CALLBACKDATADIRREAD data;
+        data.hdr.u32Magic = CALLBACKDATAMAGIC_DIR_READ;
+        paParms[0].getUInt32(&data.hdr.u32ContextID);
+
+        paParms[1].getUInt64(&data.u64NodeId);
+        paParms[2].getString(&data.pszName, &data.cbName);
 
         if (mpfnHostCallback)
             rc = mpfnHostCallback(mpvHostData, eFunction,

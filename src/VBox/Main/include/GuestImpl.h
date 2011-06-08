@@ -87,6 +87,7 @@ public:
     STDMETHOD(GetAdditionsStatus)(AdditionsRunLevelType_T aLevel, BOOL *aActive);
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
+    // Process execution
     STDMETHOD(ExecuteProcess)(IN_BSTR aCommand, ULONG aFlags,
                               ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                               IN_BSTR aUserName, IN_BSTR aPassword,
@@ -94,8 +95,18 @@ public:
     STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, LONG64 aSize, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(SetProcessInput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ComSafeArrayIn(BYTE, aData), ULONG *aBytesWritten);
     STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ExecuteProcessStatus_T *aStatus);
+    // File copying
+    STDMETHOD(CopyFromGuest)(IN_BSTR aSource, IN_BSTR aDest, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aFlags, IProgress **aProgress);
     STDMETHOD(CopyToGuest)(IN_BSTR aSource, IN_BSTR aDest, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aFlags, IProgress **aProgress);
-    STDMETHOD(CreateDirectory)(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aMode, ULONG aFlags, IProgress **aProgress);
+    // Directory handling
+    STDMETHOD(DirectoryClose)(ULONG aHandle);
+    STDMETHOD(DirectoryCreate)(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aMode, ULONG aFlags);
+    STDMETHOD(DirectoryOpen)(IN_BSTR aDirectory, IN_BSTR aFilter,
+                             ULONG aFlags, IN_BSTR aUserName, IN_BSTR aPassword, ULONG *aHandle);
+    STDMETHOD(DirectoryRead)(ULONG aHandle, IGuestDirEntry **aDirEntry);
+    // File handling
+    STDMETHOD(FileExists)(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists);
+    // Misc stuff
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
@@ -106,8 +117,8 @@ public:
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                    IN_BSTR aUserName, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
-    HRESULT createDirectoryInternal(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword,
-                                    ULONG aMode, ULONG aFlags, IProgress **aProgress, int *pRC);
+    HRESULT directoryCreateInternal(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword,
+                                    ULONG aMode, ULONG aFlags, int *pRC);
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
     bool facilityIsActive(VBoxGuestFacilityType enmFacility);
@@ -130,7 +141,8 @@ private:
 #ifdef VBOX_WITH_GUEST_CONTROL
     // Internal tasks.
     struct TaskGuest; /* Worker thread helper. */
-    HRESULT taskCopyFile(TaskGuest *aTask);
+    HRESULT taskCopyFileToGuest(TaskGuest *aTask);
+    HRESULT taskCopyFileFromGuest(TaskGuest *aTask);
     HRESULT taskUpdateGuestAdditions(TaskGuest *aTask);
 
     // Internal callback context handling.

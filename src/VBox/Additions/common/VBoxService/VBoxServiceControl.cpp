@@ -129,7 +129,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         uint32_t uMsg;
         uint32_t uNumParms;
         VBoxServiceVerbose(3, "Control: Waiting for host msg ...\n");
-        rc = VbglR3GuestCtrlGetHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms);
+        rc = VbglR3GuestCtrlWaitForHostMsg(g_GuestControlSvcClientID, &uMsg, &uNumParms);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_TOO_MUCH_DATA)
@@ -161,6 +161,18 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 
                 case HOST_EXEC_GET_OUTPUT:
                     rc = VBoxServiceControlExecHandleCmdGetOutput(g_GuestControlSvcClientID, uNumParms);
+                    break;
+
+                case HOST_DIR_CLOSE:
+                    rc = VBoxServiceGCtrlDirClose(g_GuestControlSvcClientID, uNumParms);
+                    break;
+
+                case HOST_DIR_OPEN:
+                    rc = VBoxServiceGCtrlDirOpen(g_GuestControlSvcClientID, uNumParms);
+                    break;
+
+                case HOST_DIR_READ:
+                    rc = VBoxServiceGCtrlDirRead(g_GuestControlSvcClientID, uNumParms);
                     break;
 
                 default:
