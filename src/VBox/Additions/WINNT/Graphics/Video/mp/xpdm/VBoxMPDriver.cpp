@@ -25,7 +25,7 @@
 #include <iprt/initterm.h>
 
 /* Resource list */
-VIDEO_ACCESS_RANGE  VBoxLegacyVGAResourceList[] = 
+VIDEO_ACCESS_RANGE  VBoxLegacyVGAResourceList[] =
 {
     { 0x000003B0, 0x00000000, 0x0000000C, 1, 1, 1, 0 }, /* VGA regs (0x3B0-0x3BB) */
     { 0x000003C0, 0x00000000, 0x00000020, 1, 1, 1, 0 }, /* VGA regs (0x3C0-0x3DF) */
@@ -105,7 +105,7 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
              */
             ULONG vendorId = 0x80EE;
             ULONG deviceId = 0xBEEF;
-            rc = VideoPortGetAccessRanges(pExt, 0, NULL, RT_ELEMENTS(tmpRanges), tmpRanges, 
+            rc = VideoPortGetAccessRanges(pExt, 0, NULL, RT_ELEMENTS(tmpRanges), tmpRanges,
                                           &vendorId, &deviceId, &slot);
         }
         else
@@ -141,7 +141,7 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
         VBoxCreateDisplays(pExt, ConfigInfo);
     }
 
-    /* @todo: pretend success to make the driver work. */
+    /** @todo pretend success to make the driver work. */
     rc = NO_ERROR;
 
     LOGF_LEAVE();
@@ -280,7 +280,7 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
             break;
         }
 
-        /* Returns count of supported video modes and structure size in bytes, 
+        /* Returns count of supported video modes and structure size in bytes,
          * used to allocate buffer for the following IOCTL_VIDEO_QUERY_AVAIL_MODES call.
          */
         case IOCTL_VIDEO_QUERY_NUM_AVAIL_MODES:
@@ -349,7 +349,7 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
         {
             STARTIO_IN(VIDEO_POINTER_POSITION, pPos);
 
-            /*@todo: set pointer position*/
+            /** @todo set pointer position*/
             bResult = VBoxMPEnablePointer(pExt, TRUE, pStatus);
             break;
         }
@@ -438,7 +438,8 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
 
             uint32_t cRects = RequestPacket->InputBufferLength/sizeof(RTRECT);
             /*Sanity check*/
-            if (RequestPacket->InputBufferLength != cRects*sizeof(RTRECT))
+            if (   cRects > _1M
+                || RequestPacket->InputBufferLength != cRects * sizeof(RTRECT))
             {
                 pStatus->Status = ERROR_INSUFFICIENT_BUFFER;
                 break;
@@ -486,7 +487,7 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
 
         case IOCTL_VIDEO_HGSMI_HANDLER_DISABLE:
         {
-            /* @todo: not implemented */
+            /** @todo not implemented */
             break;
         }
 
@@ -518,7 +519,7 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
     return TRUE;
 }
 
-/* Called to set out hardware into desired power state, not supported at the moment. 
+/* Called to set out hardware into desired power state, not supported at the moment.
  * Required to return NO_ERROR always.
  */
 static VP_STATUS

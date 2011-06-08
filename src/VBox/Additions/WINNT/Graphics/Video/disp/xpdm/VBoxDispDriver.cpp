@@ -134,7 +134,7 @@ RT_C_DECLS_END
 VOID _wcsncpy(WCHAR *pwcd, WCHAR *pwcs, ULONG dstsize)
 {
     ULONG cnt=0;
-        
+
     while (*pwcs!=*L"")
     {
         if (cnt>=dstsize)
@@ -180,7 +180,7 @@ VOID _wcsncpy(WCHAR *pwcd, WCHAR *pwcs, ULONG dstsize)
         _font.lfPitchAndFamily = (_pitch) | FF_DONTCARE;                             \
         memset(_font.lfFaceName, 0, sizeof(_font.lfFaceName));                       \
         memcpy(_font.lfFaceName, _name, sizeof(_name));                              \
-    } while (0)                                                                   
+    } while (0)
 
 static int VBoxDispInitDevice(PVBOXDISPDEV pDev, DEVMODEW *pdm, GDIINFO *pGdiInfo, DEVINFO *pDevInfo)
 {
@@ -285,7 +285,7 @@ static int VBoxDispInitDevice(PVBOXDISPDEV pDev, DEVMODEW *pdm, GDIINFO *pGdiInf
 
     pGdiInfo->ulNumPalReg = (pDev->mode.ulBitsPerPel==8) ? (1<<pDev->mode.ulBitsPerPel) : 0;
 
-    /* @todo: might want to implement IOCTL_VIDEO_QUERY_COLOR_CAPABILITIES in miniport driver 
+    /* @todo: might want to implement IOCTL_VIDEO_QUERY_COLOR_CAPABILITIES in miniport driver
      *        and query host for this info there
      */
     VBOXDISPSETCIEC(pGdiInfo->ciDevice.Red, 6700, 3300, 0);
@@ -342,7 +342,7 @@ static int VBoxDispInitDevice(PVBOXDISPDEV pDev, DEVMODEW *pdm, GDIINFO *pGdiInf
 #ifdef VBOX_WITH_DDRAW
     pDevInfo->flGraphicsCaps |= GCAPS_DIRECTDRAW;
 #endif
-    VBOXDISPMAKELOGFONTW(pDevInfo->lfDefaultFont, 
+    VBOXDISPMAKELOGFONTW(pDevInfo->lfDefaultFont,
                          16, 7, FW_BOLD, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, VARIABLE_PITCH, L"System");
 
     VBOXDISPMAKELOGFONTW(pDevInfo->lfAnsiVarFont,
@@ -382,7 +382,7 @@ static int VBoxDispInitDevice(PVBOXDISPDEV pDev, DEVMODEW *pdm, GDIINFO *pGdiInf
     }
 
     LOGF_LEAVE();
-    return rc;    
+    return rc;
 }
 
 /* Display Driver entry point,
@@ -441,7 +441,7 @@ VOID APIENTRY VBoxDispDrvDisableDriver()
     return;
 }
 
-/* Returns video modes supported by our device/driver 
+/* Returns video modes supported by our device/driver
  * Note: If we fail here we'd be asked to enter 800x600@4bpp mode later in VBoxDispDrvEnablePDEV.
  */
 ULONG APIENTRY VBoxDispDrvGetModes(HANDLE hDriver, ULONG cjSize, DEVMODEW *pdm)
@@ -491,7 +491,7 @@ ULONG APIENTRY VBoxDispDrvGetModes(HANDLE hDriver, ULONG cjSize, DEVMODEW *pdm)
 /* First function which is called after entry point, provides info about device to GDI.
  * Returns pointer to our driver private info structure which would be passed by GDI to our other callbacks.
  */
-DHPDEV APIENTRY 
+DHPDEV APIENTRY
 VBoxDispDrvEnablePDEV(DEVMODEW *pdm, LPWSTR pwszLogAddress, ULONG cPat, HSURF *phsurfPatterns,
                       ULONG cjCaps, ULONG *pdevcaps,
                       ULONG cjDevInfo, DEVINFO  *pdi,
@@ -670,7 +670,7 @@ HSURF APIENTRY VBoxDispDrvEnableSurface(DHPDEV dhpdev)
     size.cx = pDev->mode.ulWidth;
     size.cy = pDev->mode.ulHeight;
 
-    pDev->surface.hBitmap = EngCreateBitmap(size, pDev->mode.lScanlineStride, iFormat, 
+    pDev->surface.hBitmap = EngCreateBitmap(size, pDev->mode.lScanlineStride, iFormat,
                                             pDev->mode.lScanlineStride>0 ? BMF_TOPDOWN:0,
                                             pDev->memInfo.FrameBufferBase);
     if (!pDev->surface.hBitmap)
@@ -937,26 +937,40 @@ ULONG APIENTRY VBoxDispDrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvI
         {
             LOGF(("VBOXESC_SETVISIBLEREGION"));
             LPRGNDATA lpRgnData = (LPRGNDATA)pvIn;
+            DWORD cRects;
 
-            if (cjIn >= sizeof(RGNDATAHEADER)
+            if (    cjIn >= sizeof(RGNDATAHEADER)
                 &&  pvIn
                 &&  lpRgnData->rdh.dwSize == sizeof(RGNDATAHEADER)
                 &&  lpRgnData->rdh.iType  == RDH_RECTANGLES
-                &&  cjIn == ((uint64_t)lpRgnData->rdh.nCount) * sizeof(RECT) + sizeof(RGNDATAHEADER))
+                &&  (cRects = lpRgnData->rdh.nCount) <= _1M
+                &&  cjIn == cRects * (uint64_t)sizeof(RECT) + sizeof(RGNDATAHEADER))
             {
+                /** @todo this whole conversion thing could maybe be skipped
+                 *        since RTRECT matches the RECT layout. */
+#if 0
+                AssertCompile(sizeof(RTRECT) == sizeof(RECT));
+                AssertCompileMembersSameSizeAndOffset(RTRECT, xLeft,    RECT, left);
+                AssertCompileMembersSameSizeAndOffset(RTRECT, xBottom,  RECT, bottom);
+                AssertCompileMembersSameSizeAndOffset(RTRECT, xRight,   RECT, right);
+                AssertCompileMembersSameSizeAndOffset(RTRECT, xTop,     RECT, top);
+
+                rc = VBoxDispMPSetVisibleRegion(pDev->hDriver, (PRTRECT)&lpRgnData->Buffer[0], cRects);
+                VBOX_WARNRC(rc);
+#else
                 DWORD   i;
                 PRTRECT pRTRect;
                 int     rc;
                 RECT   *pRect = (RECT *)&lpRgnData->Buffer;
 
-                pRTRect = (PRTRECT) EngAllocMem(0, lpRgnData->rdh.nCount*sizeof(RTRECT), MEM_ALLOC_TAG);
+                pRTRect = (PRTRECT) EngAllocMem(0, cRects*sizeof(RTRECT), MEM_ALLOC_TAG);
                 if (!pRTRect)
                 {
-                    WARN(("failed to allocate %d bytes", lpRgnData->rdh.nCount*sizeof(RTRECT)));
+                    WARN(("failed to allocate %d bytes", cRects*sizeof(RTRECT)));
                     break;
                 }
 
-                for (i=0; i<lpRgnData->rdh.nCount; ++i)
+                for (i = 0; i < cRects; ++i)
                 {
                     LOG(("New visible rectangle (%d,%d) (%d,%d)",
                          pRect[i].left, pRect[i].bottom, pRect[i].right, pRect[i].top));
@@ -966,11 +980,12 @@ ULONG APIENTRY VBoxDispDrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvI
                     pRTRect[i].yTop    = pRect[i].top;
                 }
 
-                rc = VBoxDispMPSetVisibleRegion(pDev->hDriver, pRTRect, lpRgnData->rdh.nCount);
+                rc = VBoxDispMPSetVisibleRegion(pDev->hDriver, pRTRect, cRects);
                 VBOX_WARNRC(rc);
 
                 EngFreeMem(pRTRect);
 
+#endif
                 if (RT_SUCCESS(rc))
                 {
                     LOGF_LEAVE();
@@ -982,7 +997,7 @@ ULONG APIENTRY VBoxDispDrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvI
                 if (pvIn)
                 {
                     WARN(("check failed rdh.dwSize=%x iType=%d size=%d expected size=%d",
-                          lpRgnData->rdh.dwSize, lpRgnData->rdh.iType, cjIn, 
+                          lpRgnData->rdh.dwSize, lpRgnData->rdh.iType, cjIn,
                           lpRgnData->rdh.nCount * sizeof(RECT) + sizeof(RGNDATAHEADER)));
                 }
             }
