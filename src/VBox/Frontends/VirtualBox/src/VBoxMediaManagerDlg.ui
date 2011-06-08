@@ -98,7 +98,7 @@
            <item row="0" column="0" >
             <widget class="QLabel" name="mLbHD1" >
              <property name="text" >
-              <string>Location</string>
+              <string>Location:</string>
              </property>
             </widget>
            </item>
@@ -115,7 +115,7 @@
            <item row="1" column="0" >
             <widget class="QLabel" name="mLbHD2" >
              <property name="text" >
-              <string>Type (Format)</string>
+              <string>Type (Format):</string>
              </property>
             </widget>
            </item>
@@ -132,12 +132,29 @@
            <item row="2" column="0" >
             <widget class="QLabel" name="mLbHD3" >
              <property name="text" >
-              <string>Attached to</string>
+              <string>Storage details:</string>
              </property>
             </widget>
            </item>
            <item row="2" column="1" >
             <widget class="QILabel" name="mIpHD3" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0" >
+            <widget class="QLabel" name="mLbHD4" >
+             <property name="text" >
+              <string>Attached to:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1" >
+            <widget class="QILabel" name="mIpHD4" >
              <property name="sizePolicy" >
               <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
                <horstretch>0</horstretch>
@@ -203,7 +220,7 @@
            <item row="0" column="0" >
             <widget class="QLabel" name="mLbCD1" >
              <property name="text" >
-              <string>Location</string>
+              <string>Location:</string>
              </property>
             </widget>
            </item>
@@ -220,7 +237,7 @@
            <item row="1" column="0" >
             <widget class="QLabel" name="mLbCD2" >
              <property name="text" >
-              <string>Attached to</string>
+              <string>Attached to:</string>
              </property>
             </widget>
            </item>
@@ -294,7 +311,7 @@
            <item row="0" column="0" >
             <widget class="QLabel" name="mLbFD1" >
              <property name="text" >
-              <string>Location</string>
+              <string>Location:</string>
              </property>
             </widget>
            </item>
@@ -311,7 +328,7 @@
            <item row="1" column="0" >
             <widget class="QLabel" name="mLbFD2" >
              <property name="text" >
-              <string>Attached to</string>
+              <string>Attached to:</string>
              </property>
             </widget>
            </item>

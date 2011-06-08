@@ -315,6 +315,8 @@ public:
         return mDiskTypes.value (t);
     }
 
+    QString toString(KMediumVariant mediumVariant) const;
+
     /**
      * Similar to toString (KMediumType), but returns 'Differencing' for
      * normal hard disks that have a parent.

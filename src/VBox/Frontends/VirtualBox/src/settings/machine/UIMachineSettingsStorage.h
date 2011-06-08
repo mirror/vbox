@@ -365,6 +365,7 @@ public:
     QString attLogicalSize() const;
     QString attLocation() const;
     QString attFormat() const;
+    QString attDetails() const;
     QString attUsage() const;
 
 private:
@@ -398,6 +399,7 @@ private:
     QString mAttLogicalSize;
     QString mAttLocation;
     QString mAttFormat;
+    QString mAttDetails;
     QString mAttUsage;
 };
 
@@ -445,6 +447,7 @@ public:
         R_AttLogicalSize,
         R_AttLocation,
         R_AttFormat,
+        R_AttDetails,
         R_AttUsage,
 
         R_Margin,

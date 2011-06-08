@@ -405,25 +405,6 @@ UINewHDWizardPageVariant::UINewHDWizardPageVariant()
     m_pExclusivenessManager->addWidget(m_pSplitBox, QVariant((qulonglong)(KMediumVariant_VmdkSplit2G)));
 }
 
-/* static */
-QString UINewHDWizardPageVariant::variantToString(qulonglong uMediumVariant)
-{
-    switch (uMediumVariant)
-    {
-        case (qulonglong)KMediumVariant_Standard:
-            return tr("Dynamically expanding storage");
-        case (qulonglong)(KMediumVariant_Standard | KMediumVariant_Fixed):
-            return tr("Fixed size storage");
-        case (qulonglong)(KMediumVariant_Standard | KMediumVariant_VmdkSplit2G):
-            return tr("Dynamically expanding storage split into files of less than 2GB");
-        case (qulonglong)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkSplit2G):
-            return tr("Fixed size storage split into files of less than 2GB");
-        default:
-            break;
-    }
-    return QString();
-}
-
 void UINewHDWizardPageVariant::sltUpdateVariant(QVariant exclusiveData, QList<QVariant> optionsData)
 {
     /* Gather new data: */
@@ -827,7 +808,7 @@ void UINewHDWizardPageSummary::retranslateUi()
         "<tr><td><nobr>%7: </nobr></td><td><nobr>%8 (%9)</nobr></td></tr>"
     )
     .arg(tr("File type", "summary"), mediumFormat.isNull() ? QString() : VBoxGlobal::removeAccelMark(UINewHDWizardPageFormat::fullFormatName(mediumFormat.GetName())))
-    .arg(tr("Details", "summary"), UINewHDWizardPageVariant::variantToString(uVariant))
+    .arg(tr("Details", "summary"), vboxGlobal().toString((KMediumVariant)uVariant))
     .arg(tr("Location", "summary"), strMediumPath)
     .arg(tr("Size", "summary"), sizeFormatted, sizeUnformatted);
 
