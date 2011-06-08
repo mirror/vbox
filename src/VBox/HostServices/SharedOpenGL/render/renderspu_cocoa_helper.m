@@ -947,9 +947,9 @@ while(0);
     /* The GPUs like the GL_BGRA / GL_UNSIGNED_INT_8_8_8_8_REV combination
      * others are also valid, but might incur a costly software translation. */
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, m_FBOTexBackId);
-    glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA, m_FBOTexSize.width, m_FBOTexSize.height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
+    glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGB, m_FBOTexSize.width, m_FBOTexSize.height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, m_FBOTexFrontId);
-    glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA, m_FBOTexSize.width, m_FBOTexSize.height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
+    glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGB, m_FBOTexSize.width, m_FBOTexSize.height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
 
     /* Now attach the textures to the FBO as its color destinations */
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, m_FBOAttBackId,  GL_TEXTURE_RECTANGLE_ARB, m_FBOTexBackId, 0);
