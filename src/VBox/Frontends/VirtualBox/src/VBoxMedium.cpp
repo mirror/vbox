@@ -50,6 +50,8 @@ VBoxMedium& VBoxMedium::operator= (const VBoxMedium &aOther)
     mHardDiskFormat = aOther.hardDiskFormat();
     mHardDiskType = aOther.hardDiskType();
 
+    mStorageDetails = aOther.storageDetails();
+
     mUsage = aOther.usage();
     mToolTip = aOther.tip();
 
@@ -132,6 +134,7 @@ void VBoxMedium::refresh()
     {
         mHardDiskFormat = mMedium.GetFormat();
         mHardDiskType = vboxGlobal().mediumTypeString (mMedium);
+        mStorageDetails = vboxGlobal().toString((KMediumVariant)mMedium.GetVariant());
         mIsReadOnly = mMedium.GetReadOnly();
 
         /* Adjust the parent if its possible */

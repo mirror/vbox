@@ -166,6 +166,8 @@ public:
     QString hardDiskFormat (bool aNoDiffs = false) const { return aNoDiffs ? root().mHardDiskFormat : mHardDiskFormat; }
     QString hardDiskType (bool aNoDiffs = false) const { return aNoDiffs ? root().mHardDiskType : mHardDiskType; }
 
+    QString storageDetails() const { return mStorageDetails; }
+
     QString usage (bool aNoDiffs = false) const { return aNoDiffs ? root().mUsage : mUsage; }
     QString tip() const { return mToolTip; }
 
@@ -251,6 +253,8 @@ private:
 
     QString mHardDiskFormat;
     QString mHardDiskType;
+
+    QString mStorageDetails;
 
     QString mUsage;
     QString mToolTip;

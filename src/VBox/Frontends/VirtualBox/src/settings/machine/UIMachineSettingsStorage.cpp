@@ -645,6 +645,11 @@ QString AttachmentItem::attFormat() const
     return mAttFormat;
 }
 
+QString AttachmentItem::attDetails() const
+{
+    return mAttDetails;
+}
+
 QString AttachmentItem::attUsage() const
 {
     return mAttUsage;
@@ -675,6 +680,7 @@ void AttachmentItem::cache()
             case KDeviceType_HardDisk:
             {
                 mAttFormat = QString("%1 (%2)").arg(medium.hardDiskType(true)).arg(medium.hardDiskFormat(true));
+                mAttDetails = medium.storageDetails();
                 break;
             }
             case KDeviceType_DVD:
@@ -1097,6 +1103,13 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                     return static_cast <AttachmentItem*> (item)->attFormat();
+            return QString();
+        }
+        case R_AttDetails:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_AttachmentItem)
+                    return static_cast <AttachmentItem*> (item)->attDetails();
             return QString();
         }
         case R_AttUsage:
@@ -1710,6 +1723,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mLbHDVirtualSizeValue->setFullSizeSelection (true);
     mLbHDActualSizeValue->setFullSizeSelection (true);
     mLbSizeValue->setFullSizeSelection (true);
+    mLbHDDetailsValue->setFullSizeSelection (true);
     mLbLocationValue->setFullSizeSelection (true);
     mLbUsageValue->setFullSizeSelection (true);
 
@@ -2374,6 +2388,7 @@ void UIMachineSettingsStorage::getInformation()
                 mLbHDVirtualSizeValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttLogicalSize).toString()));
                 mLbHDActualSizeValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttSize).toString()));
                 mLbSizeValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttSize).toString()));
+                mLbHDDetailsValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttDetails).toString()));
                 mLbLocationValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttLocation).toString()));
                 mLbUsageValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttUsage).toString()));
 
@@ -2942,6 +2957,9 @@ void UIMachineSettingsStorage::updateAdditionalObjects (KDeviceType aType)
 
     mLbSize->setVisible (aType != KDeviceType_HardDisk);
     mLbSizeValue->setVisible (aType != KDeviceType_HardDisk);
+
+    mLbHDDetails->setVisible (aType == KDeviceType_HardDisk);
+    mLbHDDetailsValue->setVisible (aType == KDeviceType_HardDisk);
 }
 
 QString UIMachineSettingsStorage::generateUniqueName (const QString &aTemplate) const
@@ -3503,6 +3521,8 @@ void UIMachineSettingsStorage::polishPage()
     mLbHDActualSizeValue->setEnabled(isMachineInValidMode());
     mLbSize->setEnabled(isMachineInValidMode());
     mLbSizeValue->setEnabled(isMachineInValidMode());
+    mLbHDDetails->setEnabled(isMachineInValidMode());
+    mLbHDDetailsValue->setEnabled(isMachineInValidMode());
     mLbLocation->setEnabled(isMachineInValidMode());
     mLbLocationValue->setEnabled(isMachineInValidMode());
     mLbUsage->setEnabled(isMachineInValidMode());

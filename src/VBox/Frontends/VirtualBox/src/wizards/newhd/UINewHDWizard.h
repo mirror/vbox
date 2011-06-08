@@ -145,9 +145,6 @@ public:
     /* Constructor: */
     UINewHDWizardPageVariant();
 
-    /* Returns the name of passed medium variant: */
-    static QString variantToString(qulonglong uMediumVariant);
-
 private slots:
 
     /* Handler for the 'variant'-change signal: */
