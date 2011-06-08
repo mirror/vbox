@@ -824,25 +824,13 @@ static int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
 
 #define USBDEVICE_MAJOR 189
 
-/** Deduce the bus that a USB device is plugged into from the device node
- * number.  See drivers/usb/core/hub.c:usb_new_device as of Linux 2.6.20. */
-static unsigned usbBusFromDevNum(dev_t devNum)
+/** Calculate the device number of a USB device.  See
+ * drivers/usb/core/hub.c:usb_new_device as of Linux 2.6.20. */
+static dev_t usbMakeDevNum(unsigned bus, unsigned device)
 {
-    AssertReturn(devNum, 0);
-    AssertReturn(major(devNum) == USBDEVICE_MAJOR, 0);
-    return (minor(devNum) >> 7) + 1;
+    AssertReturn(((device - 1) & ~127) == 0, 0);
+    return makedev(USBDEVICE_MAJOR, ((bus + 1) << 7) + device + 1);
 }
-
-
-/** Deduce the device number of a USB device on the bus from the device node
- * number.  See drivers/usb/core/hub.c:usb_new_device as of Linux 2.6.20. */
-static unsigned usbDeviceFromDevNum(dev_t devNum)
-{
-    AssertReturn(devNum, 0);
-    AssertReturn(major(devNum) == USBDEVICE_MAJOR, 0);
-    return (minor(devNum) & 127) + 1;
-}
-
 
 /**
  * If a file @a pcszNode from /sys/bus/usb/devices is a device rather than an
@@ -855,10 +843,9 @@ static int addIfDevice(const char *pcszDevicesRoot,
     const char *pcszFile = strrchr(pcszNode, '/');
     if (strchr(pcszFile, ':'))
         return VINF_SUCCESS;
-    dev_t devnum = RTLinuxSysFsReadDevNumFile("%s/dev", pcszNode);
-    /* Sanity test of our static helpers */
-    Assert(usbBusFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 5);
-    Assert(usbDeviceFromDevNum(makedev(USBDEVICE_MAJOR, 517)) == 6);
+    unsigned bus = RTLinuxSysFsReadIntFile(10, "%s/busnum", pcszNode);
+    unsigned device = RTLinuxSysFsReadIntFile(10, "%s/devnum", pcszNode);
+    dev_t devnum = usbMakeDevNum(bus, device);
     if (!devnum)
         return VINF_SUCCESS;
     char szDevPath[RTPATH_MAX];
@@ -866,9 +853,7 @@ static int addIfDevice(const char *pcszDevicesRoot,
     cchDevPath = RTLinuxFindDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
                                        szDevPath, sizeof(szDevPath),
                                        "%s/%.3d/%.3d",
-                                       pcszDevicesRoot,
-                                       usbBusFromDevNum(devnum),
-                                       usbDeviceFromDevNum(devnum));
+                                       pcszDevicesRoot, bus, device);
     if (cchDevPath < 0)
         return VINF_SUCCESS;
 
