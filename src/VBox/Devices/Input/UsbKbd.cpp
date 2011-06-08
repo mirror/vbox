@@ -42,6 +42,7 @@
 
 /** @name USB HID specific descriptor types
  * @{ */
+#define DT_IF_HID_DESCRIPTOR        0x21
 #define DT_IF_HID_REPORT            0x22
 /** @} */
 
@@ -317,8 +318,9 @@ static const VUSBDESCCONFIGEX g_UsbHidConfigDesc =
         /* .bmAttributes = */       RT_BIT(7),
         /* .MaxPower = */           50 /* 100mA */
     },
-    NULL,
-    &g_aUsbHidInterfaces[0]
+    NULL,                           /* pvMore */
+    &g_aUsbHidInterfaces[0],
+    NULL                            /* pvOriginal */
 };
 
 static const VUSBDESCDEVICE g_UsbHidDeviceDesc =
@@ -903,7 +905,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
         u8HidCode = u32Usage & 0xFF;
         AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
 
-        LogRelFlowFunc(("key %s: 0x%x->0x%x\n",
+        LogFlowFunc(("key %s: 0x%x->0x%x\n",
                         fKeyDown ? "down" : "up", u8KeyCode, u8HidCode));
 
         if (fKeyDown)
@@ -1083,7 +1085,20 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                     {
                         switch (pSetup->wValue >> 8)
                         {
+                            case DT_IF_HID_DESCRIPTOR:
+                            {
+                                uint32_t    cbCopy;
+
+                                /* Returned data is written after the setup message. */
+                                cbCopy = pUrb->cbData - sizeof(*pSetup);
+                                cbCopy = RT_MIN(cbCopy, sizeof(g_UsbHidIfHidDesc));
+                                Log(("usbHidKbd: GET_DESCRIPTOR DT_IF_HID_DESCRIPTOR wValue=%#x wIndex=%#x cbCopy=%#x\n", pSetup->wValue, pSetup->wIndex, cbCopy));
+                                memcpy(&pUrb->abData[sizeof(*pSetup)], &g_UsbHidIfHidDesc, cbCopy);
+                                return usbHidCompleteOk(pThis, pUrb, cbCopy + sizeof(*pSetup));
+                            }
+
                             case DT_IF_HID_REPORT:
+                            {
                                 uint32_t    cbCopy;
 
                                 /* Returned data is written after the setup message. */
@@ -1092,6 +1107,8 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                                 Log(("usbHid: GET_DESCRIPTOR DT_IF_HID_REPORT wValue=%#x wIndex=%#x cbCopy=%#x\n", pSetup->wValue, pSetup->wIndex, cbCopy));
                                 memcpy(&pUrb->abData[sizeof(*pSetup)], &g_UsbHidReportDesc, cbCopy);
                                 return usbHidCompleteOk(pThis, pUrb, cbCopy + sizeof(*pSetup));
+                            }
+
                             default:
                                 Log(("usbHid: GET_DESCRIPTOR, huh? wValue=%#x wIndex=%#x\n", pSetup->wValue, pSetup->wIndex));
                                 break;
