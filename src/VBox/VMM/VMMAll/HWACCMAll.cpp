@@ -112,7 +112,6 @@ static DECLCALLBACK(void) hwaccmFlushHandler(RTCPUID idCpu, void *pvUser1, void 
 static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
 {
     uint32_t cWorldSwitchExits = ASMAtomicUoReadU32(&pVCpu->hwaccm.s.cWorldSwitchExits);
-    Assert(idHostCpu == pVCpu->idHostCpu);  /** @todo bogus assertion subject to races? */
 
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatPoke, x);
     int rc = RTMpPokeCpu(idHostCpu);
