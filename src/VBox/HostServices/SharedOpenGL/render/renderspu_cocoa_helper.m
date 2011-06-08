@@ -796,11 +796,6 @@ while(0);
         /* Clear background to transparent */
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-        glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, m_FBOId);
-        glReadBuffer(m_FBOAttFrontId);
-        glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
-        glDrawBuffer(GL_BACK);
-
         DEBUG_MSG(("OVIW(%p): makeCurrent (non shared) %p\n", (void*)self, (void*)m_pGLCtx));
         [m_pGLCtx makeCurrentContext];
     }
@@ -952,9 +947,9 @@ while(0);
     /* The GPUs like the GL_BGRA / GL_UNSIGNED_INT_8_8_8_8_REV combination
      * others are also valid, but might incur a costly software translation. */
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, m_FBOTexBackId);
-    glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGB, m_FBOTexSize.width, m_FBOTexSize.height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
+    glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA, m_FBOTexSize.width, m_FBOTexSize.height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, m_FBOTexFrontId);
-    glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGB, m_FBOTexSize.width, m_FBOTexSize.height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
+    glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA, m_FBOTexSize.width, m_FBOTexSize.height, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
 
     /* Now attach the textures to the FBO as its color destinations */
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, m_FBOAttBackId,  GL_TEXTURE_RECTANGLE_ARB, m_FBOTexBackId, 0);
@@ -982,6 +977,7 @@ while(0);
     if (GL_FRAMEBUFFER_COMPLETE_EXT != glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT))
         DEBUG_MSG(("OVIW(%p): Framebuffer Object creation or update failed!\n", (void*)self));
 
+//    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, oldTexId);
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, (GLuint)oldFBId ? (GLuint)oldFBId : m_FBOId);
 
@@ -1165,44 +1161,52 @@ while(0);
 - (void)swapFBO
 {
     GLint sw     = 0;
+    GLint readFBOId = 0;
+    GLint drawFBOId = 0;
     GLint readId = 0;
     GLint drawId = 0;
 
     DEBUG_MSG(("OVIW(%p): swapFBO\n", (void*)self));
 
 #ifdef FBO
-    glBindFramebufferEXT(GL_FRAMEBUFFER_BINDING_EXT, m_FBOId);
-
     /* Don't use flush buffers cause we are using FBOs here! */
 
-    if ([self isCurrentFBO])
+    /* Before we swap make sure everything is done (This is really
+     * important. Don't remove.) */
+    glFlush();
+
+    /* Fetch the current used read and draw buffers. */
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &readFBOId);
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &drawFBOId);
+    glGetIntegerv(GL_READ_BUFFER, &readId);
+    glGetIntegerv(GL_DRAW_BUFFER, &drawId);
+
+    /* Do the swapping of our internal ids */
+    sw              = m_FBOTexFrontId;
+    m_FBOTexFrontId = m_FBOTexBackId;
+    m_FBOTexBackId  = sw;
+    sw              = m_FBOAttFrontId;
+    m_FBOAttFrontId = m_FBOAttBackId;
+    m_FBOAttBackId  = sw;
+
+    DEBUG_MSG_1(("read FBO: %d draw FBO: %d readId: %d drawId: %d\n", readFBOId, drawFBOId, readId, drawId));
+    /* We also have to swap the real ids on the current context. */
+    if ((GLuint)readFBOId == m_FBOId)
     {
-        /* Fetch the current used read and draw buffers. */
-        glGetIntegerv(GL_READ_BUFFER, &readId);
-        glGetIntegerv(GL_DRAW_BUFFER, &drawId);
-
-        /* Do the swapping of our internal ids */
-        sw              = m_FBOTexFrontId;
-        m_FBOTexFrontId = m_FBOTexBackId;
-        m_FBOTexBackId  = sw;
-        sw              = m_FBOAttFrontId;
-        m_FBOAttFrontId = m_FBOAttBackId;
-        m_FBOAttBackId  = sw;
-
-        /* We also have to swap the real ids on the current context. */
         if ((GLuint)readId == m_FBOAttFrontId)
-        {
-            glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, m_FBOId);
             glReadBuffer(m_FBOAttBackId);
-        }
-        if ((GLuint)drawId == m_FBOAttFrontId)
-        {
-            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, m_FBOId);
-            glDrawBuffer(m_FBOAttBackId);
-        }
-
-        [self tryDraw];
+        if ((GLuint)readId == m_FBOAttBackId)
+            glReadBuffer(m_FBOAttFrontId);
     }
+    if ((GLuint)drawFBOId == m_FBOId)
+    {
+        if ((GLuint)drawId == m_FBOAttFrontId)
+            glDrawBuffer(m_FBOAttBackId);
+        if ((GLuint)drawId == m_FBOAttBackId)
+            glDrawBuffer(m_FBOAttFrontId);
+    }
+
+    [self tryDraw];
 #else
     [m_pGLCtx flushBuffer];
 #endif
@@ -1211,6 +1215,7 @@ while(0);
 - (void)flushFBO
 {
     GLint drawId = 0;
+    GLint FBOId  = 0;
 
     DEBUG_MSG(("OVIW(%p): flushFBO\n", (void*)self));
 
@@ -1223,8 +1228,10 @@ while(0);
         && [self isCurrentFBO])
     {
         /* Only reset if we aren't currently front. */
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &FBOId);
         glGetIntegerv(GL_DRAW_BUFFER, &drawId);
-        if ((GLuint)drawId != m_FBOAttFrontId)
+        if (!(   (GLuint)FBOId  == m_FBOId
+              && (GLuint)drawId == m_FBOAttFrontId))
             m_fFrontDrawing = false;
         [self tryDraw];
     }
@@ -1244,7 +1251,8 @@ while(0);
 
 - (void)stateInfo:(GLenum)pname withParams:(GLint*)params
 {
-    DEBUG_MSG_1(("StateInfo requested: %d\n", pname));
+    GLint test;
+//    DEBUG_MSG_1(("StateInfo requested: %d\n", pname));
 
     glGetIntegerv(pname, params);
 #ifdef FBO
@@ -1260,13 +1268,29 @@ while(0);
             break;
         }
         case GL_READ_BUFFER:
+        {
+            glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &test);
+            if ((GLuint)test == m_FBOId)
+            {
+                if ((GLuint)*params == m_FBOAttFrontId)
+                    *params = GL_FRONT;
+                else
+                    if ((GLuint)*params == m_FBOAttBackId)
+                        *params = GL_BACK;
+            }
+            break;
+        }
         case GL_DRAW_BUFFER:
         {
-            if ((GLuint)*params == m_FBOAttFrontId)
-                *params = GL_FRONT;
-            else
-                if ((GLuint)*params == m_FBOAttBackId)
-                    *params = GL_BACK;
+            glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &test);
+            if ((GLuint)test == m_FBOId)
+            {
+                if ((GLuint)*params == m_FBOAttFrontId)
+                    *params = GL_FRONT;
+                else
+                    if ((GLuint)*params == m_FBOAttBackId)
+                        *params = GL_BACK;
+            }
             break;
         }
     }
@@ -1281,9 +1305,15 @@ while(0);
     */
     {
         if (mode == GL_FRONT)
+        {
+            glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, m_FBOId);
             glReadBuffer(m_FBOAttFrontId);
+        }
         else if (mode == GL_BACK)
+        {
+            glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, m_FBOId);
             glReadBuffer(m_FBOAttBackId);
+        }
         else
             glReadBuffer(mode);
     }
@@ -1302,17 +1332,19 @@ while(0);
         if (mode == GL_FRONT)
         {
             DEBUG_MSG(("OVIW(%p): front\n", (void*)self));
+            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, m_FBOId);
             glDrawBuffer(m_FBOAttFrontId);
             m_fFrontDrawing = true;
         }
         else if (mode == GL_BACK)
         {
             DEBUG_MSG(("OVIW(%p): back\n", (void*)self));
+            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, m_FBOId);
             glDrawBuffer(m_FBOAttBackId);
         }
         else
         {
-            DEBUG_MSG(("OVIW(%p): other\n", (void*)self));
+            DEBUG_MSG(("OVIW(%p): other: %d\n", (void*)self, mode));
             glDrawBuffer(mode);
         }
     }
@@ -1347,8 +1379,8 @@ while(0);
 #ifdef FBO
 
     /* Fetch the current used read and draw buffers. */
-    glGetIntegerv(GL_READ_FRAMEBUFFER_EXT, &oldReadFBOId);
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_EXT, &oldDrawFBOId);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING_EXT, &oldReadFBOId);
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING_EXT, &oldDrawFBOId);
     glGetIntegerv(GL_READ_BUFFER, &oldReadId);
     glGetIntegerv(GL_DRAW_BUFFER, &oldDrawId);
 
@@ -1392,8 +1424,7 @@ while(0);
             /* Clear background to transparent */
             glClear(GL_COLOR_BUFFER_BIT);
 
-            /* Blit the content of the FBO to the screen. todo: check for
-             * optimization with display lists. */
+            /* Blit the content of the FBO to the screen. */
             for (i = 0; i < m_cClipRects; ++i)
             {
                 GLint x1 = m_paClipRects[4*i];
@@ -1408,20 +1439,19 @@ while(0);
             /*
             glFinish();
             */
+            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
             [m_pSharedGLCtx flushBuffer];
 
             [m_pGLCtx makeCurrentContext];
             /* Reset to previous buffer bindings. */
-            if (   (GLuint)oldReadId == m_FBOAttBackId
-                || (GLuint)oldReadId == m_FBOAttFrontId)
-                glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, m_FBOId);
+            glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, oldReadFBOId);
             glReadBuffer(oldReadId);
-            if (   (GLuint)oldDrawId == m_FBOAttBackId
-                || (GLuint)oldDrawId == m_FBOAttFrontId)
-                glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, m_FBOId);
+            glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, oldDrawFBOId);
             glDrawBuffer(oldDrawId);
         }
     }
+#else
+    [m_pGLCtx flushBuffer];
 #endif
 }
 
@@ -1938,7 +1968,7 @@ void cocoaGetIntegerv(GLenum pname, GLint *params)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-    DEBUG_MSG_1(("getIntergerv called: %d\n", pname));
+//    DEBUG_MSG_1(("getIntergerv called: %d\n", pname));
 
     performSelectorOnViewTwoArgs(@selector(stateInfo:withParams:), (id)pname, (id)params);
 
