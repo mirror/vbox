@@ -284,7 +284,7 @@ typedef struct HWACCM
     uint64_t                    u64RegisterMask;
 
     /** Maximum ASID allowed. */
-    RTUINT                      uMaxASID;
+    uint32_t                    uMaxASID;
 
     /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
      * This number is set much higher when RTThreadPreemptIsPending is reliable. */
@@ -569,23 +569,24 @@ typedef struct HWACCMCPU
     bool                        fActive;
 
     /** Set when the TLB has been checked until we return from the world switch. */
-    volatile uint8_t            fCheckedTLBFlush;
+    volatile bool               fCheckedTLBFlush;
     uint8_t                     bAlignment[3];
 
+    /** World switch exit counter. */
+    volatile uint32_t           cWorldSwitchExits;
+
     /** HWACCM_CHANGED_* flags. */
-    RTUINT                      fContextUseFlags;
+    uint32_t                    fContextUseFlags;
 
     /** Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
     RTCPUID                     idLastCpu;
 
     /** TLB flush count */
-    RTUINT                      cTLBFlushes;
+    uint32_t                    cTLBFlushes;
 
     /** Current ASID in use by the VM */
-    RTUINT                      uCurrentASID;
+    uint32_t                    uCurrentASID;
 
-    /** World switch exit counter. */
-    volatile uint32_t           cWorldSwitchExit;
     uint32_t                    u32Alignment;
 
     struct
@@ -775,7 +776,7 @@ typedef struct HWACCMCPU
         uint8_t             abDisStatePadding[DISCPUSTATE_PADDING_SIZE];
     };
 
-    RTUINT                  padding2[1];
+    uint32_t                padding2[1];
 
     STAMPROFILEADV          StatEntry;
     STAMPROFILEADV          StatExit1;
