@@ -8284,7 +8284,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="44637074-a613-48cd-9b5d-77117f971529"
+    uuid="af2766d9-ebff-455f-b5ce-c6f855b8f584"
     wsmap="managed"
     >
     <desc>
@@ -8752,7 +8752,7 @@
           Password of the user account specified.
         </desc>
       </param>
-      <param name="handle" type="unsigned long" dir="out">
+      <param name="handle" type="unsigned long" dir="return">
         <desc>
           Handle of opened directory returned by openDirectory.
         </desc>
@@ -8773,7 +8773,7 @@
           Handle of opened directory returned by openDirectory.
         </desc>
       </param>
-      <param name="entry" type="IGuestDirEntry" dir="out">
+      <param name="entry" type="IGuestDirEntry" dir="return">
         <desc>
           Information about next directory entry on success.
         </desc>
@@ -8806,7 +8806,7 @@
           Password of the user account specified.
         </desc>
       </param>
-      <param name="exists" type="boolean" dir="out">
+      <param name="exists" type="boolean" dir="return">
         <desc>
           True if it's a regular file, false if it isn't (or doesn't exist).
         </desc>
