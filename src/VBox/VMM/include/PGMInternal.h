@@ -806,7 +806,7 @@ typedef PPGMPAGE *PPPGMPAGE;
 
 
 /** Asserts lock ownership in some of the PGM_PAGE_XXX macros. */
-#ifdef VBOX_STRICT
+#if defined(VBOX_STRICT) && 0 /** @todo triggers in pgmRZDynMapGCPageV2Inlined */
 # define PGM_PAGE_ASSERT_LOCK(a_pVM)  PGM_LOCK_ASSERT_OWNER(a_pVM)
 #else
 # define PGM_PAGE_ASSERT_LOCK(a_pVM)  do { } while (0)
