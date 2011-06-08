@@ -108,7 +108,8 @@ enum eInputStatus
 };
 
 /**
- * Document me.
+ * The guest control callback data header. Must come first
+ * on each callback structure defined below this struct.
  */
 typedef struct VBoxGuestCtrlCallbackHeader
 {
@@ -118,6 +119,13 @@ typedef struct VBoxGuestCtrlCallbackHeader
     uint32_t u32ContextID;
 } CALLBACKHEADER;
 typedef CALLBACKHEADER *PCALLBACKHEADER;
+
+typedef struct VBoxGuestCtrlCallbackDataClientDisconnected
+{
+    /** Callback data header. */
+    CALLBACKHEADER hdr;
+} CALLBACKDATACLIENTDISCONNECTED;
+typedef CALLBACKDATACLIENTDISCONNECTED *PCALLBACKDATACLIENTDISCONNECTED;
 
 /**
  * Data structure to pass to the service extension callback.  We use this to
@@ -172,31 +180,50 @@ typedef struct VBoxGuestCtrlCallbackDataExecInStatus
 } CALLBACKDATAEXECINSTATUS;
 typedef CALLBACKDATAEXECINSTATUS *PCALLBACKDATAEXECINSTATUS;
 
-typedef struct VBoxGuestCtrlCallbackDataClientDisconnected
+typedef struct VBoxGuestCtrlCallbackDataDirOpen
 {
     /** Callback data header. */
     CALLBACKHEADER hdr;
-} CALLBACKDATACLIENTDISCONNECTED;
-typedef CALLBACKDATACLIENTDISCONNECTED *PCALLBACKDATACLIENTDISCONNECTED;
+    /** The native node id. */
+    uint32_t u32Handle;
+} CALLBACKDATADIROPEN;
+typedef CALLBACKDATADIROPEN *PCALLBACKDATADIROPEN;
 
-enum
+typedef struct VBoxGuestCtrlCallbackDataDirRead
 {
-    /** Magic number for sanity checking the CALLBACKDATACLIENTDISCONNECTED structure. */
-    CALLBACKDATAMAGICCLIENTDISCONNECTED = 0x08041984,
-    /** Magic number for sanity checking the CALLBACKDATAEXECSTATUS structure. */
-    CALLBACKDATAMAGICEXECSTATUS = 0x26011982,
-    /** Magic number for sanity checking the CALLBACKDATAEXECOUT structure. */
-    CALLBACKDATAMAGICEXECOUT = 0x11061949,
-    /** Magic number for sanity checking the CALLBACKDATAEXECIN structure. */
-    CALLBACKDATAMAGICEXECINSTATUS = 0x19091951
+    /** Callback data header. */
+    CALLBACKHEADER hdr;
+    /** The native node id. */
+    uint64_t u64NodeId;
+    /** The entry name. */
+    char *pszName;
+    /** Size (in bytes) of entry name. */
+    uint32_t cbName;
+} CALLBACKDATADIRREAD;
+typedef CALLBACKDATADIRREAD *PCALLBACKDATADIRREAD;
+
+enum eVBoxGuestCtrlCallbackDataMagic
+{
+    CALLBACKDATAMAGIC_CLIENT_DISCONNECTED = 0x08041984,
+
+    CALLBACKDATAMAGIC_EXEC_STATUS = 0x26011982,
+    CALLBACKDATAMAGIC_EXEC_OUT = 0x11061949,
+    CALLBACKDATAMAGIC_EXEC_IN_STATUS = 0x19091951,
+
+    CALLBACKDATAMAGIC_DIR_OPEN = 0x05031907,
+    CALLBACKDATAMAGIC_DIR_READ = 0x02041932
 };
 
 enum eVBoxGuestCtrlCallbackType
 {
     VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN = 0,
+
     VBOXGUESTCTRLCALLBACKTYPE_EXEC_START = 1,
     VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT = 2,
-    VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS = 3
+    VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS = 3,
+
+    VBOXGUESTCTRLCALLBACKTYPE_DIR_OPEN = 100,
+    VBOXGUESTCTRLCALLBACKTYPE_DIR_READ = 105
 };
 
 /**
@@ -208,6 +235,11 @@ enum eHostFn
      * The host asks the client to cancel all pending waits and exit.
      */
     HOST_CANCEL_PENDING_WAITS = 0,
+
+    /*
+     * Execution handling.
+     */
+
     /**
      * The host wants to execute something in the guest. This can be a command line
      * or starting a program.
@@ -221,7 +253,24 @@ enum eHostFn
      * Gets the current status of a running process, e.g.
      * new data on stdout/stderr, process terminated etc.
      */
-    HOST_EXEC_GET_OUTPUT = 102
+    HOST_EXEC_GET_OUTPUT = 102,
+
+    /*
+     * Directory handling.
+     */
+
+    /**
+     * Opens a directory for reading.
+     */
+    HOST_DIR_OPEN = 200,
+    /**
+     * Closes a formerly opened directory.
+     */
+    HOST_DIR_CLOSE = 201,
+    /**
+     * Reads the next entry from an open directory.
+     */
+    HOST_DIR_READ = 202
 };
 
 /**
@@ -246,6 +295,11 @@ enum eGuestFn
      * detected when calling service::clientDisconnect().
      */
     GUEST_DISCONNECTED = 3,
+
+    /*
+     * Process execution.
+     */
+
     /**
      * Guests sends output from an executed process.
      */
@@ -257,7 +311,20 @@ enum eGuestFn
     /**
      * Guests sends an input status notification to the host.
      */
-    GUEST_EXEC_SEND_INPUT_STATUS = 102
+    GUEST_EXEC_SEND_INPUT_STATUS = 102,
+
+    /*
+     * Directory handling.
+     */
+
+    /**
+     * Guest sends back the directory handle.
+     */
+    GUEST_DIR_SEND_OPEN = 200,
+    /**
+     * Guest sends back the next directory entry.
+     */
+    GUEST_DIR_SEND_READ = 202
 };
 
 /*
@@ -399,6 +466,55 @@ typedef struct VBoxGuestCtrlHGCMMsgExecStatusIn
     HGCMFunctionParameter written;
 
 } VBoxGuestCtrlHGCMMsgExecStatusIn;
+
+/**
+ * Closes a formerly openend guest directory.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgDirClose
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** Directory handle to close. */
+    HGCMFunctionParameter handle;
+
+} VBoxGuestCtrlHGCMMsgDirClose;
+
+/**
+ * Opens a guest directory for reading.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgDirOpen
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** Directory (path) to open. */
+    HGCMFunctionParameter directory;
+    /** Filter (DOS style wildcard). */
+    HGCMFunctionParameter filter;
+    /** Open flags. */
+    HGCMFunctionParameter flags;
+    /** The user name to run the executed command under. */
+    HGCMFunctionParameter username;
+    /** The user's password. */
+    HGCMFunctionParameter password;
+    /** OUT: Handle for opened directory. */
+    HGCMFunctionParameter handle;
+
+} VBoxGuestCtrlHGCMMsgDirOpen;
+
+/**
+ * Reads next entry of an open guest directory.
+ */
+typedef struct VBoxGuestCtrlHGCMMsgDirRead
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** Directory handle to read from. */
+    HGCMFunctionParameter handle;
+
+} VBoxGuestCtrlHGCMMsgDirRead;
 
 #pragma pack ()
 

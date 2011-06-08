@@ -92,8 +92,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t u32ClientId)
 
 
 /**
- * Gets a host message.
- *
+ * Waits until a new host message arrives.
  * This will block until a message becomes available.
  *
  * @returns VBox status code.
@@ -102,7 +101,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t u32ClientId)
  * @param   puNumParms      Where to store the number  of parameters which will be received
  *                          in a second call to the host.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms)
+VBGLR3DECL(int) VbglR3GuestCtrlWaitForHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms)
 {
     AssertPtrReturn(puMsg, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puNumParms, VERR_INVALID_PARAMETER);
@@ -152,6 +151,138 @@ VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId)
         int rc2 = Msg.hdr.result;
         if (RT_FAILURE(rc2))
             rc = rc2;
+    }
+    return rc;
+}
+
+
+/**
+ * Closes a formerly opened guest directory.
+ *
+ * @return  IPRT status code.
+ ** @todo Docs!
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlGetCmdDirClose(uint32_t  u32ClientId,    uint32_t  uNumParms,
+                                              uint32_t *puContext,      uint32_t *puHandle)
+{
+    AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puHandle, VERR_INVALID_PARAMETER);
+
+    VBoxGuestCtrlHGCMMsgDirClose Msg;
+
+    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms = uNumParms;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmUInt32Set(&Msg.handle, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.handle.GetUInt32(puHandle);
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Opens a guest directory for reading.
+ *
+ * @return  IPRT status code.
+ ** @todo Docs!
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlGetCmdDirOpen(uint32_t  u32ClientId,    uint32_t  uNumParms,
+                                             uint32_t *puContext,
+                                             char     *pszDir,         uint32_t  cbDir,
+                                             char     *pszFilter,      uint32_t  cbFilter,
+                                             uint32_t *puFlags,
+                                             char     *pszUser,        uint32_t  cbUser,
+                                             char     *pszPassword,    uint32_t  cbPassword)
+{
+    AssertPtrReturn(pszDir, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszFilter, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puFlags, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszUser, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszPassword, VERR_INVALID_PARAMETER);
+
+    VBoxGuestCtrlHGCMMsgDirOpen Msg;
+
+    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms = uNumParms;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmPtrSet(&Msg.directory, pszDir, cbDir);
+    VbglHGCMParmPtrSet(&Msg.filter, pszFilter, cbFilter);
+    VbglHGCMParmUInt32Set(&Msg.flags, 0);
+    VbglHGCMParmPtrSet(&Msg.username, pszUser, cbUser);
+    VbglHGCMParmPtrSet(&Msg.password, pszPassword, cbPassword);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.flags.GetUInt32(puFlags);
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Opens a guest directory for reading.
+ *
+ * @return  IPRT status code.
+ ** @todo Docs!
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlGetCmdDirRead(uint32_t  u32ClientId,    uint32_t  uNumParms,
+                                             uint32_t *puContext,      uint32_t *puHandle)
+{
+    AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puHandle, VERR_INVALID_PARAMETER);
+
+    VBoxGuestCtrlHGCMMsgDirRead Msg;
+
+    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms = uNumParms;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmUInt32Set(&Msg.handle, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.handle.GetUInt32(puHandle);
+        }
     }
     return rc;
 }

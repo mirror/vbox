@@ -44,8 +44,10 @@ struct Guest::TaskGuest
 {
     enum TaskType
     {
-        /** Copies a file to the guest. */
-        CopyFile = 50,
+        /** Copies a file from host to the guest. */
+        CopyFileToGuest   = 50,
+        /** Copies a file from guest to the host. */
+        CopyFileFromGuest = 55,
 
         /** Update Guest Additions by directly copying the required installer
          *  off the .ISO file, transfer it to the guest and execute the installer
@@ -59,7 +61,7 @@ struct Guest::TaskGuest
           progress(aProgress),
           rc(S_OK)
     {}
-    ~TaskGuest() {}
+    virtual ~TaskGuest() {}
 
     int startThread();
     static int taskThread(RTTHREAD aThread, void *pvUser);
@@ -109,9 +111,14 @@ DECLCALLBACK(int) Guest::TaskGuest::taskThread(RTTHREAD /* aThread */, void *pvU
     switch (task->taskType)
     {
 #ifdef VBOX_WITH_GUEST_CONTROL
-        case TaskGuest::CopyFile:
+        case TaskGuest::CopyFileToGuest:
         {
-            rc = pGuest->taskCopyFile(task.get());
+            rc = pGuest->taskCopyFileToGuest(task.get());
+            break;
+        }
+        case TaskGuest::CopyFileFromGuest:
+        {
+            rc = pGuest->taskCopyFileFromGuest(task.get());
             break;
         }
         case TaskGuest::UpdateGuestAdditions:
@@ -181,7 +188,7 @@ HRESULT Guest::TaskGuest::setProgressErrorInfo(HRESULT hr, ComObjPtr<Progress> p
 }
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-HRESULT Guest::taskCopyFile(TaskGuest *aTask)
+HRESULT Guest::taskCopyFileToGuest(TaskGuest *aTask)
 {
     LogFlowFuncEnter();
 
@@ -442,6 +449,286 @@ HRESULT Guest::taskCopyFile(TaskGuest *aTask)
                 RTFileClose(fileSource);
             }
         }
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    /* Clean up */
+    aTask->rc = rc;
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
+}
+
+HRESULT Guest::taskCopyFileFromGuest(TaskGuest *aTask)
+{
+    LogFlowFuncEnter();
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /*
+     * Do *not* take a write lock here since we don't (and won't)
+     * touch any class-specific data (of IGuest) here - only the member functions
+     * which get called here can do that.
+     */
+
+    HRESULT rc = S_OK;
+
+    try
+    {
+        Guest *pGuest = aTask->pGuest;
+        AssertPtr(pGuest);
+
+
+
+#if 0
+        /* Does our source file exist? */
+        if (!RTFileExists(aTask->strSource.c_str()))
+        {
+            rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                 Guest::tr("Source file \"%s\" does not exist, or is not a file"),
+                                                 aTask->strSource.c_str());
+        }
+        else
+        {
+            RTFILE fileSource;
+            int vrc = RTFileOpen(&fileSource, aTask->strSource.c_str(),
+                                 RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+            if (RT_FAILURE(vrc))
+            {
+                rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                     Guest::tr("Could not open source file \"%s\" for reading (%Rrc)"),
+                                                     aTask->strSource.c_str(),  vrc);
+            }
+            else
+            {
+                uint64_t cbSize;
+                vrc = RTFileGetSize(fileSource, &cbSize);
+                if (RT_FAILURE(vrc))
+                {
+                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                         Guest::tr("Could not query file size of \"%s\" (%Rrc)"),
+                                                         aTask->strSource.c_str(), vrc);
+                }
+                else
+                {
+                    com::SafeArray<IN_BSTR> args;
+                    com::SafeArray<IN_BSTR> env;
+
+                    /*
+                     * Prepare tool command line.
+                     */
+                    char szOutput[RTPATH_MAX];
+                    if (RTStrPrintf(szOutput, sizeof(szOutput), "--output=%s", aTask->strDest.c_str()) <= sizeof(szOutput) - 1)
+                    {
+                        /*
+                         * Normalize path slashes, based on the detected guest.
+                         */
+                        Utf8Str osType = mData.mOSTypeId;
+                        if (   osType.contains("Microsoft", Utf8Str::CaseInsensitive)
+                            || osType.contains("Windows", Utf8Str::CaseInsensitive))
+                        {
+                            /* We have a Windows guest. */
+                            RTPathChangeToDosSlashes(szOutput, true /* Force conversion. */);
+                        }
+                        else /* ... or something which isn't from Redmond ... */
+                        {
+                            RTPathChangeToUnixSlashes(szOutput, true /* Force conversion. */);
+                        }
+
+                        args.push_back(Bstr(szOutput).raw());             /* We want to write a file ... */
+                    }
+                    else
+                    {
+                        rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                             Guest::tr("Error preparing command line"));
+                    }
+
+                    ComPtr<IProgress> execProgress;
+                    ULONG uPID;
+                    if (SUCCEEDED(rc))
+                    {
+                        LogRel(("Copying file \"%s\" to guest \"%s\" (%u bytes) ...\n",
+                                aTask->strSource.c_str(), aTask->strDest.c_str(), cbSize));
+                        /*
+                         * Okay, since we gathered all stuff we need until now to start the
+                         * actual copying, start the guest part now.
+                         */
+                        rc = pGuest->ExecuteProcess(Bstr(VBOXSERVICE_TOOL_CAT).raw(),
+                                                      ExecuteProcessFlag_Hidden
+                                                    | ExecuteProcessFlag_WaitForProcessStartOnly,
+                                                    ComSafeArrayAsInParam(args),
+                                                    ComSafeArrayAsInParam(env),
+                                                    Bstr(aTask->strUserName).raw(),
+                                                    Bstr(aTask->strPassword).raw(),
+                                                    5 * 1000 /* Wait 5s for getting the process started. */,
+                                                    &uPID, execProgress.asOutParam());
+                        if (FAILED(rc))
+                            rc = TaskGuest::setProgressErrorInfo(rc, aTask->progress, pGuest);
+                    }
+
+                    if (SUCCEEDED(rc))
+                    {
+                        BOOL fCompleted = FALSE;
+                        BOOL fCanceled = FALSE;
+
+                        size_t cbToRead = cbSize;
+                        size_t cbTransfered = 0;
+                        size_t cbRead;
+                        SafeArray<BYTE> aInputData(_64K);
+                        while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
+                               && !fCompleted)
+                        {
+                            if (!cbToRead)
+                                cbRead = 0;
+                            else
+                            {
+                                vrc = RTFileRead(fileSource, (uint8_t*)aInputData.raw(),
+                                                 RT_MIN(cbToRead, _64K), &cbRead);
+                                /*
+                                 * Some other error occured? There might be a chance that RTFileRead
+                                 * could not resolve/map the native error code to an IPRT code, so just
+                                 * print a generic error.
+                                 */
+                                if (RT_FAILURE(vrc))
+                                {
+                                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                         Guest::tr("Could not read from file \"%s\" (%Rrc)"),
+                                                                         aTask->strSource.c_str(), vrc);
+                                    break;
+                                }
+                            }
+
+                            /* Resize buffer to reflect amount we just have read.
+                             * Size 0 is allowed! */
+                            aInputData.resize(cbRead);
+
+                            ULONG uFlags = ProcessInputFlag_None;
+                            /* Did we reach the end of the content we want to transfer (last chunk)? */
+                            if (   (cbRead < _64K)
+                                /* Did we reach the last block which is exactly _64K? */
+                                || (cbToRead - cbRead == 0)
+                                /* ... or does the user want to cancel? */
+                                || (   SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
+                                    && fCanceled)
+                               )
+                            {
+                                uFlags |= ProcessInputFlag_EndOfFile;
+                            }
+
+                            /* Transfer the current chunk ... */
+                            ULONG uBytesWritten;
+                            rc = pGuest->SetProcessInput(uPID, uFlags,
+                                                         10 * 1000 /* Wait 10s for getting the input data transfered. */,
+                                                         ComSafeArrayAsInParam(aInputData), &uBytesWritten);
+                            if (FAILED(rc))
+                            {
+                                rc = TaskGuest::setProgressErrorInfo(rc, aTask->progress, pGuest);
+                                break;
+                            }
+
+                            Assert(cbRead <= cbToRead);
+                            Assert(cbToRead >= cbRead);
+                            cbToRead -= cbRead;
+
+                            cbTransfered += uBytesWritten;
+                            Assert(cbTransfered <= cbSize);
+                            aTask->progress->SetCurrentOperationProgress(cbTransfered / (cbSize / 100.0));
+
+                            /* End of file reached? */
+                            if (cbToRead == 0)
+                                break;
+
+                            /* Did the user cancel the operation above? */
+                            if (fCanceled)
+                                break;
+
+                            /* Progress canceled by Main API? */
+                            if (   SUCCEEDED(execProgress->COMGETTER(Canceled(&fCanceled)))
+                                && fCanceled)
+                            {
+                                rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                     Guest::tr("Copy operation of file \"%s\" was canceled on guest side"),
+                                                                     aTask->strSource.c_str());
+                                break;
+                            }
+                        }
+
+                        if (SUCCEEDED(rc))
+                        {
+                            /*
+                             * If we got here this means the started process either was completed,
+                             * canceled or we simply got all stuff transferred.
+                             */
+                            ExecuteProcessStatus_T retStatus;
+                            ULONG uRetExitCode;
+                            rc = pGuest->waitForProcessStatusChange(uPID, &retStatus, &uRetExitCode, 10 * 1000 /* 10s timeout. */);
+                            if (FAILED(rc))
+                            {
+                                rc = TaskGuest::setProgressErrorInfo(rc, aTask->progress, pGuest);
+                            }
+                            else
+                            {
+                                if (   uRetExitCode != 0
+                                    || retStatus    != ExecuteProcessStatus_TerminatedNormally)
+                                {
+                                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                         Guest::tr("Guest reported error %u while copying file \"%s\" to \"%s\""),
+                                                                         uRetExitCode, aTask->strSource.c_str(), aTask->strDest.c_str());
+                                }
+                            }
+                        }
+
+                        if (SUCCEEDED(rc))
+                        {
+                            if (fCanceled)
+                            {
+                                /*
+                                 * In order to make the progress object to behave nicely, we also have to
+                                 * notify the object with a complete event when it's canceled.
+                                 */
+                                aTask->progress->notifyComplete(VBOX_E_IPRT_ERROR,
+                                                                COM_IIDOF(IGuest),
+                                                                Guest::getStaticComponentName(),
+                                                                Guest::tr("Copying file \"%s\" canceled"), aTask->strSource.c_str());
+                            }
+                            else
+                            {
+                                /*
+                                 * Even if we succeeded until here make sure to check whether we really transfered
+                                 * everything.
+                                 */
+                                if (   cbSize > 0
+                                    && cbTransfered == 0)
+                                {
+                                    /* If nothing was transfered but the file size was > 0 then "vbox_cat" wasn't able to write
+                                     * to the destination -> access denied. */
+                                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                         Guest::tr("Access denied when copying file \"%s\" to \"%s\""),
+                                                                         aTask->strSource.c_str(), aTask->strDest.c_str());
+                                }
+                                else if (cbTransfered < cbSize)
+                                {
+                                    /* If we did not copy all let the user know. */
+                                    rc = TaskGuest::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
+                                                                         Guest::tr("Copying file \"%s\" failed (%u/%u bytes transfered)"),
+                                                                         aTask->strSource.c_str(), cbTransfered, cbSize);
+                                }
+                                else /* Yay, all went fine! */
+                                    aTask->progress->notifyComplete(S_OK);
+                            }
+                        }
+                    }
+                }
+                RTFileClose(fileSource);
+            }
+        }
+#endif
     }
     catch (HRESULT aRC)
     {
@@ -944,7 +1231,7 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void    *pvExtension,
             PCALLBACKDATACLIENTDISCONNECTED pCBData = reinterpret_cast<PCALLBACKDATACLIENTDISCONNECTED>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(CALLBACKDATACLIENTDISCONNECTED) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CALLBACKDATAMAGICCLIENTDISCONNECTED == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CALLBACKDATAMAGIC_CLIENT_DISCONNECTED == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             rc = pGuest->notifyCtrlClientDisconnected(u32Function, pCBData);
             break;
@@ -957,7 +1244,7 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void    *pvExtension,
             PCALLBACKDATAEXECSTATUS pCBData = reinterpret_cast<PCALLBACKDATAEXECSTATUS>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(CALLBACKDATAEXECSTATUS) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CALLBACKDATAMAGICEXECSTATUS == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CALLBACKDATAMAGIC_EXEC_STATUS == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             rc = pGuest->notifyCtrlExecStatus(u32Function, pCBData);
             break;
@@ -970,7 +1257,7 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void    *pvExtension,
             PCALLBACKDATAEXECOUT pCBData = reinterpret_cast<PCALLBACKDATAEXECOUT>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(CALLBACKDATAEXECOUT) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CALLBACKDATAMAGICEXECOUT == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CALLBACKDATAMAGIC_EXEC_OUT == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             rc = pGuest->notifyCtrlExecOut(u32Function, pCBData);
             break;
@@ -983,7 +1270,7 @@ DECLCALLBACK(int) Guest::doGuestCtrlNotification(void    *pvExtension,
             PCALLBACKDATAEXECINSTATUS pCBData = reinterpret_cast<PCALLBACKDATAEXECINSTATUS>(pvParms);
             AssertPtr(pCBData);
             AssertReturn(sizeof(CALLBACKDATAEXECINSTATUS) == cbParms, VERR_INVALID_PARAMETER);
-            AssertReturn(CALLBACKDATAMAGICEXECINSTATUS == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+            AssertReturn(CALLBACKDATAMAGIC_EXEC_IN_STATUS == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             rc = pGuest->notifyCtrlExecInStatus(u32Function, pCBData);
             break;
@@ -1635,7 +1922,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                     else
                         paParms[i++].setUInt32(aTimeoutMS);
 
-                    VMMDev *vmmDev;
+                    VMMDev *pVMMDev = NULL;
                     {
                         /* Make sure mParent is valid, so set the read lock while using.
                          * Do not keep this lock while doing the actual call, because in the meanwhile
@@ -1644,13 +1931,13 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
 
                         /* Forward the information to the VMM device. */
                         AssertPtr(mParent);
-                        vmmDev = mParent->getVMMDev();
+                        pVMMDev = mParent->getVMMDev();
                     }
 
-                    if (vmmDev)
+                    if (pVMMDev)
                     {
                         LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
-                        vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
+                        vrc = pVMMDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
                                                    i, paParms);
                     }
                     else
@@ -1916,7 +2203,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
             int vrc = VINF_SUCCESS;
 
             {
-                VMMDev *vmmDev;
+                VMMDev *pVMMDev = NULL;
                 {
                     /* Make sure mParent is valid, so set the read lock while using.
                      * Do not keep this lock while doing the actual call, because in the meanwhile
@@ -1925,13 +2212,13 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
 
                     /* Forward the information to the VMM device. */
                     AssertPtr(mParent);
-                    vmmDev = mParent->getVMMDev();
+                    pVMMDev = mParent->getVMMDev();
                 }
 
-                if (vmmDev)
+                if (pVMMDev)
                 {
                     LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
-                    vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_SET_INPUT,
+                    vrc = pVMMDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_SET_INPUT,
                                                i, paParms);
                 }
             }
@@ -2092,7 +2379,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
         int vrc = VINF_SUCCESS;
 
         {
-            VMMDev *vmmDev;
+            VMMDev *pVMMDev = NULL;
             {
                 /* Make sure mParent is valid, so set the read lock while using.
                  * Do not keep this lock while doing the actual call, because in the meanwhile
@@ -2101,13 +2388,13 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
 
                 /* Forward the information to the VMM device. */
                 AssertPtr(mParent);
-                vmmDev = mParent->getVMMDev();
+                pVMMDev = mParent->getVMMDev();
             }
 
-            if (vmmDev)
+            if (pVMMDev)
             {
                 LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
-                vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_GET_OUTPUT,
+                vrc = pVMMDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_GET_OUTPUT,
                                            i, paParms);
             }
         }
@@ -2267,6 +2554,81 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
 #endif
 }
 
+STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
+                                  IN_BSTR aUserName, IN_BSTR aPassword,
+                                  ULONG aFlags, IProgress **aProgress)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+    CheckComArgStrNotEmptyOrNull(aSource);
+    CheckComArgStrNotEmptyOrNull(aDest);
+    CheckComArgStrNotEmptyOrNull(aUserName);
+    CheckComArgStrNotEmptyOrNull(aPassword);
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Validate flags. */
+    if (aFlags != CopyFileFlag_None)
+    {
+        if (   !(aFlags & CopyFileFlag_Recursive)
+            && !(aFlags & CopyFileFlag_Update)
+            && !(aFlags & CopyFileFlag_FollowLinks))
+        {
+            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+        }
+    }
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    ComObjPtr<Progress> progress;
+    try
+    {
+        /* Create the progress object. */
+        progress.createObject();
+
+        rc = progress->init(static_cast<IGuest*>(this),
+                            Bstr(tr("Copying file from guest to host")).raw(),
+                            TRUE /* aCancelable */);
+        if (FAILED(rc)) throw rc;
+
+        /* Initialize our worker task. */
+        TaskGuest *pTask = new TaskGuest(TaskGuest::CopyFileFromGuest, this, progress);
+        AssertPtr(pTask);
+        std::auto_ptr<TaskGuest> task(pTask);
+
+        /* Assign data - aSource is the source file on the guest,
+         * aDest reflects the full path on the host. */
+        task->strSource   = (Utf8Str(aSource));
+        task->strDest     = (Utf8Str(aDest));
+        task->strUserName = (Utf8Str(aUserName));
+        task->strPassword = (Utf8Str(aPassword));
+        task->uFlags      = aFlags;
+
+        rc = task->startThread();
+        if (FAILED(rc)) throw rc;
+
+        /* Don't destruct on success. */
+        task.release();
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    if (SUCCEEDED(rc))
+    {
+        /* Return progress to the caller. */
+        progress.queryInterfaceTo(aProgress);
+    }
+    return rc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
 STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                                 IN_BSTR aUserName, IN_BSTR aPassword,
                                 ULONG aFlags, IProgress **aProgress)
@@ -2305,12 +2667,12 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
         progress.createObject();
 
         rc = progress->init(static_cast<IGuest*>(this),
-                            Bstr(tr("Copying file")).raw(),
+                            Bstr(tr("Copying file from host to guest")).raw(),
                             TRUE /* aCancelable */);
         if (FAILED(rc)) throw rc;
 
         /* Initialize our worker task. */
-        TaskGuest *pTask = new TaskGuest(TaskGuest::CopyFile, this, progress);
+        TaskGuest *pTask = new TaskGuest(TaskGuest::CopyFileToGuest, this, progress);
         AssertPtr(pTask);
         std::auto_ptr<TaskGuest> task(pTask);
 
@@ -2342,10 +2704,20 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::CreateDirectory(IN_BSTR aDirectory,
+STDMETHODIMP Guest::DirectoryClose(ULONG aHandle)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    return VBOX_E_NOT_SUPPORTED;
+#endif
+}
+
+STDMETHODIMP Guest::DirectoryCreate(IN_BSTR aDirectory,
                                     IN_BSTR aUserName, IN_BSTR aPassword,
-                                    ULONG aMode, ULONG aFlags,
-                                    IProgress **aProgress)
+                                    ULONG aMode, ULONG aFlags)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2361,16 +2733,15 @@ STDMETHODIMP Guest::CreateDirectory(IN_BSTR aDirectory,
     LogRel(("Creating guest directory \"%s\" as  user \"%s\" ...\n",
             Utf8Str(aDirectory).c_str(), Utf8Str(aUserName).c_str()));
 
-    return createDirectoryInternal(aDirectory,
+    return directoryCreateInternal(aDirectory,
                                    aUserName, aPassword,
-                                   aMode, aFlags, aProgress, NULL /* rc */);
+                                   aMode, aFlags, NULL /* rc */);
 #endif
 }
 
-HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
+HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
                                        IN_BSTR aUserName, IN_BSTR aPassword,
-                                       ULONG aMode, ULONG aFlags,
-                                       IProgress **aProgress, int *pRC)
+                                       ULONG aMode, ULONG aFlags, int *pRC)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2378,25 +2749,18 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
     using namespace guestControl;
 
     CheckComArgStrNotEmptyOrNull(aDirectory);
-    CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Validate flags. */
-    if (aFlags != CreateDirectoryFlag_None)
+    if (aFlags != DirectoryCreateFlag_None)
     {
-        if (!(aFlags & CreateDirectoryFlag_Parents))
+        if (!(aFlags & DirectoryCreateFlag_Parents))
         {
             return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
         }
     }
-
-    /**
-     * @todo We return a progress object because we maybe later want to
-     *       process more than one directory (or somewhat lengthly operations)
-     *       that require having a progress object provided to the caller.
-     */
 
     HRESULT rc = S_OK;
     try
@@ -2411,7 +2775,7 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
         /*
          * Prepare tool command line.
          */
-        if (aFlags & CreateDirectoryFlag_Parents)
+        if (aFlags & DirectoryCreateFlag_Parents)
             args.push_back(Bstr("--parents").raw());        /* We also want to create the parent directories. */
         if (aMode > 0)
         {
@@ -2443,29 +2807,14 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
         if (SUCCEEDED(rc))
         {
             /* Wait for process to exit ... */
+            rc = progressExec->WaitForCompletion(-1);
+            if (FAILED(rc)) return rc;
+
             BOOL fCompleted = FALSE;
             BOOL fCanceled = FALSE;
-
-            while (   SUCCEEDED(progressExec->COMGETTER(Completed(&fCompleted)))
-                   && !fCompleted)
-            {
-                /* Progress canceled by Main API? */
-                if (   SUCCEEDED(progressExec->COMGETTER(Canceled(&fCanceled)))
-                    && fCanceled)
-                {
-                    break;
-                }
-            }
-
-            ComObjPtr<Progress> progressCreate;
-            rc = progressCreate.createObject();
-            if (SUCCEEDED(rc))
-            {
-                rc = progressCreate->init(static_cast<IGuest*>(this),
-                                          Bstr(tr("Creating directory")).raw(),
-                                          TRUE);
-            }
-            if (FAILED(rc)) return rc;
+            progressExec->COMGETTER(Completed)(&fCompleted);
+            if (!fCompleted)
+                progressExec->COMGETTER(Canceled)(&fCanceled);
 
             if (fCompleted)
             {
@@ -2477,26 +2826,15 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
                     if (SUCCEEDED(rc) && uRetExitCode != 0)
                     {
                         rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("Error %u while creating directory"), uRetExitCode);
+                                      tr("Error %u while creating guest directory"), uRetExitCode);
                     }
                 }
             }
             else if (fCanceled)
                 rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("Directory creation was aborted"));
+                              tr("Guest directory creation was aborted"));
             else
-                AssertReleaseMsgFailed(("Directory creation neither completed nor canceled!?"));
-
-            if (SUCCEEDED(rc))
-                progressCreate->notifyComplete(S_OK);
-            else
-                progressCreate->notifyComplete(VBOX_E_IPRT_ERROR,
-                                               COM_IIDOF(IGuest),
-                                               Guest::getStaticComponentName(),
-                                               Guest::tr("Error while executing creation command"));
-
-            /* Return the progress to the caller. */
-            progressCreate.queryInterfaceTo(aProgress);
+                AssertReleaseMsgFailed(("Guest directory creation neither completed nor canceled!?"));
         }
     }
     catch (std::bad_alloc &)
@@ -2505,6 +2843,200 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
     }
     return rc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+STDMETHODIMP Guest::DirectoryOpen(IN_BSTR aDirectory, IN_BSTR aFilter,
+                                  ULONG aFlags, IN_BSTR aUserName, IN_BSTR aPassword,
+                                  ULONG *aHandle)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    CheckComArgStrNotEmptyOrNull(aDirectory);
+    CheckComArgStrNotEmptyOrNull(aUserName);
+    CheckComArgStrNotEmptyOrNull(aPassword);
+    CheckComArgNotNull(aHandle);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Validate flags. */
+    if (aFlags != DirectoryOpenFlag_None)
+        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+
+    HRESULT rc = S_OK;
+    try
+    {
+        Utf8Str Utf8Dir(aDirectory);
+        Utf8Str UtfFilter(aFilter);
+        Utf8Str Utf8UserName(aUserName);
+        Utf8Str Utf8Password(aPassword);
+
+        /*
+         * Create progress object.
+         * This progress object, compared to the one in executeProgress() above
+         * is only local and is used to determine whether the operation finished
+         * or got canceled.
+         */
+        ComObjPtr <Progress> progress;
+        rc = progress.createObject();
+        if (SUCCEEDED(rc))
+        {
+            rc = progress->init(static_cast<IGuest*>(this),
+                                Bstr(tr("Getting output of process")).raw(),
+                                TRUE /* Cancelable */);
+        }
+        if (FAILED(rc)) return rc;
+
+        PCALLBACKDATADIROPEN pData = (PCALLBACKDATADIROPEN)RTMemAlloc(sizeof(CALLBACKDATADIROPEN));
+        AssertReturn(pData, VBOX_E_IPRT_ERROR);
+        RT_ZERO(*pData);
+        uint32_t uContextID = addCtrlCallbackContext(VBOXGUESTCTRLCALLBACKTYPE_EXEC_START,
+                                                     pData, sizeof(CALLBACKDATADIROPEN), progress);
+        Assert(uContextID > 0);
+
+        VBOXHGCMSVCPARM paParms[8];
+        int i = 0;
+        paParms[i++].setUInt32(uContextID);
+        paParms[i++].setPointer((void*)Utf8Dir.c_str(), (uint32_t)Utf8Dir.length() + 1);
+        paParms[i++].setPointer((void*)UtfFilter.c_str(), (uint32_t)UtfFilter.length() + 1);
+        paParms[i++].setUInt32(0 /* Flags, none set yet */);
+        paParms[i++].setPointer((void*)Utf8UserName.c_str(), (uint32_t)Utf8UserName.length() + 1);
+        paParms[i++].setPointer((void*)Utf8Password.c_str(), (uint32_t)Utf8Password.length() + 1);
+
+        int vrc = VINF_SUCCESS;
+        {
+            VMMDev *pVMMDev = NULL;
+            {
+                /* Make sure mParent is valid, so set the read lock while using.
+                 * Do not keep this lock while doing the actual call, because in the meanwhile
+                 * another thread could request a write lock which would be a bad idea ... */
+                AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                /* Forward the information to the VMM device. */
+                AssertPtr(mParent);
+                pVMMDev = mParent->getVMMDev();
+            }
+
+            if (pVMMDev)
+            {
+                LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
+                vrc = pVMMDev->hgcmHostCall("VBoxGuestControlSvc", HOST_DIR_OPEN,
+                                            i, paParms);
+            }
+        }
+
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Wait for the HGCM low level callback until the process
+             * has been started (or something went wrong). This is necessary to
+             * get the PID.
+             */
+            CallbackMapIter it = getCtrlCallbackContextByID(uContextID);
+            Assert(it != mCallbackMap.end());
+            ComAssert(!it->second.pProgress.isNull());
+
+            BOOL fCanceled = FALSE;
+
+            /* Wait until operation completed. */
+            rc = it->second.pProgress->WaitForCompletion(10 * 1000);
+            if (FAILED(rc)) throw rc;
+
+            /* Was the operation canceled by one of the parties? */
+            rc = it->second.pProgress->COMGETTER(Canceled)(&fCanceled);
+            if (FAILED(rc)) throw rc;
+
+            if (!fCanceled)
+            {
+                BOOL fCompleted;
+                if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
+                    && fCompleted)
+                {
+                    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                    /* Did we get some output? */
+                    pData = (PCALLBACKDATADIROPEN)it->second.pvData;
+                    Assert(it->second.cbData == sizeof(PCALLBACKDATADIROPEN));
+                    AssertPtr(pData);
+                }
+                else /* If callback not called within time ... well, that's a timeout! */
+                    vrc = VERR_TIMEOUT;
+            }
+            else /* Operation was canceled. */
+            {
+                vrc = VERR_CANCELLED;
+            }
+
+            if (RT_FAILURE(vrc))
+            {
+                if (vrc == VERR_NO_DATA)
+                {
+                    /* If there was no output data then this is no error we want
+                     * to report to COM. The caller just gets back a size of 0 (zero). */
+                    rc = S_OK;
+                }
+                else if (vrc == VERR_TIMEOUT)
+                {
+                    rc = setError(VBOX_E_IPRT_ERROR,
+                                  tr("The guest did not output within time"));
+                }
+                else if (vrc == VERR_CANCELLED)
+                {
+                    rc = setError(VBOX_E_IPRT_ERROR,
+                                  tr("The output operation was canceled"));
+                }
+                else
+                {
+                    rc = setError(E_UNEXPECTED,
+                                  tr("The service call failed with error %Rrc"), vrc);
+                }
+            }
+
+            {
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+                /* Destroy locally used progress object. */
+                destroyCtrlCallbackContext(it);
+            }
+        }
+        else /* HGCM operation failed. */
+            rc = setError(E_UNEXPECTED,
+                          tr("The HGCM call failed with error %Rrc"), vrc);
+
+        /* Cleanup. */
+        progress->uninit();
+        progress.setNull();
+    }
+    catch (std::bad_alloc &)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+    return rc;
+#endif
+}
+
+STDMETHODIMP Guest::DirectoryRead(ULONG aHandle, IGuestDirEntry **aDirEntry)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    return VBOX_E_NOT_SUPPORTED;
+#endif
+}
+
+STDMETHODIMP Guest::FileExists(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    return VBOX_E_NOT_SUPPORTED;
+#endif
 }
 
 STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress)
@@ -2569,3 +3101,4 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgres
     return rc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
+

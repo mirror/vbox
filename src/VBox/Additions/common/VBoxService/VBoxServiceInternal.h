@@ -299,6 +299,10 @@ extern int          VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+extern int          VBoxServiceGCtrlDirClose(uint32_t u32ClientId, uint32_t uNumParms);
+extern int          VBoxServiceGCtrlDirOpen(uint32_t u32ClientId, uint32_t uNumParms);
+extern int          VBoxServiceGCtrlDirRead(uint32_t u32ClientId, uint32_t uNumParms);
+
 extern int          VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms);
 extern int          VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, size_t cbMaxBufSize);
 extern int          VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
