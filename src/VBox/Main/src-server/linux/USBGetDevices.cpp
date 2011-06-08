@@ -824,12 +824,33 @@ static int USBDevInfoInit(USBDeviceInfo *pSelf, const char *aDevice,
 
 #define USBDEVICE_MAJOR 189
 
+/** Calculate the bus (a.k.a root hub) number of a USB device from it's sysfs
+ * path.  sysfs nodes representing root hubs have file names of the form
+ * usb<n>, where n is the bus number; other devices start with that number.
+ * See [http://www.linux-usb.org/FAQ.html#i6] and
+ * [http://www.kernel.org/doc/Documentation/usb/proc_usb_info.txt] for
+ * equivalent information about usbfs.
+ * @returns a bus number greater than 0 on success or 0 on failure.
+ */
+static unsigned usbGetBusFromSysfsPath(const char *pcszPath)
+{
+    const char *pcszFile = strrchr(pcszPath, '/');
+    if (!pcszFile)
+        return 0;
+    unsigned bus = RTStrToUInt32(pcszFile + 1);
+    if (   !bus
+        && pcszFile[1] == 'u' && pcszFile[2] == 's' && pcszFile[3] == 'b')
+    bus = RTStrToUInt32(pcszFile + 4);
+    return bus;
+}
+
 /** Calculate the device number of a USB device.  See
  * drivers/usb/core/hub.c:usb_new_device as of Linux 2.6.20. */
 static dev_t usbMakeDevNum(unsigned bus, unsigned device)
 {
     AssertReturn(((device - 1) & ~127) == 0, 0);
-    return makedev(USBDEVICE_MAJOR, ((bus + 1) << 7) + device + 1);
+    AssertReturn(device > 0, 0);
+    return makedev(USBDEVICE_MAJOR, ((bus - 1) << 7) + device - 1);
 }
 
 /**
@@ -841,9 +862,13 @@ static int addIfDevice(const char *pcszDevicesRoot,
                        VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo)
 {
     const char *pcszFile = strrchr(pcszNode, '/');
+    if (!pcszFile)
+        return VERR_INVALID_PARAMETER;
     if (strchr(pcszFile, ':'))
         return VINF_SUCCESS;
-    unsigned bus = RTLinuxSysFsReadIntFile(10, "%s/busnum", pcszNode);
+    unsigned bus = usbGetBusFromSysfsPath(pcszNode);
+    if (!bus)
+        return VINF_SUCCESS;
     unsigned device = RTLinuxSysFsReadIntFile(10, "%s/devnum", pcszNode);
     dev_t devnum = usbMakeDevNum(bus, device);
     if (!devnum)
@@ -1210,7 +1235,7 @@ static void fillInDeviceFromSysfs(USBDEVICE *Dev, USBDeviceInfo *pInfo)
 
     /* Fill in the simple fields */
     Dev->enmState           = USBDEVICESTATE_UNUSED;
-    Dev->bBus               = RTLinuxSysFsReadIntFile(10, "%s/busnum", pszSysfsPath);
+    Dev->bBus               = usbGetBusFromSysfsPath(pszSysfsPath);
     Dev->bDeviceClass       = RTLinuxSysFsReadIntFile(16, "%s/bDeviceClass", pszSysfsPath);
     Dev->bDeviceSubClass    = RTLinuxSysFsReadIntFile(16, "%s/bDeviceSubClass", pszSysfsPath);
     Dev->bDeviceProtocol    = RTLinuxSysFsReadIntFile(16, "%s/bDeviceProtocol", pszSysfsPath);
