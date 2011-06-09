@@ -110,6 +110,10 @@
 #define RTR0MEMOBJ_MAGIC                UINT32_C(0x19611210)
 /** RTRANDINT::u32Magic. (Alan Moore) */
 #define RTRANDINT_MAGIC                 UINT32_C(0x19531118)
+/** The value of RTS3::u32Magic. (Edgar Wallace) */
+#define RTS3_MAGIC                      UINT32_C(0x18750401)
+/** The value of RTS3::u32Magic after RTS3Destroy().  */
+#define RTS3_MAGIC_DEAD                 UINT32_C(0x19320210)
 /** Magic for the event semaphore structure. (Neil Gaiman) */
 #define RTSEMEVENT_MAGIC                UINT32_C(0x19601110)
 /** Magic for the multiple release event semaphore structure. (Isaac Asimov) */
@@ -150,6 +154,14 @@
 #define RTTCPSERVER_MAGIC               UINT32_C(0x19470304)
 /** Magic value for RTTCPSERVER::u32Magic. (Harlan Ellison) */
 #define RTUDPSERVER_MAGIC               UINT32_C(0x19340527)
+/** The value of RTTAR::u32Magic. (Donald Ervin Knuth) */
+#define RTTAR_MAGIC                     UINT32_C(0x19380110)
+/** The value of RTTAR::u32Magic after RTTarClose(). */
+#define RTTAR_MAGIC_DEAD                ~RTTAR_MAGIC
+/** The value of RTTARFILE::u32Magic. (Abraham Stoker) */
+#define RTTARFILE_MAGIC                 UINT32_C(0x18471108)
+/** The value of RTTARFILE::u32Magic after RTTarFileClose(). */
+#define RTTARFILE_MAGIC_DEAD            UINT32_C(0x19120420)
 /** RTTESTINT::u32Magic value. (Daniel Kehlmann) */
 #define RTTESTINT_MAGIC                 UINT32_C(0x19750113)
 /** RTTHREADINT::u32Magic value. (Gilbert Keith Chesterton) */
@@ -160,18 +172,10 @@
 #define RTTIMER_MAGIC                   UINT32_C(0x19370910)
 /** Magic number for timer low resolution handles. (Saki Hiwatari) */
 #define RTTIMERLR_MAGIC                 UINT32_C(0x19610715)
-/** The value of RTS3::u32Magic. (Edgar Wallace) */
-#define RTS3_MAGIC                      UINT32_C(0x18750401)
-/** The value of RTS3::u32Magic after RTS3Destroy().  */
-#define RTS3_MAGIC_DEAD                 UINT32_C(0x19320210)
-/** The value of RTTAR::u32Magic. (Donald Ervin Knuth) */
-#define RTTAR_MAGIC                     UINT32_C(0x19380110)
-/** The value of RTTAR::u32Magic after RTTarClose(). */
-#define RTTAR_MAGIC_DEAD                ~RTTAR_MAGIC
-/** The value of RTTARFILE::u32Magic. (Abraham Stoker) */
-#define RTTARFILE_MAGIC                 UINT32_C(0x18471108)
-/** The value of RTTARFILE::u32Magic after RTTarFileClose(). */
-#define RTTARFILE_MAGIC_DEAD            UINT32_C(0x19120420)
+/** Magic value of RTTRACEBUFINT::u32Magic. (George Orwell) */
+#define RTTRACEBUF_MAGIC                UINT32_C(0x19030625)
+/** Magic value of RTTRACEBUFINT::u32Magic after the final release. */
+#define RTTRACEBUF_MAGIC_DEAD           UINT32_C(0x19500121)
 /** The value of RTVFSOBJINTERNAL::u32Magic. (Yasunari Kawabata) */
 #define RTVFSOBJ_MAGIC                  UINT32_C(0x18990614)
 /** The value of RTVFSOBJINTERNAL::u32Magic arter close. */
