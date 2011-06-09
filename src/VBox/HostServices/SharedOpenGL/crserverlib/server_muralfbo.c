@@ -223,17 +223,27 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir)
 
         if (!crStateGetCurrent()->framebufferobject.drawFB)
         {
-            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, mural->idFBO);
+            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, mural->idFBO);
+        }
+        if (!crStateGetCurrent()->framebufferobject.readFB)
+        {
+            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->idFBO);
         }
     }
     else
     {
         cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, mural->bVisible);
 
-        if (mural->bUseFBO && crServerSupportRedirMuralFBO()
-            && !crStateGetCurrent()->framebufferobject.drawFB)
+        if (mural->bUseFBO && crServerSupportRedirMuralFBO())
         {
-            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+            if (!crStateGetCurrent()->framebufferobject.drawFB)
+            {
+                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
+            }
+            if (!crStateGetCurrent()->framebufferobject.readFB)
+            {
+                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
+            }
         }
     }
 
@@ -311,7 +321,10 @@ void crServerCreateMuralFBO(CRMuralInfo *mural)
     gl->BindRenderbufferEXT(GL_RENDERBUFFER_EXT, uid);
 
     uid = ctx->framebufferobject.drawFB ? ctx->framebufferobject.drawFB->hwid:0;
-    gl->BindFramebufferEXT(GL_FRAMEBUFFER_EXT, uid);
+    gl->BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, uid);
+
+    uid = ctx->framebufferobject.readFB ? ctx->framebufferobject.readFB->hwid:0;
+    gl->BindFramebufferEXT(GL_READ_FRAMEBUFFER, uid);
 
     if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {

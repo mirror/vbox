@@ -3831,6 +3831,11 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
             dst_rect.top -= offset.y; dst_rect.bottom -=offset.y;
             dst_rect.top += This->currentDesc.Height - h; dst_rect.bottom += This->currentDesc.Height - h;
         }
+        else if (surface_is_offscreen((IWineD3DSurface *)This))
+        {
+            dst_rect.top = This->currentDesc.Height-dst_rect.top;
+            dst_rect.bottom = This->currentDesc.Height-dst_rect.bottom;
+        }
 
         if (!myDevice->blitter->blit_supported(&myDevice->adapter->gl_info, BLIT_OP_BLIT,
                                                &src_rect, Src->resource.usage, Src->resource.pool, Src->resource.format_desc,

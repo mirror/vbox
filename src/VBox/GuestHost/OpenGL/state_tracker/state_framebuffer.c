@@ -734,6 +734,9 @@ crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
                 diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, to->framebufferobject.readFB?
                     to->framebufferobject.readFB->hwid:0);
             }
+
+            diff_api.DrawBuffer(to->framebufferobject.drawFB?to->framebufferobject.drawFB->drawbuffer[0]:to->buffer.drawBuffer);
+            diff_api.ReadBuffer(to->framebufferobject.readFB?to->framebufferobject.readFB->readbuffer:to->buffer.readBuffer);
         }
 
         if (to->framebufferobject.renderbuffer!=from->framebufferobject.renderbuffer)
