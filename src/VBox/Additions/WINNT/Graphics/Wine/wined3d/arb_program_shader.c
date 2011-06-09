@@ -6962,6 +6962,11 @@ HRESULT arbfp_blit_surface(IWineD3DDeviceImpl *device, IWineD3DSurfaceImpl *src_
         dst_rect.top -= offset.y; dst_rect.bottom -=offset.y;
         dst_rect.top += dst_surface->currentDesc.Height - h; dst_rect.bottom += dst_surface->currentDesc.Height - h;
     }
+    else if (surface_is_offscreen((IWineD3DSurface *)dst_surface))
+    {
+        dst_rect.top = dst_surface->currentDesc.Height-dst_rect.top;
+        dst_rect.bottom = dst_surface->currentDesc.Height-dst_rect.bottom;
+    }
 
     arbfp_blit_set((IWineD3DDevice *)device, src_surface);
 
