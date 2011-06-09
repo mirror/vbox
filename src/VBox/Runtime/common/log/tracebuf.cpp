@@ -24,9 +24,23 @@
 *******************************************************************************/
 /** Alignment used to place the trace buffer members, this should be a multiple
  * of the cache line size if possible.  (We should dynamically determine it.) */
-#define RTTRACEBUF_ALIGNMENT    64
+#define RTTRACEBUF_ALIGNMENT        64
 AssertCompile(RTTRACEBUF_ALIGNMENT >= sizeof(uint64_t) * 2);
 
+/** The maximum number of entries. */
+#define RTTRACEBUF_MAX_ENTRIES      _64K
+/** The minimum number of entries. */
+#define RTTRACEBUF_MIN_ENTRIES      4
+/** The default number of entries. */
+#define RTTRACEBUF_DEF_ENTRIES      256
+
+/** The maximum entry size. */
+#define RTTRACEBUF_MAX_ENTRY_SIZE   _1M
+/** The minimum entry size. */
+#define RTTRACEBUF_MIN_ENTRY_SIZE   RTTRACEBUF_ALIGNMENT
+/** The default entry size. */
+#define RTTRACEBUF_DEF_ENTRY_SIZE   256
+AssertCompile(!(RTTRACEBUF_DEF_ENTRY_SIZE & (RTTRACEBUF_DEF_ENTRY_SIZE - 1)));
 
 /**
  * The volatile trace buffer members.
@@ -239,21 +253,21 @@ RTDECL(int) RTTraceBufCreate(PRTTRACEBUF phTraceBuf, uint32_t cEntries, uint32_t
 {
     AssertPtrReturn(phTraceBuf, VERR_INVALID_POINTER);
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cbEntry <= _64K, ("%#x\n", cbEntry), VERR_OUT_OF_RANGE);
-    AssertMsgReturn(cEntries <= _1M, ("%#x\n", cEntries), VERR_OUT_OF_RANGE);
+    AssertMsgReturn(cbEntry  <= RTTRACEBUF_MAX_ENTRIES,    ("%#x\n", cbEntry),  VERR_OUT_OF_RANGE);
+    AssertMsgReturn(cEntries <= RTTRACEBUF_MAX_ENTRY_SIZE, ("%#x\n", cEntries), VERR_OUT_OF_RANGE);
 
     /*
      * Apply default and alignment adjustments.
      */
     if (!cbEntry)
-        cbEntry = RT_ALIGN_Z(256, RTTRACEBUF_ALIGNMENT);
+        cbEntry = RTTRACEBUF_DEF_ENTRY_SIZE;
     else
-        cbEntry = RT_ALIGN_Z(cbEntry, RTTRACEBUF_ALIGNMENT);
+        cbEntry = RT_ALIGN_32(cbEntry, RTTRACEBUF_ALIGNMENT);
 
     if (!cEntries)
-        cEntries = 64;
-    else if (cEntries < 4)
-        cEntries = 4;
+        cEntries = RTTRACEBUF_DEF_ENTRIES;
+    else if (cEntries < RTTRACEBUF_MIN_ENTRIES)
+        cEntries = RTTRACEBUF_MIN_ENTRIES;
 
     /*
      * Calculate the required buffer size, allocte it and hand it on to the
@@ -287,8 +301,8 @@ RTDECL(int) RTTraceBufCarve(PRTTRACEBUF phTraceBuf, uint32_t cEntries, uint32_t 
 {
     AssertPtrReturn(phTraceBuf, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~RTTRACEBUF_FLAGS_MASK), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cbEntry <= _64K, ("%#x\n", cbEntry), VERR_OUT_OF_RANGE);
-    AssertMsgReturn(cEntries <= _1M, ("%#x\n", cEntries), VERR_OUT_OF_RANGE);
+    AssertMsgReturn(cbEntry  <= RTTRACEBUF_MAX_ENTRIES,    ("%#x\n", cbEntry),  VERR_OUT_OF_RANGE);
+    AssertMsgReturn(cEntries <= RTTRACEBUF_MAX_ENTRY_SIZE, ("%#x\n", cEntries), VERR_OUT_OF_RANGE);
     AssertPtrReturn(pvBlock, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbBlock, VERR_INVALID_POINTER);
 
@@ -301,33 +315,42 @@ RTDECL(int) RTTraceBufCarve(PRTTRACEBUF phTraceBuf, uint32_t cEntries, uint32_t 
                             + RT_ALIGN_Z(sizeof(RTTRACEBUFVOLATILE), RTTRACEBUF_ALIGNMENT);
     size_t const cbEntryBuf = cbBlock > cbHdr ? cbBlock - cbHdr : 0;
     if (cbEntry)
-        cbEntry = RT_ALIGN_Z(cbEntry, RTTRACEBUF_ALIGNMENT);
+        cbEntry = RT_ALIGN_32(cbEntry, RTTRACEBUF_ALIGNMENT);
     else
     {
         if (!cbEntryBuf)
-            cbEntry = RT_ALIGN_Z(256, RTTRACEBUF_ALIGNMENT);
+        {
+            cbEntry  = RTTRACEBUF_DEF_ENTRY_SIZE;
+            cEntries = RTTRACEBUF_DEF_ENTRIES;
+        }
         else if (cEntries)
         {
-            cbEntry = cbBlock / cEntries;
-            cbEntry &= ~(RTTRACEBUF_ALIGNMENT - 1);
-            if (cbEntry > _64K)
-                cbEntry = _64K;
+            size_t cbEntryZ = cbBlock / cEntries;
+            cbEntryZ &= ~(RTTRACEBUF_ALIGNMENT - 1);
+            if (cbEntryZ > RTTRACEBUF_MAX_ENTRIES)
+                cbEntryZ = RTTRACEBUF_MAX_ENTRIES;
+            cbEntry = (uint32_t)cbEntryZ;
         }
-        else if (cbBlock >= RT_ALIGN_Z(512, RTTRACEBUF_ALIGNMENT) * 256)
-            cbEntry = RT_ALIGN_Z(512, RTTRACEBUF_ALIGNMENT);
-        else if (cbBlock >= RT_ALIGN_Z(256, RTTRACEBUF_ALIGNMENT) * 64)
-            cbEntry = RT_ALIGN_Z(256, RTTRACEBUF_ALIGNMENT);
-        else if (cbBlock >= RT_ALIGN_Z(128, RTTRACEBUF_ALIGNMENT) * 32)
-            cbEntry = RT_ALIGN_Z(128, RTTRACEBUF_ALIGNMENT);
+        else if (cbBlock >= RT_ALIGN_32(512, RTTRACEBUF_ALIGNMENT) * 256)
+            cbEntry = RT_ALIGN_32(512, RTTRACEBUF_ALIGNMENT);
+        else if (cbBlock >= RT_ALIGN_32(256, RTTRACEBUF_ALIGNMENT) * 64)
+            cbEntry = RT_ALIGN_32(256, RTTRACEBUF_ALIGNMENT);
+        else if (cbBlock >= RT_ALIGN_32(128, RTTRACEBUF_ALIGNMENT) * 32)
+            cbEntry = RT_ALIGN_32(128, RTTRACEBUF_ALIGNMENT);
         else
             cbEntry = sizeof(RTTRACEBUFENTRY);
     }
-    Assert(RT_ALIGN_Z(cbEntry, RTTRACEBUF_ALIGNMENT) == cbEntry);
+    Assert(RT_ALIGN_32(cbEntry, RTTRACEBUF_ALIGNMENT) == cbEntry);
 
     if (!cEntries)
-        cEntries = cbEntry / cbEntryBuf;
-    if (cEntries < 4)
-        cEntries = 4;
+    {
+        size_t cEntriesZ = cbEntryBuf / cbEntry;
+        if (cEntriesZ > RTTRACEBUF_MAX_ENTRIES)
+            cEntriesZ = RTTRACEBUF_MAX_ENTRIES;
+        cEntries = (uint32_t)cEntriesZ;
+    }
+    if (cEntries < RTTRACEBUF_MIN_ENTRIES)
+        cEntries = RTTRACEBUF_MIN_ENTRIES;
 
     uint32_t offVolatile = RTTRACEBUF_ALIGNMENT - ((uintptr_t)pvBlock & (RTTRACEBUF_ALIGNMENT - 1));
     if (offVolatile < sizeof(RTTRACEBUFINT))
@@ -375,11 +398,13 @@ static void rtTraceBufDestroy(RTTRACEBUFINT *pThis)
 {
     AssertReturnVoid(ASMAtomicCmpXchgU32(&pThis->u32Magic, RTTRACEBUF_MAGIC_DEAD, RTTRACEBUF_MAGIC));
     if (pThis->fFlags & RTTRACEBUF_FLAGS_FREE_ME)
+    {
 #ifdef IN_RC
         AssertReleaseFailed();
 #else
         RTMemFree(pThis);
 #endif
+    }
 }
 
 
