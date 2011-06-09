@@ -375,7 +375,11 @@ static void rtTraceBufDestroy(RTTRACEBUFINT *pThis)
 {
     AssertReturnVoid(ASMAtomicCmpXchgU32(&pThis->u32Magic, RTTRACEBUF_MAGIC_DEAD, RTTRACEBUF_MAGIC));
     if (pThis->fFlags & RTTRACEBUF_FLAGS_FREE_ME)
+#ifdef IN_RC
+        AssertReleaseFailed();
+#else
         RTMemFree(pThis);
+#endif
 }
 
 
