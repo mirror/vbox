@@ -1002,7 +1002,27 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                             strAttachment = "Generic";
                         }
                         else
+                        {
                             strAttachment = Utf8StrFmt("Generic '%lS'", strGenericDriver.raw());
+
+                            // show the generic properties
+                            com::SafeArray<BSTR> aProperties;
+                            com::SafeArray<BSTR> aValues;
+                            if (SUCCEEDED(nic->COMGETTER(Properties)(NULL,
+                                                                     ComSafeArrayAsOutParam(aProperties),
+                                                                     ComSafeArrayAsOutParam(aValues))))
+                            {
+                                strAttachment += " { ";
+                                unsigned i;
+                                for (i = 0; i < aProperties.size(); ++i)
+                                {
+                                    strAttachment += Utf8StrFmt("%lS='%lS'", aProperties[i], aValues[i]);
+                                    if (i != aProperties.size() - 1)
+                                        strAttachment += ", ";
+                                }
+                                strAttachment += " }";
+                            }
+                        }
                         break;
                     }
                     default:
