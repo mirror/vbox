@@ -10,7 +10,9 @@
 #include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
-#include <iprt/mem.h>
+#ifndef IN_RC
+# include <iprt/mem.h>
+#endif
 #include <iprt/string.h>
 #include <iprt/time.h>
 
