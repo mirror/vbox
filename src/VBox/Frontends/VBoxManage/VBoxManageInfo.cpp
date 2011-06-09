@@ -1008,18 +1008,15 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                             // show the generic properties
                             com::SafeArray<BSTR> aProperties;
                             com::SafeArray<BSTR> aValues;
-                            if (SUCCEEDED(nic->COMGETTER(Properties)(NULL,
-                                                                     ComSafeArrayAsOutParam(aProperties),
-                                                                     ComSafeArrayAsOutParam(aValues))))
+                            rc = nic->GetProperties(NULL,
+                                                    ComSafeArrayAsOutParam(aProperties),
+                                                    ComSafeArrayAsOutParam(aValues));
+                            if (SUCCEEDED(rc))
                             {
                                 strAttachment += " { ";
-                                unsigned i;
-                                for (i = 0; i < aProperties.size(); ++i)
-                                {
-                                    strAttachment += Utf8StrFmt("%lS='%lS'", aProperties[i], aValues[i]);
-                                    if (i != aProperties.size() - 1)
-                                        strAttachment += ", ";
-                                }
+                                for (unsigned i = 0; i < aProperties.size(); ++i)
+                                    strAttachment += Utf8StrFmt(!i ? "%lS='%lS'" : ", %lS='%lS'",
+                                                                aProperties[i], aValues[i]);
                                 strAttachment += " }";
                             }
                         }
