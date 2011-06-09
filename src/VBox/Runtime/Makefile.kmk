@@ -297,6 +297,8 @@ RuntimeR3_SOURCES       = \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
+	common/log/tracebuf.cpp \
+	common/log/tracedefault.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
 	common/misc/RTAssertMsg2.cpp \
 	common/misc/RTAssertMsg2Add.cpp \
@@ -1573,6 +1575,8 @@ RuntimeR0Drv_SOURCES    = \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
+	common/log/tracebuf.cpp \
+	common/log/tracedefault.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
 	common/misc/RTAssertMsg2.cpp \
 	common/misc/RTAssertMsg2Add.cpp \
@@ -1927,6 +1931,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/log/logrelellipsis.cpp \
  	common/log/logcom.cpp \
  	common/log/logformat.cpp \
+	common/log/tracebuf.cpp \
  	common/misc/RTAssertMsg1Weak.cpp \
  	common/misc/RTAssertMsg2.cpp \
  	common/misc/RTAssertMsg2Add.cpp \

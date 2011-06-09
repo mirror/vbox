@@ -1654,6 +1654,18 @@ typedef RTTLS const                                *PCRTTLS;
 /** NIL TLS index value. */
 #define NIL_RTTLS                                   ((RTTLS)-1)
 
+/** Trace buffer handle.
+ * @remarks This is not a R3/R0 type like most other handles!
+ */
+typedef struct RTTRACEBUFINT                        *RTTRACEBUF;
+/** Poiner to a trace buffer handle. */
+typedef RTTRACEBUF                                  *PRTTRACEBUF;
+/** Nil trace buffer handle. */
+#define NIL_RTTRACEBUF                              ((RTTRACEBUF)0)
+/** The handle of the default trace buffer.
+ * This can be used with any of the RTTraceBufAdd APIs. */
+#define RTTRACEBUF_DEFAULT                          ((RTTRACEBUF)-2)
+
 /** Handle to a simple heap. */
 typedef R3R0PTRTYPE(struct RTHEAPSIMPLEINTERNAL *)  RTHEAPSIMPLE;
 /** Pointer to a handle to a simple heap. */
