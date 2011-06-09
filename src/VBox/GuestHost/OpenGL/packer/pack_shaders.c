@@ -601,8 +601,8 @@ void PACK_APIENTRY crPackBindAttribLocationSWAP(GLuint program, GLuint index, co
     (void)program;
     (void)index;
     (void)name;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackShaderSourceSWAP(GLuint shader, GLsizei count, const char **string, const GLint *length)
@@ -612,8 +612,8 @@ void PACK_APIENTRY crPackShaderSourceSWAP(GLuint shader, GLsizei count, const ch
     (void)count;
     (void)string;
     (void)length;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniform1fvSWAP(GLint location, GLsizei count, const GLfloat *value)
@@ -622,8 +622,8 @@ void PACK_APIENTRY crPackUniform1fvSWAP(GLint location, GLsizei count, const GLf
     (void)location;
     (void)count;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 
@@ -633,8 +633,8 @@ void PACK_APIENTRY crPackUniform1ivSWAP(GLint location, GLsizei count, const GLi
     (void)location;
     (void)count;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniform2fvSWAP(GLint location, GLsizei count, const GLfloat *value)
@@ -643,8 +643,8 @@ void PACK_APIENTRY crPackUniform2fvSWAP(GLint location, GLsizei count, const GLf
     (void)location;
     (void)count;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniform2ivSWAP(GLint location, GLsizei count, const GLint * value)
@@ -653,8 +653,8 @@ void PACK_APIENTRY crPackUniform2ivSWAP(GLint location, GLsizei count, const GLi
     (void)location;
     (void)count;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniform3fvSWAP(GLint location, GLsizei count, const GLfloat *value)
@@ -663,8 +663,8 @@ void PACK_APIENTRY crPackUniform3fvSWAP(GLint location, GLsizei count, const GLf
     (void)location;
     (void)count;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniform3ivSWAP(GLint location, GLsizei count, const GLint *value)
@@ -673,8 +673,8 @@ void PACK_APIENTRY crPackUniform3ivSWAP(GLint location, GLsizei count, const GLi
     (void)location;
     (void)count;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniform4fvSWAP(GLint location, GLsizei count, const GLfloat *value)
@@ -683,8 +683,8 @@ void PACK_APIENTRY crPackUniform4fvSWAP(GLint location, GLsizei count, const GLf
     (void)location;
     (void)count;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniform4ivSWAP(GLint location, GLsizei count, const GLint *value)
@@ -693,8 +693,8 @@ void PACK_APIENTRY crPackUniform4ivSWAP(GLint location, GLsizei count, const GLi
     (void)location;
     (void)count;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniformMatrix2fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -704,8 +704,8 @@ void PACK_APIENTRY crPackUniformMatrix2fvSWAP(GLint location, GLsizei count, GLb
     (void)count;
     (void)transpose;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniformMatrix3fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -715,8 +715,8 @@ void PACK_APIENTRY crPackUniformMatrix3fvSWAP(GLint location, GLsizei count, GLb
     (void)count;
     (void)transpose;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniformMatrix4fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -726,8 +726,8 @@ void PACK_APIENTRY crPackUniformMatrix4fvSWAP(GLint location, GLsizei count, GLb
     (void)count;
     (void)transpose;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniformMatrix2x3fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -737,8 +737,8 @@ void PACK_APIENTRY crPackUniformMatrix2x3fvSWAP(GLint location, GLsizei count, G
     (void)count;
     (void)transpose;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniformMatrix3x2fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -748,8 +748,8 @@ void PACK_APIENTRY crPackUniformMatrix3x2fvSWAP(GLint location, GLsizei count, G
     (void)count;
     (void)transpose;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniformMatrix2x4fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -759,8 +759,8 @@ void PACK_APIENTRY crPackUniformMatrix2x4fvSWAP(GLint location, GLsizei count, G
     (void)count;
     (void)transpose;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniformMatrix4x2fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -770,8 +770,8 @@ void PACK_APIENTRY crPackUniformMatrix4x2fvSWAP(GLint location, GLsizei count, G
     (void)count;
     (void)transpose;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniformMatrix3x4fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -781,8 +781,8 @@ void PACK_APIENTRY crPackUniformMatrix3x4fvSWAP(GLint location, GLsizei count, G
     (void)count;
     (void)transpose;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackUniformMatrix4x3fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
@@ -792,8 +792,8 @@ void PACK_APIENTRY crPackUniformMatrix4x3fvSWAP(GLint location, GLsizei count, G
     (void)count;
     (void)transpose;
     (void)value;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackDrawBuffersSWAP(GLsizei n, const GLenum *bufs)
@@ -801,8 +801,8 @@ void PACK_APIENTRY crPackDrawBuffersSWAP(GLsizei n, const GLenum *bufs)
     CR_GET_PACKER_CONTEXT(pc);
     (void)n;
     (void)bufs;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackGetAttribLocationSWAP(GLuint program, const char * name, GLint * return_value, int * writeback)
@@ -812,8 +812,8 @@ void PACK_APIENTRY crPackGetAttribLocationSWAP(GLuint program, const char * name
     (void)name;
     (void)return_value;
     (void)writeback;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
 
 void PACK_APIENTRY crPackGetUniformLocationSWAP(GLuint program, const char * name, GLint * return_value, int * writeback)
@@ -823,6 +823,6 @@ void PACK_APIENTRY crPackGetUniformLocationSWAP(GLuint program, const char * nam
     (void)name;
     (void)return_value;
     (void)writeback;
+    (void)pc;
     crError ("No swap version");
-    (void) pc;
 }
