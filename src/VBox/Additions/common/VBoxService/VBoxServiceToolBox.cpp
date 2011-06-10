@@ -47,6 +47,15 @@
 
 #define LS_OPT_MACHINE_READABLE                 1000
 
+typedef enum VBOXSERVICETOOLBOXLSFLAG
+{
+    VBOXSERVICETOOLBOXLSFLAG_NONE =             0,
+    VBOXSERVICETOOLBOXLSFLAG_RECURSIVE =        0x00000001,
+    VBOXSERVICETOOLBOXLSFLAG_LONG =             0x00000002,
+    VBOXSERVICETOOLBOXLSFLAG_PARSEABLE =        0x00000004,
+    VBOXSERVICETOOLBOXLSFLAG_SYMLINKS =         0x00000008
+} VBOXSERVICETOOLBOXLSFLAG;
+
 /* Enable the following define to be able to debug/invoke the toolbox
  * commandos directly from command line, e.g. VBoxService vbox_cat [args] */
 #ifdef DEBUG
@@ -396,19 +405,16 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
  *
  * @return  IPRT status code.
  * @param   pszDir                  Directory (path) to ouptut.
- * @param   fRecursive              Flag indicating whether recursive directory handling
- *                                  is wanted or not.
- * @param   fLong                   Flag indicating whether long output is required or not.
- * @param   fParseable              Flag indicating whether machine parseable output
- *                                  is required or not
+ * @param   uFlags                  Flags of type VBOXSERVICETOOLBOXLSFLAG.
  */
-static int VBoxServiceToolboxLsOutput(const char *pszDir,
-                                      bool fRecursive, bool fLong, bool fParseable)
+static int VBoxServiceToolboxLsOutput(const char *pszDir, uint32_t uFlags)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_PARAMETER);
 
-    if (fParseable)
+    if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
         RTPrintf("dname=%s%c", pszDir, 0);
+    else if (uFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE)
+        RTPrintf("%s:\n", pszDir);
 
     char szPathAbs[RTPATH_MAX + 1];
     int rc = RTPathAbs(pszDir, szPathAbs, sizeof(szPathAbs));
@@ -422,7 +428,7 @@ static int VBoxServiceToolboxLsOutput(const char *pszDir,
     rc = RTDirOpen(&pDir, szPathAbs);
     if (RT_FAILURE(rc))
     {
-        RTMsgError("ls: Failed to open '%s', rc=%Rrc\n", szPathAbs, rc);
+        RTMsgError("ls: Failed to open directory '%s', rc=%Rrc\n", szPathAbs, rc);
         return rc;
     }
 
@@ -485,9 +491,9 @@ static int VBoxServiceToolboxLsOutput(const char *pszDir,
             }
             /** @todo sticy bits++ */
 
-            if (!fLong)
+            if (!(uFlags & VBOXSERVICETOOLBOXLSFLAG_LONG))
             {
-                if (fParseable)
+                if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
                 {
                     /** @todo Skip node_id if not present/available! */
                     RTPrintf("ftype=%c%cnode_id=%RU64%cname_len=%RU16%cname=%s%c",
@@ -498,12 +504,12 @@ static int VBoxServiceToolboxLsOutput(const char *pszDir,
                     RTPrintf("%c %#18llx %3d %s\n", (uint64_t)pNodeIt->dirEntry.Info.Attr.u.Unix.INodeId,
                              cFileType, pNodeIt->dirEntry.cbName, pNodeIt->dirEntry.szName);
 
-                if (fParseable) /* End of data block. */
+                if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE) /* End of data block. */
                     RTPrintf("%c%c", 0, 0);
             }
             else
             {
-                if (fParseable)
+                if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
                 {
                     RTPrintf("ftype=%c%c", cFileType, 0);
                     RTPrintf("owner_mask=%c%c%c%c",
@@ -608,7 +614,8 @@ static int VBoxServiceToolboxLsOutput(const char *pszDir,
         }
 
         /* If everything went fine we do the second run (if needed) ... */
-        if (RT_SUCCESS(rc) && fRecursive)
+        if (   RT_SUCCESS(rc)
+            && (uFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE))
         {
             /* Process all sub-directories. */
             PVBOXSERVICETOOLBOXDIRENTRY pNodeIt;
@@ -617,7 +624,10 @@ static int VBoxServiceToolboxLsOutput(const char *pszDir,
                 RTFMODE fMode = pNodeIt->dirEntry.Info.Attr.fMode;
                 switch (fMode & RTFS_TYPE_MASK)
                 {
-                    //case RTFS_TYPE_SYMLINK:
+                    case RTFS_TYPE_SYMLINK:
+                        if (!(uFlags & VBOXSERVICETOOLBOXLSFLAG_SYMLINKS))
+                            break;
+                        /* Fall through is intentional. */
                     case RTFS_TYPE_DIRECTORY:
                         {
                             const char *pszName = pNodeIt->dirEntry.szName;
@@ -627,8 +637,12 @@ static int VBoxServiceToolboxLsOutput(const char *pszDir,
                                 /* Skip dot directories. */
                                 continue;
                             }
-                            rc = VBoxServiceToolboxLsOutput(pNodeIt->dirEntry.szName, fRecursive,
-                                                            fLong, fParseable);
+
+                            char szPath[RTPATH_MAX];
+                            rc = RTPathJoin(szPath, sizeof(szPath),
+                                            pszDir, pNodeIt->dirEntry.szName);
+                            if (RT_SUCCESS(rc))
+                                rc = VBoxServiceToolboxLsOutput(szPath, uFlags);
                         }
                         break;
 
@@ -684,9 +698,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
 
     int rc = VINF_SUCCESS;
     bool fVerbose = false;
-    bool fLong = false;
-    bool fMachineReadable = false;
-    bool fRecursive = false;
+    uint32_t fFlags = 0;
 
     /* Init file list. */
     RTLISTNODE fileList;
@@ -703,15 +715,15 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                 return RTEXITCODE_SUCCESS;
 
             case 'l': /* Print long format. */
-                fLong = true;
+                fFlags |= VBOXSERVICETOOLBOXLSFLAG_LONG;
                 break;
 
             case LS_OPT_MACHINE_READABLE:
-                fMachineReadable = true;
+                fFlags |= VBOXSERVICETOOLBOXLSFLAG_PARSEABLE;
                 break;
 
             case 'R': /* Recursive processing. */
-                fRecursive = true;
+                fFlags |= VBOXSERVICETOOLBOXLSFLAG_RECURSIVE;
                 break;
 
             case 'v':
@@ -757,20 +769,19 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
         }
 
         /* Print magic/version. */
-        if (fMachineReadable)
+        if (fFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
             RTPrintf("hdr_id=vbt_ls%chdr_ver=%u%c", 0, 1 /* Version 1 */, 0);
 
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
         {
-            rc = VBoxServiceToolboxLsOutput(pNodeIt->pszName,
-                                            fRecursive, fLong, fMachineReadable);
+            rc = VBoxServiceToolboxLsOutput(pNodeIt->pszName, fFlags);
             if (RT_FAILURE(rc))
                 RTMsgError("ls: Failed while enumerating directory '%s', rc=%Rrc\n",
                            pNodeIt->pszName, rc);
         }
 
-        if (fMachineReadable) /* Output termination. */
+        if (fFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE) /* Output termination. */
             RTPrintf("%c%c%c%c", 0, 0, 0, 0);
     }
     else if (fVerbose)
