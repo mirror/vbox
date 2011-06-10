@@ -13,6 +13,12 @@
 #ifndef IN_RC
 # include <iprt/mem.h>
 #endif
+#if defined(IN_RING0) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
+# include <iprt/mp.h>
+#else
+# include <iprt/asm-amd64-x86.h>
+#endif
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 
@@ -49,7 +55,7 @@ typedef struct RTTRACEBUFVOLATILE
 {
     /** Reference counter. */
     uint32_t volatile   cRefs;
-    /** The current entry. */
+    /** The next entry to make use of. */
     uint32_t volatile   iEntry;
 } RTTRACEBUFVOLATILE;
 /** Pointer to the volatile parts of a trace buffer. */
@@ -63,8 +69,10 @@ typedef struct RTTRACEBUFENTRY
 {
     /** The nano second entry time stamp. */
     uint64_t            NanoTS;
+    /** The ID of the CPU the event was recorded.  */
+    RTCPUID             idCpu;
     /** The message. */
-    char                szMsg[RTTRACEBUF_ALIGNMENT - sizeof(uint64_t)];
+    char                szMsg[RTTRACEBUF_ALIGNMENT - sizeof(uint64_t) - sizeof(RTCPUID)];
 } RTTRACEBUFENTRY;
 AssertCompile(sizeof(RTTRACEBUFENTRY) <= RTTRACEBUF_ALIGNMENT);
 /** Pointer to a trace buffer entry. */
@@ -103,6 +111,15 @@ typedef RTTRACEBUFINT const *PCRTTRACEBUFINT;
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/**
+ * Get the current CPU Id.
+ */
+#if defined(IN_RING0) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
+# define RTTRACEBUF_CUR_CPU()   RTMpCpuId()
+#else
+# define RTTRACEBUF_CUR_CPU()   ASMGetApicId()
+#endif
+
 /** Calculates the address of the volatile trace buffer members. */
 #define RTTRACEBUF_TO_VOLATILE(a_pThis)     ((PRTTRACEBUFVOLATILE)((uint8_t *)(a_pThis) + (a_pThis)->offVolatile))
 
@@ -143,7 +160,7 @@ typedef RTTRACEBUFINT const *PCRTTRACEBUFINT;
         AssertReturn((a_pThis)->offVolatile < RTTRACEBUF_ALIGNMENT * 2, VERR_INVALID_HANDLE); \
         \
         cRefs = ASMAtomicIncU32(&RTTRACEBUF_TO_VOLATILE(a_pThis)->cRefs); \
-        if (RT_UNLIKELY(cRefs > 1 && cRefs < _1M)) \
+        if (RT_UNLIKELY(cRefs < 1 || cRefs >= _1M)) \
         { \
             ASMAtomicDecU32(&RTTRACEBUF_TO_VOLATILE(a_pThis)->cRefs); \
             AssertFailedReturn(VERR_INVALID_HANDLE); \
@@ -191,32 +208,38 @@ typedef RTTRACEBUFINT const *PCRTTRACEBUFINT;
         if (!RT_VALID_PTR(pThis)) \
             return VERR_NOT_FOUND; \
     } \
-    else \
+    else if ((a_hTraceBuf) != NIL_RTTRACEBUF) \
     { \
         pThis = (a_hTraceBuf); \
         AssertPtrReturn(pThis, VERR_INVALID_HANDLE); \
     } \
+    else \
+        return VERR_INVALID_HANDLE; \
+    \
     AssertReturn(pThis->u32Magic == RTTRACEBUF_MAGIC, VERR_INVALID_HANDLE); \
+    if (pThis->fFlags & RTTRACEBUF_FLAGS_DISABLED) \
+        return VINF_SUCCESS; \
     AssertReturn(pThis->offVolatile < RTTRACEBUF_ALIGNMENT * 2, VERR_INVALID_HANDLE); \
     pVolatile = RTTRACEBUF_TO_VOLATILE(pThis); \
     \
     /* Grab a reference. */ \
     cRefs = ASMAtomicIncU32(&pVolatile->cRefs); \
-    if (RT_UNLIKELY(cRefs > 1 && cRefs < _1M)) \
+    if (RT_UNLIKELY(cRefs < 1 || cRefs >= _1M)) \
     { \
         ASMAtomicDecU32(&pVolatile->cRefs); \
         AssertFailedReturn(VERR_INVALID_HANDLE); \
     } \
     \
     /* Grab the next entry and set the time stamp. */ \
-    iEntry  = ASMAtomicIncU32(&pVolatile->iEntry); \
+    iEntry  = ASMAtomicIncU32(&pVolatile->iEntry) - 1; \
     iEntry %= pThis->cEntries; \
-    pEntry = RTTRACEBUF_TO_ENTRY(pThis, iEntry); \
+    pEntry  = RTTRACEBUF_TO_ENTRY(pThis, iEntry); \
     pEntry->NanoTS = RTTimeNanoTS(); \
-    pszBuf = &pEntry->szMsg[0]; \
+    pEntry->idCpu  = RTTRACEBUF_CUR_CPU(); \
+    pszBuf  = &pEntry->szMsg[0]; \
     *pszBuf = '\0'; \
-    cchBuf = pThis->cbEntry - RT_OFFSETOF(RTTRACEBUFENTRY, szMsg) - 1; \
-    rc     = VINF_SUCCESS
+    cchBuf  = pThis->cbEntry - RT_OFFSETOF(RTTRACEBUFENTRY, szMsg) - 1; \
+    rc      = VINF_SUCCESS
 
 
 /**
@@ -229,7 +252,7 @@ typedef RTTRACEBUFINT const *PCRTTRACEBUFINT;
 #define RTTRACEBUF_ADD_STORE_SRC_POS() \
     do { \
         /* file(line): - no path */ \
-        size_t cchPos = RTStrPrintf(pszBuf, cchBuf, "%Rfn(%d): ", pszFile, iLine); \
+        size_t cchPos = RTStrPrintf(pszBuf, cchBuf, "%s(%d): ", RTPathFilename(pszFile), iLine); \
         pszBuf += cchPos; \
         cchBuf -= cchPos; \
     } while (0)
@@ -252,7 +275,7 @@ typedef RTTRACEBUFINT const *PCRTTRACEBUFINT;
 RTDECL(int) RTTraceBufCreate(PRTTRACEBUF phTraceBuf, uint32_t cEntries, uint32_t cbEntry, uint32_t fFlags)
 {
     AssertPtrReturn(phTraceBuf, VERR_INVALID_POINTER);
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTTRACEBUF_FLAGS_MASK & ~ RTTRACEBUF_FLAGS_FREE_ME)), VERR_INVALID_PARAMETER);
     AssertMsgReturn(cbEntry  <= RTTRACEBUF_MAX_ENTRIES,    ("%#x\n", cbEntry),  VERR_OUT_OF_RANGE);
     AssertMsgReturn(cEntries <= RTTRACEBUF_MAX_ENTRY_SIZE, ("%#x\n", cEntries), VERR_OUT_OF_RANGE);
 
@@ -303,14 +326,14 @@ RTDECL(int) RTTraceBufCarve(PRTTRACEBUF phTraceBuf, uint32_t cEntries, uint32_t 
     AssertReturn(!(fFlags & ~RTTRACEBUF_FLAGS_MASK), VERR_INVALID_PARAMETER);
     AssertMsgReturn(cbEntry  <= RTTRACEBUF_MAX_ENTRIES,    ("%#x\n", cbEntry),  VERR_OUT_OF_RANGE);
     AssertMsgReturn(cEntries <= RTTRACEBUF_MAX_ENTRY_SIZE, ("%#x\n", cEntries), VERR_OUT_OF_RANGE);
-    AssertPtrReturn(pvBlock, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbBlock, VERR_INVALID_POINTER);
+    size_t const cbBlock = *pcbBlock;
+    AssertReturn(RT_VALID_PTR(pvBlock) || !cbBlock, VERR_INVALID_POINTER);
 
     /*
      * Apply defaults, align sizes and check against available buffer space.
      * This code can be made a bit more clever, if someone feels like it.
      */
-    size_t const cbBlock    = *pcbBlock;
     size_t const cbHdr      = RT_ALIGN_Z(sizeof(RTTRACEBUFINT),      RTTRACEBUF_ALIGNMENT)
                             + RT_ALIGN_Z(sizeof(RTTRACEBUFVOLATILE), RTTRACEBUF_ALIGNMENT);
     size_t const cbEntryBuf = cbBlock > cbHdr ? cbBlock - cbHdr : 0;
@@ -512,6 +535,75 @@ RTDECL(int) RTTraceBufAddPosMsgV(RTTRACEBUF hTraceBuf, RT_SRC_POS_DECL, const ch
 }
 
 
+RTDECL(int) RTTraceBufEnumEntries(RTTRACEBUF hTraceBuf, PFNRTTRACEBUFCALLBACK pfnCallback, void *pvUser)
+{
+    int                 rc = VINF_SUCCESS;
+    uint32_t            iBase;
+    uint32_t            cLeft;
+    PCRTTRACEBUFINT     pThis;
+    RTTRACEBUF_RESOLVE_VALIDATE_RETAIN_RETURN(hTraceBuf, pThis);
+
+    iBase = ASMAtomicReadU32(&RTTRACEBUF_TO_VOLATILE(pThis)->iEntry);
+    cLeft = pThis->cEntries;
+    while (cLeft--)
+    {
+        PRTTRACEBUFENTRY pEntry;
+
+        iBase %= pThis->cEntries;
+        pEntry = RTTRACEBUF_TO_ENTRY(pThis, iBase);
+        if (pEntry->NanoTS)
+        {
+            rc = pfnCallback((RTTRACEBUF)pThis, cLeft, pEntry->NanoTS, pEntry->idCpu, pEntry->szMsg, pvUser);
+            if (rc != VINF_SUCCESS)
+                break;
+        }
+
+        /* next */
+        iBase += 1;
+    }
+
+    RTTRACEBUF_DROP_REFERENCE(pThis);
+    return rc;
+}
+
+
+RTDECL(uint32_t) RTTraceBufGetEntrySize(RTTRACEBUF hTraceBuf)
+{
+    PCRTTRACEBUFINT pThis = hTraceBuf;
+    RTTRACEBUF_VALID_RETURN_RC(pThis, 0);
+    return pThis->cbEntry;
+}
+
+
+RTDECL(uint32_t) RTTraceBufGetEntryCount(RTTRACEBUF hTraceBuf)
+{
+    PCRTTRACEBUFINT pThis = hTraceBuf;
+    RTTRACEBUF_VALID_RETURN_RC(pThis, 0);
+    return pThis->cEntries;
+}
+
+
+RTDECL(bool) RTTraceBufDisable(RTTRACEBUF hTraceBuf)
+{
+    PCRTTRACEBUFINT pThis = hTraceBuf;
+    RTTRACEBUF_VALID_RETURN_RC(pThis, false);
+    return !ASMAtomicBitTestAndSet((void volatile *)&pThis->fFlags, RTTRACEBUF_FLAGS_DISABLED_BIT);
+}
+
+
+RTDECL(bool) RTTraceBufEnable(RTTRACEBUF hTraceBuf)
+{
+    PCRTTRACEBUFINT pThis = hTraceBuf;
+    RTTRACEBUF_VALID_RETURN_RC(pThis, false);
+    return !ASMAtomicBitTestAndClear((void volatile *)&pThis->fFlags, RTTRACEBUF_FLAGS_DISABLED_BIT);
+}
+
+
+/*
+ *
+ * Move the following to a separate file, consider using the enumerator.
+ *
+ */
 
 RTDECL(int) RTTraceBufDumpToLog(RTTRACEBUF hTraceBuf)
 {
@@ -529,7 +621,7 @@ RTDECL(int) RTTraceBufDumpToLog(RTTRACEBUF hTraceBuf)
         iBase %= pThis->cEntries;
         pEntry = RTTRACEBUF_TO_ENTRY(pThis, iBase);
         if (pEntry->NanoTS)
-            RTLogPrintf("%u/%'llu: %s\n", cLeft, pEntry->NanoTS, pEntry->szMsg);
+            RTLogPrintf("%04u/%'llu/%02x: %s\n", cLeft, pEntry->NanoTS, pEntry->idCpu, pEntry->szMsg);
 
         /* next */
         iBase += 1;
@@ -556,7 +648,7 @@ RTDECL(int) RTTraceBufDumpToAssert(RTTRACEBUF hTraceBuf)
         iBase %= pThis->cEntries;
         pEntry = RTTRACEBUF_TO_ENTRY(pThis, iBase);
         if (pEntry->NanoTS)
-            RTAssertMsg2Add("%u/%'llu: %s\n", cLeft, pEntry->NanoTS, pEntry->szMsg);
+            RTAssertMsg2AddWeak("%u/%'llu/%02x: %s\n", cLeft, pEntry->NanoTS, pEntry->idCpu, pEntry->szMsg);
 
         /* next */
         iBase += 1;
@@ -565,4 +657,6 @@ RTDECL(int) RTTraceBufDumpToAssert(RTTRACEBUF hTraceBuf)
     RTTRACEBUF_DROP_REFERENCE(pThis);
     return VINF_SUCCESS;
 }
+
+
 

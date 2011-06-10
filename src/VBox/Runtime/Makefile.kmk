@@ -1451,6 +1451,8 @@ RuntimeR0_SOURCES       = \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
+	common/log/tracebuf.cpp \
+	common/log/tracedefault.cpp \
 	common/misc/RTAssertMsg1Weak.cpp \
 	common/misc/RTAssertMsg2.cpp \
 	common/misc/RTAssertMsg2Add.cpp \
@@ -1463,6 +1465,7 @@ RuntimeR0_SOURCES       = \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/term.cpp \
+ 	common/path/RTPathFilename.cpp \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	common/string/RTStrCat.cpp \
@@ -1932,6 +1935,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/log/logcom.cpp \
  	common/log/logformat.cpp \
 	common/log/tracebuf.cpp \
+	common/log/tracedefault.cpp \
  	common/misc/RTAssertMsg1Weak.cpp \
  	common/misc/RTAssertMsg2.cpp \
  	common/misc/RTAssertMsg2Add.cpp \
@@ -1943,6 +1947,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/misc/buildconfig.cpp \
  	common/misc/sanity-c.c \
  	common/misc/sanity-cpp.cpp \
+ 	common/path/RTPathFilename.cpp \
  	common/string/strformat.cpp \
  	common/string/strformatnum.cpp \
  	common/string/strformatrt.cpp \
@@ -1950,6 +1955,8 @@ ifdef VBOX_WITH_RAW_MODE
  	common/string/strncmp.cpp \
  	common/string/strpbrk.cpp \
  	common/string/strprintf.cpp \
+ 	common/string/RTStrCopy.cpp \
+ 	common/string/RTStrCopyEx.cpp \
  	common/table/avllu32.cpp \
  	common/table/avlou32.cpp \
  	common/table/avlogcphys.cpp \
