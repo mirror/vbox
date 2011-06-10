@@ -129,7 +129,6 @@
 #include <VBox/vmm/rem.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/iom.h>
-#include <VBox/vmm/dbgftrace.h>
 #include "TMInternal.h"
 #include <VBox/vmm/vm.h>
 
@@ -2076,11 +2075,9 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunStoppedAlready);
         u64Now = pVM->tm.s.u64VirtualSync;
-#if 0 //def DEBUG_bird
+#ifdef DEBUG_bird
         Assert(u64Now <= pNext->u64Expire);
 #endif
-        if (u64Now > pNext->u64Expire)
-            DBGFTRACE_U64_TAG2(pVM, u64Now - pNext->u64Expire, "stopped after timer expired", pNext->pszDesc);
     }
     else
     {
@@ -2181,11 +2178,9 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             pTimer->offPrev = 0;
 
             /* advance the clock - don't permit timers to be out of order or armed in the 'past'. */
-            if (pTimer->u64Expire < u64Prev)
-                DBGFTRACE_U64_TAG2(pVM, u64Prev - pTimer->u64Expire, "timer expires in the past", pNext->pszDesc);
 #ifdef DEBUG_bird
 #ifdef VBOX_STRICT
-            //AssertMsg(pTimer->u64Expire >= u64Prev, ("%'RU64 < %'RU64 %s\n", pTimer->u64Expire, u64Prev, pTimer->pszDesc));
+            AssertMsg(pTimer->u64Expire >= u64Prev, ("%'RU64 < %'RU64 %s\n", pTimer->u64Expire, u64Prev, pTimer->pszDesc));
             u64Prev = pTimer->u64Expire;
 #endif
 #endif
@@ -2194,7 +2189,6 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
 
             /* fire */
             TM_SET_STATE(pTimer, TMTIMERSTATE_EXPIRED_DELIVER);
-            DBGFTRACE_U64_TAG(pVM, pVM->tm.s.u64VirtualSync, pTimer->pszDesc);
             switch (pTimer->enmType)
             {
                 case TMTIMERTYPE_DEV:       pTimer->u.Dev.pfnTimer(pTimer->u.Dev.pDevIns, pTimer, pTimer->pvUser); break;
@@ -2235,11 +2229,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         const uint64_t u64VirtualNow2 = TMVirtualGetNoCheck(pVM);
         Assert(u64VirtualNow2 >= u64VirtualNow);
 #ifdef DEBUG_bird
-        //AssertMsg(pVM->tm.s.u64VirtualSync >= u64Now, ("%'RU64 < %'RU64\n", pVM->tm.s.u64VirtualSync, u64Now));
+        AssertMsg(pVM->tm.s.u64VirtualSync >= u64Now, ("%'RU64 < %'RU64\n", pVM->tm.s.u64VirtualSync, u64Now));
 #endif
-        if (pVM->tm.s.u64VirtualSync < u64Now)
-            DBGFTRACE_U64_TAG(pVM, u64Now - pVM->tm.s.u64VirtualSync, "u64VirtualSync < u64Now");
-
         const uint64_t offSlack = pVM->tm.s.u64VirtualSync - u64Now;
         STAM_STATS({
             if (offSlack)
@@ -2283,7 +2274,6 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 STAM_PROFILE_ADV_STOP(&pVM->tm.s.StatVirtualSyncCatchup, c);
                 ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
                 Log4(("TM: %'RU64/-%'8RU64: caught up [pt]\n", u64VirtualNow2 - offNew, offLag));
-                DBGFTRACE_U64_TAG(pVM, u64VirtualNow2 - offNew, "vs caught up [pt]");
             }
             else if (offLag <= pVM->tm.s.u64VirtualSyncCatchUpGiveUpThreshold)
             {
@@ -2297,10 +2287,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                     STAM_COUNTER_INC(&pVM->tm.s.aStatVirtualSyncCatchupAdjust[i]);
                     ASMAtomicWriteU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage, pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage);
                     Log4(("TM: %'RU64/%'8RU64: adj %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
-                    DBGFTRACE_U64_TAG(pVM, pVM->tm.s.u32VirtualSyncCatchUpPercentage, "vs adj");
                 }
-                else
-                    DBGFTRACE_U64_TAG(pVM, u64VirtualNow2 - offNew, "vs resuming catch up");
                 pVM->tm.s.u64VirtualSyncCatchUpPrev = u64VirtualNow2;
             }
             else
@@ -2312,7 +2299,6 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, false);
                 Log4(("TM: %'RU64/%'8RU64: give up %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
                 LogRel(("TM: Giving up catch-up attempt at a %'RU64 ns lag; new total: %'RU64 ns\n", offLag, offNew));
-                DBGFTRACE_U64_TAG(pVM, u64VirtualNow2 - offNew, "vs gave up");
             }
         }
         else if (offLag >= pVM->tm.s.aVirtualSyncCatchUpPeriods[0].u64Start)
@@ -2329,7 +2315,6 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 ASMAtomicWriteU32(&pVM->tm.s.u32VirtualSyncCatchUpPercentage, pVM->tm.s.aVirtualSyncCatchUpPeriods[i].u32Percentage);
                 ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncCatchUp, true);
                 Log4(("TM: %'RU64/%'8RU64: catch-up %u%%\n", u64VirtualNow2 - offNew, offLag, pVM->tm.s.u32VirtualSyncCatchUpPercentage));
-                DBGFTRACE_U64_TAG(pVM, pVM->tm.s.u32VirtualSyncCatchUpPercentage, "vs start");
             }
             else
             {
@@ -2338,11 +2323,8 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
                 ASMAtomicWriteU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp, offNew);
                 Log4(("TM: %'RU64/%'8RU64: give up\n", u64VirtualNow2 - offNew, offLag));
                 LogRel(("TM: Not bothering to attempt catching up a %'RU64 ns lag; new total: %'RU64\n", offLag, offNew));
-                DBGFTRACE_U64_TAG(pVM, u64VirtualNow2 - offNew, "vs don't bother");
             }
         }
-        else
-            DBGFTRACE_U64_TAG(pVM, u64VirtualNow2 - offNew, "vs resuming");
 
         /*
          * Update the offset and restart the clock.
