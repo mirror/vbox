@@ -38,9 +38,6 @@
      <property name="wordWrap">
       <bool>true</bool>
      </property>
-     <property name="text">
-      <string>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.&lt;/p&gt;</string>
-     </property>
     </widget>
    </item>
    <item>
@@ -66,9 +63,6 @@
     <widget class="QILabel" name="m_pLabel2">
      <property name="wordWrap">
       <bool>true</bool>
-     </property>
-     <property name="text">
-      <string>&lt;p&gt;Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk.&lt;/p&gt;</string>
      </property>
     </widget>
    </item>

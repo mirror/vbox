@@ -288,12 +288,14 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
 
     mNewAction     = new QAction (this);
     mAddAction     = new QAction (this);
+    mCopyAction    = new QAction (this);
     mRemoveAction  = new QAction (this);
     mReleaseAction = new QAction (this);
     mRefreshAction = new QAction (this);
 
     connect (mNewAction, SIGNAL (triggered()), this, SLOT (doNewMedium()));
     connect (mAddAction, SIGNAL (triggered()), this, SLOT (doAddMedium()));
+    connect (mCopyAction, SIGNAL (triggered()), this, SLOT (doCopyMedium()));
     connect (mRemoveAction, SIGNAL (triggered()), this, SLOT (doRemoveMedium()));
     connect (mReleaseAction, SIGNAL (triggered()), this, SLOT (doReleaseMedium()));
     connect (mRefreshAction, SIGNAL (triggered()), this, SLOT (refreshAll()));
@@ -306,6 +308,10 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
         QSize (22, 22), QSize (16, 16),
         ":/hd_add_22px.png", ":/hd_add_16px.png",
         ":/hd_add_disabled_22px.png", ":/hd_add_disabled_16px.png"));
+    mCopyAction->setIcon(UIIconPool::iconSetFull (
+        QSize (22, 22), QSize (16, 16),
+        ":/hd_new_22px.png", ":/hd_new_16px.png",
+        ":/hd_new_disabled_22px.png", ":/hd_new_disabled_16px.png"));
     mRemoveAction->setIcon(UIIconPool::iconSetFull (
         QSize (22, 22), QSize (16, 16),
         ":/hd_remove_22px.png", ":/hd_remove_16px.png",
@@ -319,6 +325,7 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
         ":/refresh_22px.png", ":/refresh_16px.png",
         ":/refresh_disabled_22px.png", ":/refresh_disabled_16px.png"));
 
+    mActionsContextMenu->addAction (mCopyAction);
     mActionsContextMenu->addAction (mRemoveAction);
     mActionsContextMenu->addAction (mReleaseAction);
 
@@ -347,6 +354,7 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
 
 //    mToolBar->addAction (mNewAction);
 //    mToolBar->addAction (mAddAction);
+    mToolBar->addAction (mCopyAction);
 //    mToolBar->addSeparator();
     mToolBar->addAction (mRemoveAction);
     mToolBar->addAction (mReleaseAction);
@@ -357,6 +365,7 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     mActionsMenu = menuBar()->addMenu (QString::null);
 //    mActionsMenu->addAction (mNewAction);
 //    mActionsMenu->addAction (mAddAction);
+    mActionsMenu->addAction (mCopyAction);
 //    mActionsMenu->addSeparator();
     mActionsMenu->addAction (mRemoveAction);
     mActionsMenu->addAction (mReleaseAction);
@@ -590,18 +599,21 @@ void VBoxMediaManagerDlg::retranslateUi()
 
     mNewAction->setText (tr ("&New..."));
     mAddAction->setText (tr ("&Add..."));
+    mCopyAction->setText (tr ("&Copy..."));
     mRemoveAction->setText (tr ("R&emove"));
     mReleaseAction->setText (tr ("Re&lease"));
     mRefreshAction->setText (tr ("Re&fresh"));
 
     mNewAction->setShortcut (QKeySequence (QKeySequence::New));
     mAddAction->setShortcut (QKeySequence ("Ins"));
+    mCopyAction->setShortcut (QKeySequence ("Ctrl+C"));
     mRemoveAction->setShortcut (QKeySequence (QKeySequence::Delete));
     mReleaseAction->setShortcut (QKeySequence ("Ctrl+L"));
     mRefreshAction->setShortcut (QKeySequence (QKeySequence::Refresh));
 
     mNewAction->setStatusTip (tr ("Create a new virtual hard disk"));
     mAddAction->setStatusTip (tr ("Add an existing medium"));
+    mCopyAction->setStatusTip (tr ("Copy an existing medium"));
     mRemoveAction->setStatusTip (tr ("Remove the selected medium"));
     mReleaseAction->setStatusTip (tr ("Release the selected medium by detaching it from the machines"));
     mRefreshAction->setStatusTip (tr ("Refresh the media list"));
@@ -610,6 +622,8 @@ void VBoxMediaManagerDlg::retranslateUi()
         QString (" (%1)").arg (mNewAction->shortcut().toString()));
     mAddAction->setToolTip (mAddAction->text().remove ('&') +
         QString (" (%1)").arg (mAddAction->shortcut().toString()));
+    mCopyAction->setToolTip (mCopyAction->text().remove ('&') +
+        QString (" (%1)").arg (mCopyAction->shortcut().toString()));
     mRemoveAction->setToolTip (mRemoveAction->text().remove ('&') +
         QString (" (%1)").arg (mRemoveAction->shortcut().toString()));
     mReleaseAction->setToolTip (mReleaseAction->text().remove ('&') +
@@ -1028,6 +1042,29 @@ void VBoxMediaManagerDlg::doAddMedium()
     }
 }
 
+void VBoxMediaManagerDlg::doCopyMedium()
+{
+    /* Get current tree: */
+    QTreeWidget *pTree = currentTreeWidget();
+    /* Get current item of current tree: */
+    MediaItem *pItem = toMediaItem(pTree->currentItem());
+
+    UINewHDWizard wizard(this /* parent dialog */,
+                         tr("%1_copy", "copied virtual disk name").arg(QFileInfo(pItem->text(0)).baseName()) /* default name */,
+                         QFileInfo(pItem->location()).absolutePath() /* default path */,
+                         0 /* default size, not important for copying */,
+                         pItem->medium().medium() /* base medium for copying */);
+
+    if (wizard.exec() == QDialog::Accepted)
+    {
+        /* Search for the newly created hard disk: */
+        MediaItem *pItem = searchItem(mTwHD, wizard.hardDisk().GetId());
+        AssertReturnVoid(pItem);
+        /* Select the newly created hard disk: */
+        mTwHD->setCurrentItem(pItem);
+    }
+}
+
 void VBoxMediaManagerDlg::doRemoveMedium()
 {
     QTreeWidget *tree = currentTreeWidget();
@@ -1382,11 +1419,13 @@ void VBoxMediaManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem,
     /* New and Add are now enabled even when enumerating since it should be safe */
     bool newEnabled     = currentTreeWidgetType() == VBoxDefs::MediumType_HardDisk;
     bool addEnabled     = true;
+    bool copyEnabled    = notInEnum && item && checkMediumFor (item, Action_Copy);
     bool removeEnabled  = notInEnum && item && checkMediumFor (item, Action_Remove);
     bool releaseEnabled = item && checkMediumFor (item, Action_Release);
 
     mNewAction->setEnabled (newEnabled);
     mAddAction->setEnabled (addEnabled);
+    mCopyAction->setEnabled (copyEnabled);
     mRemoveAction->setEnabled (removeEnabled);
     mReleaseAction->setEnabled (releaseEnabled);
 
@@ -1705,6 +1744,11 @@ bool VBoxMediaManagerDlg::checkMediumFor (MediaItem *aItem, Action aAction)
                     break;
             }
             return true;
+        }
+        case Action_Copy:
+        {
+            /* False for children: */
+            return !aItem->medium().parent();
         }
         case Action_Remove:
         {
