@@ -101,7 +101,7 @@ struc VM
  %error "Missing HC_ARCH_BITS"
 %endif
 %if HC_ARCH_BITS == 32
-    .abAlignment1           resb 48
+    .abAlignment1           resb 30
 %else
 ;    .abAlignment1           resb 0
 %endif
