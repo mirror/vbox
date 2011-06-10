@@ -34,15 +34,16 @@ else # !VBOX_ONLY_DOCS
  VBoxManage_SOURCES = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp \
+	VBoxManageAppliance.cpp \
+	VBoxManageBandwidthControl.cpp \
 	VBoxManageControlVM.cpp \
 	VBoxManageDebugVM.cpp \
 	VBoxManageDHCPServer.cpp \
 	VBoxManageDisk.cpp \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxManageGuestCtrl.cpp) \
+	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
 	VBoxManageHelp.cpp \
 	VBoxManageHostonly.cpp \
-	VBoxManageAppliance.cpp \
 	VBoxManageInfo.cpp \
 	VBoxManageList.cpp \
 	VBoxManageMetrics.cpp \
@@ -50,8 +51,7 @@ else # !VBOX_ONLY_DOCS
 	VBoxManageModifyVM.cpp \
 	VBoxManageSnapshot.cpp \
 	VBoxManageStorageController.cpp \
-	VBoxManageUSB.cpp \
-	VBoxManageBandwidthControl.cpp
+	VBoxManageUSB.cpp
 endif # !VBOX_ONLY_DOCS
 
 VBoxManage_DEFS      += \
