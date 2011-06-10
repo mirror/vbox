@@ -9,6 +9,14 @@
     <itemizedlist>
 
       <listitem>
+        <para>GUI: enhanced wizard for creating new virtual disks</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: new wizard for copying virtual disks</para>
+      </listitem>
+
+      <listitem>
         <para>Guest Additions: modules and features now are represented as facilities
           to have a common interface for frontends.</para>
       </listitem>
