@@ -263,6 +263,16 @@ static DECLCALLBACK(uint64_t) pdmRCDevHlp_TMTimeVirtGetNano(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPRC,pfnDBGFTraceBuf} */
+static DECLCALLBACK(RTTRACEBUF) pdmRCDevHlp_DBGFTraceBuf(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RTTRACEBUF hTraceBuf = pDevIns->Internal.s.pVMRC->hTraceBufRC;
+    LogFlow(("pdmRCDevHlp_DBGFTraceBuf: caller='%p'/%d: returns %p\n", pDevIns, pDevIns->iInstance, hTraceBuf));
+    return hTraceBuf;
+}
+
+
 /**
  * The Raw-Mode Context Device Helper Callbacks.
  */
@@ -285,6 +295,7 @@ extern DECLEXPORT(const PDMDEVHLPRC) g_pdmRCDevHlp =
     pdmRCDevHlp_TMTimeVirtGet,
     pdmRCDevHlp_TMTimeVirtGetFreq,
     pdmRCDevHlp_TMTimeVirtGetNano,
+    pdmRCDevHlp_DBGFTraceBuf,
     PDM_DEVHLPRC_VERSION
 };
 

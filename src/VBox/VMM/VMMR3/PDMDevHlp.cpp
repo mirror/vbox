@@ -1000,6 +1000,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_DBGFInfoRegister(PPDMDEVINS pDevIns, const 
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnDBGFTraceBuf} */
+static DECLCALLBACK(RTTRACEBUF) pdmR3DevHlp_DBGFTraceBuf(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RTTRACEBUF hTraceBuf = pDevIns->Internal.s.pVMR3->hTraceBufR3;
+    LogFlow(("pdmR3DevHlp_DBGFTraceBuf: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, hTraceBuf));
+    return hTraceBuf;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnSTAMRegister} */
 static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
@@ -3192,6 +3202,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_VMSetRuntimeErrorV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,
+    pdmR3DevHlp_DBGFTraceBuf,
     pdmR3DevHlp_STAMRegister,
     pdmR3DevHlp_STAMRegisterF,
     pdmR3DevHlp_STAMRegisterV,
@@ -3403,6 +3414,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_VMSetRuntimeErrorV,
     pdmR3DevHlp_DBGFStopV,
     pdmR3DevHlp_DBGFInfoRegister,
+    pdmR3DevHlp_DBGFTraceBuf,
     pdmR3DevHlp_STAMRegister,
     pdmR3DevHlp_STAMRegisterF,
     pdmR3DevHlp_STAMRegisterV,

@@ -3,7 +3,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2010 Oracle Corporation
+; Copyright (C) 2006-2011 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -23,8 +23,8 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-%ifndef ___VBox_vmm_vm_mac__
-%define ___VBox_vmm_vm_mac__
+%ifndef ___VBox_vmm_vm_mac
+%define ___VBox_vmm_vm_mac
 
 %include "VBox/vmm/stam.mac"
 
@@ -72,6 +72,11 @@ struc VM
     .fFaultTolerantMaster   resb 1
     .fUseLargePages         resb 1
 
+    .hTraceBufRC            RTRCPTR_RES 1
+    .uPadding3              resd 1
+    .hTraceBufR3            RTR3PTR_RES 1
+    .hTraceBufR0            RTR0PTR_RES 1
+
     alignb 8
 
     .StatTotalQemuToGC      resb STAMPROFILEADV_size
@@ -98,7 +103,7 @@ struc VM
 %if HC_ARCH_BITS == 32
     .abAlignment1           resb 48
 %else
-    .abAlignment1           resb 24
+;    .abAlignment1           resb 0
 %endif
 
     alignb 64
@@ -135,3 +140,4 @@ endstruc
 
 
 %endif
+

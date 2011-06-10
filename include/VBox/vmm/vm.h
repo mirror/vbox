@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -849,12 +849,20 @@ typedef struct VM
     bool                        fUseLargePages;
     /** @} */
 
+    /** @name Debugging
+     * @{ */
+    /** Raw-mode Context VM Pointer. */
+    RCPTRTYPE(RTTRACEBUF)       hTraceBufRC;
+    /** Alignment padding */
+    uint32_t                    uPadding3;
+    /** Ring-3 Host Context VM Pointer. */
+    R3PTRTYPE(RTTRACEBUF)       hTraceBufR3;
+    /** Ring-0 Host Context VM Pointer. */
+    R0PTRTYPE(RTTRACEBUF)       hTraceBufR0;
+    /** @} */
 
-    /* padding to make gnuc put the StatQemuToGC where msc does. */
-#if HC_ARCH_BITS == 32
-    uint32_t                    padding0;
-#endif
-
+    /** @name Switcher statistics (remove)
+     * @{ */
     /** Profiling the total time from Qemu to GC. */
     STAMPROFILEADV              StatTotalQemuToGC;
     /** Profiling the total time from GC to Qemu. */
@@ -878,10 +886,13 @@ typedef struct VM
     STAMPROFILEADV              StatSwitcherLidt;
     STAMPROFILEADV              StatSwitcherLldt;
     STAMPROFILEADV              StatSwitcherTSS;
+    /** @} */
 
+#if HC_ARCH_BITS != 64
     /** Padding - the unions must be aligned on a 64 bytes boundary and the unions
      *  must start at the same offset on both 64-bit and 32-bit hosts. */
-    uint8_t                     abAlignment1[HC_ARCH_BITS == 32 ? 48 : 24];
+    uint8_t                     abAlignment1[HC_ARCH_BITS == 32 ? 36 : 0];
+#endif
 
     /** CPUM part. */
     union
@@ -1084,3 +1095,4 @@ RT_C_DECLS_END
 /** @} */
 
 #endif
+

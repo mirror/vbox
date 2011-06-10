@@ -332,6 +332,7 @@ typedef DBGFCPU *PDBGFCPU;
 int  dbgfR3AsInit(PVM pVM);
 void dbgfR3AsTerm(PVM pVM);
 void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta);
+int  dbgfR3BpInit(PVM pVM);
 int  dbgfR3InfoInit(PVM pVM);
 int  dbgfR3InfoTerm(PVM pVM);
 void dbgfR3OSTerm(PVM pVM);
@@ -339,7 +340,9 @@ int  dbgfR3RegInit(PVM pVM);
 void dbgfR3RegTerm(PVM pVM);
 int  dbgfR3SymInit(PVM pVM);
 int  dbgfR3SymTerm(PVM pVM);
-int  dbgfR3BpInit(PVM pVM);
+int  dbgfR3TraceInit(PVM pVM);
+void dbgfR3TraceRelocate(PVM pVM);
+void dbgfR3TraceTerm(PVM pVM);
 
 
 
