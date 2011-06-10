@@ -678,6 +678,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--machinereadable", LS_OPT_MACHINE_READABLE, RTGETOPT_REQ_NOTHING },
+        { "--dereference",     'L',                     RTGETOPT_REQ_NOTHING },
         { NULL,                'l',                     RTGETOPT_REQ_NOTHING },
         { NULL,                'R',                     RTGETOPT_REQ_NOTHING },
         { "--verbose",         'v',                     RTGETOPT_REQ_NOTHING}
@@ -698,7 +699,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
 
     int rc = VINF_SUCCESS;
     bool fVerbose = false;
-    uint32_t fFlags = 0;
+    uint32_t fFlags = VBOXSERVICETOOLBOXLSFLAG_NONE;
 
     /* Init file list. */
     RTLISTNODE fileList;
@@ -713,6 +714,10 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
             case 'h':
                 VBoxServiceToolboxShowUsage();
                 return RTEXITCODE_SUCCESS;
+
+            case 'L': /* Dereference symlinks. */
+                fFlags |= VBOXSERVICETOOLBOXLSFLAG_SYMLINKS;
+                break;
 
             case 'l': /* Print long format. */
                 fFlags |= VBOXSERVICETOOLBOXLSFLAG_LONG;
