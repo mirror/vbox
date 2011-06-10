@@ -279,6 +279,7 @@ private:
 class UINewHDWizardPageSummary : public UINewHDWizardPage, public Ui::UINewHDWizardPageSummary
 {
     Q_OBJECT;
+    Q_PROPERTY(CMedium initialHardDisk READ initialHardDisk WRITE setInitialHardDisk);
     Q_PROPERTY(CMedium hardDisk READ hardDisk WRITE setHardDisk);
 
 public:
@@ -302,7 +303,9 @@ private:
     /* Creates hard disk: */
     bool createHardDisk();
 
-    /* Initial hard disk: */
+    /* Stuff for 'initialHardDisk' field: */
+    CMedium initialHardDisk() const { return m_initialHardDisk; }
+    void setInitialHardDisk(const CMedium &initialHardDisk) { m_initialHardDisk = initialHardDisk; }
     CMedium m_initialHardDisk;
 
     /* Stuff for 'hardDisk' field: */

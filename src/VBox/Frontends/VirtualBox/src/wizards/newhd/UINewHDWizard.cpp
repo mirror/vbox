@@ -599,6 +599,7 @@ void UINewHDWizardPageOptions::initializePage()
         case UINewHDWizardType_Copying:
             m_pLabel2->setHidden(true);
             m_pSizeCnt->setHidden(true);
+            m_uMediumSize = field("initialHardDisk").value<CMedium>().GetLogicalSize();
             break;
         default:
             break;
@@ -831,7 +832,8 @@ UINewHDWizardPageSummary::UINewHDWizardPageSummary(const CMedium &initialHardDis
     /* Register CMedium class: */
     qRegisterMetaType<CMedium>();
 
-    /* Register 'hardDisk' field: */
+    /* Register 'initialHardDisk', 'hardDisk' fields: */
+    registerField("initialHardDisk", this, "initialHardDisk");
     registerField("hardDisk", this, "hardDisk");
 
     /* Disable the background painting of the summary widget: */
