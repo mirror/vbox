@@ -9607,8 +9607,8 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
     {
         ErrorInfoKeeper eik;
 
-        rc = lockedMediaMap->Clear();
-        AssertComRC(rc);
+        HRESULT rc1 = lockedMediaMap->Clear();
+        AssertComRC(rc1);
     }
 
     if (FAILED(rc))
