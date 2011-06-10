@@ -45,6 +45,8 @@ EXPORTS
     TMTimerGet
     TMTimerGetFreq
     TMTimerIsActive
+    TMTimerIsLockOwner
+    TMTimerLock
     TMTimerSet
     TMTimerSetRelative
     TMTimerSetMillies
@@ -52,6 +54,7 @@ EXPORTS
     TMTimerSetNano
     TMTimerSetFrequencyHint
     TMTimerStop
+    TMTimerUnlock
     TRPMGCHandlerGeneric
     TRPMGCHandlerInterupt
     TRPMGCHandlerTrap08
