@@ -2707,6 +2707,17 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegister,(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler));
 
     /**
+     * Gets the trace buffer handle.
+     *
+     * This is used by the macros found in VBox/vmm/dbgftrace.h and is not
+     * really inteded for direct usage, thus no inline wrapper function.
+     *
+     * @returns Trace buffer handle or NIL_RTTRACEBUF.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(RTTRACEBUF, pfnDBGFTraceBuf,(PPDMDEVINS pDevIns));
+
+    /**
      * Registers a statistics sample if statistics are enabled.
      *
      * @param   pDevIns             Device instance of the DMA.
@@ -3557,6 +3568,17 @@ typedef struct PDMDEVHLPRC
      */
     DECLRCCALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetNano,(PPDMDEVINS pDevIns));
 
+    /**
+     * Gets the trace buffer handle.
+     *
+     * This is used by the macros found in VBox/vmm/dbgftrace.h and is not
+     * really inteded for direct usage, thus no inline wrapper function.
+     *
+     * @returns Trace buffer handle or NIL_RTTRACEBUF.
+     * @param   pDevIns             The device instance.
+     */
+    DECLRCCALLBACKMEMBER(RTTRACEBUF, pfnDBGFTraceBuf,(PPDMDEVINS pDevIns));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDEVHLPRC;
@@ -3744,6 +3766,17 @@ typedef struct PDMDEVHLPR0
      * @param   pDevIns             The device instance.
      */
     DECLR0CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetNano,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the trace buffer handle.
+     *
+     * This is used by the macros found in VBox/vmm/dbgftrace.h and is not
+     * really inteded for direct usage, thus no inline wrapper function.
+     *
+     * @returns Trace buffer handle or NIL_RTTRACEBUF.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR0CALLBACKMEMBER(RTTRACEBUF, pfnDBGFTraceBuf,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;

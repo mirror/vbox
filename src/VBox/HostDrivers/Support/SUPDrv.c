@@ -336,6 +336,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTR0AssertPanicSystem",                  (void *)RTR0AssertPanicSystem },
     { "RTAssertMsg1",                           (void *)RTAssertMsg1 },
     { "RTAssertMsg2V",                          (void *)RTAssertMsg2V },
+    { "RTAssertMsg2AddV",                       (void *)RTAssertMsg2AddV },
     { "RTAssertSetQuiet",                       (void *)RTAssertSetQuiet },
     { "RTAssertMayPanic",                       (void *)RTAssertMayPanic },
     { "RTAssertSetMayPanic",                    (void *)RTAssertSetMayPanic },

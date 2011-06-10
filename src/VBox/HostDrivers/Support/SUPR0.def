@@ -181,6 +181,7 @@ EXPORTS
     RTLogPrintfV
     RTAssertMsg1
     RTAssertMsg2V
+    RTAssertMsg2AddV
     RTAssertSetQuiet
     RTAssertMayPanic
     RTAssertSetMayPanic
