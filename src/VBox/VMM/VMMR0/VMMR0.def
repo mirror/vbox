@@ -49,6 +49,8 @@ EXPORTS
     TMTimerGet
     TMTimerGetFreq
     TMTimerIsActive
+    TMTimerIsLockOwner
+    TMTimerLock
     TMTimerSet
     TMTimerSetRelative
     TMTimerSetMillies
@@ -56,6 +58,7 @@ EXPORTS
     TMTimerSetNano
     TMTimerSetFrequencyHint
     TMTimerStop
+    TMTimerUnlock
     VMMGetSvnRev
     vmmR0LoggerFlush
     vmmR0LoggerWrapper
