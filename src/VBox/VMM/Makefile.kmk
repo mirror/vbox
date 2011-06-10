@@ -100,6 +100,7 @@ VMMR3_SOURCES   = \
 	VMMR3/DBGFReg.cpp \
 	VMMR3/DBGFStack.cpp \
 	VMMR3/DBGFSym.cpp \
+	VMMR3/DBGFR3Trace.cpp \
 	VMMR3/EM.cpp \
 	VMMR3/EMRaw.cpp \
 	VMMR3/EMHwaccm.cpp \
