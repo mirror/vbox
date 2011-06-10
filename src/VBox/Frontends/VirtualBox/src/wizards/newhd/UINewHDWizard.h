@@ -35,6 +35,13 @@ class QRadioButton;
 class QCheckBox;
 class UIExclusivenessManager;
 
+/* Wizard type: */
+enum UINewHDWizardType
+{
+    UINewHDWizardType_Creating,
+    UINewHDWizardType_Copying
+};
+
 /* New hard disk wizard class: */
 class UINewHDWizard : public QIWizard
 {
@@ -43,7 +50,12 @@ class UINewHDWizard : public QIWizard
 public:
 
     /* Constructor: */
-    UINewHDWizard(QWidget *pParent, const QString &strDefaultName = QString(), const QString &strDefaultPath = QString(), qulonglong uDefaultSize = 0);
+    UINewHDWizard(QWidget *pParent,
+                  const QString &strDefaultName = QString(), const QString &strDefaultPath = QString(),
+                  qulonglong uDefaultSize = 0, const CMedium &initialHardDisk = CMedium());
+
+    /* Stuff for wizard type: */
+    UINewHDWizardType wizardType() const { return m_wizardType; }
 
     /* Returns created hard disk: */
     CMedium hardDisk() const;
@@ -52,6 +64,9 @@ private:
 
     /* Translation stuff: */
     void retranslateUi();
+
+    /* Wizard type: */
+    UINewHDWizardType m_wizardType;
 };
 
 /* Base wrapper for the wizard page
@@ -68,7 +83,10 @@ public:
 protected:
 
     /* Returns parent wizard object: */
-    UINewHDWizard* wizard() { return qobject_cast<UINewHDWizard*>(QIWizardPage::wizard()); }
+    UINewHDWizard* wizard() const { return qobject_cast<UINewHDWizard*>(QIWizardPage::wizard()); }
+
+    /* Returns parent wizard type: */
+    UINewHDWizardType wizardType() const { return wizard()->wizardType(); }
 };
 
 /* Welcome page of the new hard-disk wizard: */
@@ -266,7 +284,7 @@ class UINewHDWizardPageSummary : public UINewHDWizardPage, public Ui::UINewHDWiz
 public:
 
     /* Constructor: */
-    UINewHDWizardPageSummary();
+    UINewHDWizardPageSummary(const CMedium &initialHardDisk);
 
 protected:
 
@@ -284,10 +302,13 @@ private:
     /* Creates hard disk: */
     bool createHardDisk();
 
+    /* Initial hard disk: */
+    CMedium m_initialHardDisk;
+
     /* Stuff for 'hardDisk' field: */
-    CMedium hardDisk() const { return m_HardDisk; }
-    void setHardDisk(const CMedium &hardDisk) { m_HardDisk = hardDisk; }
-    CMedium m_HardDisk;
+    CMedium hardDisk() const { return m_hardDisk; }
+    void setHardDisk(const CMedium &hardDisk) { m_hardDisk = hardDisk; }
+    CMedium m_hardDisk;
 };
 
 Q_DECLARE_METATYPE(CMedium);

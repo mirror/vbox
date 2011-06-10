@@ -38,9 +38,6 @@
      <property name="wordWrap">
       <bool>true</bool>
      </property>
-     <property name="text">
-      <string>&lt;p&gt;This wizard will help you to create a new virtual disk for your virtual machine.&lt;/p&gt;</string>
-     </property>
     </widget>
    </item>
    <item>
