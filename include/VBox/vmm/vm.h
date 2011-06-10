@@ -861,6 +861,11 @@ typedef struct VM
     R0PTRTYPE(RTTRACEBUF)       hTraceBufR0;
     /** @} */
 
+#if HC_ARCH_BITS == 32
+    /** Alignment padding.. */
+    uint32_t                    uPadding4;
+#endif
+
     /** @name Switcher statistics (remove)
      * @{ */
     /** Profiling the total time from Qemu to GC. */
@@ -891,7 +896,7 @@ typedef struct VM
 #if HC_ARCH_BITS != 64
     /** Padding - the unions must be aligned on a 64 bytes boundary and the unions
      *  must start at the same offset on both 64-bit and 32-bit hosts. */
-    uint8_t                     abAlignment1[HC_ARCH_BITS == 32 ? 36 : 0];
+    uint8_t                     abAlignment1[HC_ARCH_BITS == 32 ? 30 : 0];
 #endif
 
     /** CPUM part. */
