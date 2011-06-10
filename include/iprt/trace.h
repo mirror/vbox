@@ -75,9 +75,13 @@ RT_C_DECLS_BEGIN
 /** @name RTTRACEBUF_FLAGS_XXX - RTTraceBufCarve and RTTraceBufCreate flags.
  * @{ */
 /** Free the memory block on release using RTMemFree(). */
-#define RTTRACEBUF_FLAGS_FREE_ME    RT_BIT_32(0)
+#define RTTRACEBUF_FLAGS_FREE_ME        RT_BIT_32(0)
+/** Whether the trace buffer is disabled or enabled. */
+#define RTTRACEBUF_FLAGS_DISABLED       RT_BIT_32(RTTRACEBUF_FLAGS_DISABLED_BIT)
+/** The bit number corresponding to the RTTRACEBUF_FLAGS_DISABLED mask. */
+#define RTTRACEBUF_FLAGS_DISABLED_BIT   1
 /** Mask of the valid flags. */
-#define RTTRACEBUF_FLAGS_MASK       UINT32_C(0x00000001)
+#define RTTRACEBUF_FLAGS_MASK           UINT32_C(0x00000003)
 /** @}  */
 
 
@@ -88,6 +92,87 @@ RTDECL(uint32_t)    RTTraceBufRetain(RTTRACEBUF hTraceBuf);
 RTDECL(uint32_t)    RTTraceBufRelease(RTTRACEBUF hTraceBuf);
 RTDECL(int)         RTTraceBufDumpToLog(RTTRACEBUF hTraceBuf);
 RTDECL(int)         RTTraceBufDumpToAssert(RTTRACEBUF hTraceBuf);
+
+/**
+ * Trace buffer callback for processing one entry.
+ *
+ * Used by RTTraceBufEnumEntries.
+ *
+ * @returns IPRT status code.  Any status code but VINF_SUCCESS will abort the
+ *          enumeration and be returned by RTTraceBufEnumEntries.
+ * @param   hTraceBuf           The trace buffer handle.
+ * @param   iEntry              The entry number.
+ * @param   NanoTS              The timestamp of the entry.
+ * @param   idCpu               The ID of the CPU which added the entry.
+ * @param   pszMsg              The message text.
+ * @param   pvUser              The user argument.
+ */
+typedef DECLCALLBACK(int) FNRTTRACEBUFCALLBACK(RTTRACEBUF hTraceBuf, uint32_t iEntry, uint64_t NanoTS,
+                                               RTCPUID idCpu, const char *pszMsg, void *pvUser);
+/** Pointer to trace buffer enumeration callback function. */
+typedef FNRTTRACEBUFCALLBACK *PFNRTTRACEBUFCALLBACK;
+
+/**
+ * Enumerates the used trace buffer entries, calling @a pfnCallback for each.
+ *
+ * @returns IPRT status code.  Should the callback (@a pfnCallback) return
+ *          anything other than VINF_SUCCESS, then the enumeration will be
+ *          aborted and the status code will be returned by this function.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_INVALID_HANDLE
+ * @retval  VERR_INVALID_PARAMETER
+ * @retval  VERR_INVALID_POINTER
+ *
+ * @param   hTraceBuf           The trace buffer handle.  Special handles are
+ *                              accepted.
+ * @param   pfnCallback         The callback to call for each entry.
+ * @param   pvUser              The user argument for the callback.
+ */
+RTDECL(int)         RTTraceBufEnumEntries(RTTRACEBUF hTraceBuf, PFNRTTRACEBUFCALLBACK pfnCallback, void *pvUser);
+
+/**
+ * Gets the entry size used by the specified trace buffer.
+ *
+ * @returns The size on success, 0 if the handle is invalid.
+ *
+ * @param   hTraceBuf           The trace buffer handle.  Special handles are
+ *                              accepted.
+ */
+RTDECL(uint32_t)    RTTraceBufGetEntrySize(RTTRACEBUF hTraceBuf);
+
+/**
+ * Gets the number of entries in the specified trace buffer.
+ *
+ * @returns The entry count on success, 0 if the handle is invalid.
+ *
+ * @param   hTraceBuf           The trace buffer handle.  Special handles are
+ *                              accepted.
+ */
+RTDECL(uint32_t)    RTTraceBufGetEntryCount(RTTRACEBUF hTraceBuf);
+
+
+/**
+ * Disables tracing.
+ *
+ * @returns @c true if tracing was enabled prior to this call, @c false if
+ *          disabled already.
+ *
+ * @param   hTraceBuf           The trace buffer handle.  Special handles are
+ *                              accepted.
+ */
+RTDECL(bool)        RTTraceBufDisable(RTTRACEBUF hTraceBuf);
+
+/**
+ * Enables tracing.
+ *
+ * @returns @c true if tracing was enabled prior to this call, @c false if
+ *          disabled already.
+ *
+ * @param   hTraceBuf           The trace buffer handle.  Special handles are
+ *                              accepted.
+ */
+RTDECL(bool)        RTTraceBufEnable(RTTRACEBUF hTraceBuf);
+
 
 RTDECL(int)         RTTraceBufAddMsg(      RTTRACEBUF hTraceBuf, const char *pszMsg);
 RTDECL(int)         RTTraceBufAddMsgF(     RTTRACEBUF hTraceBuf, const char *pszMsgFmt, ...);

@@ -29,13 +29,19 @@ RTDECL(int)         RTTraceSetDefaultBuf(RTTRACEBUF hTraceBuf)
     }
 
     RTTRACEBUF hOldTraceBuf;
+#ifdef IN_RC
+    hOldTraceBuf = (RTTRACEBUF)ASMAtomicXchgPtr((void **)&g_hDefaultTraceBuf, hTraceBuf);
+#else
     ASMAtomicXchgHandle(&g_hDefaultTraceBuf, hTraceBuf, &hOldTraceBuf);
+#endif
 
     if (    hOldTraceBuf != NIL_RTTRACEBUF
         &&  hOldTraceBuf != hTraceBuf)
     {
         /* Race prevention kludge. */
+#ifndef IN_RC
         RTThreadSleep(33);
+#endif
         RTTraceBufRelease(hOldTraceBuf);
     }
 
