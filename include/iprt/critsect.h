@@ -101,6 +101,12 @@ AssertCompileSize(RTCRITSECT, HC_ARCH_BITS == 32 ? 32 : 48);
 #define RTCRITSECT_FLAGS_NO_LOCK_VAL    UINT32_C(0x00000002)
 /** Bootstrap hack for use with certain memory allocator locks only! */
 #define RTCRITSECT_FLAGS_BOOTSTRAP_HACK UINT32_C(0x00000004)
+/** If set, the critical section becomes a dummy that doesn't serialize any
+ * threads.  This flag can only be set at creation time.
+ *
+ * The intended use is avoiding lots of conditional code where some component
+ * might or might not require entering a critical section before access. */
+#define RTCRITSECT_FLAGS_NOP            UINT32_C(0x00000008)
 /** @} */
 
 #ifdef IN_RING3
