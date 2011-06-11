@@ -194,8 +194,12 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
     /*
      * See if we're lucky.
      */
+    /* NOP ... */
+    if (pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP)
+        return VINF_SUCCESS;
+
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
-    /* Not owned ... */
+    /* ... not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
         return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
 
@@ -366,8 +370,12 @@ static int pdmCritSectTryEnter(PPDMCRITSECT pCritSect, PCRTLOCKVALSRCPOS pSrcPos
     /*
      * See if we're lucky.
      */
+    /* NOP ... */
+    if (pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP)
+        return VINF_SUCCESS;
+
     RTNATIVETHREAD hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
-    /* Not owned ... */
+    /* ... not owned ... */
     if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, 0, -1))
         return pdmCritSectEnterFirst(pCritSect, hNativeSelf, pSrcPos);
 
@@ -480,6 +488,12 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     Assert(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC);
     Assert(pCritSect->s.Core.NativeThreadOwner == pdmCritSectGetNativeSelf(pCritSect));
     Assert(pCritSect->s.Core.cNestings >= 1);
+
+    /*
+     * Check for NOP sections.
+     */
+    if (pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP)
+        return;
 
     /*
      * Nested leave.
