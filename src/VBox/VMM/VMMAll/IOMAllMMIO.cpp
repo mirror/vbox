@@ -35,6 +35,7 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/hwaccm.h>
+#include "IOMInline.h"
 
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
@@ -80,7 +81,7 @@ static const unsigned g_aSize2Shift[] =
 DECLINLINE(int) iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault, const void *pvData, unsigned cb)
 {
 #ifdef VBOX_WITH_STATISTICS
-    PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhysFault, pRange);
+    PIOMMMIOSTATS pStats = iomMMIOGetStats(pVM, GCPhysFault, pRange);
     Assert(pStats);
 #endif
 
@@ -102,7 +103,7 @@ DECLINLINE(int) iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFau
 DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void *pvValue, unsigned cbValue)
 {
 #ifdef VBOX_WITH_STATISTICS
-    PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhys, pRange);
+    PIOMMMIOSTATS pStats = iomMMIOGetStats(pVM, GCPhys, pRange);
     Assert(pStats);
 #endif
 
@@ -454,7 +455,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
         rc = PGMGstGetPage(pVCpu, (RTGCPTR)pu8Virt, NULL, &PhysDst);
         PhysDst |= (RTGCUINTPTR)pu8Virt & PAGE_OFFSET_MASK;
         if (    RT_SUCCESS(rc)
-            &&  (pMMIODst = iomMMIOGetRange(&pVM->iom.s, PhysDst)))
+            &&  (pMMIODst = iomMMIOGetRange(pVM, PhysDst)))
         {
             /** @todo implement per-device locks for MMIO access. */
             Assert(!pMMIODst->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSect));
@@ -1075,7 +1076,7 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
 
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
     Assert(pRange);
-    Assert(pRange == iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
+    Assert(pRange == iomMMIOGetRange(pVM, GCPhysFault));
     /** @todo implement per-device locks for MMIO access. It can replace the IOM
      *        lock for most of the code, provided that we retake the lock while
      *        deregistering PIOMMMIORANGE to deal with remapping/access races
@@ -1086,7 +1087,7 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
     /*
      * Locate the statistics, if > PAGE_SIZE we'll use the first byte for everything.
      */
-    PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhysFault, pRange);
+    PIOMMMIOSTATS pStats = iomMMIOGetStats(pVM, GCPhysFault, pRange);
     if (!pStats)
     {
 # ifdef IN_RING3
@@ -1308,7 +1309,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXC
     if (rc2 == VERR_SEM_BUSY)
         return VINF_IOM_HC_MMIO_READ_WRITE;
 #endif
-    VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
+    VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, iomMMIOGetRange(pVM, GCPhysFault));
     iomUnlock(pVM);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
@@ -1339,7 +1340,7 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
     AssertMsg(cbBuf == 1 || cbBuf == 2 || cbBuf == 4 || cbBuf == 8, ("%zu\n", cbBuf));
 
     Assert(pRange);
-    Assert(pRange == iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
+    Assert(pRange == iomMMIOGetRange(pVM, GCPhysFault));
     /** @todo implement per-device locks for MMIO access. It can replace the IOM
      *        lock for most of the code, provided that we retake the lock while
      *        deregistering PIOMMMIORANGE to deal with remapping/access races
@@ -1383,7 +1384,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
     /*
      * Lookup the current context range node and statistics.
      */
-    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+    PIOMMMIORANGE pRange = iomMMIOGetRange(pVM, GCPhys);
     AssertMsg(pRange, ("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue));
     if (!pRange)
     {
@@ -1393,7 +1394,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
     /** @todo implement per-device locks for MMIO access. */
     Assert(!pRange->CTX_SUFF(pDevIns) || !pRange->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSect));
 #ifdef VBOX_WITH_STATISTICS
-    PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhys, pRange);
+    PIOMMMIOSTATS pStats = iomMMIOGetStats(pVM, GCPhys, pRange);
     if (!pStats)
     {
         iomUnlock(pVM);
@@ -1512,7 +1513,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
     /*
      * Lookup the current context range node.
      */
-    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+    PIOMMMIORANGE pRange = iomMMIOGetRange(pVM, GCPhys);
     AssertMsg(pRange, ("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue));
     if (!pRange)
     {
@@ -1522,7 +1523,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
     /** @todo implement per-device locks for MMIO access. */
     Assert(!pRange->CTX_SUFF(pDevIns) || !pRange->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSect));
 #ifdef VBOX_WITH_STATISTICS
-    PIOMMMIOSTATS pStats = iomMMIOGetStats(&pVM->iom.s, GCPhys, pRange);
+    PIOMMMIOSTATS pStats = iomMMIOGetStats(pVM, GCPhys, pRange);
     if (!pStats)
     {
         iomUnlock(pVM);
@@ -1933,7 +1934,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
     /*
      * Lookup the context range node the page belongs to.
      */
-    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+    PIOMMMIORANGE pRange = iomMMIOGetRange(pVM, GCPhys);
     AssertMsgReturn(pRange,
                     ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys), VERR_IOM_MMIO_RANGE_NOT_FOUND);
 
@@ -1997,7 +1998,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uin
      */
 #ifdef VBOX_STRICT
     /* Can't lock IOM here due to potential deadlocks in the VGA device; not safe to access. */
-    PIOMMMIORANGE pRange = iomMMIOGetRangeUnsafe(&pVM->iom.s, GCPhys);
+    PIOMMMIORANGE pRange = iomMMIOGetRangeUnsafe(pVM, GCPhys);
     AssertMsgReturn(pRange,
             ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     Assert((pRange->GCPhys       & PAGE_OFFSET_MASK) == 0);
@@ -2050,7 +2051,7 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
      */
 #ifdef VBOX_STRICT
     /* Can't lock IOM here due to potential deadlocks in the VGA device; not safe to access. */
-    PIOMMMIORANGE pRange = iomMMIOGetRangeUnsafe(&pVM->iom.s, GCPhys);
+    PIOMMMIORANGE pRange = iomMMIOGetRangeUnsafe(pVM, GCPhys);
     AssertMsgReturn(pRange,
             ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     Assert((pRange->GCPhys       & PAGE_OFFSET_MASK) == 0);

@@ -112,6 +112,8 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 
+#include "IOMInline.h"
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -1537,7 +1539,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      * Find the MMIO range and check that the input matches.
      */
     iomLock(pVM);
-    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
+    PIOMMMIORANGE pRange = iomMMIOGetRange(pVM, GCPhysStart);
     AssertReturnStmt(pRange, iomUnlock(pVM), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     AssertReturnStmt(pRange->pDevInsR3 == pDevIns, iomUnlock(pVM), VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturnStmt(pRange->GCPhys == GCPhysStart, iomUnlock(pVM), VERR_IOM_INVALID_MMIO_RANGE);
@@ -1593,7 +1595,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      * Find the MMIO range and check that the input matches.
      */
     iomLock(pVM);
-    PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhysStart);
+    PIOMMMIORANGE pRange = iomMMIOGetRange(pVM, GCPhysStart);
     AssertReturnStmt(pRange, iomUnlock(pVM), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     AssertReturnStmt(pRange->pDevInsR3 == pDevIns, iomUnlock(pVM), VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturnStmt(pRange->GCPhys == GCPhysStart, iomUnlock(pVM), VERR_IOM_INVALID_MMIO_RANGE);
@@ -1647,7 +1649,7 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     RTGCPHYS GCPhys = GCPhysStart;
     while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
     {
-        PIOMMMIORANGE pRange = iomMMIOGetRange(&pVM->iom.s, GCPhys);
+        PIOMMMIORANGE pRange = iomMMIOGetRange(pVM, GCPhys);
         if (!pRange)
         {
             iomUnlock(pVM);
