@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <windows.h>
 #include <atlconv.h>
 #include <stdlib.h>
@@ -24,24 +27,37 @@
 /* Required structures/defines of VBoxTray. */
 #include "../../VBoxTray/VBoxTrayMsg.h"
 
-HINSTANCE g_hInstance;
-HWND g_hwndParent;
 
-typedef DWORD (WINAPI *fnSfcFileException) (DWORD param1, PWCHAR param2, DWORD param3);
-fnSfcFileException g_pfnSfcFileException = NULL;
-
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 #define VBOXINSTALLHELPER_EXPORT extern "C" void __declspec(dllexport)
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+typedef DWORD (WINAPI *PFNSFCFILEEXCEPTION)(DWORD param1, PWCHAR param2, DWORD param3);
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+HINSTANCE               g_hInstance;
+HWND                    g_hwndParent;
+PFNSFCFILEEXCEPTION     g_pfnSfcFileException = NULL;
+
 
 /**
  * Pops (gets) a value from the internal NSIS stack.
  * Since the supplied popstring() method easily can cause buffer
- * overflows, use VBoxPopString() instead!
+ * overflows, use vboxPopString() instead!
  *
  * @return  HRESULT
  * @param   pszDest     Pointer to pre-allocated string to store result.
  * @param   cchDest     Size (in characters) of pre-allocated string.
  */
-static HRESULT VBoxPopString(TCHAR *pszDest, size_t cchDest)
+static HRESULT vboxPopString(TCHAR *pszDest, size_t cchDest)
 {
     HRESULT hr = S_OK;
     if (!g_stacktop || !*g_stacktop)
@@ -62,7 +78,7 @@ static HRESULT VBoxPopString(TCHAR *pszDest, size_t cchDest)
     return hr;
 }
 
-static HRESULT VBoxPopULong(ULONG *pulValue)
+static HRESULT vboxPopULong(PULONG pulValue)
 {
     HRESULT hr = S_OK;
     if (!g_stacktop || !*g_stacktop)
@@ -81,17 +97,17 @@ static HRESULT VBoxPopULong(ULONG *pulValue)
     return hr;
 }
 
-void Char2WCharFree(PWCHAR pwString)
+static void vboxChar2WCharFree(PWCHAR pwString)
 {
     if (pwString)
         HeapFree(GetProcessHeap(), 0, pwString);
 }
 
-HRESULT Char2WCharAlloc(const char *pszString, PWCHAR *ppwString)
+static HRESULT vboxChar2WCharAlloc(const char *pszString, PWCHAR *ppwString)
 {
     HRESULT hr;
     int iLen = strlen(pszString) + 2;
-	WCHAR *pwString = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, iLen * sizeof(WCHAR));
+    WCHAR *pwString = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, iLen * sizeof(WCHAR));
     if (!pwString)
         hr = ERROR_NOT_ENOUGH_MEMORY;
     else
@@ -110,7 +126,7 @@ HRESULT Char2WCharAlloc(const char *pszString, PWCHAR *ppwString)
     return hr;
 }
 
-HANDLE VBoIPCConnect()
+static HANDLE vboxIPCConnect(void)
 {
     HANDLE hPipe = NULL;
     while (1)
@@ -148,12 +164,12 @@ HANDLE VBoIPCConnect()
     return hPipe;
 }
 
-void VBoxIPCDisconnect(HANDLE hPipe)
+static void vboxIPCDisconnect(HANDLE hPipe)
 {
     CloseHandle(hPipe);
 }
 
-HRESULT VBoxIPCWriteMessage(HANDLE hPipe, BYTE *pMessage, DWORD cbMessage)
+static HRESULT vboxIPCWriteMessage(HANDLE hPipe, BYTE *pMessage, DWORD cbMessage)
 {
     HRESULT hr = S_OK;
     DWORD cbWritten = 0;
@@ -181,25 +197,25 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
     hdr.cbBody = sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG);
 
     VBOXTRAYIPCMSG_SHOWBALLOONMSG msg;
-    HRESULT hr = VBoxPopString(msg.szContent, sizeof(msg.szContent) / sizeof(TCHAR));
+    HRESULT hr = vboxPopString(msg.szContent, sizeof(msg.szContent) / sizeof(TCHAR));
     if (SUCCEEDED(hr))
-        hr = VBoxPopString(msg.szTitle, sizeof(msg.szTitle) / sizeof(TCHAR));
+        hr = vboxPopString(msg.szTitle, sizeof(msg.szTitle) / sizeof(TCHAR));
     if (SUCCEEDED(hr))
-        hr = VBoxPopULong(&msg.ulType);
+        hr = vboxPopULong(&msg.ulType);
     if (SUCCEEDED(hr))
-        hr = VBoxPopULong(&msg.ulShowMS);
+        hr = vboxPopULong(&msg.ulShowMS);
 
     if (SUCCEEDED(hr))
     {
         msg.ulFlags = 0;
 
-        HANDLE hPipe = VBoIPCConnect();
+        HANDLE hPipe = vboxIPCConnect();
         if (hPipe)
         {
-            hr = VBoxIPCWriteMessage(hPipe, (BYTE*)&hdr, sizeof(VBOXTRAYIPCHEADER));
+            hr = vboxIPCWriteMessage(hPipe, (BYTE*)&hdr, sizeof(VBOXTRAYIPCHEADER));
             if (SUCCEEDED(hr))
-                hr = VBoxIPCWriteMessage(hPipe, (BYTE*)&msg, sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG));
-            VBoxIPCDisconnect(hPipe);
+                hr = vboxIPCWriteMessage(hPipe, (BYTE*)&msg, sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG));
+            vboxIPCDisconnect(hPipe);
         }
     }
 
@@ -228,18 +244,18 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
     EXDLL_INIT();
 
     TCHAR szFile[MAX_PATH + 1];
-    HRESULT hr = VBoxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
+    HRESULT hr = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
     if (SUCCEEDED(hr))
     {
         HMODULE hSFC = LoadLibrary("sfc_os.dll");
         if (NULL != hSFC)
         {
-            g_pfnSfcFileException = (fnSfcFileException)GetProcAddress(hSFC, "SfcFileException");
+            g_pfnSfcFileException = (PFNSFCFILEEXCEPTION)GetProcAddress(hSFC, "SfcFileException");
             if (g_pfnSfcFileException == NULL)
             {
                 /* If we didn't get the proc address with the call above, try it harder with
                  * the (zero based) index of the function list. */
-                g_pfnSfcFileException = (fnSfcFileException)GetProcAddress(hSFC, (LPCSTR)5);
+                g_pfnSfcFileException = (PFNSFCFILEEXCEPTION)GetProcAddress(hSFC, (LPCSTR)5);
                 if (g_pfnSfcFileException == NULL)
                     hr = HRESULT_FROM_WIN32(ERROR_PROC_NOT_FOUND);
             }
@@ -250,12 +266,12 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
         if (SUCCEEDED(hr))
         {
             WCHAR *pwszFile;
-            hr = Char2WCharAlloc(szFile, &pwszFile);
+            hr = vboxChar2WCharAlloc(szFile, &pwszFile);
             if (SUCCEEDED(hr))
             {
                 if (g_pfnSfcFileException(0, pwszFile, -1) != 0)
                     hr = HRESULT_FROM_WIN32(GetLastError());
-                Char2WCharFree(pwszFile);
+                vboxChar2WCharFree(pwszFile);
             }
         }
 
