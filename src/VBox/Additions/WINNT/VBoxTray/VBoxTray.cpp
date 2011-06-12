@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBoxTray - Guest Additions Tray Application
  */
@@ -40,6 +41,17 @@
 
 
 /*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int vboxTrayCreateTrayIcon(void);
+static LRESULT CALLBACK vboxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+/* Global message handler prototypes. */
+static int vboxTrayGlMsgTaskbarCreated(WPARAM lParam, LPARAM wParam);
+/*static int vboxTrayGlMsgShowBalloonMsg(WPARAM lParam, LPARAM wParam);*/
+
+
+/*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 HANDLE                ghVBoxDriver;
@@ -51,15 +63,6 @@ HINSTANCE             ghInstance;
 HWND                  ghwndToolWindow;
 NOTIFYICONDATA        gNotifyIconData;
 DWORD                 gMajorVersion;
-
-/* Global message handler prototypes. */
-int vboxTrayGlMsgTaskbarCreated(WPARAM lParam, LPARAM wParam);
-int vboxTrayGlMsgShowBalloonMsg(WPARAM lParam, LPARAM wParam);
-
-/* Prototypes */
-int vboxTrayCreateTrayIcon(void);
-VOID DisplayChangeThread(void *dummy);
-LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
 /* The service table. */
@@ -331,7 +334,7 @@ static bool vboxTrayHandleGlobalMessages(PVBOXGLOBALMESSAGE pTable, UINT uMsg,
     return false;
 }
 
-static int vboxTrayOpenBaseDriver()
+static int vboxTrayOpenBaseDriver(void)
 {
     /* Open VBox guest driver. */
     DWORD dwErr = ERROR_SUCCESS;
@@ -350,7 +353,7 @@ static int vboxTrayOpenBaseDriver()
     return RTErrConvertFromWin32(dwErr);
 }
 
-static void vboxTrayCloseBaseDriver()
+static void vboxTrayCloseBaseDriver(void)
 {
     if (ghVBoxDriver)
     {
@@ -359,7 +362,7 @@ static void vboxTrayCloseBaseDriver()
     }
 }
 
-static void vboxTrayDestroyToolWindow()
+static void vboxTrayDestroyToolWindow(void)
 {
     if (ghwndToolWindow)
     {
@@ -373,14 +376,14 @@ static void vboxTrayDestroyToolWindow()
     }
 }
 
-static int vboxTrayCreateToolWindow()
+static int vboxTrayCreateToolWindow(void)
 {
     DWORD dwErr = ERROR_SUCCESS;
 
     /* Create a custom window class. */
     WNDCLASS windowClass = {0};
     windowClass.style         = CS_NOCLOSE;
-    windowClass.lpfnWndProc   = (WNDPROC)VBoxToolWndProc;
+    windowClass.lpfnWndProc   = (WNDPROC)vboxToolWndProc;
     windowClass.hInstance     = ghInstance;
     windowClass.hCursor       = LoadCursor(NULL, IDC_ARROW);
     windowClass.lpszClassName = "VBoxTrayToolWndClass";
@@ -421,7 +424,7 @@ static int vboxTrayCreateToolWindow()
     return RTErrConvertFromWin32(dwErr);
 }
 
-static int vboxTraySetupSeamless()
+static int vboxTraySetupSeamless(void)
 {
     OSVERSIONINFO info;
     gMajorVersion = 5; /* Default to Windows XP. */
@@ -518,11 +521,11 @@ static int vboxTraySetupSeamless()
 
 static void vboxTrayShutdownSeamless(void)
 {
-	if (ghSeamlessNotifyEvent)
-	{
+    if (ghSeamlessNotifyEvent)
+    {
     	CloseHandle(ghSeamlessNotifyEvent);
-	    ghSeamlessNotifyEvent = NULL;
-	}
+        ghSeamlessNotifyEvent = NULL;
+    }
 }
 
 static int vboxTrayServiceMain(void)
@@ -730,7 +733,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 /**
  * Window procedure for our tool window
  */
-LRESULT CALLBACK VBoxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
@@ -814,3 +817,4 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
      * to DefWindowProc. */
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
+
