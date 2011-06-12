@@ -135,7 +135,7 @@ VBoxInit(DeviceIntPtr device)
                                10000, 0, 10000
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
                                , Absolute
-# endif                               
+# endif
                                );
 
     xf86InitValuatorAxisStruct(device, 1,
@@ -146,7 +146,7 @@ VBoxInit(DeviceIntPtr device)
                                10000, 0, 10000
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
                                , Absolute
-# endif                               
+# endif
                                );
 #endif
     xf86InitValuatorDefaults(device, 0);

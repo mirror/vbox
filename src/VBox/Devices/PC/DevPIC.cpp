@@ -785,7 +785,7 @@ static DECLCALLBACK(void) picInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
         pHlp->pfnPrintf(pHlp, " Poll:%02x SpMask:%02x IState:%02x\n",
                         pPic->poll, pPic->special_mask, pPic->init_state);
         pHlp->pfnPrintf(pHlp, " AEOI:%02x Rotate:%02x FNest :%02x Ini4:%02x\n",
-                        pPic->auto_eoi, pPic->rotate_on_auto_eoi, 
+                        pPic->auto_eoi, pPic->rotate_on_auto_eoi,
                         pPic->special_fully_nested_mode, pPic->init4);
         pHlp->pfnPrintf(pHlp, " ELCR:%02x ELMask:%02x\n", pPic->elcr, pPic->elcr_mask);
     }

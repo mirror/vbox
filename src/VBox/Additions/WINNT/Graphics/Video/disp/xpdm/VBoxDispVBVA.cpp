@@ -322,7 +322,7 @@ int VBoxDispVBVAInit(PVBOXDISPDEV pDev)
     if (RT_SUCCESS(rc))
     {
         pDev->hgsmi.bSupported = TRUE;
-    
+
         pDev->hgsmi.mp = callbacks;
         pDev->vpAPI = portProcs;
     }
@@ -397,7 +397,7 @@ int VBoxDispVBVAInit(PVBOXDISPDEV pDev)
         }
     }
 
-    /* Setup HGSMI heap in the display information area. 
+    /* Setup HGSMI heap in the display information area.
      * The area has some space reserved for HGSMI event flags in the beginning.
      */
     if (pDev->hgsmi.bSupported)
@@ -560,7 +560,7 @@ static void vbvaReportDirtyClip(PVBOXDISPDEV pDev, CLIPOBJ *pco, RECTL *prcl)
  * VBVA driver functions.
  */
 
-void vbvaDrvLineTo(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo, 
+void vbvaDrvLineTo(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo,
                    LONG x1, LONG y1, LONG x2, LONG y2, RECTL *prclBounds, MIX mix)
 {
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)pso->dhpdev;
@@ -619,7 +619,7 @@ void vbvaDrvStretchBlt(SURFOBJ *psoDest, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIP
     vbvaReportDirtyClip(pDev, pco, prclDest);
 }
 
-void vbvaDrvCopyBits(SURFOBJ *psoDest, SURFOBJ *psoSrc, CLIPOBJ *pco, XLATEOBJ *pxlo, 
+void vbvaDrvCopyBits(SURFOBJ *psoDest, SURFOBJ *psoSrc, CLIPOBJ *pco, XLATEOBJ *pxlo,
                      RECTL *prclDest, POINTL *pptlSrc)
 {
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)psoDest->dhpdev;

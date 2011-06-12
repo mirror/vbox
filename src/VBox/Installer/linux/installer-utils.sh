@@ -97,7 +97,7 @@ install_udev() {
                 esac
                 ;;
             esac
-                
+
         fi
         ;;
     esac

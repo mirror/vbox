@@ -356,7 +356,7 @@ STDMETHODIMP SystemProperties::GetMaxNetworkAdaptersOfType(ChipsetType_T aChipse
     /* no need for locking, no state */
     switch (aType)
     {
-        case NetworkAttachmentType_NAT:        
+        case NetworkAttachmentType_NAT:
         case NetworkAttachmentType_Internal:
             /* chipset default is OK */
             break;

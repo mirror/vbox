@@ -77,7 +77,7 @@ typedef struct VBOXVIDEOPORTPROCS
     PFNFREEPOOL pfnFreePool;
 
     PFNQUEUEDPC pfnQueueDpc;
-    
+
     PFNCREATESECONDARYDISPLAY pfnCreateSecondaryDisplay;
 } VBOXVIDEOPORTPROCS;
 

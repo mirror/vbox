@@ -53,4 +53,3 @@ int _info(struct modinfo *pModInfo)
     return mod_info(&g_rtModuleStubModLinkage, pModInfo);
 }
 
-

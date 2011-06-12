@@ -205,7 +205,7 @@ static SURFOBJ *VBoxDispConvSurfTo32BPP(PVBOXDISPDEV pDev, SURFOBJ *psoScreen, S
     else if (psoBitmap->iBitmapFormat == BMF_32BPP)
     {
         LOG(("BMF_32BPP"));
-        memcpy(psoRes->pvBits, psoBitmap->pvBits, min(psoRes->cjBits, psoBitmap->cjBits)); 
+        memcpy(psoRes->pvBits, psoBitmap->pvBits, min(psoRes->cjBits, psoBitmap->cjBits));
     }
     else
     {
@@ -494,7 +494,7 @@ VBoxDispDrvSetPointerShape(SURFOBJ *pso, SURFOBJ *psoMask, SURFOBJ *psoColor, XL
     {
         pDev->pointer.pAttrs->Enable |= VBOX_MOUSE_POINTER_VISIBLE;
     }
-    
+
     if (fl & SPS_ALPHA)
     {
         pDev->pointer.pAttrs->Enable |= VBOX_MOUSE_POINTER_ALPHA;

@@ -523,7 +523,7 @@ static void vboxTrayShutdownSeamless(void)
 {
     if (ghSeamlessNotifyEvent)
     {
-    	CloseHandle(ghSeamlessNotifyEvent);
+        CloseHandle(ghSeamlessNotifyEvent);
         ghSeamlessNotifyEvent = NULL;
     }
 }

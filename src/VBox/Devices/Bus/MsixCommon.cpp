@@ -169,7 +169,7 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
      /* We cannot init MSI-X on raw devices yet. */
     Assert(!pciDevIsPassthrough(pDev));
 
-    uint16_t   cVectors    = pMsiReg->cMsixVectors;   
+    uint16_t   cVectors    = pMsiReg->cMsixVectors;
     uint8_t    iCapOffset  = pMsiReg->iMsixCapOffset;
     uint8_t    iNextOffset = pMsiReg->iMsixNextOffset;
     uint8_t    iBar        = pMsiReg->iMsixBar;

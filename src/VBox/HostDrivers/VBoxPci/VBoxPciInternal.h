@@ -43,7 +43,7 @@ typedef struct VBOXRAWPCIGLOBALS *PVBOXRAWPCIGLOBALS;
 typedef struct VBOXRAWPCIDRVVM   *PVBOXRAWPCIDRVVM;
 typedef struct VBOXRAWPCIINS     *PVBOXRAWPCIINS;
 
-typedef struct VBOXRAWPCIISRDESC 
+typedef struct VBOXRAWPCIISRDESC
 {
     /** Handler function. */
     PFNRAWPCIISR       pfnIrqHandler;

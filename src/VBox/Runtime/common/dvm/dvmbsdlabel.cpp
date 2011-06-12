@@ -479,7 +479,7 @@ DECLCALLBACK(int) rtDvmFmtBsdLblVolumeWrite(RTDVMVOLUMEFMT hVolFmt, uint64_t off
     return rtDvmDiskWrite(pVol->pVolMgr->pDisk, pVol->offStart + off, pvBuf, cbWrite);
 }
 
-DECLHIDDEN(RTDVMFMTOPS) g_rtDvmFmtBsdLbl = 
+DECLHIDDEN(RTDVMFMTOPS) g_rtDvmFmtBsdLbl =
 {
     /* pcszFmt */
     "BsdLabel",

@@ -73,7 +73,7 @@ RTDECL(void) VBoxVideoSetModeRegisters(uint16_t cWidth, uint16_t cHeight,
     s_ModeRegs.cy         = cy;
 }
 
-static struct 
+static struct
 {
     PHGSMIGUESTCOMMANDCONTEXT pCtx;
     uint32_t cDisplay;

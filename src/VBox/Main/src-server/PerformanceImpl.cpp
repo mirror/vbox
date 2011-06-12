@@ -216,13 +216,13 @@ void PerformanceCollector::uninit()
     /* Destroy unregistered metrics */
     BaseMetricList::iterator it;
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
-	if ((*it)->isUnregistered())
-	{
-	    delete *it;
-	    it = m.baseMetrics.erase(it);
-	}
-	else
-	    ++it;
+        if ((*it)->isUnregistered())
+        {
+            delete *it;
+            it = m.baseMetrics.erase(it);
+        }
+        else
+            ++it;
     Assert(m.baseMetrics.size() == 0);
     /*
      * Now when we have destroyed all base metrics that could

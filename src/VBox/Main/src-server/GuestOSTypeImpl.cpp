@@ -51,7 +51,7 @@ HRESULT GuestOSType::FinalConstruct()
 void GuestOSType::FinalRelease()
 {
     uninit();
-   
+
     BaseFinalRelease();
 }
 

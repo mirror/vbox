@@ -32,15 +32,15 @@
  * vector in the source file, e.g.
  *   RTVEC_DECL(TopLevels, Window *)
  * without a semi-colon.  This macro will define a structure (struct TopLevels)
- * which contains a dynamically resizeable array of Window * elements.  It 
+ * which contains a dynamically resizeable array of Window * elements.  It
  * will also define a number of inline methods for manipulating the structure,
  * such as
  *   Window *TopLevelsPushBack(struct TopLevels *)
  * which adds a new element to the end of the array and returns it, optionally
  * reallocating the array if there is not enough space for the new element.
- * (This particular method prototype differs from the STL equivalent - 
+ * (This particular method prototype differs from the STL equivalent -
  * push_back - more than most of the other methods).
- * 
+ *
  * To create a vector, one simply needs to declare the structure, in this case
  *   struct TopLevels = RTVEC_INITIALIZER;
  *
@@ -58,7 +58,7 @@
  *       unused static functions.  I assume that in this day and age a
  *       compiler makes its own decisions about whether to actually
  *       inline a function.
- * @note since vector structures must be explicitly instanciated unlike the 
+ * @note since vector structures must be explicitly instanciated unlike the
  *       C++ vector template, care must be taken not to instanciate a
  *       particular type twice, e.g. once in a header and once in a code file.
  *       Only using vectors in code files and keeping them out of interfaces
@@ -137,7 +137,7 @@ DECLINLINE(type *) name ## Begin(struct name *pVec)                        \
     return(pVec->mpElements);                                              \
 }
 
-/** 
+/**
  * Generic method - return a pointer to one past the last element in the
  * vector.
  */
@@ -195,7 +195,7 @@ DECLINLINE(void) name ## PopBack(struct name *pVec)                        \
     pfnDelete(pfnAdapter(&pVec->mpElements[pVec->mcElements]));            \
 }
 
-/** 
+/**
  * Generic method - reset a vector to empty.
  * @note This function does not free any memory
  */
@@ -225,7 +225,7 @@ DECLINLINE(void) name ## Clear(struct name *pVec)                          \
     pVec->mcElements = 0;                                                  \
 }
 
-/** 
+/**
  * Generic method - detach the array contained inside a vector and reset the
  * vector to empty.
  * @note This function does not free any memory

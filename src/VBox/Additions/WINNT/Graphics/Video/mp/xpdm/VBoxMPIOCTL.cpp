@@ -80,7 +80,7 @@ BOOLEAN VBoxMPMapVideoMemory(PVBOXMP_DEVEXT pExt, PVIDEO_MEMORY pRequestedAddres
     VBOXMPIOCTL_HIDE(pRequestedAddress);
     pMapInfo->VideoRamLength = pExt->pPrimary->u.primary.ulMaxFrameBufferSize;
 
-    pStatus->Status = VideoPortMapMemory(pExt, framebuffer, &pMapInfo->VideoRamLength, 
+    pStatus->Status = VideoPortMapMemory(pExt, framebuffer, &pMapInfo->VideoRamLength,
                                          &inIoSpace, &pMapInfo->VideoRamBase);
 
     if (NO_ERROR == pStatus->Status)
@@ -156,7 +156,7 @@ BOOLEAN VBoxMPShareVideoMemory(PVBOXMP_DEVEXT pExt, PVIDEO_SHARE_MEMORY pShareMe
 
         pStatus->Information = sizeof(VIDEO_SHARE_MEMORY_INFORMATION);
     }
-   
+
     VBOXMPIOCTL_UNHIDE();
     LOGF_LEAVE();
     return NO_ERROR == pStatus->Status;
@@ -199,7 +199,7 @@ BOOLEAN VBoxMPSetCurrentMode(PVBOXMP_DEVEXT pExt, PVIDEO_MODE pMode, PSTATUS_BLO
         return FALSE;
     }
 
-    LOG(("width %d, height %d, bpp %d", 
+    LOG(("width %d, height %d, bpp %d",
          pModeInfo->VisScreenWidth, pModeInfo->VisScreenHeight, pModeInfo->BitsPerPlane));
 
     /* Update device info */
@@ -215,7 +215,7 @@ BOOLEAN VBoxMPSetCurrentMode(PVBOXMP_DEVEXT pExt, PVIDEO_MODE pMode, PSTATUS_BLO
     }
 
     /* Perform actual mode switch */
-    VBoxVideoSetModeRegisters((USHORT)pModeInfo->VisScreenWidth, (USHORT)pModeInfo->VisScreenHeight, 
+    VBoxVideoSetModeRegisters((USHORT)pModeInfo->VisScreenWidth, (USHORT)pModeInfo->VisScreenHeight,
                               (USHORT)pModeInfo->VisScreenWidth, (USHORT)pModeInfo->BitsPerPlane, 0, 0, 0);
 
     /*@todo read back from port to check if mode switch was successful */
@@ -240,7 +240,7 @@ BOOLEAN VBoxMPQueryCurrentMode(PVBOXMP_DEVEXT pExt, PVIDEO_MODE_INFORMATION pMod
 }
 
 /* Called for IOCTL_VIDEO_QUERY_NUM_AVAIL_MODES.
- * Returns count of supported video modes and structure size in bytes, 
+ * Returns count of supported video modes and structure size in bytes,
  * used by the following IOCTL_VIDEO_QUERY_AVAIL_MODES.
  */
 BOOLEAN VBoxMPQueryNumAvailModes(PVBOXMP_DEVEXT pExt, PVIDEO_NUM_MODES pNumModes, PSTATUS_BLOCK pStatus)
@@ -341,7 +341,7 @@ BOOLEAN VBoxMPEnablePointer(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, PSTATUS_BLOCK 
             VIDEO_POINTER_ATTRIBUTES attrs;
 
             /* Visible and No Shape means show the pointer, 0 means hide pointer.
-             * It's enough to init only this field. 
+             * It's enough to init only this field.
              */
             attrs.Enable = bEnable ? VBOX_MOUSE_POINTER_VISIBLE:0;
 
@@ -611,7 +611,7 @@ BOOLEAN VBoxMPVhwaQueryInfo(PVBOXMP_DEVEXT pExt, VHWAQUERYINFO *pInfo, PSTATUS_B
         pStatus->Status = ERROR_INVALID_FUNCTION;
         bRC=FALSE;
     }
-    
+
     LOGF_LEAVE();
     return bRC;
 }

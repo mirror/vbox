@@ -101,7 +101,7 @@ USBInstall_LIBS = \
 	$(LIB_RUNTIME) \
 	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
 	$(TARGET_VBoxDrvCfg)
-	
+
 
 #
 # USBUninstall
@@ -134,7 +134,7 @@ USBTest_LIBS = \
 	$(LIB_RUNTIME) \
 	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
 	$(TARGET_VBoxDrvCfg)
-	
+
 #
 # Install the INF files.
 #

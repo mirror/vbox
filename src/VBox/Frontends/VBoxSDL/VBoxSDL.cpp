@@ -716,7 +716,7 @@ void signal_handler_SIGINT(int sig)
 #endif /* VBOXSDL_WITH_X11 */
 
 
-#ifdef RT_OS_WINDOWS 
+#ifdef RT_OS_WINDOWS
 // Required for ATL
 static CComModule _Module;
 #endif

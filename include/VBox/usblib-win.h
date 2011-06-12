@@ -262,17 +262,17 @@ typedef struct
 
 typedef struct
 {
-	USBSUP_DEVID DevId;
-	char szName[512];
-	USBDEVICESTATE enmState;
-    bool fHiSpeed;
+    USBSUP_DEVID    DevId;
+    char            szName[512];
+    USBDEVICESTATE  enmState;
+    bool            fHiSpeed;
 } USBSUP_DEVINFO, *PUSBSUP_DEVINFO;
 
 typedef struct
 {
-    int rc;
-    uint32_t cDevices;
-    USBSUP_DEVINFO aDevices[1];
+    int             rc;
+    uint32_t        cDevices;
+    USBSUP_DEVINFO  aDevices[1];
 } USBSUP_GET_DEVICES, *PUSBSUP_GET_DEVICES;
 
 #pragma pack()                          /* paranoia */

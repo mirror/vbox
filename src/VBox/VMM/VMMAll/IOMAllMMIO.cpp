@@ -1899,8 +1899,8 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
     return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->prefix, cb);
 }
 
-
 #ifndef IN_RC
+
 /**
  * Mapping an MMIO2 page in place of an MMIO page for direct access.
  *
@@ -1968,6 +1968,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
     return VINF_SUCCESS;
 }
 
+
 /**
  * Mapping a HC page in place of an MMIO page for direct access.
  *
@@ -2022,6 +2023,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uin
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     return VINF_SUCCESS;
 }
+
 
 /**
  * Reset a previously modified MMIO region; restore the access flags.
@@ -2082,5 +2084,6 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
 #endif
     return rc;
 }
+
 #endif /* !IN_RC */
 

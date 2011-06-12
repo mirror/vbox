@@ -62,7 +62,7 @@ static void VBoxDispGetDDHalInfo(PVBOXDISPDEV pDev, DD_HALINFO *pHalInfo)
 
 /* Called to get supported DirectDraw caps */
 BOOL APIENTRY
-VBoxDispDrvGetDirectDrawInfo(DHPDEV dhpdev, DD_HALINFO *pHalInfo, DWORD *pdwNumHeaps, 
+VBoxDispDrvGetDirectDrawInfo(DHPDEV dhpdev, DD_HALINFO *pHalInfo, DWORD *pdwNumHeaps,
                              VIDEOMEMORY *pvmList, DWORD *pdwNumFourCCCodes, DWORD *pdwFourCC)
 {
     PVBOXDISPDEV pDev = (PVBOXDISPDEV)dhpdev;
@@ -180,7 +180,7 @@ VBoxDispDrvEnableDirectDraw(DHPDEV dhpdev, DD_CALLBACKS *pCallBacks, DD_SURFACEC
             pSurfaceCallBacks->SetOverlayPosition = VBoxDispDDSetOverlayPosition;
             pSurfaceCallBacks->dwFlags |= DDHAL_SURFCB32_UPDATEOVERLAY|DDHAL_SURFCB32_SETOVERLAYPOSITION;
         }
-    }   
+    }
 #endif
 
     LOGF_LEAVE();

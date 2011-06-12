@@ -101,7 +101,7 @@ typedef struct _VBOXDISPDEV
 {
     HANDLE hDriver;                          /* Display device handle which was passed to VBoxDispDrvEnablePDEV */
     HDEV   hDevGDI;                          /* GDI's handle for PDEV created in VBoxDispDrvEnablePDEV */
-    
+
     VBOXDISPCURRENTMODE mode;                /* Current device mode */
     ULONG iDevice;                           /* Miniport's device index */
     POINTL orgDev;                           /* Device origin for DualView (0,0 is primary) */
@@ -151,7 +151,7 @@ VOID APIENTRY VBoxDispDrvDisablePDEV(DHPDEV dhpdev);
 HSURF APIENTRY VBoxDispDrvEnableSurface(DHPDEV dhpdev);
 VOID APIENTRY VBoxDispDrvDisableSurface(DHPDEV dhpdev);
 
-BOOL APIENTRY VBoxDispDrvLineTo(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo, 
+BOOL APIENTRY VBoxDispDrvLineTo(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo,
                                 LONG x1, LONG y1, LONG x2, LONG y2, RECTL *prclBounds, MIX mix);
 BOOL APIENTRY VBoxDispDrvStrokePath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, XFORMOBJ *pxo,
                                     BRUSHOBJ  *pbo, POINTL *pptlBrushOrg, LINEATTRS *plineattrs, MIX mix);
@@ -170,7 +170,7 @@ BOOL APIENTRY VBoxDispDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMa
 BOOL APIENTRY VBoxDispDrvStretchBlt(SURFOBJ *psoDest, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *pco, XLATEOBJ *pxlo,
                                     COLORADJUSTMENT *pca, POINTL *pptlHTOrg, RECTL *prclDest, RECTL *prclSrc,
                                     POINTL *pptlMask, ULONG iMode);
-BOOL APIENTRY VBoxDispDrvCopyBits(SURFOBJ *psoDest, SURFOBJ *psoSrc, CLIPOBJ *pco, XLATEOBJ *pxlo, 
+BOOL APIENTRY VBoxDispDrvCopyBits(SURFOBJ *psoDest, SURFOBJ *psoSrc, CLIPOBJ *pco, XLATEOBJ *pxlo,
                                   RECTL *prclDest, POINTL *pptlSrc);
 
 ULONG APIENTRY VBoxDispDrvSetPointerShape(SURFOBJ *pso, SURFOBJ *psoMask, SURFOBJ *psoColor, XLATEOBJ *pxlo,
@@ -191,9 +191,9 @@ BOOL APIENTRY VBoxDispDrvOffset(SURFOBJ* pso, LONG x, LONG y, FLONG flReserved);
 VOID APIENTRY VBoxDispDrvNotify(SURFOBJ *pso, ULONG iType, PVOID pvData);
 
 #ifdef VBOX_WITH_DDRAW
-BOOL APIENTRY VBoxDispDrvGetDirectDrawInfo(DHPDEV dhpdev, DD_HALINFO *pHalInfo, DWORD *pdwNumHeaps, 
+BOOL APIENTRY VBoxDispDrvGetDirectDrawInfo(DHPDEV dhpdev, DD_HALINFO *pHalInfo, DWORD *pdwNumHeaps,
                                            VIDEOMEMORY *pvmList, DWORD *pdwNumFourCCCodes, DWORD *pdwFourCC);
-BOOL APIENTRY VBoxDispDrvEnableDirectDraw(DHPDEV dhpdev, DD_CALLBACKS *pCallBacks, 
+BOOL APIENTRY VBoxDispDrvEnableDirectDraw(DHPDEV dhpdev, DD_CALLBACKS *pCallBacks,
                                           DD_SURFACECALLBACKS *pSurfaceCallBacks,
                                           DD_PALETTECALLBACKS *pPaletteCallBacks);
 VOID APIENTRY VBoxDispDrvDisableDirectDraw(DHPDEV  dhpdev);
@@ -216,5 +216,5 @@ DECLINLINE(SURFOBJ) *getSurfObj(SURFOBJ *pso)
 
     return pso;
 }
-                                                        
+
 #endif /*VBOXDISP_H*/

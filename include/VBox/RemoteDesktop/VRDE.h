@@ -47,7 +47,7 @@ typedef class VRDEServerType *HVRDESERVER;
 #else
 struct VRDEServer;
 typedef struct VRDEServerType *HVRDESERVER;
-#endif /* __cplusplus */
+#endif /* !__cplusplus */
 
 /* Callback based VRDE server interface declarations. */
 
@@ -1117,7 +1117,7 @@ typedef struct _VRDEENTRYPOINTS_3
 } VRDEENTRYPOINTS_3;
 
 
-/* Indexes for VRDECallbackProperty. 
+/* Indexes for VRDECallbackProperty.
  * *_QP_* queries a property.
  * *_SP_* sets a property.
  */

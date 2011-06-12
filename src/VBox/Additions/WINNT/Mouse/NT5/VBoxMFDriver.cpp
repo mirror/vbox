@@ -144,7 +144,7 @@ NTSTATUS VBoxIrpPassthrough(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 }
 
 static void
-VBoxServiceCB(PDEVICE_OBJECT DeviceObject, PMOUSE_INPUT_DATA InputDataStart, 
+VBoxServiceCB(PDEVICE_OBJECT DeviceObject, PMOUSE_INPUT_DATA InputDataStart,
               PMOUSE_INPUT_DATA InputDataEnd, PULONG InputDataConsumed)
 {
     PVBOXMOUSE_DEVEXT pDevExt;
