@@ -84,6 +84,7 @@ DECLINLINE(PIOMMMIORANGE) iomMMIOGetRange(PVM pVM, RTGCPHYS GCPhys)
     return pRange;
 }
 
+
 #ifdef VBOX_STRICT
 /**
  * Gets the MMIO range for the specified physical address in the current context.
