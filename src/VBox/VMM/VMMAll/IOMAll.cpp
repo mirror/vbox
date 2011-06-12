@@ -36,6 +36,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include "IOMInline.h"
 
 
 
@@ -291,7 +292,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value,
     if (    !pRange
         ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
-        pRange = iomIOPortGetRange(&pVM->iom.s, Port);
+        pRange = iomIOPortGetRange(pVM, Port);
         if (pRange)
             pVM->iom.s.CTX_SUFF(pRangeLastRead) = pRange;
     }
@@ -386,7 +387,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value,
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(&pVM->iom.s, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(pVM, Port);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
@@ -487,7 +488,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPt
     if (    !pRange
         ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
-        pRange = iomIOPortGetRange(&pVM->iom.s, Port);
+        pRange = iomIOPortGetRange(pVM, Port);
         if (pRange)
             pVM->iom.s.CTX_SUFF(pRangeLastRead) = pRange;
     }
@@ -568,7 +569,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPt
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(&pVM->iom.s, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(pVM, Port);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
@@ -657,7 +658,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, 
     if (    !pRange
         ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
-        pRange = iomIOPortGetRange(&pVM->iom.s, Port);
+        pRange = iomIOPortGetRange(pVM, Port);
         if (pRange)
             pVM->iom.s.CTX_SUFF(pRangeLastWrite) = pRange;
     }
@@ -737,7 +738,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, 
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(&pVM->iom.s, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(pVM, Port);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
@@ -827,7 +828,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCP
     if (    !pRange
         ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
-        pRange = iomIOPortGetRange(&pVM->iom.s, Port);
+        pRange = iomIOPortGetRange(pVM, Port);
         if (pRange)
             pVM->iom.s.CTX_SUFF(pRangeLastWrite) = pRange;
     }
@@ -908,7 +909,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCP
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(&pVM->iom.s, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(pVM, Port);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
