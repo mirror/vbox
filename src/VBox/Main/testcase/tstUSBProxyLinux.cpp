@@ -72,7 +72,7 @@ void SysFreeString(BSTR bstr)
     Assert(0);
 }
 
-static struct 
+static struct
 {
     const char *pcszEnvUsb;
     const char *pcszEnvUsbRoot;
@@ -162,7 +162,7 @@ static void testInit(RTTEST hTest)
     }
 }
 
-static struct 
+static struct
 {
     const char *pacszDeviceAddresses[16];
     const char *pacszAccessibleFiles[16];

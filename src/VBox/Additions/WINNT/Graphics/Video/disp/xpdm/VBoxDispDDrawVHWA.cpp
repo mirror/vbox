@@ -58,7 +58,7 @@ int VBoxDispVHWAUpdateDDHalInfo(PVBOXDISPDEV pDev, DD_HALINFO *pHalInfo)
     pHalInfo->ddCaps.dwCaps |= VBoxDispVHWAToDDCAPS(pDev->vhwa.caps);
     if (VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT))
     {
-        /* we only support simple dst=src copy 
+        /* we only support simple dst=src copy
          * Note: search "ternary raster operations" on msdn for more info
          */
         SET_SUPPORT_ROP(pHalInfo->ddCaps.dwRops, SRCCOPY);
@@ -539,7 +539,7 @@ DWORD APIENTRY VBoxDispDDUpdateOverlay(PDD_UPDATEOVERLAYDATA lpUpdateOverlay)
             if(pDstSurf)
             {
                 PVBOXVHWASURFDESC pDstDesc = (PVBOXVHWASURFDESC) pDstSurf->lpGbl->dwReserved1;
-    
+
                 if (!pDstDesc)
                 {
                     WARN(("!pDstDesc"));

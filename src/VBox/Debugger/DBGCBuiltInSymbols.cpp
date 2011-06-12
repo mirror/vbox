@@ -38,4 +38,3 @@ PCDBGCSYM dbgcLookupRegisterSymbol(PDBGC pDbgc, const char *pszSymbol)
     return NULL;
 }
 
-

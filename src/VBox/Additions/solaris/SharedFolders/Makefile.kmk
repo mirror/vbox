@@ -45,7 +45,7 @@ vboxfs_SOURCES       = \
 	vboxfs_vnode.c \
 	vboxfs_prov.c
 vboxfs_LIBS          = \
-	$(VBOX_LIB_VBGL_R0) 
+	$(VBOX_LIB_VBGL_R0)
 vboxfs_LDFLAGS      += -N drv/vboxguest
 
 

@@ -73,13 +73,13 @@ static DECLCALLBACK(void *) vboxPciQueryFactoryInterface(PCSUPDRVFACTORY pSupDrv
 
     return NULL;
 }
-DECLINLINE(int) vboxPciDevLock(PVBOXRAWPCIINS pThis, 
+DECLINLINE(int) vboxPciDevLock(PVBOXRAWPCIINS pThis,
                                PRTSPINLOCKTMP pTmp)
 {
 #ifdef VBOX_WITH_SHARED_PCI_INTERRUPTS
     RTSpinlockAcquireNoInts(pThis->hSpinlock, pTmp);
     return VINF_SUCCESS;
-#else    
+#else
     int rc = RTSemFastMutexRequest(pThis->hFastMtx);
 
     NOREF(pTmp);
@@ -260,7 +260,7 @@ static DECLCALLBACK(int) vboxPciDevGetRegionInfo(PRAWPCIDEVPORT pPort,
                                                  RTHCPHYS       *pRegionStart,
                                                  uint64_t       *pu64RegionSize,
                                                  bool           *pfPresent,
-						 uint32_t        *pfFlags)
+                                                 uint32_t        *pfFlags)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int            rc;
@@ -283,8 +283,8 @@ static DECLCALLBACK(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
                                              int32_t        iRegion,
                                              RTHCPHYS       RegionStart,
                                              uint64_t       u64RegionSize,
-					     int32_t        fFlags,
-					     RTR0PTR        *pRegionBase)
+                                             int32_t        fFlags,
+                                             RTR0PTR        *pRegionBase)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int            rc;
@@ -306,7 +306,7 @@ static DECLCALLBACK(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
                                                int32_t        iRegion,
                                                RTHCPHYS       RegionStart,
                                                uint64_t       u64RegionSize,
-					       RTR0PTR        RegionBase)
+                                               RTR0PTR        RegionBase)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int            rc;
@@ -324,8 +324,8 @@ static DECLCALLBACK(int) vboxPciDevUnmapRegion(PRAWPCIDEVPORT pPort,
 /**
  * @copydoc RAWPCIDEVPORT:: pfnPciCfgRead
  */
-static DECLCALLBACK(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort, 
-                                              uint32_t       Register, 
+static DECLCALLBACK(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort,
+                                              uint32_t       Register,
                                               PCIRAWMEMLOC   *pValue)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
@@ -344,8 +344,8 @@ static DECLCALLBACK(int) vboxPciDevPciCfgRead(PRAWPCIDEVPORT pPort,
 /**
  * @copydoc RAWPCIDEVPORT:: pfnPciCfgWrite
  */
-static DECLCALLBACK(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort, 
-                                               uint32_t       Register, 
+static DECLCALLBACK(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort,
+                                               uint32_t       Register,
                                                PCIRAWMEMLOC   *pValue)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
@@ -361,9 +361,9 @@ static DECLCALLBACK(int) vboxPciDevPciCfgWrite(PRAWPCIDEVPORT pPort,
     return rc;
 }
 
-static DECLCALLBACK(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT  pPort, 
-                                                      PFNRAWPCIISR    pfnHandler, 
-                                                      void*           pIrqContext, 
+static DECLCALLBACK(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT  pPort,
+                                                      PFNRAWPCIISR    pfnHandler,
+                                                      void*           pIrqContext,
                                                       PCIRAWISRHANDLE *phIsr)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
@@ -397,7 +397,7 @@ static DECLCALLBACK(int) vboxPciDevRegisterIrqHandler(PRAWPCIDEVPORT  pPort,
     return rc;
 }
 
-static DECLCALLBACK(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT  pPort, 
+static DECLCALLBACK(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT  pPort,
                                                         PCIRAWISRHANDLE hIsr)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
@@ -421,8 +421,8 @@ static DECLCALLBACK(int) vboxPciDevUnregisterIrqHandler(PRAWPCIDEVPORT  pPort,
     return rc;
 }
 
-static DECLCALLBACK(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT    pPort, 
-                                                    PCIRAWPOWERSTATE  aState, 
+static DECLCALLBACK(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT    pPort,
+                                                    PCIRAWPOWERSTATE  aState,
                                                     uint64_t          *pu64Param)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);

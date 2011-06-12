@@ -405,8 +405,8 @@ void BusAssignmentManager::State::listAttachedPciDevices(ComSafeArrayOut(IPciDev
     {
         dev.createObject();
         com::Bstr devname(it->second.szDevName);
-        dev->init(NULL, devname, 
-                  it->second.HostAddress.valid() ? it->second.HostAddress.asLong() : -1, 
+        dev->init(NULL, devname,
+                  it->second.HostAddress.valid() ? it->second.HostAddress.asLong() : -1,
                   it->first.asLong(), it->second.HostAddress.valid());
         result.setElement(iIndex++, dev);
     }

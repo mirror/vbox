@@ -63,7 +63,7 @@ static VOID vboxFreePoolVoid(IN PVOID  HwDeviceExtension, IN PVOID  Ptr)
     WARN(("stub called"));
 }
 
-static BOOLEAN 
+static BOOLEAN
 vboxQueueDpcVoid(IN PVOID  HwDeviceExtension, IN PMINIPORT_DPC_ROUTINE  CallbackRoutine, IN PVOID  Context)
 {
     WARN(("stub called"));

@@ -284,7 +284,7 @@ static BOOL ssbCopy(SSB *pSSB, SURFOBJ *pso, RECTL *prcl, BOOL bToScreen)
  * Display driver callbacks.
  */
 
-BOOL APIENTRY 
+BOOL APIENTRY
 VBoxDispDrvLineTo(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo, LONG x1, LONG y1, LONG x2, LONG y2,
                   RECTL *prclBounds, MIX mix)
 {
@@ -299,7 +299,7 @@ VBoxDispDrvLineTo(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo, LONG x1, LONG y1, L
     return bRc;
 }
 
-BOOL APIENTRY 
+BOOL APIENTRY
 VBoxDispDrvStrokePath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, XFORMOBJ *pxo,
                       BRUSHOBJ  *pbo, POINTL *pptlBrushOrg, LINEATTRS *plineattrs, MIX mix)
 {
@@ -314,7 +314,7 @@ VBoxDispDrvStrokePath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, XFORMOBJ *pxo,
     return bRc;
 }
 
-BOOL APIENTRY 
+BOOL APIENTRY
 VBoxDispDrvFillPath(SURFOBJ *pso, PATHOBJ *ppo, CLIPOBJ *pco, BRUSHOBJ *pbo, POINTL *pptlBrushOrg,
                     MIX mix, FLONG flOptions)
 {
@@ -342,7 +342,7 @@ BOOL APIENTRY VBoxDispDrvPaint(SURFOBJ *pso, CLIPOBJ *pco, BRUSHOBJ *pbo, POINTL
     return bRc;
 }
 
-BOOL APIENTRY 
+BOOL APIENTRY
 VBoxDispDrvTextOut(SURFOBJ *pso, STROBJ *pstro, FONTOBJ *pfo, CLIPOBJ *pco,
                    RECTL *prclExtra, RECTL *prclOpaque, BRUSHOBJ *pboFore,
                    BRUSHOBJ *pboOpaque, POINTL *pptlOrg, MIX mix)
@@ -497,7 +497,7 @@ ULONG_PTR APIENTRY VBoxDispDrvSaveScreenBits(SURFOBJ *pso, ULONG iMode, ULONG_PT
     return rc;
 }
 
-BOOL APIENTRY 
+BOOL APIENTRY
 VBoxDispDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *pco, XLATEOBJ *pxlo,
                   RECTL *prclTrg, POINTL *pptlSrc, POINTL *pptlMask, BRUSHOBJ *pbo, POINTL *pptlBrush, ROP4 rop4)
 {
@@ -508,7 +508,7 @@ VBoxDispDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *p
     LOG(("psoTrg = %p, psoSrc = %p, psoMask = %p, pco = %p, pxlo = %p, prclTrg = %p, pptlSrc = %p, "
          "pptlMask = %p, pbo = %p, pptlBrush = %p, rop4 = %08X",
          psoTrg, psoSrc, psoMask, pco, pxlo, prclTrg, pptlSrc, pptlMask, pbo, pptlBrush, rop4));
-    
+
     bRc = EngBitBlt(getSurfObj(psoTrg), getSurfObj(psoSrc), psoMask, pco, pxlo, prclTrg, pptlSrc, pptlMask, pbo, pptlBrush, rop4);
     VBVA_OPERATION(psoTrg, BitBlt,
                    (psoTrg, psoSrc, psoMask, pco, pxlo, prclTrg, pptlSrc, pptlMask, pbo, pptlBrush, rop4));
@@ -536,7 +536,7 @@ VBoxDispDrvStretchBlt(SURFOBJ *psoDest, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPO
 }
 
 BOOL APIENTRY
-VBoxDispDrvCopyBits(SURFOBJ *psoDest, SURFOBJ *psoSrc, CLIPOBJ *pco, XLATEOBJ *pxlo, 
+VBoxDispDrvCopyBits(SURFOBJ *psoDest, SURFOBJ *psoSrc, CLIPOBJ *pco, XLATEOBJ *pxlo,
                     RECTL *prclDest, POINTL *pptlSrc)
 {
     BOOL bRc;

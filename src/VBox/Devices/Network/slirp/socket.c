@@ -920,7 +920,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 
     /* Don't care what port we get */
     /*
-     * > nmap -sV -T4 -O -A -v -PU3483 255.255.255.255 
+     * > nmap -sV -T4 -O -A -v -PU3483 255.255.255.255
      * generates bodyless messages, annoying memmory management system.
      */
     mlen = m_length(m, NULL);

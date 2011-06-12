@@ -43,7 +43,7 @@ BOOL __stdcall DllMain(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
     switch (dwReason)
     {
         /*
-         * When attaching to a process, we'd like to make sure IPRT stays put 
+         * When attaching to a process, we'd like to make sure IPRT stays put
          * and doesn't get unloaded.
          */
         case DLL_PROCESS_ATTACH:

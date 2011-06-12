@@ -111,7 +111,7 @@ DECLCALLBACK(int) VBoxVbvaInitInfoDisplayCB(void *pvData, struct VBVAINFOVIEW *p
 void VBoxCreateDisplays(PVBOXMP_DEVEXT pExt, PVIDEO_PORT_CONFIG_INFO pConfigInfo)
 {
     LOGF_ENTER();
-    
+
     PVBOXMP_COMMON pCommon = VBoxCommonFromDeviceExt(pExt);
     VBOXVIDEOPORTPROCS *pAPI = &pExt->u.primary.VideoPortProcs;
 
@@ -314,7 +314,7 @@ int VBoxVbvaEnable(PVBOXMP_DEVEXT pExt, BOOLEAN bEnable, VBVAENABLERESULT *pResu
 
         VbglGRFree(&req->header);
     }
-    else 
+    else
     {
         WARN(("VbglGRAlloc(VMMDevVideoAccelEnable) rc = %#xrc", rc));
     }
@@ -430,7 +430,7 @@ static int VBoxVbvaCreateChannelContexts(PVBOXMP_COMMON pCommon, VBVA_CHANNELCON
         return VINF_SUCCESS;
     }
 
-    WARN(("Failed to allocate %d bytes", size));    
+    WARN(("Failed to allocate %d bytes", size));
     return VERR_GENERAL_FAILURE;
 }
 
@@ -444,7 +444,7 @@ static void VBoxMPSignalEvent(PVBOXMP_COMMON pCommon, uint64_t pvEvent)
 {
     PVBOXMP_DEVEXT pExt = VBoxCommonToPrimaryExt(pCommon);
     PEVENT pEvent = (PEVENT)pvEvent;
-    pExt->u.primary.VideoPortProcs.pfnSetEvent(pExt, pEvent);    
+    pExt->u.primary.VideoPortProcs.pfnSetEvent(pExt, pEvent);
 }
 
 static DECLCALLBACK(int)

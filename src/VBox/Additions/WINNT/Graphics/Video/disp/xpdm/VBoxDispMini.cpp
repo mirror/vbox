@@ -57,7 +57,7 @@ int VBoxDispMPGetVideoModes(HANDLE hDriver, PVIDEO_MODE_INFORMATION *ppModesTabl
     }
 
     /* Allocate temp buffer */
-    pMiniportModes = (PVIDEO_MODE_INFORMATION) 
+    pMiniportModes = (PVIDEO_MODE_INFORMATION)
                      EngAllocMem(0, numModes.NumModes*numModes.ModeInformationLength, MEM_ALLOC_TAG);
 
     if (!pMiniportModes)
@@ -74,7 +74,7 @@ int VBoxDispMPGetVideoModes(HANDLE hDriver, PVIDEO_MODE_INFORMATION *ppModesTabl
         EngFreeMem(pMiniportModes);
         VBOX_CHECK_WINERR_RETRC(dwrc, VERR_DEV_IO_ERROR);
     }
-    
+
     /* Check which of miniport modes are supprted by display driver.
      * Note: size of VIDEO_MODE_INFORMATION is returned by miniport driver in numModes.ModeInformationLength,
      *       it might be different from the one we have here.
@@ -110,7 +110,7 @@ int VBoxDispMPGetVideoModes(HANDLE hDriver, PVIDEO_MODE_INFORMATION *ppModesTabl
     }
 
     /* Allocate and zero output buffer */
-    *ppModesTable = (PVIDEO_MODE_INFORMATION) 
+    *ppModesTable = (PVIDEO_MODE_INFORMATION)
                     EngAllocMem(FL_ZERO_MEMORY, cSupportedModes*sizeof(VIDEO_MODE_INFORMATION), MEM_ALLOC_TAG);
 
     if (!*ppModesTable)
@@ -120,7 +120,7 @@ int VBoxDispMPGetVideoModes(HANDLE hDriver, PVIDEO_MODE_INFORMATION *ppModesTabl
         return VERR_NO_MEMORY;
     }
 
-    /* Copy supported modes to output buffer */    
+    /* Copy supported modes to output buffer */
     pMode = pMiniportModes;
     for (j=0, i=0; i<numModes.NumModes; ++i)
     {
@@ -237,7 +237,7 @@ int VBoxDispMPQueryHGSMIInfo(HANDLE hDriver, QUERYHGSMIRESULT *pInfo)
     LOGF_ENTER();
 
     memset(pInfo, 0, sizeof(QUERYHGSMIRESULT));
-    dwrc = EngDeviceIoControl(hDriver, IOCTL_VIDEO_QUERY_HGSMI_INFO, NULL, 0, 
+    dwrc = EngDeviceIoControl(hDriver, IOCTL_VIDEO_QUERY_HGSMI_INFO, NULL, 0,
                               pInfo, sizeof(QUERYHGSMIRESULT), &cbReturned);
     VBOX_CHECK_WINERR_RETRC(dwrc, VERR_DEV_IO_ERROR);
     VBOX_WARN_IOCTLCB_RETRC("IOCTL_VIDEO_QUERY_HGSMI_INFO", cbReturned, sizeof(QUERYHGSMIRESULT), VERR_DEV_IO_ERROR);
@@ -342,7 +342,7 @@ int VBoxDispMPSetPointerAttrs(PVBOXDISPDEV pDev)
 
     Assert(pDev->pointer.pAttrs);
 
-    dwrc = EngDeviceIoControl(pDev->hDriver, IOCTL_VIDEO_SET_POINTER_ATTR, pDev->pointer.pAttrs, pDev->pointer.cbAttrs, 
+    dwrc = EngDeviceIoControl(pDev->hDriver, IOCTL_VIDEO_SET_POINTER_ATTR, pDev->pointer.pAttrs, pDev->pointer.cbAttrs,
                               NULL, 0, &cbReturned);
     VBOX_CHECK_WINERR_RETRC(dwrc, VERR_DEV_IO_ERROR);
 
@@ -383,10 +383,10 @@ int VBoxDispMPShareVideoMemory(HANDLE hDriver, PVIDEO_SHARE_MEMORY pSMem, PVIDEO
     ULONG cbReturned;
     LOGF_ENTER();
 
-    dwrc = EngDeviceIoControl(hDriver, IOCTL_VIDEO_SHARE_VIDEO_MEMORY, pSMem, sizeof(VIDEO_SHARE_MEMORY), 
+    dwrc = EngDeviceIoControl(hDriver, IOCTL_VIDEO_SHARE_VIDEO_MEMORY, pSMem, sizeof(VIDEO_SHARE_MEMORY),
                               pSMemInfo, sizeof(VIDEO_SHARE_MEMORY_INFORMATION), &cbReturned);
     VBOX_CHECK_WINERR_RETRC(dwrc, VERR_DEV_IO_ERROR);
-    VBOX_WARN_IOCTLCB_RETRC("IOCTL_VIDEO_SHARE_VIDEO_MEMORY", cbReturned, 
+    VBOX_WARN_IOCTLCB_RETRC("IOCTL_VIDEO_SHARE_VIDEO_MEMORY", cbReturned,
                             sizeof(VIDEO_SHARE_MEMORY_INFORMATION), VERR_DEV_IO_ERROR);
 
     LOGF_LEAVE();
@@ -399,7 +399,7 @@ int VBoxDispMPUnshareVideoMemory(HANDLE hDriver, PVIDEO_SHARE_MEMORY pSMem)
     ULONG cbReturned;
     LOGF_ENTER();
 
-    dwrc = EngDeviceIoControl(hDriver, IOCTL_VIDEO_UNSHARE_VIDEO_MEMORY, pSMem, sizeof(VIDEO_SHARE_MEMORY), 
+    dwrc = EngDeviceIoControl(hDriver, IOCTL_VIDEO_UNSHARE_VIDEO_MEMORY, pSMem, sizeof(VIDEO_SHARE_MEMORY),
                               NULL, 0, &cbReturned);
     VBOX_CHECK_WINERR_RETRC(dwrc, VERR_DEV_IO_ERROR);
 

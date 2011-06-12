@@ -353,7 +353,7 @@ static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFla
 
             PVBOXNETADP pNew;
             Log(("VBoxNetAdpDarwinIOCtl: szName=%s\n", pReq->szName));
-            rc = vboxNetAdpCreate(&pNew, 
+            rc = vboxNetAdpCreate(&pNew,
                                   pReq->szName[0] && RTStrEnd(pReq->szName, RT_MIN(cbReq, sizeof(pReq->szName))) ?
                                   pReq->szName : NULL);
             if (RT_FAILURE(rc))

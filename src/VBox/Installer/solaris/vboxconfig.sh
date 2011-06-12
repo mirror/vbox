@@ -756,7 +756,7 @@ cleanup_install()
 # !! failure is always fatal
 postinstall()
 {
-    infoprint "Detected Solaris $HOST_OS_MAJORVERSION Version $HOST_OS_MINORVERSION" 
+    infoprint "Detected Solaris $HOST_OS_MAJORVERSION Version $HOST_OS_MINORVERSION"
     infoprint "Loading VirtualBox kernel modules..."
     install_drivers
 

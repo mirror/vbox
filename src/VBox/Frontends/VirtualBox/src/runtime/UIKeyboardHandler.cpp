@@ -1357,7 +1357,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
             if (keyEventHandleNormal(iKey, uScan, fFlags, pCodes, &uCodesCount))
                 return true;
     }
-    
+
     /* This must come before host key handling */
     keyEventHandleCapturing(uScan, fFlags, uScreenId);
 

@@ -83,27 +83,27 @@ static ng_disconnect_t    ng_vboxnetflt_disconnect;
 static int        ng_vboxnetflt_mod_event(module_t mod, int event, void *data);
 
 /** Netgraph node type */
-#define NG_VBOXNETFLT_NODE_TYPE    "vboxnetflt"
+#define NG_VBOXNETFLT_NODE_TYPE     "vboxnetflt"
 /** Netgraph message cookie */
-#define NGM_VBOXNETFLT_COOKIE    0x56424f58
+#define NGM_VBOXNETFLT_COOKIE       0x56424f58
 
 /** Input netgraph hook name */
-#define NG_VBOXNETFLT_HOOK_IN    "input"
+#define NG_VBOXNETFLT_HOOK_IN       "input"
 /** Output netgraph hook name */
-#define NG_VBOXNETFLT_HOOK_OUT    "output"
+#define NG_VBOXNETFLT_HOOK_OUT      "output"
 
 /** mbuf tag identifier */
-#define MTAG_VBOX        0x56424f58
+#define MTAG_VBOX                   0x56424f58
 /** mbuf packet tag */
-#define PACKET_TAG_VBOX        128
+#define PACKET_TAG_VBOX             128
 
 #if defined(__FreeBSD_version) && __FreeBSD_version >= 800500
 # include <sys/jail.h>
 # include <net/vnet.h>
 
-# define VBOXCURVNET_SET(arg)		CURVNET_SET_QUIET(arg)
-# define VBOXCURVNET_SET_FROM_UCRED()	VBOXCURVNET_SET(CRED_TO_VNET(curthread->td_ucred))
-# define VBOXCURVNET_RESTORE()		CURVNET_RESTORE()
+# define VBOXCURVNET_SET(arg)           CURVNET_SET_QUIET(arg)
+# define VBOXCURVNET_SET_FROM_UCRED()   VBOXCURVNET_SET(CRED_TO_VNET(curthread->td_ucred))
+# define VBOXCURVNET_RESTORE()          CURVNET_RESTORE()
 
 #else /* !defined(__FreeBSD_version) || __FreeBSD_version < 800500 */
 
@@ -127,16 +127,16 @@ static const struct ng_cmdlist ng_vboxnetflt_cmdlist[] =
  */
 static struct ng_type ng_vboxnetflt_typestruct =
 {
-    .version =    NG_ABI_VERSION,
-    .name =        NG_VBOXNETFLT_NODE_TYPE,
-    .mod_event =    vboxnetflt_modevent,
-    .constructor =    ng_vboxnetflt_constructor,
-    .rcvmsg =     ng_vboxnetflt_rcvmsg,
-    .shutdown =    ng_vboxnetflt_shutdown,
-    .newhook =    ng_vboxnetflt_newhook,
-    .rcvdata =    ng_vboxnetflt_rcvdata,
-    .disconnect =     ng_vboxnetflt_disconnect,
-    .cmdlist =    ng_vboxnetflt_cmdlist,
+    .version    = NG_ABI_VERSION,
+    .name       = NG_VBOXNETFLT_NODE_TYPE,
+    .mod_event  = vboxnetflt_modevent,
+    .constructor= ng_vboxnetflt_constructor,
+    .rcvmsg     = ng_vboxnetflt_rcvmsg,
+    .shutdown   = ng_vboxnetflt_shutdown,
+    .newhook    = ng_vboxnetflt_newhook,
+    .rcvdata    = ng_vboxnetflt_rcvdata,
+    .disconnect = ng_vboxnetflt_disconnect,
+    .cmdlist    = ng_vboxnetflt_cmdlist,
 };
 NETGRAPH_INIT(vboxnetflt, &ng_vboxnetflt_typestruct);
 

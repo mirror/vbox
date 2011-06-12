@@ -63,7 +63,7 @@ void printDevices(PUSBDEVICE pDevices,
     RTPrintf("Enumerating usb devices using %s at %s\n", pcszMethod, pcszDevices);
     while (pDevice)
     {
-        const char *pcszState = 
+        const char *pcszState =
               pDevice->enmState == USBDEVICESTATE_UNSUPPORTED   ? "UNSUPPORTED"
             : pDevice->enmState == USBDEVICESTATE_USED_BY_HOST  ? "USED_BY_HOST"
             : pDevice->enmState == USBDEVICESTATE_USED_BY_HOST_CAPTURABLE ? "USED_BY_HOST_CAPTURABLE"

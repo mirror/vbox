@@ -93,7 +93,7 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
 
     QPainter painter(m_pMachineView->viewport());
 
-    
+
     if ((ulong)r.width() < m_width * 2 / 3)
     {
         /* This method is faster for narrow updates */

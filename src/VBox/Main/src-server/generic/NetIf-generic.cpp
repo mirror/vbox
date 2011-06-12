@@ -127,7 +127,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * /
 
 
 int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
-                                        IHostNetworkInterface **aHostNetworkInterface, 
+                                        IHostNetworkInterface **aHostNetworkInterface,
                                         IProgress **aProgress,
                                         const char *pcszName)
 {

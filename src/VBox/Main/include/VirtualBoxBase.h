@@ -657,7 +657,7 @@ protected:
      {
 #ifdef RT_OS_WINDOWS
         return CoCreateFreeThreadedMarshaler(this, //GetControllingUnknown(),
-  	                                     &m_pUnkMarshaler.p);
+                                             &m_pUnkMarshaler.p);
 #else
         return S_OK;
 #endif

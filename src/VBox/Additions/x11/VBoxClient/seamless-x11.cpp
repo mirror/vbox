@@ -452,7 +452,7 @@ DECLCALLBACK(int) getRectsCallback(VBoxGuestWinInfo *pInfo,
         for (int i = 0; i < pInfo->mcRects; ++i)
         {
             RTRECT *pRect;
-            
+
             pRect = RectListPushBack(pRects);
             if (!pRect)
                 return VERR_NO_MEMORY;

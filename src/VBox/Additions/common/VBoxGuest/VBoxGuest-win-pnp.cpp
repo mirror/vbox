@@ -208,7 +208,7 @@ NTSTATUS vboxguestwinPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
             VBOXGUEST_UPDATE_DEVSTATE(pDevExt, SURPRISEREMOVED);
 
-            /* Do nothing here actually. Cleanup is done in IRP_MN_REMOVE_DEVICE. 
+            /* Do nothing here actually. Cleanup is done in IRP_MN_REMOVE_DEVICE.
              * This request is not expected for VBoxGuest.
              */
             LogRel(("VBoxGuest: unexpected device removal\n"));

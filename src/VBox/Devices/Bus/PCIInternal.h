@@ -90,7 +90,7 @@ enum {
     PCIDEV_FLAG_PASSTHROUGH        = 1<<5,
     /** Flag whether the device is capable of MSI using 64-bit address.  */
     PCIDEV_FLAG_MSI64_CAPABLE      = 1<<6
-    
+
 };
 
 /**

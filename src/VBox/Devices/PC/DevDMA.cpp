@@ -70,7 +70,7 @@
  * The 16-bit DMA controller added in the PC/AT shifts all 8237A addresses
  * left by one, including the control registers addresses. The DMA register
  * offsets (except for the page registers) are therefore "double spaced".
- * 
+ *
  * Due to the address shifting, the DMA controller decodes more addresses
  * than are usually documented, with aliasing. See the ICH8 datasheet.
  *
@@ -417,11 +417,11 @@ static DECLCALLBACK(int) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT p
 
         return VINF_SUCCESS;
     }
-    else 
+    else
         return VERR_IOM_IOPORT_UNUSED;
 }
 
-/* DMA page registers. There are 16 R/W page registers for compatibility with 
+/* DMA page registers. There are 16 R/W page registers for compatibility with
  * the IBM PC/AT; only some of those registers are used for DMA. The page register
  * accessible via port 80h may be read to insert small delays or used as a scratch
  * register by a BIOS.
@@ -429,14 +429,14 @@ static DECLCALLBACK(int) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT p
 static DECLCALLBACK(int) dmaReadPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
                                      uint32_t *pu32, unsigned cb)
 {
-    if (cb == 1) 
+    if (cb == 1)
     {
         DMAControl  *dc = (DMAControl *)pvUser;
         int         reg;
 
         reg   = port & 7;
         *pu32 = dc->au8Page[reg];
-        Log2(("Read %#x to from page register %#x (channel %d)\n", 
+        Log2(("Read %#x to from page register %#x (channel %d)\n",
               *pu32, port, DMAPG2CX(reg)));
         return VINF_SUCCESS;
     }
@@ -474,14 +474,14 @@ static DECLCALLBACK(int) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 static DECLCALLBACK(int) dmaReadHiPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
                                        uint32_t *pu32, unsigned cb)
 {
-    if (cb == 1) 
+    if (cb == 1)
     {
         DMAControl  *dc = (DMAControl *)pvUser;
         int         reg;
 
         reg   = port & 7;
         *pu32 = dc->au8PageHi[reg];
-        Log2(("Read %#x to from high page register %#x (channel %d)\n", 
+        Log2(("Read %#x to from high page register %#x (channel %d)\n",
               *pu32, port, DMAPG2CX(reg)));
         return VINF_SUCCESS;
     }
@@ -500,7 +500,7 @@ static DECLCALLBACK(int) dmaWriteHiPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
         Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
         reg = port & 7;
         dc->au8PageHi[reg] = u32;
-        Log2(("Wrote %#x to high page register %#x (channel %d)\n", 
+        Log2(("Wrote %#x to high page register %#x (channel %d)\n",
               u32, port, DMAPG2CX(reg)));
     }
     else
@@ -562,7 +562,7 @@ static bool dmaRun(PPDMDEVINS pDevIns)
 static void dmaRegister(PPDMDEVINS pDevIns, unsigned channel,
                         PFNDMATRANSFERHANDLER handler, void *pvUser)
 {
-    DMAState    *s = PDMINS_2_DATA(pDevIns, DMAState *);    
+    DMAState    *s = PDMINS_2_DATA(pDevIns, DMAState *);
     DMAChannel  *ch = &s->DMAC[DMACH2C(channel)].ChState[channel & 3];
 
     LogFlow(("dmaRegister: s=%p channel=%u XferHandler=%p pvUser=%p\n",
@@ -681,7 +681,7 @@ static void dmaSetDREQ(PPDMDEVINS pDevIns, unsigned channel, unsigned level)
     LogFlow(("dmaSetDREQ: s=%p channel=%u level=%u\n", s, channel, level));
 
     chidx  = channel & 3;
-    if (level) 
+    if (level)
         dc->u8Status |= 1 << (chidx + 4);
     else
         dc->u8Status &= ~(1 << (chidx + 4));
@@ -763,7 +763,7 @@ static void dmaSaveController(PSSMHANDLE pSSMHandle, DMAControl *dc)
     SSMR3PutMem(pSSMHandle, &dc->au8PageHi, sizeof(dc->au8PageHi));
 
     /* ...and all four of its channels. */
-    for (chidx = 0; chidx < 4; ++chidx) 
+    for (chidx = 0; chidx < 4; ++chidx)
     {
         DMAChannel  *ch = &dc->ChState[chidx];
 
@@ -795,7 +795,7 @@ static int dmaLoadController(PSSMHANDLE pSSMHandle, DMAControl *dc, int version)
         SSMR3GetMem(pSSMHandle, &dc->au8PageHi, sizeof(dc->au8PageHi));
     }
 
-    for (chidx = 0; chidx < 4; ++chidx) 
+    for (chidx = 0; chidx < 4; ++chidx)
     {
         DMAChannel  *ch = &dc->ChState[chidx];
 

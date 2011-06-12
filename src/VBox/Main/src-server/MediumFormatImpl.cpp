@@ -37,7 +37,7 @@ HRESULT MediumFormat::FinalConstruct()
 void MediumFormat::FinalRelease()
 {
     uninit();
-    
+
     BaseFinalRelease();
 }
 
