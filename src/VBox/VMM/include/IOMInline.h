@@ -34,10 +34,7 @@
  */
 DECLINLINE(CTX_SUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PVM pVM, RTIOPORT Port)
 {
-#ifdef IN_RING3
-    if (PDMCritSectIsInitialized(&pVM->iom.s.EmtLock))
-#endif
-        Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock));
+    Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock) || !PDMCritSectIsInitialized(&pVM->iom.s.EmtLock));
     return (CTX_SUFF(PIOMIOPORTRANGE))RTAvlroIOPortRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->CTX_SUFF(IOPortTree), Port);
 }
 
@@ -53,10 +50,7 @@ DECLINLINE(CTX_SUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PVM pVM, RTIOPORT Port)
  */
 DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PVM pVM, RTIOPORT Port)
 {
-#ifdef IN_RING3
-    if (PDMCritSectIsInitialized(&pVM->iom.s.EmtLock)) /** @todo Move the call into the assertion since the compiler cannot optimize it away in non-strict builds. */
-#endif
-        Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock));
+    Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock) || !PDMCritSectIsInitialized(&pVM->iom.s.EmtLock));
     return (PIOMIOPORTRANGER3)RTAvlroIOPortRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortTreeR3, Port);
 }
 
@@ -72,10 +66,7 @@ DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PVM pVM, RTIOPORT Port)
  */
 DECLINLINE(PIOMMMIORANGE) iomMMIOGetRange(PVM pVM, RTGCPHYS GCPhys)
 {
-#ifdef IN_RING3
-    if (PDMCritSectIsInitialized(&pVM->iom.s.EmtLock))
-#endif
-        Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock));
+    Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock) || !PDMCritSectIsInitialized(&pVM->iom.s.EmtLock));
     PIOMMMIORANGE pRange = pVM->iom.s.CTX_SUFF(pMMIORangeLast);
     if (    !pRange
         ||  GCPhys - pRange->GCPhys >= pRange->cb)
@@ -124,6 +115,7 @@ DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, RTGCPHYS GCPhys)
 DECLINLINE(PIOMMMIOSTATS) iomMMIOGetStats(PVM pVM, RTGCPHYS GCPhys, PIOMMMIORANGE pRange)
 {
     Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock));
+
     /* For large ranges, we'll put everything on the first byte. */
     if (pRange->cb > PAGE_SIZE)
         GCPhys = pRange->GCPhys;
