@@ -442,6 +442,11 @@ void scsi_enumerate_attached_devices(io_base)
                 hdcount++;
                 write_byte(ebda_seg, &EbdaData->ata.hdcount, hdcount);
 
+                /* Update hdcount in the BDA. */
+                hdcount = read_byte(0x40, 0x75);
+                hdcount++;
+                write_byte(0x40, 0x75, hdcount);
+
                 hdcount_scsi++;
                 write_byte(ebda_seg, &EbdaData->scsi.hdcount, hdcount_scsi);
             }
