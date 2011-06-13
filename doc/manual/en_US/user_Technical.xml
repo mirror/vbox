@@ -884,7 +884,7 @@
           (TLBs).</para>
 
           <para>To enable these features for a VM, you need to use the
-          <computeroutput>VBoxManage modifyvm --vtxvpids</computeroutput> and
+          <computeroutput>VBoxManage modifyvm --vtxvpid</computeroutput> and
           <computeroutput>--largepages</computeroutput> commands; see <xref
           linkend="vboxmanage-modifyvm" />.</para>
         </listitem>
