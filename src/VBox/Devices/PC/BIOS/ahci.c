@@ -14,24 +14,25 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+/**
+ * Parts are based on the int13_harddisk code in rombios.c
+ */
 
 #define AHCI_MAX_STORAGE_DEVICES 4
 
+/**
+ * AHCI device data.
+ */
 typedef struct
 {
     Bit8u  type;         // Detected type of ata (ata/atapi/none/unknown/scsi)
     Bit8u  device;       // Detected type of attached devices (hd/cd/none)
-#if 0
     Bit8u  removable;    // Removable device flag
     Bit8u  lock;         // Locks for removable devices
-#endif
     Bit16u blksize;      // block size
-
-    Bit8u  translation;  // type of translation
     chs_t  lchs;         // Logical CHS
     chs_t  pchs;         // Physical CHS
-
-    Bit32u sectors;      // Total sectors count
+    Bit32u cSectors;     // Total sectors count
     Bit8u  port;         // Port this device is on.
 } ahci_device_t;
 
@@ -65,12 +66,18 @@ typedef struct
     Bit8u         port;
     /** AHCI device information. */
     ahci_device_t aDevices[AHCI_MAX_STORAGE_DEVICES];
+    /** Index of the next unoccupied device slot. */
+    Bit8u         cDevices;
     /** Map between (bios hd id - 0x80) and ahci devices. */
     Bit8u         cHardDisks;
     Bit8u         aHdIdMap[AHCI_MAX_STORAGE_DEVICES];
     /** Map between (bios cd id - 0xE0) and ahci_devices. */
     Bit8u         cCdDrives;
     Bit8u         aCdIdMap[AHCI_MAX_STORAGE_DEVICES];
+    /** int13 handler to call if given device is not from AHCI. */
+    Bit16u        pfnInt13Old;
+    /** Number of harddisks detected before the AHCI driver started detection. */
+    Bit8u         cHardDisksOld;
 } ahci_t;
 
 #define AhciData ((ahci_t *) 0)
@@ -105,7 +112,8 @@ typedef struct
 #define PCI_CAP_ID_SATACR               0x12
 #define VBOX_AHCI_NO_DEVICE 0xffff
 
-#define VBOX_AHCI_DEBUG 1 /* temporary */
+//#define VBOX_AHCI_DEBUG 1
+//#define VBOX_AHCI_INT13_DEBUG 1
 
 #ifdef VBOX_AHCI_DEBUG
 # define VBOXAHCI_DEBUG(a...) BX_INFO(a)
@@ -113,7 +121,13 @@ typedef struct
 # define VBOXAHCI_DEBUG(a...)
 #endif
 
-#define RT_BIT_32(bit) ((Bit32u)(1 << (bit)))
+#ifdef VBOX_AHCI_INT13_DEBUG
+# define VBOXAHCI_INT13_DEBUG(a...) BX_INFO(a)
+#else
+# define VBOXAHCI_INT13_DEBUG(a...)
+#endif
+
+#define RT_BIT_32(bit) ((Bit32u)(1L << (bit)))
 
 /** Global register set. */
 #define AHCI_HBA_SIZE 0x100
@@ -175,6 +189,8 @@ typedef struct
     VBOXAHCI_READ_REG((iobase), VBOXAHCI_PORT_REG((port), (reg)), val)
 
 #define ATA_CMD_IDENTIFY_DEVICE 0xEC
+#define AHCI_CMD_READ_DMA_EXT 0x25
+#define AHCI_CMD_WRITE_DMA_EXT 0x35
 
 /**
  * Returns the bus/device/function of a PCI device with
@@ -221,7 +237,7 @@ ASM_END
 Bit8u ahci_pci_read_config_byte(u8Bus, u8DevFn, u8Reg)
     Bit8u u8Bus, u8DevFn, u8Reg;
 {
-    uint8_t u8Val;
+    Bit8u u8Val;
 
     u8Val = 0;
 
@@ -506,8 +522,8 @@ ASM_START
     push bp
     mov bp, sp
 
-    push eax
     push edx
+    push eax
 
     ; Read from the register
     mov eax, _ahci_ctrl_is_bit_set.u32Reg + 2[bp]
@@ -520,7 +536,8 @@ ASM_START
     in eax, dx
 
     ; Check for set bits
-    test eax, _ahci_ctrl_is_bit_set.u32Mask + 2[bp]
+    mov edx, _ahci_ctrl_is_bit_set.u32Mask + 2[bp]
+    test eax, edx
     je ahci_ctrl_is_bit_set_not_set
     mov al, #1                                       ; At least one of the bits is set
     jmp ahci_ctrl_is_bit_set_done
@@ -529,8 +546,10 @@ ahci_ctrl_is_bit_set_not_set:
     mov al, #0                                       ; No bit is set
 
 ahci_ctrl_is_bit_set_done:
+    pop edx                                          ; restore upper 16 bits of eax
+    and edx, #0xffff0000
+    or  eax, edx
     pop edx
-    pop eax
 
     pop bp
 ASM_END
@@ -626,9 +645,9 @@ static void ahci_port_cmd_sync(SegAhci, u16IoBase, fWrite, fAtapi, cFisDWords, c
         write_dword(SegAhci, &AhciData->abCmdHdr[2],
                     ahci_addr_to_phys(SegAhci, &AhciData->abCmd[0]));
 
-        /* Enable Command engine. */
+        /* Enable Command and FIS receive engine. */
         ahci_ctrl_set_bits(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
-                           AHCI_REG_PORT_CMD_ST);
+                           AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST);
 
         /* Queue command. */
         VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_CI, 0x1L);
@@ -689,7 +708,7 @@ static void ahci_cmd_data(SegAhci, u16IoBase, u8Cmd, u8Feat, u8Device, u8CylHigh
 
     /* Prepare PRDT. */
     write_dword(SegAhci, &AhciData->abCmd[0x80], ahci_addr_to_phys(SegData, OffData));
-    write_dword(SegAhci, &AhciData->abCmd[0x8c], (Bit32u)cbData);
+    write_dword(SegAhci, &AhciData->abCmd[0x8c], (Bit32u)(cbData - 1));
 
     ahci_port_cmd_sync(SegAhci, u16IoBase, fWrite, 0, 5, cbData);
 }
@@ -712,7 +731,7 @@ static void ahci_port_deinit_current(SegAhci, u16IoBase)
                              AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST);
 
         while (ahci_ctrl_is_bit_set(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
-                                    AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST | AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_CR) == 1)
+                                    AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST | AHCI_REG_PORT_CMD_FR | AHCI_REG_PORT_CMD_CR) == 1)
         {
             VBOXAHCI_DEBUG("AHCI: Waiting for the port to idle\n");
         }
@@ -757,7 +776,7 @@ static void ahci_port_init(SegAhci, u16IoBase, u8Port)
                          AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST);
 
     while (ahci_ctrl_is_bit_set(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
-                                AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST | AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_CR) == 1)
+                                AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST | AHCI_REG_PORT_CMD_FR | AHCI_REG_PORT_CMD_CR) == 1)
     {
         VBOXAHCI_DEBUG("AHCI: Waiting for the port to idle\n");
     }
@@ -789,6 +808,63 @@ static void ahci_port_init(SegAhci, u16IoBase, u8Port)
     write_byte(SegAhci, &AhciData->port, u8Port);
 }
 
+/**
+ * Write data to the device.
+ */
+static void ahci_cmd_data_out(SegAhci, u16IoBase, u8Port, u8Cmd, u32Lba, u16Sectors, SegData, OffData)
+    Bit16u SegAhci, u16IoBase;
+    Bit8u  u8Port, u8Cmd;
+    Bit32u u32Lba;
+    Bit16u u16Sectors;
+    Bit16u SegData, OffData;
+{
+    Bit8u u8CylLow, u8CylHigh, u8Device, u8Sect, u8CylHighExp, u8CylLowExp, u8SectExp, u8SectCount, u8SectCountExp;
+
+    u8SectCount = (Bit8u)(u16Sectors & 0xff);
+    u8SectCountExp = (Bit8u)((u16Sectors >> 8) & 0xff);;
+    u8Sect = (Bit8u)(u32Lba & 0xff);
+    u8SectExp = (Bit8u)((u32Lba >> 24) & 0xff);
+    u8CylLow = (Bit8u)((u32Lba >> 8) & 0xff);
+    u8CylLowExp = 0;
+    u8CylHigh = (Bit8u)((u32Lba >> 16) & 0xff);
+    u8CylHighExp = 0;
+    u8Device = (1 << 6); /* LBA access */
+
+    ahci_port_init(SegAhci, u16IoBase, u8Port);
+    ahci_cmd_data(SegAhci, u16IoBase, u8Cmd, 0, u8Device, u8CylHigh, u8CylLow,
+                  u8Sect,0, u8CylHighExp, u8CylLowExp, u8SectExp, u8SectCount,
+                  u8SectCountExp, SegData, OffData, u16Sectors * 512, 1);
+}
+
+/**
+ * Read data from the device.
+ */
+static void ahci_cmd_data_in(SegAhci, u16IoBase, u8Port, u8Cmd, u32Lba, u16Sectors, SegData, OffData)
+    Bit16u SegAhci, u16IoBase;
+    Bit8u  u8Port, u8Cmd;
+    Bit32u u32Lba;
+    Bit16u u16Sectors;
+    Bit16u SegData, OffData;
+{
+    Bit8u u8CylLow, u8CylHigh, u8Device, u8Sect, u8CylHighExp, u8CylLowExp, u8SectExp, u8SectCount, u8SectCountExp;
+
+    u8SectCount = (Bit8u)(u16Sectors & 0xff);
+    u8SectCountExp = (Bit8u)((u16Sectors >> 8) & 0xff);;
+    u8Sect = (Bit8u)(u32Lba & 0xff);
+    u8SectExp = (Bit8u)((u32Lba >> 24) & 0xff);
+    u8CylLow = (Bit8u)((u32Lba >> 8) & 0xff);
+    u8CylLowExp = 0;
+    u8CylHigh = (Bit8u)((u32Lba >> 16) & 0xff);
+    u8CylHighExp = 0;
+
+    u8Device = (1 << 6); /* LBA access */
+
+    ahci_port_init(SegAhci, u16IoBase, u8Port);
+    ahci_cmd_data(SegAhci, u16IoBase, u8Cmd, 0, u8Device, u8CylHigh, u8CylLow,
+                  u8Sect, 0, u8CylHighExp, u8CylLowExp, u8SectExp, u8SectCount,
+                  u8SectCountExp, SegData, OffData, u16Sectors * 512, 0);
+}
+
 static void ahci_port_detect_device(SegAhci, u16IoBase, u8Port)
     Bit16u SegAhci;
     Bit16u u16IoBase;
@@ -810,46 +886,613 @@ static void ahci_port_detect_device(SegAhci, u16IoBase, u8Port)
     VBOXAHCI_PORT_READ_REG(u16IoBase, u8Port, AHCI_REG_PORT_SSTS, val);
     if (ahci_ctrl_extract_bits(val, 0xfL, 0) == 0x3L)
     {
+        Bit8u idxDevice;
+
+        idxDevice = read_byte(SegAhci, &AhciData->cDevices);
         VBOXAHCI_DEBUG("AHCI: Device detected on port %d\n", u8Port);
 
-        /* Device detected, enable FIS receive. */
-        ahci_ctrl_set_bits(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
-                           AHCI_REG_PORT_CMD_FRE);
-
-        /* Check signature to determine device type. */
-        VBOXAHCI_PORT_READ_REG(u16IoBase, u8Port, AHCI_REG_PORT_SIG, val);
-        if (val == 0x101L)
+        if (idxDevice < AHCI_MAX_STORAGE_DEVICES)
         {
-            Bit8u idxHdCurr = read_byte(SegAhci, &AhciData->cHardDisks);
-            if (idxHdCurr < AHCI_MAX_STORAGE_DEVICES)
+            /* Device detected, enable FIS receive. */
+            ahci_ctrl_set_bits(u16IoBase, VBOXAHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
+                               AHCI_REG_PORT_CMD_FRE);
+
+            /* Check signature to determine device type. */
+            VBOXAHCI_PORT_READ_REG(u16IoBase, u8Port, AHCI_REG_PORT_SIG, val);
+            if (val == 0x101L)
             {
+                Bit8u idxHdCurr;
                 Bit32u cSectors;
                 Bit8u  abBuffer[0x0200];
+                Bit8u  fRemovable;
+                Bit16u cCylinders, cHeads, cSectorsPerTrack;
+                Bit8u  cHardDisksOld;
+                Bit8u  idxCmosChsBase;
 
+                idxHdCurr = read_byte(SegAhci, &AhciData->cHardDisks);
                 VBOXAHCI_DEBUG("AHCI: Detected hard disk\n");
 
                 /* Identify device. */
                 ahci_cmd_data(SegAhci, u16IoBase, ATA_CMD_IDENTIFY_DEVICE, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, get_SS(), abBuffer, sizeof(abBuffer), 0);
 
-                write_byte(SegAhci, &AhciData->aDevices[idxHdCurr].port, u8Port);
-                VBOXAHCI_DEBUG("AHCI: %lld sectors\n", cSectors);
+                write_byte(SegAhci, &AhciData->aDevices[idxDevice].port, u8Port);
 
+                fRemovable       = (read_byte(get_SS(),abBuffer+0) & 0x80) ? 1 : 0;
+                cCylinders       = read_word(get_SS(),abBuffer+(1*2)); // word 1
+                cHeads           = read_word(get_SS(),abBuffer+(3*2)); // word 3
+                cSectorsPerTrack = read_word(get_SS(),abBuffer+(6*2)); // word 6
+                cSectors         = read_dword(get_SS(),abBuffer+(60*2)); // word 60 and word 61
 
+                /** @todo update sectors to be a 64 bit number (also lba...). */
+                if (cSectors == 268435455)
+                    cSectors = read_dword(get_SS(),abBuffer+(100*2)); // words 100 to 103 (someday)
+
+                VBOXAHCI_DEBUG("AHCI: %ld sectors\n", cSectors);
+
+                write_byte(SegAhci, &AhciData->aDevices[idxDevice].device,ATA_DEVICE_HD);
+                write_byte(SegAhci, &AhciData->aDevices[idxDevice].removable, fRemovable);
+                write_word(SegAhci, &AhciData->aDevices[idxDevice].blksize, 512);
+                write_word(SegAhci, &AhciData->aDevices[idxDevice].pchs.heads, cHeads);
+                write_word(SegAhci, &AhciData->aDevices[idxDevice].pchs.cylinders, cCylinders);
+                write_word(SegAhci, &AhciData->aDevices[idxDevice].pchs.spt, cSectorsPerTrack);
+                write_dword(SegAhci, &AhciData->aDevices[idxDevice].cSectors, cSectors);
+
+                /* Get logical CHS geometry. */
+                switch (idxDevice)
+                {
+                    case 0:
+                        idxCmosChsBase = 0x40;
+                        break;
+                    case 1:
+                        idxCmosChsBase = 0x48;
+                        break;
+                    case 2:
+                        idxCmosChsBase = 0x50;
+                        break;
+                    case 3:
+                        idxCmosChsBase = 0x58;
+                        break;
+                    default:
+                        idxCmosChsBase = 0;
+                }
+                if (idxCmosChsBase != 0)
+                {
+                    cCylinders = inb_cmos(idxCmosChsBase) + (inb_cmos(idxCmosChsBase+1) << 8);
+                    cHeads = inb_cmos(idxCmosChsBase+2);
+                    cSectorsPerTrack = inb_cmos(idxCmosChsBase+7);
+                }
+                else
+                {
+                    cCylinders = 0;
+                    cHeads = 0;
+                    cSectorsPerTrack = 0;
+                }
+                write_word(SegAhci, &AhciData->aDevices[idxDevice].lchs.heads, cHeads);
+                write_word(SegAhci, &AhciData->aDevices[idxDevice].lchs.cylinders, cCylinders);
+                write_word(SegAhci, &AhciData->aDevices[idxDevice].lchs.spt, cSectorsPerTrack);
+
+                write_byte(SegAhci, &AhciData->aHdIdMap[idxHdCurr], idxDevice);
                 idxHdCurr++;
                 write_byte(SegAhci, &AhciData->cHardDisks, idxHdCurr);
+
+                /* Update hdcount in the BDA. */
+                cHardDisksOld = read_byte(0x40, 0x75);
+                cHardDisksOld++;
+                write_byte(0x40, 0x75, cHardDisksOld);
+            }
+            else if (val == 0xeb140101)
+            {
+                VBOXAHCI_DEBUG("AHCI: Detected ATAPI device\n");
             }
             else
-                VBOXAHCI_DEBUG("AHCI: Reached maximum hard disk count, skipping\n");
-        }
-        else if (val == 0xeb140101)
-        {
-            VBOXAHCI_DEBUG("AHCI: Detected ATAPI device\n");
+                VBOXAHCI_DEBUG("AHCI: Unknown device ignoring\n");
+
+            idxDevice++;
+            write_byte(SegAhci, &AhciData->cDevices, idxDevice);
         }
         else
-            VBOXAHCI_DEBUG("AHCI: Unknown device ignoring\n");
+            VBOXAHCI_DEBUG("AHCI: Reached maximum device count, skipping\n");
     }
 }
 
+#define SET_DISK_RET_STATUS(status) write_byte(0x0040, 0x0074, status)
+
+/**
+ * Int 13 handler.
+ */
+static void ahci_int13(RET, ES, DS, DI, SI, BP, SP, BX, DX, CX, AX, IPIRET, CSIRET, FLAGSIRET, IP, CS, FLAGS)
+    Bit16u RET, ES, DS, AX, CX, DX, BX, SP, BP, SI, DI, IPIRET, CSIRET, FLAGSIRET, IP, CS, FLAGS;
+{
+    Bit16u ebda_seg;
+    Bit16u SegAhci, u16IoBase;
+    Bit8u  idxDevice;
+    Bit8u  cHardDisksOld;
+    Bit8u  u8Port;
+
+    Bit32u lba;
+    Bit16u cylinder, head, sector;
+    Bit16u segment, offset;
+    Bit16u npc, nph, npspt, nlc, nlh, nlspt;
+    Bit16u size, count;
+    Bit8u  status;
+
+    VBOXAHCI_INT13_DEBUG("AHCI: ahci_int13 AX=%x CX=%x DX=%x BX=%x SP=%x BP=%x SI=%x DI=%x IP=%x CS=%x FLAGS=%x\n",
+                         AX, CX, DX, BX, SP, BP, SI, DI, IP, CS, FLAGS);
+
+    ebda_seg  = read_word(0x0040, 0x000E);
+    SegAhci   = read_word(ebda_seg, &EbdaData->SegAhci);
+    u16IoBase = read_word(SegAhci, &AhciData->iobase);
+    VBOXAHCI_INT13_DEBUG("AHCI: ahci_int13: SegAhci=%x u16IoBase=%x\n", SegAhci, u16IoBase);
+
+    cHardDisksOld = read_byte(SegAhci, &AhciData->cHardDisksOld);
+
+    /* Check if the device is controlled by us first. */
+    if (   (GET_DL() < 0x80)
+        || (GET_DL() < 0x80 + cHardDisksOld)
+        || ((GET_DL() & 0xe0) != 0x80) /* No CD-ROM drives supported for now */)
+    {
+        VBOXAHCI_INT13_DEBUG("AHCI: ahci_int13 device not controlled by us, forwarding to old handler (%d)\n", cHardDisksOld);
+        /* Fill the iret frame to jump to the old handler. */
+        IPIRET    = read_word(SegAhci, &AhciData->pfnInt13Old);
+        CSIRET    = 0xf000;
+        FLAGSIRET = FLAGS;
+        RET       = 1;
+        return;
+    }
+
+    idxDevice = read_byte(SegAhci, &AhciData->aHdIdMap[GET_DL()-0x80-cHardDisksOld]);
+
+    if (idxDevice >= AHCI_MAX_STORAGE_DEVICES)
+    {
+        VBOXAHCI_INT13_DEBUG("AHCI: ahci_int13: function %02x, unmapped device for ELDL=%02x\n", GET_AH(), GET_DL());
+        goto ahci_int13_fail;
+    }
+
+    u8Port = read_byte(SegAhci, &AhciData->aDevices[idxDevice].port);
+
+    switch (GET_AH())
+    {
+        case 0x00: /* disk controller reset */
+        {
+            /** @todo: not really important I think. */
+            goto ahci_int13_success;
+            break;
+        }
+        case 0x01: /* read disk status */
+        {
+            status = read_byte(0x0040, 0x0074);
+            SET_AH(status);
+            SET_DISK_RET_STATUS(0);
+            /* set CF if error status read */
+            if (status)
+                goto ahci_int13_fail_nostatus;
+            else
+                goto ahci_int13_success_noah;
+            break;
+        }
+        case 0x02: // read disk sectors
+        case 0x03: // write disk sectors
+        case 0x04: // verify disk sectors
+        {
+            count       = GET_AL();
+            cylinder    = GET_CH();
+            cylinder   |= ( ((Bit16u) GET_CL()) << 2) & 0x300;
+            sector      = (GET_CL() & 0x3f);
+            head        = GET_DH();
+
+            segment = ES;
+            offset  = BX;
+
+            if ( (count > 128) || (count == 0) )
+            {
+                BX_INFO("int13_harddisk: function %02x, count out of range!\n",GET_AH());
+                goto ahci_int13_fail;
+            }
+
+            nlc   = read_word(SegAhci, &AhciData->aDevices[idxDevice].lchs.cylinders);
+            nlh   = read_word(SegAhci, &AhciData->aDevices[idxDevice].lchs.heads);
+            nlspt = read_word(SegAhci, &AhciData->aDevices[idxDevice].lchs.spt);
+
+            // sanity check on cyl heads, sec
+            if( (cylinder >= nlc) || (head >= nlh) || (sector > nlspt ))
+            {
+              BX_INFO("ahci_int13: function %02x, disk %02x, parameters out of range %04x/%04x/%04x!\n", GET_AH(), GET_DL(), cylinder, head, sector);
+              goto ahci_int13_fail;
+            }
+
+            // FIXME verify
+            if ( GET_AH() == 0x04 )
+                goto ahci_int13_success;
+
+            lba = ((((Bit32u)cylinder * (Bit32u)nlh) + (Bit32u)head) * (Bit32u)nlspt) + (Bit32u)sector - 1;
+
+            status = 0;
+            if ( GET_AH() == 0x02 )
+                ahci_cmd_data_in(SegAhci, u16IoBase, u8Port, AHCI_CMD_READ_DMA_EXT, lba, count, segment, offset);
+            else
+                ahci_cmd_data_out(SegAhci, u16IoBase, u8Port, AHCI_CMD_WRITE_DMA_EXT, lba, count, segment, offset);
+
+            // Set nb of sector transferred
+            SET_AL(read_word(ebda_seg, &EbdaData->ata.trsfsectors));
+
+            if (status != 0)
+            {
+                BX_INFO("int13_harddisk: function %02x, error %02x !\n",GET_AH(),status);
+                SET_AH(0x0c);
+                goto ahci_int13_fail_noah;
+            }
+
+            goto ahci_int13_success;
+            break;
+        }
+        case 0x05: /* format disk track */
+            BX_INFO("format disk track called\n");
+            goto ahci_int13_success;
+            break;
+        case 0x08: /* read disk drive parameters */
+        {
+            // Get logical geometry from table
+            nlc   = read_word(SegAhci, &AhciData->aDevices[idxDevice].lchs.cylinders);
+            nlh   = read_word(SegAhci, &AhciData->aDevices[idxDevice].lchs.heads);
+            nlspt = read_word(SegAhci, &AhciData->aDevices[idxDevice].lchs.spt);
+
+            count = read_byte(SegAhci, &AhciData->cHardDisks); /** @todo correct? */
+            /* Maximum cylinder number is just one less than the number of cylinders. */
+            nlc = nlc - 1; /* 0 based , last sector not used */
+            SET_AL(0);
+            SET_CH(nlc & 0xff);
+            SET_CL(((nlc >> 2) & 0xc0) | (nlspt & 0x3f));
+            SET_DH(nlh - 1);
+            SET_DL(count); /* FIXME returns 0, 1, or n hard drives */
+            // FIXME should set ES & DI
+            goto ahci_int13_success;
+            break;
+        }
+        case 0x10: /* check drive ready */
+        {
+            /** @todo */
+            goto ahci_int13_success;
+            break;
+        }
+        case 0x15: /* read disk drive size */
+        {
+            // Get physical geometry from table
+            npc   = read_word(SegAhci, &AhciData->aDevices[idxDevice].pchs.cylinders);
+            nph   = read_word(SegAhci, &AhciData->aDevices[idxDevice].pchs.heads);
+            npspt = read_word(SegAhci, &AhciData->aDevices[idxDevice].pchs.spt);
+
+            // Compute sector count seen by int13
+            lba = (Bit32u)npc * (Bit32u)nph * (Bit32u)npspt;
+            CX = lba >> 16;
+            DX = lba & 0xffff;
+
+            SET_AH(3);  // hard disk accessible
+            goto ahci_int13_success_noah;
+            break;
+        }
+#if 0
+        case 0x41: // IBM/MS installation check
+        {
+            BX=0xaa55;     // install check
+            SET_AH(0x30);  // EDD 3.0
+            CX=0x0007;     // ext disk access and edd, removable supported
+            goto ahci_int13_success_noah;
+            break;
+        }
+        case 0x42: // IBM/MS extended read
+        case 0x43: // IBM/MS extended write
+        case 0x44: // IBM/MS verify
+        case 0x47: // IBM/MS extended seek
+        {
+            count=read_word(DS, SI+(Bit16u)&Int13Ext->count);
+            segment=read_word(DS, SI+(Bit16u)&Int13Ext->segment);
+            offset=read_word(DS, SI+(Bit16u)&Int13Ext->offset);
+
+            // Can't use 64 bits lba
+            lba=read_dword(DS, SI+(Bit16u)&Int13Ext->lba2);
+            if (lba != 0L)
+            {
+                BX_PANIC("int13_harddisk: function %02x. Can't use 64bits lba\n",GET_AH());
+                goto ahci_int13_fail;
+            }
+
+            // Get 32 bits lba and check
+            lba=read_dword(DS, SI+(Bit16u)&Int13Ext->lba1);
+
+            if (lba >= read_word(SegAhci, &AhciData->aDevices[idxDevice].cSectors) )
+            {
+                BX_INFO("int13_harddisk: function %02x. LBA out of range\n",GET_AH());
+                goto ahci_int13_fail;
+            }
+
+            // If verify or seek
+            if (( GET_AH() == 0x44 ) || ( GET_AH() == 0x47 ))
+                goto ahci_int13_success;
+
+            // Execute the command
+            if ( GET_AH() == 0x42 )
+            {
+                if (lba + count >= 268435456)
+                    status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
+                else
+                {
+                    write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,count * 0x200);
+                    status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, 0, 0, 0, lba, segment, offset);
+                    write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0x200);
+                }
+            }
+            else
+            {
+                if (lba + count >= 268435456)
+                    status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
+                else
+                    status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, 0, 0, 0, lba, segment, offset);
+            }
+
+            count=read_word(ebda_seg, &EbdaData->ata.trsfsectors);
+            write_word(DS, SI+(Bit16u)&Int13Ext->count, count);
+
+            if (status != 0)
+            {
+                BX_INFO("int13_harddisk: function %02x, error %02x !\n",GET_AH(),status);
+                SET_AH(0x0c);
+                goto ahci_int13_fail_noah;
+            }
+            goto ahci_int13_success;
+            break;
+        }
+        case 0x45: // IBM/MS lock/unlock drive
+        case 0x49: // IBM/MS extended media change
+            goto ahci_int13_success;    // Always success for HD
+            break;
+        case 0x46: // IBM/MS eject media
+            SET_AH(0xb2);          // Volume Not Removable
+            goto ahci_int13_fail_noah;  // Always fail for HD
+            break;
+
+        case 0x48: // IBM/MS get drive parameters
+            size=read_word(DS,SI+(Bit16u)&Int13DPT->size);
+
+            // Buffer is too small
+            if(size < 0x1a)
+                goto ahci_int13_fail;
+
+            // EDD 1.x
+            if(size >= 0x1a)
+            {
+                Bit16u   blksize;
+
+                npc     = read_word(SegAhci, &AhciData->aDevices[idxDevice].pchs.cylinders);
+                nph     = read_word(SegAhci, &AhciData->aDevices[idxDevice].pchs.heads);
+                npspt   = read_word(SegAhci, &AhciData->aDevices[idxDevice].pchs.spt);
+                lba     = read_dword(SegAhci, &AhciData->aDevices[idxDevice].cSectors);
+                blksize = read_word(SegAhci, &AhciData->aDevices[idxDevice].blksize);
+
+                write_word(DS, SI+(Bit16u)&Int13DPT->size, 0x1a);
+                write_word(DS, SI+(Bit16u)&Int13DPT->infos, 0x02); // geometry is valid
+                write_dword(DS, SI+(Bit16u)&Int13DPT->cylinders, (Bit32u)npc);
+                write_dword(DS, SI+(Bit16u)&Int13DPT->heads, (Bit32u)nph);
+                write_dword(DS, SI+(Bit16u)&Int13DPT->spt, (Bit32u)npspt);
+                write_dword(DS, SI+(Bit16u)&Int13DPT->sector_count1, lba);  // FIXME should be Bit64
+                write_dword(DS, SI+(Bit16u)&Int13DPT->sector_count2, 0L);
+                write_word(DS, SI+(Bit16u)&Int13DPT->blksize, blksize);
+            }
+
+#if 0 /* Disable EDD 2.X and 3.x for now, don't know if it is required by any OS loader yet */
+            // EDD 2.x
+            if(size >= 0x1e)
+            {
+                Bit8u  channel, dev, irq, mode, checksum, i, translation;
+                Bit16u iobase1, iobase2, options;
+
+                translation = ATA_TRANSLATION_LBA;
+
+                write_word(DS, SI+(Bit16u)&Int13DPT->size, 0x1e);
+
+                write_word(DS, SI+(Bit16u)&Int13DPT->dpte_segment, ebda_seg);
+                write_word(DS, SI+(Bit16u)&Int13DPT->dpte_offset, &EbdaData->ata.dpte);
+
+                // Fill in dpte
+                channel = device / 2;
+                iobase1 = read_word(ebda_seg, &EbdaData->ata.channels[channel].iobase1);
+                iobase2 = read_word(ebda_seg, &EbdaData->ata.channels[channel].iobase2);
+                irq = read_byte(ebda_seg, &EbdaData->ata.channels[channel].irq);
+                mode = read_byte(ebda_seg, &EbdaData->ata.devices[device].mode);
+                translation = read_byte(ebda_seg, &EbdaData->ata.devices[device].translation);
+
+                options  = (translation==ATA_TRANSLATION_NONE?0:1<<3); // chs translation
+                options |= (1<<4); // lba translation
+                options |= (mode==ATA_MODE_PIO32?1:0<<7);
+                options |= (translation==ATA_TRANSLATION_LBA?1:0<<9);
+                options |= (translation==ATA_TRANSLATION_RECHS?3:0<<9);
+
+                write_word(ebda_seg, &EbdaData->ata.dpte.iobase1, iobase1);
+                write_word(ebda_seg, &EbdaData->ata.dpte.iobase2, iobase2);
+                //write_byte(ebda_seg, &EbdaData->ata.dpte.prefix, (0xe | /*(device % 2))<<4*/ );
+                write_byte(ebda_seg, &EbdaData->ata.dpte.unused, 0xcb );
+                write_byte(ebda_seg, &EbdaData->ata.dpte.irq, irq );
+                write_byte(ebda_seg, &EbdaData->ata.dpte.blkcount, 1 );
+                write_byte(ebda_seg, &EbdaData->ata.dpte.dma, 0 );
+                write_byte(ebda_seg, &EbdaData->ata.dpte.pio, 0 );
+                write_word(ebda_seg, &EbdaData->ata.dpte.options, options);
+                write_word(ebda_seg, &EbdaData->ata.dpte.reserved, 0);
+                write_byte(ebda_seg, &EbdaData->ata.dpte.revision, 0x11);
+
+                checksum=0;
+                for (i=0; i<15; i++)
+                    checksum+=read_byte(ebda_seg, (&EbdaData->ata.dpte) + i);
+
+                checksum = -checksum;
+                write_byte(ebda_seg, &EbdaData->ata.dpte.checksum, checksum);
+            }
+
+            // EDD 3.x
+            if(size >= 0x42)
+            {
+                Bit8u channel, iface, checksum, i;
+                Bit16u iobase1;
+
+                channel = device / 2;
+                iface = read_byte(ebda_seg, &EbdaData->ata.channels[channel].iface);
+                iobase1 = read_word(ebda_seg, &EbdaData->ata.channels[channel].iobase1);
+
+                write_word(DS, SI+(Bit16u)&Int13DPT->size, 0x42);
+                write_word(DS, SI+(Bit16u)&Int13DPT->key, 0xbedd);
+                write_byte(DS, SI+(Bit16u)&Int13DPT->dpi_length, 0x24);
+                write_byte(DS, SI+(Bit16u)&Int13DPT->reserved1, 0);
+                write_word(DS, SI+(Bit16u)&Int13DPT->reserved2, 0);
+
+                if (iface==ATA_IFACE_ISA) {
+                  write_byte(DS, SI+(Bit16u)&Int13DPT->host_bus[0], 'I');
+                  write_byte(DS, SI+(Bit16u)&Int13DPT->host_bus[1], 'S');
+                  write_byte(DS, SI+(Bit16u)&Int13DPT->host_bus[2], 'A');
+                  write_byte(DS, SI+(Bit16u)&Int13DPT->host_bus[3], 0);
+                  }
+                else {
+                  // FIXME PCI
+                  }
+                write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[0], 'A');
+                write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[1], 'T');
+                write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[2], 'A');
+                write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[3], 0);
+
+                if (iface==ATA_IFACE_ISA) {
+                  write_word(DS, SI+(Bit16u)&Int13DPT->iface_path[0], iobase1);
+                  write_word(DS, SI+(Bit16u)&Int13DPT->iface_path[2], 0);
+                  write_dword(DS, SI+(Bit16u)&Int13DPT->iface_path[4], 0L);
+                  }
+                else {
+                  // FIXME PCI
+                  }
+                //write_byte(DS, SI+(Bit16u)&Int13DPT->device_path[0], device%2);
+                write_byte(DS, SI+(Bit16u)&Int13DPT->device_path[1], 0);
+                write_word(DS, SI+(Bit16u)&Int13DPT->device_path[2], 0);
+                write_dword(DS, SI+(Bit16u)&Int13DPT->device_path[4], 0L);
+
+                checksum=0;
+                for (i=30; i<64; i++) checksum+=read_byte(DS, SI + i);
+                checksum = -checksum;
+                write_byte(DS, SI+(Bit16u)&Int13DPT->checksum, checksum);
+            }
+#endif
+            goto ahci_int13_success;
+            break;
+        case 0x4e: // // IBM/MS set hardware configuration
+            // DMA, prefetch, PIO maximum not supported
+            switch (GET_AL())
+            {
+                case 0x01:
+                case 0x03:
+                case 0x04:
+                case 0x06:
+                    goto ahci_int13_success;
+                    break;
+                default :
+                    goto ahci_int13_fail;
+            }
+            break;
+#endif
+        case 0x09: /* initialize drive parameters */
+        case 0x0c: /* seek to specified cylinder */
+        case 0x0d: /* alternate disk reset */
+        case 0x11: /* recalibrate */
+        case 0x14: /* controller internal diagnostic */
+            BX_INFO("ahci_int13: function %02xh unimplemented, returns success\n", GET_AH());
+            goto ahci_int13_success;
+            break;
+
+        case 0x0a: /* read disk sectors with ECC */
+        case 0x0b: /* write disk sectors with ECC */
+        case 0x18: // set media type for format
+        case 0x50: // IBM/MS send packet command
+        default:
+            BX_INFO("ahci_int13: function %02xh unsupported, returns fail\n", GET_AH());
+            goto ahci_int13_fail;
+            break;
+    }
+
+ahci_int13_fail:
+    SET_AH(0x01); // defaults to invalid function in AH or invalid parameter
+ahci_int13_fail_noah:
+    SET_DISK_RET_STATUS(GET_AH());
+ahci_int13_fail_nostatus:
+    SET_CF();     // error occurred
+    return;
+
+ahci_int13_success:
+    SET_AH(0x00); // no error
+ahci_int13_success_noah:
+    SET_DISK_RET_STATUS(0x00);
+    CLEAR_CF();   // no error
+    return;
+}
+
+#undef SET_DISK_RET_STATUS
+
+/**
+ * Assembler part of the int 13 handler.
+ */
+ASM_START
+ahci_int13_handler:
+    ; Allocate space for an iret frame we have to use
+    ; to call the old int 13 handler
+    push #0x0000
+    push #0x0000
+    push #0x0000
+
+    pusha                 ; Save 16bit values as arguments
+    push ds
+    push es
+    mov ax, #0            ; Allocate room for the return value on the stack
+    push ax
+    call _ahci_int13
+    pop ax
+    pop es
+    pop ds
+    cmp ax, #0x0          ; Check if the handler processed the request
+    je ahci_int13_out
+    popa                  ; Restore the caller environment
+    iret                  ; Call the old interrupt handler. Will not come back here.
+
+ahci_int13_out:
+    popa
+    add sp, #6            ; Destroy the iret frame
+    iret
+ASM_END
+
+/**
+ * Install the in13 interrupt handler
+ * preserving the previous one.
+ */
+static void ahci_install_int_handler(SegAhci)
+    Bit16u SegAhci;
+{
+
+    Bit16u pfnInt13Old;
+
+    VBOXAHCI_DEBUG("AHCI: Hooking int 13h vector\n");
+
+    /* Read the old interrupt handler. */
+    pfnInt13Old = read_word(0x0000, 0x0013*4);
+    write_word(SegAhci, &AhciData->pfnInt13Old, pfnInt13Old);
+
+    /* Set our own */
+    ASM_START
+
+    push bp
+    mov bp, sp
+
+    push ax
+    SET_INT_VECTOR(0x13, #0xF000, #ahci_int13_handler)
+    pop ax
+
+    pop bp
+    ASM_END
+}
+
+/**
+ * Allocates 1K from the base memory.
+ */
 static Bit16u ahci_mem_alloc()
 {
     Bit16u cBaseMem1K;
@@ -870,6 +1513,9 @@ static Bit16u ahci_mem_alloc()
     return SegStart;
 }
 
+/**
+ * Initializes the SATA controller and detects attached devices.
+ */
 static int ahci_ctrl_init(u16IoBase)
     Bit16u u16IoBase;
 {
@@ -895,6 +1541,8 @@ static int ahci_ctrl_init(u16IoBase)
 
     write_word(ebda_seg, &EbdaData->SegAhci, SegAhci);
     write_byte(SegAhci, &AhciData->port, 0xff);
+    write_word(SegAhci, &AhciData->iobase, u16IoBase);
+    write_byte(SegAhci, &AhciData->cHardDisksOld, read_byte(0x40, 0x75));
 
     /* Reset the controller. */
     ahci_ctrl_set_bits(u16IoBase, AHCI_REG_GHC, AHCI_GHC_HR);
@@ -921,6 +1569,15 @@ static int ahci_ctrl_init(u16IoBase)
                 break;
         }
         i++;
+    }
+
+    if (read_byte(SegAhci, &AhciData->cDevices) > 0)
+    {
+        /*
+         * Init completed and there is at least one device present.
+         * Install our int13 handler.
+         */
+        ahci_install_int_handler(SegAhci);
     }
 
     return 0;

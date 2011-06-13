@@ -2564,6 +2564,7 @@ void ata_detect( )
           case 3:
               chsgeo_base = 0x70;
               break;
+#ifndef VBOX_WITH_BIOS_AHCI
           case 4:
               chsgeo_base = 0x40;
               break;
@@ -2576,6 +2577,7 @@ void ata_detect( )
           case 7:
               chsgeo_base = 0x58;
               break;
+#endif
           default:
               chsgeo_base = 0;
       }
@@ -9469,8 +9471,10 @@ hard_drive_post:
   mov  0x048c, al /* hard disk status register */
   mov  0x048d, al /* hard disk error register */
   mov  0x048e, al /* hard disk task complete flag */
+#ifndef VBOX /* Why is this hardcoded to 1? */
   mov  al, #0x01
   mov  0x0475, al /* hard disk number attached */
+#endif
   mov  al, #0xc0
   mov  0x0476, al /* hard disk control byte */
   SET_INT_VECTOR(0x13, #0xF000, #int13_handler)
@@ -11723,14 +11727,6 @@ post_default_ints:
   ;;
 #endif
 
-#ifdef VBOX_WITH_BIOS_AHCI
-  ;;
-  ;; AHCI driver setup
-  ;;
-  call _ahci_init
-  ;;
-#endif
-
   call _print_bios_banner
 
   ;;
@@ -11742,6 +11738,14 @@ post_default_ints:
   ;; Hard Drive setup
   ;;
   call hard_drive_post
+
+#ifdef VBOX_WITH_BIOS_AHCI
+  ;;
+  ;; AHCI driver setup
+  ;;
+  call _ahci_init
+  ;;
+#endif
 
 #if BX_ELTORITO_BOOT
   ;;
