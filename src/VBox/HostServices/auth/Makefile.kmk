@@ -38,7 +38,9 @@ VBoxAuth_LDFLAGS.darwin = -framework DirectoryService
 
 # The simple plugin.
 ifndef VBOX_ONLY_SDK
- DLLS += VBoxAuthSimple
+ if defined(VBOX_WITH_MAIN)
+  DLLS += VBoxAuthSimple
+ endif
 endif
 VBoxAuthSimple_TEMPLATE = VBOXMAINCLIENTDLL
 VBoxAuthSimple_SOURCES = simple/VBoxAuthSimple.cpp
