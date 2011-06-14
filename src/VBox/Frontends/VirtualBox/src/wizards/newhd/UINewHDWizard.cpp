@@ -968,9 +968,27 @@ bool UINewHDWizardPageSummary::createHardDisk()
         return false;
     }
 
-    /* Inform everybody there is a new medium: */
+    /* Assign hardDisk field value: */
     m_hardDisk = hardDisk;
-    vboxGlobal().addMedium(VBoxMedium(m_hardDisk, VBoxDefs::MediumType_HardDisk, KMediumState_Created));
+
+    /* Depending on dialog type: */
+    switch (wizardType())
+    {
+        case UINewHDWizardType_Creating:
+        {
+            /* Inform everybody there is a new medium: */
+            vboxGlobal().addMedium(VBoxMedium(m_hardDisk, VBoxDefs::MediumType_HardDisk, KMediumState_Created));
+            break;
+        }
+        case UINewHDWizardType_Copying:
+        {
+            /* Just close the clone medium, it is not necessary yet: */
+            m_hardDisk.Close();
+            break;
+        }
+        default:
+            return false;
+    }
 
     return true;
 }
