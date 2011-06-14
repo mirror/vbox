@@ -2456,7 +2456,7 @@ public class VirtualBoxManager
         this.vbox = new IVirtualBox((org.mozilla.interfaces.IVirtualBox) this.componentManager
                     .createInstanceByContractID("@virtualbox.org/VirtualBox;1",
                                                 null,
-						org.mozilla.interfaces.IVirtualBox.IVIRTUALBOX_IID));
+                                                org.mozilla.interfaces.IVirtualBox.IVIRTUALBOX_IID));
     }
 
     public void connect(String url, String username, String passwd)
@@ -3256,7 +3256,7 @@ public class Helper {
         for (int i = 0; i < valToChar.length; i++)
            charToVal[valToChar[i]] = i;
 
-	charToVal['='] = 0;
+        charToVal['='] = 0;
     }
 
     public static String encodeBase64(byte[] data)
@@ -3533,8 +3533,10 @@ public class VirtualBoxManager
              String handle = port.iWebsessionManagerLogon(username, passwd);
              this.vbox = new IVirtualBox(handle, port);
          }  catch (Throwable t) {
-             if (this.port != null)
+             if (this.port != null && pool != null) {
                 pool.releasePort(this.port);
+                this.port = null;
+             }
              // we have to throw smth derived from RuntimeException
              throw new VBoxException(t, t.getMessage());
           }
