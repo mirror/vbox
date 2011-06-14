@@ -486,6 +486,12 @@ static CRVBOXSVCBUFFER_t* svcGetBuffer(uint32_t iBuffer, uint32_t cbBufferSize)
         {
             if (pBuffer->uiId == iBuffer)
             {
+                if (pBuffer->uiSize!=cbBufferSize)
+                {
+                    LogRel(("SHARED_CROPENGL svcGetBuffer: invalid buffer(%i) size %i instead of %i\n",
+                            iBuffer, pBuffer->uiSize, cbBufferSize));
+                    return NULL;
+                }
                 return pBuffer;
             }
             pBuffer = pBuffer->pNext;
@@ -818,7 +824,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
                 /* Execute the function. */
                 CRVBOXSVCBUFFER_t *pSvcBuffer = svcGetBuffer(iBuffer, cbBufferSize);
-                if (!pSvcBuffer || ui32Offset+cbBuffer>cbBufferSize)
+                if (!pSvcBuffer || ((uint64_t)ui32Offset+cbBuffer)>cbBufferSize)
                 {
                     rc = VERR_INVALID_PARAMETER;
                 }
