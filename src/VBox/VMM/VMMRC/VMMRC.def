@@ -38,6 +38,9 @@ EXPORTS
     RTLogDefaultInstance
     RTLogRelDefaultInstance
     RTTimeMilliTS
+    RTTraceBufAddMsgF
+    RTTraceBufAddPos
+    RTTraceBufAddPosMsgF
     SELMGetHyperCS
     TMTimerFromMilli
     TMTimerFromMicro

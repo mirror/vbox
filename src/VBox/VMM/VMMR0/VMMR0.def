@@ -43,6 +43,9 @@ EXPORTS
     RTLogLoggerEx
     RTLogLoggerExV
     RTTimeMilliTS
+    RTTraceBufAddMsgF
+    RTTraceBufAddPos
+    RTTraceBufAddPosMsgF
     TMTimerFromMilli
     TMTimerFromMicro
     TMTimerFromNano
