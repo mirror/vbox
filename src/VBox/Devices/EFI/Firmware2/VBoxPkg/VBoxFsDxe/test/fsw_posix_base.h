@@ -44,6 +44,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdint.h>
 
 #define FSW_LITTLE_ENDIAN (1)
 // TODO: use info from the headers to define FSW_LITTLE_ENDIAN or FSW_BIG_ENDIAN
@@ -51,14 +52,14 @@
 
 // types
 
-typedef signed char         fsw_s8;
-typedef unsigned char       fsw_u8;
-typedef short               fsw_s16;
-typedef unsigned short      fsw_u16;
-typedef long                fsw_s32;
-typedef unsigned long       fsw_u32;
-typedef long long           fsw_s64;
-typedef unsigned long long  fsw_u64;
+typedef int8_t        fsw_s8;
+typedef uint8_t       fsw_u8;
+typedef int16_t       fsw_s16;
+typedef uint16_t      fsw_u16;
+typedef int32_t       fsw_s32;
+typedef uint32_t      fsw_u32;
+typedef int64_t       fsw_s64;
+typedef uint64_t      fsw_u64;
 
 
 // allocation functions
