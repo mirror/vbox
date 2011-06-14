@@ -808,6 +808,7 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
 static int usbLibDevGetHubDevices(LPCSTR lpszName, PUSBDEVICE *ppDevs, uint32_t *pcDevs)
 {
     LPSTR lpszDevName = (LPSTR)RTMemAllocZ(strlen(lpszName) + sizeof("\\\\.\\"));
+    HANDLE hDev = INVALID_HANDLE_VALUE;
     Assert(lpszDevName);
     if (!lpszDevName)
     {
@@ -821,7 +822,7 @@ static int usbLibDevGetHubDevices(LPCSTR lpszName, PUSBDEVICE *ppDevs, uint32_t 
     do
     {
         DWORD cbReturned = 0;
-        HANDLE hDev = CreateFile(lpszDevName, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        hDev = CreateFile(lpszDevName, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
         if (hDev == INVALID_HANDLE_VALUE)
         {
             AssertFailed();
@@ -844,6 +845,10 @@ static int usbLibDevGetHubDevices(LPCSTR lpszName, PUSBDEVICE *ppDevs, uint32_t 
             usbLibDevGetHubPortDevices(hDev, lpszName, i, ppDevs, pcDevs);
         }
     } while (0);
+
+    if (hDev != INVALID_HANDLE_VALUE)
+        CloseHandle(hDev);
+
     RTMemFree(lpszDevName);
 
     return rc;
