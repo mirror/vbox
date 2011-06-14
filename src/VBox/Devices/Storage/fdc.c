@@ -2032,6 +2032,7 @@ static void fdctrl_write_data(fdctrl_t *fdctrl, uint32_t value)
         pos = command_to_handler[value & 0xff];
         FLOPPY_DPRINTF("%s command\n", handlers[pos].name);
         fdctrl->data_len = handlers[pos].parameters + 1;
+        fdctrl->msr |= FD_MSR_CMDBUSY;
     }
 
     FLOPPY_DPRINTF("%s: %02x\n", __func__, value);
