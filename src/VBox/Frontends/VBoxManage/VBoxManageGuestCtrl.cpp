@@ -139,6 +139,7 @@ enum EXITCODEEXEC
 enum GETOPTDEF_EXEC
 {
     GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES = 1000,
+    GETOPTDEF_EXEC_NO_PROFILE,
     GETOPTDEF_EXEC_OUTPUTFORMAT,
     GETOPTDEF_EXEC_DOS2UNIX,
     GETOPTDEF_EXEC_UNIX2DOS,
@@ -442,6 +443,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         { "--flags",                        'f',                                      RTGETOPT_REQ_STRING  },
         { "--ignore-operhaned-processes",   GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES,   RTGETOPT_REQ_NOTHING },
         { "--image",                        'i',                                      RTGETOPT_REQ_STRING  },
+        { "--no-profile",                   GETOPTDEF_EXEC_NO_PROFILE,                RTGETOPT_REQ_NOTHING },
         { "--password",                     'p',                                      RTGETOPT_REQ_STRING  },
         { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
         { "--unix2dos",                     GETOPTDEF_EXEC_UNIX2DOS,                  RTGETOPT_REQ_NOTHING },
@@ -501,6 +503,10 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES:
                 fExecFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
+                break;
+
+            case GETOPTDEF_EXEC_NO_PROFILE:
+                fExecFlags |= ExecuteProcessFlag_NoProfile;
                 break;
 
             case 'i':

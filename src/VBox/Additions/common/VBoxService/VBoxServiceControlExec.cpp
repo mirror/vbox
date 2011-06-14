@@ -864,6 +864,9 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
                 /* Process Main flag "ExecuteProcessFlag_Hidden". */
                 if (fFlags & RT_BIT(2))
                     uProcFlags = RTPROC_FLAGS_HIDDEN;
+                /* Process Main flag "ExecuteProcessFlag_NoProfile". */
+                if (fFlags & RT_BIT(3))
+                    uProcFlags = RTPROC_FLAGS_NO_PROFILE;
             }
 
             /* If no user name specified run with current credentials (e.g.

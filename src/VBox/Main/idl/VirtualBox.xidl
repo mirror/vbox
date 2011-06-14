@@ -8146,7 +8146,7 @@
 
   <enum
     name="ExecuteProcessFlag"
-    uuid="3258e8a5-ba0c-43d5-86b5-cf91405fddc0"
+    uuid="286ceb91-5f66-4c96-9845-4483e90e00ae"
     >
     <desc>
       Guest process execution flags.
@@ -8164,6 +8164,9 @@
     </const>
     <const name="Hidden"                  value="4">
       <desc>Don't show the started process according to the guest OS guidelines.</desc>
+    </const>
+    <const name="NoProfile"               value="8">
+      <desc>Do not use the user's profile data when exeuting a process.</desc>
     </const>
   </enum>
 

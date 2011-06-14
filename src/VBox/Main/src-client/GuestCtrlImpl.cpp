@@ -1802,7 +1802,8 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
     {
         if (   !(aFlags & ExecuteProcessFlag_IgnoreOrphanedProcesses)
             && !(aFlags & ExecuteProcessFlag_WaitForProcessStartOnly)
-            && !(aFlags & ExecuteProcessFlag_Hidden))
+            && !(aFlags & ExecuteProcessFlag_Hidden)
+            && !(aFlags & ExecuteProcessFlag_NoProfile))
         {
             if (pRC)
                 *pRC = VERR_INVALID_PARAMETER;

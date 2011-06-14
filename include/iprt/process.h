@@ -197,6 +197,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * on Solaris. Without this flag the contract id is always changed,
  * as that's the more frequently used case. */
 #define RTPROC_FLAGS_SAME_CONTRACT          RT_BIT(3)
+/** Do not load user profile data when executing a process. This bit
+ *  at the moment only is used on Windows. */
+#define RTPROC_FLAGS_NO_PROFILE             RT_BIT(4)
 /** @}  */
 
 
