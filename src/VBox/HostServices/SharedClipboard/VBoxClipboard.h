@@ -73,6 +73,7 @@ void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Ms
 
 void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, uint32_t cbActual);
 
+bool vboxSvcClipboardGetHeadless(void);
 
 /*
  * Platform dependent functions.
@@ -90,5 +91,10 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
 void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format);
 
 int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient);
+
+/* Host unit testing interface */
+#ifdef UNIT_TEST
+uint32_t testClipSvcGetMode(void);
+#endif
 
 #endif /* __VBOXCLIPBOARD__H */
