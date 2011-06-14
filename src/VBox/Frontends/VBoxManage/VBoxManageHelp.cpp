@@ -333,6 +333,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_CLONEVM)
         RTStrmPrintf(pStrm,
                      "VBoxManage clonevm          <uuid>|<name>\n"
+                     "                            [--snapshot <uuid>|<name>]\n"
                      "                            [--name <name>]\n"
                      "                            [--basefolder <basefolder>]\n"
                      "                            [--uuid <uuid>]\n"

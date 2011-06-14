@@ -6076,18 +6076,26 @@ struct Machine::CloneVMTask
 {
     ComObjPtr<Machine>          pSrcMachine;
     ComObjPtr<Machine>          pTrgMachine;
+    ComPtr<IMachine>            pOldMachineState;
     ComObjPtr<Progress>         pProgress;
-    bool                        fLink;
+    Guid                        snapshotId;
+    CloneMode_T                 mode;
+    bool                        fLinkDisks;
     typedef struct
     {
         ComPtr<IMedium>         pMedium;
         uint64_t                uSize;
     }MediumTask;
-    typedef RTCList<MediumTask> MediumTaskChain;
+    typedef struct
+    {
+        RTCList<MediumTask>     chain;
+        bool                    fCreateDiffs;
+    }MediumTaskChain;
     RTCList<MediumTaskChain>    llMedias;
+    RTCList< std::pair<Utf8Str, Utf8Str> > llSaveStateFiles; /* Snapshot UUID -> File path */
 };
 
-STDMETHODIMP Machine::CloneTo(IMachine *pTarget, BOOL fFullClone, IProgress **pProgress)
+STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, BOOL fFullClone, IProgress **pProgress)
 {
     LogFlowFuncEnter();
 
@@ -6105,64 +6113,118 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, BOOL fFullClone, IProgress **pP
     try
     {
         pTask = new CloneVMTask;
-        pTask->pSrcMachine = this;
-        pTask->pTrgMachine = static_cast<Machine*>(pTarget);
-        pTask->fLink       = !fFullClone;
+        pTask->pSrcMachine   = this;
+        pTask->pTrgMachine   = static_cast<Machine*>(pTarget);
+        pTask->fLinkDisks    = !fFullClone;
+        pTask->mode          = mode;
 
+        /* Lock the target machine early (so nobody mess around with it in the meantime). */
         AutoWriteLock trgLock(pTask->pTrgMachine COMMA_LOCKVAL_SRC_POS);
 
+        if (pTask->pSrcMachine->isSnapshotMachine())
+            pTask->snapshotId  = static_cast<SnapshotMachine*>((Machine*)pTask->pSrcMachine)->getSnapshotId();
+
+        /* Add the current machine and all snapshot machines below this machine
+         * in a list for further processing. */
+        RTCList< ComPtr<IMachine> > machineList;
+
+        /* Include current state? */
+        if (   pTask->mode == CloneMode_MachineState
+            || pTask->mode == CloneMode_AllStates)
+            machineList.append(static_cast< ComPtr<IMachine> >(pTask->pSrcMachine));
+        /* Should be done a depth copy with all child snapshots? */
+        if (   pTask->mode == CloneMode_MachineAndChildStates
+            || pTask->mode == CloneMode_AllStates)
+        {
+            ULONG cSnapshots = 0;
+            rc = pTask->pSrcMachine->COMGETTER(SnapshotCount)(&cSnapshots);
+            if (FAILED(rc)) throw rc;
+            if (cSnapshots > 0)
+            {
+                Utf8Str id;
+                if (   pTask->mode == CloneMode_MachineAndChildStates
+                    && !pTask->snapshotId.isEmpty())
+                    id = pTask->snapshotId.toString();
+                ComPtr<ISnapshot> pSnapshot;
+                rc = pTask->pSrcMachine->FindSnapshot(Bstr(id).raw(), pSnapshot.asOutParam());
+                if (FAILED(rc)) throw rc;
+                rc = cloneCreateMachineList(pSnapshot, machineList);
+                if (FAILED(rc)) throw rc;
+                rc = pSnapshot->COMGETTER(Machine)(pTask->pOldMachineState.asOutParam());
+                if (FAILED(rc)) throw rc;
+            }
+        }
+
+        /* Go over every machine and walk over every attachment this machine has. */
         ULONG uCount       = 2; /* One init task and the machine creation. */
         ULONG uTotalWeight = 2; /* The init task and the machine creation is worth one. */
-        for (MediaData::AttachmentList::iterator it = mMediaData->mAttachments.begin();
-             it != mMediaData->mAttachments.end();
-             ++it)
+        for (size_t i = 0; i < machineList.size(); ++i)
         {
-            /* Query some info of the source image. */
-            const ComObjPtr<MediumAttachment> &pAtt = *it;
-            DeviceType_T type;
-            rc = pAtt->COMGETTER(Type)(&type);
+            /* If this is the Snapshot Machine we want to clone, we need to
+             * create a new diff file for the new "current state". */
+            bool fCreateDiffs = false;
+            if (machineList.at(i) == pTask->pOldMachineState)
+                fCreateDiffs = true;
+            SafeIfaceArray<IMediumAttachment> sfaAttachments;
+            rc = machineList.at(i)->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
             if (FAILED(rc)) throw rc;
-
-            /* Only harddisk's are of interest. */
-            if (type != DeviceType_HardDisk)
-                continue;
-
-            /* Valid medium attached? */
-            ComPtr<IMedium> pSrcMedium;
-            rc = pAtt->COMGETTER(Medium)(pSrcMedium.asOutParam());
-            if (FAILED(rc)) throw rc;
-            if (pSrcMedium.isNull())
-                continue;
-
-            /* Build up a child->parent list of this attachment. (Note: we are
-             * not interested of any child's not attached to this VM. So this
-             * will not create a full copy of the base/child relationship.) */
-            Machine::CloneVMTask::MediumTaskChain mtc;
-            while(!pSrcMedium.isNull())
+            /* Add all attachments (and there parents) of the different
+             * machines to a worker list. */
+            for (size_t a = 0; a < sfaAttachments.size(); ++a)
             {
-                /* Refresh the state so that the file size get read. */
-                MediumState_T e;
-                rc = pSrcMedium->RefreshState(&e);
-                if (FAILED(rc)) throw rc;
-                LONG64 lSize;
-                rc = pSrcMedium->COMGETTER(Size)(&lSize);
+                const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[a];
+                DeviceType_T type;
+                rc = pAtt->COMGETTER(Type)(&type);
                 if (FAILED(rc)) throw rc;
 
-                /* Save the current medium, for later cloning. */
-                Machine::CloneVMTask::MediumTask mt;
-                mt.pMedium = pSrcMedium;
-                mt.uSize   = lSize;
-                mtc.append(mt);
+                /* Only harddisk's are of interest. */
+                if (type != DeviceType_HardDisk)
+                    continue;
 
-                /* Calculate progress data */
-                ++uCount;
-                uTotalWeight += lSize;
-
-                /* Query next parent. */
-                rc = pSrcMedium->COMGETTER(Parent)(pSrcMedium.asOutParam());
+                /* Valid medium attached? */
+                ComPtr<IMedium> pSrcMedium;
+                rc = pAtt->COMGETTER(Medium)(pSrcMedium.asOutParam());
                 if (FAILED(rc)) throw rc;
-            };
-            pTask->llMedias.append(mtc);
+                if (pSrcMedium.isNull())
+                    continue;
+
+                /* Build up a child->parent list of this attachment. (Note: we are
+                 * not interested of any child's not attached to this VM. So this
+                 * will not create a full copy of the base/child relationship.) */
+                Machine::CloneVMTask::MediumTaskChain mtc;
+                mtc.fCreateDiffs = fCreateDiffs;
+                while(!pSrcMedium.isNull())
+                {
+                    /* Refresh the state so that the file size get read. */
+                    MediumState_T e;
+                    rc = pSrcMedium->RefreshState(&e);
+                    if (FAILED(rc)) throw rc;
+                    LONG64 lSize;
+                    rc = pSrcMedium->COMGETTER(Size)(&lSize);
+                    if (FAILED(rc)) throw rc;
+
+                    /* Save the current medium, for later cloning. */
+                    Machine::CloneVMTask::MediumTask mt;
+                    mt.pMedium = pSrcMedium;
+                    mt.uSize   = lSize;
+                    mtc.chain.append(mt);
+
+                    /* Calculate progress data */
+                    ++uCount;
+                    uTotalWeight += lSize;
+
+                    /* Query next parent. */
+                    rc = pSrcMedium->COMGETTER(Parent)(pSrcMedium.asOutParam());
+                    if (FAILED(rc)) throw rc;
+                };
+                pTask->llMedias.append(mtc);
+            }
+            /* Todo: If this machine has save state files, they have to be copied as well. */
+//            Bstr bstrSrcSaveStatePath;
+//            rc = machineList.at(i)->COMGETTER(StateFilePath)(bstrSrcSaveStatePath.asOutParam());
+//            if (FAILED(rc)) throw rc;
+//            if (!bstrSrcSaveStatePath.isEmpty())
+//                pTask->llSaveStates.append(bstrSrcSaveStatePath);
         }
 
         rc = pTask->pProgress.createObject();
@@ -6230,6 +6292,78 @@ DECLCALLBACK(int) Machine::cloneVMThread(RTTHREAD /* Thread */, void *pvUser)
     return VINF_SUCCESS;
 }
 
+HRESULT Machine::cloneCreateMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComPtr<IMachine> > &machineList) const
+{
+    HRESULT rc = S_OK;
+    Bstr name;
+    rc = pSnapshot->COMGETTER(Name)(name.asOutParam());
+    if (FAILED(rc)) return rc;
+
+    ComPtr<IMachine> pMachine;
+    rc = pSnapshot->COMGETTER(Machine)(pMachine.asOutParam());
+    if (FAILED(rc)) return rc;
+    machineList.append(pMachine);
+
+    SafeIfaceArray<ISnapshot> sfaChilds;
+    rc = pSnapshot->COMGETTER(Children)(ComSafeArrayAsOutParam(sfaChilds));
+    if (FAILED(rc)) return rc;
+    for (size_t i = 0; i < sfaChilds.size(); ++i)
+    {
+        rc = cloneCreateMachineList(sfaChilds[i], machineList);
+        if (FAILED(rc)) return rc;
+    }
+
+    return rc;
+}
+
+settings::Snapshot Machine::cloneFindSnapshot(settings::MachineConfigFile *pMCF, const settings::SnapshotsList &snl, const Guid &id) const
+{
+    settings::SnapshotsList::const_iterator it;
+    for (it = snl.begin(); it != snl.end(); ++it)
+    {
+        if (it->uuid == id)
+            return *it;
+        else if (!it->llChildSnapshots.empty())
+            return cloneFindSnapshot(pMCF, it->llChildSnapshots, id);
+    }
+    return settings::Snapshot();
+}
+
+void Machine::cloneUpdateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const
+{
+    settings::StorageControllersList::iterator it3;
+    for (it3 = sc.begin();
+         it3 != sc.end();
+         ++it3)
+    {
+        settings::AttachedDevicesList &llAttachments = it3->llAttachedDevices;
+        settings::AttachedDevicesList::iterator it4;
+        for (it4 = llAttachments.begin();
+             it4 != llAttachments.end();
+             ++it4)
+        {
+            if (   it4->deviceType == DeviceType_HardDisk
+                && it4->uuid == bstrOldId)
+            {
+                it4->uuid = bstrNewId;
+            }
+        }
+    }
+}
+
+void Machine::cloneUpdateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const
+{
+    settings::SnapshotsList::iterator it;
+    for (  it  = sl.begin();
+           it != sl.end();
+         ++it)
+    {
+        cloneUpdateStorageLists(it->storage.llStorageControllers, bstrOldId, bstrNewId);
+        if (!it->llChildSnapshots.empty())
+            cloneUpdateSnapshotStorageLists(it->llChildSnapshots, bstrOldId, bstrNewId);
+    }
+}
+
 /**
  * Task thread implementation for Machine::CloneTo(), called from Machine::cloneVMThread().
  * @param task
@@ -6270,9 +6404,40 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
 
         /* Reset media registry. */
         pTrgMCF->mediaRegistry.llHardDisks.clear();
-        /* Reset all snapshots. */
-        pTrgMCF->llFirstSnapshot.clear();
-        pTrgMCF->uuidCurrentSnapshot.clear();
+        /* If we got a valid snapshot id, replace the hardware/storage section
+         * with the stuff from the snapshot. */
+        settings::Snapshot sn;
+        if (!pTask->snapshotId.isEmpty())
+            sn = cloneFindSnapshot(pTrgMCF, pTrgMCF->llFirstSnapshot, pTask->snapshotId);
+
+        if (pTask->mode == CloneMode_MachineState)
+        {
+            if (!sn.uuid.isEmpty())
+            {
+                pTrgMCF->hardwareMachine = sn.hardware;
+                pTrgMCF->storageMachine  = sn.storage;
+            }
+
+            /* Remove any hint on snapshots. */
+            pTrgMCF->llFirstSnapshot.clear();
+            pTrgMCF->uuidCurrentSnapshot.clear();
+        }else
+        if (   pTask->mode == CloneMode_MachineAndChildStates
+            && !sn.uuid.isEmpty())
+        {
+            /* Copy the snapshot data to the current machine. */
+            pTrgMCF->hardwareMachine = sn.hardware;
+            pTrgMCF->storageMachine  = sn.storage;
+
+            /* The snapshot will be the root one. */
+            pTrgMCF->uuidCurrentSnapshot = sn.uuid;
+            pTrgMCF->llFirstSnapshot.clear();
+            pTrgMCF->llFirstSnapshot.push_back(sn);
+        }
+
+        /* Reset the snapshot folder to 'Snapshots' within the target directory.
+         * Todo: Not sure if this is what we want. */
+        pTrgMCF->machineUserData.strSnapshotFolder = "Snapshots";
         pTrgMCF->strStateFile = "";
         /* Force writing of setting file. */
         pTrgMCF->fCurrentStateModified = true;
@@ -6280,13 +6445,23 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
         pTrgMCF->machineUserData.strName = pTask->pTrgMachine->mUserData->s.strName;
         pTrgMCF->uuid = pTask->pTrgMachine->mData->mUuid;
 
+        /* The absolute name of the snapshot folder. */
+        Utf8Str strTrgSnapshotFolder = Utf8StrFmt("%s%c%s%c", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, pTrgMCF->machineUserData.strSnapshotFolder.c_str(), RTPATH_DELIMITER);
+
+        /* We need to create a map with the already created medias. This is
+         * necessary, cause different snapshots could have the same
+         * parents/parent chain. If a medium is in this map already, it isn't
+         * cloned a second time, but simply used. */
+        typedef std::map<Utf8Str, ComObjPtr<Medium> > TStrMediumMap;
+        typedef std::pair<Utf8Str, ComObjPtr<Medium> > TStrMediumPair;
+        TStrMediumMap map;
         for (size_t i = 0; i < pTask->llMedias.size(); ++i)
         {
             const Machine::CloneVMTask::MediumTaskChain &mtc = pTask->llMedias.at(i);
             ComObjPtr<Medium> pNewParent;
-            for (size_t a = mtc.size(); a > 0; --a)
+            for (size_t a = mtc.chain.size(); a > 0; --a)
             {
-                const Machine::CloneVMTask::MediumTask &mt = mtc.at(a - 1);
+                const Machine::CloneVMTask::MediumTask &mt = mtc.chain.at(a - 1);
                 ComPtr<IMedium> pMedium = mt.pMedium;
 
                 Bstr bstrSrcName;
@@ -6296,93 +6471,183 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
                 rc = pTask->pProgress->SetNextOperation(BstrFmt(tr("Cloning Disk '%ls' ..."), bstrSrcName.raw()).raw(), mt.uSize);
                 if (FAILED(rc)) throw rc;
 
-                ComPtr<IMediumFormat> pSrcFormat;
-                rc = pMedium->COMGETTER(MediumFormat)(pSrcFormat.asOutParam());
-                ULONG uSrcCaps = 0;
-                rc = pSrcFormat->COMGETTER(Capabilities)(&uSrcCaps);
+                Bstr bstrSrcId;
+                rc = pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                Bstr bstrSrcFormat     = "VDI";
-                ULONG srcVar = MediumVariant_Standard;
-                /* Is the source file based? */
-                if ((uSrcCaps & MediumFormatCapabilities_File) == MediumFormatCapabilities_File)
+                /* Is a clone already there? */
+                TStrMediumMap::iterator it = map.find(Utf8Str(bstrSrcId));
+                if (it != map.end())
+                    pNewParent = it->second;
+                else
                 {
-                    /* Yes, just use the source format. Otherwise the defaults
-                     * will be used. */
-                    rc = pMedium->COMGETTER(Format)(bstrSrcFormat.asOutParam());
+                    ComPtr<IMediumFormat> pSrcFormat;
+                    rc = pMedium->COMGETTER(MediumFormat)(pSrcFormat.asOutParam());
+                    ULONG uSrcCaps = 0;
+                    rc = pSrcFormat->COMGETTER(Capabilities)(&uSrcCaps);
                     if (FAILED(rc)) throw rc;
-                    rc = pMedium->COMGETTER(Variant)(&srcVar);
+
+                    Bstr bstrSrcFormat = "VDI";
+                    ULONG srcVar = MediumVariant_Standard;
+                    /* Is the source file based? */
+                    if ((uSrcCaps & MediumFormatCapabilities_File) == MediumFormatCapabilities_File)
+                    {
+                        /* Yes, just use the source format. Otherwise the defaults
+                         * will be used. */
+                        rc = pMedium->COMGETTER(Format)(bstrSrcFormat.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                        rc = pMedium->COMGETTER(Variant)(&srcVar);
+                        if (FAILED(rc)) throw rc;
+                    }
+
+                    /* Start creating the clone. */
+                    ComObjPtr<Medium> pTarget;
+                    rc = pTarget.createObject();
                     if (FAILED(rc)) throw rc;
+
+                    Utf8Str strFile = Utf8StrFmt("%s%c%lS", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
+                    rc = pTarget->init(mParent,
+                                       Utf8Str(bstrSrcFormat),
+                                       strFile,
+                                       pTask->pTrgMachine->mData->mUuid,  /* media registry */
+                                       NULL                               /* llRegistriesThatNeedSaving */);
+                    if (FAILED(rc)) throw rc;
+
+                    /* Do the disk cloning. */
+                    ComPtr<IProgress> progress2;
+                    rc = pMedium->CloneTo(pTarget,
+                                          srcVar,
+                                          pNewParent,
+                                          progress2.asOutParam());
+                    if (FAILED(rc)) throw rc;
+
+                    /* Wait until the asynchrony process has finished. */
+                    srcLock.release();
+                    rc = pTask->pProgress->WaitForAsyncProgressCompletion(progress2);
+                    srcLock.acquire();
+                    if (FAILED(rc)) throw rc;
+
+                    /* Check the result of the asynchrony process. */
+                    LONG iRc;
+                    rc = progress2->COMGETTER(ResultCode)(&iRc);
+                    if (FAILED(rc)) throw rc;
+                    if (FAILED(iRc))
+                    {
+                        /* If the thread of the progress object has an error, then
+                         * retrieve the error info from there, or it'll be lost. */
+                        ProgressErrorInfo info(progress2);
+                        throw setError(iRc, Utf8Str(info.getText()).c_str());
+                    }
+
+                    map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pTarget));
+
+                    /* Remember created medias. */
+                    newMedias.append(pTarget);
+                    /* This medium becomes the parent of the next medium in the
+                     * chain. */
+                    pNewParent = pTarget;
                 }
-
-                /* Start creating the clone. */
-                ComObjPtr<Medium> pTarget;
-                rc = pTarget.createObject();
-                if (FAILED(rc)) throw rc;
-
-                Utf8Str strFile = Utf8StrFmt("%s%c%lS", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
-                rc = pTarget->init(mParent,
-                                   Utf8Str(bstrSrcFormat),
-                                   strFile,
-                                   pTask->pTrgMachine->mData->mUuid,  /* media registry */
-                                   NULL                               /* llRegistriesThatNeedSaving */);
-                if (FAILED(rc)) throw rc;
-
-                /* Do the disk cloning. */
-                ComPtr<IProgress> progress2;
-                rc = pMedium->CloneTo(pTarget,
-                                      srcVar,
-                                      pNewParent,
-                                      progress2.asOutParam());
-                if (FAILED(rc)) throw rc;
-
-                /* Wait until the asynchrony process has finished. */
-                srcLock.release();
-                rc = pTask->pProgress->WaitForAsyncProgressCompletion(progress2);
-                srcLock.acquire();
-                if (FAILED(rc)) throw rc;
-
-                /* Check the result of the asynchrony process. */
-                LONG iRc;
-                rc = progress2->COMGETTER(ResultCode)(&iRc);
-                if (FAILED(rc)) throw rc;
-                if (FAILED(iRc))
-                {
-                    /* If the thread of the progress object has an error, then
-                     * retrieve the error info from there, or it'll be lost. */
-                    ProgressErrorInfo info(progress2);
-                    throw setError(iRc, Utf8Str(info.getText()).c_str());
-                }
-                /* Remember created medias. */
-                newMedias.append(pTarget);
-                /* This medium becomes the parent of the next medium in the
-                 * chain. */
-                pNewParent = pTarget;
             }
 
+            /* Create diffs for the last image chain. */
+            if (mtc.fCreateDiffs)
+            {
+                Bstr bstrSrcId;
+                rc = pNewParent->COMGETTER(Id)(bstrSrcId.asOutParam());
+                if (FAILED(rc)) throw rc;
+                GuidList *pllRegistriesThatNeedSaving;
+                ComObjPtr<Medium> diff;
+                diff.createObject();
+                rc = diff->init(mParent,
+                                pNewParent->getPreferredDiffFormat(),
+                                strTrgSnapshotFolder,
+                                pTask->pTrgMachine->mData->mUuid,
+                                NULL); // pllRegistriesThatNeedSaving
+                if (FAILED(rc)) throw rc;
+                MediumLockList *pMediumLockList(new MediumLockList()); /* todo: deleteeeeeeeee */
+                rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
+                                                true /* fMediumLockWrite */,
+                                                pNewParent,
+                                                *pMediumLockList);
+                if (FAILED(rc)) throw rc;
+                rc = pMediumLockList->Lock();
+                if (FAILED(rc)) throw rc;
+                rc = pNewParent->createDiffStorage(diff, MediumVariant_Standard,
+                                                   pMediumLockList,
+                                                   NULL /* aProgress */,
+                                                   true /* aWait */,
+                                                   NULL); // pllRegistriesThatNeedSaving
+                delete pMediumLockList;
+                if (FAILED(rc)) throw rc;
+                pNewParent = diff;
+            }
             Bstr bstrSrcId;
-            rc = mtc.first().pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
+            rc = mtc.chain.first().pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
             if (FAILED(rc)) throw rc;
             Bstr bstrTrgId;
             rc = pNewParent->COMGETTER(Id)(bstrTrgId.asOutParam());
             if (FAILED(rc)) throw rc;
             /* We have to patch the configuration, so it contains the new
              * medium uuid instead of the old one. */
-            settings::StorageControllersList::iterator it3;
-            for (it3 = pTrgMCF->storageMachine.llStorageControllers.begin();
-                 it3 != pTrgMCF->storageMachine.llStorageControllers.end();
-                 ++it3)
+            cloneUpdateStorageLists(pTrgMCF->storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
+            cloneUpdateSnapshotStorageLists(pTrgMCF->llFirstSnapshot, bstrSrcId, bstrTrgId);
+        }
+        /* Todo: Clone all save state files. */
+//        for (size_t i = 0; i < pTask->llSaveStates.size(); ++i)
+//        {
+//            RTPrintf("save state: %s\n", pTask->llSaveStates.at(i).c_str());
+//            RTFileCopy(llSaveStates.at(i).c_str(),);
+//        }
+
+        if (false)
+//        if (!pTask->pOldMachineState.isNull())
+        {
+            SafeIfaceArray<IMediumAttachment> sfaAttachments;
+            rc = pTask->pOldMachineState->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
+            if (FAILED(rc)) throw rc;
+            for (size_t a = 0; a < sfaAttachments.size(); ++a)
             {
-                settings::AttachedDevicesList &llAttachments = it3->llAttachedDevices;
-                settings::AttachedDevicesList::iterator it4;
-                for (it4 = llAttachments.begin();
-                     it4 != llAttachments.end();
-                     ++it4)
-                {
-                    if (   it4->deviceType == DeviceType_HardDisk
-                        && it4->uuid == bstrSrcId)
-                        it4->uuid = bstrTrgId;
-                }
+                const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[a];
+                DeviceType_T type;
+                rc = pAtt->COMGETTER(Type)(&type);
+                if (FAILED(rc)) throw rc;
+
+                /* Only harddisk's are of interest. */
+                if (type != DeviceType_HardDisk)
+                    continue;
+
+                /* Valid medium attached? */
+                ComPtr<IMedium> pSrcMedium;
+                rc = pAtt->COMGETTER(Medium)(pSrcMedium.asOutParam());
+                if (FAILED(rc)) throw rc;
+                if (pSrcMedium.isNull())
+                    continue;
+
+//                ComObjPtr<Medium> pMedium = static_cast<Medium*>((IMedium*)pSrcMedium);
+//                ComObjPtr<Medium> diff;
+//                diff.createObject();
+                // store this diff in the same registry as the parent
+//                Guid uuidRegistryParent;
+//                if (!medium->getFirstRegistryMachineId(uuidRegistryParent))
+//                {
+                    // parent image has no registry: this can happen if we're attaching a new immutable
+                    // image that has not yet been attached (medium then points to the base and we're
+                    // creating the diff image for the immutable, and the parent is not yet registered);
+                    // put the parent in the machine registry then
+//                    addMediumToRegistry(medium, llRegistriesThatNeedSaving, &uuidRegistryParent);
+//                }
+//                rc = diff->init(mParent,
+//                                pMedium->getPreferredDiffFormat(),
+//                                strFullSnapshotFolder.append(RTPATH_SLASH_STR),
+//                                uuidRegistryParent,
+//                                pllRegistriesThatNeedSaving);
+//                if (FAILED(rc)) throw rc;
+//
+//                rc = pMedium->createDiffStorage(diff, MediumVariant_Standard,
+//                                                pMediumLockList,
+//                                                NULL /* aProgress */,
+//                                                true /* aWait */,
+//                                                pllRegistriesThatNeedSaving);
             }
         }
 

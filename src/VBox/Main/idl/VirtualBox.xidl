@@ -3512,10 +3512,31 @@
 
   </interface>
 
+  <enum
+    name="CloneMode" extends="$unknown"
+    uuid="A7A159FE-5096-4B8D-8C3C-D033CB0B35A8"
+    >
+
+    <desc>
+    Clone mode, used with <link to="IMachine::cloneTo" />.
+    </desc>
+
+    <const name="MachineState"                 value="1">
+      <desc>Clone the state of the machine.</desc>
+    </const>
+    <const name="MachineAndChildStates"        value="2">
+      <desc>Clone the state of the machine and if this machine object has child snapshots the state of this childs.</desc>
+    </const>
+    <const name="AllStates"                    value="3">
+      <desc>Clone all states (including all snapshots) of the machine, regardless of the machine object used.</desc>
+    </const>
+
+  </enum>
+
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="84208466-c072-4e64-b993-c35c096cc837"
+    uuid="5A398458-266D-4DCD-9745-0886AEBD761B"
     wsmap="managed"
     >
     <desc>
@@ -5961,6 +5982,9 @@
 
       <param name="target" type="IMachine" dir="in">
         <desc>Target machine object.</desc>
+      </param>
+      <param name="mode" type="CloneMode" dir="in">
+        <desc>Which states should be cloned.</desc>
       </param>
       <param name="fullClone" type="boolean" dir="in">
         <desc>Selects whether a full or linked clone is created.</desc>
@@ -9128,30 +9152,30 @@
 
     <method name="waitForAsyncProgressCompletion">
       <desc>
-         Waits until the other task is completed (including all
-         sub-operations) and forward all changes from the other progress to
-         this progress. This means sub-operation number, description, percent
-         and so on.
+          Waits until the other task is completed (including all
+          sub-operations) and forward all changes from the other progress to
+          this progress. This means sub-operation number, description, percent
+          and so on.
+          
+          You have to take care on setting up at least the same count on
+          sub-operations in this progress object like there are in the other
+          progress object. 
 
-         You have to take care on setting up at least the same count on
-         sub-operations in this progress object like there are in the other
-         progress object.
+          If the other progress object supports cancel and this object gets any
+          cancel request (when here enabled as well), it will be forwarded to
+          the other progress object.
 
-         If the other progress object supports cancel and this object gets any
-         cancel request (when here enabled as well), it will be forwarded to
-         the other progress object.
-
-         If there is an error in the other progress, this error isn't
-         automatically transfered to this progress object. So you have to
-         check any operation error within the other progress object, after
-         this method returns.
+          If there is an error in the other progress, this error isn't
+          automatically transfered to this progress object. So you have to
+          check any operation error within the other progress object, after
+          this method returns.
       </desc>
 
-     <param name="pProgressAsync" type="IProgress" dir="in">
-       <desc>
-         The progress object of the asynchrony process.
-       </desc>
-     </param>
+      <param name="pProgressAsync" type="IProgress" dir="in">
+        <desc>
+          The progress object of the asynchrony process.
+        </desc>
+      </param>
     </method>
 
     <method name="cancel">
@@ -9177,7 +9201,7 @@
 
   <interface
     name="ISnapshot" extends="$unknown"
-    uuid="1a2d0551-58a4-4107-857e-ef414fc42ffc"
+    uuid="0472823b-c6e7-472a-8e9f-d732e86b8463"
     wsmap="managed"
     >
     <desc>
@@ -9324,6 +9348,16 @@
         with a @c null UUID), a machine's snapshots tree can be iterated over.
       </desc>
     </attribute>
+
+    <method name="getChildrenCount" const="yes">
+      <desc>
+        Returns the number of direct childrens of this snapshot.
+      </desc>
+      <param name="childrenCount" type="unsigned long" dir="return">
+        <desc>
+        </desc>
+      </param>
+    </method>
 
   </interface>
 
@@ -10804,7 +10838,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         an arbitrary medium for this parameter, including the parent of the
         medium which is being cloned. Even cloning to a child of the source
         medium is possible. Note that when cloning to an existing image, the
-        @a parent irgument is ignored.
+        @a parent argument is ignored.
 
         After the returned progress object reports that the operation is
         successfully complete, the target medium gets remembered by this

@@ -528,7 +528,7 @@ public:
     STDMETHOD(ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeArrayOut(BYTE, aData)));
     STDMETHOD(AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, BOOL tryToUnbind));
     STDMETHOD(DetachHostPciDevice(LONG hostAddress));
-    STDMETHOD(CloneTo(IMachine *aTarget, BOOL aFullClone, IProgress **aProgress));
+    STDMETHOD(CloneTo(IMachine *aTarget, CloneMode_T mode, BOOL aFullClone, IProgress **aProgress));
     // public methods only for internal purposes
 
     virtual bool isSnapshotMachine() const
@@ -840,6 +840,11 @@ protected:
     HRESULT deleteTaskWorker(DeleteTask &task);
 
     struct CloneVMTask;
+    HRESULT cloneCreateMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComPtr<IMachine> > &machineList) const;
+    settings::Snapshot cloneFindSnapshot(settings::MachineConfigFile *pMCF, const settings::SnapshotsList &snl, const Guid &id) const;
+    void cloneUpdateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
+    void cloneUpdateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
+
     static DECLCALLBACK(int) cloneVMThread(RTTHREAD Thread, void *pvUser);
     HRESULT cloneVMTaskWorker(CloneVMTask *pTask);
 
