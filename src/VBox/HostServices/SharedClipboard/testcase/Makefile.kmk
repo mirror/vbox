@@ -20,9 +20,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
- ifneq ($(KBUILD_TARGET),win)
-  PROGRAMS += tstClipboardServiceHost
- endif
+ PROGRAMS += tstClipboardServiceHost
 
  tstClipboardServiceHost_TEMPLATE = VBOXR3TSTEXE
  tstClipboardServiceHost_DEFS     = VBOX_WITH_HGCM UNIT_TEST

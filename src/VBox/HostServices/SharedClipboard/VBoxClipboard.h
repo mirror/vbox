@@ -94,7 +94,7 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient);
 
 /* Host unit testing interface */
 #ifdef UNIT_TEST
-uint32_t testClipSvcGetMode(void);
+uint32_t TestClipSvcGetMode(void);
 #endif
 
 #endif /* __VBOXCLIPBOARD__H */
