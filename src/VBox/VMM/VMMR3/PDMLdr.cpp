@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -246,7 +246,7 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
     /*
      * Validate input.
      */
-    AssertMsg(pUVM->pVM->pdm.s.offVM, ("bad init order!\n"));
+    AssertMsg(PDMCritSectIsInitialized(&pUVM->pVM->pdm.s.CritSect), ("bad init order!\n"));
     Assert(pszFilename);
     size_t cchFilename = strlen(pszFilename);
     Assert(pszName);
@@ -440,7 +440,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
     /*
      * Validate input.
      */
-    AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
+    AssertMsg(PDMCritSectIsInitialized(&pVM->pdm.s.CritSect), ("bad init order!\n"));
     PUVM     pUVM = pVM->pUVM;
     RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
     PPDMMOD  pCur = pUVM->pdm.s.pModules;
@@ -691,7 +691,10 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *p
     /*
      * Validate input.
      */
-    AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
+    AssertPtr(pVM);
+    AssertPtr(pszModule);
+    AssertPtr(ppvValue);
+    AssertMsg(PDMCritSectIsInitialized(&pVM->pdm.s.CritSect), ("bad init order!\n"));
 
     /*
      * Find the module.
@@ -747,7 +750,11 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *p
     /*
      * Validate input.
      */
-    AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
+    AssertPtr(pVM);
+    AssertPtrNull(pszModule);
+    AssertPtr(ppvValue);
+    AssertMsg(PDMCritSectIsInitialized(&pVM->pdm.s.CritSect), ("bad init order!\n"));
+
     if (!pszModule)
         pszModule = "VMMR0.r0";
 
@@ -799,11 +806,15 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const cha
     return VINF_SUCCESS;
 
 #else
+    AssertPtr(pVM);
+    AssertPtrNull(pszModule);
+    AssertPtr(ppvValue);
+    AssertMsg(PDMCritSectIsInitialized(&pVM->pdm.s.CritSect), ("bad init order!\n"));
+
     /*
      * Since we're lazy, we'll only check if the module is present
      * and hand it over to PDMR3LdrGetSymbolR0 when that's done.
      */
-    AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
     if (pszModule)
     {
         AssertMsgReturn(!strpbrk(pszModule, "/\\:\n\r\t"), ("pszModule=%s\n", pszModule), VERR_INVALID_PARAMETER);
@@ -846,7 +857,11 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
     /*
      * Validate input.
      */
-    AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
+    AssertPtr(pVM);
+    AssertPtrNull(pszModule);
+    AssertPtr(pRCPtrValue);
+    AssertMsg(PDMCritSectIsInitialized(&pVM->pdm.s.CritSect), ("bad init order!\n"));
+
     if (!pszModule)
         pszModule = "VMMGC.gc";
 
@@ -906,11 +921,15 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const cha
     return VINF_SUCCESS;
 
 #else
+    AssertPtr(pVM);
+    AssertPtrNull(pszModule);
+    AssertPtr(pRCPtrValue);
+    AssertMsg(PDMCritSectIsInitialized(&pVM->pdm.s.CritSect), ("bad init order!\n"));
+
     /*
      * Since we're lazy, we'll only check if the module is present
      * and hand it over to PDMR3LdrGetSymbolRC when that's done.
      */
-    AssertMsg(pVM->pdm.s.offVM, ("bad init order!\n"));
     if (pszModule)
     {
         AssertMsgReturn(!strpbrk(pszModule, "/\\:\n\r\t"), ("pszModule=%s\n", pszModule), VERR_INVALID_PARAMETER);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -939,13 +939,6 @@ typedef struct PDMCPU
     R3PTRTYPE(PPDMCRITSECT)         apQueuedCritSectsLeaves[8];
 } PDMCPU;
 
-/**
- * Converts a PDM pointer into a VM pointer.
- * @returns Pointer to the VM structure the PDM is part of.
- * @param   pPDM   Pointer to PDM instance data.
- */
-#define PDM2VM(pPDM)  ( (PVM)((char*)pPDM - pPDM->offVM) )
-
 
 /**
  * PDM VM Instance data.
@@ -953,10 +946,20 @@ typedef struct PDMCPU
  */
 typedef struct PDM
 {
-    /** Offset to the VM structure.
-     * See PDM2VM(). */
-    RTUINT                          offVM;
-    RTUINT                          uPadding0; /**< Alignment padding.*/
+    /** The PDM lock.
+     * This is used to protect everything that deals with interrupts, i.e.
+     * the PIC, APIC, IOAPIC and PCI devices plus some PDM functions. */
+    PDMCRITSECT                     CritSect;
+
+    /** The giant PDM device lock.
+     * This is a temporary measure and will be removed. */
+    PDMCRITSECT                     GiantDevCritSect;
+
+    /** The NOP critical section.
+     * This is a dummy critical section that will not do any thread
+     * serialization but instead let all threads enter immediately and
+     * concurrently. */
+    PDMCRITSECT                     NopCritSect;
 
     /** List of registered devices. (FIFO) */
     R3PTRTYPE(PPDMDEV)              pDevs;
@@ -1012,11 +1015,6 @@ typedef struct PDM
     /** The current mapping. NIL_RTGCPHYS if not mapped or registered. */
     RTGCPHYS                        GCPhysVMMDevHeap;
     /** @} */
-
-    /** The PDM lock.
-     * This is used to protect everything that deals with interrupts, i.e.
-     * the PIC, APIC, IOAPIC and PCI devices plus some PDM functions. */
-    PDMCRITSECT                     CritSect;
 
     /** Number of times a critical section leave request needed to be queued for ring-3 execution. */
     STAMCOUNTER                     StatQueuedCritSectLeaves;

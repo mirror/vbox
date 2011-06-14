@@ -73,6 +73,10 @@ VMMDECL(void)       PDMCritSectFF(PVMCPU pVCpu);
 VMMR3DECL(uint32_t) PDMR3CritSectCountOwned(PVM pVM, char *pszNames, size_t cbNames);
 VMMR3DECL(void)     PDMR3CritSectLeaveAll(PVM pVM);
 
+VMMR3DECL(PPDMCRITSECT)             PDMR3CritSectGetNop(PVM pVM);
+VMMR3DECL(R0PTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopR0(PVM pVM);
+VMMR3DECL(RCPTRTYPE(PPDMCRITSECT))  PDMR3CritSectGetNopRC(PVM pVM);
+
 /* Strict build: Remap the two enter calls to the debug versions. */
 #ifdef VBOX_STRICT
 # ifdef ___iprt_asm_h
