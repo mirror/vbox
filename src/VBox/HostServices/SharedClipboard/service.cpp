@@ -143,7 +143,7 @@ static uint32_t vboxSvcClipboardMode (void)
 
 #ifdef UNIT_TEST
 /** Testing interface, getter for clipboard mode */
-uint32_t testClipSvcGetMode(void)
+uint32_t TestClipSvcGetMode(void)
 {
     return vboxSvcClipboardMode();
 }
@@ -742,6 +742,18 @@ static DECLCALLBACK(int) svcHostCall (void *,
     return rc;
 }
 
+#ifdef UNIT_TEST
+static int testSSMStubRC(void) { AssertFailedReturn(VERR_WRONG_ORDER); }
+static uint32_t testSSMStubU32(void) { AssertFailedReturn(0); }
+# define SSMR3PutU32(pSSM, u32) testSSMStubRC()
+# define SSMR3PutStructEx(pSSM, pvStruct, cbStruct, fFlags, paFields, pvUser) \
+      testSSMStubRC()
+# define SSMR3GetU32(pSSM, pu32) ( *(pu32) = 0, testSSMStubRC() )
+# define SSMR3HandleHostBits(pSSM) testSSMStubU32()
+# define SSMR3GetStructEx(pSSM, pvStruct, cbStruct, fFlags, paFields, pvUser) \
+      testSSMStubRC()
+#endif
+
 /**
  * SSM descriptor table for the VBOXCLIPBOARDCLIENTDATA structure.
  */
@@ -905,6 +917,13 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
     return VINF_SUCCESS;
 }
+
+#ifdef UNIT_TEST
+# undef SSMR3PutU32
+# undef SSMR3GetU32
+# undef SSMR3HandleHostBits
+# undef SSMR3GetStructEx
+#endif
 
 static DECLCALLBACK(int) extCallback (uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData)
 {

@@ -19,9 +19,6 @@
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 
-#define IN_VMM_R3 /* so that the SSM function stubs are exports not imports */
-#include <VBox/vmm/ssm.h>
-
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
@@ -50,7 +47,7 @@ static void testSetMode(void)
     rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
-    u32Mode = testClipSvcGetMode();
+    u32Mode = TestClipSvcGetMode();
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_OFF,
                       ("u32Mode=%u\n", (unsigned) u32Mode));
     rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
@@ -67,14 +64,14 @@ static void testSetMode(void)
     rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
-    u32Mode = testClipSvcGetMode();
+    u32Mode = TestClipSvcGetMode();
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST,
                       ("u32Mode=%u\n", (unsigned) u32Mode));
     parms[0].setUInt32(99);
     rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
-    u32Mode = testClipSvcGetMode();
+    u32Mode = TestClipSvcGetMode();
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_OFF,
                       ("u32Mode=%u\n", (unsigned) u32Mode));
 }
@@ -163,15 +160,5 @@ void vboxClipboardFormatAnnounce(_VBOXCLIPBOARDCLIENTDATA*, unsigned int)
 int vboxClipboardReadData(_VBOXCLIPBOARDCLIENTDATA*, unsigned int, void*, unsigned int, unsigned int*)
 { AssertFailed(); return VERR_WRONG_ORDER; }
 void vboxClipboardWriteData(_VBOXCLIPBOARDCLIENTDATA*, void*, unsigned int, unsigned int) { AssertFailed(); }
-VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
-{ AssertFailed(); return VERR_WRONG_ORDER; }
-VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cbStruct, uint32_t fFlags, PCSSMFIELD paFields, void *pvUser)
-{ AssertFailed(); return VERR_WRONG_ORDER; }
-VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
-{ AssertFailed(); return VERR_WRONG_ORDER; }
-VMMR3DECL(uint32_t)     SSMR3HandleHostBits(PSSMHANDLE pSSM)
-{ AssertFailed(); return 0; }
-VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct, uint32_t fFlags, PCSSMFIELD paFields, void *pvUser)
-{ AssertFailed(); return VERR_WRONG_ORDER; }
 int vboxClipboardSync(_VBOXCLIPBOARDCLIENTDATA*)
 { AssertFailed(); return VERR_WRONG_ORDER; }
