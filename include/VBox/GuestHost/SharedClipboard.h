@@ -53,7 +53,7 @@ struct _CLIPREADCBREQ;
 typedef struct _CLIPREADCBREQ CLIPREADCBREQ;
 
 /* APIs exported by the X11 backend */
-extern CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend);
+extern CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend, bool fHeadless);
 extern void ClipDestructX11(CLIPBACKEND *pBackend);
 #ifdef __cplusplus
 extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab = false);

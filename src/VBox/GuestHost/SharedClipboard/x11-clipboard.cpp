@@ -43,7 +43,6 @@
 #include <X11/StringDefs.h>
 
 #include <iprt/types.h>
-#include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
@@ -697,13 +696,13 @@ static int clipInit(CLIPBACKEND *pCtx)
  * Construct the X11 backend of the shared clipboard.
  * @note  X11 backend code
  */
-CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend)
+CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend, bool fHeadless)
 {
     int rc;
 
     CLIPBACKEND *pCtx = (CLIPBACKEND *)
                     RTMemAllocZ(sizeof(CLIPBACKEND));
-    if (pCtx && !RTEnvExist("DISPLAY"))
+    if (pCtx && fHeadless)
     {
         /*
          * If we don't find the DISPLAY environment variable we assume that
@@ -2240,6 +2239,15 @@ static void testStringFromVBox(RTTEST hTest, CLIPBACKEND *pCtx,
                              pcszTarget, valueExp);
 }
 
+static void testNoX11(CLIPBACKEND *pCtx, const char *pcszTestCtx)
+{
+    CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
+    int rc = ClipRequestDataFromX11(pCtx,
+                                    VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+                                    pReq);
+    RTTESTI_CHECK_MSG(rc == VERR_NO_DATA, ("context: %s\n", pcszTestCtx));
+}
+
 static void testStringFromVBoxFailed(RTTEST hTest, CLIPBACKEND *pCtx,
                                      const char *pcszTarget)
 {
@@ -2256,6 +2264,12 @@ static void testStringFromVBoxFailed(RTTEST hTest, CLIPBACKEND *pCtx,
     XtFree((char *)value);
 }
 
+static void testNoSelectionOwnership(CLIPBACKEND *pCtx,
+                                     const char *pcszTestCtx)
+{
+    RTTESTI_CHECK_MSG(!g_ownsSel, ("context: %s\n", pcszTestCtx));
+}
+
 int main()
 {
     /*
@@ -2270,7 +2284,7 @@ int main()
     /*
      * Run the test.
      */
-    CLIPBACKEND *pCtx = ClipConstructX11(NULL);
+    CLIPBACKEND *pCtx = ClipConstructX11(NULL, false);
     char *pc;
     uint32_t cbActual;
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
@@ -2523,6 +2537,34 @@ int main()
     AssertRCReturn(rc, 1);
     ClipDestructX11(pCtx);
 
+    /*** Headless clipboard tests ***/
+
+    pCtx = ClipConstructX11(NULL, true);
+    rc = ClipStartX11(pCtx);
+    AssertRCReturn(rc, 1);
+
+    /*** Read from X11 ***/
+    RTTestSub(hTest, "reading from X11, headless clipboard");
+    /* Simple test */
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "",
+                     sizeof("") * 2);
+    clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
+                           sizeof("hello world"), 8);
+    testNoX11(pCtx, "reading from X11, headless clipboard");
+
+    /*** Read from VBox ***/
+    RTTestSub(hTest, "reading from VBox, headless clipboard");
+    /* Simple test */
+    clipEmptyVBox(pCtx, VERR_WRONG_ORDER);
+    clipSetSelectionValues("TEXT", XA_STRING, "", sizeof(""), 8);
+    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
+                     sizeof("hello world") * 2);
+    testNoSelectionOwnership(pCtx, "reading from VBox, headless clipboard");
+
+    rc = ClipStopX11(pCtx);
+    AssertRCReturn(rc, 1);
+    ClipDestructX11(pCtx);
+
     return RTTestSummaryAndDestroy(hTest);
 }
 
@@ -2535,6 +2577,7 @@ int main()
  * interactive mode in which the user can read and copy to the clipboard from
  * the command line. */
 
+#include <iprt/env.h>
 #include <iprt/test.h>
 
 int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx,
@@ -2576,7 +2619,7 @@ int main()
                      "X11 not available, not running test\n");
         return RTTestSummaryAndDestroy(hTest);
     }
-    CLIPBACKEND *pCtx = ClipConstructX11(NULL);
+    CLIPBACKEND *pCtx = ClipConstructX11(NULL, false);
     AssertReturn(pCtx, 1);
     rc = ClipStartX11(pCtx);
     AssertRCReturn(rc, 1);

@@ -50,7 +50,9 @@
 /*
  * The service functions which are callable by host.
  */
-#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE   1
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE      1
+/** Run headless on the host, i.e. do not touch the host clipboard. */
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS  2
 
 /*
  * The service functions which are called by guest.
