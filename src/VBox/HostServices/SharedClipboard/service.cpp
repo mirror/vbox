@@ -133,9 +133,26 @@ static bool g_fReadingData = false;
 static bool g_fDelayedAnnouncement = false;
 static uint32_t g_u32DelayedFormats = 0;
 
+/** Is the clipboard running in headless mode? */
+static bool g_fHeadless = false;
+
 static uint32_t vboxSvcClipboardMode (void)
 {
     return g_u32Mode;
+}
+
+#ifdef UNIT_TEST
+/** Testing interface, getter for clipboard mode */
+uint32_t testClipSvcGetMode(void)
+{
+    return vboxSvcClipboardMode();
+}
+#endif
+
+/** Getter for headless setting */
+bool vboxSvcClipboardGetHeadless(void)
+{
+    return g_fHeadless;
 }
 
 static void vboxSvcClipboardModeSet (uint32_t u32Mode)
@@ -703,6 +720,18 @@ static DECLCALLBACK(int) svcHostCall (void *,
                 /* The setter takes care of invalid values. */
                 vboxSvcClipboardModeSet (u32Mode);
             }
+        } break;
+
+        case VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS:
+        {
+            uint32_t u32Headless = g_fHeadless;
+            LogRel2(("svcCall: VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE\n"));
+
+            rc = VERR_INVALID_PARAMETER;
+            if (cParms != 1)
+                break;
+            rc = VBoxHGCMParmUInt32Get (&paParms[0], &u32Headless);
+            g_fHeadless = RT_BOOL(u32Headless);
         } break;
 
         default:

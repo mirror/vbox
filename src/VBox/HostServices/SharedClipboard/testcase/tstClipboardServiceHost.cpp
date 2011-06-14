@@ -35,38 +35,95 @@ static int setupTable(VBOXHGCMSVCFNTABLE *pTable)
     return VBoxHGCMSvcLoad(pTable);
 }
 
-static struct
+static void testSetMode(void)
 {
-    uint32_t cParms;
-    uint32_t type1;
-    uint32_t val1;
-    int rcExp;
-} s_testHostFnSetMode[] =
-{
-    { 0, VBOX_HGCM_SVC_PARM_32BIT, 99, VERR_INVALID_PARAMETER },
-    { 2, VBOX_HGCM_SVC_PARM_32BIT, 99, VERR_INVALID_PARAMETER },
-    { 1, VBOX_HGCM_SVC_PARM_64BIT, 99, VERR_INVALID_PARAMETER },
-    { 1, VBOX_HGCM_SVC_PARM_32BIT, 99, VINF_SUCCESS }
-};
-
-static void testHostCall(RTTEST hTest)
-{
+    struct VBOXHGCMSVCPARM parms[2];
     VBOXHGCMSVCFNTABLE table;
+    uint32_t u32Mode;
+    int rc;
+    
+    RTTestISub("Testing HOST_FN_SET_MODE");
+    rc = setupTable(&table);
+    RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
+    /* Reset global variable which doesn't reset itself. */
+    parms[0].setUInt32(VBOX_SHARED_CLIPBOARD_MODE_OFF);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+                           1, parms);
+    RTTESTI_CHECK_RC_OK(rc);
+    u32Mode = testClipSvcGetMode();
+    RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_OFF,
+                      ("u32Mode=%u\n", (unsigned) u32Mode));
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+                           0, parms);
+    RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+                           2, parms);
+    RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
+    parms[0].setUInt64(99);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+                           1, parms);
+    RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
+    parms[0].setUInt32(VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+                           1, parms);
+    RTTESTI_CHECK_RC_OK(rc);
+    u32Mode = testClipSvcGetMode();
+    RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST,
+                      ("u32Mode=%u\n", (unsigned) u32Mode));
+    parms[0].setUInt32(99);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+                           1, parms);
+    RTTESTI_CHECK_RC_OK(rc);
+    u32Mode = testClipSvcGetMode();
+    RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_OFF,
+                      ("u32Mode=%u\n", (unsigned) u32Mode));
+}
 
-    RTTestSub(hTest, "Testing HOST_FN_SET_MODE");
-    for (unsigned i = 0; i < RT_ELEMENTS(s_testHostFnSetMode); ++i)
-    {
-        struct VBOXHGCMSVCPARM parms[2];
+static void testSetHeadless(void)
+{
+    struct VBOXHGCMSVCPARM parms[2];
+    VBOXHGCMSVCFNTABLE table;
+    bool fHeadless;
+    int rc;
+    
+    RTTestISub("Testing HOST_FN_SET_HEADLESS");
+    rc = setupTable(&table);
+    RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
+    /* Reset global variable which doesn't reset itself. */
+    parms[0].setUInt32(false);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+                           1, parms);
+    RTTESTI_CHECK_RC_OK(rc);
+    fHeadless = vboxSvcClipboardGetHeadless();
+    RTTESTI_CHECK_MSG(fHeadless == false, ("fHeadless=%RTbool\n", fHeadless));
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+                           0, parms);
+    RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+                           2, parms);
+    RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
+    parms[0].setUInt64(99);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+                           1, parms);
+    RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
+    parms[0].setUInt32(true);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+                           1, parms);
+    RTTESTI_CHECK_RC_OK(rc);
+    fHeadless = vboxSvcClipboardGetHeadless();
+    RTTESTI_CHECK_MSG(fHeadless == true, ("fHeadless=%RTbool\n", fHeadless));
+    parms[0].setUInt32(99);
+    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+                           1, parms);
+    RTTESTI_CHECK_RC_OK(rc);
+    fHeadless = vboxSvcClipboardGetHeadless();
+    RTTESTI_CHECK_MSG(fHeadless == true, ("fHeadless=%RTbool\n", fHeadless));
+}
 
-        int rc = setupTable(&table);
-        RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("i=%u, rc=%Rrc\n", i, rc));
-        parms[0].type = s_testHostFnSetMode[i].type1;
-        parms[0].u.uint32 = s_testHostFnSetMode[i].val1;
-        rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
-                               s_testHostFnSetMode[i].cParms, parms);
-        RTTESTI_CHECK_MSG(rc == s_testHostFnSetMode[i].rcExp,
-                          ("i=%u, rc=%Rrc\n", i, rc));
-    }
+static void testHostCall(void)
+{
+    testSetMode();
+    testSetHeadless();
 }
 
 
@@ -88,7 +145,7 @@ int main(int argc, char *argv[])
     /*
      * Run the tests.
      */
-    testHostCall(hTest);
+    testHostCall();
 
     /*
      * Summary
