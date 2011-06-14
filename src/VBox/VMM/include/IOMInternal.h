@@ -47,7 +47,8 @@ typedef struct IOMMMIORANGE
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
     uint32_t                    cb;
-    uint32_t                    u32Alignment; /**< Alignment padding. */
+    /** The reference counter. */
+    uint32_t volatile           cRefs;
 
     /** Pointer to user argument - R3. */
     RTR3PTR                     pvUserR3;
@@ -284,7 +285,7 @@ typedef struct IOMTREES
     /** Tree containing I/O port statistics (IOMIOPORTSTATS). */
     AVLOIOPORTTREE          IOPortStatTree;
     /** Tree containing MMIO statistics (IOMMMIOSTATS). */
-    AVLOGCPHYSTREE          MMIOStatTree;
+    AVLOGCPHYSTREE          MmioStatTree;
 } IOMTREES;
 /** Pointer to the IOM trees. */
 typedef IOMTREES *PIOMTREES;
@@ -417,15 +418,16 @@ typedef IOMCPU *PIOMCPU;
 
 RT_C_DECLS_BEGIN
 
+void                iomMmioFreeRange(PVM pVM, PIOMMMIORANGE pRange);
 #ifdef IN_RING3
 PIOMIOPORTSTATS     iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDesc);
 PIOMMMIOSTATS       iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc);
 #endif /* IN_RING3 */
 
-VMMDECL(int)        IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, 
+VMMDECL(int)        IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                    RTGCPHYS GCPhysFault, void *pvUser);
 #ifdef IN_RING3
-DECLCALLBACK(int)   IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, 
+DECLCALLBACK(int)   IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
                                      PGMACCESSTYPE enmAccessType, void *pvUser);
 #endif
 

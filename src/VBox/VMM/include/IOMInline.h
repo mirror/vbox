@@ -64,15 +64,69 @@ DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PVM pVM, RTIOPORT Port)
  * @param   pVM     The VM handle.
  * @param   GCPhys  Physical address to lookup.
  */
-DECLINLINE(PIOMMMIORANGE) iomMMIOGetRange(PVM pVM, RTGCPHYS GCPhys)
+DECLINLINE(PIOMMMIORANGE) iomMmioGetRange(PVM pVM, RTGCPHYS GCPhys)
 {
-    Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock) || !PDMCritSectIsInitialized(&pVM->iom.s.EmtLock));
+    Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock));
     PIOMMMIORANGE pRange = pVM->iom.s.CTX_SUFF(pMMIORangeLast);
     if (    !pRange
         ||  GCPhys - pRange->GCPhys >= pRange->cb)
-        pVM->iom.s.CTX_SUFF(pMMIORangeLast) = pRange 
+        pVM->iom.s.CTX_SUFF(pMMIORangeLast) = pRange
             = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->MMIOTree, GCPhys);
     return pRange;
+}
+
+/**
+ * Retain a MMIO range.
+ *
+ * @param   pRange  The range to release.
+ */
+DECLINLINE(void) iomMmioRetainRange(PIOMMMIORANGE pRange)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pRange->cRefs);
+    Assert(cRefs > 1);
+    Assert(cRefs < _1M);
+}
+
+
+/**
+ * Gets the referenced MMIO range for the specified physical address in the
+ * current context.
+ *
+ * @returns Pointer to MMIO range.
+ * @returns NULL if address not in a MMIO range.
+ *
+ * @param   pVM     The VM handle.
+ * @param   GCPhys  Physical address to lookup.
+ */
+DECLINLINE(PIOMMMIORANGE) iomMmioGetRangeWithRef(PVM pVM, RTGCPHYS GCPhys)
+{
+    int rc = PDMCritSectEnter(&pVM->iom.s.EmtLock, VINF_SUCCESS);
+    AssertRCReturn(rc, NULL);
+
+    PIOMMMIORANGE pRange = pVM->iom.s.CTX_SUFF(pMMIORangeLast);
+    if (   !pRange
+        || GCPhys - pRange->GCPhys >= pRange->cb)
+        pVM->iom.s.CTX_SUFF(pMMIORangeLast) = pRange
+            = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->MMIOTree, GCPhys);
+    if (pRange)
+        iomMmioRetainRange(pRange);
+
+    PDMCritSectLeave(&pVM->iom.s.EmtLock);
+    return pRange;
+}
+
+
+/**
+ * Releases a MMIO range.
+ *
+ * @param   pVM     The VM handle.
+ * @param   pRange  The range to release.
+ */
+DECLINLINE(void) iomMmioReleaseRange(PVM pVM, PIOMMMIORANGE pRange)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pRange->cRefs);
+    if (!cRefs)
+        iomMmioFreeRange(pVM, pRange);
 }
 
 
@@ -91,7 +145,7 @@ DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, RTGCPHYS GCPhys)
     PIOMMMIORANGE pRange = pVM->iom.s.CTX_SUFF(pMMIORangeLast);
     if (    !pRange
         ||  GCPhys - pRange->GCPhys >= pRange->cb)
-        pVM->iom.s.CTX_SUFF(pMMIORangeLast) = pRange 
+        pVM->iom.s.CTX_SUFF(pMMIORangeLast) = pRange
             = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->MMIOTree, GCPhys);
     return pRange;
 }
@@ -112,9 +166,9 @@ DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, RTGCPHYS GCPhys)
  * @param   GCPhys      Physical address to lookup.
  * @param   pRange      The MMIO range.
  */
-DECLINLINE(PIOMMMIOSTATS) iomMMIOGetStats(PVM pVM, RTGCPHYS GCPhys, PIOMMMIORANGE pRange)
+DECLINLINE(PIOMMMIOSTATS) iomMmioGetStats(PVM pVM, RTGCPHYS GCPhys, PIOMMMIORANGE pRange)
 {
-    Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock));
+    PDMCritSectEnter(&pVM->iom.s.EmtLock, VINF_SUCCESS);
 
     /* For large ranges, we'll put everything on the first byte. */
     if (pRange->cb > PAGE_SIZE)
@@ -124,12 +178,14 @@ DECLINLINE(PIOMMMIOSTATS) iomMMIOGetStats(PVM pVM, RTGCPHYS GCPhys, PIOMMMIORANG
     if (    !pStats
         ||  pStats->Core.Key != GCPhys)
     {
-        pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pVM->iom.s.CTX_SUFF(pTrees)->MMIOStatTree, GCPhys);
+        pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pVM->iom.s.CTX_SUFF(pTrees)->MmioStatTree, GCPhys);
 # ifdef IN_RING3
         if (!pStats)
             pStats = iomR3MMIOStatsCreate(pVM, GCPhys, pRange->pszDesc);
 # endif
     }
+
+    PDMCritSectLeave(&pVM->iom.s.EmtLock);
     return pStats;
 }
 #endif /* VBOX_WITH_STATISTICS */

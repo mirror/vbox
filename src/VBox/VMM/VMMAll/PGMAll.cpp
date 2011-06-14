@@ -2231,7 +2231,7 @@ VMMDECL(const char *) PGMGetModeName(PGMMODE enmMode)
  */
 VMM_INT_DECL(void) PGMNotifyNxeChanged(PVMCPU pVCpu, bool fNxe)
 {
-    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+/** @todo VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu); */
     Log(("PGMNotifyNxeChanged: fNxe=%RTbool\n", fNxe));
 
     pVCpu->pgm.s.fNoExecuteEnabled = fNxe;

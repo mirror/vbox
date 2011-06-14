@@ -237,14 +237,15 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
      */
     return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
 
-#elif defined(IN_RING0)
+#else
+# ifdef IN_RING0
     /** @todo If preemption is disabled it means we're in VT-x/AMD-V context
      *        and would be better off switching out of that while waiting for
      *        the lock.  Several of the locks jumps back to ring-3 just to
      *        get the lock, the ring-3 code will then call the kernel to do
      *        the lock wait and when the call return it will call ring-0
      *        again and resume via in setjmp style.  Not very efficient. */
-# if 0
+#  if 0
     if (ASMIntAreEnabled()) /** @todo this can be handled as well by changing
                              * callers not prepared for longjmp/blocking to
                              * use PDMCritSectTryEnter. */
@@ -273,27 +274,34 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
         }
         return rc;
     }
-# else
+#  else
     /*
      * We preemption hasn't been disabled, we can block here in ring-0.
      */
     if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
         && ASMIntAreEnabled())
         return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
-# endif
+#  endif
+#endif /* IN_RING0 */
 
     STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
-    LogFlow(("PDMCritSectEnter: locked => R3 (%Rrc)\n", rcBusy));
-    return rcBusy;
 
-#else  /* IN_RC */
+    /*
+     * Call ring-3 to acquire the critical section?
+     */
+    if (rcBusy == VINF_SUCCESS)
+    {
+        PVM     pVM   = pCritSect->s.CTX_SUFF(pVM); AssertPtr(pVM);
+        PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+        return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_ENTER, MMHyperCCToR3(pVM, pCritSect));
+    }
+
     /*
      * Return busy.
      */
-    STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLock);
     LogFlow(("PDMCritSectEnter: locked => R3 (%Rrc)\n", rcBusy));
     return rcBusy;
-#endif /* IN_RC */
+#endif /* !IN_RING3 */
 }
 
 
@@ -306,16 +314,38 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
  *
  * @param   pCritSect           The PDM critical section to enter.
  * @param   rcBusy              The status code to return when we're in GC or R0
- *                              and the section is busy.
+ *                              and the section is busy.  Pass VINF_SUCCESS to
+ *                              acquired the critical section thru a ring-3
+ *                              call if necessary.
  */
 VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
 {
+    int rc;
+#ifndef IN_RING3
+    if (rcBusy == VINF_SUCCESS)
+    {
+# ifndef PDMCRITSECT_STRICT
+        rc = pdmCritSectEnter(pCritSect, VERR_SEM_BUSY, NULL);
+# else
+        RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+        rc = pdmCritSectEnter(pCritSect, VERR_SEM_BUSY, &SrcPos);
+# endif
+        if (rc == VERR_SEM_BUSY)
+        {
+
+        }
+    }
+    else
+#endif /* !IN_RING3 */
+    {
 #ifndef PDMCRITSECT_STRICT
-    return pdmCritSectEnter(pCritSect, rcBusy, NULL);
+        rc = pdmCritSectEnter(pCritSect, rcBusy, NULL);
 #else
-    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectEnter(pCritSect, rcBusy, &SrcPos);
+        RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+        rc = pdmCritSectEnter(pCritSect, rcBusy, &SrcPos);
 #endif
+    }
+    return rc;
 }
 
 
@@ -328,7 +358,9 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
  *
  * @param   pCritSect           The PDM critical section to enter.
  * @param   rcBusy              The status code to return when we're in GC or R0
- *                              and the section is busy.
+ *                              and the section is busy.   Pass VINF_SUCCESS to
+ *                              acquired the critical section thru a ring-3
+ *                              call if necessary.
  * @param   uId                 Some kind of locking location ID.  Typically a
  *                              return address up the stack.  Optional (0).
  * @param   pszFile             The file where the lock is being acquired from.

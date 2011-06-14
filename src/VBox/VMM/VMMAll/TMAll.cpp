@@ -811,7 +811,9 @@ VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer)
  *          if the clock does not have a lock.
  * @param   pTimer              The timer which clock lock we wish to take.
  * @param   rcBusy              What to return in ring-0 and raw-mode context
- *                              if the lock is busy.
+ *                              if the lock is busy.  Pass VINF_SUCCESS to
+ *                              acquired the critical section thru a ring-3
+                                call if necessary.
  *
  * @remarks Currently only supported on timers using the virtual sync clock.
  */
