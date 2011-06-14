@@ -21,6 +21,12 @@
           to have a common interface for frontends.</para>
       </listitem>
 
+      <listitem>
+        <para>New Networking Mode: <emphasis>UDP Tunnel</emphasis>. Allows to
+        interconnect VMs running on different hosts easily and transparently,
+        see <xref linkend="networkingmodes" /></para>
+      </listitem>
+      
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>

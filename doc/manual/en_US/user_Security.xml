@@ -30,6 +30,13 @@
           HTTP. This is a potential security risk! For details about the web
           service, please see <xref linkend="VirtualBoxAPI" />.</para>
         </listitem>
+        
+        <listitem>
+          <para>All traffic sent over an UDP Tunnel network attachment is not
+          encrypted. You can either encrypt it on the host network level (with
+          IPsec), or use encrypted protocols in the guest network (such as
+          SSH). The security properties are similar to bridged Ethernet.</para>
+        </listitem>
       </itemizedlist></para>
   </sect1>
 
