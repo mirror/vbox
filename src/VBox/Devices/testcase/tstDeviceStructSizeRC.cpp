@@ -480,9 +480,9 @@ int main()
     GEN_CHECK_OFF(ACPIState, pm1a_sts);
     GEN_CHECK_OFF(ACPIState, pm1a_ctl);
     GEN_CHECK_OFF(ACPIState, u64PmTimerInitial);
-    GEN_CHECK_OFF(ACPIState, tsR3);
-    GEN_CHECK_OFF(ACPIState, tsR0);
-    GEN_CHECK_OFF(ACPIState, tsRC);
+    GEN_CHECK_OFF(ACPIState, pPmTimerR3);
+    GEN_CHECK_OFF(ACPIState, pPmTimerR0);
+    GEN_CHECK_OFF(ACPIState, pPmTimerRC);
     GEN_CHECK_OFF(ACPIState, gpe0_en);
     GEN_CHECK_OFF(ACPIState, gpe0_sts);
     GEN_CHECK_OFF(ACPIState, uBatteryIndex);
