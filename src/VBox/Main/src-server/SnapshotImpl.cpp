@@ -449,6 +449,15 @@ STDMETHODIMP Snapshot::COMGETTER(Children)(ComSafeArrayOut(ISnapshot *, aChildre
     return S_OK;
 }
 
+STDMETHODIMP Snapshot::GetChildrenCount(ULONG* count)
+{
+    CheckComArgOutPointerValid(count);
+
+    *count = getChildrenCount();
+
+    return S_OK;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Snapshot public internal methods

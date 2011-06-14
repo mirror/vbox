@@ -269,20 +269,38 @@ int handleCreateVM(HandlerArg *a)
 
 static const RTGETOPTDEF g_aCloneVMOptions[] =
 {
+    { "--snapshot",       's', RTGETOPT_REQ_STRING },
     { "--name",           'n', RTGETOPT_REQ_STRING },
+    { "--mode",           'm', RTGETOPT_REQ_STRING },
     { "--register",       'r', RTGETOPT_REQ_NOTHING },
     { "--basefolder",     'p', RTGETOPT_REQ_STRING },
     { "--uuid",           'u', RTGETOPT_REQ_STRING },
 };
 
+static int parseCloneMode(const char *psz, CloneMode_T *pMode)
+{
+    if (!RTStrICmp(psz, "machine"))
+        *pMode = CloneMode_MachineState;
+    else if (!RTStrICmp(psz, "machineandchilds"))
+        *pMode = CloneMode_MachineAndChildStates;
+    else if (!RTStrICmp(psz, "all"))
+        *pMode = CloneMode_AllStates;
+    else
+        return VERR_PARSE_ERROR;
+
+    return VINF_SUCCESS;
+}
+
 int handleCloneVM(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT     rc;
     const char *pszSrcName       = NULL;
+    const char *pszSnapshotName  = NULL;
+    CloneMode_T mode             = CloneMode_MachineState;
     const char *pszTrgName       = NULL;
     const char *pszTrgBaseFolder = NULL;
-    bool fRegister               = false;
-    RTUUID trgUuid;
+    bool        fRegister        = false;
+    RTUUID      trgUuid;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -294,6 +312,15 @@ int handleCloneVM(HandlerArg *a)
     {
         switch (c)
         {
+            case 's':   // --snapshot
+                pszSnapshotName = ValueUnion.psz;
+                break;
+
+            case 'm':   // --mode
+                if (RT_FAILURE(parseCloneMode(ValueUnion.psz, &mode)))
+                    return errorArgument("Invalid clone mode '%s'\n", ValueUnion.psz);
+                break;
+
             case 'n':   // --name
                 pszTrgName = ValueUnion.psz;
                 break;
@@ -323,18 +350,31 @@ int handleCloneVM(HandlerArg *a)
         }
     }
 
-    /* ~heck for required options */
+    /* Check for required options */
     if (!pszSrcName)
         return errorSyntax(USAGE_CLONEVM, "VM name required");
 
+    /* Get the machine object */
     ComPtr<IMachine> srcMachine;
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(pszSrcName).raw(),
                                                srcMachine.asOutParam()),
                     RTEXITCODE_FAILURE);
 
+    /* If a snapshot name/uuid was given, get the particular machine of this
+     * snapshot. */
+    if (pszSnapshotName)
+    {
+        ComPtr<ISnapshot> srcSnapshot;
+        CHECK_ERROR_RET(srcMachine, FindSnapshot(Bstr(pszSnapshotName).raw(),
+                                                 srcSnapshot.asOutParam()),
+                        RTEXITCODE_FAILURE);
+        CHECK_ERROR_RET(srcSnapshot, COMGETTER(Machine)(srcMachine.asOutParam()),
+                        RTEXITCODE_FAILURE);
+    }
+
     /* Default name necessary? */
     if (!pszTrgName)
-        pszTrgName = RTStrAPrintf2("%s Copy", pszSrcName);
+        pszTrgName = RTStrAPrintf2("%s Clone", pszSrcName);
 
     Bstr bstrSettingsFile;
     CHECK_ERROR_RET(a->virtualBox,
@@ -353,6 +393,7 @@ int handleCloneVM(HandlerArg *a)
                     RTEXITCODE_FAILURE);
     ComPtr<IProgress> progress;
     CHECK_ERROR_RET(srcMachine, CloneTo(trgMachine,
+                                        mode,
                                         FALSE,
                                         progress.asOutParam()),
                     RTEXITCODE_FAILURE);

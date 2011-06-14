@@ -82,6 +82,7 @@ public:
     STDMETHOD(COMGETTER(Children)) (ComSafeArrayOut (ISnapshot *, aChildren));
 
     // ISnapshot methods
+    STDMETHOD(GetChildrenCount)(ULONG* count);
 
     // public methods only for internal purposes
 
