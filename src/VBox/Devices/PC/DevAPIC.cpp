@@ -337,28 +337,7 @@ AssertCompileMemberAlignment(APICDeviceInfo, StatMMIOReadGC, 8);
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(int)  apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int)  apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int)  apicGetInterrupt(PPDMDEVINS pDevIns);
-PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns);
-PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, uint64_t val);
-PDMBOTHCBDECL(uint64_t) apicGetBase(PPDMDEVINS pDevIns);
-PDMBOTHCBDECL(void) apicSetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t val);
-PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu);
-PDMBOTHCBDECL(int)  apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
-                                           uint8_t u8DeliveryMode, uint8_t iVector, uint8_t u8Polarity,
-                                           uint8_t u8TriggerMode);
-PDMBOTHCBDECL(int)  apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t u8Level);
-PDMBOTHCBDECL(int)  apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
-PDMBOTHCBDECL(int)  apicReadMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
-PDMBOTHCBDECL(int)  ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int)  ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue);
-
 static void apic_update_tpr(APICDeviceInfo *dev, APICState* s, uint32_t val);
-RT_C_DECLS_END
 
 static void apic_eoi(APICDeviceInfo *dev, APICState* s); /*  */
 static uint32_t apic_get_delivery_bitmask(APICDeviceInfo* dev, uint8_t dest, uint8_t dest_mode);
@@ -719,9 +698,10 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
     if (dev->enmVersion < PDMAPICVERSION_X2APIC)
         return VERR_EM_INTERPRETER;
 
-    uint32_t index = (u32Reg - MSR_IA32_APIC_START) & 0xff;
-    APICState* apic = getLapicById(dev, idCpu);
-    uint64_t val = 0;
+    uint32_t    index = (u32Reg - MSR_IA32_APIC_START) & 0xff;
+    APICState  *apic = getLapicById(dev, idCpu);
+    uint64_t    val = 0;
+    int         rc = VINF_SUCCESS;
 
     switch (index)
     {
@@ -729,9 +709,9 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
             val = apic->id << 24;
             break;
         case 0x03: /* version */
-            val =   APIC_HW_VERSION                                     |
-                    ((APIC_LVT_NB - 1) << 16) /* Max LVT index */       |
-                    (0 << 24) /* Support for EOI broadcast suppression */;
+            val = APIC_HW_VERSION
+                | ((APIC_LVT_NB - 1) << 16) /* Max LVT index */
+                | (0 << 24) /* Support for EOI broadcast suppression */;
             break;
         case 0x08:
             val = apic->tpr;
@@ -755,7 +735,7 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
             break;
         case 0x0f:
             val = apic->spurious_vec;
-        break;
+            break;
         case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
             val = apic->isr[index & 7];
             break;
@@ -803,7 +783,7 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
             break;
     }
     *pu64Value = val;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -1219,10 +1199,18 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
     return intno;
 }
 
+/**
+ * May return to ring-3 to acquire the TM and PDM lock.
+ */
 static uint32_t apic_get_current_count(APICDeviceInfo *dev, APICState *s)
 {
     int64_t d;
     uint32_t val;
+
+    /* Acquire the timer lock w/ lock order kludge. */
+    PDMCritSectLeave(dev->CTX_SUFF(pCritSect));
+    TMTimerLock(s->CTX_SUFF(pTimer), VINF_SUCCESS);
+    PDMCritSectEnter(dev->CTX_SUFF(pCritSect), VINF_SUCCESS);
 
     d = (TMTimerGet(s->CTX_SUFF(pTimer)) - s->initial_count_load_time) >>
         s->count_shift;
@@ -1236,6 +1224,9 @@ static uint32_t apic_get_current_count(APICDeviceInfo *dev, APICState *s)
         else
             val = s->initial_count - d;
     }
+
+    TMTimerUnlock(s->CTX_SUFF(pTimer));
+
     return val;
 }
 
@@ -1325,6 +1316,11 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
 {
     STAM_COUNTER_INC(&pThis->StatTimerSetLvt);
 
+    /* Acquire the timer lock w/ lock order kludge. */
+    PDMCritSectLeave(dev->CTX_SUFF(pCritSect));
+    TMTimerLock(pThis->CTX_SUFF(pTimer), VINF_SUCCESS);
+    PDMCritSectEnter(dev->CTX_SUFF(pCritSect), VINF_SUCCESS);
+
     /*
      * Make the flag change, saving the old ones so we can avoid
      * unnecessary work.
@@ -1410,6 +1406,8 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
     }
     else
         STAM_COUNTER_INC(&pThis->StatTimerSetLvtNoRelevantChange);
+
+    TMTimerUnlock(pThis->CTX_SUFF(pTimer));
 }
 
 # ifdef IN_RING3
@@ -1427,6 +1425,7 @@ static DECLCALLBACK(void) apicTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     Assert(pThis->pTimerR3 == pTimer);
     Assert(pThis->fTimerArmed);
     Assert(PDMCritSectIsOwned(dev->pCritSectR3));
+    Assert(TMTimerIsLockOwner(pTimer));
 
     if (!(pThis->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
         LogFlow(("apic_timer: trigger irq\n"));
@@ -2377,7 +2376,11 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Use PDMAPICVERSION_X2APIC to activate x2APIC mode */
     pThis->enmVersion = PDMAPICVERSION_APIC;
 
+    /* Disable locking in this device. */
+    pDevIns->pCritSectR3 = PDMDevHlpCritSectGetNop(pDevIns);
+
     PVM pVM = PDMDevHlpGetVM(pDevIns);
+
     /*
      * We are not freeing this memory, as it's automatically released when guest exits.
      */
