@@ -21,6 +21,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_TM
 #include <VBox/vmm/tm.h>
+#include <VBox/vmm/dbgftrace.h>
 #ifdef IN_RING3
 # include <VBox/vmm/rem.h>
 # include <iprt/thread.h>
@@ -82,15 +83,16 @@ DECLEXPORT(uint64_t) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData)
  */
 DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVM pVM)
 {
-#ifdef IN_RING3
-    return CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData));
+# ifdef IN_RING3
+    uint64_t u64 = CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData));
 # else  /* !IN_RING3 */
     uint32_t cPrevSteps = pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps;
     uint64_t u64 = pVM->tm.s.CTX_SUFF(pfnVirtualGetRaw)(&pVM->tm.s.CTX_SUFF(VirtualGetRawData));
     if (cPrevSteps != pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps)
         VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_TO_R3);
-    return u64;
 # endif /* !IN_RING3 */
+    /*DBGFTRACE_POS_U64(pVM, u64);*/
+    return u64;
 }
 
 #else
@@ -503,6 +505,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
 
     Log6(("tmVirtualSyncGetHandleCatchUpLocked -> %'RU64\n", u64));
+    DBGFTRACE_U64_TAG(pVM, u64, "tmVirtualSyncGetHandleCatchUpLocked");
     return u64;
 }
 
@@ -530,6 +533,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
             *pcNsToDeadline = 0;
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
         Log6(("tmVirtualSyncGetLocked -> %'RU64 [stopped]\n", u64));
+        DBGFTRACE_U64_TAG(pVM, u64, "tmVirtualSyncGetLocked-stopped");
         return u64;
     }
 
@@ -577,6 +581,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
     }
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
     Log6(("tmVirtualSyncGetLocked -> %'RU64\n", u64));
+    DBGFTRACE_U64_TAG(pVM, u64, "tmVirtualSyncGetLocked");
     return u64;
 }
 
@@ -596,18 +601,21 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
 {
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGet);
 
+    uint64_t u64;
     if (!pVM->tm.s.fVirtualSyncTicking)
     {
         if (pcNsToDeadline)
             *pcNsToDeadline = 0;
-        return pVM->tm.s.u64VirtualSync;
+        u64 = pVM->tm.s.u64VirtualSync;
+        DBGFTRACE_U64_TAG(pVM, u64, "tmVirtualSyncGetEx-stopped1");
+        return u64;
     }
 
     /*
      * Query the virtual clock and do the usual expired timer check.
      */
     Assert(pVM->tm.s.cVirtualTicking);
-    uint64_t u64 = tmVirtualGetRaw(pVM);
+    u64 = tmVirtualGetRaw(pVM);
     if (fCheckTimers)
     {
         PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
@@ -646,6 +654,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
                         *pcNsToDeadline = tmVirtualVirtToNsDeadline(pVM, u64Expire - off);
                     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLockless);
                     Log6(("tmVirtualSyncGetEx -> %'RU64 [lockless]\n", off));
+                    DBGFTRACE_U64_TAG(pVM, off, "tmVirtualSyncGetEx-lockless");
                     return off;
                 }
             }
@@ -660,6 +669,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
                 *pcNsToDeadline = 0;
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLockless);
             Log6(("tmVirtualSyncGetEx -> %'RU64 [lockless/stopped]\n", off));
+            DBGFTRACE_U64_TAG(pVM, off, "tmVirtualSyncGetEx-stopped2");
             return off;
         }
     }
@@ -701,6 +711,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
             if (pcNsToDeadline)
                 *pcNsToDeadline = 0;
             Log6(("tmVirtualSyncGetEx -> %'RU64 [stopped]\n", off));
+            DBGFTRACE_U64_TAG(pVM, off, "tmVirtualSyncGetEx-stopped3");
             return off;
         }
 
@@ -793,6 +804,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
     }
 
     Log6(("tmVirtualSyncGetEx -> %'RU64\n", u64));
+    DBGFTRACE_U64_TAG(pVM, u64, "tmVirtualSyncGetEx-nolock");
     return u64;
 }
 
