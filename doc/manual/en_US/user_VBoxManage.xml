@@ -658,7 +658,8 @@ Statistics update:  disabled
       should be changed.<itemizedlist>
           <listitem>
             <para><computeroutput>--nic&lt;1-N&gt;
-            none|null|nat|bridged|intnet|hostonly|vde</computeroutput>: With
+            none|null|nat|bridged|intnet|hostonly|generic
+            </computeroutput>: With
             this, you can set, for each of the VM's virtual network cards,
             what type of networking should be available. They can be not
             present (<computeroutput>none</computeroutput>), not connected to
@@ -667,9 +668,9 @@ Statistics update:  disabled
             bridged networking (<computeroutput>bridged</computeroutput>) or
             communicate with other virtual machines using internal networking
             (<computeroutput>intnet</computeroutput>), host-only networking
-            (<computeroutput>hostonly</computeroutput>) or on Linux and
-            FreeBSD hosts a Virtual Distributed Ethernet switch
-            (<computeroutput>vde</computeroutput>). These options correspond
+            (<computeroutput>hostonly</computeroutput>), or access rarely used
+            sub-modes (<computeroutput>generic</computeroutput>).
+            These options correspond
             to the modes which are described in detail in <xref
             linkend="networkingmodes" />.</para>
           </listitem>
@@ -744,14 +745,24 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
-            <para><computeroutput>--vdenet&lt;1-N&gt;
-            network</computeroutput>: If Virtual Distributed Ethernet is
-            available on the host and has been enabled for a virtual network
-            card (see the <computeroutput>--nic</computeroutput> option above;
-            otherwise this setting has no effect). Use this option to specify
-            the name of a VDE network for the interface to connect to (see
-            <xref linkend="networkingmodes" /> and the VDE
-            documentation).</para>
+            <para><computeroutput>--nicgenericdrv&lt;1-N&gt;
+            &lt;backend driver&gt;</computeroutput>: If generic networking has been 
+            enabled for a virtual network card (see the
+            <computeroutput>--nic</computeroutput> option above; otherwise
+            this setting has no effect), this mode allows you to access
+            rarely used networking sub-modes, such as VDE network or UDP Tunnel.
+            </para>
+          </listitem>
+          
+          <listitem>
+            <para><computeroutput>--nicproperty&lt;1-N&gt; 
+            &lt;paramname&gt;="paramvalue"</computeroutput>:
+            This option, in combination with "nicgenericdrv" allows you to
+            pass parameters to rarely-used network backends.</para><para>
+            Those parameters are backend engine-specific, and are different
+            between UDP Tunnel and the VDE backend drivers. For example, 
+            please see <xref linkend="network_udp_tunnel" />.
+            </para>
           </listitem>
         </itemizedlist></para>
 
@@ -1319,7 +1330,7 @@ Virtual system 0:
 
       <listitem>
         <para><computeroutput>nic&lt;1-N&gt;
-        null|nat|bridged|intnet|hostonly</computeroutput>: With this, you can
+        null|nat|bridged|intnet|hostonly|generic</computeroutput>: With this, you can
         set, for each of the VM's virtual network cards, what type of
         networking should be available. They can be not connected to the host
         (<computeroutput>null</computeroutput>), use network address
@@ -1327,7 +1338,9 @@ Virtual system 0:
         (<computeroutput>bridged</computeroutput>) or communicate with other
         virtual machines using internal networking
         (<computeroutput>intnet</computeroutput>) or host-only networking
-        (<computeroutput>hostonly</computeroutput>). These options correspond
+        (<computeroutput>hostonly</computeroutput>) or access to rarely used
+        sub-modes 
+        (<computeroutput>generic</computeroutput>). These options correspond
         to the modes which are described in detail in <xref
         linkend="networkingmodes" />.</para>
       </listitem>
