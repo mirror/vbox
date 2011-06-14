@@ -2918,6 +2918,30 @@ typedef struct PDMDEVHLPR3
                                                const char *pszNameFmt, va_list va));
 
     /**
+     * Gets the NOP critical section.
+     *
+     * @returns The ring-3 address of the NOP critical section.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(PPDMCRITSECT, pfnCritSectGetNop,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the NOP critical section.
+     *
+     * @returns The ring-0 address of the NOP critical section.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(R0PTRTYPE(PPDMCRITSECT), pfnCritSectGetNopR0,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the NOP critical section.
+     *
+     * @returns The raw-mode context address of the NOP critical section.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(RCPTRTYPE(PPDMCRITSECT), pfnCritSectGetNopRC,(PPDMDEVINS pDevIns));
+
+    /**
      * Creates a PDM thread.
      *
      * This differs from the RTThreadCreate() API in that PDM takes care of suspending,
@@ -3397,7 +3421,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 4, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 5, 0)
 
 
 /**
@@ -3588,7 +3612,7 @@ typedef RCPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RCPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 1, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 2, 0)
 
 
 /**
@@ -3787,7 +3811,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 1, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 2, 0)
 
 
 
@@ -4510,6 +4534,30 @@ DECLINLINE(int) PDMDevHlpCritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect
     rc = pDevIns->pHlpR3->pfnCritSectInit(pDevIns, pCritSect, RT_SRC_POS_ARGS, pszNameFmt, va);
     va_end(va);
     return rc;
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnCritSectGetNop
+ */
+DECLINLINE(PPDMCRITSECT) PDMDevHlpCritSectGetNop(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnCritSectGetNop(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnCritSectGetNopR0
+ */
+DECLINLINE(R0PTRTYPE(PPDMCRITSECT)) PDMDevHlpCritSectGetNopR0(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnCritSectGetNopR0(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnCritSectGetNopRC
+ */
+DECLINLINE(RCPTRTYPE(PPDMCRITSECT)) PDMDevHlpCritSectGetNopRC(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnCritSectGetNopRC(pDevIns);
 }
 
 /**
