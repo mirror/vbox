@@ -265,8 +265,8 @@ VMMR3DECL(int)          TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
 VMMR3DECL(int)          TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
 VMMR3DECL(int)          TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCritSect);
 VMMR3DECL(void)         TMR3TimerQueuesDo(PVM pVM);
-VMM_INT_DECL(void)      TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu);
-VMM_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime);
+VMMR3_INT_DECL(void)    TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu);
+VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime);
 /** @} */
 #endif /* IN_RING3 */
 

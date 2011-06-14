@@ -454,7 +454,7 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
     AssertGCPhys32(GCPhys);
 #endif
     /* check if it already exists. */
-    PIOMMMIOSTATS pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pVM->iom.s.pTreesR3->MMIOStatTree, GCPhys);
+    PIOMMMIOSTATS pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pVM->iom.s.pTreesR3->MmioStatTree, GCPhys);
     if (pStats)
         return pStats;
 
@@ -465,7 +465,7 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
     {
         /* insert into the tree. */
         pStats->Core.Key = GCPhys;
-        if (RTAvloGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOStatTree, &pStats->Core))
+        if (RTAvloGCPhysInsert(&pVM->iom.s.pTreesR3->MmioStatTree, &pStats->Core))
         {
             rc = STAMR3RegisterF(pVM, &pStats->Accesses,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,     pszDesc, "/IOM/MMIO/%RGp",              GCPhys); AssertRC(rc);
             rc = STAMR3RegisterF(pVM, &pStats->ProfReadR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, pszDesc, "/IOM/MMIO/%RGp/Read-R3",      GCPhys); AssertRC(rc);
@@ -1394,11 +1394,12 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                    R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
+VMMR3_INT_DECL(int)
+IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+                    R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
+                    R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
 {
-    LogFlow(("IOMR3MMIORegisterR3: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
+    LogFlow(("IOMR3MmioRegisterR3: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
     int rc;
 
@@ -1410,8 +1411,6 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         AssertMsgFailed(("Wrapped! %RGp %#x bytes\n", GCPhysStart, cbRange));
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
-    /** @todo implement per-device locks for MMIO access. */
-    AssertReturn(!pDevIns->pCritSectR3, VERR_INTERNAL_ERROR_2);
 
     /*
      * Resolve the GC/R0 handler addresses lazily because of init order.
@@ -1447,6 +1446,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         pRange->Core.KeyLast        = GCPhysStart + (cbRange - 1);
         pRange->GCPhys              = GCPhysStart;
         pRange->cb                  = cbRange;
+        pRange->cRefs               = 1; /* The tree reference. */
         pRange->pszDesc             = pszDesc;
 
         pRange->pvUserR3            = pvUser;
@@ -1519,11 +1519,12 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @param   pfnReadCallback     Pointer to function which is gonna handle Read operations.
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  */
-VMMR3DECL(int)  IOMR3MMIORegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
-                                    RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, RCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    RCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
+VMMR3_INT_DECL(int)
+IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+                    RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, RCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
+                    RCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MMIORegisterRC: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+    LogFlow(("IOMR3MmioRegisterRC: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
@@ -1539,7 +1540,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      * Find the MMIO range and check that the input matches.
      */
     iomLock(pVM);
-    PIOMMMIORANGE pRange = iomMMIOGetRange(pVM, GCPhysStart);
+    PIOMMMIORANGE pRange = iomMmioGetRange(pVM, GCPhysStart);
     AssertReturnStmt(pRange, iomUnlock(pVM), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     AssertReturnStmt(pRange->pDevInsR3 == pDevIns, iomUnlock(pVM), VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturnStmt(pRange->GCPhys == GCPhysStart, iomUnlock(pVM), VERR_IOM_INVALID_MMIO_RANGE);
@@ -1574,12 +1575,13 @@ VMMR3DECL(int)  IOMR3MMIORegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @param   pfnReadCallback     Pointer to function which is gonna handle Read operations.
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  */
-VMMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
-                                    R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
-                                    R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                                    R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
+VMMR3_INT_DECL(int)
+IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+                    R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
+                    R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
+                    R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MMIORegisterR0: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+    LogFlow(("IOMR3MmioRegisterR0: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
@@ -1595,7 +1597,7 @@ VMMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
      * Find the MMIO range and check that the input matches.
      */
     iomLock(pVM);
-    PIOMMMIORANGE pRange = iomMMIOGetRange(pVM, GCPhysStart);
+    PIOMMMIORANGE pRange = iomMmioGetRange(pVM, GCPhysStart);
     AssertReturnStmt(pRange, iomUnlock(pVM), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     AssertReturnStmt(pRange->pDevInsR3 == pDevIns, iomUnlock(pVM), VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturnStmt(pRange->GCPhys == GCPhysStart, iomUnlock(pVM), VERR_IOM_INVALID_MMIO_RANGE);
@@ -1627,9 +1629,9 @@ VMMR3DECL(int)  IOMR3MMIORegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @remark  This function mainly for PCI PnP Config and will not do
  *          all the checks you might expect it to do.
  */
-VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
+VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
 {
-    LogFlow(("IOMR3MMIODeregister: pDevIns=%p GCPhysStart=%RGp cbRange=%#x\n", pDevIns, GCPhysStart, cbRange));
+    LogFlow(("IOMR3MmioDeregister: pDevIns=%p GCPhysStart=%RGp cbRange=%#x\n", pDevIns, GCPhysStart, cbRange));
 
     /*
      * Validate input.
@@ -1649,7 +1651,7 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     RTGCPHYS GCPhys = GCPhysStart;
     while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
     {
-        PIOMMMIORANGE pRange = iomMMIOGetRange(pVM, GCPhys);
+        PIOMMMIORANGE pRange = iomMmioGetRange(pVM, GCPhys);
         if (!pRange)
         {
             iomUnlock(pVM);
@@ -1680,7 +1682,7 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         PIOMMMIORANGE pRange = (PIOMMMIORANGE)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesR3->MMIOTree, GCPhys);
         Assert(pRange);
         Assert(pRange->Core.Key == GCPhys && pRange->Core.KeyLast <= GCPhysLast);
-        iomUnlock(pVM);
+        iomUnlock(pVM); /** @todo r=bird: Why are we leving the lock here? We don't leave it when registering the range above... */
 
         /* remove it from PGM */
         int rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRange->cb);
@@ -1691,8 +1693,11 @@ VMMR3DECL(int)  IOMR3MMIODeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         /* advance and free. */
         GCPhys = pRange->Core.KeyLast + 1;
         if (pDevIns->iInstance > 0)
-            MMR3HeapFree((void *)pRange->pszDesc);
-        MMHyperFree(pVM, pRange);
+        {
+            void *pvDesc = ASMAtomicXchgPtr((void * volatile *)&pRange->pszDesc, NULL);
+            MMR3HeapFree(pvDesc);
+        }
+        iomMmioReleaseRange(pVM, pRange);
     }
 
     iomUnlock(pVM);

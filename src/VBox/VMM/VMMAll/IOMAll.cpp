@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1158,3 +1158,16 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUT(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
         AssertMsg(rcStrict == VINF_EM_RAW_GUEST_TRAP || rcStrict == VINF_TRPM_XCPT_DISPATCHED || rcStrict == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
+
+
+/**
+ * Fress an MMIO range after the reference counter has become zero.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pRange              The range to free.
+ */
+void iomMmioFreeRange(PVM pVM, PIOMMMIORANGE pRange)
+{
+    MMHyperFree(pVM, pRange);
+}
+

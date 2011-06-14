@@ -300,8 +300,9 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending)
     return VERR_PDM_NO_APIC_INSTANCE;
 }
 
+
 /**
- * Write MSR in APIC range.
+ * Write a MSR in APIC range.
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
@@ -322,8 +323,9 @@ VMMDECL(int) PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u6
     return VERR_PDM_NO_APIC_INSTANCE;
 }
 
+
 /**
- * Read MSR in APIC range.
+ * Read a MSR in APIC range.
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.

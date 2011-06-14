@@ -914,7 +914,7 @@ typedef struct VM
 #ifdef ___VMMInternal_h
         struct VMM  s;
 #endif
-        uint8_t     padding[1536];      /* multiple of 64 */
+        uint8_t     padding[1600];      /* multiple of 64 */
     } vmm;
 
     /** PGM part. */
@@ -1074,7 +1074,7 @@ typedef struct VM
 
 
     /** Padding for aligning the cpu array on a page boundary. */
-    uint8_t         abAlignment2[1182];
+    uint8_t         abAlignment2[1118];
 
     /* ---- end small stuff ---- */
 
