@@ -19,6 +19,7 @@
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 
+#define IN_VMM_R3 /* so that the SSM function stubs are exports not imports */
 #include <VBox/vmm/ssm.h>
 
 #include <iprt/assert.h>
