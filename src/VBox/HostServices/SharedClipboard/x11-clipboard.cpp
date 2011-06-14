@@ -22,6 +22,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
+#include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
 
@@ -110,7 +111,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
     else
     {
         RTCritSectInit(&pCtx->clipboardMutex);
-        pBackend = ClipConstructX11(pCtx);
+        pBackend = ClipConstructX11(pCtx, !RTEnvGet("DISPLAY"));
         if (pBackend == NULL)
             rc = VERR_NO_MEMORY;
         else
@@ -469,7 +470,7 @@ void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, 
     pBackend->completeRead.cbActual = cbActual;
 }
 
-CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend)
+CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend, bool)
 {
     return (CLIPBACKEND *)RTMemAllocZ(sizeof(CLIPBACKEND));
 }

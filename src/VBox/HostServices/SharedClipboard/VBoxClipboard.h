@@ -19,6 +19,7 @@
 #define __VBOXCLIPBOARD__H
 
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <VBox/hgcmsvc.h>
 #include <VBox/log.h>
 
 struct _VBOXCLIPBOARDCONTEXT;
