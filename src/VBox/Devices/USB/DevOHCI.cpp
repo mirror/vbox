@@ -872,6 +872,8 @@ static DECLCALLBACK(unsigned) ohciRhGetAvailablePorts(PVUSBIROOTHUBPORT pInterfa
     unsigned cPorts = 0;
 
     memset(pAvailable, 0, sizeof(*pAvailable));
+
+    PDMCritSectEnter(pOhci->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
     for (iPort = 0; iPort < RT_ELEMENTS(pOhci->RootHub.aPorts); iPort++)
     {
         if (!pOhci->RootHub.aPorts[iPort].pDev)
@@ -880,6 +882,7 @@ static DECLCALLBACK(unsigned) ohciRhGetAvailablePorts(PVUSBIROOTHUBPORT pInterfa
             ASMBitSet(pAvailable, iPort + 1);
         }
     }
+    PDMCritSectLeave(pOhci->pDevInsR3->pCritSectRoR3);
 
     return cPorts;
 }
@@ -908,6 +911,7 @@ static DECLCALLBACK(int) ohciRhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE
 {
     POHCI pOhci = VUSBIROOTHUBPORT_2_OHCI(pInterface);
     LogFlow(("ohciRhAttach: pDev=%p uPort=%u\n", pDev, uPort));
+    PDMCritSectEnter(pOhci->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
 
     /*
      * Validate and adjust input.
@@ -926,6 +930,7 @@ static DECLCALLBACK(int) ohciRhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE
     ohci_remote_wakeup(pOhci);
     ohciSetInterrupt(pOhci, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
 
+    PDMCritSectLeave(pOhci->pDevInsR3->pCritSectRoR3);
     return VINF_SUCCESS;
 }
 
@@ -941,6 +946,7 @@ static DECLCALLBACK(void) ohciRhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVIC
 {
     POHCI pOhci = VUSBIROOTHUBPORT_2_OHCI(pInterface);
     LogFlow(("ohciRhDetach: pDev=%p uPort=%u\n", pDev, uPort));
+    PDMCritSectEnter(pOhci->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
 
     /*
      * Validate and adjust input.
@@ -960,6 +966,8 @@ static DECLCALLBACK(void) ohciRhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVIC
 
     ohci_remote_wakeup(pOhci);
     ohciSetInterrupt(pOhci, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
+
+    PDMCritSectLeave(pOhci->pDevInsR3->pCritSectRoR3);
 }
 
 
@@ -997,6 +1005,7 @@ static DECLCALLBACK(void) ohciRhResetDoneOneDev(PVUSBIDEVICE pDev, int rc, void 
 static DECLCALLBACK(int) ohciRhReset(PVUSBIROOTHUBPORT pInterface, bool fResetOnLinux)
 {
     POHCI pOhci = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    PDMCritSectEnter(pOhci->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
 
     pOhci->RootHub.status = 0;
     pOhci->RootHub.desc_a = OHCI_RHA_NPS | OHCI_NDP;
@@ -1029,6 +1038,7 @@ static DECLCALLBACK(int) ohciRhReset(PVUSBIROOTHUBPORT pInterface, bool fResetOn
             pOhci->RootHub.aPorts[iPort].fReg = 0;
     }
 
+    PDMCritSectLeave(pOhci->pDevInsR3->pCritSectRoR3);
     return VINF_SUCCESS;
 }
 
@@ -2401,6 +2411,7 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
     POHCI pOhci = VUSBIROOTHUBPORT_2_OHCI(pInterface);
     LogFlow(("%s: ohciRhXferCompletion: EdAddr=%#010RX32 cTds=%d TdAddr0=%#010RX32\n",
              pUrb->pszDesc, pUrb->Hci.EdAddr, pUrb->Hci.cTds, pUrb->Hci.paTds[0].TdAddr));
+    Assert(PDMCritSectIsOwner(pOhci->pDevInsR3->pCritSectRoR3));
 
     pOhci->fIdle = false;   /* Mark as active */
 
@@ -2475,6 +2486,7 @@ static DECLCALLBACK(void) ohciRhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVU
 static DECLCALLBACK(bool) ohciRhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb)
 {
     POHCI pOhci = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    Assert(PDMCritSectIsOwner(pOhci->pDevInsR3->pCritSectRoR3));
 
     /*
      * Isochronous URBs can't be retried.
