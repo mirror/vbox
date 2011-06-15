@@ -577,12 +577,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     const char *pszFileNameParam = "VBox-%d.vob";
 #endif /* VBOX_FFMPEG */
 
-
-    /* Make sure that DISPLAY is unset, so that X11 bits do not get initialised
-     * on X11-using OSes. */
-    /** @todo this should really be taken care of in Main. */
-    RTEnvUnset("DISPLAY");
-
     LogFlow (("VBoxHeadless STARTED.\n"));
     RTPrintf (VBOX_PRODUCT " Headless Interface " VBOX_VERSION_STRING "\n"
               "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
@@ -1162,6 +1156,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(FALSE));
             }
         }
+
+        /* Disable the host clipboard before powering up */
+        console->COMSETTER(UseHostClipboard)(false);
 
         Log(("VBoxHeadless: Powering up the machine...\n"));
 
