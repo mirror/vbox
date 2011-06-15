@@ -55,6 +55,8 @@
 #undef LOG_GROUP
 #include "../PC/DevAPIC.cpp"
 #undef LOG_GROUP
+#include "../PC/DevIoApic.cpp"
+#undef LOG_GROUP
 #include "../PC/DevHPET.cpp"
 #undef LOG_GROUP
 #include "../PC/DevLPC.cpp"
