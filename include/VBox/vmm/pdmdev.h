@@ -1073,35 +1073,38 @@ typedef struct PDMAPICREG
     DECLR3CALLBACKMEMBER(uint8_t, pfnGetTPRR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
 
     /**
-     * Write MSR in APIC range.
+     * Write to a MSR in APIC range.
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           Target CPU.
-     * @param   u32Reg          MSR to write.
-     * @param   u64Value        Value to write.
+     * @param   u32Reg          The MSR begin written to.
+     * @param   u64Value        The value to write.
+     *
+     * @remarks Unlike the other callbacks, the PDM lock is not taken before
+     *          calling this method.
      */
     DECLR3CALLBACKMEMBER(int, pfnWriteMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value));
 
     /**
-     * Read MSR in APIC range.
+     * Read from a MSR in APIC range.
      *
      * @returns VBox status code.
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           Target CPU.
      * @param   u32Reg          MSR to read.
-     * @param   pu64Value       Value read.
+     * @param   pu64Value       Where to return the read value.
      */
     DECLR3CALLBACKMEMBER(int, pfnReadMSRR3, (PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value));
 
     /**
      * Private interface between the IOAPIC and APIC.
      *
-     * This is a low-level, APIC/IOAPIC implementation specific interface
-     * which is registered with PDM only because it makes life so much
-     * simpler right now (GC bits). This is a bad bad hack! The correct
-     * way of doing this would involve some way of querying GC interfaces
-     * and relocating them. Perhaps doing some kind of device init in GC...
+     * This is a low-level, APIC/IOAPIC implementation specific interface which
+     * is registered with PDM only because it makes life so much simpler right
+     * now (GC bits).  This is a bad bad hack!  The correct way of doing this
+     * would involve some way of querying GC interfaces and relocating them.
+     * Perhaps doing some kind of device init in GC...
      *
      * @returns status code.
      * @param   pDevIns         Device instance of the APIC.

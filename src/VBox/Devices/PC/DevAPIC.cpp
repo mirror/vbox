@@ -79,6 +79,30 @@
 #define APIC_UNLOCK(pThis) \
     PDMCritSectLeave((pThis)->CTX_SUFF(pCritSect))
 
+/** @def APIC_AND_TM_LOCK
+ * Acquires the virtual sync clock lock as well as the PDM lock. */
+#define APIC_AND_TM_LOCK(a_pDev, a_pAcpi, rcBusy) \
+    do { \
+        int rc2 = TMTimerLock((a_pAcpi)->CTX_SUFF(pTimer), (rcBusy)); \
+        if (rc2 != VINF_SUCCESS) \
+            return rc2; \
+        rc2 = PDMCritSectEnter((a_pDev)->CTX_SUFF(pCritSect), (rcBusy)); \
+        if (rc2 != VINF_SUCCESS) \
+        { \
+            TMTimerUnlock((a_pAcpi)->CTX_SUFF(pTimer)); \
+            return rc2; \
+        } \
+    } while (0)
+
+/** @def APIC_AND_TM_UNLOCK
+ * Releases the PDM lock as well as the TM virtual sync clock lock.  */
+#define APIC_AND_TM_UNLOCK(a_pDev, a_pAcpi) \
+    do { \
+        TMTimerUnlock((a_pAcpi)->CTX_SUFF(pTimer)); \
+        PDMCritSectLeave((a_pDev)->CTX_SUFF(pCritSect)); \
+    } while (0)
+
+
 /** @def IOAPIC_LOCK
  * Acquires the PDM lock. */
 #define IOAPIC_LOCK(pThis, rc) \
@@ -574,106 +598,149 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu)
 }
 
 /**
- * x2APIC MSR write interface.
+ * Writes to an APIC register via MMIO or MSR.
  *
- * @returns VBox status code.
- *
- * @param   pDevIns         The device instance.
- * @param   idCpu           The ID of the virtual CPU and thereby APIC index.
- * @param   u32Reg          Register to write (ecx).
- * @param   u64Value        The value to write (eax:edx / rax).
- *
+ * @returns Strict VBox status code.
+ * @param   pDev                The PDM device instance.
+ * @param   pApic               The APIC being written to.
+ * @param   iReg                The APIC register index.
+ * @param   u64Value            The value being written.
+ * @param   rcBusy              The busy return code to employ.  See
+ *                              PDMCritSectEnter for a description.
+ * @param   fMsr                Set if called via MSR, clear if MMIO.
  */
-PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value)
+static int acpiWriteRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iReg, uint64_t u64Value,
+                             int rcBusy, bool fMsr)
 {
-    APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
+    Assert(!PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
+
     int rc = VINF_SUCCESS;
-
-    if (dev->enmVersion < PDMAPICVERSION_X2APIC)
-        return VERR_EM_INTERPRETER;
-
-    APICState *pThis = getLapicById(dev, idCpu);
-
-    uint32_t index = (u32Reg - MSR_IA32_APIC_START) & 0xff;
-    switch (index)
+    switch (iReg)
     {
         case 0x02:
-            pThis->id = (u64Value >> 24);
+            APIC_LOCK(pDev, rcBusy);
+            pApic->id = (u64Value >> 24); /** @todo r=bird: Is the range supposed to be 40 bits??? */
+            APIC_UNLOCK(pDev);
             break;
+
         case 0x03:
+            /* read only, ignore write. */
             break;
+
         case 0x08:
-            apic_update_tpr(dev, pThis, u64Value);
+            APIC_LOCK(pDev, rcBusy);
+            apic_update_tpr(pDev, pApic, u64Value);
+            APIC_UNLOCK(pDev);
             break;
+
         case 0x09: case 0x0a:
-            Log(("apicWriteMSR: write to read-only register %d ignored\n", index));
+            Log(("acpiWriteRegister: write to read-only register %d ignored\n", iReg));
             break;
+
         case 0x0b: /* EOI */
-            apic_eoi(dev, pThis);
+            APIC_LOCK(pDev, rcBusy);
+            apic_eoi(pDev, pApic);
+            APIC_UNLOCK(pDev);
             break;
+
         case 0x0d:
-            pThis->log_dest = u64Value >> 24;
+            APIC_LOCK(pDev, rcBusy);
+            pApic->log_dest = (u64Value >> 24) & 0xff;
+            APIC_UNLOCK(pDev);
             break;
+
         case 0x0e:
-            pThis->dest_mode = u64Value >> 28;
+            APIC_LOCK(pDev, rcBusy);
+            pApic->dest_mode = u64Value >> 28; /** @todo r=bird: range?  This used to be 32-bit before morphed into an MSR handler. */
+            APIC_UNLOCK(pDev);
             break;
+
         case 0x0f:
-            pThis->spurious_vec = u64Value & 0x1ff;
-            apic_update_irq(dev, pThis);
+            APIC_LOCK(pDev, rcBusy);
+            pApic->spurious_vec = u64Value & 0x1ff;
+            apic_update_irq(pDev, pApic);
+            APIC_UNLOCK(pDev);
             break;
+
         case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
         case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
         case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
         case 0x28:
-            Log(("apicWriteMSR: write to read-only register %d ignored\n", index));
+            Log(("acpiWriteRegister: write to read-only register %d ignored\n", iReg));
             break;
 
         case 0x30:
-            /* Here one of the differences with regular APIC: ICR is single 64-bit register */
-            pThis->icr[0] = (uint32_t)u64Value;
-            pThis->icr[1] = (uint32_t)(u64Value >> 32);
-            rc = apic_deliver(dev, pThis, (pThis->icr[1] >> 24) & 0xff, (pThis->icr[0] >> 11) & 1,
-                             (pThis->icr[0] >>  8) & 7, (pThis->icr[0] & 0xff),
-                             (pThis->icr[0] >> 14) & 1, (pThis->icr[0] >> 15) & 1);
+            APIC_LOCK(pDev, rcBusy);
+            pApic->icr[0] = (uint32_t)u64Value;
+            if (fMsr) /* Here one of the differences with regular APIC: ICR is single 64-bit register */
+                pApic->icr[1] = (uint32_t)(u64Value >> 32);
+            rc = apic_deliver(pDev, pApic, (pApic->icr[1] >> 24) & 0xff, (pApic->icr[0] >> 11) & 1,
+                              (pApic->icr[0] >>  8) & 7, (pApic->icr[0] & 0xff),
+                              (pApic->icr[0] >> 14) & 1, (pApic->icr[0] >> 15) & 1);
+            APIC_UNLOCK(pDev);
             break;
+
+        case 0x31:
+            APIC_LOCK(pDev, rcBusy);
+            if (!fMsr)
+                pApic->icr[1] = (uint64_t)u64Value;
+            else
+                pApic->esr |= ESR_ILLEGAL_ADDRESS;
+            APIC_UNLOCK(pDev);
+            break;
+
         case 0x32 + APIC_LVT_TIMER:
             AssertCompile(APIC_LVT_TIMER == 0);
-            apicTimerSetLvt(dev, pThis, u64Value);
+            APIC_AND_TM_LOCK(pDev, pApic, rcBusy);
+            apicTimerSetLvt(pDev, pApic, u64Value);
+            APIC_AND_TM_UNLOCK(pDev, pApic);
             break;
 
         case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
-            pThis->lvt[index - 0x32] = u64Value;
+            APIC_LOCK(pDev, rcBusy);
+            pApic->lvt[iReg - 0x32] = u64Value;
+            APIC_UNLOCK(pDev);
             break;
+
         case 0x38:
-            apicTimerSetInitialCount(dev, pThis, u64Value);
+            APIC_AND_TM_LOCK(pDev, pApic, rcBusy);
+            apicTimerSetInitialCount(pDev, pApic, u64Value);
+            APIC_AND_TM_UNLOCK(pDev, pApic);
             break;
+
         case 0x39:
-            Log(("apicWriteMSR: write to read-only register %d ignored\n", index));
+            Log(("acpiWriteRegister: write to read-only register %d ignored\n", iReg));
             break;
+
         case 0x3e:
         {
-            int v;
-            pThis->divide_conf = u64Value & 0xb;
-            v = (pThis->divide_conf & 3) | ((pThis->divide_conf >> 1) & 4);
-            pThis->count_shift = (v + 1) & 7;
+            APIC_LOCK(pDev, rcBusy);
+            pApic->divide_conf = u64Value & 0xb;
+            int v = (pApic->divide_conf & 3) | ((pApic->divide_conf >> 1) & 4);
+            pApic->count_shift = (v + 1) & 7;
+            APIC_UNLOCK(pDev);
             break;
         }
+
         case 0x3f:
-        {
-            /* Self IPI, see x2APIC book 2.4.5 */
-            int vector = u64Value & 0xff;
-            rc = apic_bus_deliver(dev,
-                                  1 << getLapicById(dev, idCpu)->id /* Self */,
-                                  0 /* Delivery mode - fixed */,
-                                  vector,
-                                  0 /* Polarity - conform to the bus */,
-                                  0 /* Trigger mode - edge */);
-            break;
-        }
+            if (fMsr)
+            {
+                /* Self IPI, see x2APIC book 2.4.5 */
+                APIC_LOCK(pDev, rcBusy);
+                int vector = u64Value & 0xff;
+                rc = apic_bus_deliver(pDev,
+                                      1 << pApic->id /* Self */,
+                                      0 /* Delivery mode - fixed */,
+                                      vector,
+                                      0 /* Polarity - conform to the bus */,
+                                      0 /* Trigger mode - edge */);
+                APIC_UNLOCK(pDev);
+                break;
+            }
+            /* else: fall thru */
         default:
-            AssertMsgFailed(("apicWriteMSR: unknown index %x\n", index));
-            pThis->esr |= ESR_ILLEGAL_ADDRESS;
+            AssertMsgFailed(("unknown iReg %x\n", iReg));
+            pApic->esr |= ESR_ILLEGAL_ADDRESS;
             break;
     }
 
@@ -681,14 +748,22 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
 }
 
 /**
- * x2APIC MSR read interface.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns         The device instance.
- * @param   idCpu           The ID of the virtual CPU and thereby APIC index.
- * @param   u32Reg          Register to write (ecx).
- * @param   pu64Value       Where to return the value (eax:edx / rax).
+ * @interface_method_impl{PDMAPICREG,pfnWriteMSRR3}
+ */
+PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t u64Value)
+{
+    APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
+    if (pDev->enmVersion < PDMAPICVERSION_X2APIC)
+        return VERR_EM_INTERPRETER; /** @todo tell the caller to raise hell (\#GP(0)).  */
+
+    APICState      *pApic = getLapicById(pDev, idCpu);
+    uint32_t        iReg = (u32Reg - MSR_IA32_APIC_START) & 0xff;
+    return acpiWriteRegister(pDev, pApic, iReg, u64Value, VINF_SUCCESS /*rcBusy*/, true /*fMsr*/);
+}
+
+
+/**
+ * @interface_method_impl{PDMAPICREG,pfnReadMSRR3}
  */
 PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
@@ -1077,7 +1152,7 @@ static void apic_init_ipi(APICDeviceInfo* dev, APICState *s)
     s->tpr = 0;
     s->spurious_vec = 0xff;
     s->log_dest = 0;
-    s->dest_mode = 0xff;
+    s->dest_mode = 0xff; /** @todo 0xff???? */
     memset(s->isr, 0, sizeof(s->isr));
     memset(s->tmr, 0, sizeof(s->tmr));
     memset(s->irr, 0, sizeof(s->irr));
@@ -1316,11 +1391,6 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
 {
     STAM_COUNTER_INC(&pThis->StatTimerSetLvt);
 
-    /* Acquire the timer lock w/ lock order kludge. */
-    PDMCritSectLeave(dev->CTX_SUFF(pCritSect));
-    TMTimerLock(pThis->CTX_SUFF(pTimer), VINF_SUCCESS);
-    PDMCritSectEnter(dev->CTX_SUFF(pCritSect), VINF_SUCCESS);
-
     /*
      * Make the flag change, saving the old ones so we can avoid
      * unnecessary work.
@@ -1406,8 +1476,6 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
     }
     else
         STAM_COUNTER_INC(&pThis->StatTimerSetLvtNoRelevantChange);
-
-    TMTimerUnlock(pThis->CTX_SUFF(pTimer));
 }
 
 # ifdef IN_RING3
@@ -1532,93 +1600,6 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr)
     Log(("CPU%d: APIC read: %08x = %08x\n", s->phys_id, (uint32_t)addr, val));
 #endif
     return val;
-}
-
-static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr, uint32_t val)
-{
-    int rc = VINF_SUCCESS;
-    int index;
-
-#ifdef DEBUG_APIC
-    Log(("CPU%d: APIC write: %08x = %08x\n", s->phys_id, (uint32_t)addr, val));
-#endif
-
-    index = (addr >> 4) & 0xff;
-
-    switch(index) {
-    case 0x02:
-        s->id = (val >> 24);
-        break;
-    case 0x03:
-        Log(("apic_mem_writel: write to version register; ignored\n"));
-        break;
-    case 0x08:
-        apic_update_tpr(dev, s, val);
-        break;
-    case 0x09:
-    case 0x0a:
-        Log(("apic_mem_writel: write to read-only register %d ignored\n", index));
-        break;
-    case 0x0b: /* EOI */
-        apic_eoi(dev, s);
-        break;
-    case 0x0d:
-        s->log_dest = val >> 24;
-        break;
-    case 0x0e:
-        s->dest_mode = val >> 28;
-        break;
-    case 0x0f:
-        s->spurious_vec = val & 0x1ff;
-        apic_update_irq(dev, s);
-        break;
-    case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
-    case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
-    case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
-    case 0x28:
-        Log(("apic_mem_writel: write to read-only register %d ignored\n", index));
-        break;
-
-    case 0x30:
-        s->icr[0] = val;
-        rc = apic_deliver(dev, s, (s->icr[1] >> 24) & 0xff,
-                          (s->icr[0] >> 11) & 1,
-                          (s->icr[0] >> 8) & 7, (s->icr[0] & 0xff),
-                          (s->icr[0] >> 14) & 1, (s->icr[0] >> 15) & 1);
-        break;
-    case 0x31:
-        s->icr[1] = val;
-        break;
-    case 0x32 + APIC_LVT_TIMER:
-        AssertCompile(APIC_LVT_TIMER == 0);
-        apicTimerSetLvt(dev, s, val);
-        break;
-    case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
-        {
-            int n = index - 0x32;
-            s->lvt[n] = val;
-        }
-        break;
-    case 0x38:
-        apicTimerSetInitialCount(dev, s, val);
-        break;
-    case 0x39:
-        Log(("apic_mem_writel: write to read-only register %d ignored\n", index));
-        break;
-    case 0x3e:
-        {
-            int v;
-            s->divide_conf = val & 0xb;
-            v = (s->divide_conf & 3) | ((s->divide_conf >> 1) & 4);
-            s->count_shift = (v + 1) & 7;
-        }
-        break;
-    default:
-        AssertMsgFailed(("apic_mem_writel: unknown index %x\n", index));
-        s->esr |= ESR_ILLEGAL_ADDRESS;
-        break;
-    }
-    return rc;
 }
 
 #ifdef IN_RING3
@@ -2013,13 +1994,9 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
             break;
 
         case 4:
-        {
-            int rc;
-            APIC_LOCK(dev, VINF_IOM_HC_MMIO_WRITE);
-            rc = apic_mem_writel(dev, s, GCPhysAddr, *(uint32_t *)pv);
-            APIC_UNLOCK(dev);
-            return rc;
-        }
+            /* It does its own locking. */
+            return acpiWriteRegister(dev, s, (GCPhysAddr >> 4) & 0xff, *(uint32_t const *)pv,
+                                     VINF_IOM_HC_MMIO_WRITE, false /*fMsr*/);
 
         default:
             AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
