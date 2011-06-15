@@ -833,6 +833,10 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                             pVM->cCpus            = cCpus;
                             pVM->uCpuExecutionCap = 100; /* default is no cap. */
                             pVM->offVMCPU         = RT_UOFFSETOF(VM, aCpus);
+                            AssertCompileMemberAlignment(VM, cpum, 64);
+                            AssertCompileMemberAlignment(VM, tm, 64);
+                            AssertCompileMemberAlignment(VM, aCpus, PAGE_SIZE);
+                            AssertCompileMemberAlignment(VM, aCpus[1], PAGE_SIZE);
 
                             rc = RTR0MemObjAllocPage(&pGVM->gvmm.s.VMPagesMemObj, cPages * sizeof(SUPPAGE), false /* fExecutable */);
                             if (RT_SUCCESS(rc))
