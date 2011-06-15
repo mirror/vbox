@@ -290,7 +290,6 @@ int main()
 
     GEN_CHECK_SIZE(PDM);
     GEN_CHECK_OFF(PDM, CritSect);
-    GEN_CHECK_OFF(PDM, GiantDevCritSect);
     GEN_CHECK_OFF(PDM, NopCritSect);
     GEN_CHECK_OFF(PDM, pDevs);
     GEN_CHECK_OFF(PDM, pDevInstances);

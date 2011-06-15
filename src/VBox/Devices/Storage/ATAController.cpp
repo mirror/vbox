@@ -5580,7 +5580,7 @@ int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
                       bool fNonRotationalSlave,
                       uint32_t *pcbSSMState, const char *szName)
 {
-    int      rc;
+    int rc;
 
     AssertMsg(pcbSSMState, ("pcbSSMState is invalid\n"));
 

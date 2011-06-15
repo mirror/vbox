@@ -6027,7 +6027,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
     /* Initialize the PDM lock. */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->lock, RT_SRC_POS, "VGA");
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->lock, RT_SRC_POS, "VGA#u", iInstance);
     if (RT_FAILURE(rc))
     {
         Log(("%s: Failed to create critical section.\n", __FUNCTION__));

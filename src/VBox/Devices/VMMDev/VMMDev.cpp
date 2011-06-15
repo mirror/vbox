@@ -3010,7 +3010,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Create the critical section for the device.
      */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "VMMDev");
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "VMMDev#u", iInstance);
     AssertRCReturn(rc, rc);
     /* Later: pDevIns->pCritSectR3 = &pThis->CritSect; */
 

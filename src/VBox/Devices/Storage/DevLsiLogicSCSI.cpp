@@ -4955,7 +4955,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc = VINF_SUCCESS;
     char *pszCtrlType = NULL;
-    char  szDevTag[20], szTaggedText[64];
+    char  szDevTag[20];
     bool fBootable = true;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
@@ -5010,7 +5010,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = lsilogicGetCtrlTypeFromString(pThis, pszCtrlType);
     MMR3HeapFree(pszCtrlType);
 
-    RTStrPrintf(szDevTag, sizeof(szDevTag), "LSILOGIC%s-%d",
+    RTStrPrintf(szDevTag, sizeof(szDevTag), "LSILOGIC%s-%u",
                 pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "SPI" : "SAS",
                 iInstance);
 
@@ -5117,6 +5117,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return rc;
 
     /* Initialize task queue. (Need two items to handle SMP guest concurrency.) */
+    char szTaggedText[64];
     RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%s-Task", szDevTag);
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 2, 0,
                               lsilogicNotifyQueueConsumer, true,
@@ -5143,16 +5144,12 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Create critical sections protecting the reply post and free queues.
      */
-    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRFQ", szDevTag);
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS,
-                               szTaggedText);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS, "%sRFQ", szDevTag);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic: cannot create critical section for reply free queue"));
 
-    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRPQ", szDevTag);
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS,
-                               szTaggedText);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS, "%sRPQ", szDevTag);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic: cannot create critical section for reply post queue"));

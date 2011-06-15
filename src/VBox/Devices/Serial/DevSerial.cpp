@@ -1189,11 +1189,6 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 #endif /* VBOX_SERIAL_PCI */
 
     /*
-     * We have a critical section make TM and IOM take it for callbacks.
-     */
-    pDevIns->pCritSectR3 = &pThis->CritSect;
-
-    /*
      * Validate and read the configuration.
      */
     if (!CFGMR3AreValuesValid(pCfg, "IRQ\0"
@@ -1269,17 +1264,26 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     LogRel(("Serial#%d: emulating %s\n", pDevIns->iInstance, pThis->f16550AEnabled ? "16550A" : "16450"));
 
     /*
-     * Initialize critical section and the semaphore.
-     * This must of be done before attaching drivers or doing anything else
-     * which can call us back.
+     * Initialize critical section and the semaphore.  Change the default
+     * critical section to ours so that TM and IOM will enter it before
+     * calling us.
+     *
+     * Note! This must of be done BEFORE creating timers, registering I/O ports
+     *       and other things which might pick up the default CS or end up
+     *       calling back into the device.
      */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "Serial#%d", iInstance);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "Serial#%u", iInstance);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, &pThis->CritSect);
+    AssertRCReturn(rc, rc);
 
     rc = RTSemEventCreate(&pThis->ReceiveSem);
     AssertRCReturn(rc, rc);
 
+    /*
+     * Create the timers.
+     */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, serialFifoTimer, pThis,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "Serial Fifo Timer",
                                 &pThis->fifo_timeout_timer);

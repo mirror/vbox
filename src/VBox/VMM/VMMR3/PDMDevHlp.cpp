@@ -1585,6 +1585,57 @@ static DECLCALLBACK(RCPTRTYPE(PPDMCRITSECT)) pdmR3DevHlp_CritSectGetNopRC(PPDMDE
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnSetDeviceCritSect} */
+static DECLCALLBACK(int) pdmR3DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
+{
+    /*
+     * Validate input.
+     *
+     * Note! We only allow the automatically created default critical section
+     *       to be replaced by this API.
+     */
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertPtrReturn(pCritSect, VERR_INVALID_POINTER);
+    LogFlow(("pdmR3DevHlp_SetDeviceCritSect: caller='%s'/%d: pCritSect=%p (%s)\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pCritSect, pCritSect->s.pszName));
+    AssertReturn(PDMCritSectIsInitialized(pCritSect), VERR_INVALID_PARAMETER);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    AssertReturn(pCritSect->s.pVMR3 == pVM, VERR_INVALID_PARAMETER);
+
+    VM_ASSERT_EMT(pVM);
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+
+    AssertReturn(pDevIns->pCritSectRoR3, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pDevIns->pCritSectRoR3->s.fAutomaticDefaultCritsect, VERR_WRONG_ORDER);
+    AssertReturn(!pDevIns->pCritSectRoR3->s.fUsedByTimerOrSimilar, VERR_WRONG_ORDER);
+    AssertReturn(pDevIns->pCritSectRoR3 != pCritSect, VERR_INVALID_PARAMETER);
+
+    /*
+     * Replace the critical section and destroy the automatic default section.
+     */
+    PPDMCRITSECT pOldCritSect = pDevIns->pCritSectRoR3;
+    pDevIns->pCritSectRoR3 = pCritSect;
+    if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
+        pDevIns->pCritSectRoR0 = MMHyperCCToR0(pVM, pDevIns->pCritSectRoR3);
+    else
+        Assert(pDevIns->pCritSectRoR0 == NIL_RTRCPTR);
+
+    if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
+        pDevIns->pCritSectRoRC = MMHyperCCToRC(pVM, pDevIns->pCritSectRoR3);
+    else
+        Assert(pDevIns->pCritSectRoRC == NIL_RTRCPTR);
+
+    PDMR3CritSectDelete(pOldCritSect);
+    if (pDevIns->pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0))
+        MMHyperFree(pVM, pOldCritSect);
+    else
+        MMR3HeapFree(pOldCritSect);
+
+    LogFlow(("pdmR3DevHlp_SetDeviceCritSect: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnThreadCreate} */
 static DECLCALLBACK(int) pdmR3DevHlp_ThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                                   PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
@@ -3262,6 +3313,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CritSectGetNop,
     pdmR3DevHlp_CritSectGetNopR0,
     pdmR3DevHlp_CritSectGetNopRC,
+    pdmR3DevHlp_SetDeviceCritSect,
     pdmR3DevHlp_ThreadCreate,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,
@@ -3477,6 +3529,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CritSectGetNop,
     pdmR3DevHlp_CritSectGetNopR0,
     pdmR3DevHlp_CritSectGetNopRC,
+    pdmR3DevHlp_SetDeviceCritSect,
     pdmR3DevHlp_ThreadCreate,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,
