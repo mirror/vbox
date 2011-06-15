@@ -611,7 +611,7 @@ void vboxClipboardDestroy (void)
     g_ctx.thread = NIL_RTTHREAD;
 }
 
-int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
+int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool)
 {
     Log(("vboxClipboardConnect\n"));
 

@@ -361,7 +361,7 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
 
     pClient->u32ClientID = u32ClientID;
 
-    rc = vboxClipboardConnect (pClient);
+    rc = vboxClipboardConnect (pClient, vboxSvcClipboardGetHeadless());
 
     if (RT_SUCCESS (rc))
     {
@@ -725,12 +725,14 @@ static DECLCALLBACK(int) svcHostCall (void *,
         case VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS:
         {
             uint32_t u32Headless = g_fHeadless;
-            LogRel2(("svcCall: VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE\n"));
 
             rc = VERR_INVALID_PARAMETER;
             if (cParms != 1)
                 break;
             rc = VBoxHGCMParmUInt32Get (&paParms[0], &u32Headless);
+            if (RT_SUCCESS(rc))
+                LogRelFlow(("svcCall: VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, u32Headless=%u\n",
+                            (unsigned) u32Headless));
             g_fHeadless = RT_BOOL(u32Headless);
         } break;
 

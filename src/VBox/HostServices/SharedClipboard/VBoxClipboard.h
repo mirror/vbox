@@ -81,7 +81,7 @@ bool vboxSvcClipboardGetHeadless(void);
 int vboxClipboardInit (void);
 void vboxClipboardDestroy (void);
 
-int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient);
+int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless);
 void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient);
 
 void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats);
