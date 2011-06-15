@@ -204,6 +204,8 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     , mType (VBoxDefs::MediumType_Invalid)
     , mShowDiffs (true)
     , mSetupMode (false)
+    , m_previousMediumType(KMediumType_Normal)
+    , m_fParentMediumType(true)
 {
     /* Apply UI decorations */
     Ui::VBoxMediaManagerDlg::setupUi (this);
@@ -282,6 +284,10 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
              this, SLOT (makeRequestForAdjustTable()));
     connect (mTwFD->header(), SIGNAL (sectionResized (int, int, int)),
              this, SLOT (makeRequestForAdjustTable()));
+
+    /* Setup information pane: */
+    qRegisterMetaType<KMediumType>();
+    connect(m_pTypeCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(sltCurrentMediumTypeChanged()));
 
     /* Context menu composing */
     mActionsContextMenu = new QMenu (this);
@@ -651,6 +657,46 @@ void VBoxMediaManagerDlg::retranslateUi()
 
     if (mTwHD->model()->rowCount() || mTwCD->model()->rowCount() || mTwFD->model()->rowCount())
         refreshAll();
+
+    /* Translate medium type combo: */
+    repopulateMediumTypeCombo();
+}
+
+void VBoxMediaManagerDlg::repopulateMediumTypeCombo()
+{
+    /* Block signals: */
+    m_pTypeCombo->blockSignals(true);
+
+    /* Remember current index: */
+    int iCurrentIndex = m_pTypeCombo->currentIndex();
+
+    /* Repopulate medium types: */
+    m_pTypeCombo->clear();
+
+    /* Check parent mode: */
+    if (m_fParentMediumType)
+    {
+        /* Populate possible types for parent disks: */
+        m_pTypeCombo->insertItem(0, vboxGlobal().toString(KMediumType_Normal), QVariant::fromValue(KMediumType_Normal));
+        m_pTypeCombo->insertItem(1, vboxGlobal().toString(KMediumType_Immutable), QVariant::fromValue(KMediumType_Immutable));
+        m_pTypeCombo->insertItem(2, vboxGlobal().toString(KMediumType_Writethrough), QVariant::fromValue(KMediumType_Writethrough));
+        m_pTypeCombo->insertItem(3, vboxGlobal().toString(KMediumType_Shareable), QVariant::fromValue(KMediumType_Shareable));
+        m_pTypeCombo->insertItem(4, vboxGlobal().toString(KMediumType_MultiAttach), QVariant::fromValue(KMediumType_MultiAttach));
+    }
+    else
+    {
+        /* Just one 'differencing' type for children disks: */
+        m_pTypeCombo->insertItem(0, vboxGlobal().differencingMediumTypeName());
+    }
+
+    /* Choose current index again if still possible: */
+    if (iCurrentIndex >= 0 && iCurrentIndex < m_pTypeCombo->count())
+        m_pTypeCombo->setCurrentIndex(iCurrentIndex);
+    else
+        m_pTypeCombo->setCurrentIndex(0);
+
+    /* Unblock signals: */
+    m_pTypeCombo->blockSignals(false);
 }
 
 void VBoxMediaManagerDlg::closeEvent (QCloseEvent *aEvent)
@@ -1436,11 +1482,27 @@ void VBoxMediaManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem,
 
         if (item->treeWidget() == mTwHD)
         {
-            mIpHD1->setText (formatPaneText (item->location(), true, "end"));
-            mIpHD2->setText (formatPaneText (QString ("%1 (%2)").arg (item->hardDiskType())
-                                                                .arg (item->hardDiskFormat()), false));
-            mIpHD3->setText (details);
-            mIpHD4->setText (usage);
+            /* Update parent mode: */
+            m_fParentMediumType = !item->medium().parent();
+            /* Repopulate combo: */
+            repopulateMediumTypeCombo();
+
+            /* Block signals: */
+            m_pTypeCombo->blockSignals(true);
+            /* Choose the correct one medium type: */
+            int iIndexOfType = m_pTypeCombo->findText(item->hardDiskType());
+            AssertMsg(iIndexOfType != -1, ("Incorrect medium type: %s\n", item->hardDiskType().toLatin1().constData()));
+            m_pTypeCombo->setCurrentIndex(iIndexOfType);
+            /* Remember new medium type: */
+            m_previousMediumType = m_pTypeCombo->itemData(m_pTypeCombo->currentIndex()).value<KMediumType>();
+            /* Unblock signals: */
+            m_pTypeCombo->blockSignals(false);
+
+            /* Other panes: */
+            m_pLocationPane->setText(formatPaneText(item->location(), true, "end"));
+            m_pFormatPane->setText(item->hardDiskFormat());
+            m_pDetailsPane->setText(details);
+            m_pUsagePane->setText(usage);
         }
         else if (item->treeWidget() == mTwCD)
         {
@@ -1532,6 +1594,37 @@ void VBoxMediaManagerDlg::performTablesAdjustment()
         int size0 = widgetList [i]->viewport()->width() - deductionsList [i];
         if (widgetList [i]->header()->sectionSize (0) != size0)
             widgetList [i]->header()->resizeSection (0, size0);
+    }
+}
+
+void VBoxMediaManagerDlg::sltCurrentMediumTypeChanged()
+{
+    /* Get new medium type: */
+    KMediumType newMediumType = m_pTypeCombo->itemData(m_pTypeCombo->currentIndex()).value<KMediumType>();
+
+    /* Check that new type exists and differs from the old one: */
+    if (newMediumType == m_previousMediumType)
+        return;
+
+    MediaItem *pMediumItem = toMediaItem(currentTreeWidget()->currentItem());
+    CMedium medium = pMediumItem->medium().medium();
+    medium.SetType(newMediumType);
+    if (!medium.isOk())
+    {
+        /* Revert medium type: */
+        m_pTypeCombo->blockSignals(true);
+        int iPreviousIndex = m_pTypeCombo->findText(vboxGlobal().toString(m_previousMediumType));
+        m_pTypeCombo->setCurrentIndex(iPreviousIndex);
+        m_pTypeCombo->blockSignals(false);
+        /* Show warning: */
+        vboxProblem().cannotChangeMediumType(this, medium, m_previousMediumType, newMediumType);
+    }
+    else
+    {
+        /* Remember new medium type: */
+        m_previousMediumType = m_pTypeCombo->itemData(m_pTypeCombo->currentIndex()).value<KMediumType>();
+        /* Refresh related VMM item: */
+        pMediumItem->refreshAll();
     }
 }
 
@@ -1813,7 +1906,7 @@ void VBoxMediaManagerDlg::addDndUrls (const QList <QUrl> &aUrls)
 
 void VBoxMediaManagerDlg::clearInfoPanes()
 {
-    mIpHD1->clear(); mIpHD2->clear(); mIpHD3->clear(); mIpHD4->clear();
+    m_pTypeCombo->setCurrentIndex(-1); m_pLocationPane->clear(); m_pFormatPane->clear(); m_pDetailsPane->clear(); m_pUsagePane->clear();
     mIpCD1->clear(); mIpCD2->clear();
     mIpFD1->clear(); mIpFD2->clear();
 }

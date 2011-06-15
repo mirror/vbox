@@ -314,6 +314,7 @@ public:
         AssertMsg (!mDiskTypes.value (t).isNull(), ("No text for %d", t));
         return mDiskTypes.value (t);
     }
+    QString differencingMediumTypeName() const { return mDiskTypes_Differencing; }
 
     QString toString(KMediumVariant mediumVariant) const;
 

@@ -96,14 +96,14 @@
             <number>5</number>
            </property>
            <item row="0" column="0" >
-            <widget class="QLabel" name="mLbHD1" >
+            <widget class="QLabel" name="m_pTypeLabel" >
              <property name="text" >
-              <string>Location:</string>
+              <string>Type:</string>
              </property>
             </widget>
            </item>
            <item row="0" column="1" >
-            <widget class="QILabel" name="mIpHD1" >
+            <widget class="QComboBox" name="m_pTypeCombo" >
              <property name="sizePolicy" >
               <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
                <horstretch>0</horstretch>
@@ -113,14 +113,14 @@
             </widget>
            </item>
            <item row="1" column="0" >
-            <widget class="QLabel" name="mLbHD2" >
+            <widget class="QLabel" name="m_pLocationLabel" >
              <property name="text" >
-              <string>Type (Format):</string>
+              <string>Location:</string>
              </property>
             </widget>
            </item>
            <item row="1" column="1" >
-            <widget class="QILabel" name="mIpHD2" >
+            <widget class="QILabel" name="m_pLocationPane" >
              <property name="sizePolicy" >
               <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
                <horstretch>0</horstretch>
@@ -130,14 +130,14 @@
             </widget>
            </item>
            <item row="2" column="0" >
-            <widget class="QLabel" name="mLbHD3" >
+            <widget class="QLabel" name="m_pFormatLabel" >
              <property name="text" >
-              <string>Storage details:</string>
+              <string>Format:</string>
              </property>
             </widget>
            </item>
            <item row="2" column="1" >
-            <widget class="QILabel" name="mIpHD3" >
+            <widget class="QILabel" name="m_pFormatPane" >
              <property name="sizePolicy" >
               <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
                <horstretch>0</horstretch>
@@ -147,14 +147,31 @@
             </widget>
            </item>
            <item row="3" column="0" >
-            <widget class="QLabel" name="mLbHD4" >
+            <widget class="QLabel" name="m_pDetailsLabel" >
+             <property name="text" >
+              <string>Storage details:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1" >
+            <widget class="QILabel" name="m_pDetailsPane" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0" >
+            <widget class="QLabel" name="m_pUsageLabel" >
              <property name="text" >
               <string>Attached to:</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="1" >
-            <widget class="QILabel" name="mIpHD4" >
+           <item row="4" column="1" >
+            <widget class="QILabel" name="m_pUsagePane" >
              <property name="sizePolicy" >
               <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
                <horstretch>0</horstretch>

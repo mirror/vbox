@@ -69,6 +69,7 @@ public slots:
 protected:
 
     void retranslateUi();
+    void repopulateMediumTypeCombo();
     virtual void closeEvent (QCloseEvent *aEvent);
     virtual bool eventFilter (QObject *aObject, QEvent *aEvent);
 
@@ -99,6 +100,8 @@ private slots:
 
     void makeRequestForAdjustTable();
     void performTablesAdjustment();
+
+    void sltCurrentMediumTypeChanged();
 
 private:
 
@@ -143,6 +146,10 @@ private:
 
     bool mShowDiffs : 1;
     bool mSetupMode : 1;
+
+    /* Medium type related variables: */
+    KMediumType m_previousMediumType;
+    bool m_fParentMediumType;
 
     /* Icon definitions */
     QIcon mHardDiskIcon;
