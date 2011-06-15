@@ -6242,6 +6242,15 @@
       <desc>Array of PCI devices attached to this machine.</desc>
     </attribute>
 
+    <attribute name="useHostClipboard" type="boolean">
+      <desc>
+        Whether the guest clipboard should be connected to the host one or
+        whether it should only be allowed access to the VRDE clipboard.  This
+        setting may not affect existing guest clipboard connections which
+        are already connected to the host clipboard.
+      </desc>
+    </attribute>
+
     <method name="powerUp">
       <desc>
         Starts the virtual machine execution using the current machine
