@@ -25,24 +25,17 @@
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
 
-#include <VBoxGuestInternal.h>
-
-#ifdef TARGET_NT4
 /*
  * XP DDK #defines ExFreePool to ExFreePoolWithTag. The latter does not exist
  * on NT4, so... The same for ExAllocatePool.
  */
-#undef ExAllocatePool
-#undef ExFreePool
+#ifdef TARGET_NT4
+# undef ExAllocatePool
+# undef ExFreePool
 #endif
 
 /*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-
-
-/*******************************************************************************
-*   Entry Points                                                               *
+*   Internal Functions                                                         *
 *******************************************************************************/
 RT_C_DECLS_BEGIN
 static NTSTATUS vboxguestwinAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj);
@@ -54,15 +47,8 @@ static NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
-RT_C_DECLS_END
-
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-RT_C_DECLS_BEGIN
 #ifdef DEBUG
- static void    vboxguestwinDoTests(void);
+static void     vboxguestwinDoTests(void);
 #endif
 RT_C_DECLS_END
 
@@ -543,7 +529,7 @@ NTSTATUS vboxguestwinCleanup(PDEVICE_OBJECT pDevObj)
  *
  * @param   pDrvObj     Driver object.
  */
-void vboxguestwinUnload(PDRIVER_OBJECT pDrvObj)
+static void vboxguestwinUnload(PDRIVER_OBJECT pDrvObj)
 {
     Log(("VBoxGuest::vboxguestwinGuestUnload\n"));
 #ifdef TARGET_NT4
@@ -578,7 +564,7 @@ void vboxguestwinUnload(PDRIVER_OBJECT pDrvObj)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     /** @todo AssertPtrReturn(pIrp); */
     PIO_STACK_LOCATION pStack   = IoGetCurrentIrpStackLocation(pIrp);
@@ -647,7 +633,7 @@ NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-NTSTATUS vboxguestwinClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vboxguestwinClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     PVBOXGUESTDEVEXT   pDevExt  = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
     PIO_STACK_LOCATION pStack   = IoGetCurrentIrpStackLocation(pIrp);
@@ -678,20 +664,20 @@ NTSTATUS vboxguestwinClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
  * @param   pDevObj     Device object.
  * @param   pIrp        Request packet.
  */
-NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+static NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
-    PIO_STACK_LOCATION pStack = IoGetCurrentIrpStackLocation(pIrp);
-    unsigned int uCmd = (unsigned int)pStack->Parameters.DeviceIoControl.IoControlCode;
+    NTSTATUS            Status   = STATUS_SUCCESS;
+    PVBOXGUESTDEVEXT    pDevExt  = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
+    PIO_STACK_LOCATION  pStack   = IoGetCurrentIrpStackLocation(pIrp);
+    unsigned int        uCmd     = (unsigned int)pStack->Parameters.DeviceIoControl.IoControlCode;
 
-    char *pBuf = (char *)pIrp->AssociatedIrp.SystemBuffer; /* All requests are buffered. */
-    size_t cbData = pStack->Parameters.DeviceIoControl.InputBufferLength;
-    unsigned cbOut = 0;
+    char               *pBuf     = (char *)pIrp->AssociatedIrp.SystemBuffer; /* All requests are buffered. */
+    size_t              cbData   = pStack->Parameters.DeviceIoControl.InputBufferLength;
+    unsigned            cbOut    = 0;
 
     /* Do we have a file object associated?*/
-    PFILE_OBJECT pFileObj = pStack->FileObject;
-    PVBOXGUESTSESSION pSession = NULL;
+    PFILE_OBJECT        pFileObj = pStack->FileObject;
+    PVBOXGUESTSESSION   pSession = NULL;
     if (pFileObj) /* ... then we might have a session object as well! */
         pSession = (PVBOXGUESTSESSION)pFileObj->FsContext;
 
@@ -700,6 +686,8 @@ NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
     /* We don't have a session associated with the file object? So this seems
      * to be a kernel call then. */
+    /** @todo r=bird: What on earth is this supposed to be? Each kernel session
+     *        shall have its own context of course, no hacks, pleeease. */
     if (pSession == NULL)
     {
         Log(("VBoxGuest::vboxguestwinIOCtl: Using kernel session data ...\n"));
@@ -757,7 +745,7 @@ NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
              * Process the common IOCtls.
              */
             size_t cbDataReturned;
-            int vrc = VBoxGuestCommonIOCtl(uCmd, pDevExt, pSession, (void*)pBuf, cbData, &cbDataReturned);
+            int vrc = VBoxGuestCommonIOCtl(uCmd, pDevExt, pSession, pBuf, cbData, &cbDataReturned);
 
             Log(("VBoxGuest::vboxguestwinGuestDeviceControl: rc=%Rrc, pBuf=0x%p, cbData=%u, cbDataReturned=%u\n",
                  vrc, pBuf, cbData, cbDataReturned));
@@ -796,16 +784,27 @@ NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     return Status;
 }
 
-/* we do not want to allow some IOCTLs to be originated from user mode,
- * this is why we have a separate vboxguestwinInternalIOCtl for internal IOCTLs */
-NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+/**
+ * Internal Device I/O Control entry point.
+ *
+ * We do not want to allow some IOCTLs to be originated from user mode, this is
+ * why we have a different entry point for internal IOCTLs.
+ *
+ * @param   pDevObj     Device object.
+ * @param   pIrp        Request packet.
+ *
+ * @todo r=bird: This is no need for this extra function for the purpose of
+ *       securing an IOCTL from user space access.  VBoxGuestCommonIOCtl
+ *       has a way to do this already, see VBOXGUEST_IOCTL_GETVMMDEVPORT.
+ */
+static NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-    PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
-    PIO_STACK_LOCATION pStack = IoGetCurrentIrpStackLocation(pIrp);
-    unsigned int uCmd = (unsigned int)pStack->Parameters.DeviceIoControl.IoControlCode;
-    BOOLEAN fProcessed = FALSE;
-    unsigned Info = 0;
+    NTSTATUS            Status      = STATUS_SUCCESS;
+    PVBOXGUESTDEVEXT    pDevExt     = (PVBOXGUESTDEVEXT)pDevObj->DeviceExtension;
+    PIO_STACK_LOCATION  pStack      = IoGetCurrentIrpStackLocation(pIrp);
+    unsigned int        uCmd        = (unsigned int)pStack->Parameters.DeviceIoControl.IoControlCode;
+    bool                fProcessed  = false;
+    unsigned            Info        = 0;
 
     switch (uCmd)
     {
@@ -1264,10 +1263,10 @@ VBOXOSTYPE vboxguestwinVersionToOSType(winVersion_t winVer)
     return enmOsType;
 }
 
-
 #ifdef DEBUG
-/** A quick implementation of AtomicTestAndClear for uint32_t and multiple
- *  bits.
+
+/**
+ * A quick implementation of AtomicTestAndClear for uint32_t and multiple bits.
  */
 static uint32_t vboxugestwinAtomicBitsTestAndClear(void *pu32Bits, uint32_t u32Mask)
 {
@@ -1316,4 +1315,6 @@ static void vboxguestwinDoTests()
     vboxguestwinTestAtomicTestAndClearBitsU32(0x11, 0x32, 0x10);
     vboxguestwinTestAtomicTestAndClearBitsU32(0x22, 0x23, 0x22);
 }
-#endif
+
+#endif /* DEBUG */
+
