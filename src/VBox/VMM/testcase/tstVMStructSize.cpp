@@ -377,7 +377,7 @@ int main()
     PRINT_OFFSET(VM, StatGCToQemu);
 #endif
 
-    CHECK_MEMBER_ALIGNMENT(IOM, EmtLock, sizeof(uintptr_t));
+    CHECK_MEMBER_ALIGNMENT(IOM, CritSect, sizeof(uintptr_t));
     CHECK_MEMBER_ALIGNMENT(EM, CritSectREM, sizeof(uintptr_t));
     CHECK_MEMBER_ALIGNMENT(PGM, CritSect, sizeof(uintptr_t));
     CHECK_MEMBER_ALIGNMENT(PDM, CritSect, sizeof(uintptr_t));

@@ -1069,7 +1069,7 @@ static int iomInterpretXCHG(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
 static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault, void *pvUser)
 {
     /* Take the IOM lock before performing any MMIO. */
-    int rc = iomLock(pVM);
+    int rc = IOM_LOCK(pVM);
 #ifndef IN_RING3
     if (rc == VERR_SEM_BUSY)
         return VINF_IOM_HC_MMIO_READ_WRITE;
@@ -1092,12 +1092,12 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
     if (!pStats)
     {
 # ifdef IN_RING3
-        iomUnlock(pVM);
+        IOM_UNLOCK(pVM);
         return VERR_NO_MEMORY;
 # else
         STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
         STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOFailures);
-        iomUnlock(pVM);
+        IOM_UNLOCK(pVM);
         return VINF_IOM_HC_MMIO_READ_WRITE;
 # endif
     }
@@ -1126,7 +1126,7 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
 
         STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
         STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOFailures);
-        iomUnlock(pVM);
+        IOM_UNLOCK(pVM);
         return VINF_IOM_HC_MMIO_READ_WRITE;
     }
 #endif /* !IN_RING3 */
@@ -1136,18 +1136,12 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
      */
     iomMmioRetainRange(pRange);
     PPDMDEVINS pDevIns = pRange->CTX_SUFF(pDevIns);
-    PPDMCRITSECT pLock = pDevIns->CTX_SUFF(pCritSectRo);
-    if (!pLock)
-        pLock = &pVM->iom.s.EmtLock;
-    else
+    IOM_UNLOCK(pVM);
+    rc = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_HC_MMIO_READ_WRITE);
+    if (rc != VINF_SUCCESS)
     {
-        iomUnlock(pVM);
-        rc = PDMCritSectEnter(pLock, VINF_IOM_HC_MMIO_READ_WRITE);
-        if (rc != VINF_SUCCESS)
-        {
-            iomMmioReleaseRange(pVM, pRange);
-            return rc;
-        }
+        iomMmioReleaseRange(pVM, pRange);
+        return rc;
     }
 
     /*
@@ -1161,7 +1155,7 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
     if (RT_FAILURE(rc))
     {
         iomMmioReleaseRange(pVM, pRange);
-        PDMCritSectLeave(pLock);
+        PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
         return rc;
     }
     switch (pDis->pCurInstr->opcode)
@@ -1295,7 +1289,7 @@ static int iomMMIOHandler(PVM pVM, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, R
 
     STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
     iomMmioReleaseRange(pVM, pRange);
-    PDMCritSectLeave(pLock);
+    PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     return rc;
 }
 
@@ -1329,13 +1323,13 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
  */
 VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault)
 {
-    int rc2 = iomLock(pVM);
+    int rc2 = IOM_LOCK(pVM);
 #ifndef IN_RING3
     if (rc2 == VERR_SEM_BUSY)
         return VINF_IOM_HC_MMIO_READ_WRITE;
 #endif
     VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, iomMmioGetRange(pVM, GCPhysFault));
-    iomUnlock(pVM);
+    IOM_UNLOCK(pVM);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
@@ -1366,7 +1360,7 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
     /*
      * Validate the range.
      */
-    int rc = iomLock(pVM);
+    int rc = IOM_LOCK(pVM);
     AssertRC(rc);
     Assert(pRange == iomMmioGetRange(pVM, GCPhysFault));
 
@@ -1375,18 +1369,12 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
      */
     iomMmioRetainRange(pRange);
     PPDMDEVINS pDevIns = pRange->CTX_SUFF(pDevIns);
-    PPDMCRITSECT pLock = pDevIns->CTX_SUFF(pCritSectRo);
-    if (!pLock)
-        pLock = &pVM->iom.s.EmtLock;
-    else
+    IOM_UNLOCK(pVM);
+    rc = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_HC_MMIO_READ_WRITE);
+    if (rc != VINF_SUCCESS)
     {
-        iomUnlock(pVM);
-        rc = PDMCritSectEnter(pLock, VINF_IOM_HC_MMIO_READ_WRITE);
-        if (rc != VINF_SUCCESS)
-        {
-            iomMmioReleaseRange(pVM, pRange);
-            return rc;
-        }
+        iomMmioReleaseRange(pVM, pRange);
+        return rc;
     }
 
     /*
@@ -1399,7 +1387,7 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
 
     AssertRC(rc);
     iomMmioReleaseRange(pVM, pRange);
-    PDMCritSectLeave(pLock);
+    PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     return rc;
 }
 #endif /* IN_RING3 */
@@ -1418,7 +1406,7 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
 VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t cbValue)
 {
     /* Take the IOM lock before performing any MMIO. */
-    int rc = iomLock(pVM);
+    int rc = IOM_LOCK(pVM);
 #ifndef IN_RING3
     if (rc == VERR_SEM_BUSY)
         return VINF_IOM_HC_MMIO_WRITE;
@@ -1435,14 +1423,14 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
     AssertMsg(pRange, ("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue));
     if (!pRange)
     {
-        iomUnlock(pVM);
+        IOM_UNLOCK(pVM);
         return VERR_INTERNAL_ERROR;
     }
 #ifdef VBOX_WITH_STATISTICS
     PIOMMMIOSTATS pStats = iomMmioGetStats(pVM, GCPhys, pRange);
     if (!pStats)
     {
-        iomUnlock(pVM);
+        IOM_UNLOCK(pVM);
 # ifdef IN_RING3
         return VERR_NO_MEMORY;
 # else
@@ -1459,18 +1447,12 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
          */
         iomMmioRetainRange(pRange);
         PPDMDEVINS pDevIns = pRange->CTX_SUFF(pDevIns);
-        PPDMCRITSECT pLock = pDevIns->CTX_SUFF(pCritSectRo);
-        if (!pLock)
-            pLock = &pVM->iom.s.EmtLock;
-        else
+        IOM_UNLOCK(pVM);
+        rc = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_HC_MMIO_WRITE);
+        if (rc != VINF_SUCCESS)
         {
-            iomUnlock(pVM);
-            rc = PDMCritSectEnter(pLock, VINF_IOM_HC_MMIO_WRITE);
-            if (rc != VINF_SUCCESS)
-            {
-                iomMmioReleaseRange(pVM, pRange);
-                return rc;
-            }
+            iomMmioReleaseRange(pVM, pRange);
+            return rc;
         }
 
         /*
@@ -1484,7 +1466,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
             case VINF_SUCCESS:
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=VINF_SUCCESS\n", GCPhys, *pu32Value, cbValue));
                 iomMmioReleaseRange(pVM, pRange);
-                PDMCritSectLeave(pLock);
+                PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
                 return rc;
 #ifndef IN_RING3
             case VINF_IOM_HC_MMIO_READ:
@@ -1494,13 +1476,13 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
             default:
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
                 iomMmioReleaseRange(pVM, pRange);
-                PDMCritSectLeave(pLock);
+                PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
                 return rc;
 
             case VINF_IOM_MMIO_UNUSED_00:
                 switch (cbValue)
                 {
-                    case 1: *(uint8_t *)pu32Value  = UINT8_C(0x00); break;
+                    case 1: *(uint8_t  *)pu32Value = UINT8_C(0x00); break;
                     case 2: *(uint16_t *)pu32Value = UINT16_C(0x0000); break;
                     case 4: *(uint32_t *)pu32Value = UINT32_C(0x00000000); break;
                     case 8: *(uint64_t *)pu32Value = UINT64_C(0x0000000000000000); break;
@@ -1508,13 +1490,13 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
                 }
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
                 iomMmioReleaseRange(pVM, pRange);
-                PDMCritSectLeave(pLock);
+                PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
                 return VINF_SUCCESS;
 
             case VINF_IOM_MMIO_UNUSED_FF:
                 switch (cbValue)
                 {
-                    case 1: *(uint8_t *)pu32Value  = UINT8_C(0xff); break;
+                    case 1: *(uint8_t  *)pu32Value = UINT8_C(0xff); break;
                     case 2: *(uint16_t *)pu32Value = UINT16_C(0xffff); break;
                     case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
                     case 8: *(uint64_t *)pu32Value = UINT64_C(0xffffffffffffffff); break;
@@ -1522,7 +1504,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
                 }
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
                 iomMmioReleaseRange(pVM, pRange);
-                PDMCritSectLeave(pLock);
+                PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
                 return VINF_SUCCESS;
         }
         /* not reached */
@@ -1531,7 +1513,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
     if (pRange->pfnReadCallbackR3)
     {
         STAM_COUNTER_INC(&pStats->CTX_MID_Z(Read,ToR3));
-        iomUnlock(pVM);
+        IOM_UNLOCK(pVM);
         return VINF_IOM_HC_MMIO_READ;
     }
 #endif
@@ -1550,7 +1532,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
         default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
     }
     Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=VINF_SUCCESS\n", GCPhys, *pu32Value, cbValue));
-    iomUnlock(pVM);
+    IOM_UNLOCK(pVM);
     return VINF_SUCCESS;
 }
 
@@ -1568,7 +1550,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
 VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cbValue)
 {
     /* Take the IOM lock before performing any MMIO. */
-    int rc = iomLock(pVM);
+    int rc = IOM_LOCK(pVM);
 #ifndef IN_RING3
     if (rc == VERR_SEM_BUSY)
         return VINF_IOM_HC_MMIO_WRITE;
@@ -1585,14 +1567,14 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
     AssertMsg(pRange, ("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue));
     if (!pRange)
     {
-        iomUnlock(pVM);
+        IOM_UNLOCK(pVM);
         return VERR_INTERNAL_ERROR;
     }
 #ifdef VBOX_WITH_STATISTICS
     PIOMMMIOSTATS pStats = iomMmioGetStats(pVM, GCPhys, pRange);
     if (!pStats)
     {
-        iomUnlock(pVM);
+        IOM_UNLOCK(pVM);
 # ifdef IN_RING3
         return VERR_NO_MEMORY;
 # else
@@ -1609,18 +1591,12 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
          */
         iomMmioRetainRange(pRange);
         PPDMDEVINS pDevIns = pRange->CTX_SUFF(pDevIns);
-        PPDMCRITSECT pLock = pDevIns->CTX_SUFF(pCritSectRo);
-        if (!pLock)
-            pLock = &pVM->iom.s.EmtLock;
-        else
+        IOM_UNLOCK(pVM);
+        rc = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_HC_MMIO_READ);
+        if (rc != VINF_SUCCESS)
         {
-            iomUnlock(pVM);
-            rc = PDMCritSectEnter(pLock, VINF_IOM_HC_MMIO_READ);
-            if (rc != VINF_SUCCESS)
-            {
-                iomMmioReleaseRange(pVM, pRange);
-                return rc;
-            }
+            iomMmioReleaseRange(pVM, pRange);
+            return rc;
         }
 
         /*
@@ -1637,14 +1613,14 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
 #endif
         Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, u32Value, cbValue, rc));
         iomMmioReleaseRange(pVM, pRange);
-        PDMCritSectLeave(pLock);
+        PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
         return rc;
     }
 #ifndef IN_RING3
     if (pRange->pfnWriteCallbackR3)
     {
         STAM_COUNTER_INC(&pStats->CTX_MID_Z(Write,ToR3));
-        iomUnlock(pVM);
+        IOM_UNLOCK(pVM);
         return VINF_IOM_HC_MMIO_WRITE;
     }
 #endif
@@ -1655,9 +1631,10 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
     STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
     STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
     Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, u32Value, cbValue, VINF_SUCCESS));
-    iomUnlock(pVM);
+    IOM_UNLOCK(pVM);
     return VINF_SUCCESS;
 }
+
 
 /**
  * [REP*] INSB/INSW/INSD
@@ -2014,7 +1991,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
              && !HWACCMIsNestedPagingActive(pVM)))
         return VINF_SUCCESS;    /* ignore */
 
-    PDMCritSectEnter(&pVM->iom.s.EmtLock, VINF_SUCCESS);
+    IOM_LOCK(pVM);
 
     /*
      * Lookup the context range node the page belongs to.
@@ -2034,7 +2011,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
 
     int rc = PGMHandlerPhysicalPageAlias(pVM, pRange->GCPhys, GCPhys, GCPhysRemapped);
 
-    PDMCritSectLeave(&pVM->iom.s.EmtLock);
+    IOM_UNLOCK(pVM);
     AssertRCReturn(rc, rc);
 
     /*
