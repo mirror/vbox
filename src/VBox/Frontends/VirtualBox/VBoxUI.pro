@@ -47,6 +47,8 @@ FORMS = \
     src/settings/machine/UIMachineSettingsUSBFilterDetails.ui \
     src/settings/machine/UIMachineSettingsSF.ui \
     src/settings/machine/UIMachineSettingsSFDetails.ui \
+    src/wizards/clonevm/UICloneVMWizardPage1.ui \
+    src/wizards/clonevm/UICloneVMWizardPage2.ui \
     src/wizards/newvm/UINewVMWzdPage1.ui \
     src/wizards/newvm/UINewVMWzdPage2.ui \
     src/wizards/newvm/UINewVMWzdPage3.ui \

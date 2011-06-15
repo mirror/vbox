@@ -25,6 +25,7 @@
 #include "UIExportApplianceWzd.h"
 #include "UIIconPool.h"
 #include "UIImportApplianceWzd.h"
+#include "UICloneVMWizard.h"
 #include "UINewVMWzd.h"
 #include "UIVMDesktop.h"
 #include "UIVMListView.h"
@@ -140,6 +141,9 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
         QSize(32, 32), QSize(16, 16),
         ":/vm_settings_32px.png", ":/settings_16px.png",
         ":/vm_settings_disabled_32px.png", ":/settings_dis_16px.png"));
+    mVmCloneAction = new QAction(this);
+    mVmCloneAction->setIcon(UIIconPool::iconSet(
+        ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png"));
     mVmDeleteAction = new QAction(this);
     mVmDeleteAction->setIcon(UIIconPool::iconSetFull(
         QSize(32, 32), QSize(16, 16),
@@ -287,6 +291,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMMenu->addAction(mVmNewAction);
     mVMMenu->addAction(mVmAddAction);
     mVMMenu->addAction(mVmConfigAction);
+    mVMMenu->addAction(mVmCloneAction);
     mVMMenu->addAction(mVmDeleteAction);
     mVMMenu->addSeparator();
     mVMMenu->addAction(mVmStartAction);
@@ -305,6 +310,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mVMCtxtMenu = new QMenu(this);
     mVMCtxtMenu->addAction(mVmConfigAction);
+    mVMCtxtMenu->addAction(mVmCloneAction);
     mVMCtxtMenu->addAction(mVmDeleteAction);
     mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction(mVmStartAction);
@@ -434,6 +440,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect(mVmAddAction, SIGNAL(triggered()), this, SLOT(vmAdd()));
 
     connect(mVmConfigAction, SIGNAL(triggered()), this, SLOT(vmSettings()));
+    connect(mVmCloneAction, SIGNAL(triggered()), this, SLOT(vmClone()));
     connect(mVmDeleteAction, SIGNAL(triggered()), this, SLOT(vmDelete()));
     connect(mVmStartAction, SIGNAL(triggered()), this, SLOT(vmStart()));
     connect(mVmDiscardAction, SIGNAL(triggered()), this, SLOT(vmDiscard()));
@@ -724,6 +731,18 @@ void VBoxSelectorWnd::vmSettings(const QString &strCategoryRef /* = QString::nul
     /* Create and execute corresponding VM settings dialog: */
     UISettingsDialogMachine dlg(this, pItem->id(), strCategory, strControl);
     dlg.execute();
+}
+
+void VBoxSelectorWnd::vmClone(const QString &aUuid /* = QString::null */)
+{
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() : mVMModel->itemById(aUuid);
+
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
+
+    CMachine machine = item->machine();
+
+    UICloneVMWizard wzd(this, machine, false);
+    wzd.exec();
 }
 
 void VBoxSelectorWnd::vmDelete(const QString &aUuid /* = QString::null */)
@@ -1200,6 +1219,10 @@ void VBoxSelectorWnd::retranslateUi()
     mVmConfigAction->setToolTip(mVmConfigAction->text().remove('&').remove('.') +
         (mVmConfigAction->shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(mVmConfigAction->shortcut().toString())));
 
+    mVmCloneAction->setText(tr("&Clone"));
+    mVmCloneAction->setShortcut(gSS->keySequence(UISelectorShortcuts::CloneVMShortcut));
+    mVmCloneAction->setStatusTip(tr("Clone the selected virtual machine"));
+
     mVmDeleteAction->setText(tr("&Remove"));
     mVmDeleteAction->setShortcut(gSS->keySequence(UISelectorShortcuts::RemoveVMShortcut));
     mVmDeleteAction->setStatusTip(tr("Remove the selected virtual machine"));
@@ -1307,6 +1330,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
 
         /* enable/disable modify actions */
         mVmConfigAction->setEnabled(modifyEnabled);
+        mVmCloneAction->setEnabled(!running);
         mVmDeleteAction->setEnabled(!running);
         mVmDiscardAction->setEnabled(state == KMachineState_Saved && !running);
         mVmPauseAction->setEnabled(   state == KMachineState_Running
@@ -1437,6 +1461,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
 
         /* disable modify actions */
         mVmConfigAction->setEnabled(false);
+        mVmCloneAction->setEnabled(false);
         mVmDeleteAction->setEnabled(item != NULL);
         mVmDiscardAction->setEnabled(false);
         mVmPauseAction->setEnabled(false);

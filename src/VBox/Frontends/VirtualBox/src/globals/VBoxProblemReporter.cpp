@@ -664,6 +664,17 @@ void VBoxProblemReporter::cannotOpenMachine(QWidget *pParent, const QString &str
             formatErrorInfo(vbox));
 }
 
+void VBoxProblemReporter::cannotRegisterMachine(const CVirtualBox &vbox,
+                                                const CMachine &machine,
+                                                QWidget *pParent)
+{
+    message(pParent ? pParent : mainWindowShown(),
+            Error,
+            tr("Failed to register the virtual machine <b>%1</b>.")
+            .arg(machine.GetName()),
+            formatErrorInfo(vbox));
+}
+
 void VBoxProblemReporter::cannotReregisterMachine(QWidget *pParent, const QString &strMachinePath, const QString &strMachineName)
 {
     message(pParent ? pParent : mainWindowShown(),
@@ -813,6 +824,33 @@ void VBoxProblemReporter::cannotSaveMachineState (const CProgress &progress)
         tr ("Failed to save the state of the virtual machine <b>%1</b>.")
             .arg (console.GetMachine().GetName()),
         formatErrorInfo (progress.GetErrorInfo())
+    );
+}
+
+void VBoxProblemReporter::cannotCreateClone(const CMachine &machine,
+                                            QWidget *pParent /* = 0 */)
+{
+    message(
+        pParent ? pParent : mainWindowShown(),
+        Error,
+        tr ("Failed to clone the virtual machine <b>%1</b>.")
+            .arg(machine.GetName()),
+        formatErrorInfo(machine)
+    );
+}
+
+void VBoxProblemReporter::cannotCreateClone(const CMachine &machine,
+                                            const CProgress &progress,
+                                            QWidget *pParent /* = 0 */)
+{
+    AssertWrapperOk(progress);
+
+    message(
+        pParent ? pParent : mainWindowShown(),
+        Error,
+        tr ("Failed to clone the virtual machine <b>%1</b>.")
+            .arg(machine.GetName()),
+        formatErrorInfo(progress.GetErrorInfo())
     );
 }
 
@@ -2652,6 +2690,21 @@ void VBoxProblemReporter::remindAboutWrongColorDepth(ulong uRealBPP, ulong uWant
 {
     emit sigRemindAboutWrongColorDepth(uRealBPP, uWantedBPP);
 }
+
+void VBoxProblemReporter::showGenericError(COMBaseWithEI *object, QWidget *pParent /* = 0 */)
+{
+    if (   !object
+        || object->lastRC() == S_OK)
+        return;
+
+    message(pParent ? pParent : mainWindowShown(),
+            Error,
+            tr("Sorry, some generic error happens."),
+            formatErrorInfo(*object));
+}
+
+// Public slots
+/////////////////////////////////////////////////////////////////////////////
 
 void VBoxProblemReporter::remindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent)
 {

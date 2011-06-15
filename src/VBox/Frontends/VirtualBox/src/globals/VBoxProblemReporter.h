@@ -192,8 +192,8 @@ public:
                               QWidget *parent = 0);
 
     void cannotOpenMachine(QWidget *pParent, const QString &strMachinePath, const CVirtualBox &vbox);
+    void cannotRegisterMachine(const CVirtualBox &vbox, const CMachine &machine, QWidget *pParent);
     void cannotReregisterMachine(QWidget *pParent, const QString &strMachinePath, const QString &strMachineName);
-
     void cannotApplyMachineSettings (const CMachine &machine, const COMResult &res);
     void cannotSaveMachineSettings (const CMachine &machine,
                                     QWidget *parent = 0);
@@ -210,6 +210,8 @@ public:
     void cannotACPIShutdownMachine (const CConsole &console);
     void cannotSaveMachineState (const CConsole &console);
     void cannotSaveMachineState (const CProgress &progress);
+    void cannotCreateClone(const CMachine &machine, QWidget *pParent = 0);
+    void cannotCreateClone(const CMachine &machine, const CProgress &progress, QWidget *pParent = 0);
     void cannotTakeSnapshot (const CConsole &console);
     void cannotTakeSnapshot (const CProgress &progress);
     void cannotStopMachine (const CConsole &console);
@@ -395,6 +397,8 @@ public:
         Assert (aRC.rc() != S_OK);
         return formatErrorInfo (aRC.errorInfo(), aRC.rc());
     }
+
+    void showGenericError(COMBaseWithEI *object, QWidget *pParent = 0);
 
     /* Stuff supporting interthreading: */
     void cannotCreateHostInterface(const CHost &host, QWidget *pParent = 0);
