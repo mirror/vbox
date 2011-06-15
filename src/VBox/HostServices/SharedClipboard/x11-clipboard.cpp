@@ -98,7 +98,7 @@ void vboxClipboardDestroy (void)
  * @note  on the host, we assume that some other application already owns
  *        the clipboard and leave ownership to X11.
  */
-int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
+int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
 {
     int rc = VINF_SUCCESS;
     CLIPBACKEND *pBackend = NULL;
@@ -111,7 +111,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
     else
     {
         RTCritSectInit(&pCtx->clipboardMutex);
-        pBackend = ClipConstructX11(pCtx, !RTEnvGet("DISPLAY"));
+        pBackend = ClipConstructX11(pCtx, fHeadless);
         if (pBackend == NULL)
             rc = VERR_NO_MEMORY;
         else
@@ -511,7 +511,7 @@ int main()
     int rc = RTR3Init();
     RTPrintf(TEST_NAME ": TESTING\n");
     AssertRCReturn(rc, 1);
-    rc = vboxClipboardConnect(&client);
+    rc = vboxClipboardConnect(&client, false);
     CLIPBACKEND *pBackend = client.pCtx->pBackend;
     AssertRCReturn(rc, 1);
     vboxClipboardFormatAnnounce(&client,

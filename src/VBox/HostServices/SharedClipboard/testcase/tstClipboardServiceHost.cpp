@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 int vboxClipboardInit() { return VINF_SUCCESS; }
 void vboxClipboardDestroy() { AssertFailed(); }
 void vboxClipboardDisconnect(_VBOXCLIPBOARDCLIENTDATA*) { AssertFailed(); }
-int vboxClipboardConnect(_VBOXCLIPBOARDCLIENTDATA*)
+int vboxClipboardConnect(_VBOXCLIPBOARDCLIENTDATA*, bool)
 { AssertFailed(); return VERR_WRONG_ORDER; }
 void vboxClipboardFormatAnnounce(_VBOXCLIPBOARDCLIENTDATA*, unsigned int)
 { AssertFailed(); }
