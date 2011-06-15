@@ -1229,6 +1229,14 @@ bool VBoxProblemReporter::confirmDiscardSavedState (const CMachine &machine)
         tr ("Discard", "saved state"));
 }
 
+void VBoxProblemReporter::cannotChangeMediumType(QWidget *pParent, const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType)
+{
+    message(pParent ? pParent : mainWindowShown(), Error,
+            tr("<p>Error changing medium type from <b>%1</b> to <b>%2</b>.</p>")
+                .arg(vboxGlobal().toString(oldMediumType)).arg(vboxGlobal().toString(newMediumType)),
+            formatErrorInfo(medium));
+}
+
 bool VBoxProblemReporter::confirmReleaseMedium (QWidget *aParent,
                                                 const VBoxMedium &aMedium,
                                                 const QString &aUsage)

@@ -249,6 +249,8 @@ public:
     int confirmMachineDeletion(const CMachine &machine);
     bool confirmDiscardSavedState (const CMachine &machine);
 
+    void cannotChangeMediumType(QWidget *pParent, const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType);
+
     bool confirmReleaseMedium (QWidget *aParent, const VBoxMedium &aMedium,
                                const QString &aUsage);
 
