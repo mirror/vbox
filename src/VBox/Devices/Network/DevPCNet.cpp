@@ -5174,7 +5174,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * This must be done before register the critsect with the timer code, and also before
      * attaching drivers or anything else that may call us back.
      */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "PCNet#%d", iInstance);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "PCNet#%u", iInstance);
     if (RT_FAILURE(rc))
         return rc;
 

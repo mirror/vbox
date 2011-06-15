@@ -158,7 +158,7 @@ VMMR3DECL(int) IOMR3Init(PVM pVM)
     /*
      * Initialize the REM critical section.
      */
-    int rc = PDMR3CritSectInit(pVM, &pVM->iom.s.EmtLock, RT_SRC_POS, "IOM EMT Lock");
+    int rc = PDMR3CritSectInit(pVM, &pVM->iom.s.EmtLock, RT_SRC_POS, "IOM Lock");
     AssertRCReturn(rc, rc);
 
     /*
@@ -1702,18 +1702,6 @@ VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GC
 
     iomUnlock(pVM);
     return VINF_SUCCESS;
-}
-
-
-/**
- * For TM only!
- *
- * @returns Pointer to the critical section.
- * @param   pVM                 The VM handle.
- */
-VMMR3DECL(PPDMCRITSECT) IOMR3GetCritSect(PVM pVM)
-{
-    return &pVM->iom.s.EmtLock;
 }
 
 

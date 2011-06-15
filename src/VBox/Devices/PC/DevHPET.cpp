@@ -1312,7 +1312,7 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Initialize critical section.
      */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->csLock, RT_SRC_POS, "HPET");
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->csLock, RT_SRC_POS, "HPET#%u", pDevIns->iInstance);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("HPET cannot initialize critical section"));
 

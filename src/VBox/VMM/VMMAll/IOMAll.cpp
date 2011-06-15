@@ -93,6 +93,7 @@ VMMDECL(bool) IOMIsLockOwner(PVM pVM)
     return PDMCritSectIsOwner(&pVM->iom.s.EmtLock);
 }
 
+
 /**
  * Returns the contents of register or immediate data of instruction's parameter.
  *
@@ -315,7 +316,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value,
 #endif
         void           *pvUser    = pRange->pvUser;
         PPDMDEVINS      pDevIns   = pRange->pDevIns;
-        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSect);
+        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSectRo);
 
         /*
          * Call the device - 4 variations.
@@ -511,7 +512,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPt
 #endif
         void           *pvUser    = pRange->pvUser;
         PPDMDEVINS      pDevIns   = pRange->pDevIns;
-        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSect);
+        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSectRo);
 
         /*
          * Call the device - 4 variations.
@@ -679,9 +680,9 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, 
             return VINF_IOM_HC_IOPORT_WRITE;
         }
 #endif
-        void           *pvUser    =  pRange->pvUser;
+        void           *pvUser    = pRange->pvUser;
         PPDMDEVINS      pDevIns   = pRange->pDevIns;
-        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSect);
+        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSectRo);
 
         /*
          * Call the device - 4 variations.
@@ -851,7 +852,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCP
 #endif
         void           *pvUser    = pRange->pvUser;
         PPDMDEVINS      pDevIns   = pRange->pDevIns;
-        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSect);
+        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSectRo);
 
         /*
          * Call the device - 4 variations.

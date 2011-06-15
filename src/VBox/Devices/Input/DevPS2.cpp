@@ -1778,7 +1778,7 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Initialize the critical section.
      */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "PS2KM#%d", iInstance);
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "PS2KM#%u", iInstance);
     if (RT_FAILURE(rc))
         return rc;
 

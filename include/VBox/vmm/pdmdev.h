@@ -2942,6 +2942,18 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(RCPTRTYPE(PPDMCRITSECT), pfnCritSectGetNopRC,(PPDMDEVINS pDevIns));
 
     /**
+     * Changes the device level critical section from the automatically created
+     * default to one desired by the device constructor.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pCritSect           The critical section to use.  NULL is not
+     *                              valid, instead use the NOP critical
+     *                              section.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetDeviceCritSect,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
+
+    /**
      * Creates a PDM thread.
      *
      * This differs from the RTThreadCreate() API in that PDM takes care of suspending,
@@ -3421,7 +3433,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 5, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 7, 0)
 
 
 /**
@@ -3829,10 +3841,8 @@ typedef struct PDMDEVINS
     PCPDMDEVHLPRC               pHlpRC;
     /** Pointer to device instance data. */
     RTRCPTR                     pvInstanceDataRC;
-    /** The critical section for the device, see pCritSectR3.
-     * This is automatically resolved by PDM when pCritSectR3 is set by the
-     * constructor. */
-    RCPTRTYPE(PPDMCRITSECT)     pCritSectRC;
+    /** The critical section for the device, see pCritSectXR3. */
+    RCPTRTYPE(PPDMCRITSECT)     pCritSectRoRC;
     /** Alignment padding.  */
     RTRCPTR                     pAlignmentRC;
 
@@ -3840,25 +3850,24 @@ typedef struct PDMDEVINS
     PCPDMDEVHLPR0               pHlpR0;
     /** Pointer to device instance data (R0). */
     RTR0PTR                     pvInstanceDataR0;
-    /** The critical section for the device, see pCritSectR3.
-    * This is automatically resolved by PDM when pCritSectR3 is set by the
-    * constructor. */
-    R0PTRTYPE(PPDMCRITSECT)     pCritSectR0;
+    /** The critical section for the device, see pCritSectXR3. */
+    R0PTRTYPE(PPDMCRITSECT)     pCritSectRoR0;
 
     /** Pointer the HC PDM Device API. */
     PCPDMDEVHLPR3               pHlpR3;
     /** Pointer to device instance data. */
     RTR3PTR                     pvInstanceDataR3;
-    /** The critical section for the device. (Optional)
+    /** The critical section for the device.
      *
-     * The device constructor initializes this if it has a critical section for
-     * the device and desires it to be taken automatically by MMIO, I/O port
-     * and timer callbacks to the device.  The advantages using this locking
-     * approach is both less code and avoiding the global IOM lock.
+     * TM and IOM will enter this critical section before calling into the
+     * device code.  SSM will currently not, but this will be changed later on.
      *
-     * @remarks Will not yet be taken by SSM.
+     * The device gets a critical section automatically assigned to it before
+     * the constructor is called.  If the constructor wishes to use a different
+     * critical section, it calls PDMDevHlpSetDeviceCritSect() to change it
+     * very early on.
      */
-    R3PTRTYPE(PPDMCRITSECT)     pCritSectR3;
+    R3PTRTYPE(PPDMCRITSECT)     pCritSectRoR3;
 
     /** Pointer to device registration structure.  */
     R3PTRTYPE(PCPDMDEVREG)      pReg;
@@ -4558,6 +4567,14 @@ DECLINLINE(R0PTRTYPE(PPDMCRITSECT)) PDMDevHlpCritSectGetNopR0(PPDMDEVINS pDevIns
 DECLINLINE(RCPTRTYPE(PPDMCRITSECT)) PDMDevHlpCritSectGetNopRC(PPDMDEVINS pDevIns)
 {
     return pDevIns->pHlpR3->pfnCritSectGetNopRC(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSetDeviceCritSect
+ */
+DECLINLINE(int) PDMDevHlpSetDeviceCritSect(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
+{
+    return pDevIns->pHlpR3->pfnSetDeviceCritSect(pDevIns, pCritSect);
 }
 
 /**

@@ -808,7 +808,6 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
                                 uint16_t uSubsystemId, uint16_t uClass,
                                 uint32_t nQueues)
 {
-    int rc = VINF_SUCCESS;
     /* Init handles and log related stuff. */
     RTStrPrintf(pState->szInstance, sizeof(pState->szInstance),
                 pcszNameFmt, iInstance);
@@ -821,7 +820,7 @@ DECLCALLBACK(int) vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
     pState->ILeds.pfnQueryStatusLed = vpciQueryStatusLed;
 
     /* Initialize critical section. */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pState->cs, RT_SRC_POS, "%s", pState->szInstance);
+    int rc = PDMDevHlpCritSectInit(pDevIns, &pState->cs, RT_SRC_POS, "%s", pState->szInstance);
     if (RT_FAILURE(rc))
         return rc;
 

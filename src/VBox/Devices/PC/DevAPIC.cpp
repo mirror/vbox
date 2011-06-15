@@ -2377,7 +2377,8 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->enmVersion = PDMAPICVERSION_APIC;
 
     /* Disable locking in this device. */
-    pDevIns->pCritSectR3 = PDMDevHlpCritSectGetNop(pDevIns);
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
 
     PVM pVM = PDMDevHlpGetVM(pDevIns);
 

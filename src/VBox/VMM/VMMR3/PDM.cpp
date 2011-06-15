@@ -365,8 +365,6 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
     if (RT_SUCCESS(rc))
         rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, RT_SRC_POS, "PDM");
     if (RT_SUCCESS(rc))
-        rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.GiantDevCritSect, RT_SRC_POS, "Giant PDM Dev");
-    if (RT_SUCCESS(rc))
     {
         rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.NopCritSect, RT_SRC_POS, "NOP");
         if (RT_SUCCESS(rc))
@@ -506,8 +504,8 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         {
             pDevIns->pHlpRC             = pDevHlpRC;
             pDevIns->pvInstanceDataRC   = MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3);
-            if (pDevIns->pCritSectR3)
-                pDevIns->pCritSectRC    = MMHyperR3ToRC(pVM, pDevIns->pCritSectR3);
+            if (pDevIns->pCritSectRoR3)
+                pDevIns->pCritSectRoRC  = MMHyperR3ToRC(pVM, pDevIns->pCritSectRoR3);
             pDevIns->Internal.s.pVMRC   = pVM->pVMRC;
             if (pDevIns->Internal.s.pPciBusR3)
                 pDevIns->Internal.s.pPciBusRC    = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciBusR3);

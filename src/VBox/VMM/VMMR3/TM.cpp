@@ -1331,12 +1331,7 @@ VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enm
         (*ppTimer)->u.Dev.pDevIns   = pDevIns;
         (*ppTimer)->pvUser          = pvUser;
         if (!(fFlags & TMTIMER_FLAGS_NO_CRIT_SECT))
-        {
-            if (pDevIns->pCritSectR3)
-                (*ppTimer)->pCritSect = pDevIns->pCritSectR3;
-            else
-                (*ppTimer)->pCritSect = IOMR3GetCritSect(pVM);
-        }
+            (*ppTimer)->pCritSect = PDMR3DevGetCritSect(pVM, pDevIns);
         Log(("TM: Created device timer %p clock %d callback %p '%s'\n", (*ppTimer), enmClock, pfnCallback, pszDesc));
     }
 

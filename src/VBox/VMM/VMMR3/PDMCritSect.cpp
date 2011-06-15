@@ -164,6 +164,8 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                 pCritSect->pVMR0                     = pVM->pVMR0;
                 pCritSect->pVMRC                     = pVM->pVMRC;
                 pCritSect->pvKey                     = pvKey;
+                pCritSect->fAutomaticDefaultCritsect = false;
+                pCritSect->fUsedByTimerOrSimilar     = false;
                 pCritSect->EventToSignal             = NIL_RTSEMEVENT;
                 pCritSect->pNext                     = pVM->pUVM->pdm.s.pCritSects;
                 pCritSect->pszName                   = pszName;
@@ -235,6 +237,27 @@ int pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect,
                             const char *pszNameFmt, va_list va)
 {
     return pdmR3CritSectInitOne(pVM, &pCritSect->s, pDevIns, RT_SRC_POS_ARGS, pszNameFmt, va);
+}
+
+
+/**
+ * Initializes the automatic default PDM critical section for a device.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   pDevIns         Device instance.
+ * @param   pCritSect       Pointer to the critical section.
+ */
+int pdmR3CritSectInitDeviceAuto(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
+                                const char *pszNameFmt, ...)
+{
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = pdmR3CritSectInitOne(pVM, &pCritSect->s, pDevIns, RT_SRC_POS_ARGS, pszNameFmt, va);
+    if (RT_SUCCESS(rc))
+        pCritSect->s.fAutomaticDefaultCritsect = true;
+    va_end(va);
+    return rc;
 }
 
 

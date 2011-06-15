@@ -267,8 +267,14 @@ typedef struct PDMCRITSECTINT
     PVMR0                           pVMR0;
     /** Pointer to the VM - GCPtr. */
     PVMRC                           pVMRC;
+    /** Set if this critical section is the automatically created default
+     * section of a device.. */
+    bool                            fAutomaticDefaultCritsect;
+    /** Set if the critical section is used by a timer or similar.
+     * See PDMR3DevGetCritSect.  */
+    bool                            fUsedByTimerOrSimilar;
     /** Alignment padding. */
-    uint32_t                        padding;
+    bool                            afPadding[2];
     /** Event semaphore that is scheduled to be signaled upon leaving the
      * critical section. This is Ring-3 only of course. */
     RTSEMEVENT                      EventToSignal;
@@ -950,11 +956,6 @@ typedef struct PDM
      * This is used to protect everything that deals with interrupts, i.e.
      * the PIC, APIC, IOAPIC and PCI devices plus some PDM functions. */
     PDMCRITSECT                     CritSect;
-
-    /** The giant PDM device lock.
-     * This is a temporary measure and will be removed. */
-    PDMCRITSECT                     GiantDevCritSect;
-
     /** The NOP critical section.
      * This is a dummy critical section that will not do any thread
      * serialization but instead let all threads enter immediately and
@@ -1125,6 +1126,8 @@ extern const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp;
 int         pdmR3CritSectInitStats(PVM pVM);
 void        pdmR3CritSectRelocate(PVM pVM);
 int         pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, va_list va);
+int         pdmR3CritSectInitDeviceAuto(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
+                                        const char *pszNameFmt, ...);
 int         pdmR3CritSectDeleteDevice(PVM pVM, PPDMDEVINS pDevIns);
 int         pdmR3CritSectInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, ...);
 int         pdmR3CritSectDeleteDriver(PVM pVM, PPDMDRVINS pDrvIns);

@@ -263,8 +263,6 @@ VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS G
                                          RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
 
-VMMR3DECL(PPDMCRITSECT) IOMR3GetCritSect(PVM pVM);
-
 /** @} */
 #endif /* IN_RING3 */
 
