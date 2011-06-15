@@ -35,6 +35,7 @@ public:
         NewVMShortcut,
         AddVMShortcut,
         SettingsVMShortcut,
+        CloneVMShortcut,
         RemoveVMShortcut,
         StartVMShortcut,
         DiscardVMShortcut,

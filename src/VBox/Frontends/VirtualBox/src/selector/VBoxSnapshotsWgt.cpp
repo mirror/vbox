@@ -26,8 +26,10 @@
 #include "VBoxSnapshotDetailsDlg.h"
 #include "VBoxSnapshotsWgt.h"
 #include "VBoxTakeSnapshotDlg.h"
+#include "UICloneVMWizard.h"
 #include "UIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
+#include "UISelectorShortcuts.h"
 
 /* Global includes */
 #include <QDateTime>
@@ -135,6 +137,7 @@ public:
         adjustText();
     }
 
+    CMachine machine() const { return mMachine; }
     CSnapshot snapshot() const { return mSnapshot; }
     QString snapshotId() const { return mId; }
 
@@ -329,6 +332,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     , mDeleteSnapshotAction (new QAction (mSnapshotActionGroup))
     , mShowSnapshotDetailsAction (new QAction (mSnapshotActionGroup))
     , mTakeSnapshotAction (new QAction (mCurStateActionGroup))
+    , mCloneSnapshotAction(new QAction(mCurStateActionGroup))
 {
     /* Apply UI decorations */
     Ui::VBoxSnapshotsWgt::setupUi (this);
@@ -359,6 +363,8 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     toolBar->addAction (mRestoreSnapshotAction);
     toolBar->addAction (mDeleteSnapshotAction);
     toolBar->addSeparator();
+    toolBar->addAction(mCloneSnapshotAction);
+    toolBar->addSeparator();
     toolBar->addAction (mShowSnapshotDetailsAction);
 
     ((QVBoxLayout*)layout())->insertWidget (0, toolBar);
@@ -380,11 +386,14 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
         QSize (22, 22), QSize (16, 16),
         ":/take_snapshot_22px.png", ":/take_snapshot_16px.png",
         ":/take_snapshot_dis_22px.png", ":/take_snapshot_dis_16px.png"));
+    mCloneSnapshotAction->setIcon(UIIconPool::iconSet(
+        ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png"));
 
     mRestoreSnapshotAction->setShortcut (QString ("Ctrl+Shift+R"));
     mDeleteSnapshotAction->setShortcut (QString ("Ctrl+Shift+D"));
     mShowSnapshotDetailsAction->setShortcut (QString ("Ctrl+Space"));
     mTakeSnapshotAction->setShortcut (QString ("Ctrl+Shift+S"));
+    mCloneSnapshotAction->setShortcut(QString ("Ctrl+Shift+C"));
 
     mAgeUpdateTimer.setSingleShot (true);
 
@@ -400,6 +409,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     connect (mRestoreSnapshotAction, SIGNAL (triggered()), this, SLOT (sltRestoreSnapshot()));
     connect (mDeleteSnapshotAction, SIGNAL (triggered()), this, SLOT (sltDeleteSnapshot()));
     connect (mShowSnapshotDetailsAction, SIGNAL (triggered()), this, SLOT (sltShowSnapshotDetails()));
+    connect (mCloneSnapshotAction, SIGNAL(triggered()), this, SLOT(sltCloneSnapshot()));
 
     connect (gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
              this, SLOT(machineDataChanged(QString)));
@@ -440,11 +450,14 @@ void VBoxSnapshotsWgt::retranslateUi()
     mDeleteSnapshotAction->setText (tr ("&Delete Snapshot"));
     mShowSnapshotDetailsAction->setText (tr ("S&how Details"));
     mTakeSnapshotAction->setText (tr ("Take &Snapshot"));
+    mCloneSnapshotAction->setText(tr("&Clone"));
+
 
     mRestoreSnapshotAction->setStatusTip (tr ("Restore the selected snapshot of the virtual machine"));
     mDeleteSnapshotAction->setStatusTip (tr ("Delete the selected snapshot of the virtual machine"));
     mShowSnapshotDetailsAction->setStatusTip (tr ("Show the details of the selected snapshot"));
     mTakeSnapshotAction->setStatusTip (tr ("Take a snapshot of the current virtual machine state"));
+    mCloneSnapshotAction->setStatusTip(tr("Clone the selected virtual machine"));
 
     mRestoreSnapshotAction->setToolTip (mRestoreSnapshotAction->text().remove ('&').remove ('.') +
         QString (" (%1)").arg (mRestoreSnapshotAction->shortcut().toString()));
@@ -454,6 +467,8 @@ void VBoxSnapshotsWgt::retranslateUi()
         QString (" (%1)").arg (mShowSnapshotDetailsAction->shortcut().toString()));
     mTakeSnapshotAction->setToolTip (mTakeSnapshotAction->text().remove ('&').remove ('.') +
         QString (" (%1)").arg (mTakeSnapshotAction->shortcut().toString()));
+    mCloneSnapshotAction->setToolTip(mCloneSnapshotAction->text().remove('&').remove('.') +
+        QString(" (%1)").arg(mCloneSnapshotAction->shortcut().toString()));
 }
 
 void VBoxSnapshotsWgt::onCurrentChanged (QTreeWidgetItem *aItem)
@@ -497,6 +512,9 @@ void VBoxSnapshotsWgt::onCurrentChanged (QTreeWidgetItem *aItem)
     mTakeSnapshotAction->setEnabled (   (   canTakeDeleteSnapshot
                                          && mCurSnapshotItem && item && item->isCurrentStateItem())
                                      || (item && !mCurSnapshotItem));
+
+    /* Enable/disable cloning snapshots */
+    mCloneSnapshotAction->setEnabled(!busy && item);
 }
 
 void VBoxSnapshotsWgt::onContextMenuRequested (const QPoint &aPoint)
@@ -513,10 +531,16 @@ void VBoxSnapshotsWgt::onContextMenuRequested (const QPoint &aPoint)
         menu.addAction (mRestoreSnapshotAction);
         menu.addAction (mDeleteSnapshotAction);
         menu.addSeparator();
+        menu.addAction(mCloneSnapshotAction);
+        menu.addSeparator();
         menu.addAction (mShowSnapshotDetailsAction);
     }
     else
+    {
         menu.addAction (mTakeSnapshotAction);
+        menu.addSeparator();
+        menu.addAction(mCloneSnapshotAction);
+    }
 
     menu.exec (mTreeWidget->viewport()->mapToGlobal (aPoint));
 }
@@ -652,6 +676,30 @@ void VBoxSnapshotsWgt::sltShowSnapshotDetails()
 
     if (dlg.exec() == QDialog::Accepted)
         dlg.putBackToSnapshot();
+}
+
+void VBoxSnapshotsWgt::sltCloneSnapshot()
+{
+    SnapshotWgtItem *item = !mTreeWidget->currentItem() ? 0 :
+        static_cast <SnapshotWgtItem*> (mTreeWidget->currentItem());
+    AssertReturn (item, (void) 0);
+
+    CMachine machine;
+    bool fShowChildsOption = false;
+    if (item->isCurrentStateItem())
+        machine = item->machine();
+    else
+    {
+        const CSnapshot &snap = item->snapshot();
+        AssertReturn(!snap.isNull(), (void)0);
+        machine = snap.GetMachine();
+        if (snap.GetChildrenCount() > 0)
+            fShowChildsOption = true;
+    }
+    AssertReturn(!machine.isNull(), (void)0);
+
+    UICloneVMWizard wzd(this, machine, fShowChildsOption);
+    wzd.exec();
 }
 
 void VBoxSnapshotsWgt::machineDataChanged(QString strId)

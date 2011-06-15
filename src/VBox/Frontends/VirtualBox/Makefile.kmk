@@ -177,6 +177,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/settings \
 	./src/settings/global \
 	./src/settings/machine \
+	./src/wizards/clonevm \
 	./src/wizards/newvm \
 	./src/wizards/newhd \
 	./src/wizards/firstrun \
@@ -318,6 +319,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/machine/UIMachineSettingsUSBFilterDetails.h \
 	src/settings/machine/UIMachineSettingsSF.h \
 	src/settings/machine/UIMachineSettingsSFDetails.h \
+	src/wizards/clonevm/UICloneVMWizard.h \
 	src/wizards/newvm/UINewVMWzd.h \
 	src/wizards/newhd/UINewHDWizard.h \
 	src/wizards/firstrun/UIFirstRunWzd.h \
@@ -484,6 +486,7 @@ VirtualBox_SOURCES = \
 	src/settings/machine/UIMachineSettingsUSBFilterDetails.cpp \
 	src/settings/machine/UIMachineSettingsSF.cpp \
 	src/settings/machine/UIMachineSettingsSFDetails.cpp \
+	src/wizards/clonevm/UICloneVMWizard.cpp \
 	src/wizards/newvm/UINewVMWzd.cpp \
 	src/wizards/newhd/UINewHDWizard.cpp \
 	src/wizards/firstrun/UIFirstRunWzd.cpp \

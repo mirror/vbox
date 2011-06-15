@@ -66,6 +66,7 @@ private slots:
     void sltRestoreSnapshot();
     void sltDeleteSnapshot();
     void sltShowSnapshotDetails();
+    void sltCloneSnapshot();
 
     /* Main API event handlers: */
     void machineDataChanged(QString strId);
@@ -101,6 +102,7 @@ private:
     QAction         *mDeleteSnapshotAction;
     QAction         *mShowSnapshotDetailsAction;
     QAction         *mTakeSnapshotAction;
+    QAction         *mCloneSnapshotAction;
 
     QTimer          mAgeUpdateTimer;
 };

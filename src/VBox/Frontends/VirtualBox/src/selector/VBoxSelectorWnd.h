@@ -70,6 +70,7 @@ public slots:
     void vmNew();
     void vmAdd(const QString &strFile = "");
     void vmSettings(const QString &aCategory = QString::null, const QString &aControl = QString::null, const QString & = QString::null);
+    void vmClone(const QString & = QString::null);
     void vmDelete(const QString & = QString::null);
     void vmStart(const QString & = QString::null);
     void vmDiscard(const QString & = QString::null);
@@ -94,6 +95,7 @@ public slots:
     const QAction *vmNewAction() const { return mVmNewAction; }
     const QAction *vmAddAction() const { return mVmAddAction; }
     const QAction *vmConfigAction() const { return mVmConfigAction; }
+    const QAction *vmCloneAction() const { return mVmCloneAction; }
     const QAction *vmDeleteAction() const { return mVmDeleteAction; }
     const QAction *vmStartAction() const { return mVmStartAction; }
     const QAction *vmDiscardAction() const { return mVmDiscardAction; }
@@ -164,6 +166,7 @@ private:
     QAction *mVmNewAction;
     QAction *mVmAddAction;
     QAction *mVmConfigAction;
+    QAction *mVmCloneAction;
     QAction *mVmDeleteAction;
     QAction *mVmStartAction;
     QAction *mVmDiscardAction;

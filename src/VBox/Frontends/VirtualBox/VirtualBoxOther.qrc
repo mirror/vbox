@@ -6,5 +6,6 @@
     <file alias="vmw_first_run.png">images/vmw_first_run.png</file>
     <file alias="vmw_ovf_export.png">images/vmw_ovf_export.png</file>
     <file alias="vmw_ovf_import.png">images/vmw_ovf_import.png</file>
+    <file alias="vmw_clone.png">images/vmw_clone.png</file>
  </qresource>
  </RCC>
