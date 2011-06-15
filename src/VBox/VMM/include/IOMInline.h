@@ -34,7 +34,7 @@
  */
 DECLINLINE(CTX_SUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PVM pVM, RTIOPORT Port)
 {
-    Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock) || !PDMCritSectIsInitialized(&pVM->iom.s.EmtLock));
+    Assert(PDMCritSectIsOwner(&pVM->iom.s.CritSect));
     return (CTX_SUFF(PIOMIOPORTRANGE))RTAvlroIOPortRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->CTX_SUFF(IOPortTree), Port);
 }
 
@@ -50,7 +50,7 @@ DECLINLINE(CTX_SUFF(PIOMIOPORTRANGE)) iomIOPortGetRange(PVM pVM, RTIOPORT Port)
  */
 DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PVM pVM, RTIOPORT Port)
 {
-    Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock) || !PDMCritSectIsInitialized(&pVM->iom.s.EmtLock));
+    Assert(PDMCritSectIsOwner(&pVM->iom.s.CritSect));
     return (PIOMIOPORTRANGER3)RTAvlroIOPortRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortTreeR3, Port);
 }
 
@@ -66,7 +66,7 @@ DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PVM pVM, RTIOPORT Port)
  */
 DECLINLINE(PIOMMMIORANGE) iomMmioGetRange(PVM pVM, RTGCPHYS GCPhys)
 {
-    Assert(PDMCritSectIsOwner(&pVM->iom.s.EmtLock));
+    Assert(PDMCritSectIsOwner(&pVM->iom.s.CritSect));
     PIOMMMIORANGE pRange = pVM->iom.s.CTX_SUFF(pMMIORangeLast);
     if (    !pRange
         ||  GCPhys - pRange->GCPhys >= pRange->cb)
@@ -100,7 +100,7 @@ DECLINLINE(void) iomMmioRetainRange(PIOMMMIORANGE pRange)
  */
 DECLINLINE(PIOMMMIORANGE) iomMmioGetRangeWithRef(PVM pVM, RTGCPHYS GCPhys)
 {
-    int rc = PDMCritSectEnter(&pVM->iom.s.EmtLock, VINF_SUCCESS);
+    int rc = PDMCritSectEnter(&pVM->iom.s.CritSect, VINF_SUCCESS);
     AssertRCReturn(rc, NULL);
 
     PIOMMMIORANGE pRange = pVM->iom.s.CTX_SUFF(pMMIORangeLast);
@@ -111,7 +111,7 @@ DECLINLINE(PIOMMMIORANGE) iomMmioGetRangeWithRef(PVM pVM, RTGCPHYS GCPhys)
     if (pRange)
         iomMmioRetainRange(pRange);
 
-    PDMCritSectLeave(&pVM->iom.s.EmtLock);
+    PDMCritSectLeave(&pVM->iom.s.CritSect);
     return pRange;
 }
 
@@ -168,7 +168,7 @@ DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, RTGCPHYS GCPhys)
  */
 DECLINLINE(PIOMMMIOSTATS) iomMmioGetStats(PVM pVM, RTGCPHYS GCPhys, PIOMMMIORANGE pRange)
 {
-    PDMCritSectEnter(&pVM->iom.s.EmtLock, VINF_SUCCESS);
+    PDMCritSectEnter(&pVM->iom.s.CritSect, VINF_SUCCESS);
 
     /* For large ranges, we'll put everything on the first byte. */
     if (pRange->cb > PAGE_SIZE)
@@ -185,7 +185,7 @@ DECLINLINE(PIOMMMIOSTATS) iomMmioGetStats(PVM pVM, RTGCPHYS GCPhys, PIOMMMIORANG
 # endif
     }
 
-    PDMCritSectLeave(&pVM->iom.s.EmtLock);
+    PDMCritSectLeave(&pVM->iom.s.CritSect);
     return pStats;
 }
 #endif /* VBOX_WITH_STATISTICS */

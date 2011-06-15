@@ -322,7 +322,7 @@ typedef struct IOM
 #endif
 
     /** Lock serializing EMT access to IOM. */
-    PDMCRITSECT                     EmtLock;
+    PDMCRITSECT                     CritSect;
 
     /** @name Caching of I/O Port and MMIO ranges and statistics.
      * (Saves quite some time in rep outs/ins instruction emulation.)
@@ -432,9 +432,9 @@ DECLCALLBACK(int)   IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, voi
 #endif
 
 /* IOM locking helpers. */
-int     iomLock(PVM pVM);
-int     iomTryLock(PVM pVM);
-void    iomUnlock(PVM pVM);
+#define IOM_LOCK(a_pVM)     PDMCritSectEnter(&(a_pVM)->iom.s.CritSect, VERR_SEM_BUSY)
+#define IOM_UNLOCK(a_pVM)   do { PDMCritSectLeave(&(a_pVM)->iom.s.CritSect); } while (0)
+
 
 /* Disassembly helpers used in IOMAll.cpp & IOMAllMMIO.cpp */
 bool    iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRegFrame, uint64_t *pu64Data, unsigned *pcbSize);
