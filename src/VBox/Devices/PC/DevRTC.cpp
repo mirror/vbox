@@ -210,6 +210,9 @@ static void rtc_timer_update(RTCState *pThis, int64_t current_time)
     uint64_t cur_clock, next_irq_clock;
     uint32_t freq;
 
+    Assert(TMTimerIsLockOwner(pThis->CTX_SUFF(pPeriodicTimer)));
+    Assert(PDMCritSectIsOwner(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo)));
+
     period_code = pThis->cmos_data[RTC_REG_A] & 0x0f;
     if (   period_code != 0
         && (pThis->cmos_data[RTC_REG_B] & REG_B_PIE))
@@ -378,7 +381,8 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
         Log(("CMOS: Write bank %d idx %#04x: %#04x (old %#04x)\n", bank,
              pThis->cmos_index[bank], u32, pThis->cmos_data[pThis->cmos_index[bank]]));
 
-        switch (pThis->cmos_index[bank])
+        int const idx = pThis->cmos_index[bank];
+        switch (idx)
         {
             case RTC_SECONDS_ALARM:
             case RTC_MINUTES_ALARM:
@@ -400,30 +404,49 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
                 break;
 
             case RTC_REG_A:
-                /* UIP bit is read only */
-                pThis->cmos_data[RTC_REG_A] = (u32                        & ~REG_A_UIP)
-                                            | (pThis->cmos_data[RTC_REG_A] & REG_A_UIP);
-                rtc_timer_update(pThis, TMTimerGet(pThis->CTX_SUFF(pPeriodicTimer)));
-                break;
-
             case RTC_REG_B:
-                if (u32 & REG_B_SET)
+            {
+                /* We need to acquire the clock lock, because of lock ordering
+                   issues this means having to release the device lock.  Since
+                   we're letting IOM do the locking, we must not return without
+                   holding the device lock.*/
+                PDMCritSectLeave(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo));
+                int rc1 = TMTimerLock(pThis->CTX_SUFF(pPeriodicTimer), VINF_SUCCESS /* must get it */);
+                int rc2 = PDMCritSectEnter(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo), VINF_SUCCESS /* must get it */);
+                AssertRCReturn(rc1, rc1);
+                AssertRCReturnStmt(rc2, TMTimerUnlock(pThis->CTX_SUFF(pPeriodicTimer)), rc2);
+
+                if (idx == RTC_REG_A)
                 {
-                    /* set mode: reset UIP mode */
-                    pThis->cmos_data[RTC_REG_A] &= ~REG_A_UIP;
-#if 0 /* This is probably wrong as it breaks changing the time/date in OS/2. */
-                    u32 &= ~REG_B_UIE;
-#endif
+                    /* UIP bit is read only */
+                    pThis->cmos_data[RTC_REG_A] = (u32                        & ~REG_A_UIP)
+                                                | (pThis->cmos_data[RTC_REG_A] & REG_A_UIP);
                 }
                 else
                 {
-                    /* if disabling set mode, update the time */
-                    if (pThis->cmos_data[RTC_REG_B] & REG_B_SET)
-                        rtc_set_time(pThis);
+                    if (u32 & REG_B_SET)
+                    {
+                        /* set mode: reset UIP mode */
+                        pThis->cmos_data[RTC_REG_A] &= ~REG_A_UIP;
+#if 0 /* This is probably wrong as it breaks changing the time/date in OS/2. */
+                        u32 &= ~REG_B_UIE;
+#endif
+                    }
+                    else
+                    {
+                        /* if disabling set mode, update the time */
+                        if (pThis->cmos_data[RTC_REG_B] & REG_B_SET)
+                            rtc_set_time(pThis);
+                    }
+                    pThis->cmos_data[RTC_REG_B] = u32;
                 }
-                pThis->cmos_data[RTC_REG_B] = u32;
+
                 rtc_timer_update(pThis, TMTimerGet(pThis->CTX_SUFF(pPeriodicTimer)));
+
+                TMTimerUnlock(pThis->CTX_SUFF(pPeriodicTimer));
+                /* the caller leaves the other lock. */
                 break;
+            }
 
             case RTC_REG_C:
             case RTC_REG_D:
@@ -454,6 +477,8 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 static DECLCALLBACK(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    Assert(TMTimerIsLockOwner(pThis->CTX_SUFF(pPeriodicTimer)));
+    Assert(PDMCritSectIsOwner(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo)));
 
     rtc_timer_update(pThis, pThis->next_periodic_time);
     pThis->cmos_data[RTC_REG_C] |= 0xc0;
@@ -536,6 +561,8 @@ static void rtc_next_second(struct my_tm *tm)
 static DECLCALLBACK(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    Assert(TMTimerIsLockOwner(pThis->CTX_SUFF(pPeriodicTimer)));
+    Assert(PDMCritSectIsOwner(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo)));
 
     /* if the oscillator is not in normal operation, we do not update */
     if ((pThis->cmos_data[RTC_REG_A] & 0x70) != 0x20)
@@ -597,6 +624,8 @@ static void rtc_copy_date(RTCState *pThis)
 static DECLCALLBACK(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    Assert(TMTimerIsLockOwner(pThis->CTX_SUFF(pPeriodicTimer)));
+    Assert(PDMCritSectIsOwner(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo)));
 
     if (!(pThis->cmos_data[RTC_REG_B] & REG_B_SET))
         rtc_copy_date(pThis);
