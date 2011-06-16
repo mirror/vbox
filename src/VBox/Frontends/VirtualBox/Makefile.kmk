@@ -227,9 +227,14 @@ else
  endif
 endif
 
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
- VirtualBox_LDFLAGS.win += /DelayLoad:QtOpenGLVBox4.dll /DelayLoad:OPENGL32.dll
-endif
+# delay loading causes VM process crashes due to the misbehave of the current QtOpenGLVBox4.dll we use 
+# (i.e. it does not create the ogl context properly when loaded this way)
+#
+# @todo: investigate a better work-around and enable back delay loading since it is needed to avoid
+# crashes caused by buggy ogl drivers for the case 2D is not used (i.e. no ogl stuff loaded)  
+#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
+# VirtualBox_LDFLAGS.win += /DelayLoad:QtOpenGLVBox4.dll /DelayLoad:OPENGL32.dll
+#endif
 
 VirtualBox_LDFLAGS.darwin = \
 	-framework AppKit -framework Carbon \
