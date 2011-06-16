@@ -1106,6 +1106,13 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
             pfnProgress = pCbProgress->pfnProgress;
         pvUser = pIfProgress->pvUser;
     }
+    
+    /* Check the image flags. */
+    if ((uImageFlags & ~VD_VDI_IMAGE_FLAGS_MASK) != 0)
+    {
+        rc = VERR_VD_INVALID_TYPE;
+        goto out;
+    }
 
     /* Check open flags. All valid flags are supported. */
     if (uOpenFlags & ~VD_OPEN_FLAGS_MASK)
