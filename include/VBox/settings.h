@@ -160,6 +160,10 @@ public:
 
 protected:
     ConfigFileBase(const com::Utf8Str *pstrFilename);
+    /* Note: this copy constructor doesn't create a full copy of other, cause
+     * the file based stuff (xml doc) could not be copied. */
+    ConfigFileBase(const ConfigFileBase &other);
+
     ~ConfigFileBase();
 
     void parseUUID(com::Guid &guid,
@@ -194,10 +198,6 @@ protected:
 
     struct Data;
     Data *m;
-
-private:
-    // prohibit copying (Data contains pointers to XML which cannot be copied)
-    ConfigFileBase(const ConfigFileBase&);
 
     friend class ConfigFileError;
 };

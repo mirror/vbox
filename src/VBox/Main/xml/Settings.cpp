@@ -345,6 +345,13 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     }
 }
 
+ConfigFileBase::ConfigFileBase(const ConfigFileBase &other)
+    : m(new Data)
+{
+    copyBaseFrom(other);
+    m->strFilename = "";
+    m->fFileExists = false;
+}
 /**
  * Clean up.
  */
