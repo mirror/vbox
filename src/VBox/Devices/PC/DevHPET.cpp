@@ -194,26 +194,29 @@ typedef struct HpetState
     /** The HPET helpers - RC Ptr. */
     PCPDMHPETHLPRC       pHpetHlpRC;
 
-    /* Timer structures. */
+    /** Timer structures. */
     HpetTimer            aTimers[HPET_NUM_TIMERS];
 
-    /* Offset realtive to the system clock. */
+    /** Offset realtive to the virtual sync clock. */
     uint64_t             u64HpetOffset;
 
-    /* Memory-mapped, software visible registers */
-    /* capabilities. */
+    /** @name Memory-mapped, software visible registers
+     * @{ */
+    /** Capabilities. */
     uint64_t             u64Capabilities;
-    /* Configuration. */
+    /** Configuration. */
     uint64_t             u64HpetConfig;
-    /* Interrupt status register. */
+    /** Interrupt status register. */
     uint64_t             u64Isr;
-    /* Main counter. */
+    /** Main counter. */
     uint64_t             u64HpetCounter;
+    /** @}  */
 
-    /* Global device lock. */
+    /** Global device lock. */
     PDMCRITSECT          csLock;
 
-    /* If we emulate ICH9 HPET (different frequency). */
+    /** If we emulate ICH9 HPET (different frequency).
+     * @todo different number of timers  */
     uint8_t              fIch9;
     uint8_t              padding0[7];
 } HpetState;
@@ -1082,13 +1085,12 @@ static DECLCALLBACK(void) hpetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *p
 static DECLCALLBACK(void) hpetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     HpetState *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
-    unsigned i;
     LogFlow(("hpetRelocate:\n"));
 
     pThis->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pHpetHlpRC   = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);
 
-    for (i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
         HpetTimer *pTm = &pThis->aTimers[i];
         if (pTm->pTimerR3)
@@ -1106,15 +1108,14 @@ static DECLCALLBACK(void) hpetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
 {
     HpetState *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
-    unsigned i;
-
     LogFlow(("hpetReset:\n"));
 
     pThis->u64HpetConfig = 0;
-    for (i = 0; i < HPET_NUM_TIMERS; i++)
+    for (unsigned i = 0; i < HPET_NUM_TIMERS; i++)
     {
         HpetTimer *pHpetTimer = &pThis->aTimers[i];
-        pHpetTimer->idxTimer = i;
+        Assert(pHpetTimer->idxTimer == i);
+
         /* capable of periodic operations and 64-bits */
         if (pThis->fIch9)
             pHpetTimer->u64Config = (i == 0)
@@ -1135,54 +1136,18 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
 
     uint32_t u32Vendor = 0x8086;
     /* 64-bit main counter; 3 timers supported; LegacyReplacementRoute. */
-    uint32_t u32Caps =
-      (1 << 15) /* LEG_RT_CAP, LegacyReplacementRoute capable */ |
-      (1 << 13) /* COUNTER_SIZE_CAP, main counter is 64-bit capable */ |
-      /* Actually ICH9 has 4 timers, but to avoid breaking saved state we'll stick with 3 so far. */
-      (HPET_NUM_TIMERS << 8) /* NUM_TIM_CAP, number of timers -1 */ |
-      1 /* REV_ID, revision, must not be 0 */;
+    uint32_t u32Caps = (1 << 15)              /* LEG_RT_CAP       - LegacyReplacementRoute capable. */
+                     | (1 << 13)              /* COUNTER_SIZE_CAP - Main counter is 64-bit capable. */
+                     | (HPET_NUM_TIMERS << 8) /* NUM_TIM_CAP      - Number of timers -1.
+                                                 Actually ICH9 has 4 timers, but to avoid breaking
+                                                 saved state we'll stick with 3 so far. */ /** @todo fix this ICH9 timer count bug. */
+                     | 1                      /* REV_ID           - Revision, must not be 0 */
+                     ;
     pThis->u64Capabilities = (u32Vendor << 16) | u32Caps;
     pThis->u64Capabilities |= ((uint64_t)(pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD) << 32);
 
     /* Notify PIT/RTC devices */
     hpetLegacyMode(pThis, false);
-}
-
-/**
- * Initialization routine.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- */
-static int hpetInit(PPDMDEVINS pDevIns)
-{
-    HpetState *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
-
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
-    for (unsigned i = 0; i < HPET_NUM_TIMERS; i++)
-    {
-        HpetTimer *pHpetTimer = &pThis->aTimers[i];
-
-        pHpetTimer->pHpetR3 = pThis;
-        pHpetTimer->pHpetR0 = PDMINS_2_DATA_R0PTR(pDevIns);
-        pHpetTimer->pHpetRC = PDMINS_2_DATA_RCPTR(pDevIns);
-
-        int rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hpetTimer, pHpetTimer,
-                                        TMTIMER_FLAGS_NO_CRIT_SECT, "HPET Timer",
-                                        &pThis->aTimers[i].pTimerR3);
-        if (RT_FAILURE(rc))
-            return rc;
-        pThis->aTimers[i].pTimerRC = TMTimerRCPtr(pThis->aTimers[i].pTimerR3);
-        pThis->aTimers[i].pTimerR0 = TMTimerR0Ptr(pThis->aTimers[i].pTimerR3);
-        /// @todo TMR3TimerSetCritSect(pThis->aTimers[i].pTimerR3, &pThis->csLock);
-    }
-
-    hpetReset(pDevIns);
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -1256,16 +1221,37 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read ICH9 as boolean"));
 
-    /* Initialize the device state */
-    pThis->fIch9 = (uint8_t)fIch9;
-
-    rc = hpetInit(pDevIns);
-    if (RT_FAILURE(rc))
-        return rc;
-
+    /*
+     * Initialize the device state
+     */
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->fIch9     = (uint8_t)fIch9;
+
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->csLock, RT_SRC_POS, "HPET#%u", pDevIns->iInstance);
+    AssertRCReturn(rc, rc);
+
+    /* Init timers. */
+    for (unsigned i = 0; i < HPET_NUM_TIMERS; i++)
+    {
+        HpetTimer *pHpetTimer = &pThis->aTimers[i];
+
+        pHpetTimer->idxTimer = i;
+        pHpetTimer->pHpetR3  = pThis;
+        pHpetTimer->pHpetR0  = PDMINS_2_DATA_R0PTR(pDevIns);
+        pHpetTimer->pHpetRC  = PDMINS_2_DATA_RCPTR(pDevIns);
+
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hpetTimer, pHpetTimer,
+                                        TMTIMER_FLAGS_NO_CRIT_SECT, "HPET Timer",
+                                        &pThis->aTimers[i].pTimerR3);
+        AssertRCReturn(rc, rc);
+        pThis->aTimers[i].pTimerRC = TMTimerRCPtr(pThis->aTimers[i].pTimerR3);
+        pThis->aTimers[i].pTimerR0 = TMTimerR0Ptr(pThis->aTimers[i].pTimerR3);
+        /// @todo TMR3TimerSetCritSect(pThis->aTimers[i].pTimerR3, &pThis->csLock);
+    }
+
+    hpetReset(pDevIns);
 
     /*
      * Register the HPET and get helpers.
@@ -1276,58 +1262,36 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     AssertRCReturn(rc, rc);
 
     /*
-     * Initialize critical section.
-     */
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->csLock, RT_SRC_POS, "HPET#%u", pDevIns->iInstance);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("HPET cannot initialize critical section"));
-
-    /*
      * Register the MMIO range, PDM API requests page aligned
      * addresses and sizes.
      */
     rc = PDMDevHlpMMIORegister(pDevIns, HPET_BASE, 0x1000, pThis,
                                hpetMMIOWrite, hpetMMIORead, NULL, "HPET Memory");
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgRC(rc, ("Cannot register MMIO: %Rrc\n", rc));
-        return rc;
-    }
+    AssertRCReturn(rc, rc);
 
     if (fRCEnabled)
     {
         rc = PDMDevHlpMMIORegisterRC(pDevIns, HPET_BASE, 0x1000, 0,
                                      "hpetMMIOWrite", "hpetMMIORead", NULL);
-        if (RT_FAILURE(rc))
-            return rc;
+        AssertRCReturn(rc, rc);
 
         pThis->pHpetHlpRC = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);
-        if (!pThis->pHpetHlpRC)
-        {
-            AssertReleaseMsgFailed(("cannot get RC helper\n"));
-            return VERR_INTERNAL_ERROR;
-        }
+        AssertReturn(pThis->pHpetHlpRC != NIL_RTRCPTR, VERR_INTERNAL_ERROR);
     }
 
     if (fR0Enabled)
     {
         rc = PDMDevHlpMMIORegisterR0(pDevIns, HPET_BASE, 0x1000, 0,
                                      "hpetMMIOWrite", "hpetMMIORead", NULL);
-        if (RT_FAILURE(rc))
-            return rc;
+        AssertRCReturn(rc, rc);
 
         pThis->pHpetHlpR0 = pThis->pHpetHlpR3->pfnGetR0Helpers(pDevIns);
-        if (!pThis->pHpetHlpR0)
-        {
-            AssertReleaseMsgFailed(("cannot get R0 helper\n"));
-            return VERR_INTERNAL_ERROR;
-        }
+        AssertReturn(pThis->pHpetHlpR0 != NIL_RTR0PTR, VERR_INTERNAL_ERROR);
     }
 
     /* Register SSM callbacks */
     rc = PDMDevHlpSSMRegister3(pDevIns, HPET_SAVED_STATE_VERSION, sizeof(*pThis), hpetLiveExec, hpetSaveExec, hpetLoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /**
      * @todo Register statistics.
