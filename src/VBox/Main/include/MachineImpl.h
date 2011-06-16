@@ -840,10 +840,12 @@ protected:
     HRESULT deleteTaskWorker(DeleteTask &task);
 
     struct CloneVMTask;
-    HRESULT cloneCreateMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComPtr<IMachine> > &machineList) const;
+    HRESULT cloneCreateMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComObjPtr<Machine> > &machineList) const;
     settings::Snapshot cloneFindSnapshot(settings::MachineConfigFile *pMCF, const settings::SnapshotsList &snl, const Guid &id) const;
     void cloneUpdateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
     void cloneUpdateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
+    void cloneUpdateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const;
+    static int cloneCopyStateFileProgress(unsigned uPercentage, void *pvUser);
 
     static DECLCALLBACK(int) cloneVMThread(RTTHREAD Thread, void *pvUser);
     HRESULT cloneVMTaskWorker(CloneVMTask *pTask);

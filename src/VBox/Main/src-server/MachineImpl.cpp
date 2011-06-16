@@ -6092,7 +6092,13 @@ struct Machine::CloneVMTask
         bool                    fCreateDiffs;
     }MediumTaskChain;
     RTCList<MediumTaskChain>    llMedias;
-    RTCList< std::pair<Utf8Str, Utf8Str> > llSaveStateFiles; /* Snapshot UUID -> File path */
+    typedef struct
+    {
+        Guid                    snapshotUuid;
+        Utf8Str                 strSaveStateFile;
+        uint64_t                cbSize;
+    }SaveStateTask;
+    RTCList<SaveStateTask> llSaveStateFiles; /* Snapshot UUID -> File path */
 };
 
 STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, BOOL fFullClone, IProgress **pProgress)
@@ -6122,16 +6128,16 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, BOOL fFullClo
         AutoWriteLock trgLock(pTask->pTrgMachine COMMA_LOCKVAL_SRC_POS);
 
         if (pTask->pSrcMachine->isSnapshotMachine())
-            pTask->snapshotId  = static_cast<SnapshotMachine*>((Machine*)pTask->pSrcMachine)->getSnapshotId();
+            pTask->snapshotId = pTask->pSrcMachine->getSnapshotId();
 
         /* Add the current machine and all snapshot machines below this machine
          * in a list for further processing. */
-        RTCList< ComPtr<IMachine> > machineList;
+        RTCList< ComObjPtr<Machine> > machineList;
 
         /* Include current state? */
-        if (   pTask->mode == CloneMode_MachineState
-            || pTask->mode == CloneMode_AllStates)
-            machineList.append(static_cast< ComPtr<IMachine> >(pTask->pSrcMachine));
+        if (   pTask->mode == CloneMode_MachineState)
+//            || pTask->mode == CloneMode_AllStates)
+            machineList.append(pTask->pSrcMachine);
         /* Should be done a depth copy with all child snapshots? */
         if (   pTask->mode == CloneMode_MachineAndChildStates
             || pTask->mode == CloneMode_AllStates)
@@ -6160,13 +6166,14 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, BOOL fFullClo
         ULONG uTotalWeight = 2; /* The init task and the machine creation is worth one. */
         for (size_t i = 0; i < machineList.size(); ++i)
         {
+            ComObjPtr<Machine> machine = machineList.at(i);
             /* If this is the Snapshot Machine we want to clone, we need to
              * create a new diff file for the new "current state". */
             bool fCreateDiffs = false;
-            if (machineList.at(i) == pTask->pOldMachineState)
+            if (machine == pTask->pOldMachineState)
                 fCreateDiffs = true;
             SafeIfaceArray<IMediumAttachment> sfaAttachments;
-            rc = machineList.at(i)->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
+            rc = machine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
             if (FAILED(rc)) throw rc;
             /* Add all attachments (and there parents) of the different
              * machines to a worker list. */
@@ -6219,12 +6226,21 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, BOOL fFullClo
                 };
                 pTask->llMedias.append(mtc);
             }
-            /* Todo: If this machine has save state files, they have to be copied as well. */
-//            Bstr bstrSrcSaveStatePath;
-//            rc = machineList.at(i)->COMGETTER(StateFilePath)(bstrSrcSaveStatePath.asOutParam());
-//            if (FAILED(rc)) throw rc;
-//            if (!bstrSrcSaveStatePath.isEmpty())
-//                pTask->llSaveStates.append(bstrSrcSaveStatePath);
+            Bstr bstrSrcSaveStatePath;
+            rc = machine->COMGETTER(StateFilePath)(bstrSrcSaveStatePath.asOutParam());
+            if (FAILED(rc)) throw rc;
+            if (!bstrSrcSaveStatePath.isEmpty())
+            {
+                Machine::CloneVMTask::SaveStateTask sst;
+                sst.snapshotUuid     = machine->getSnapshotId();
+                sst.strSaveStateFile = bstrSrcSaveStatePath;
+                int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &sst.cbSize);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_IPRT_ERROR, tr("Could not query file size of '%s' (%Rrc)"), sst.strSaveStateFile.c_str(), vrc);
+                pTask->llSaveStateFiles.append(sst);
+                ++uCount;
+                uTotalWeight += sst.cbSize;
+            }
         }
 
         rc = pTask->pProgress.createObject();
@@ -6247,7 +6263,7 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, BOOL fFullClo
                                  0,
                                  "MachineClone");
         if (RT_FAILURE(vrc))
-            throw setError(E_FAIL, "Could not create Machine clone thread (%Rrc)", vrc);
+            throw setError(VBOX_E_IPRT_ERROR, "Could not create machine clone thread (%Rrc)", vrc);
     }
     catch (HRESULT rc2)
     {
@@ -6292,7 +6308,7 @@ DECLCALLBACK(int) Machine::cloneVMThread(RTTHREAD /* Thread */, void *pvUser)
     return VINF_SUCCESS;
 }
 
-HRESULT Machine::cloneCreateMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComPtr<IMachine> > &machineList) const
+HRESULT Machine::cloneCreateMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComObjPtr<Machine> > &machineList) const
 {
     HRESULT rc = S_OK;
     Bstr name;
@@ -6302,7 +6318,7 @@ HRESULT Machine::cloneCreateMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCL
     ComPtr<IMachine> pMachine;
     rc = pSnapshot->COMGETTER(Machine)(pMachine.asOutParam());
     if (FAILED(rc)) return rc;
-    machineList.append(pMachine);
+    machineList.append((Machine*)(IMachine*)pMachine);
 
     SafeIfaceArray<ISnapshot> sfaChilds;
     rc = pSnapshot->COMGETTER(Children)(ComSafeArrayAsOutParam(sfaChilds));
@@ -6364,6 +6380,36 @@ void Machine::cloneUpdateSnapshotStorageLists(settings::SnapshotsList &sl, const
     }
 }
 
+void Machine::cloneUpdateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const
+{
+    settings::SnapshotsList::iterator it;
+    for (it = snl.begin(); it != snl.end(); ++it)
+    {
+        if (it->uuid == id)
+            it->strStateFile = strFile;
+        else if (!it->llChildSnapshots.empty())
+            cloneUpdateStateFile(it->llChildSnapshots, id, strFile);
+    }
+}
+
+/* static */
+int Machine::cloneCopyStateFileProgress(unsigned uPercentage, void *pvUser)
+{
+    ComObjPtr<Progress> pProgress = *static_cast< ComObjPtr<Progress>* >(pvUser);
+
+    BOOL fCanceled = false;
+    HRESULT rc = pProgress->COMGETTER(Canceled)(&fCanceled);
+    if (FAILED(rc)) return VERR_GENERAL_FAILURE;
+    /* If canceled by the user tell it to the copy operation. */
+    if (fCanceled) return VERR_CANCELLED;
+    /* Set the new process. */
+    RTPrintf("stat %d %%\n", uPercentage);
+    rc = pProgress->SetCurrentOperationProgress(uPercentage);
+    if (FAILED(rc)) return VERR_GENERAL_FAILURE;
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Task thread implementation for Machine::CloneTo(), called from Machine::cloneVMThread().
  * @param task
@@ -6377,7 +6423,7 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
     AutoReadLock  srcLock(this COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock trgLock(pTask->pTrgMachine COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
+    MultiResult rc = S_OK;
 
     /*
      * Todo:
@@ -6395,6 +6441,7 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
     strTrgMachineFolder.stripFilename();
 
     RTCList< ComObjPtr<Medium> > newMedias; /* All created images */
+    RTCList<Utf8Str> newFiles;              /* All extra created files (save states, ...) */
     try
     {
         /* Copy all the configuration from this machine to an empty
@@ -6435,9 +6482,10 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
             pTrgMCF->llFirstSnapshot.push_back(sn);
         }
 
-        /* Reset the snapshot folder to 'Snapshots' within the target directory.
-         * Todo: Not sure if this is what we want. */
-        pTrgMCF->machineUserData.strSnapshotFolder = "Snapshots";
+        /* When the current snapshot folder is absolute we reset it to the
+         * default relative folder. */
+        if (RTPathStartsWithRoot(pTrgMCF->machineUserData.strSnapshotFolder.c_str()))
+            pTrgMCF->machineUserData.strSnapshotFolder = "Snapshots";
         pTrgMCF->strStateFile = "";
         /* Force writing of setting file. */
         pTrgMCF->fCurrentStateModified = true;
@@ -6445,6 +6493,9 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
         pTrgMCF->machineUserData.strName = pTask->pTrgMachine->mUserData->s.strName;
         pTrgMCF->uuid = pTask->pTrgMachine->mData->mUuid;
 
+        Bstr bstrSrcSnapshotFolder;
+        rc = pTask->pSrcMachine->COMGETTER(SnapshotFolder)(bstrSrcSnapshotFolder.asOutParam());
+        if (FAILED(rc)) throw rc;
         /* The absolute name of the snapshot folder. */
         Utf8Str strTrgSnapshotFolder = Utf8StrFmt("%s%c%s%c", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, pTrgMCF->machineUserData.strSnapshotFolder.c_str(), RTPATH_DELIMITER);
 
@@ -6592,12 +6643,31 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
             cloneUpdateStorageLists(pTrgMCF->storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
             cloneUpdateSnapshotStorageLists(pTrgMCF->llFirstSnapshot, bstrSrcId, bstrTrgId);
         }
-        /* Todo: Clone all save state files. */
-//        for (size_t i = 0; i < pTask->llSaveStates.size(); ++i)
-//        {
-//            RTPrintf("save state: %s\n", pTask->llSaveStates.at(i).c_str());
-//            RTFileCopy(llSaveStates.at(i).c_str(),);
-//        }
+        /* Clone all save state files. */
+        for (size_t i = 0; i < pTask->llSaveStateFiles.size(); ++i)
+        {
+            Machine::CloneVMTask::SaveStateTask sst = pTask->llSaveStateFiles.at(i);
+            const Utf8Str &strTrgSaveState = Utf8StrFmt("%s%s", strTrgSnapshotFolder.c_str(), RTPathFilename(sst.strSaveStateFile.c_str()));
+
+            /* Move to next sub-operation. */
+            rc = pTask->pProgress->SetNextOperation(BstrFmt(tr("Copy save state file '%s' ..."), RTPathFilename(sst.strSaveStateFile.c_str())).raw(), sst.cbSize);
+            if (FAILED(rc)) throw rc;
+            /* Copy the file only if it was not copied already. */
+            if (!newFiles.contains(strTrgSaveState.c_str()))
+            {
+                int vrc = RTFileCopyEx(sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), 0, cloneCopyStateFileProgress, &pTask->pProgress);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_IPRT_ERROR,
+                                   tr("Could not copy state file '%s' to '%s' (%Rrc)"), sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
+                newFiles.append(strTrgSaveState);
+            }
+            /* Update the path in the configuration either for the current
+             * machine state or the snapshots. */
+            if (sst.snapshotUuid.isEmpty())
+                pTrgMCF->strStateFile = strTrgSaveState;
+            else
+                cloneUpdateStateFile(pTrgMCF->llFirstSnapshot, sst.snapshotUuid, strTrgSaveState);
+        }
 
         if (false)
 //        if (!pTask->pOldMachineState.isNull())
@@ -6690,23 +6760,35 @@ HRESULT Machine::cloneVMTaskWorker(CloneVMTask *pTask)
     /* Cleanup on failure (CANCEL also) */
     if (FAILED(rc))
     {
+        int vrc = VINF_SUCCESS;
+        /* Delete all created files. */
+        for (size_t i = 0; i < newFiles.size(); ++i)
+        {
+            vrc = RTFileDelete(newFiles.at(i).c_str());
+            if (RT_FAILURE(vrc))
+                rc = setError(VBOX_E_IPRT_ERROR, tr("Could not delete file '%s' (%Rrc)"), newFiles.at(i).c_str(), vrc);
+        }
         /* Delete all already created medias. (Reverse, cause there could be
          * parent->child relations.) */
         for (size_t i = newMedias.size(); i > 0; --i)
         {
             ComObjPtr<Medium> &pMedium = newMedias.at(i - 1);
             AutoCaller mac(pMedium);
-            if (FAILED(mac.rc())) return mac.rc();
+            if (FAILED(mac.rc())) { continue; rc = mac.rc(); }
             AutoReadLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
             bool fFile = pMedium->isMediumFormatFile();
             Utf8Str strLoc = pMedium->getLocationFull();
             mlock.release();
             /* Close the medium. If this succeed, delete it finally from the
              * disk. */
-            HRESULT rc1 = pMedium->close(NULL, mac);
-            if (   SUCCEEDED(rc1)
-                && fFile)
-                RTFileDelete(strLoc.c_str());
+            rc = pMedium->close(NULL, mac);
+            if (FAILED(rc)) continue;
+            if (fFile)
+            {
+                vrc = RTFileDelete(strLoc.c_str());
+                if (RT_FAILURE(vrc))
+                    rc = setError(VBOX_E_IPRT_ERROR, tr("Could not delete file '%s' (%Rrc)"), strLoc.c_str(), vrc);
+            }
         }
         /* Delete the machine folder when not empty. */
         RTDirRemove(strTrgMachineFolder.c_str());
