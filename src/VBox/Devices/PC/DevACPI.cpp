@@ -220,7 +220,6 @@ typedef struct ACPIState
     /** Number of logical CPUs in guest */
     uint16_t            cCpus;
     uint64_t            u64PmTimerInitial;
-    uint64_t            u64PmTimerLastSeen;
     PTMTIMERR3          pPmTimerR3;
     PTMTIMERR0          pPmTimerR0;
     PTMTIMERRC          pPmTimerRC;
@@ -1590,27 +1589,6 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     {
         uint64_t const u64PmTimerInitial = pThis->u64PmTimerInitial;
         uint64_t u64Now = TMTimerGet(pThis->CTX_SUFF(pPmTimer));
-
-        /*
-         * Make 100% sure time doesn't go backwards.
-         */
-        uint64_t u64Seen;
-        do
-        {
-            u64Seen = ASMAtomicReadU64(&pThis->u64PmTimerLastSeen);
-            if (u64Now < u64Seen)
-            {
-#ifdef DEBUG
-                DBGFTRACE_PDM_U64_TAG(pDevIns, u64Now, "acpi bad");
-# if 0
-                RTTraceBufDisable(DBGFTRACE_PDM_TRACEBUF(pDevIns));
-                AssertFailed();
-# endif
-#endif
-                u64Now = u64Seen + 1;
-            }
-        } while (!ASMAtomicCmpXchgU64(&pThis->u64PmTimerLastSeen, u64Now, u64Seen));
-
         TMTimerUnlock(pThis->CTX_SUFF(pPmTimer));
 
         /*
