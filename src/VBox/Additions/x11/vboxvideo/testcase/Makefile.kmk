@@ -36,7 +36,7 @@ endif # !VBOX_ONLY_SDK
 #
 tstSetModeXOrg_TEMPLATE = VBOXR3TSTEXE
 tstSetModeXOrg_CFLAGS += -std=c99
-tstSetModeXOrg_DEFS = $(vboxvideo_drv_15_DEFS) TESTCASE
+tstSetModeXOrg_DEFS = $(filter-out IN_RT_STATIC,$(vboxvideo_drv_15_DEFS)) TESTCASE
 tstSetModeXOrg_SOURCES  = \
 	tstSetModeXOrg.c \
 	../setmode.c
