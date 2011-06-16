@@ -6403,7 +6403,6 @@ int Machine::cloneCopyStateFileProgress(unsigned uPercentage, void *pvUser)
     /* If canceled by the user tell it to the copy operation. */
     if (fCanceled) return VERR_CANCELLED;
     /* Set the new process. */
-    RTPrintf("stat %d %%\n", uPercentage);
     rc = pProgress->SetCurrentOperationProgress(uPercentage);
     if (FAILED(rc)) return VERR_GENERAL_FAILURE;
 
