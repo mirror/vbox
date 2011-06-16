@@ -6111,7 +6111,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="acf265ea-0433-4fda-9619-efa40275899c"
+    uuid="7fcaa74a-5d69-4c83-a357-404a60664e47"
     wsmap="managed"
     >
     <desc>
