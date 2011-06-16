@@ -1064,10 +1064,6 @@ static DECLCALLBACK(void) hpetTimerCb(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     uint64_t   u64CurTick = hpetGetTicks(pThis);
     uint64_t   u64Diff;
 
-    /* Lock in R3 must either block or succeed */
-    int rc = PDMCritSectEnter(&pThis->csLock, VERR_IGNORED);
-    AssertRC(rc);
-
     if ((pHpetTimer->u64Config & HPET_TN_PERIODIC) && (u64Period != 0))
     {
         hpetAdjustComparator(pHpetTimer, u64CurTick);
@@ -1090,8 +1086,6 @@ static DECLCALLBACK(void) hpetTimerCb(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 
     /* Should it really be under lock, does it really matter? */
     hpetTimerCbUpdateIrq(pThis, pHpetTimer);
-
-    PDMCritSectLeave(&pThis->csLock);
 }
 
 
@@ -1263,6 +1257,7 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
     {
         HpetTimer *pHpetTimer = &pThis->aTimers[i];
         Assert(pHpetTimer->idxTimer == i);
+        TMTimerStop(pHpetTimer->pTimerR3);
 
         /* capable of periodic operations and 64-bits */
         if (pThis->fIch9)
@@ -1278,7 +1273,6 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
         pHpetTimer->u64Period  = 0;
         pHpetTimer->u8Wrap     = 0;
         pHpetTimer->u64Cmp     = hpetInvalidValue(pHpetTimer);
-        /** @todo shouldn't we stop any active timers at this point? */
     }
     pThis->u64HpetCounter = 0;
     pThis->u64HpetOffset  = 0;
@@ -1360,7 +1354,8 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         AssertRCReturn(rc, rc);
         pThis->aTimers[i].pTimerRC = TMTimerRCPtr(pThis->aTimers[i].pTimerR3);
         pThis->aTimers[i].pTimerR0 = TMTimerR0Ptr(pThis->aTimers[i].pTimerR3);
-        /// @todo TMR3TimerSetCritSect(pThis->aTimers[i].pTimerR3, &pThis->csLock);
+        rc = TMR3TimerSetCritSect(pThis->aTimers[i].pTimerR3, &pThis->csLock);
+        AssertRCReturn(rc, rc);
     }
 
     /* This must be done prior to registering the HPET, right? */
