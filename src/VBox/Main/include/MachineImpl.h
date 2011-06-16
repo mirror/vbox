@@ -907,6 +907,8 @@ protected:
     friend class SnapshotMachine;
     friend class Appliance;
     friend class VirtualBox;
+
+    friend class MachineCloneVM;
 };
 
 // SessionMachine class

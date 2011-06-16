@@ -33,6 +33,9 @@
  * @{
  */
 
+#define DPTR(CLASS) CLASS##Private *d = static_cast<CLASS##Private *>(d_ptr)
+#define QPTR(CLASS) CLASS *q = static_cast<CLASS *>(q_ptr)
+
 /**
  * A simple class used to prevent copying and assignment.
  *
