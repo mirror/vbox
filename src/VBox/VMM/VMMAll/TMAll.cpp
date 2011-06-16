@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_TM
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/dbgftrace.h>
 #ifdef IN_RING3
 # include <VBox/vmm/rem.h>
 #endif
@@ -39,6 +40,8 @@
 #ifdef IN_RING3
 # include <iprt/thread.h>
 #endif
+
+#include "TMInline.h"
 
 
 /*******************************************************************************
@@ -372,7 +375,7 @@ DECLINLINE(bool) tmTimerTry(PTMTIMER pTimer, TMTIMERSTATE enmStateNew, TMTIMERST
  * @todo    FIXME: Look into potential race with the thread running the queues
  *          and stuff.
  */
-DECLINLINE(void) tmTimerLink(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
+DECLINLINE(void) tmTimerLinkSchedule(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
 {
     Assert(!pTimer->offScheduleNext);
     const int32_t offHeadNew = (intptr_t)pTimer - (intptr_t)pQueue;
@@ -401,12 +404,315 @@ DECLINLINE(bool) tmTimerTryWithLink(PTMTIMER pTimer, TMTIMERSTATE enmStateNew, T
 {
     if (tmTimerTry(pTimer, enmStateNew, enmStateOld))
     {
-        tmTimerLink(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF(paTimerQueues)[pTimer->enmClock], pTimer);
+        tmTimerLinkSchedule(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF(paTimerQueues)[pTimer->enmClock], pTimer);
         return true;
     }
     return false;
 }
 
+
+/**
+ * Links a timer into the active list of a timer queue.
+ *
+ * @param   pQueue          The queue.
+ * @param   pTimer          The timer.
+ * @param   u64Expire       The timer expiration time.
+ *
+ * @remarks Called while owning the relevant queue lock.
+ */
+DECL_FORCE_INLINE(void) tmTimerQueueLinkActive(PTMTIMERQUEUE pQueue, PTMTIMER pTimer, uint64_t u64Expire)
+{
+    Assert(!pTimer->offNext);
+    Assert(!pTimer->offPrev);
+    Assert(pTimer->enmState == TMTIMERSTATE_ACTIVE || pTimer->enmClock != TMCLOCK_VIRTUAL_SYNC); /* (active is not a stable state) */
+
+    PTMTIMER pCur = TMTIMER_GET_HEAD(pQueue);
+    if (pCur)
+    {
+        for (;; pCur = TMTIMER_GET_NEXT(pCur))
+        {
+            if (pCur->u64Expire > u64Expire)
+            {
+                const PTMTIMER pPrev = TMTIMER_GET_PREV(pCur);
+                TMTIMER_SET_NEXT(pTimer, pCur);
+                TMTIMER_SET_PREV(pTimer, pPrev);
+                if (pPrev)
+                    TMTIMER_SET_NEXT(pPrev, pTimer);
+                else
+                {
+                    TMTIMER_SET_HEAD(pQueue, pTimer);
+                    ASMAtomicWriteU64(&pQueue->u64Expire, u64Expire);
+                    DBGFTRACE_U64_TAG2(pTimer->CTX_SUFF(pVM), u64Expire, "tmTimerQueueLinkActive head", R3STRING(pTimer->pszDesc));
+                }
+                TMTIMER_SET_PREV(pCur, pTimer);
+                return;
+            }
+            if (!pCur->offNext)
+            {
+                TMTIMER_SET_NEXT(pCur, pTimer);
+                TMTIMER_SET_PREV(pTimer, pCur);
+                DBGFTRACE_U64_TAG2(pTimer->CTX_SUFF(pVM), u64Expire, "tmTimerQueueLinkActive tail", R3STRING(pTimer->pszDesc));
+                return;
+            }
+        }
+    }
+    else
+    {
+        TMTIMER_SET_HEAD(pQueue, pTimer);
+        ASMAtomicWriteU64(&pQueue->u64Expire, u64Expire);
+        DBGFTRACE_U64_TAG2(pTimer->CTX_SUFF(pVM), u64Expire, "tmTimerQueueLinkActive empty", R3STRING(pTimer->pszDesc));
+    }
+}
+
+
+
+/**
+ * Schedules the given timer on the given queue.
+ *
+ * @param   pQueue      The timer queue.
+ * @param   pTimer      The timer that needs scheduling.
+ *
+ * @remarks Called while owning the lock.
+ */
+DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
+{
+    Assert(pQueue->enmClock != TMCLOCK_VIRTUAL_SYNC);
+
+    /*
+     * Processing.
+     */
+    unsigned cRetries = 2;
+    do
+    {
+        TMTIMERSTATE enmState = pTimer->enmState;
+        switch (enmState)
+        {
+            /*
+             * Reschedule timer (in the active list).
+             */
+            case TMTIMERSTATE_PENDING_RESCHEDULE:
+                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE, TMTIMERSTATE_PENDING_RESCHEDULE)))
+                    break; /* retry */
+                tmTimerQueueUnlinkActive(pQueue, pTimer);
+                /* fall thru */
+
+            /*
+             * Schedule timer (insert into the active list).
+             */
+            case TMTIMERSTATE_PENDING_SCHEDULE:
+                Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
+                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, TMTIMERSTATE_PENDING_SCHEDULE)))
+                    break; /* retry */
+                tmTimerQueueLinkActive(pQueue, pTimer, pTimer->u64Expire);
+                return;
+
+            /*
+             * Stop the timer in active list.
+             */
+            case TMTIMERSTATE_PENDING_STOP:
+                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_PENDING_STOP_SCHEDULE, TMTIMERSTATE_PENDING_STOP)))
+                    break; /* retry */
+                tmTimerQueueUnlinkActive(pQueue, pTimer);
+                /* fall thru */
+
+            /*
+             * Stop the timer (not on the active list).
+             */
+            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
+                Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
+                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_PENDING_STOP_SCHEDULE)))
+                    break;
+                return;
+
+            /*
+             * The timer is pending destruction by TMR3TimerDestroy, our caller.
+             * Nothing to do here.
+             */
+            case TMTIMERSTATE_DESTROY:
+                break;
+
+            /*
+             * Postpone these until they get into the right state.
+             */
+            case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
+            case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
+                tmTimerLinkSchedule(pQueue, pTimer);
+                STAM_COUNTER_INC(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatPostponed));
+                return;
+
+            /*
+             * None of these can be in the schedule.
+             */
+            case TMTIMERSTATE_FREE:
+            case TMTIMERSTATE_STOPPED:
+            case TMTIMERSTATE_ACTIVE:
+            case TMTIMERSTATE_EXPIRED_GET_UNLINK:
+            case TMTIMERSTATE_EXPIRED_DELIVER:
+            default:
+                AssertMsgFailed(("Timer (%p) in the scheduling list has an invalid state %s (%d)!",
+                                 pTimer, tmTimerState(pTimer->enmState), pTimer->enmState));
+                return;
+        }
+    } while (cRetries-- > 0);
+}
+
+
+/**
+ * Schedules the specified timer queue.
+ *
+ * @param   pVM             The VM to run the timers for.
+ * @param   pQueue          The queue to schedule.
+ *
+ * @remarks Called while owning the lock.
+ */
+void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
+{
+    TM_ASSERT_LOCK(pVM);
+
+    /*
+     * Dequeue the scheduling list and iterate it.
+     */
+    int32_t offNext = ASMAtomicXchgS32(&pQueue->offSchedule, 0);
+    Log2(("tmTimerQueueSchedule: pQueue=%p:{.enmClock=%d, offNext=%RI32, .u64Expired=%'RU64}\n", pQueue, pQueue->enmClock, offNext, pQueue->u64Expire));
+    if (!offNext)
+        return;
+    PTMTIMER pNext = (PTMTIMER)((intptr_t)pQueue + offNext);
+    while (pNext)
+    {
+        /*
+         * Unlink the head timer and find the next one.
+         */
+        PTMTIMER pTimer = pNext;
+        pNext = pNext->offScheduleNext ? (PTMTIMER)((intptr_t)pNext + pNext->offScheduleNext) : NULL;
+        pTimer->offScheduleNext = 0;
+
+        /*
+         * Do the scheduling.
+         */
+        Log2(("tmTimerQueueSchedule: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, .pszDesc=%s}\n",
+              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, R3STRING(pTimer->pszDesc)));
+        tmTimerQueueScheduleOne(pQueue, pTimer);
+        Log2(("tmTimerQueueSchedule: %p: new %s\n", pTimer, tmTimerState(pTimer->enmState)));
+    } /* foreach timer in current schedule batch. */
+    Log2(("tmTimerQueueSchedule: u64Expired=%'RU64\n", pQueue->u64Expire));
+}
+
+
+#ifdef VBOX_STRICT
+/**
+ * Checks that the timer queues are sane.
+ *
+ * @param   pVM     VM handle.
+ *
+ * @remarks Called while owning the lock.
+ */
+void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
+{
+    TM_ASSERT_LOCK(pVM);
+
+    /*
+     * Check the linking of the active lists.
+     */
+    bool fHaveVirtualSyncLock = false;
+    for (int i = 0; i < TMCLOCK_MAX; i++)
+    {
+        PTMTIMERQUEUE pQueue = &pVM->tm.s.CTX_SUFF(paTimerQueues)[i];
+        Assert((int)pQueue->enmClock == i);
+        if (pQueue->enmClock == TMCLOCK_VIRTUAL_SYNC)
+        {
+            if (PDMCritSectTryEnter(&pVM->tm.s.VirtualSyncLock) != VINF_SUCCESS)
+                continue;
+            fHaveVirtualSyncLock = true;
+        }
+        PTMTIMER pPrev = NULL;
+        for (PTMTIMER pCur = TMTIMER_GET_HEAD(pQueue); pCur; pPrev = pCur, pCur = TMTIMER_GET_NEXT(pCur))
+        {
+            AssertMsg((int)pCur->enmClock == i, ("%s: %d != %d\n", pszWhere, pCur->enmClock, i));
+            AssertMsg(TMTIMER_GET_PREV(pCur) == pPrev, ("%s: %p != %p\n", pszWhere, TMTIMER_GET_PREV(pCur), pPrev));
+            TMTIMERSTATE enmState = pCur->enmState;
+            switch (enmState)
+            {
+                case TMTIMERSTATE_ACTIVE:
+                    AssertMsg(  !pCur->offScheduleNext
+                              || pCur->enmState != TMTIMERSTATE_ACTIVE,
+                              ("%s: %RI32\n", pszWhere, pCur->offScheduleNext));
+                    break;
+                case TMTIMERSTATE_PENDING_STOP:
+                case TMTIMERSTATE_PENDING_RESCHEDULE:
+                case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
+                    break;
+                default:
+                    AssertMsgFailed(("%s: Invalid state enmState=%d %s\n", pszWhere, enmState, tmTimerState(enmState)));
+                    break;
+            }
+        }
+    }
+
+
+# ifdef IN_RING3
+    /*
+     * Do the big list and check that active timers all are in the active lists.
+     */
+    PTMTIMERR3 pPrev = NULL;
+    for (PTMTIMERR3 pCur = pVM->tm.s.pCreated; pCur; pPrev = pCur, pCur = pCur->pBigNext)
+    {
+        Assert(pCur->pBigPrev == pPrev);
+        Assert((unsigned)pCur->enmClock < (unsigned)TMCLOCK_MAX);
+
+        TMTIMERSTATE enmState = pCur->enmState;
+        switch (enmState)
+        {
+            case TMTIMERSTATE_ACTIVE:
+            case TMTIMERSTATE_PENDING_STOP:
+            case TMTIMERSTATE_PENDING_RESCHEDULE:
+            case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
+                if (fHaveVirtualSyncLock || pCur->enmClock != TMCLOCK_VIRTUAL_SYNC)
+                {
+                    PTMTIMERR3 pCurAct = TMTIMER_GET_HEAD(&pVM->tm.s.CTX_SUFF(paTimerQueues)[pCur->enmClock]);
+                    Assert(pCur->offPrev || pCur == pCurAct);
+                    while (pCurAct && pCurAct != pCur)
+                        pCurAct = TMTIMER_GET_NEXT(pCurAct);
+                    Assert(pCurAct == pCur);
+                }
+                break;
+
+            case TMTIMERSTATE_PENDING_SCHEDULE:
+            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
+            case TMTIMERSTATE_STOPPED:
+            case TMTIMERSTATE_EXPIRED_DELIVER:
+                if (fHaveVirtualSyncLock || pCur->enmClock != TMCLOCK_VIRTUAL_SYNC)
+                {
+                    Assert(!pCur->offNext);
+                    Assert(!pCur->offPrev);
+                    for (PTMTIMERR3 pCurAct = TMTIMER_GET_HEAD(&pVM->tm.s.CTX_SUFF(paTimerQueues)[pCur->enmClock]);
+                          pCurAct;
+                          pCurAct = TMTIMER_GET_NEXT(pCurAct))
+                    {
+                        Assert(pCurAct != pCur);
+                        Assert(TMTIMER_GET_NEXT(pCurAct) != pCur);
+                        Assert(TMTIMER_GET_PREV(pCurAct) != pCur);
+                    }
+                }
+                break;
+
+            /* ignore */
+            case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
+                break;
+
+            /* shouldn't get here! */
+            case TMTIMERSTATE_EXPIRED_GET_UNLINK:
+            case TMTIMERSTATE_DESTROY:
+            default:
+                AssertMsgFailed(("Invalid state enmState=%d %s\n", enmState, tmTimerState(enmState)));
+                break;
+        }
+    }
+# endif /* IN_RING3 */
+
+    if (fHaveVirtualSyncLock)
+        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+}
+#endif /* !VBOX_STRICT */
 
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
 
@@ -853,53 +1159,6 @@ VMMDECL(bool) TMTimerIsLockOwner(PTMTIMER pTimer)
 
 
 /**
- * Links a timer into the active list of a timer queue.
- *
- * The caller must have taken the TM semaphore before calling this function.
- *
- * @param   pQueue          The queue.
- * @param   pTimer          The timer.
- * @param   u64Expire       The timer expiration time.
- */
-DECL_FORCE_INLINE(void) tmTimerActiveLink(PTMTIMERQUEUE pQueue, PTMTIMER pTimer, uint64_t u64Expire)
-{
-    PTMTIMER pCur = TMTIMER_GET_HEAD(pQueue);
-    if (pCur)
-    {
-        for (;; pCur = TMTIMER_GET_NEXT(pCur))
-        {
-            if (pCur->u64Expire > u64Expire)
-            {
-                const PTMTIMER pPrev = TMTIMER_GET_PREV(pCur);
-                TMTIMER_SET_NEXT(pTimer, pCur);
-                TMTIMER_SET_PREV(pTimer, pPrev);
-                if (pPrev)
-                    TMTIMER_SET_NEXT(pPrev, pTimer);
-                else
-                {
-                    TMTIMER_SET_HEAD(pQueue, pTimer);
-                    pQueue->u64Expire = u64Expire;
-                }
-                TMTIMER_SET_PREV(pCur, pTimer);
-                return;
-            }
-            if (!pCur->offNext)
-            {
-                TMTIMER_SET_NEXT(pCur, pTimer);
-                TMTIMER_SET_PREV(pTimer, pCur);
-                return;
-            }
-        }
-    }
-    else
-    {
-        TMTIMER_SET_HEAD(pQueue, pTimer);
-        pQueue->u64Expire = u64Expire;
-    }
-}
-
-
-/**
  * Optimized TMTimerSet code path for starting an inactive timer.
  *
  * @returns VBox status code.
@@ -914,17 +1173,25 @@ static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire
     Assert(!pTimer->offNext);
     Assert(pTimer->enmState == TMTIMERSTATE_ACTIVE);
 
+    TMCLOCK const enmClock = pTimer->enmClock;
+
     /*
      * Calculate and set the expiration time.
      */
-    pTimer->u64Expire = u64Expire;
+    if (enmClock == TMCLOCK_VIRTUAL_SYNC)
+    {
+        uint64_t u64Last = ASMAtomicReadU64(&pVM->tm.s.u64VirtualSync);
+        AssertMsgStmt(u64Expire >= u64Last,
+                      ("exp=%#llx last=%#llx\n", u64Expire, u64Last),
+                      u64Expire = u64Last);
+    }
+    ASMAtomicWriteU64(&pTimer->u64Expire, u64Expire);
     Log2(("tmTimerSetOptimizedStart: %p:{.pszDesc='%s', .u64Expire=%'RU64}\n", pTimer, R3STRING(pTimer->pszDesc), u64Expire));
 
     /*
      * Link the timer into the active list.
      */
-    TMCLOCK const enmClock = pTimer->enmClock;
-    tmTimerActiveLink(&pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock], pTimer, u64Expire);
+    tmTimerQueueLinkActive(&pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock], pTimer, u64Expire);
 
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetOpt);
     tmTimerUnlock(pVM);
@@ -932,7 +1199,74 @@ static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire
 }
 
 
+/**
+ * TMTimerSet for the virtual sync timer queue.
+ *
+ * This employs a greatly simplified state machine by always acquiring the
+ * queue lock and bypassing the scheduling list.
+ *
+ * @returns VBox status code
+ * @param   pVM                 The VM handle.
+ * @param   pTimer              The timer handle.
+ * @param   u64Expire           The expiration time.
+ */
+static int tmTimerVirtualSyncSet(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire)
+{
+    STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetVs), a);
+    VM_ASSERT_EMT(pVM);
+    int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
+    AssertRCReturn(rc, rc);
 
+    PTMTIMERQUEUE   pQueue   = &pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC];
+    TMTIMERSTATE    enmState = pTimer->enmState;
+    switch (enmState)
+    {
+        case TMTIMERSTATE_EXPIRED_DELIVER:
+        case TMTIMERSTATE_STOPPED:
+            if (enmState == TMTIMERSTATE_EXPIRED_DELIVER)
+                STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetVsStExpDeliver);
+            else
+                STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetVsStStopped);
+
+            AssertMsg(u64Expire >= pVM->tm.s.u64VirtualSync,
+                      ("%'RU64 < %'RU64 %s\n", u64Expire, pVM->tm.s.u64VirtualSync, R3STRING(pTimer->pszDesc)));
+            pTimer->u64Expire = u64Expire;
+            TM_SET_STATE(pTimer, TMTIMERSTATE_ACTIVE);
+            tmTimerQueueLinkActive(pQueue, pTimer, u64Expire);
+            rc = VINF_SUCCESS;
+            break;
+
+        case TMTIMERSTATE_ACTIVE:
+            STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetVsStActive);
+            tmTimerQueueUnlinkActive(pQueue, pTimer);
+            pTimer->u64Expire = u64Expire;
+            tmTimerQueueLinkActive(pQueue, pTimer, u64Expire);
+            rc = VINF_SUCCESS;
+            break;
+
+        case TMTIMERSTATE_PENDING_RESCHEDULE:
+        case TMTIMERSTATE_PENDING_STOP:
+        case TMTIMERSTATE_PENDING_SCHEDULE:
+        case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
+        case TMTIMERSTATE_EXPIRED_GET_UNLINK:
+        case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
+        case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
+        case TMTIMERSTATE_DESTROY:
+        case TMTIMERSTATE_FREE:
+            AssertLogRelMsgFailed(("Invalid timer state %s: %s\n", tmTimerState(enmState), R3STRING(pTimer->pszDesc)));
+            rc = VERR_TM_INVALID_STATE;
+            break;
+
+        default:
+            AssertMsgFailed(("Unknown timer state %d: %s\n", enmState, R3STRING(pTimer->pszDesc)));
+            rc = VERR_TM_UNKNOWN_STATE;
+            break;
+    }
+
+    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetVs), a);
+    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    return rc;
+}
 
 
 /**
@@ -945,11 +1279,20 @@ static int tmTimerSetOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t u64Expire
 VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
 {
     PVM pVM = pTimer->CTX_SUFF(pVM);
+
+    /* Treat virtual sync timers specially. */
+    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
+        return tmTimerVirtualSyncSet(pVM, pTimer, u64Expire);
+
     STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
     TMTIMER_ASSERT_CRITSECT(pTimer);
 
+    DBGFTRACE_U64_TAG2(pVM, u64Expire, "TMTimerSet", R3STRING(pTimer->pszDesc));
+
 #ifdef VBOX_WITH_STATISTICS
-    /* Gather optimization info. */
+    /*
+     * Gather optimization info.
+     */
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSet);
     TMTIMERSTATE enmOrgState = pTimer->enmState;
     switch (enmOrgState)
@@ -981,7 +1324,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
             if (RT_LIKELY(tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, enmState1)))
             {
                 tmTimerSetOptimizedStart(pVM, pTimer, u64Expire);
-                STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
+                STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
                 return VINF_SUCCESS;
             }
             tmTimerUnlock(pVM);
@@ -1009,10 +1352,6 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
                 {
                     Assert(!pTimer->offPrev);
                     Assert(!pTimer->offNext);
-                    AssertMsg(      pTimer->enmClock != TMCLOCK_VIRTUAL_SYNC
-                              ||    pVM->tm.s.fVirtualSyncTicking
-                              ||    u64Expire >= pVM->tm.s.u64VirtualSync,
-                              ("%'RU64 < %'RU64 %s\n", u64Expire, pVM->tm.s.u64VirtualSync, R3STRING(pTimer->pszDesc)));
                     pTimer->u64Expire = u64Expire;
                     TM_SET_STATE(pTimer, TMTIMERSTATE_PENDING_SCHEDULE);
                     tmSchedule(pTimer);
@@ -1148,11 +1487,87 @@ static int tmTimerSetRelativeOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t c
     /*
      * Link the timer into the active list.
      */
-    tmTimerActiveLink(&pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock], pTimer, u64Expire);
+    DBGFTRACE_U64_TAG2(pVM, u64Expire, "tmTimerSetRelativeOptimizedStart", R3STRING(pTimer->pszDesc));
+    tmTimerQueueLinkActive(&pVM->tm.s.CTX_SUFF(paTimerQueues)[enmClock], pTimer, u64Expire);
 
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeOpt);
     tmTimerUnlock(pVM);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * TMTimerSetRelative for the virtual sync timer queue.
+ *
+ * This employs a greatly simplified state machine by always acquiring the
+ * queue lock and bypassing the scheduling list.
+ *
+ * @returns VBox status code
+ * @param   pVM                 The VM handle.
+ * @param   cTicksToNext        Clock ticks until the next time expiration.
+ * @param   pu64Now             Where to return the current time stamp used.
+ *                              Optional.
+ */
+static int tmTimerVirtualSyncSetRelative(PVM pVM, PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+{
+    STAM_PROFILE_START(pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelativeVs), a);
+    VM_ASSERT_EMT(pVM);
+    int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
+    AssertRCReturn(rc, rc);
+
+    /* Calculate the expiration tick. */
+    uint64_t u64Expire = TMVirtualSyncGetNoCheck(pVM);
+    if (pu64Now)
+        *pu64Now = u64Expire;
+    u64Expire += cTicksToNext;
+
+    /* Update the timer. */
+    PTMTIMERQUEUE   pQueue    = &pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC];
+    TMTIMERSTATE    enmState  = pTimer->enmState;
+    switch (enmState)
+    {
+        case TMTIMERSTATE_EXPIRED_DELIVER:
+        case TMTIMERSTATE_STOPPED:
+            if (enmState == TMTIMERSTATE_EXPIRED_DELIVER)
+                STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeVsStExpDeliver);
+            else
+                STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeVsStStopped);
+            pTimer->u64Expire = u64Expire;
+            TM_SET_STATE(pTimer, TMTIMERSTATE_ACTIVE);
+            tmTimerQueueLinkActive(pQueue, pTimer, u64Expire);
+            rc = VINF_SUCCESS;
+            break;
+
+        case TMTIMERSTATE_ACTIVE:
+            STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeVsStActive);
+            tmTimerQueueUnlinkActive(pQueue, pTimer);
+            pTimer->u64Expire = u64Expire;
+            tmTimerQueueLinkActive(pQueue, pTimer, u64Expire);
+            rc = VINF_SUCCESS;
+            break;
+
+        case TMTIMERSTATE_PENDING_RESCHEDULE:
+        case TMTIMERSTATE_PENDING_STOP:
+        case TMTIMERSTATE_PENDING_SCHEDULE:
+        case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
+        case TMTIMERSTATE_EXPIRED_GET_UNLINK:
+        case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
+        case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
+        case TMTIMERSTATE_DESTROY:
+        case TMTIMERSTATE_FREE:
+            AssertLogRelMsgFailed(("Invalid timer state %s: %s\n", tmTimerState(enmState), R3STRING(pTimer->pszDesc)));
+            rc = VERR_TM_INVALID_STATE;
+            break;
+
+        default:
+            AssertMsgFailed(("Unknown timer state %d: %s\n", enmState, R3STRING(pTimer->pszDesc)));
+            rc = VERR_TM_UNKNOWN_STATE;
+            break;
+    }
+
+    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelativeVs), a);
+    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    return rc;
 }
 
 
@@ -1167,13 +1582,21 @@ static int tmTimerSetRelativeOptimizedStart(PVM pVM, PTMTIMER pTimer, uint64_t c
  */
 VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
 {
-    STAM_PROFILE_START(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
+    PVM pVM = pTimer->CTX_SUFF(pVM);
+
+    /* Treat virtual sync timers specially. */
+    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
+        return tmTimerVirtualSyncSetRelative(pVM, pTimer, cTicksToNext, pu64Now);
+
+    STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
     TMTIMER_ASSERT_CRITSECT(pTimer);
-    PVM             pVM = pTimer->CTX_SUFF(pVM);
-    int             rc;
+
+    DBGFTRACE_U64_TAG2(pVM, cTicksToNext, "TMTimerSetRelative", R3STRING(pTimer->pszDesc));
 
 #ifdef VBOX_WITH_STATISTICS
-    /* Gather optimization info. */
+    /*
+     * Gather optimization info.
+     */
     STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelative);
     TMTIMERSTATE enmOrgState = pTimer->enmState;
     switch (enmOrgState)
@@ -1224,11 +1647,8 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
     /*
      * Unoptimized path.
      */
+    int             rc;
     TMCLOCK const   enmClock = pTimer->enmClock;
-    bool            fOwnVirtSyncLock;
-    fOwnVirtSyncLock = !fOwnTMLock
-                    && enmClock == TMCLOCK_VIRTUAL_SYNC
-                    && RT_SUCCESS(tmVirtualSyncTryLock(pVM));
     for (int cRetries = 1000; ; cRetries--)
     {
         /*
@@ -1357,28 +1777,15 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
          * Retry to gain locks.
          */
         if (!fOwnTMLock)
-        {
             fOwnTMLock = RT_SUCCESS_NP(tmTimerTryLock(pVM));
-            if (    !fOwnTMLock
-                &&  enmClock == TMCLOCK_VIRTUAL_SYNC
-                &&  !fOwnVirtSyncLock)
-                fOwnVirtSyncLock = RT_SUCCESS_NP(tmVirtualSyncTryLock(pVM));
-        }
 
     } /* for (;;) */
 
     /*
      * Clean up and return.
      */
-    if (fOwnVirtSyncLock)
-        tmVirtualSyncUnlock(pVM);
     if (fOwnTMLock)
         tmTimerUnlock(pVM);
-
-    if (    !fOwnTMLock
-        &&  !fOwnVirtSyncLock
-        &&  enmClock == TMCLOCK_VIRTUAL_SYNC)
-        STAM_COUNTER_INC(&pVM->tm.s.StatTimerSetRelativeRacyVirtSync);
 
     STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerSetRelative), a);
     return rc;
@@ -1517,6 +1924,76 @@ VMMDECL(int) TMTimerSetFrequencyHint(PTMTIMER pTimer, uint32_t uHzHint)
 
 
 /**
+ * TMTimerStop for the virtual sync timer queue.
+ *
+ * This employs a greatly simplified state machine by always acquiring the
+ * queue lock and bypassing the scheduling list.
+ *
+ * @returns VBox status code
+ * @param   pVM                 The VM handle.
+ * @param   pTimer              The timer handle.
+ */
+static int tmTimerVirtualSyncStop(PVM pVM, PTMTIMER pTimer)
+{
+    STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerStopVs), a);
+    VM_ASSERT_EMT(pVM);
+    int rc = PDMCritSectEnter(&pVM->tm.s.VirtualSyncLock, VINF_SUCCESS);
+    AssertRCReturn(rc, rc);
+
+    /* Reset the HZ hint. */
+    if (pTimer->uHzHint)
+    {
+        if (pTimer->uHzHint >= pVM->tm.s.uMaxHzHint)
+            ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
+        pTimer->uHzHint = 0;
+    }
+
+    /* Update the timer state. */
+    PTMTIMERQUEUE   pQueue   = &pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC];
+    TMTIMERSTATE    enmState = pTimer->enmState;
+    switch (enmState)
+    {
+        case TMTIMERSTATE_ACTIVE:
+            tmTimerQueueUnlinkActive(pQueue, pTimer);
+            TM_SET_STATE(pTimer, TMTIMERSTATE_STOPPED);
+            rc = VINF_SUCCESS;
+            break;
+
+        case TMTIMERSTATE_EXPIRED_DELIVER:
+            TM_SET_STATE(pTimer, TMTIMERSTATE_STOPPED);
+            rc = VINF_SUCCESS;
+            break;
+
+        case TMTIMERSTATE_STOPPED:
+            rc = VINF_SUCCESS;
+            break;
+
+        case TMTIMERSTATE_PENDING_RESCHEDULE:
+        case TMTIMERSTATE_PENDING_STOP:
+        case TMTIMERSTATE_PENDING_SCHEDULE:
+        case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
+        case TMTIMERSTATE_EXPIRED_GET_UNLINK:
+        case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
+        case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
+        case TMTIMERSTATE_DESTROY:
+        case TMTIMERSTATE_FREE:
+            AssertLogRelMsgFailed(("Invalid timer state %s: %s\n", tmTimerState(enmState), R3STRING(pTimer->pszDesc)));
+            rc = VERR_TM_INVALID_STATE;
+            break;
+
+        default:
+            AssertMsgFailed(("Unknown timer state %d: %s\n", enmState, R3STRING(pTimer->pszDesc)));
+            rc = VERR_TM_UNKNOWN_STATE;
+            break;
+    }
+
+    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStopVs), a);
+    PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
+    return rc;
+}
+
+
+/**
  * Stop the timer.
  * Use TMR3TimerArm() to "un-stop" the timer.
  *
@@ -1525,13 +2002,20 @@ VMMDECL(int) TMTimerSetFrequencyHint(PTMTIMER pTimer, uint32_t uHzHint)
  */
 VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
 {
-    STAM_PROFILE_START(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerStop), a);
+    PVM pVM = pTimer->CTX_SUFF(pVM);
+
+    /* Treat virtual sync timers specially. */
+    if (pTimer->enmClock == TMCLOCK_VIRTUAL_SYNC)
+        return tmTimerVirtualSyncStop(pVM, pTimer);
+
+    STAM_PROFILE_START(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
     TMTIMER_ASSERT_CRITSECT(pTimer);
 
-    /* Reset the HZ hint. */
+    /*
+     * Reset the HZ hint.
+     */
     if (pTimer->uHzHint)
     {
-        PVM pVM = pTimer->CTX_SUFF(pVM);
         if (pTimer->uHzHint >= pVM->tm.s.uMaxHzHint)
             ASMAtomicWriteBool(&pVM->tm.s.fHzHintNeedsUpdating, true);
         pTimer->uHzHint = 0;
@@ -1556,14 +2040,14 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
             case TMTIMERSTATE_STOPPED:
             case TMTIMERSTATE_PENDING_STOP:
             case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
-                STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerStop), a);
+                STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
                 return VINF_SUCCESS;
 
             case TMTIMERSTATE_PENDING_SCHEDULE:
                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_STOP_SCHEDULE, enmState))
                 {
                     tmSchedule(pTimer);
-                    STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerStop), a);
+                    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
                     return VINF_SUCCESS;
                 }
 
@@ -1571,7 +2055,7 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_STOP, enmState))
                 {
                     tmSchedule(pTimer);
-                    STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerStop), a);
+                    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
                     return VINF_SUCCESS;
                 }
                 break;
@@ -1580,7 +2064,7 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
                 if (tmTimerTryWithLink(pTimer, TMTIMERSTATE_PENDING_STOP, enmState))
                 {
                     tmSchedule(pTimer);
-                    STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerStop), a);
+                    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
                     return VINF_SUCCESS;
                 }
                 break;
@@ -1610,7 +2094,7 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
     } while (cRetries-- > 0);
 
     AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
-    STAM_PROFILE_STOP(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatTimerStop), a);
+    STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
     return VERR_INTERNAL_ERROR;
 }
 
@@ -1624,9 +2108,9 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
  */
 VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
 {
-    uint64_t u64;
-    PVM      pVM   = pTimer->CTX_SUFF(pVM);
+    PVM pVM = pTimer->CTX_SUFF(pVM);
 
+    uint64_t u64;
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -1640,7 +2124,7 @@ VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
             break;
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
-            return ~(uint64_t)0;
+            return UINT64_MAX;
     }
     //Log2(("TMTimerGet: returns %'RU64 (pTimer=%p:{.enmState=%s, .pszDesc='%s'})\n",
     //      u64, pTimer, tmTimerState(pTimer->enmState), R3STRING(pTimer->pszDesc)));
@@ -1800,21 +2284,21 @@ VMMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)
  *
  * @returns timer clock ticks.
  * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   u64NanoTS       The nanosecond value ticks to convert.
+ * @param   cNanoSecs       The nanosecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-VMMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS)
+VMMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t cNanoSecs)
 {
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return u64NanoTS;
+            return cNanoSecs;
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return u64NanoTS / 1000000;
+            return cNanoSecs / 1000000;
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -1828,21 +2312,21 @@ VMMDECL(uint64_t) TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS)
  *
  * @returns timer clock ticks.
  * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   u64MicroTS      The microsecond value ticks to convert.
+ * @param   cMicroSecs      The microsecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS)
+VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t cMicroSecs)
 {
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return u64MicroTS * 1000;
+            return cMicroSecs * 1000;
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return u64MicroTS / 1000;
+            return cMicroSecs / 1000;
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -1856,21 +2340,21 @@ VMMDECL(uint64_t) TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS)
  *
  * @returns timer clock ticks.
  * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   u64MilliTS      The millisecond value ticks to convert.
+ * @param   cMilliSecs      The millisecond value ticks to convert.
  * @remark  There could be rounding and overflow errors here.
  */
-VMMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS)
+VMMDECL(uint64_t) TMTimerFromMilli(PTMTIMER pTimer, uint64_t cMilliSecs)
 {
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
         case TMCLOCK_VIRTUAL_SYNC:
             AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
-            return u64MilliTS * 1000000;
+            return cMilliSecs * 1000000;
 
         case TMCLOCK_REAL:
             AssertCompile(TMCLOCK_FREQ_REAL == 1000);
-            return u64MilliTS;
+            return cMilliSecs;
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
@@ -1950,7 +2434,7 @@ VMMDECL(uint64_t) TMTimerGetExpire(PTMTIMER pTimer)
  */
 VMMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
 {
-    TMTIMERSTATE    enmState = pTimer->enmState;
+    TMTIMERSTATE enmState = pTimer->enmState;
     switch (enmState)
     {
         case TMTIMERSTATE_STOPPED:
@@ -1988,6 +2472,18 @@ VMMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
 
 
 /**
+ * Gets the current warp drive percent.
+ *
+ * @returns The warp drive percent.
+ * @param   pVM         The VM handle.
+ */
+VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM)
+{
+    return pVM->tm.s.u32VirtualWarpDrivePercentage;
+}
+
+
+/**
  * Convert state to string.
  *
  * @returns Readonly status name.
@@ -2018,319 +2514,6 @@ const char *tmTimerState(TMTIMERSTATE enmState)
             return "Invalid state!";
 #undef CASE
     }
-}
-
-
-/**
- * Schedules the given timer on the given queue.
- *
- * @param   pQueue      The timer queue.
- * @param   pTimer      The timer that needs scheduling.
- *
- * @remarks Called while owning the lock.
- */
-DECLINLINE(void) tmTimerQueueScheduleOne(PTMTIMERQUEUE pQueue, PTMTIMER pTimer)
-{
-    /*
-     * Processing.
-     */
-    unsigned cRetries = 2;
-    do
-    {
-        TMTIMERSTATE enmState = pTimer->enmState;
-        switch (enmState)
-        {
-            /*
-             * Reschedule timer (in the active list).
-             */
-            case TMTIMERSTATE_PENDING_RESCHEDULE:
-            {
-                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_PENDING_SCHEDULE, TMTIMERSTATE_PENDING_RESCHEDULE)))
-                    break; /* retry */
-
-                const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
-                const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
-                if (pPrev)
-                    TMTIMER_SET_NEXT(pPrev, pNext);
-                else
-                {
-                    TMTIMER_SET_HEAD(pQueue, pNext);
-                    pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
-                }
-                if (pNext)
-                    TMTIMER_SET_PREV(pNext, pPrev);
-                pTimer->offNext = 0;
-                pTimer->offPrev = 0;
-                /* fall thru */
-            }
-
-            /*
-             * Schedule timer (insert into the active list).
-             */
-            case TMTIMERSTATE_PENDING_SCHEDULE:
-            {
-                Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
-                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_ACTIVE, TMTIMERSTATE_PENDING_SCHEDULE)))
-                    break; /* retry */
-
-                PTMTIMER pCur = TMTIMER_GET_HEAD(pQueue);
-                if (pCur)
-                {
-                    const uint64_t u64Expire = pTimer->u64Expire;
-                    for (;; pCur = TMTIMER_GET_NEXT(pCur))
-                    {
-                        if (pCur->u64Expire > u64Expire)
-                        {
-                            const PTMTIMER pPrev = TMTIMER_GET_PREV(pCur);
-                            TMTIMER_SET_NEXT(pTimer, pCur);
-                            TMTIMER_SET_PREV(pTimer, pPrev);
-                            if (pPrev)
-                                TMTIMER_SET_NEXT(pPrev, pTimer);
-                            else
-                            {
-                                TMTIMER_SET_HEAD(pQueue, pTimer);
-                                pQueue->u64Expire = u64Expire;
-                            }
-                            TMTIMER_SET_PREV(pCur, pTimer);
-                            return;
-                        }
-                        if (!pCur->offNext)
-                        {
-                            TMTIMER_SET_NEXT(pCur, pTimer);
-                            TMTIMER_SET_PREV(pTimer, pCur);
-                            return;
-                        }
-                    }
-                }
-                else
-                {
-                    TMTIMER_SET_HEAD(pQueue, pTimer);
-                    pQueue->u64Expire = pTimer->u64Expire;
-                }
-                return;
-            }
-
-            /*
-             * Stop the timer in active list.
-             */
-            case TMTIMERSTATE_PENDING_STOP:
-            {
-                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_PENDING_STOP_SCHEDULE, TMTIMERSTATE_PENDING_STOP)))
-                    break; /* retry */
-
-                const PTMTIMER pPrev = TMTIMER_GET_PREV(pTimer);
-                const PTMTIMER pNext = TMTIMER_GET_NEXT(pTimer);
-                if (pPrev)
-                    TMTIMER_SET_NEXT(pPrev, pNext);
-                else
-                {
-                    TMTIMER_SET_HEAD(pQueue, pNext);
-                    pQueue->u64Expire = pNext ? pNext->u64Expire : INT64_MAX;
-                }
-                if (pNext)
-                    TMTIMER_SET_PREV(pNext, pPrev);
-                pTimer->offNext = 0;
-                pTimer->offPrev = 0;
-                /* fall thru */
-            }
-
-            /*
-             * Stop the timer (not on the active list).
-             */
-            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
-                Assert(!pTimer->offNext); Assert(!pTimer->offPrev);
-                if (RT_UNLIKELY(!tmTimerTry(pTimer, TMTIMERSTATE_STOPPED, TMTIMERSTATE_PENDING_STOP_SCHEDULE)))
-                    break;
-                return;
-
-            /*
-             * The timer is pending destruction by TMR3TimerDestroy, our caller.
-             * Nothing to do here.
-             */
-            case TMTIMERSTATE_DESTROY:
-                break;
-
-            /*
-             * Postpone these until they get into the right state.
-             */
-            case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
-            case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
-                tmTimerLink(pQueue, pTimer);
-                STAM_COUNTER_INC(&pTimer->CTX_SUFF(pVM)->tm.s.CTX_SUFF_Z(StatPostponed));
-                return;
-
-            /*
-             * None of these can be in the schedule.
-             */
-            case TMTIMERSTATE_FREE:
-            case TMTIMERSTATE_STOPPED:
-            case TMTIMERSTATE_ACTIVE:
-            case TMTIMERSTATE_EXPIRED_GET_UNLINK:
-            case TMTIMERSTATE_EXPIRED_DELIVER:
-            default:
-                AssertMsgFailed(("Timer (%p) in the scheduling list has an invalid state %s (%d)!",
-                                 pTimer, tmTimerState(pTimer->enmState), pTimer->enmState));
-                return;
-        }
-    } while (cRetries-- > 0);
-}
-
-
-/**
- * Schedules the specified timer queue.
- *
- * @param   pVM             The VM to run the timers for.
- * @param   pQueue          The queue to schedule.
- *
- * @remarks Called while owning the lock.
- */
-void tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue)
-{
-    TM_ASSERT_LOCK(pVM);
-
-    /*
-     * Dequeue the scheduling list and iterate it.
-     */
-    int32_t offNext = ASMAtomicXchgS32(&pQueue->offSchedule, 0);
-    Log2(("tmTimerQueueSchedule: pQueue=%p:{.enmClock=%d, offNext=%RI32, .u64Expired=%'RU64}\n", pQueue, pQueue->enmClock, offNext, pQueue->u64Expire));
-    if (!offNext)
-        return;
-    PTMTIMER pNext = (PTMTIMER)((intptr_t)pQueue + offNext);
-    while (pNext)
-    {
-        /*
-         * Unlink the head timer and find the next one.
-         */
-        PTMTIMER pTimer = pNext;
-        pNext = pNext->offScheduleNext ? (PTMTIMER)((intptr_t)pNext + pNext->offScheduleNext) : NULL;
-        pTimer->offScheduleNext = 0;
-
-        /*
-         * Do the scheduling.
-         */
-        Log2(("tmTimerQueueSchedule: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, .pszDesc=%s}\n",
-              pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, R3STRING(pTimer->pszDesc)));
-        tmTimerQueueScheduleOne(pQueue, pTimer);
-        Log2(("tmTimerQueueSchedule: %p: new %s\n", pTimer, tmTimerState(pTimer->enmState)));
-    } /* foreach timer in current schedule batch. */
-    Log2(("tmTimerQueueSchedule: u64Expired=%'RU64\n", pQueue->u64Expire));
-}
-
-
-#ifdef VBOX_STRICT
-/**
- * Checks that the timer queues are sane.
- *
- * @param   pVM     VM handle.
- *
- * @remarks Called while owning the lock.
- */
-void tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere)
-{
-    TM_ASSERT_LOCK(pVM);
-
-    /*
-     * Check the linking of the active lists.
-     */
-    for (int i = 0; i < TMCLOCK_MAX; i++)
-    {
-        PTMTIMERQUEUE pQueue = &pVM->tm.s.CTX_SUFF(paTimerQueues)[i];
-        Assert((int)pQueue->enmClock == i);
-        PTMTIMER pPrev = NULL;
-        for (PTMTIMER pCur = TMTIMER_GET_HEAD(pQueue); pCur; pPrev = pCur, pCur = TMTIMER_GET_NEXT(pCur))
-        {
-            AssertMsg((int)pCur->enmClock == i, ("%s: %d != %d\n", pszWhere, pCur->enmClock, i));
-            AssertMsg(TMTIMER_GET_PREV(pCur) == pPrev, ("%s: %p != %p\n", pszWhere, TMTIMER_GET_PREV(pCur), pPrev));
-            TMTIMERSTATE enmState = pCur->enmState;
-            switch (enmState)
-            {
-                case TMTIMERSTATE_ACTIVE:
-                    AssertMsg(  !pCur->offScheduleNext
-                              || pCur->enmState != TMTIMERSTATE_ACTIVE,
-                              ("%s: %RI32\n", pszWhere, pCur->offScheduleNext));
-                    break;
-                case TMTIMERSTATE_PENDING_STOP:
-                case TMTIMERSTATE_PENDING_RESCHEDULE:
-                case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
-                    break;
-                default:
-                    AssertMsgFailed(("%s: Invalid state enmState=%d %s\n", pszWhere, enmState, tmTimerState(enmState)));
-                    break;
-            }
-        }
-    }
-
-
-# ifdef IN_RING3
-    /*
-     * Do the big list and check that active timers all are in the active lists.
-     */
-    PTMTIMERR3 pPrev = NULL;
-    for (PTMTIMERR3 pCur = pVM->tm.s.pCreated; pCur; pPrev = pCur, pCur = pCur->pBigNext)
-    {
-        Assert(pCur->pBigPrev == pPrev);
-        Assert((unsigned)pCur->enmClock < (unsigned)TMCLOCK_MAX);
-
-        TMTIMERSTATE enmState = pCur->enmState;
-        switch (enmState)
-        {
-            case TMTIMERSTATE_ACTIVE:
-            case TMTIMERSTATE_PENDING_STOP:
-            case TMTIMERSTATE_PENDING_RESCHEDULE:
-            case TMTIMERSTATE_PENDING_RESCHEDULE_SET_EXPIRE:
-            {
-                PTMTIMERR3 pCurAct = TMTIMER_GET_HEAD(&pVM->tm.s.CTX_SUFF(paTimerQueues)[pCur->enmClock]);
-                Assert(pCur->offPrev || pCur == pCurAct);
-                while (pCurAct && pCurAct != pCur)
-                    pCurAct = TMTIMER_GET_NEXT(pCurAct);
-                Assert(pCurAct == pCur);
-                break;
-            }
-
-            case TMTIMERSTATE_PENDING_SCHEDULE:
-            case TMTIMERSTATE_PENDING_STOP_SCHEDULE:
-            case TMTIMERSTATE_STOPPED:
-            case TMTIMERSTATE_EXPIRED_DELIVER:
-            {
-                Assert(!pCur->offNext);
-                Assert(!pCur->offPrev);
-                for (PTMTIMERR3 pCurAct = TMTIMER_GET_HEAD(&pVM->tm.s.CTX_SUFF(paTimerQueues)[pCur->enmClock]);
-                      pCurAct;
-                      pCurAct = TMTIMER_GET_NEXT(pCurAct))
-                {
-                    Assert(pCurAct != pCur);
-                    Assert(TMTIMER_GET_NEXT(pCurAct) != pCur);
-                    Assert(TMTIMER_GET_PREV(pCurAct) != pCur);
-                }
-                break;
-            }
-
-            /* ignore */
-            case TMTIMERSTATE_PENDING_SCHEDULE_SET_EXPIRE:
-                break;
-
-            /* shouldn't get here! */
-            case TMTIMERSTATE_EXPIRED_GET_UNLINK:
-            case TMTIMERSTATE_DESTROY:
-            default:
-                AssertMsgFailed(("Invalid state enmState=%d %s\n", enmState, tmTimerState(enmState)));
-                break;
-        }
-    }
-# endif /* IN_RING3 */
-}
-#endif /* !VBOX_STRICT */
-
-
-/**
- * Gets the current warp drive percent.
- *
- * @returns The warp drive percent.
- * @param   pVM         The VM handle.
- */
-VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM)
-{
-    return pVM->tm.s.u32VirtualWarpDrivePercentage;
 }
 
 

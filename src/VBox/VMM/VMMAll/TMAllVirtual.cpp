@@ -461,9 +461,18 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
      * set the timer pending flag.
      */
     u64 -= off;
+
+    uint64_t u64Last = ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSync);
+    if (u64Last > u64)
+    {
+        u64 = u64Last + 1;
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetAdjLast);
+    }
+
     uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     if (u64 < u64Expire)
     {
+        ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, u64);
         if (fUpdateOff)
             ASMAtomicWriteU64(&pVM->tm.s.offVirtualSync, off);
         if (fStop)
@@ -550,9 +559,18 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
      * set the timer pending flag.
      */
     u64 -= off;
+
+    uint64_t u64Last = ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSync);
+    if (u64Last > u64)
+    {
+        u64 = u64Last + 1;
+        STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetAdjLast);
+    }
+
     uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     if (u64 < u64Expire)
     {
+        ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, u64);
         tmVirtualSyncUnlock(pVM);
         if (pcNsToDeadline)
             *pcNsToDeadline = tmVirtualVirtToNsDeadline(pVM, u64Expire - u64);
@@ -631,6 +649,16 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetSetFF);
         }
     }
+
+    /*
+     * If we can get the lock, get it.  The result is much more reliable.
+     *
+     * Note! This is where all clock source devices branch off because they
+     *       will be owning the lock already.  The 'else' is taken by code
+     *       which is less picky or hasn't been adjusted yet
+     */
+    if (tmVirtualSyncTryLock(pVM) == VINF_SUCCESS)
+        return tmVirtualSyncGetLocked(pVM, u64, pcNsToDeadline);
 
     /*
      * When the clock is ticking, not doing catch ups and not running into an
@@ -772,6 +800,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
      * set the timer pending flag.
      */
     u64 -= off;
+/** @todo u64VirtualSyncLast */
     uint64_t u64Expire = ASMAtomicReadU64(&pVM->tm.s.CTX_SUFF(paTimerQueues)[TMCLOCK_VIRTUAL_SYNC].u64Expire);
     if (u64 >= u64Expire)
     {
