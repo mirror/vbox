@@ -1333,6 +1333,11 @@ struct Document::Data
             delete pRootElement;
             pRootElement = NULL;
         }
+        if (pComment)
+        {
+            delete pComment;
+            pComment = NULL;
+        }
     }
 
     void copyFrom(const Document::Data *p)
