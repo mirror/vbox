@@ -105,9 +105,10 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
     /* be reentrant */
     struct crypt_data *data = (struct crypt_data*)RTMemTmpAllocZ(sizeof(*data));
     char *pszEncPasswd = crypt_r(pszPasswd, pw->pw_passwd, data);
-    if (strcmp(pszEncPasswd, pw->pw_passwd))
-        return VERR_PERMISSION_DENIED;
+    int fCorrect = !strcmp(pszEncPasswd, pw->pw_passwd);
     RTMemTmpFree(data);
+    if (!fCorrect)
+        return VERR_PERMISSION_DENIED;
 
     *gid = pw->pw_gid;
     *uid = pw->pw_uid;
