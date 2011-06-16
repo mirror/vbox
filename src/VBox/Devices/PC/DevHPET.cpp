@@ -378,7 +378,7 @@ static void hpetProgramTimer(HpetTimer *pHpetTimer)
 }
 
 
-/* -=-=-=-=-=- Register accesses -=-=-=-=-=- */
+/* -=-=-=-=-=- Timer register accesses -=-=-=-=-=- */
 
 
 /**
@@ -567,7 +567,7 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
 }
 
 
-
+/* -=-=-=-=-=- Non-timer register accesses -=-=-=-=-=- */
 
 
 /**
