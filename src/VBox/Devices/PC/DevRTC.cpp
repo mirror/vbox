@@ -249,6 +249,7 @@ static void rtc_timer_update(RTCState *pThis, int64_t current_time)
     }
 }
 
+
 static void rtc_raise_irq(RTCState* pThis, uint32_t iLevel)
 {
     if (!pThis->fDisabledByHpet)
@@ -258,21 +259,19 @@ static void rtc_raise_irq(RTCState* pThis, uint32_t iLevel)
 
 DECLINLINE(int) to_bcd(RTCState *pThis, int a)
 {
-    if (pThis->cmos_data[RTC_REG_B] & 0x04) {
+    if (pThis->cmos_data[RTC_REG_B] & 0x04)
         return a;
-    } else {
-        return ((a / 10) << 4) | (a % 10);
-    }
+    return ((a / 10) << 4) | (a % 10);
 }
+
 
 DECLINLINE(int) from_bcd(RTCState *pThis, int a)
 {
-    if (pThis->cmos_data[RTC_REG_B] & 0x04) {
+    if (pThis->cmos_data[RTC_REG_B] & 0x04)
         return a;
-    } else {
-        return ((a >> 4) * 10) + (a & 0x0f);
-    }
+    return ((a >> 4) * 10) + (a & 0x0f);
 }
+
 
 static void rtc_set_time(RTCState *pThis)
 {
@@ -291,7 +290,8 @@ static void rtc_set_time(RTCState *pThis)
 }
 
 
-/* -=-=-=-=-=- I/O Port -=-=-=-=-=- */
+/* -=-=-=-=-=- I/O Port Handlers -=-=-=-=-=- */
+
 
 /**
  * Port I/O Handler for IN operations.
@@ -912,8 +912,8 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
     rtc_set_date(pThis, &Tm);
 
     int iYear = to_bcd(pThis, (Tm.tm_year / 100) + 19); /* tm_year is 1900 based */
-    rtc_set_memory(pThis, 0x32, iYear);                                     /* 32h - Century Byte (BCD value for the century */
-    rtc_set_memory(pThis, 0x37, iYear);                                     /* 37h - (IBM PS/2) Date Century Byte */
+    rtc_set_memory(pThis, 0x32, iYear);                 /* 32h - Century Byte (BCD value for the century */
+    rtc_set_memory(pThis, 0x37, iYear);                 /* 37h - (IBM PS/2) Date Century Byte */
 
     /*
      * Recalculate the checksum just in case.
