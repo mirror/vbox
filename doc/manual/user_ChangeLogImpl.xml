@@ -9,6 +9,10 @@
     <itemizedlist>
 
       <listitem>
+        <para>Support for cloning of VMs (bug #5853)</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: enhanced wizard for creating new virtual disks</para>
       </listitem>
 
