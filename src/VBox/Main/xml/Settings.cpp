@@ -352,6 +352,7 @@ ConfigFileBase::ConfigFileBase(const ConfigFileBase &other)
     m->strFilename = "";
     m->fFileExists = false;
 }
+
 /**
  * Clean up.
  */
