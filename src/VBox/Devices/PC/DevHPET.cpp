@@ -378,6 +378,9 @@ static void hpetProgramTimer(HpetTimer *pHpetTimer)
 }
 
 
+/* -=-=-=-=-=- Register accesses -=-=-=-=-=- */
+
+
 /**
  * Reads a HPET timer register.
  *
@@ -438,70 +441,6 @@ static int hpetTimerRegRead32(HpetState const *pThis, uint32_t iTimerNo, uint32_
             break;
         }
     }
-    *pu32Value = u32Value;
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Read a 32-bit HPET register.
- *
- * @returns Strict VBox status code.
- * @param   pThis               The HPET state.
- * @param   idxReg              The register to read.
- * @param   pu32Value           Where to return the register value.
- */
-static int hpetConfigRegRead32(HpetState const *pThis, uint32_t idxReg, uint32_t *pu32Value)
-{
-    uint32_t u32Value;
-    switch (idxReg)
-    {
-        case HPET_ID:
-            u32Value = (uint32_t)pThis->u64Capabilities;
-            Log(("read HPET_ID: %#x\n", u32Value));
-            break;
-
-        case HPET_PERIOD:
-            u32Value = (uint32_t)(pThis->u64Capabilities >> 32);
-            Log(("read HPET_PERIOD: %#x\n", u32Value));
-            break;
-
-        case HPET_CFG:
-            u32Value = (uint32_t)pThis->u64HpetConfig;
-            Log(("read HPET_CFG: %#x\n", u32Value));
-            break;
-
-        case HPET_CFG + 4:
-            u32Value = (uint32_t)(pThis->u64HpetConfig >> 32);
-            Log(("read of HPET_CFG + 4: %#x\n", u32Value));
-            break;
-
-        case HPET_COUNTER:
-        case HPET_COUNTER + 4:
-        {
-            uint64_t u64Ticks;
-            if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
-                u64Ticks = hpetGetTicks(pThis);
-            else
-                u64Ticks = pThis->u64HpetCounter;
-            /** @todo is it correct? */
-            u32Value = (idxReg == HPET_COUNTER) ? (uint32_t)u64Ticks : (uint32_t)(u64Ticks >> 32);
-            Log(("read HPET_COUNTER: %s part value %x (%#llx)\n",
-                 (idxReg == HPET_COUNTER) ? "low" : "high", u32Value, u64Ticks));
-            break;
-        }
-
-        case HPET_STATUS:
-            Log(("read HPET_STATUS\n"));
-            u32Value = (uint32_t)pThis->u64Isr;
-            break;
-
-        default:
-            Log(("invalid HPET register read: %x\n", idxReg));
-            u32Value = 0;
-            break;
-    }
-
     *pu32Value = u32Value;
     return VINF_SUCCESS;
 }
@@ -624,6 +563,73 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
         }
     }
 
+    return VINF_SUCCESS;
+}
+
+
+
+
+
+/**
+ * Read a 32-bit HPET register.
+ *
+ * @returns Strict VBox status code.
+ * @param   pThis               The HPET state.
+ * @param   idxReg              The register to read.
+ * @param   pu32Value           Where to return the register value.
+ */
+static int hpetConfigRegRead32(HpetState const *pThis, uint32_t idxReg, uint32_t *pu32Value)
+{
+    uint32_t u32Value;
+    switch (idxReg)
+    {
+        case HPET_ID:
+            u32Value = (uint32_t)pThis->u64Capabilities;
+            Log(("read HPET_ID: %#x\n", u32Value));
+            break;
+
+        case HPET_PERIOD:
+            u32Value = (uint32_t)(pThis->u64Capabilities >> 32);
+            Log(("read HPET_PERIOD: %#x\n", u32Value));
+            break;
+
+        case HPET_CFG:
+            u32Value = (uint32_t)pThis->u64HpetConfig;
+            Log(("read HPET_CFG: %#x\n", u32Value));
+            break;
+
+        case HPET_CFG + 4:
+            u32Value = (uint32_t)(pThis->u64HpetConfig >> 32);
+            Log(("read of HPET_CFG + 4: %#x\n", u32Value));
+            break;
+
+        case HPET_COUNTER:
+        case HPET_COUNTER + 4:
+        {
+            uint64_t u64Ticks;
+            if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
+                u64Ticks = hpetGetTicks(pThis);
+            else
+                u64Ticks = pThis->u64HpetCounter;
+            /** @todo is it correct? */
+            u32Value = (idxReg == HPET_COUNTER) ? (uint32_t)u64Ticks : (uint32_t)(u64Ticks >> 32);
+            Log(("read HPET_COUNTER: %s part value %x (%#llx)\n",
+                 (idxReg == HPET_COUNTER) ? "low" : "high", u32Value, u64Ticks));
+            break;
+        }
+
+        case HPET_STATUS:
+            Log(("read HPET_STATUS\n"));
+            u32Value = (uint32_t)pThis->u64Isr;
+            break;
+
+        default:
+            Log(("invalid HPET register read: %x\n", idxReg));
+            u32Value = 0;
+            break;
+    }
+
+    *pu32Value = u32Value;
     return VINF_SUCCESS;
 }
 
