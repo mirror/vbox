@@ -114,6 +114,23 @@
 #define HPET_SAVED_STATE_VERSION_EMPTY 1
 
 
+/**
+ * Acquires the HPET lock or returns.
+ */
+#define DEVHPET_LOCK_RETURN(a_pThis, a_rcBusy)  \
+    do { \
+        int rcLock = PDMCritSectEnter(&(a_pThis)->csLock, (a_rcBusy)); \
+        if (rcLock != VINF_SUCCESS) \
+            return rcLock; \
+    } while (0)
+
+/**
+ * Releases the HPET lock.
+ */
+#define DEVHPET_UNLOCK(a_pThis) \
+    do { PDMCritSectLeave(&(a_pThis)->csLock); } while (0)
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -204,17 +221,6 @@ typedef struct HpetState
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-
-/** @todo Use macros so we can get the source position. */
-DECLINLINE(int) hpetLock(HpetState* pThis, int rcBusy)
-{
-    return PDMCritSectEnter(&pThis->csLock, rcBusy);
-}
-
-DECLINLINE(void) hpetUnlock(HpetState* pThis)
-{
-    PDMCritSectLeave(&pThis->csLock);
-}
 
 DECLINLINE(bool) hpet32bitTimer(HpetTimer *pHpetTimer)
 {
@@ -724,10 +730,7 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
     uint32_t    iIndex = (uint32_t)(GCPhysAddr - HPET_BASE);
 
     LogFlow(("hpetMMIORead (%d): %llx (%x)\n", cb, (uint64_t)GCPhysAddr, iIndex));
-
-    rc = hpetLock(pThis, VINF_IOM_HC_MMIO_READ);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return rc;
+    DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
 
     switch (cb)
     {
@@ -801,8 +804,7 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
             rc = VINF_SUCCESS;
     }
 
-    hpetUnlock(pThis);
-
+    DEVHPET_UNLOCK(pThis);
     return rc;
 }
 
@@ -813,15 +815,13 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns,
                                  unsigned   cb)
 {
     HpetState  *pThis  = PDMINS_2_DATA(pDevIns, HpetState*);
-    int         rc     = VINF_SUCCESS;
     uint32_t    iIndex = (uint32_t)(GCPhysAddr - HPET_BASE);
+    int         rc     = VINF_SUCCESS;
 
     LogFlow(("hpetMMIOWrite (%d): %llx (%x) <- %x\n",
              cb, (uint64_t)GCPhysAddr, iIndex, cb >= 4 ? *(uint32_t*)pv : 0xdeadbeef));
 
-    rc = hpetLock(pThis, VINF_IOM_HC_MMIO_WRITE);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-        return rc;
+    DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
 
     switch (cb)
     {
@@ -884,7 +884,7 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns,
             break;
     }
 
-    hpetUnlock(pThis);
+    DEVHPET_UNLOCK(pThis);
     return rc;
 }
 
@@ -1043,8 +1043,8 @@ static DECLCALLBACK(void) hpetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *p
     uint64_t   u64Diff;
 
     /* Lock in R3 must either block or succeed */
-    int rc = hpetLock(pThis, VERR_IGNORED);
-    AssertLogRelRCReturnVoid(rc);
+    int rc = PDMCritSectEnter(&pThis->csLock, VERR_IGNORED);
+    AssertRC(rc);
 
     if ((pHpetTimer->u64Config & HPET_TN_PERIODIC) && (u64Period != 0))
     {
@@ -1069,7 +1069,7 @@ static DECLCALLBACK(void) hpetTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *p
     /* Should it really be under lock, does it really matter? */
     hpetIrqUpdate(pHpetTimer);
 
-    hpetUnlock(pThis);
+    PDMCritSectLeave(&pThis->csLock);
 }
 
 /**
@@ -1177,7 +1177,7 @@ static int hpetInit(PPDMDEVINS pDevIns)
             return rc;
         pThis->aTimers[i].pTimerRC = TMTimerRCPtr(pThis->aTimers[i].pTimerR3);
         pThis->aTimers[i].pTimerR0 = TMTimerR0Ptr(pThis->aTimers[i].pTimerR3);
-        TMR3TimerSetCritSect(pThis->aTimers[i].pTimerR3, &pThis->csLock);
+        /// @todo TMR3TimerSetCritSect(pThis->aTimers[i].pTimerR3, &pThis->csLock);
     }
 
     hpetReset(pDevIns);
