@@ -130,6 +130,33 @@
     do { PDMCritSectLeave(&(a_pThis)->csLock); } while (0)
 
 
+/**
+ * Acquires the TM lock and HPET lock, returns on failure.
+ */
+#define DEVHPET_LOCK_BOTH_RETURN(a_pThis, a_rcBusy)  \
+    do { \
+        int rcLock = TMTimerLock((a_pThis)->aTimers[0].CTX_SUFF(pTimer), (a_rcBusy)); \
+        if (rcLock != VINF_SUCCESS) \
+            return rcLock; \
+        rcLock = PDMCritSectEnter(&(a_pThis)->csLock, (a_rcBusy)); \
+        if (rcLock != VINF_SUCCESS) \
+        { \
+            TMTimerUnlock((a_pThis)->aTimers[0].CTX_SUFF(pTimer)); \
+            return rcLock; \
+        } \
+    } while (0)
+
+
+/**
+ * Releases the HPET lock and TM lock.
+ */
+#define DEVHPET_UNLOCK_BOTH(a_pThis) \
+    do { \
+        PDMCritSectLeave(&(a_pThis)->csLock); \
+        TMTimerUnlock((a_pThis)->aTimers[0].CTX_SUFF(pTimer)); \
+    } while (0)
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -337,16 +364,13 @@ static void hpetAdjustComparator(HpetTimer *pHpetTimer, uint64_t u64Now)
 
 static void hpetProgramTimer(HpetTimer *pHpetTimer)
 {
-    uint64_t u64Ticks = hpetGetTicks(pHpetTimer->CTX_SUFF(pHpet));
-    uint64_t u64Diff;
-    uint32_t u32TillWrap;
-
     /* no wrapping on new timers */
     pHpetTimer->u8Wrap = 0;
 
+    uint64_t u64Ticks = hpetGetTicks(pHpetTimer->CTX_SUFF(pHpet));
     hpetAdjustComparator(pHpetTimer, u64Ticks);
 
-    u64Diff = hpetComputeDiff(pHpetTimer, u64Ticks);
+    uint64_t u64Diff = hpetComputeDiff(pHpetTimer, u64Ticks);
 
     /*
      * HPET spec says in one-shot 32-bit mode, generate an interrupt when
@@ -355,7 +379,7 @@ static void hpetProgramTimer(HpetTimer *pHpetTimer)
     if (    hpet32bitTimer(pHpetTimer)
         && !(pHpetTimer->u64Config & HPET_TN_PERIODIC))
     {
-        u32TillWrap = 0xffffffff - (uint32_t)u64Ticks + 1;
+        uint32_t u32TillWrap = 0xffffffff - (uint32_t)u64Ticks + 1;
         if (u32TillWrap < (uint32_t)u64Diff)
         {
             Log(("wrap on timer %d: till=%u ticks=%lld diff64=%lld\n",
@@ -365,15 +389,15 @@ static void hpetProgramTimer(HpetTimer *pHpetTimer)
         }
     }
 
-    /* Avoid killing VM with interrupts */
-#if 1
-    /* @todo: HACK, rethink, may have negative impact on the guest */
+    /*
+     * HACK ALERT! Avoid killing VM with interrupts.
+     */
+#if 1 /** @todo: HACK, rethink, may have negative impact on the guest */
     if (u64Diff == 0)
         u64Diff = 100000; /* 1 millisecond */
 #endif
 
     Log4(("HPET: next IRQ in %lld ticks (%lld ns)\n", u64Diff, hpetTicksToNs(pHpetTimer->CTX_SUFF(pHpet), u64Diff)));
-
     TMTimerSetNano(pHpetTimer->CTX_SUFF(pTimer), hpetTicksToNs(pHpetTimer->CTX_SUFF(pHpet), u64Diff));
 }
 
@@ -394,6 +418,8 @@ static void hpetProgramTimer(HpetTimer *pHpetTimer)
  */
 static int hpetTimerRegRead32(HpetState const *pThis, uint32_t iTimerNo, uint32_t iTimerReg, uint32_t *pu32Value)
 {
+    Assert(PDMCritSectIsOwner(&pThis->csLock));
+
     if (iTimerNo >= HPET_NUM_TIMERS)
     {
         static unsigned s_cOccurences = 0;
@@ -454,9 +480,14 @@ static int hpetTimerRegRead32(HpetState const *pThis, uint32_t iTimerNo, uint32_
  * @param   pThis           The HPET state.
  * @param   idxReg          The register being written to.
  * @param   u32NewValue     The value being written.
+ *
+ * @remarks The caller should not hold the device lock, unless it also holds
+ *          the TM lock.
  */
 static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTimerReg, uint32_t u32NewValue)
 {
+    Assert(!PDMCritSectIsOwner(&pThis->csLock) || TMTimerIsLockOwner(pThis->aTimers[0].CTX_SUFF(pTimer)));
+
     if (iTimerNo >= HPET_NUM_TIMERS)
     {
         LogRel(("HPET: using timer above configured range: %d\n", iTimerNo));
@@ -468,6 +499,7 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
     {
         case HPET_TN_CFG:
         {
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
             Log(("write HPET_TN_CFG: %d: %x\n", iTimerNo, u32NewValue));
             uint64_t const iOldValue = (uint32_t)pHpetTimer->u64Config;
 
@@ -494,6 +526,7 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
 
             /* We only care about lower 32-bits so far */
             pHpetTimer->u64Config = hpetUpdateMasked(u32NewValue, iOldValue, u64Mask);
+            DEVHPET_UNLOCK(pThis);
             break;
         }
 
@@ -505,7 +538,9 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
 
         case HPET_TN_CMP: /* lower bits of comparator register */
         {
-            Log(("write HPET_TN_CMP on %d: %x\n", iTimerNo, u32NewValue));
+            DEVHPET_LOCK_BOTH_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
+            Log(("write HPET_TN_CMP on %d: %#x\n", iTimerNo, u32NewValue));
+
             if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
             {
                 u32NewValue &= hpetInvalidValue(pHpetTimer) >> 1;
@@ -514,32 +549,35 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
             }
 
             pHpetTimer->u64Cmp = (pHpetTimer->u64Cmp & UINT64_C(0xffffffff00000000))
-                               | u32NewValue;
+                               | u32NewValue; /** @todo RT_MAKE_U64 */
 
             pHpetTimer->u64Config &= ~HPET_TN_SETVAL;
-            Log2(("after HPET_TN_CMP cmp=%llx per=%llx\n", pHpetTimer->u64Cmp, pHpetTimer->u64Period));
+            Log2(("after HPET_TN_CMP cmp=%#llx per=%#llx\n", pHpetTimer->u64Cmp, pHpetTimer->u64Period));
 
             if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
                 hpetProgramTimer(pHpetTimer);
+            DEVHPET_UNLOCK_BOTH(pThis);
             break;
         }
 
         case HPET_TN_CMP + 4: /* upper bits of comparator register */
         {
-            Log(("write HPET_TN_CMP + 4 on %d: %x\n", iTimerNo, u32NewValue));
-            if (hpet32bitTimer(pHpetTimer))
-                break;
+            DEVHPET_LOCK_BOTH_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
+            Log(("write HPET_TN_CMP + 4 on %d: %#x\n", iTimerNo, u32NewValue));
+            if (!hpet32bitTimer(pHpetTimer))
+            {
+                if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
+                    pHpetTimer->u64Period = RT_MAKE_U64(pHpetTimer->u64Period, u32NewValue);
+                pHpetTimer->u64Cmp = RT_MAKE_U64(pHpetTimer->u64Cmp, u32NewValue);
 
-            if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
-                pHpetTimer->u64Period = RT_MAKE_U64(pHpetTimer->u64Period, u32NewValue);
-            pHpetTimer->u64Cmp = RT_MAKE_U64(pHpetTimer->u64Cmp, u32NewValue);
+                Log2(("after HPET_TN_CMP+4 cmp=%llx per=%llx tmr=%d\n", pHpetTimer->u64Cmp, pHpetTimer->u64Period, iTimerNo));
 
-            Log2(("after HPET_TN_CMP+4 cmp=%llx per=%llx tmr=%d\n", pHpetTimer->u64Cmp, pHpetTimer->u64Period, iTimerNo));
+                pHpetTimer->u64Config &= ~HPET_TN_SETVAL;
 
-            pHpetTimer->u64Config &= ~HPET_TN_SETVAL;
-
-            if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
-                hpetProgramTimer(pHpetTimer);
+                if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
+                    hpetProgramTimer(pHpetTimer);
+            }
+            DEVHPET_UNLOCK_BOTH(pThis);
             break;
         }
 
@@ -557,8 +595,9 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
 
         default:
         {
-            LogRel(("invalid timer register write: %d\n", iTimerReg));
-            AssertFailed();
+            static unsigned s_cOccurences = 0;
+            if (s_cOccurences++ < 10)
+                LogRel(("invalid timer register write: %d\n", iTimerReg));
             break;
         }
     }
@@ -577,40 +616,57 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
  * @param   pThis               The HPET state.
  * @param   idxReg              The register to read.
  * @param   pu32Value           Where to return the register value.
+ *
+ * @remarks The caller must not own the device lock if HPET_COUNTER is read.
  */
-static int hpetConfigRegRead32(HpetState const *pThis, uint32_t idxReg, uint32_t *pu32Value)
+static int hpetConfigRegRead32(HpetState *pThis, uint32_t idxReg, uint32_t *pu32Value)
 {
+    Assert(!PDMCritSectIsOwner(&pThis->csLock) || (idxReg != HPET_COUNTER && idxReg != HPET_COUNTER + 4));
+
     uint32_t u32Value;
     switch (idxReg)
     {
         case HPET_ID:
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
             u32Value = (uint32_t)pThis->u64Capabilities;
+            DEVHPET_UNLOCK(pThis);
             Log(("read HPET_ID: %#x\n", u32Value));
             break;
 
         case HPET_PERIOD:
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
             u32Value = (uint32_t)(pThis->u64Capabilities >> 32);
+            DEVHPET_UNLOCK(pThis);
             Log(("read HPET_PERIOD: %#x\n", u32Value));
             break;
 
         case HPET_CFG:
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
             u32Value = (uint32_t)pThis->u64HpetConfig;
+            DEVHPET_UNLOCK(pThis);
             Log(("read HPET_CFG: %#x\n", u32Value));
             break;
 
         case HPET_CFG + 4:
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
             u32Value = (uint32_t)(pThis->u64HpetConfig >> 32);
+            DEVHPET_UNLOCK(pThis);
             Log(("read of HPET_CFG + 4: %#x\n", u32Value));
             break;
 
         case HPET_COUNTER:
         case HPET_COUNTER + 4:
         {
+            DEVHPET_LOCK_BOTH_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
+
             uint64_t u64Ticks;
             if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
                 u64Ticks = hpetGetTicks(pThis);
             else
                 u64Ticks = pThis->u64HpetCounter;
+
+            DEVHPET_UNLOCK_BOTH(pThis);
+
             /** @todo is it correct? */
             u32Value = (idxReg == HPET_COUNTER) ? (uint32_t)u64Ticks : (uint32_t)(u64Ticks >> 32);
             Log(("read HPET_COUNTER: %s part value %x (%#llx)\n",
@@ -619,8 +675,10 @@ static int hpetConfigRegRead32(HpetState const *pThis, uint32_t idxReg, uint32_t
         }
 
         case HPET_STATUS:
-            Log(("read HPET_STATUS\n"));
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
             u32Value = (uint32_t)pThis->u64Isr;
+            DEVHPET_UNLOCK(pThis);
+            Log(("read HPET_STATUS: %#x\n", u32Value));
             break;
 
         default:
@@ -642,9 +700,14 @@ static int hpetConfigRegRead32(HpetState const *pThis, uint32_t idxReg, uint32_t
  * @param   pThis           The HPET state.
  * @param   idxReg          The register being written to.
  * @param   u32NewValue     The value being written.
+ *
+ * @remarks The caller should not hold the device lock, unless it also holds
+ *          the TM lock.
  */
 static int hpetConfigRegWrite32(HpetState *pThis, uint32_t idxReg, uint32_t u32NewValue)
 {
+    Assert(!PDMCritSectIsOwner(&pThis->csLock) || TMTimerIsLockOwner(pThis->aTimers[0].CTX_SUFF(pTimer)));
+
     int rc = VINF_SUCCESS;
     switch (idxReg)
     {
@@ -657,6 +720,7 @@ static int hpetConfigRegWrite32(HpetState *pThis, uint32_t idxReg, uint32_t u32N
 
         case HPET_CFG:
         {
+            DEVHPET_LOCK_BOTH_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
             uint32_t const iOldValue = (uint32_t)(pThis->u64HpetConfig);
             Log(("write HPET_CFG: %x (old %x)\n", u32NewValue, iOldValue));
 
@@ -670,11 +734,13 @@ static int hpetConfigRegWrite32(HpetState *pThis, uint32_t idxReg, uint32_t u32N
 #ifdef IN_RING3
                 rc = pThis->pHpetHlpR3->pfnSetLegacyMode(pThis->pDevInsR3, RT_BOOL(u32NewValue & HPET_CFG_LEGACY));
                 if (rc != VINF_SUCCESS)
-                    break;
 #else
                 rc = VINF_IOM_HC_MMIO_WRITE;
-                break;
 #endif
+                {
+                    DEVHPET_UNLOCK_BOTH(pThis);
+                    break;
+                }
             }
 
             pThis->u64HpetConfig = hpetUpdateMasked(u32NewValue, iOldValue, HPET_CFG_WRITE_MASK);
@@ -696,25 +762,29 @@ static int hpetConfigRegWrite32(HpetState *pThis, uint32_t idxReg, uint32_t u32N
                 for (uint32_t i = 0; i < HPET_NUM_TIMERS; i++)
                     TMTimerStop(pThis->aTimers[i].CTX_SUFF(pTimer));
             }
+
+            DEVHPET_UNLOCK_BOTH(pThis);
             break;
         }
 
         case HPET_CFG + 4:
         {
-            /** @todo why do we let the guest write to the high bits but not
-             *        read them? */
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
             pThis->u64HpetConfig = hpetUpdateMasked((uint64_t)u32NewValue << 32,
                                                     pThis->u64HpetConfig,
                                                     UINT64_C(0xffffffff00000000));
             Log(("write HPET_CFG + 4: %x -> %#llx\n", u32NewValue, pThis->u64HpetConfig));
+            DEVHPET_UNLOCK(pThis);
             break;
         }
 
         case HPET_STATUS:
         {
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
             /* Clear ISR for all set bits in u32NewValue, see p. 14 of the HPET spec. */
             pThis->u64Isr &= ~((uint64_t)u32NewValue);
             Log(("write HPET_STATUS: %x -> ISR=%#llx\n", u32NewValue, pThis->u64Isr));
+            DEVHPET_UNLOCK(pThis);
             break;
         }
 
@@ -732,21 +802,29 @@ static int hpetConfigRegWrite32(HpetState *pThis, uint32_t idxReg, uint32_t u32N
 
         case HPET_COUNTER:
         {
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
             pThis->u64HpetCounter = RT_MAKE_U64(u32NewValue, pThis->u64HpetCounter);
             Log(("write HPET_COUNTER: %#x -> %llx\n", u32NewValue, pThis->u64HpetCounter));
+            DEVHPET_UNLOCK(pThis);
             break;
         }
 
         case HPET_COUNTER + 4:
         {
+            DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
             pThis->u64HpetCounter = RT_MAKE_U64(pThis->u64HpetCounter, u32NewValue);
             Log(("write HPET_COUNTER + 4: %#x -> %llx\n", u32NewValue, pThis->u64HpetCounter));
+            DEVHPET_UNLOCK(pThis);
             break;
         }
 
         default:
-            LogRel(("invalid HPET config write: %x\n", idxReg));
+        {
+            static unsigned s_cOccurences = 0;
+            if (s_cOccurences++ < 10)
+                LogRel(("invalid HPET config write: %x\n", idxReg));
             break;
+        }
     }
 
     return rc;
@@ -765,17 +843,20 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     uint32_t const  idxReg = (uint32_t)(GCPhysAddr - HPET_BASE);
 
     LogFlow(("hpetMMIORead (%d): %llx (%x)\n", cb, (uint64_t)GCPhysAddr, idxReg));
-    DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
 
     int rc = VINF_SUCCESS;
     switch (cb)
     {
         case 4:
             if (idxReg >= 0x100 && idxReg < 0x400)
+            {
+                DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
                 rc = hpetTimerRegRead32(pThis,
                                         (idxReg - 0x100) / 0x20,
                                         (idxReg - 0x100) % 0x20,
                                         (uint32_t *)pv);
+                DEVHPET_UNLOCK(pThis);
+            }
             else
                 rc = hpetConfigRegRead32(pThis, idxReg, (uint32_t *)pv);
             break;
@@ -796,25 +877,32 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
             {
                 /* When reading HPET counter we must read it in a single read,
                    to avoid unexpected time jumps on 32-bit overflow. */
-                pValue->u = (pThis->u64HpetConfig & HPET_CFG_ENABLE) != 0
-                          ? hpetGetTicks(pThis)
-                          : pThis->u64HpetCounter;
-                rc = VINF_SUCCESS;
-            }
-            else if (idxReg >= 0x100 && idxReg < 0x400)
-            {
-                uint32_t iTimer    = (idxReg - 0x100) / 0x20;
-                uint32_t iTimerReg = (idxReg - 0x100) % 0x20;
-                rc = hpetTimerRegRead32(pThis, iTimer, iTimerReg, &pValue->s.Lo);
-                if (rc == VINF_SUCCESS)
-                    rc = hpetTimerRegRead32(pThis, iTimer, iTimerReg + 4, &pValue->s.Hi);
+                DEVHPET_LOCK_BOTH_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
+                if (pThis->u64HpetConfig & HPET_CFG_ENABLE)
+                    pValue->u = hpetGetTicks(pThis);
+                else
+                    pValue->u = pThis->u64HpetCounter;
+                DEVHPET_UNLOCK_BOTH(pThis);
             }
             else
             {
-                /* for most 8-byte accesses we just split them, happens under lock anyway. */
-                rc = hpetConfigRegRead32(pThis, idxReg, &pValue->s.Lo);
-                if (rc == VINF_SUCCESS)
-                    rc = hpetConfigRegRead32(pThis, idxReg + 4, &pValue->s.Hi);
+                DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_READ);
+                if (idxReg >= 0x100 && idxReg < 0x400)
+                {
+                    uint32_t iTimer    = (idxReg - 0x100) / 0x20;
+                    uint32_t iTimerReg = (idxReg - 0x100) % 0x20;
+                    rc = hpetTimerRegRead32(pThis, iTimer, iTimerReg, &pValue->s.Lo);
+                    if (rc == VINF_SUCCESS)
+                        rc = hpetTimerRegRead32(pThis, iTimer, iTimerReg + 4, &pValue->s.Hi);
+                }
+                else
+                {
+                    /* for most 8-byte accesses we just split them, happens under lock anyway. */
+                    rc = hpetConfigRegRead32(pThis, idxReg, &pValue->s.Lo);
+                    if (rc == VINF_SUCCESS)
+                        rc = hpetConfigRegRead32(pThis, idxReg + 4, &pValue->s.Hi);
+                }
+                DEVHPET_UNLOCK(pThis);
             }
             break;
         }
@@ -830,7 +918,6 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
             rc = VINF_SUCCESS;
     }
 
-    DEVHPET_UNLOCK(pThis);
     return rc;
 }
 
@@ -844,8 +931,6 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     uint32_t    idxReg = (uint32_t)(GCPhysAddr - HPET_BASE);
     LogFlow(("hpetMMIOWrite: cb=%u reg=%03x (%RGp) val=%llx\n",
              cb, idxReg, GCPhysAddr, cb == 4 ? *(uint32_t *)pv : cb == 8 ? *(uint64_t *)pv : 0xdeadbeef));
-
-    DEVHPET_LOCK_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
 
     int rc;
     switch (cb)
@@ -870,6 +955,7 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
             }
 
             /* Split the access and rely on the locking to prevent trouble. */
+            DEVHPET_LOCK_BOTH_RETURN(pThis, VINF_IOM_HC_MMIO_WRITE);
             RTUINT64U uValue;
             uValue.u = *(uint64_t const *)pv;
             if (idxReg >= 0x100 && idxReg < 0x400)
@@ -887,6 +973,7 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
                 if (RT_LIKELY(rc == VINF_SUCCESS))
                     rc = hpetConfigRegWrite32(pThis, idxReg + 4, uValue.s.Hi);
             }
+            DEVHPET_UNLOCK_BOTH(pThis);
             break;
         }
 
@@ -902,7 +989,6 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
             break;
     }
 
-    DEVHPET_UNLOCK(pThis);
     return rc;
 }
 
