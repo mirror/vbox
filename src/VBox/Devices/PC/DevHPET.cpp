@@ -525,19 +525,12 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
     }
     HpetTimer *pHpetTimer = &pThis->aTimers[iTimerNo];
 
-    /** @todo iOldValue is only used by in HPET_TN_CFG, so this is a waste of
-     *   time. */
-    uint32_t u32Temp;
-    int rc = hpetTimerRegRead32(pThis, iTimerNo, iTimerReg, &u32Temp);
-    if (RT_FAILURE(rc))
-        return rc;
-    uint64_t iOldValue = u32Temp;
-
     switch (iTimerReg)
     {
         case HPET_TN_CFG:
         {
             Log(("write HPET_TN_CFG: %d: %x\n", iTimerNo, u32NewValue));
+            uint64_t const iOldValue = (uint32_t)pHpetTimer->u64Config;
 
             uint64_t u64Mask = HPET_TN_CFG_WRITE_MASK;
             if ((pHpetTimer->u64Config & HPET_TN_PERIODIC_CAP) != 0)
