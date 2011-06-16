@@ -203,48 +203,49 @@ struct RTCState {
 };
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
-static void rtc_set_time(RTCState *s);
-static void rtc_copy_date(RTCState *s);
 
-static void rtc_timer_update(RTCState *s, int64_t current_time)
+static void rtc_timer_update(RTCState *pThis, int64_t current_time)
 {
     int period_code, period;
     uint64_t cur_clock, next_irq_clock;
     uint32_t freq;
 
-    period_code = s->cmos_data[RTC_REG_A] & 0x0f;
-    if (period_code != 0 &&
-        (s->cmos_data[RTC_REG_B] & REG_B_PIE)) {
+    period_code = pThis->cmos_data[RTC_REG_A] & 0x0f;
+    if (   period_code != 0
+        && (pThis->cmos_data[RTC_REG_B] & REG_B_PIE))
+    {
         if (period_code <= 2)
             period_code += 7;
         /* period in 32 kHz cycles */
         period = 1 << (period_code - 1);
         /* compute 32 kHz clock */
-        freq = TMTimerGetFreq(s->CTX_SUFF(pPeriodicTimer));
+        freq = TMTimerGetFreq(pThis->CTX_SUFF(pPeriodicTimer));
 
         cur_clock = ASMMultU64ByU32DivByU32(current_time, 32768, freq);
         next_irq_clock = (cur_clock & ~(uint64_t)(period - 1)) + period;
-        s->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
-        TMTimerSet(s->CTX_SUFF(pPeriodicTimer), s->next_periodic_time);
+        pThis->next_periodic_time = ASMMultU64ByU32DivByU32(next_irq_clock, freq, 32768) + 1;
+        TMTimerSet(pThis->CTX_SUFF(pPeriodicTimer), pThis->next_periodic_time);
 
 #ifdef IN_RING3
-        if (RT_UNLIKELY(period != s->CurLogPeriod))
+        if (RT_UNLIKELY(period != pThis->CurLogPeriod))
 #else
-        if (RT_UNLIKELY(period != s->CurHintPeriod))
+        if (RT_UNLIKELY(period != pThis->CurHintPeriod))
 #endif
         {
 #ifdef IN_RING3
-            if (s->cRelLogEntries++ < 64)
+            if (pThis->cRelLogEntries++ < 64)
                 LogRel(("RTC: period=%#x (%d) %u Hz\n", period, period, _32K / period));
-            s->CurLogPeriod  = period;
+            pThis->CurLogPeriod  = period;
 #endif
-            s->CurHintPeriod = period;
-            TMTimerSetFrequencyHint(s->CTX_SUFF(pPeriodicTimer), _32K / period);
+            pThis->CurHintPeriod = period;
+            TMTimerSetFrequencyHint(pThis->CTX_SUFF(pPeriodicTimer), _32K / period);
         }
-    } else {
-        if (TMTimerIsActive(s->CTX_SUFF(pPeriodicTimer)) && s->cRelLogEntries++ < 64)
+    }
+    else
+    {
+        if (TMTimerIsActive(pThis->CTX_SUFF(pPeriodicTimer)) && pThis->cRelLogEntries++ < 64)
             LogRel(("RTC: stopped the periodic timer\n"));
-        TMTimerStop(s->CTX_SUFF(pPeriodicTimer));
+        TMTimerStop(pThis->CTX_SUFF(pPeriodicTimer));
     }
 }
 
@@ -254,301 +255,43 @@ static void rtc_raise_irq(RTCState* pThis, uint32_t iLevel)
         PDMDevHlpISASetIrq(pThis->CTX_SUFF(pDevIns), pThis->irq, iLevel);
 }
 
-static void rtc_periodic_timer(void *opaque)
+
+DECLINLINE(int) to_bcd(RTCState *pThis, int a)
 {
-    RTCState *s = (RTCState*)opaque;
-
-    rtc_timer_update(s, s->next_periodic_time);
-    s->cmos_data[RTC_REG_C] |= 0xc0;
-
-    rtc_raise_irq(s, 1);
-}
-
-static void cmos_ioport_write(void *opaque, uint32_t addr, uint32_t data)
-{
-    RTCState *s = (RTCState*)opaque;
-    uint32_t bank;
-
-    bank = (addr >> 1) & 1;
-    if ((addr & 1) == 0) {
-        s->cmos_index[bank] = (data & 0x7f) + (bank * 128);
-    } else {
-        Log(("CMOS: Write bank %d idx %#04x: %#04x (old %#04x)\n", bank,
-             s->cmos_index[bank], data, s->cmos_data[s->cmos_index[bank]]));
-        switch(s->cmos_index[bank]) {
-        case RTC_SECONDS_ALARM:
-        case RTC_MINUTES_ALARM:
-        case RTC_HOURS_ALARM:
-            s->cmos_data[s->cmos_index[0]] = data;
-            break;
-        case RTC_SECONDS:
-        case RTC_MINUTES:
-        case RTC_HOURS:
-        case RTC_DAY_OF_WEEK:
-        case RTC_DAY_OF_MONTH:
-        case RTC_MONTH:
-        case RTC_YEAR:
-            s->cmos_data[s->cmos_index[0]] = data;
-            /* if in set mode, do not update the time */
-            if (!(s->cmos_data[RTC_REG_B] & REG_B_SET)) {
-                rtc_set_time(s);
-            }
-            break;
-        case RTC_REG_A:
-            /* UIP bit is read only */
-            s->cmos_data[RTC_REG_A] = (data & ~REG_A_UIP) |
-                (s->cmos_data[RTC_REG_A] & REG_A_UIP);
-            rtc_timer_update(s, TMTimerGet(s->CTX_SUFF(pPeriodicTimer)));
-            break;
-        case RTC_REG_B:
-            if (data & REG_B_SET) {
-                /* set mode: reset UIP mode */
-                s->cmos_data[RTC_REG_A] &= ~REG_A_UIP;
-#if 0 /* This is probably wrong as it breaks changing the time/date in OS/2. */
-                data &= ~REG_B_UIE;
-#endif
-            } else {
-                /* if disabling set mode, update the time */
-                if (s->cmos_data[RTC_REG_B] & REG_B_SET) {
-                    rtc_set_time(s);
-                }
-            }
-            s->cmos_data[RTC_REG_B] = data;
-            rtc_timer_update(s, TMTimerGet(s->CTX_SUFF(pPeriodicTimer)));
-            break;
-        case RTC_REG_C:
-        case RTC_REG_D:
-            /* cannot write to them */
-            break;
-        default:
-            s->cmos_data[s->cmos_index[bank]] = data;
-            break;
-        }
-    }
-}
-
-static inline int to_bcd(RTCState *s, int a)
-{
-    if (s->cmos_data[RTC_REG_B] & 0x04) {
+    if (pThis->cmos_data[RTC_REG_B] & 0x04) {
         return a;
     } else {
         return ((a / 10) << 4) | (a % 10);
     }
 }
 
-static inline int from_bcd(RTCState *s, int a)
+DECLINLINE(int) from_bcd(RTCState *pThis, int a)
 {
-    if (s->cmos_data[RTC_REG_B] & 0x04) {
+    if (pThis->cmos_data[RTC_REG_B] & 0x04) {
         return a;
     } else {
         return ((a >> 4) * 10) + (a & 0x0f);
     }
 }
 
-static void rtc_set_time(RTCState *s)
+static void rtc_set_time(RTCState *pThis)
 {
-    struct my_tm *tm = &s->current_tm;
+    struct my_tm *tm = &pThis->current_tm;
 
-    tm->tm_sec = from_bcd(s, s->cmos_data[RTC_SECONDS]);
-    tm->tm_min = from_bcd(s, s->cmos_data[RTC_MINUTES]);
-    tm->tm_hour = from_bcd(s, s->cmos_data[RTC_HOURS] & 0x7f);
-    if (!(s->cmos_data[RTC_REG_B] & 0x02) &&
-        (s->cmos_data[RTC_HOURS] & 0x80)) {
+    tm->tm_sec  = from_bcd(pThis, pThis->cmos_data[RTC_SECONDS]);
+    tm->tm_min  = from_bcd(pThis, pThis->cmos_data[RTC_MINUTES]);
+    tm->tm_hour = from_bcd(pThis, pThis->cmos_data[RTC_HOURS] & 0x7f);
+    if (   !(pThis->cmos_data[RTC_REG_B] & 0x02)
+        && (pThis->cmos_data[RTC_HOURS] & 0x80))
         tm->tm_hour += 12;
-    }
-    tm->tm_wday = from_bcd(s, s->cmos_data[RTC_DAY_OF_WEEK]);
-    tm->tm_mday = from_bcd(s, s->cmos_data[RTC_DAY_OF_MONTH]);
-    tm->tm_mon = from_bcd(s, s->cmos_data[RTC_MONTH]) - 1;
-    tm->tm_year = from_bcd(s, s->cmos_data[RTC_YEAR]) + 100;
-}
-
-static void rtc_copy_date(RTCState *s)
-{
-    const struct my_tm *tm = &s->current_tm;
-
-    s->cmos_data[RTC_SECONDS] = to_bcd(s, tm->tm_sec);
-    s->cmos_data[RTC_MINUTES] = to_bcd(s, tm->tm_min);
-    if (s->cmos_data[RTC_REG_B] & 0x02) {
-        /* 24 hour format */
-        s->cmos_data[RTC_HOURS] = to_bcd(s, tm->tm_hour);
-    } else {
-        /* 12 hour format */
-        s->cmos_data[RTC_HOURS] = to_bcd(s, tm->tm_hour % 12);
-        if (tm->tm_hour >= 12)
-            s->cmos_data[RTC_HOURS] |= 0x80;
-    }
-    s->cmos_data[RTC_DAY_OF_WEEK] = to_bcd(s, tm->tm_wday);
-    s->cmos_data[RTC_DAY_OF_MONTH] = to_bcd(s, tm->tm_mday);
-    s->cmos_data[RTC_MONTH] = to_bcd(s, tm->tm_mon + 1);
-    s->cmos_data[RTC_YEAR] = to_bcd(s, tm->tm_year % 100);
-}
-
-/* month is between 0 and 11. */
-static int get_days_in_month(int month, int year)
-{
-    static const int days_tab[12] = {
-        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-    };
-    int d;
-    if ((unsigned )month >= 12)
-        return 31;
-    d = days_tab[month];
-    if (month == 1) {
-        if ((year % 4) == 0 && ((year % 100) != 0 || (year % 400) == 0))
-            d++;
-    }
-    return d;
-}
-
-/* update 'tm' to the next second */
-static void rtc_next_second(struct my_tm *tm)
-{
-    int days_in_month;
-
-    tm->tm_sec++;
-    if ((unsigned)tm->tm_sec >= 60) {
-        tm->tm_sec = 0;
-        tm->tm_min++;
-        if ((unsigned)tm->tm_min >= 60) {
-            tm->tm_min = 0;
-            tm->tm_hour++;
-            if ((unsigned)tm->tm_hour >= 24) {
-                tm->tm_hour = 0;
-                /* next day */
-                tm->tm_wday++;
-                if ((unsigned)tm->tm_wday >= 7)
-                    tm->tm_wday = 0;
-                days_in_month = get_days_in_month(tm->tm_mon,
-                                                  tm->tm_year + 1900);
-                tm->tm_mday++;
-                if (tm->tm_mday < 1) {
-                    tm->tm_mday = 1;
-                } else if (tm->tm_mday > days_in_month) {
-                    tm->tm_mday = 1;
-                    tm->tm_mon++;
-                    if (tm->tm_mon >= 12) {
-                        tm->tm_mon = 0;
-                        tm->tm_year++;
-                    }
-                }
-            }
-        }
-    }
+    tm->tm_wday = from_bcd(pThis, pThis->cmos_data[RTC_DAY_OF_WEEK]);
+    tm->tm_mday = from_bcd(pThis, pThis->cmos_data[RTC_DAY_OF_MONTH]);
+    tm->tm_mon  = from_bcd(pThis, pThis->cmos_data[RTC_MONTH]) - 1;
+    tm->tm_year = from_bcd(pThis, pThis->cmos_data[RTC_YEAR]) + 100;
 }
 
 
-static void rtc_update_second(void *opaque)
-{
-    RTCState *s = (RTCState*)opaque;
-
-    /* if the oscillator is not in normal operation, we do not update */
-    if ((s->cmos_data[RTC_REG_A] & 0x70) != 0x20) {
-        s->next_second_time += TMTimerGetFreq(s->CTX_SUFF(pSecondTimer));
-        TMTimerSet(s->CTX_SUFF(pSecondTimer), s->next_second_time);
-    } else {
-        rtc_next_second(&s->current_tm);
-
-        if (!(s->cmos_data[RTC_REG_B] & REG_B_SET)) {
-            /* update in progress bit */
-            Log2(("RTC: UIP %x -> 1\n", !!(s->cmos_data[RTC_REG_A] & REG_A_UIP)));
-            s->cmos_data[RTC_REG_A] |= REG_A_UIP;
-        }
-
-        /* 244140 ns = 8 / 32768 seconds */
-        uint64_t delay = TMTimerFromNano(s->CTX_SUFF(pSecondTimer2), 244140);
-        TMTimerSet(s->CTX_SUFF(pSecondTimer2), s->next_second_time + delay);
-    }
-}
-
-static void rtc_update_second2(void *opaque)
-{
-    RTCState *s = (RTCState*)opaque;
-
-    if (!(s->cmos_data[RTC_REG_B] & REG_B_SET)) {
-        rtc_copy_date(s);
-    }
-
-    /* check alarm */
-    if (s->cmos_data[RTC_REG_B] & REG_B_AIE) {
-        if (((s->cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0 ||
-             from_bcd(s, s->cmos_data[RTC_SECONDS_ALARM]) == s->current_tm.tm_sec) &&
-            ((s->cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0 ||
-             from_bcd(s, s->cmos_data[RTC_MINUTES_ALARM]) == s->current_tm.tm_min) &&
-            ((s->cmos_data[RTC_HOURS_ALARM] & 0xc0) == 0xc0 ||
-             from_bcd(s, s->cmos_data[RTC_HOURS_ALARM]) == s->current_tm.tm_hour)) {
-
-            s->cmos_data[RTC_REG_C] |= 0xa0;
-            rtc_raise_irq(s, 1);
-        }
-    }
-
-    /* update ended interrupt */
-    if (s->cmos_data[RTC_REG_B] & REG_B_UIE) {
-        s->cmos_data[RTC_REG_C] |= 0x90;
-        rtc_raise_irq(s, 1);
-    }
-
-    /* clear update in progress bit */
-    Log2(("RTC: UIP %x -> 0\n", !!(s->cmos_data[RTC_REG_A] & REG_A_UIP)));
-    s->cmos_data[RTC_REG_A] &= ~REG_A_UIP;
-
-    s->next_second_time += TMTimerGetFreq(s->CTX_SUFF(pSecondTimer));
-    TMTimerSet(s->CTX_SUFF(pSecondTimer), s->next_second_time);
-}
-
-static uint32_t cmos_ioport_read(void *opaque, uint32_t addr)
-{
-    RTCState *s = (RTCState*)opaque;
-    int ret;
-    unsigned bank;
-
-    bank = (addr >> 1) & 1;
-    if ((addr & 1) == 0) {
-        return 0xff;
-    } else {
-        switch(s->cmos_index[bank]) {
-        case RTC_SECONDS:
-        case RTC_MINUTES:
-        case RTC_HOURS:
-        case RTC_DAY_OF_WEEK:
-        case RTC_DAY_OF_MONTH:
-        case RTC_MONTH:
-        case RTC_YEAR:
-            ret = s->cmos_data[s->cmos_index[0]];
-            break;
-        case RTC_REG_A:
-            ret = s->cmos_data[s->cmos_index[0]];
-            break;
-        case RTC_REG_C:
-            ret = s->cmos_data[s->cmos_index[0]];
-            rtc_raise_irq(s, 0);
-            s->cmos_data[RTC_REG_C] = 0x00;
-            break;
-        default:
-            ret = s->cmos_data[s->cmos_index[bank]];
-            break;
-        }
-        Log(("CMOS: Read bank %d idx %#04x: %#04x\n", bank, s->cmos_index[bank], ret));
-        return ret;
-    }
-}
-
-#ifdef IN_RING3
-static void rtc_set_memory(RTCState *s, int addr, int val)
-{
-    if (addr >= 0 && addr <= 127)
-        s->cmos_data[addr] = val;
-}
-
-static void rtc_set_date(RTCState *s, const struct my_tm *tm)
-{
-    s->current_tm = *tm;
-    rtc_copy_date(s);
-}
-
-#endif /* IN_RING3 */
-
-/* -=-=-=-=-=- wrappers / stuff -=-=-=-=-=- */
+/* -=-=-=-=-=- I/O Port -=-=-=-=-=- */
 
 /**
  * Port I/O Handler for IN operations.
@@ -564,12 +307,46 @@ static void rtc_set_date(RTCState *s, const struct my_tm *tm)
 PDMBOTHCBDECL(int) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
-    if (cb == 1)
+    if (cb != 1)
+        return VERR_IOM_IOPORT_UNUSED;
+
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    if ((Port & 1) == 0)
+        *pu32 = 0xff;
+    else
     {
-        *pu32 = cmos_ioport_read(PDMINS_2_DATA(pDevIns, RTCState *), Port);
-        return VINF_SUCCESS;
+        unsigned bank = (Port >> 1) & 1;
+        switch (pThis->cmos_index[bank])
+        {
+            case RTC_SECONDS:
+            case RTC_MINUTES:
+            case RTC_HOURS:
+            case RTC_DAY_OF_WEEK:
+            case RTC_DAY_OF_MONTH:
+            case RTC_MONTH:
+            case RTC_YEAR:
+                *pu32 = pThis->cmos_data[pThis->cmos_index[0]];
+                break;
+
+            case RTC_REG_A:
+                *pu32 = pThis->cmos_data[pThis->cmos_index[0]];
+                break;
+
+            case RTC_REG_C:
+                *pu32 = pThis->cmos_data[pThis->cmos_index[0]];
+                rtc_raise_irq(pThis, 0);
+                pThis->cmos_data[RTC_REG_C] = 0x00;
+                break;
+
+            default:
+                *pu32 = pThis->cmos_data[pThis->cmos_index[bank]];
+                break;
+        }
+
+        Log(("CMOS: Read bank %d idx %#04x: %#04x\n", bank, pThis->cmos_index[bank], *pu32));
     }
-    return VERR_IOM_IOPORT_UNUSED;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -587,10 +364,84 @@ PDMBOTHCBDECL(int) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     NOREF(pvUser);
-    if (cb == 1)
-        cmos_ioport_write(PDMINS_2_DATA(pDevIns, RTCState *), Port, u32);
+    if (cb != 1)
+        return VINF_SUCCESS;
+
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    uint32_t bank = (Port >> 1) & 1;
+    if ((Port & 1) == 0)
+    {
+        pThis->cmos_index[bank] = (u32 & 0x7f) + (bank * 128);
+    }
+    else
+    {
+        Log(("CMOS: Write bank %d idx %#04x: %#04x (old %#04x)\n", bank,
+             pThis->cmos_index[bank], u32, pThis->cmos_data[pThis->cmos_index[bank]]));
+
+        switch (pThis->cmos_index[bank])
+        {
+            case RTC_SECONDS_ALARM:
+            case RTC_MINUTES_ALARM:
+            case RTC_HOURS_ALARM:
+                pThis->cmos_data[pThis->cmos_index[0]] = u32;
+                break;
+
+            case RTC_SECONDS:
+            case RTC_MINUTES:
+            case RTC_HOURS:
+            case RTC_DAY_OF_WEEK:
+            case RTC_DAY_OF_MONTH:
+            case RTC_MONTH:
+            case RTC_YEAR:
+                pThis->cmos_data[pThis->cmos_index[0]] = u32;
+                /* if in set mode, do not update the time */
+                if (!(pThis->cmos_data[RTC_REG_B] & REG_B_SET))
+                    rtc_set_time(pThis);
+                break;
+
+            case RTC_REG_A:
+                /* UIP bit is read only */
+                pThis->cmos_data[RTC_REG_A] = (u32                        & ~REG_A_UIP)
+                                            | (pThis->cmos_data[RTC_REG_A] & REG_A_UIP);
+                rtc_timer_update(pThis, TMTimerGet(pThis->CTX_SUFF(pPeriodicTimer)));
+                break;
+
+            case RTC_REG_B:
+                if (u32 & REG_B_SET)
+                {
+                    /* set mode: reset UIP mode */
+                    pThis->cmos_data[RTC_REG_A] &= ~REG_A_UIP;
+#if 0 /* This is probably wrong as it breaks changing the time/date in OS/2. */
+                    u32 &= ~REG_B_UIE;
+#endif
+                }
+                else
+                {
+                    /* if disabling set mode, update the time */
+                    if (pThis->cmos_data[RTC_REG_B] & REG_B_SET)
+                        rtc_set_time(pThis);
+                }
+                pThis->cmos_data[RTC_REG_B] = u32;
+                rtc_timer_update(pThis, TMTimerGet(pThis->CTX_SUFF(pPeriodicTimer)));
+                break;
+
+            case RTC_REG_C:
+            case RTC_REG_D:
+                /* cannot write to them */
+                break;
+
+            default:
+                pThis->cmos_data[pThis->cmos_index[bank]] = u32;
+                break;
+        }
+    }
+
     return VINF_SUCCESS;
 }
+
+#ifdef IN_RING3
+
+/* -=-=-=-=-=- Timers and their support code  -=-=-=-=-=- */
 
 
 /**
@@ -600,9 +451,78 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  * @param   pTimer          The timer handle.
  * @param   pvUser          Pointer to the RTC state.
  */
-PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    rtc_periodic_timer((RTCState *)pvUser);
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+
+    rtc_timer_update(pThis, pThis->next_periodic_time);
+    pThis->cmos_data[RTC_REG_C] |= 0xc0;
+
+    rtc_raise_irq(pThis, 1);
+}
+
+
+/* month is between 0 and 11. */
+static int get_days_in_month(int month, int year)
+{
+    static const int days_tab[12] =
+    {
+        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+    };
+    int d;
+
+    if ((unsigned )month >= 12)
+        return 31;
+
+    d = days_tab[month];
+    if (month == 1)
+    {
+        if ((year % 4) == 0 && ((year % 100) != 0 || (year % 400) == 0))
+            d++;
+    }
+    return d;
+}
+
+
+/* update 'tm' to the next second */
+static void rtc_next_second(struct my_tm *tm)
+{
+    int days_in_month;
+
+    tm->tm_sec++;
+    if ((unsigned)tm->tm_sec >= 60)
+    {
+        tm->tm_sec = 0;
+        tm->tm_min++;
+        if ((unsigned)tm->tm_min >= 60)
+        {
+            tm->tm_min = 0;
+            tm->tm_hour++;
+            if ((unsigned)tm->tm_hour >= 24)
+            {
+                tm->tm_hour = 0;
+                /* next day */
+                tm->tm_wday++;
+                if ((unsigned)tm->tm_wday >= 7)
+                    tm->tm_wday = 0;
+                days_in_month = get_days_in_month(tm->tm_mon,
+                                                  tm->tm_year + 1900);
+                tm->tm_mday++;
+                if (tm->tm_mday < 1)
+                    tm->tm_mday = 1;
+                else if (tm->tm_mday > days_in_month)
+                {
+                    tm->tm_mday = 1;
+                    tm->tm_mon++;
+                    if (tm->tm_mon >= 12)
+                    {
+                        tm->tm_mon = 0;
+                        tm->tm_year++;
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -613,9 +533,57 @@ PDMBOTHCBDECL(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *
  * @param   pTimer          The timer handle.
  * @param   pvUser          Pointer to the RTC state.
  */
-PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    rtc_update_second((RTCState *)pvUser);
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+
+    /* if the oscillator is not in normal operation, we do not update */
+    if ((pThis->cmos_data[RTC_REG_A] & 0x70) != 0x20)
+    {
+        pThis->next_second_time += TMTimerGetFreq(pThis->CTX_SUFF(pSecondTimer));
+        TMTimerSet(pThis->CTX_SUFF(pSecondTimer), pThis->next_second_time);
+    }
+    else
+    {
+        rtc_next_second(&pThis->current_tm);
+
+        if (!(pThis->cmos_data[RTC_REG_B] & REG_B_SET))
+        {
+            /* update in progress bit */
+            Log2(("RTC: UIP %x -> 1\n", !!(pThis->cmos_data[RTC_REG_A] & REG_A_UIP)));
+            pThis->cmos_data[RTC_REG_A] |= REG_A_UIP;
+        }
+
+        /* 244140 ns = 8 / 32768 seconds */
+        uint64_t delay = TMTimerFromNano(pThis->CTX_SUFF(pSecondTimer2), 244140);
+        TMTimerSet(pThis->CTX_SUFF(pSecondTimer2), pThis->next_second_time + delay);
+    }
+}
+
+
+/* Used by rtc_set_date and rtcTimerSecond2. */
+static void rtc_copy_date(RTCState *pThis)
+{
+    const struct my_tm *tm = &pThis->current_tm;
+
+    pThis->cmos_data[RTC_SECONDS] = to_bcd(pThis, tm->tm_sec);
+    pThis->cmos_data[RTC_MINUTES] = to_bcd(pThis, tm->tm_min);
+    if (pThis->cmos_data[RTC_REG_B] & 0x02)
+    {
+        /* 24 hour format */
+        pThis->cmos_data[RTC_HOURS] = to_bcd(pThis, tm->tm_hour);
+    }
+    else
+    {
+        /* 12 hour format */
+        pThis->cmos_data[RTC_HOURS] = to_bcd(pThis, tm->tm_hour % 12);
+        if (tm->tm_hour >= 12)
+            pThis->cmos_data[RTC_HOURS] |= 0x80;
+    }
+    pThis->cmos_data[RTC_DAY_OF_WEEK] = to_bcd(pThis, tm->tm_wday);
+    pThis->cmos_data[RTC_DAY_OF_MONTH] = to_bcd(pThis, tm->tm_mday);
+    pThis->cmos_data[RTC_MONTH] = to_bcd(pThis, tm->tm_mon + 1);
+    pThis->cmos_data[RTC_YEAR] = to_bcd(pThis, tm->tm_year % 100);
 }
 
 
@@ -626,12 +594,47 @@ PDMBOTHCBDECL(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
  * @param   pTimer          The timer handle.
  * @param   pvUser          Pointer to the RTC state.
  */
-PDMBOTHCBDECL(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    rtc_update_second2((RTCState *)pvUser);
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+
+    if (!(pThis->cmos_data[RTC_REG_B] & REG_B_SET))
+        rtc_copy_date(pThis);
+
+    /* check alarm */
+    if (pThis->cmos_data[RTC_REG_B] & REG_B_AIE)
+    {
+        if (   (   (pThis->cmos_data[RTC_SECONDS_ALARM] & 0xc0) == 0xc0
+                || from_bcd(pThis, pThis->cmos_data[RTC_SECONDS_ALARM]) == pThis->current_tm.tm_sec)
+            && (   (pThis->cmos_data[RTC_MINUTES_ALARM] & 0xc0) == 0xc0
+                || from_bcd(pThis, pThis->cmos_data[RTC_MINUTES_ALARM]) == pThis->current_tm.tm_min)
+            && (   (pThis->cmos_data[RTC_HOURS_ALARM  ] & 0xc0) == 0xc0
+                || from_bcd(pThis, pThis->cmos_data[RTC_HOURS_ALARM  ]) == pThis->current_tm.tm_hour)
+            )
+        {
+            pThis->cmos_data[RTC_REG_C] |= 0xa0;
+            rtc_raise_irq(pThis, 1);
+        }
+    }
+
+    /* update ended interrupt */
+    if (pThis->cmos_data[RTC_REG_B] & REG_B_UIE)
+    {
+        pThis->cmos_data[RTC_REG_C] |= 0x90;
+        rtc_raise_irq(pThis, 1);
+    }
+
+    /* clear update in progress bit */
+    Log2(("RTC: UIP %x -> 0\n", !!(pThis->cmos_data[RTC_REG_A] & REG_A_UIP)));
+    pThis->cmos_data[RTC_REG_A] &= ~REG_A_UIP;
+
+    pThis->next_second_time += TMTimerGetFreq(pThis->CTX_SUFF(pSecondTimer));
+    TMTimerSet(pThis->CTX_SUFF(pSecondTimer), pThis->next_second_time);
 }
 
-#ifdef IN_RING3
+
+/* -=-=-=-=-=- Saved State -=-=-=-=-=- */
+
 
 /**
  * @copydoc FNSSMDEVLIVEEXEC
@@ -786,7 +789,7 @@ static void rtcCalcCRC(RTCState *pThis)
 
     for (i = RTC_CRC_START, u16 = 0; i <= RTC_CRC_LAST; i++)
         u16 += pThis->cmos_data[i];
-    pThis->cmos_data[RTC_CRC_LOW] = u16 & 0xff;
+    pThis->cmos_data[RTC_CRC_LOW]  = u16 & 0xff;
     pThis->cmos_data[RTC_CRC_HIGH] = (u16 >> 8) & 0xff;
 }
 
@@ -804,6 +807,8 @@ static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
     if (iReg < RT_ELEMENTS(pThis->cmos_data))
     {
+        PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+
         pThis->cmos_data[iReg] = u8Value;
 
         /* does it require checksum update? */
@@ -811,8 +816,10 @@ static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t
             &&  iReg <= RTC_CRC_LAST)
             rtcCalcCRC(pThis);
 
+        PDMCritSectLeave(pDevIns->pCritSectRoR3);
         return VINF_SUCCESS;
     }
+
     AssertMsgFailed(("iReg=%d\n", iReg));
     return VERR_INVALID_PARAMETER;
 }
@@ -831,7 +838,11 @@ static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t 
     RTCState   *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
     if (iReg < RT_ELEMENTS(pThis->cmos_data))
     {
+        PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+
         *pu8Value = pThis->cmos_data[iReg];
+
+        PDMCritSectLeave(pDevIns->pCritSectRoR3);
         return VINF_SUCCESS;
     }
     AssertMsgFailed(("iReg=%d\n", iReg));
@@ -839,7 +850,36 @@ static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t 
 }
 
 
+/**
+ * @interface_method_impl{PDMIHPETLEGACYNOTIFY,pfnModeChanged}
+ */
+static DECLCALLBACK(void) rtcHpetLegacyNotify_ModeChanged(PPDMIHPETLEGACYNOTIFY pInterface, bool fActivated)
+{
+    RTCState *pThis = RT_FROM_MEMBER(pInterface, RTCState, IHpetLegacyNotify);
+    PDMCritSectEnter(pThis->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
+
+    pThis->fDisabledByHpet = fActivated;
+
+    PDMCritSectLeave(pThis->pDevInsR3->pCritSectRoR3);
+}
+
+
 /* -=-=-=-=-=- based on bits from pc.c -=-=-=-=-=- */
+
+
+static void rtc_set_memory(RTCState *pThis, int addr, int val)
+{
+    if (addr >= 0 && addr <= 127)
+        pThis->cmos_data[addr] = val;
+}
+
+
+static void rtc_set_date(RTCState *pThis, const struct my_tm *tm)
+{
+    pThis->current_tm = *tm;
+    rtc_copy_date(pThis);
+}
+
 
 /** @copydoc FNPDMDEVINITCOMPLETE */
 static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
@@ -899,17 +939,6 @@ static DECLCALLBACK(void *) rtcQueryInterface(PPDMIBASE pInterface, const char *
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHPETLEGACYNOTIFY, &pThis->IHpetLegacyNotify);
     return NULL;
 }
-
-
-/**
- * @interface_method_impl{PDMIHPETLEGACYNOTIFY,pfnModeChanged}
- */
-static DECLCALLBACK(void) rtcHpetLegacyNotify_ModeChanged(PPDMIHPETLEGACYNOTIFY pInterface, bool fActivated)
-{
-    RTCState *pThis = RT_FROM_MEMBER(pInterface, RTCState, IHpetLegacyNotify);
-    pThis->fDisabledByHpet = fActivated;
-}
-
 
 /**
  * @copydoc
@@ -1030,20 +1059,21 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
+
     rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase, 4, NULL,
                                  rtcIOPortWrite, rtcIOPortRead, NULL, NULL, "MC146818 RTC/CMOS");
     if (RT_FAILURE(rc))
         return rc;
     if (fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase, 4, 0,
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase, 4, NIL_RTRCPTR,
                                        "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
         if (RT_FAILURE(rc))
             return rc;
     }
     if (fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase, 4, 0,
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase, 4, NIL_RTR0PTR,
                                        "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
         if (RT_FAILURE(rc))
             return rc;
