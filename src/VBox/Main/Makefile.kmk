@@ -301,6 +301,7 @@ VBoxSVC_SOURCES = \
 	src-server/HostNetworkInterfaceImpl.cpp \
 	src-server/HostPower.cpp \
 	src-server/MachineImpl.cpp \
+	src-server/MachineImplCloneVM.cpp \
 	src-server/Matching.cpp \
 	src-server/MediumAttachmentImpl.cpp \
 	src-server/MediumFormatImpl.cpp \
