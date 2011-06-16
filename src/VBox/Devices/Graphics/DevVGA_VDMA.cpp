@@ -673,6 +673,10 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_
                     return cbTransfer; /* error */
                 break;
             }
+            case VBOXVDMACMD_TYPE_DMA_NOP:
+                return VINF_SUCCESS;
+            case VBOXVDMACMD_TYPE_CHILD_STATUS_IRQ:
+                return VINF_SUCCESS;
             default:
                 AssertBreakpoint();
                 return VERR_INVALID_FUNCTION;
@@ -1262,17 +1266,20 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd)
 void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd)
 {
 #ifdef VBOX_WITH_CRHGSMI
+    /* chromium commands are processed by crhomium hgcm thread independently from our internal cmd processing pipeline
+     * this is why we process them specially */
     if (vboxVDMACmdCheckCrCmd(pVdma, pCmd))
         return;
 #endif
 
+#ifndef VBOX_VDMA_WITH_WORKERTHREAD
+    vboxVDMACommandProcess(pVdma, pCmd);
+#else
     int rc = VERR_NOT_IMPLEMENTED;
 
-#ifdef VBOX_VDMA_WITH_WORKERTHREAD
-
-#ifdef DEBUG_misha
+# ifdef DEBUG_misha
     Assert(0);
-#endif
+# endif
 
     VBOXVDMACMD_SUBMIT_CONTEXT Context;
     Context.pVdma = pVdma;
@@ -1291,11 +1298,11 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd)
         }
         rc = VERR_OUT_OF_RESOURCES;
     }
-#endif
     /* failure */
     Assert(RT_FAILURE(rc));
     PHGSMIINSTANCE pIns = pVdma->pHgsmi;
     pCmd->rc = rc;
     int tmpRc = VBoxSHGSMICommandComplete (pIns, pCmd);
     AssertRC(tmpRc);
+#endif
 }

@@ -1739,8 +1739,6 @@ int HGSMICompleteGuestCommand(PHGSMIINSTANCE pIns,
 {
     LogFlowFunc(("pIns = %p, pvMem = %p\n", pIns, pvMem));
 
-    VM_ASSERT_OTHER_THREAD(pIns->pVM);
-
     int rc = VINF_SUCCESS;
     HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pIns->hostHeap, pvMem);
     Assert(offBuffer != HGSMIOFFSET_VOID);

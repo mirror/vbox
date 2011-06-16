@@ -224,6 +224,9 @@ void vboxVideoCmSessionCtxAdd(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX pC
 
 static void vboxVideoCmSessionDestroy(PVBOXVIDEOCM_SESSION pSession)
 {
+    /* signal event so that user-space client can figure out the context is destroyed
+     * in case the context destroyal is caused by Graphics device reset or miniport driver update */
+    KeSetEvent(pSession->pUmEvent, 0, FALSE);
     ObDereferenceObject(pSession->pUmEvent);
     Assert(IsListEmpty(&pSession->ContextList));
     Assert(IsListEmpty(&pSession->CommandsList));
