@@ -1096,8 +1096,9 @@ typedef enum
     VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL,
     VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP,
     VBOXVDMACMD_TYPE_DMA_NOP,
-    VBOXVDMACMD_TYPE_CHROMIUM_CMD,
-    VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER_VRAMSYS
+    VBOXVDMACMD_TYPE_CHROMIUM_CMD, /* chromium cmd */
+    VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER_VRAMSYS,
+    VBOXVDMACMD_TYPE_CHILD_STATUS_IRQ /* make the device notify child (monitor) state change IRQ */
 } VBOXVDMACMD_TYPE;
 
 #pragma pack()
@@ -1338,6 +1339,28 @@ typedef struct VBOXVDMACMD_DMA_BPB_FILL
     uint32_t cbFillSize;
     uint32_t u32FillPattern;
 } VBOXVDMACMD_DMA_BPB_FILL, *PVBOXVDMACMD_DMA_BPB_FILL;
+
+#define VBOXVDMA_CHILD_STATUS_F_CONNECTED    0x01
+#define VBOXVDMA_CHILD_STATUS_F_DISCONNECTED 0x02
+#define VBOXVDMA_CHILD_STATUS_F_ROTATED      0x04
+
+typedef struct VBOXVDMA_CHILD_STATUS
+{
+    uint32_t iChild;
+    uint8_t  fFlags;
+    uint8_t  u8RotationAngle;
+    uint16_t u16Reserved;
+} VBOXVDMA_CHILD_STATUS, *PVBOXVDMA_CHILD_STATUS;
+
+/* apply the aInfos are applied to all targets, the iTarget is ignored */
+#define VBOXVDMACMD_CHILD_STATUS_IRQ_F_APPLY_TO_ALL 0x00000001
+
+typedef struct VBOXVDMACMD_CHILD_STATUS_IRQ
+{
+    uint32_t cInfos;
+    uint32_t fFlags;
+    VBOXVDMA_CHILD_STATUS aInfos[1];
+} VBOXVDMACMD_CHILD_STATUS_IRQ, *PVBOXVDMACMD_CHILD_STATUS_IRQ;
 
 # pragma pack()
 #endif /* #ifdef VBOX_WITH_VDMA */

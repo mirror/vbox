@@ -43,6 +43,12 @@
 # define BREAK_WARN() do {} while(0)
 #endif
 
+#define _LOGMSG_EXACT(_logger, _a)                                          \
+    do                                                                      \
+    {                                                                       \
+        _logger(_a);                                                        \
+    } while (0)
+
 #define _LOGMSG(_logger, _a)                                                \
     do                                                                      \
     {                                                                       \
@@ -65,5 +71,6 @@
 #define LOGF(_a) _LOGMSG(LogFlow, _a)
 #define LOGF_ENTER() LOGF(("ENTER"))
 #define LOGF_LEAVE() LOGF(("LEAVE"))
+#define LOGREL_EXACT(_a) _LOGMSG_EXACT(Log, _a)
 
 #endif /*VBOXVIDEOLOG_H*/

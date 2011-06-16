@@ -2102,6 +2102,12 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
 
     hgcm_buffer = (CRVBOXHGCMBUFFER *) *bufp - 1;
     CRASSERT(hgcm_buffer->magic == CR_VBOXHGCM_BUFFER_MAGIC);
+    if (hgcm_buffer->magic != CR_VBOXHGCM_BUFFER_MAGIC)
+    {
+        crError("HGCM buffer magic mismatch");
+    }
+
+
     if (hgcm_buffer->kind != CR_VBOXHGCM_UHGSMI_BUFFER)
     {
         /* fallback */
@@ -2125,6 +2131,10 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
     }
 
     pClient = (PCRVBOXHGSMI_CLIENT)pBuf->pvUserData;
+    if (pClient != &conn->HgsmiClient)
+    {
+        crError("HGSMI client mismatch");
+    }
 
     /* Length would be passed as part of HGCM pointer description
      * No need to prepend it to the buffer

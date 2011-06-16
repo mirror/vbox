@@ -186,7 +186,7 @@ VBOXDRVTOOL_DECL(VOID) VBoxDrvToolRefWaitEqual(PVBOXDRVTOOL_REF pRef, uint32_t u
         Assert(cRefs >= u32Val);
         Assert(cRefs < UINT32_MAX/2);
 
-        KeDelayExecutionThread(KernelMode, TRUE, &Interval);
+        KeDelayExecutionThread(KernelMode, FALSE, &Interval);
     }
 }
 

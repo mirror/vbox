@@ -77,6 +77,9 @@ DECLINLINE(VOID) vboxVdmaDdiCmdInit(PVBOXVDMADDI_CMD pCmd,
     pCmd->pvComplete = pvComplete;
 }
 
+/* marks the command a submitted in a way that it is invisible for dx runtime,
+ * i.e. the dx runtime won't be notified about the command completion
+ * this is used to submit commands initiated by the driver, but not by the dx runtime */
 DECLINLINE(VOID) vboxVdmaDdiCmdSubmittedNotDx(PVBOXVDMADDI_CMD pCmd)
 {
     Assert(pCmd->enmState == VBOXVDMADDI_STATE_NOT_QUEUED);

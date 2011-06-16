@@ -1179,6 +1179,9 @@ NTSTATUS vboxVideoAMgrCtxAllocDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXD
 #ifdef VBOX_WITH_CRHGSMI
 static DECLCALLBACK(VOID) vboxVideoAMgrAllocSubmitCompletion(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext)
 {
+    /* we should be called from our DPC routine */
+    Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
+
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)pvContext;
     PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
     VBOXVDMACMD_CHROMIUM_CMD *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_CHROMIUM_CMD);
@@ -1214,6 +1217,7 @@ static DECLCALLBACK(VOID) vboxVideoAMgrAllocSubmitCompletion(PVBOXMP_DEVEXT pDev
     vboxVdmaCBufDrFree(&pDevExt->u.primary.Vdma, pDr);
 }
 
+/* submits a set of chromium uhgsmi buffers to host for processing */
 NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_CONTEXT pContext, UINT cBuffers, VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE *paBuffers)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -1256,6 +1260,7 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
         {
             PVBOXVDMADDI_CMD pDdiCmd = VBOXVDMADDI_CMD_FROM_BUF_DR(pDr);
             vboxVdmaDdiCmdInit(pDdiCmd, 0, NULL, vboxVideoAMgrAllocSubmitCompletion, pDr);
+            /* mark command as submitted & invisible for the dx runtime since dx did not originate it */
             vboxVdmaDdiCmdSubmittedNotDx(pDdiCmd);
             int rc = vboxVdmaCBufDrSubmit(pDevExt, &pDevExt->u.primary.Vdma, pDr);
             Assert(rc == VINF_SUCCESS);

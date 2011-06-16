@@ -257,8 +257,8 @@ typedef struct VBOXWDDM_VIDEOMODES_INFO
 {
     int32_t iPreferredMode;
     uint32_t cModes;
-    uint32_t cPrevModes;
     VIDEO_MODE_INFORMATION aModes[VBOXWDDM_MAX_VIDEOMODES];
+    int32_t iPreferredResolution;
     uint32_t cResolutions;
     D3DKMDT_2DREGION aResolutions[VBOXWDDM_MAX_VIDEOMODES];
 } VBOXWDDM_VIDEOMODES_INFO, *PVBOXWDDM_VIDEOMODES_INFO;
