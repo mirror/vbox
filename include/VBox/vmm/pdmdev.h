@@ -3957,7 +3957,7 @@ typedef struct PDMDEVINS
  *                              RTStrSimplePatternMultiMatch for details on the
  *                              pattern syntax.
  * @param   pszValidNodes       Patterns describing the valid node (key) names.
- *                              Pass empty string if no valid nodess.
+ *                              Pass empty string if no valid nodes.
  */
 #define PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, pszValidValues, pszValidNodes) \
     do \
