@@ -417,58 +417,57 @@ HRESULT MachineCloneVM::run()
     {
         /* Copy all the configuration from this machine to an empty
          * configuration dataset. */
-        settings::MachineConfigFile *pTrgMCF = new settings::MachineConfigFile(0);
-        *pTrgMCF = *d->pSrcMachine->mData->pMachineConfigFile;
+        settings::MachineConfigFile trgMCF = *d->pSrcMachine->mData->pMachineConfigFile;
 
         /* Reset media registry. */
-        pTrgMCF->mediaRegistry.llHardDisks.clear();
+        trgMCF.mediaRegistry.llHardDisks.clear();
         /* If we got a valid snapshot id, replace the hardware/storage section
          * with the stuff from the snapshot. */
         settings::Snapshot sn;
         if (!d->snapshotId.isEmpty())
-            sn = d->cloneFindSnapshot(pTrgMCF, pTrgMCF->llFirstSnapshot, d->snapshotId);
+            sn = d->cloneFindSnapshot(&trgMCF, trgMCF.llFirstSnapshot, d->snapshotId);
 
         if (d->mode == CloneMode_MachineState)
         {
             if (!sn.uuid.isEmpty())
             {
-                pTrgMCF->hardwareMachine = sn.hardware;
-                pTrgMCF->storageMachine  = sn.storage;
+                trgMCF.hardwareMachine = sn.hardware;
+                trgMCF.storageMachine  = sn.storage;
             }
 
             /* Remove any hint on snapshots. */
-            pTrgMCF->llFirstSnapshot.clear();
-            pTrgMCF->uuidCurrentSnapshot.clear();
+            trgMCF.llFirstSnapshot.clear();
+            trgMCF.uuidCurrentSnapshot.clear();
         }else
         if (   d->mode == CloneMode_MachineAndChildStates
             && !sn.uuid.isEmpty())
         {
             /* Copy the snapshot data to the current machine. */
-            pTrgMCF->hardwareMachine = sn.hardware;
-            pTrgMCF->storageMachine  = sn.storage;
+            trgMCF.hardwareMachine = sn.hardware;
+            trgMCF.storageMachine  = sn.storage;
 
             /* The snapshot will be the root one. */
-            pTrgMCF->uuidCurrentSnapshot = sn.uuid;
-            pTrgMCF->llFirstSnapshot.clear();
-            pTrgMCF->llFirstSnapshot.push_back(sn);
+            trgMCF.uuidCurrentSnapshot = sn.uuid;
+            trgMCF.llFirstSnapshot.clear();
+            trgMCF.llFirstSnapshot.push_back(sn);
         }
 
         /* When the current snapshot folder is absolute we reset it to the
          * default relative folder. */
-        if (RTPathStartsWithRoot(pTrgMCF->machineUserData.strSnapshotFolder.c_str()))
-            pTrgMCF->machineUserData.strSnapshotFolder = "Snapshots";
-        pTrgMCF->strStateFile = "";
+        if (RTPathStartsWithRoot(trgMCF.machineUserData.strSnapshotFolder.c_str()))
+            trgMCF.machineUserData.strSnapshotFolder = "Snapshots";
+        trgMCF.strStateFile = "";
         /* Force writing of setting file. */
-        pTrgMCF->fCurrentStateModified = true;
+        trgMCF.fCurrentStateModified = true;
         /* Set the new name. */
-        pTrgMCF->machineUserData.strName = d->pTrgMachine->mUserData->s.strName;
-        pTrgMCF->uuid = d->pTrgMachine->mData->mUuid;
+        trgMCF.machineUserData.strName = d->pTrgMachine->mUserData->s.strName;
+        trgMCF.uuid = d->pTrgMachine->mData->mUuid;
 
         Bstr bstrSrcSnapshotFolder;
         rc = d->pSrcMachine->COMGETTER(SnapshotFolder)(bstrSrcSnapshotFolder.asOutParam());
         if (FAILED(rc)) throw rc;
         /* The absolute name of the snapshot folder. */
-        Utf8Str strTrgSnapshotFolder = Utf8StrFmt("%s%c%s%c", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, pTrgMCF->machineUserData.strSnapshotFolder.c_str(), RTPATH_DELIMITER);
+        Utf8Str strTrgSnapshotFolder = Utf8StrFmt("%s%c%s%c", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, trgMCF.machineUserData.strSnapshotFolder.c_str(), RTPATH_DELIMITER);
 
         /* We need to create a map with the already created medias. This is
          * necessary, cause different snapshots could have the same
@@ -611,8 +610,8 @@ HRESULT MachineCloneVM::run()
             if (FAILED(rc)) throw rc;
             /* We have to patch the configuration, so it contains the new
              * medium uuid instead of the old one. */
-            d->cloneUpdateStorageLists(pTrgMCF->storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
-            d->cloneUpdateSnapshotStorageLists(pTrgMCF->llFirstSnapshot, bstrSrcId, bstrTrgId);
+            d->cloneUpdateStorageLists(trgMCF.storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
+            d->cloneUpdateSnapshotStorageLists(trgMCF.llFirstSnapshot, bstrSrcId, bstrTrgId);
         }
         /* Clone all save state files. */
         for (size_t i = 0; i < d->llSaveStateFiles.size(); ++i)
@@ -635,9 +634,9 @@ HRESULT MachineCloneVM::run()
             /* Update the path in the configuration either for the current
              * machine state or the snapshots. */
             if (sst.snapshotUuid.isEmpty())
-                pTrgMCF->strStateFile = strTrgSaveState;
+                trgMCF.strStateFile = strTrgSaveState;
             else
-                d->cloneUpdateStateFile(pTrgMCF->llFirstSnapshot, sst.snapshotUuid, strTrgSaveState);
+                d->cloneUpdateStateFile(trgMCF.llFirstSnapshot, sst.snapshotUuid, strTrgSaveState);
         }
 
         if (false)
@@ -693,14 +692,14 @@ HRESULT MachineCloneVM::run()
         }
 
         {
-            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Create Machine Clone '%s' ..."), pTrgMCF->machineUserData.strName.c_str()).raw(), 1);
+            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Create Machine Clone '%s' ..."), trgMCF.machineUserData.strName.c_str()).raw(), 1);
             if (FAILED(rc)) throw rc;
             /* After modifying the new machine config, we can copy the stuff
              * over to the new machine. The machine have to be mutable for
              * this. */
             rc = d->pTrgMachine->checkStateDependency(p->MutableStateDep);
             if (FAILED(rc)) throw rc;
-            rc = d->pTrgMachine->loadMachineDataFromSettings(*pTrgMCF,
+            rc = d->pTrgMachine->loadMachineDataFromSettings(trgMCF,
                                                              &d->pTrgMachine->mData->mUuid);
             if (FAILED(rc)) throw rc;
         }
