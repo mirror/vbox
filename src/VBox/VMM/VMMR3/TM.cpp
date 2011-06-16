@@ -2088,9 +2088,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunStoppedAlready);
         u64Now = pVM->tm.s.u64VirtualSync;
-#ifdef DEBUG_bird
         Assert(u64Now <= pNext->u64Expire);
-#endif
     }
     else
     {
@@ -2161,20 +2159,16 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         u64Max = u64VirtualNow - offSyncGivenUp;
 
     /* assert sanity */
-#ifdef DEBUG_bird
     Assert(u64Now <= u64VirtualNow - offSyncGivenUp);
     Assert(u64Max <= u64VirtualNow - offSyncGivenUp);
     Assert(u64Now <= u64Max);
     Assert(offSyncGivenUp == pVM->tm.s.offVirtualSyncGivenUp);
-#endif
 
     /*
      * Process the expired timers moving the clock along as we progress.
      */
-#ifdef DEBUG_bird
 #ifdef VBOX_STRICT
     uint64_t u64Prev = u64Now; NOREF(u64Prev);
-#endif
 #endif
     while (pNext && pNext->u64Expire <= u64Max)
     {
@@ -2192,11 +2186,9 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
 
         /* Advance the clock - don't permit timers to be out of order or armed
            in the 'past'. */
-#ifdef DEBUG_bird
 #ifdef VBOX_STRICT
         AssertMsg(pTimer->u64Expire >= u64Prev, ("%'RU64 < %'RU64 %s\n", pTimer->u64Expire, u64Prev, pTimer->pszDesc));
         u64Prev = pTimer->u64Expire;
-#endif
 #endif
         ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, pTimer->u64Expire);
         ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
@@ -2246,9 +2238,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         /* calc the slack we've handed out. */
         const uint64_t u64VirtualNow2 = TMVirtualGetNoCheck(pVM);
         Assert(u64VirtualNow2 >= u64VirtualNow);
-#ifdef DEBUG_bird
         AssertMsg(pVM->tm.s.u64VirtualSync >= u64Now, ("%'RU64 < %'RU64\n", pVM->tm.s.u64VirtualSync, u64Now));
-#endif
         const uint64_t offSlack = pVM->tm.s.u64VirtualSync - u64Now;
         STAM_STATS({
             if (offSlack)
