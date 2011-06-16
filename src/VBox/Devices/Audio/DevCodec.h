@@ -529,7 +529,9 @@ int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle);
 int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle, uint32_t uVersion);
 int codecOpenVoice(CODECState *pCodecState, ENMSOUNDSOURCE enmSoundSource, audsettings_t *pAudioSettings);
 
-#define HDA_SSM_VERSION 2
+#define HDA_SSM_VERSION 3
+#define HDA_SSM_VERSION_1 1
+#define HDA_SSM_VERSION_2 2
 
 # ifdef VBOX_WITH_HDA_CODEC_EMU
 /* */

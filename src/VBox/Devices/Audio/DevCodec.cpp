@@ -1867,7 +1867,7 @@ static DECLCALLBACK(int)codecLoadV1(PCODECState pCodecState, PSSMHANDLE pSSMHand
 int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle, uint32_t uVersion)
 {
     int rc;
-    if (uVersion == 1)
+    if (uVersion == HDA_SSM_VERSION_1)
     {
 #if RT_ARCH_X86
         if (SSMR3HandleHostBits(pSSMHandle) == 32)
