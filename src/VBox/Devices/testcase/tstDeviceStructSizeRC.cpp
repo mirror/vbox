@@ -1718,7 +1718,7 @@ int main()
     GEN_CHECK_OFF(HpetTimer, pHpetR0);
     GEN_CHECK_OFF(HpetTimer, pTimerRC);
     GEN_CHECK_OFF(HpetTimer, pHpetRC);
-    GEN_CHECK_OFF(HpetTimer, u8TimerNumber);
+    GEN_CHECK_OFF(HpetTimer, idxTimer);
     GEN_CHECK_OFF(HpetTimer, u64Config);
     GEN_CHECK_OFF(HpetTimer, u64Cmp);
     GEN_CHECK_OFF(HpetTimer, u64Fsb);
