@@ -399,7 +399,9 @@ typedef struct TM
     RCPTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawRC;
     /** Alignment. */
     RTRCPTR                     AlignmentRCPtr;
-    /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared. */
+    /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared.
+     * When fVirtualSyncTicking is set it holds the last time returned to
+     * the guest (while the lock was held). */
     uint64_t volatile           u64VirtualSync;
     /** The offset of the timer synchronous virtual clock (TMCLOCK_VIRTUAL_SYNC) relative
      * to the virtual clock (TMCLOCK_VIRTUAL).
@@ -504,7 +506,8 @@ typedef struct TM
 
     /** Lock serializing access to the timer lists. */
     PDMCRITSECT                 TimerCritSect;
-    /** Lock serializing access to the VirtualSync clock. */
+    /** Lock serializing access to the VirtualSync clock and the associated
+     * timer queue. */
     PDMCRITSECT                 VirtualSyncLock;
 
     /** CPU load state for all the virtual CPUs (tmR3CpuLoadTimer). */
@@ -528,6 +531,7 @@ typedef struct TM
     STAMCOUNTER                 StatVirtualGet;
     STAMCOUNTER                 StatVirtualGetSetFF;
     STAMCOUNTER                 StatVirtualSyncGet;
+    STAMCOUNTER                 StatVirtualSyncGetAdjLast;
     STAMCOUNTER                 StatVirtualSyncGetELoop;
     STAMCOUNTER                 StatVirtualSyncGetExpired;
     STAMCOUNTER                 StatVirtualSyncGetLockless;
@@ -535,7 +539,7 @@ typedef struct TM
     STAMCOUNTER                 StatVirtualSyncGetSetFF;
     STAMCOUNTER                 StatVirtualPause;
     STAMCOUNTER                 StatVirtualResume;
-    /* @} */
+    /** @} */
     /** TMTimerPoll
      * @{ */
     STAMCOUNTER                 StatPoll;
@@ -547,7 +551,7 @@ typedef struct TM
     STAMCOUNTER                 StatPollVirtual;
     STAMCOUNTER                 StatPollVirtualSync;
     /** @} */
-    /** TMTimerSet
+    /** TMTimerSet sans virtual sync timers.
      * @{ */
     STAMCOUNTER                 StatTimerSet;
     STAMCOUNTER                 StatTimerSetOpt;
@@ -561,14 +565,22 @@ typedef struct TM
     STAMCOUNTER                 StatTimerSetStPendSched;
     STAMCOUNTER                 StatTimerSetStPendResched;
     STAMCOUNTER                 StatTimerSetStOther;
+    /** @}  */
+    /** TMTimerSet on virtual sync timers.
+     * @{ */
+    STAMCOUNTER                 StatTimerSetVs;
+    STAMPROFILE                 StatTimerSetVsRZ;
+    STAMPROFILE                 StatTimerSetVsR3;
+    STAMCOUNTER                 StatTimerSetVsStStopped;
+    STAMCOUNTER                 StatTimerSetVsStExpDeliver;
+    STAMCOUNTER                 StatTimerSetVsStActive;
     /** @} */
-    /** TMTimerSetRelative
+    /** TMTimerSetRelative sans virtual sync timers
      * @{ */
     STAMCOUNTER                 StatTimerSetRelative;
     STAMPROFILE                 StatTimerSetRelativeRZ;
     STAMPROFILE                 StatTimerSetRelativeR3;
     STAMCOUNTER                 StatTimerSetRelativeOpt;
-    STAMCOUNTER                 StatTimerSetRelativeRacyVirtSync;
     STAMCOUNTER                 StatTimerSetRelativeStStopped;
     STAMCOUNTER                 StatTimerSetRelativeStExpDeliver;
     STAMCOUNTER                 StatTimerSetRelativeStActive;
@@ -578,10 +590,24 @@ typedef struct TM
     STAMCOUNTER                 StatTimerSetRelativeStPendResched;
     STAMCOUNTER                 StatTimerSetRelativeStOther;
     /** @} */
-    /** TMTimerStop
+    /** TMTimerSetRelative on virtual sync timers.
+     * @{ */
+    STAMCOUNTER                 StatTimerSetRelativeVs;
+    STAMPROFILE                 StatTimerSetRelativeVsRZ;
+    STAMPROFILE                 StatTimerSetRelativeVsR3;
+    STAMCOUNTER                 StatTimerSetRelativeVsStStopped;
+    STAMCOUNTER                 StatTimerSetRelativeVsStExpDeliver;
+    STAMCOUNTER                 StatTimerSetRelativeVsStActive;
+    /** @} */
+    /** TMTimerStop sans virtual sync.
      * @{ */
     STAMPROFILE                 StatTimerStopRZ;
     STAMPROFILE                 StatTimerStopR3;
+    /** @} */
+    /** TMTimerStop on virtual sync timers.
+     * @{ */
+    STAMPROFILE                 StatTimerStopVsRZ;
+    STAMPROFILE                 StatTimerStopVsR3;
     /** @} */
     /** VirtualSync - Running and Catching Up
      * @{ */
