@@ -1953,6 +1953,7 @@ public:
         QGLContext(format),
         mAllowDoneCurrent(true)
     {
+        makeCurrent();
     }
 
     void doneCurrent()
