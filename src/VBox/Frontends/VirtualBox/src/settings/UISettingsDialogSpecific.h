@@ -39,6 +39,7 @@ public:
         GLSettingsPage_USB,
         GLSettingsPage_Network,
         GLSettingsPage_Extension,
+        GLSettingsPage_Proxy,
         GLSettingsPage_MAX
     };
 

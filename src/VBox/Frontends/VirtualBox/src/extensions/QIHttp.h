@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,8 +56,8 @@ public:
         MovedTemporarilyError  /* Corresponds to 302 == moved temporarily response */
     };
 
-    QIHttp (QObject *aParent, const QString &aHostName, quint16 aPort = 80)
-        : QHttp (aHostName, aPort, aParent)
+    QIHttp (QObject *aParent)
+        : QHttp (aParent)
         , mStatusCode (0)
         , mErrorCode (NoError)
     {
