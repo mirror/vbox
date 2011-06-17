@@ -17,6 +17,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Global includes */
+#include <QRegExpValidator>
+
 /* Local includes */
 #include "UIGlobalSettingsProxy.h"
 #include "VBoxUtils.h"
