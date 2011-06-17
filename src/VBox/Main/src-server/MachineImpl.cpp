@@ -6083,7 +6083,12 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayI
     /* Convert the options. */
     RTCList<CloneOptions_T> optList;
     if (options != NULL)
-        optList = SafeArrayToRTCList<CloneOptions_T>(ComSafeArrayInArg(options));
+    {
+         com::SafeArray<CloneOptions_T> sfaOpts(ComSafeArrayInArg(options));
+         for (size_t i = 0; i < sfaOpts.size(); ++i)
+             optList.append(sfaOpts[i]);
+//        optList = SafeArrayToRTCList<CloneOptions_T>(ComSafeArrayInArg(options));
+    }
     AssertReturn(!optList.contains(CloneOptions_Link), E_NOTIMPL);
     AssertReturn(!(optList.contains(CloneOptions_KeepAllMACs) && optList.contains(CloneOptions_KeepNATMACs)), E_FAIL);
 
