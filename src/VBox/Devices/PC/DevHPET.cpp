@@ -365,6 +365,25 @@ static void hpetAdjustComparator(HpetTimer *pHpetTimer, uint64_t u64Now)
   }
 }
 
+
+/**
+ * Sets the frequency hint if it's a periodic timer.
+ *
+ * @param   pThis       The HPET state.
+ * @param   pHpetTimer  The timer.
+ */
+DECLINLINE(void) hpetTimerSetFrequencyHint(HpetState *pThis, HpetTimer *pHpetTimer)
+{
+    if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
+    {
+        uint64_t const u64Period = pHpetTimer->u64Period;
+        uint32_t const u32Freq   = pThis->u32Period;
+        if (u64Period > 0 && u64Period < u32Freq)
+            TMTimerSetFrequencyHint(pHpetTimer->CTX_SUFF(pTimer), u32Freq / (uint32_t)u64Period);
+    }
+}
+
+
 static void hpetProgramTimer(HpetTimer *pHpetTimer)
 {
     /* no wrapping on new timers */
@@ -402,13 +421,7 @@ static void hpetProgramTimer(HpetTimer *pHpetTimer)
 
     Log4(("HPET: next IRQ in %lld ticks (%lld ns)\n", u64Diff, hpetTicksToNs(pHpetTimer->CTX_SUFF(pHpet), u64Diff)));
     TMTimerSetNano(pHpetTimer->CTX_SUFF(pTimer), hpetTicksToNs(pHpetTimer->CTX_SUFF(pHpet), u64Diff));
-    if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
-    {
-        uint64_t const u64Period = pHpetTimer->u64Period;
-        uint32_t const u32Freq   = pHpetTimer->CTX_SUFF(pHpet)->u32Period;
-        if (u64Period > 0 && u64Period < u32Freq)
-            TMTimerSetFrequencyHint(pHpetTimer->CTX_SUFF(pTimer), u32Freq / (uint32_t)u64Period);
-    }
+    hpetTimerSetFrequencyHint(pHpetTimer->CTX_SUFF(pHpet), pHpetTimer);
 }
 
 
@@ -1247,14 +1260,8 @@ static DECLCALLBACK(int) hpetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     for (uint32_t iTimer = 0; iTimer < cTimers; iTimer++)
     {
         HpetTimer *pHpetTimer = &pThis->aTimers[iTimer];
-        if (   (pHpetTimer->u64Config & HPET_TN_PERIODIC)
-            && TMTimerIsActive(pHpetTimer->CTX_SUFF(pTimer)))
-        {
-            uint64_t const u64Period = pHpetTimer->u64Period;
-            uint32_t const u32Freq   = pHpetTimer->CTX_SUFF(pHpet)->u32Period;
-            if (u64Period > 0 && u64Period < u32Freq)
-                TMTimerSetFrequencyHint(pHpetTimer->CTX_SUFF(pTimer), u32Freq / (uint32_t)u64Period);
-        }
+        if (TMTimerIsActive(pHpetTimer->CTX_SUFF(pTimer)))
+            hpetTimerSetFrequencyHint(pThis, pHpetTimer);
     }
     PDMCritSectLeave(&pThis->csLock);
     return VINF_SUCCESS;
