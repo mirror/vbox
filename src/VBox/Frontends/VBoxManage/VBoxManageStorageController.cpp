@@ -54,6 +54,8 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--bandwidthgroup",   'b', RTGETOPT_REQ_STRING },
     { "--forceunmount",     'f', RTGETOPT_REQ_NOTHING },
     { "--comment",          'C', RTGETOPT_REQ_STRING },
+    { "--setuuid",          'q', RTGETOPT_REQ_STRING },
+    { "--setparentuuid",    'Q', RTGETOPT_REQ_STRING },
     // iSCSI options
     { "--server",           'S', RTGETOPT_REQ_STRING },
     { "--target",           'T', RTGETOPT_REQ_STRING },
@@ -73,6 +75,8 @@ int handleStorageAttach(HandlerArg *a)
     ULONG device = ~0U;
     bool fForceUnmount = false;
     bool fSetMediumType = false;
+    bool fSetNewUuid = false;
+    bool fSetNewParentUuid = false;
     MediumType_T mediumType = MediumType_Normal;
     Bstr bstrComment;
     const char *pszCtl  = NULL;
@@ -80,6 +84,8 @@ int handleStorageAttach(HandlerArg *a)
     const char *pszMedium = NULL;
     const char *pszPassThrough = NULL;
     const char *pszBandwidthGroup = NULL;
+    Bstr bstrNewUuid;
+    Bstr bstrNewParentUuid;
     // iSCSI options
     Bstr bstrServer;
     Bstr bstrTarget;
@@ -180,7 +186,27 @@ int handleStorageAttach(HandlerArg *a)
                     bstrComment = ValueUnion.psz;
                 else
                     rc = E_FAIL;
-            break;
+                break;
+
+            case 'q':
+                if (ValueUnion.psz)
+                {
+                    bstrNewUuid = ValueUnion.psz;
+                    fSetNewUuid = true;
+                }
+                else
+                    rc = E_FAIL;
+                break;
+
+            case 'Q':
+                if (ValueUnion.psz)
+                {
+                    bstrNewParentUuid = ValueUnion.psz;
+                    fSetNewParentUuid = true;
+                }
+                else
+                    rc = E_FAIL;
+                break;
 
             case 'S':   // --server
                 bstrServer = ValueUnion.psz;
@@ -543,9 +569,18 @@ int handleStorageAttach(HandlerArg *a)
                     throw Utf8Str("Missing --medium argument");
 
                 rc = findOrOpenMedium(a, pszMedium, devTypeRequested,
-                                      pMedium2Mount, NULL);
+                                      pMedium2Mount, fSetNewUuid, NULL);
                 if (FAILED(rc) || !pMedium2Mount)
                     throw Utf8StrFmt("Invalid UUID or filename \"%s\"", pszMedium);
+            }
+
+            // set medium/parent medium UUID, if so desired
+            if (fSetNewUuid || fSetNewParentUuid)
+            {
+                CHECK_ERROR(pMedium2Mount, SetIDs(fSetNewUuid, bstrNewUuid.raw(),
+                                                  fSetNewParentUuid, bstrNewParentUuid.raw()));
+                if (FAILED(rc))
+                    throw  Utf8Str("Failed to set the medium/parent medium UUID");
             }
 
             // set medium type, if so desired

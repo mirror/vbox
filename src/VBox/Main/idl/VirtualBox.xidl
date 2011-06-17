@@ -1391,7 +1391,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="bc166b9b-9b62-4145-b1f6-6c39068aaf00"
+    uuid="d627bf11-2758-46be-9a4d-7d9ef794c247"
     wsmap="managed"
     >
     <desc>
@@ -1912,6 +1912,12 @@
       <param name="accessMode" type="AccessMode" dir="in">
         <desc>Whether to open the image in read/write or read-only mode. For
         a "DVD" device type, this is ignored and read-only mode is always assumed.</desc>
+      </param>
+      <param name="forceNewUuid" type="boolean" dir="in">
+        <desc>Allows the caller to request a completely new medium UUID for
+        the image which is to be opened. Useful if one intends to open an exact
+        copy of a previously opened image, as this would normally fail due to
+        the duplicate UUID.</desc>
       </param>
       <param name="medium" type="IMedium" dir="return">
         <desc>Opened medium object.</desc>

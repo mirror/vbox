@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1458,7 +1458,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             /* we've not found the image */
             RTPrintf("Adding hard disk '%s'...\n", hdaFile);
             pVirtualBox->OpenMedium(bstrHdaFile.raw(), DeviceType_HardDisk,
-                                    AccessMode_ReadWrite, pMedium.asOutParam());
+                                    AccessMode_ReadWrite, FALSE /* fForceNewUuid */,
+                                    pMedium.asOutParam());
         }
         /* do we have the right image now? */
         if (pMedium)
@@ -1543,6 +1544,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                                       OpenMedium(bstrFdaFile.raw(),
                                                  DeviceType_Floppy,
                                                  AccessMode_ReadWrite,
+                                                 FALSE /* fForceNewUuid */,
                                                  pMedium.asOutParam()));
                 }
             }
@@ -1623,6 +1625,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                                       OpenMedium(bstrCdromFile.raw(),
                                                  DeviceType_DVD,
                                                  AccessMode_ReadWrite,
+                                                 FALSE /* fForceNewUuid */,
                                                  pMedium.asOutParam()));
                 }
             }

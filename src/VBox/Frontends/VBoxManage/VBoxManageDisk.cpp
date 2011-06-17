@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -180,7 +180,7 @@ HRESULT findMedium(HandlerArg *a, const char *pszFilenameOrUuid,
 
 HRESULT findOrOpenMedium(HandlerArg *a, const char *pszFilenameOrUuid,
                          DeviceType_T enmDevType, ComPtr<IMedium> &pMedium,
-                         bool *pfWasUnknown)
+                         bool fForceNewUuidOnOpen, bool *pfWasUnknown)
 {
     HRESULT rc;
     bool fWasUnknown = false;
@@ -206,6 +206,7 @@ HRESULT findOrOpenMedium(HandlerArg *a, const char *pszFilenameOrUuid,
     {
         CHECK_ERROR(a->virtualBox, OpenMedium(Bstr(pszFilenameOrUuid).raw(),
                                               enmDevType, AccessMode_ReadWrite,
+                                              fForceNewUuidOnOpen,
                                               pMedium.asOutParam()));
         if (SUCCEEDED(rc))
             fWasUnknown = true;
@@ -475,7 +476,7 @@ int handleModifyHardDisk(HandlerArg *a)
         rc = findMedium(a, FilenameOrUuid, DeviceType_HardDisk, false /* fSilent */, hardDisk);
     else
         rc = findOrOpenMedium(a, FilenameOrUuid, DeviceType_HardDisk,
-                              hardDisk, &unknown);
+                              hardDisk, false /* fForceNewUuidOnOpen */, &unknown);
     if (FAILED(rc))
         return 1;
     if (hardDisk.isNull())
@@ -629,7 +630,8 @@ int handleCloneHardDisk(HandlerArg *a)
     bool fSrcUnknown = false;
     bool fDstUnknown = false;
 
-    rc = findOrOpenMedium(a, pszSrc, DeviceType_HardDisk, srcDisk, &fSrcUnknown);
+    rc = findOrOpenMedium(a, pszSrc, DeviceType_HardDisk, srcDisk,
+                          false /* fForceNewUuidOnOpen */, &fSrcUnknown);
     if (FAILED(rc))
         return 1;
 
@@ -638,7 +640,8 @@ int handleCloneHardDisk(HandlerArg *a)
         /* open/create destination hard disk */
         if (fExisting)
         {
-            rc = findOrOpenMedium(a, pszDst, DeviceType_HardDisk, dstDisk, &fDstUnknown);
+            rc = findOrOpenMedium(a, pszDst, DeviceType_HardDisk, dstDisk,
+                                  false /* fForceNewUuidOnOpen */, &fDstUnknown);
             if (FAILED(rc))
                 break;
 
@@ -924,7 +927,8 @@ int handleShowHardDiskInfo(HandlerArg *a)
     ComPtr<IMedium> hardDisk;
     bool unknown = false;
 
-    rc = findOrOpenMedium(a, FilenameOrUuid, DeviceType_HardDisk, hardDisk, &unknown);
+    rc = findOrOpenMedium(a, FilenameOrUuid, DeviceType_HardDisk, hardDisk,
+                          false /* fForceNewUuidOnOpen */, &unknown);
     if (FAILED(rc))
         return 1;
 

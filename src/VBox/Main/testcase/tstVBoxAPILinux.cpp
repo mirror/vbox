@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -358,6 +358,7 @@ void createVM(IVirtualBox *virtualBox)
     rc = virtualBox->OpenMedium(NS_LITERAL_STRING("/home/vbox/isos/winnt4ger.iso").get(),
                                 DeviceType_DVD,
                                 AccessMode_ReadOnly,
+                                false /* fForceNewUuid */,
                                 getter_AddRefs(dvdImage));
     if (NS_FAILED(rc))
         printf("Error: could not open CD image! rc=%08X\n", rc);
