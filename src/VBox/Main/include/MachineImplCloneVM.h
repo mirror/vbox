@@ -26,7 +26,7 @@ struct MachineCloneVMPrivate;
 class MachineCloneVM
 {
 public:
-    MachineCloneVM(ComObjPtr<Machine> pSrcMachine, ComObjPtr<Machine> pTrgMachine, CloneMode_T mode, bool fFullClone);
+    MachineCloneVM(ComObjPtr<Machine> pSrcMachine, ComObjPtr<Machine> pTrgMachine, CloneMode_T mode, const RTCList<CloneOptions_T> &opts);
     ~MachineCloneVM();
 
     HRESULT start(IProgress **pProgress);

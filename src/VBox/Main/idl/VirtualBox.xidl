@@ -3528,10 +3528,10 @@
     </desc>
 
     <const name="MachineState"                 value="1">
-      <desc>Clone the state of the machine.</desc>
+      <desc>Clone the state of the selected machine.</desc>
     </const>
     <const name="MachineAndChildStates"        value="2">
-      <desc>Clone the state of the machine and if this machine object has child snapshots the state of this childs.</desc>
+      <desc>Clone the state of the selected machine and if this machine object has child snapshots the state of this childs.</desc>
     </const>
     <const name="AllStates"                    value="3">
       <desc>Clone all states (including all snapshots) of the machine, regardless of the machine object used.</desc>
@@ -3539,10 +3539,31 @@
 
   </enum>
 
+  <enum
+    name="CloneOptions" extends="$unknown"
+    uuid="1be61ee1-c0ea-4942-b733-7496f27d4f28"
+    >
+
+    <desc>
+    Clone options, used with <link to="IMachine::cloneTo" />.
+    </desc>
+
+    <const name="Link"               value="1">
+      <desc>Create a clone VM where all virtual disks are linked to the original VM.</desc>
+    </const>
+    <const name="KeepAllMACs"        value="2">
+      <desc>Don't generate new MAC addresses of the attached network adapters.</desc>
+    </const>
+    <const name="KeepNATMACs"        value="3">
+      <desc>Don't generate new MAC addresses of the attached network adapters when they are using NAT.</desc>
+    </const>
+
+  </enum>
+
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="5A398458-266D-4DCD-9745-0886AEBD761B"
+    uuid="54fd9a53-7c1b-4005-9247-9cf703edd4da"
     wsmap="managed"
     >
     <desc>
@@ -5965,21 +5986,18 @@
     <method name="cloneTo">
       <desc>
         Creates a clone of this machine, either as a full clone (which means
-        creating independent copies of the hard disk media), or as a linked
-        clone (which uses its own differencing media, sharing the parent media
-        with the source machine).
+        creating independent copies of the hard disk media, save states and so
+        on), or as a linked clone (which uses its own differencing media,
+        sharing the parent media with the source machine).
 
-        The target machine object must have been created previously with
-        <link to="IVirtualBox::createMachine"/>, and all the settings will be
-        transferred except the VM name, hardware UUID and the network card
-        MAC addresses. These can be set after the clone operation if required.
-        The operation is performed asynchronously, so the machine object will
-        be not be usable until the @a progress object signals completion. If
-        any step of the machine clone operation fails this will abort the
-        operation. The result will be a machine which is not a complete clone.
-        It is the responsibility of the caller to delete this incomplete
-        machine if desired with <link to="#unregister"/> and/or
-        <link to="#delete"/>.
+        The target machine object must have been created previously with <link
+          to="IVirtualBox::createMachine"/>, and all the settings will be
+        transferred except the VM name and the hardware UUID. You can set the
+        VM name and the new hardware UUID when creating the target machine. The
+        network MAC addresses are newly created for all newtwork adapters. You
+        can change that behaviour with the options parameter. The operation is
+        performed asynchronously, so the machine object will be not be usable
+        until the @a progress object signals completion.
 
         <result name="E_INVALIDARG">
           @a target is @c null.
@@ -5992,8 +6010,8 @@
       <param name="mode" type="CloneMode" dir="in">
         <desc>Which states should be cloned.</desc>
       </param>
-      <param name="fullClone" type="boolean" dir="in">
-        <desc>Selects whether a full or linked clone is created.</desc>
+      <param name="options" type="CloneOptions" dir="in" safearray="yes">
+        <desc>Options for the cloning operation.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
@@ -8204,9 +8222,9 @@
     <const name="Hidden"                  value="4">
       <desc>Don't show the started process according to the guest OS guidelines.</desc>
     </const>
-    <const name="NoProfile"               value="8">
-      <desc>Do not use the user's profile data when exeuting a process.</desc>
-    </const>
+    <const name="NoProfile"               value="8"> 
+      <desc>Do not use the user's profile data when exeuting a process.</desc> 
+    </const> 
   </enum>
 
   <enum
