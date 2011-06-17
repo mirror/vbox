@@ -398,9 +398,6 @@ HRESULT MachineCloneVM::run()
 
     /*
      * Todo:
-     * - Regardless where the old media comes from (e.g. snapshots folder) it
-     *   goes to the new main VM folder. Maybe we like to be a little bit
-     *   smarter here.
      * - Snapshot diffs (can) have the uuid as name. After cloning this isn't
      *   right anymore. Is it worth to change to the new uuid? Or should the
      *   cloned disks called exactly as the original one or should all new disks
@@ -469,7 +466,7 @@ HRESULT MachineCloneVM::run()
         rc = d->pSrcMachine->COMGETTER(SnapshotFolder)(bstrSrcSnapshotFolder.asOutParam());
         if (FAILED(rc)) throw rc;
         /* The absolute name of the snapshot folder. */
-        strTrgSnapshotFolder = Utf8StrFmt("%s%c%s%c", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, trgMCF.machineUserData.strSnapshotFolder.c_str(), RTPATH_DELIMITER);
+        strTrgSnapshotFolder = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, trgMCF.machineUserData.strSnapshotFolder.c_str());
 
         /* We need to create a map with the already created medias. This is
          * necessary, cause different snapshots could have the same
@@ -528,7 +525,19 @@ HRESULT MachineCloneVM::run()
                     rc = pTarget.createObject();
                     if (FAILED(rc)) throw rc;
 
+                    /* Check if this medium comes from the snapshot folder, if
+                     * so, put it there in the cloned machine as well.
+                     * Otherwise it goes to the machine folder. */
                     Utf8Str strFile = Utf8StrFmt("%s%c%lS", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
+                    Bstr bstrSrcPath;
+                    rc = pMedium->COMGETTER(Location)(bstrSrcPath.asOutParam());
+                    if (FAILED(rc)) throw rc;
+                    if (   !bstrSrcPath.isEmpty()
+                        &&  RTPathStartsWith(Utf8Str(bstrSrcPath).c_str(), Utf8Str(bstrSrcSnapshotFolder).c_str()))
+                        strFile = Utf8StrFmt("%s%c%lS", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
+                    else
+                        strFile = Utf8StrFmt("%s%c%lS", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
+
                     rc = pTarget->init(p->mParent,
                                        Utf8Str(bstrSrcFormat),
                                        strFile,
@@ -583,7 +592,7 @@ HRESULT MachineCloneVM::run()
                 diff.createObject();
                 rc = diff->init(p->mParent,
                                 pNewParent->getPreferredDiffFormat(),
-                                strTrgSnapshotFolder,
+                                Utf8StrFmt("%s%c", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER),
                                 d->pTrgMachine->mData->mUuid,
                                 NULL); // pllRegistriesThatNeedSaving
                 if (FAILED(rc)) throw rc;
@@ -620,7 +629,7 @@ HRESULT MachineCloneVM::run()
         for (size_t i = 0; i < d->llSaveStateFiles.size(); ++i)
         {
             SAVESTATETASK sst = d->llSaveStateFiles.at(i);
-            const Utf8Str &strTrgSaveState = Utf8StrFmt("%s%s", strTrgSnapshotFolder.c_str(), RTPathFilename(sst.strSaveStateFile.c_str()));
+            const Utf8Str &strTrgSaveState = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER, RTPathFilename(sst.strSaveStateFile.c_str()));
 
             /* Move to next sub-operation. */
             rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy save state file '%s' ..."), RTPathFilename(sst.strSaveStateFile.c_str())).raw(), sst.cbSize);
