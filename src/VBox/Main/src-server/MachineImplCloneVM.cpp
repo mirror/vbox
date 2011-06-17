@@ -405,9 +405,11 @@ HRESULT MachineCloneVM::run()
      *   right anymore. Is it worth to change to the new uuid? Or should the
      *   cloned disks called exactly as the original one or should all new disks
      *   get a new name with the new VM name in it.
+     * - What about log files?
      */
 
     /* Where should all the media go? */
+    Utf8Str strTrgSnapshotFolder;
     Utf8Str strTrgMachineFolder = d->pTrgMachine->getSettingsFileFull();
     strTrgMachineFolder.stripFilename();
 
@@ -467,7 +469,7 @@ HRESULT MachineCloneVM::run()
         rc = d->pSrcMachine->COMGETTER(SnapshotFolder)(bstrSrcSnapshotFolder.asOutParam());
         if (FAILED(rc)) throw rc;
         /* The absolute name of the snapshot folder. */
-        Utf8Str strTrgSnapshotFolder = Utf8StrFmt("%s%c%s%c", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, trgMCF.machineUserData.strSnapshotFolder.c_str(), RTPATH_DELIMITER);
+        strTrgSnapshotFolder = Utf8StrFmt("%s%c%s%c", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, trgMCF.machineUserData.strSnapshotFolder.c_str(), RTPATH_DELIMITER);
 
         /* We need to create a map with the already created medias. This is
          * necessary, cause different snapshots could have the same
@@ -601,6 +603,7 @@ HRESULT MachineCloneVM::run()
                 delete pMediumLockList;
                 if (FAILED(rc)) throw rc;
                 pNewParent = diff;
+                newMedias.append(diff);
             }
             Bstr bstrSrcId;
             rc = mtc.chain.first().pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
@@ -742,17 +745,16 @@ HRESULT MachineCloneVM::run()
          * parent->child relations.) */
         for (size_t i = newMedias.size(); i > 0; --i)
         {
+            bool fFile = false;
+            Utf8Str strLoc;
             ComObjPtr<Medium> &pMedium = newMedias.at(i - 1);
-            AutoCaller mac(pMedium);
-            if (FAILED(mac.rc())) { continue; rc = mac.rc(); }
-            AutoReadLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
-            bool fFile = pMedium->isMediumFormatFile();
-            Utf8Str strLoc = pMedium->getLocationFull();
-            mlock.release();
-            /* Close the medium. If this succeed, delete it finally from the
-             * disk. */
-            rc = pMedium->close(NULL, mac);
-            if (FAILED(rc)) continue;
+            {
+                AutoCaller mac(pMedium);
+                if (FAILED(mac.rc())) { continue; rc = mac.rc(); }
+                AutoReadLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
+                fFile = pMedium->isMediumFormatFile();
+                strLoc = pMedium->getLocationFull();
+            }
             if (fFile)
             {
                 vrc = RTFileDelete(strLoc.c_str());
@@ -760,6 +762,9 @@ HRESULT MachineCloneVM::run()
                     rc = p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not delete file '%s' (%Rrc)"), strLoc.c_str(), vrc);
             }
         }
+        /* Delete the snapshot folder when not empty. */
+        if (!strTrgSnapshotFolder.isEmpty())
+            RTDirRemove(strTrgSnapshotFolder.c_str());
         /* Delete the machine folder when not empty. */
         RTDirRemove(strTrgMachineFolder.c_str());
     }
