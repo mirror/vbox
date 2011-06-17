@@ -1057,38 +1057,49 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->IHpetLegacyNotify.pfnModeChanged = rtcHpetLegacyNotify_ModeChanged;
 
     /*
-     * Create timers, arm them, register I/O Ports and save state.
+     * Create timers.
      */
+    PTMTIMER pTimer;
+    /* Periodic timer. */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerPeriodic, pThis,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "MC146818 RTC/CMOS - Periodic",
-                                &pThis->pPeriodicTimerR3);
+                                &pTimer);
     if (RT_FAILURE(rc))
         return rc;
-    pThis->pPeriodicTimerR0 = TMTimerR0Ptr(pThis->pPeriodicTimerR3);
-    pThis->pPeriodicTimerRC = TMTimerRCPtr(pThis->pPeriodicTimerR3);
+    pThis->pPeriodicTimerR3 = pTimer;
+    pThis->pPeriodicTimerR0 = TMTimerR0Ptr(pTimer);
+    pThis->pPeriodicTimerRC = TMTimerRCPtr(pTimer);
 
+    /* Seconds timer. */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond, pThis,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "MC146818 RTC/CMOS - Second",
-                                &pThis->pSecondTimerR3);
+                                &pTimer);
     if (RT_FAILURE(rc))
         return rc;
-    pThis->pSecondTimerR0 = TMTimerR0Ptr(pThis->pSecondTimerR3);
-    pThis->pSecondTimerRC = TMTimerRCPtr(pThis->pSecondTimerR3);
+    pThis->pSecondTimerR3 = pTimer;
+    pThis->pSecondTimerR0 = TMTimerR0Ptr(pTimer);
+    pThis->pSecondTimerRC = TMTimerRCPtr(pTimer);
 
+    /* The second2 timer, this is always active. */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, rtcTimerSecond2, pThis,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "MC146818 RTC/CMOS - Second2",
-                                &pThis->pSecondTimer2R3);
+                                &pTimer);
     if (RT_FAILURE(rc))
         return rc;
-    pThis->pSecondTimer2R0  = TMTimerR0Ptr(pThis->pSecondTimer2R3);
-    pThis->pSecondTimer2RC  = TMTimerRCPtr(pThis->pSecondTimer2R3);
-    pThis->next_second_time = TMTimerGet(pThis->CTX_SUFF(pSecondTimer2))
-                            + (TMTimerGetFreq(pThis->CTX_SUFF(pSecondTimer2)) * 99) / 100;
-    rc = TMTimerSet(pThis->CTX_SUFF(pSecondTimer2), pThis->next_second_time);
-    if (RT_FAILURE(rc))
-        return rc;
+    pThis->pSecondTimer2R3  = pTimer;
+    pThis->pSecondTimer2R0  = TMTimerR0Ptr(pTimer);
+    pThis->pSecondTimer2RC  = TMTimerRCPtr(pTimer);
+    pThis->next_second_time = TMTimerGet(pTimer)
+                            + (TMTimerGetFreq(pTimer) * 99) / 100;
+    rc = TMTimerLock(pTimer, VERR_IGNORED);
+    AssertRCReturn(rc, rc);
+    rc = TMTimerSet(pTimer, pThis->next_second_time);
+    TMTimerUnlock(pTimer);
+    AssertRCReturn(rc, rc);
 
-
+    /*
+     * Register I/O ports.
+     */
     rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase, 4, NULL,
                                  rtcIOPortWrite, rtcIOPortRead, NULL, NULL, "MC146818 RTC/CMOS");
     if (RT_FAILURE(rc))
@@ -1108,6 +1119,9 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             return rc;
     }
 
+    /*
+     * Register the saved state.
+     */
     rc = PDMDevHlpSSMRegister3(pDevIns, RTC_SAVED_STATE_VERSION, sizeof(*pThis), rtcLiveExec, rtcSaveExec, rtcLoadExec);
     if (RT_FAILURE(rc))
         return rc;

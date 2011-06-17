@@ -2009,7 +2009,9 @@ static DECLCALLBACK(int) acpiLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
         rc = acpiFetchBatteryInfo(pThis);
         if (RT_FAILURE(rc))
             return rc;
+        TMTimerLock(pThis->pPmTimerR3, VERR_IGNORED);
         acpiPmTimerReset(pThis, TMTimerGet(pThis->pPmTimerR3));
+        TMTimerUnlock(pThis->pPmTimerR3);
     }
     return rc;
 }
@@ -2741,6 +2743,7 @@ static DECLCALLBACK(void) acpiReset(PPDMDEVINS pDevIns)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
 
+    TMTimerLock(pThis->pPmTimerR3, VERR_IGNORED);
     pThis->pm1a_en           = 0;
     pThis->pm1a_sts          = 0;
     pThis->pm1a_ctl          = 0;
@@ -2751,6 +2754,7 @@ static DECLCALLBACK(void) acpiReset(PPDMDEVINS pDevIns)
     pThis->gpe0_en           = 0;
     pThis->gpe0_sts          = 0;
     pThis->uSleepState       = 0;
+    TMTimerUnlock(pThis->pPmTimerR3);
 
     /** @todo Should we really reset PM base? */
     acpiUpdatePmHandlers(pThis, PM_PORT_BASE);
@@ -3061,18 +3065,19 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Create the PM timer.
      */
+    PTMTIMER pTimer;
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiPmTimer, &pThis->dev,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "ACPI PM Timer", &pThis->pPmTimerR3);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("pfnTMTimerCreate -> %Rrc\n", rc));
-        return rc;
-    }
+                                TMTIMER_FLAGS_NO_CRIT_SECT, "ACPI PM Timer", &pTimer);
+    AssertRCReturn(rc, rc);
+    pThis->pPmTimerR3 = pTimer;
+    pThis->pPmTimerR0 = TMTimerR0Ptr(pTimer);
+    pThis->pPmTimerRC = TMTimerRCPtr(pTimer);
 
-    pThis->pPmTimerR0 = TMTimerR0Ptr(pThis->pPmTimerR3);
-    pThis->pPmTimerRC = TMTimerRCPtr(pThis->pPmTimerR3);
-    pThis->u64PmTimerInitial = TMTimerGet(pThis->pPmTimerR3);
+    rc = TMTimerLock(pTimer, VERR_IGNORED);
+    AssertRCReturn(rc, rc);
+    pThis->u64PmTimerInitial = TMTimerGet(pTimer);
     acpiPmTimerReset(pThis, pThis->u64PmTimerInitial);
+    TMTimerUnlock(pTimer);
 
     /*
      * Set up the PCI device.
