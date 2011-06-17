@@ -39,16 +39,13 @@
  *   - statistics not implemented
  *   - level-triggered mode not implemented
  */
-/*
- * Base address for MMIO
- */
+
+/** Base address for MMIO. */
 #define HPET_BASE                   0xfed00000
 
-/*
- * Number of available timers, cannot be changed without
- * breaking saved states.
- */
-#define HPET_NUM_TIMERS             3
+/** The number of timers for PIIX4 / PIIX3. */
+#define HPET_NUM_TIMERS_PIIX        3
+/** The number of timers for ICH9. */
 #define HPET_NUM_TIMERS_ICH9        4
 
 /*
@@ -225,7 +222,7 @@ typedef struct HpetState
     PCPDMHPETHLPRC       pHpetHlpRC;
 
     /** Timer structures. */
-    HpetTimer            aTimers[HPET_NUM_TIMERS];
+    HpetTimer            aTimers[RT_MAX(HPET_NUM_TIMERS_PIIX, HPET_NUM_TIMERS_ICH9)];
 
     /** Offset realtive to the virtual sync clock. */
     uint64_t             u64HpetOffset;
@@ -1330,12 +1327,14 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
     /* 64-bit main counter; 3 timers supported; LegacyReplacementRoute. */
     uint32_t u32Caps = (1 << 15)              /* LEG_RT_CAP       - LegacyReplacementRoute capable. */
                      | (1 << 13)              /* COUNTER_SIZE_CAP - Main counter is 64-bit capable. */
-                     | (HPET_NUM_TIMERS << 8) /* NUM_TIM_CAP      - Number of timers -1.
-                                                 Actually ICH9 has 4 timers, but to avoid breaking
-                                                 saved state we'll stick with 3 so far. */ /** @todo fix this ICH9 timer count bug. */
-                                              /** @todo what about the '-1' bit?? Linux thinks it has 4 timers. */
-                     | 1                      /* REV_ID           - Revision, must not be 0 */
-                     ;
+                     | 1;                     /* REV_ID           - Revision, must not be 0 */
+    if (pThis->fIch9)                         /* NUM_TIM_CAP      - Number of timers -1. */
+        u32Caps |= (HPET_NUM_TIMERS_ICH9 - 1) << 8;
+    else
+        u32Caps |= (HPET_NUM_TIMERS_PIIX - 1) << 8;
+    AssertCompile(HPET_NUM_TIMERS_ICH9 <= RT_ELEMENTS(pThis->aTimers));
+    AssertCompile(HPET_NUM_TIMERS_PIIX <= RT_ELEMENTS(pThis->aTimers));
+
     pThis->u64Capabilities = (u32Vendor << 16) | u32Caps;
     pThis->u64Capabilities |= ((uint64_t)(pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD) << 32);
 
