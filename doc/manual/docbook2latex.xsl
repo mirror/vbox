@@ -539,7 +539,7 @@
       <xsl:when test="(name(..)='screen') or (name(../..)='screen')">
         <xsl:value-of select="." />
       </xsl:when>
-      <xsl:when test="(name(..)='computeroutput') or (name(../..)='computeroutput') or (name(../..)='code') or (name(../..)='code')">
+      <xsl:when test="(name(..)='computeroutput') or (name(../..)='computeroutput') or (name(..)='code') or (name(../..)='code')">
         <xsl:variable name="subst2">
           <xsl:call-template name="str:subst">
             <xsl:with-param name="text" select="$subst1" />
