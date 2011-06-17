@@ -236,6 +236,22 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
     HRESULT rc;
     try
     {
+        /* Handle the special case that someone is requesting a _full_ clone
+         * with all snapshots (and the current state), but uses a snapshot
+         * machine (and not the current one) as source machine. In this case we
+         * just replace the source (snapshot) machine with the current machine. */
+        if (   d->mode == CloneMode_AllStates
+            && d->pSrcMachine->isSnapshotMachine())
+        {
+            Bstr bstrSrcMachineId;
+            rc = d->pSrcMachine->COMGETTER(Id)(bstrSrcMachineId.asOutParam());
+            if (FAILED(rc)) throw rc;
+            ComPtr<IMachine> newSrcMachine;
+            rc = d->pSrcMachine->getVirtualBox()->FindMachine(bstrSrcMachineId.raw(), newSrcMachine.asOutParam());
+            if (FAILED(rc)) throw rc;
+            d->pSrcMachine = (Machine*)(IMachine*)newSrcMachine;
+        }
+
         /* Lock the target machine early (so nobody mess around with it in the meantime). */
         AutoWriteLock trgLock(d->pTrgMachine COMMA_LOCKVAL_SRC_POS);
 
@@ -247,8 +263,8 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         RTCList< ComObjPtr<Machine> > machineList;
 
         /* Include current state? */
-        if (   d->mode == CloneMode_MachineState)
-//            || d->mode == CloneMode_AllStates)
+        if (   d->mode == CloneMode_MachineState
+            || d->mode == CloneMode_AllStates)
             machineList.append(d->pSrcMachine);
         /* Should be done a depth copy with all child snapshots? */
         if (   d->mode == CloneMode_MachineAndChildStates
@@ -268,8 +284,11 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                 if (FAILED(rc)) throw rc;
                 rc = d->cloneCreateMachineList(pSnapshot, machineList);
                 if (FAILED(rc)) throw rc;
-                rc = pSnapshot->COMGETTER(Machine)(d->pOldMachineState.asOutParam());
-                if (FAILED(rc)) throw rc;
+                if (d->mode == CloneMode_MachineAndChildStates)
+                {
+                    rc = pSnapshot->COMGETTER(Machine)(d->pOldMachineState.asOutParam());
+                    if (FAILED(rc)) throw rc;
+                }
             }
         }
 
