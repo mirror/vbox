@@ -721,25 +721,6 @@ typedef struct TMCPU
 /** Pointer to TM VMCPU instance data. */
 typedef TMCPU *PTMCPU;
 
-#if 0 /* enable this to rule out locking bugs on single cpu guests. */
-# define tmTimerLock(pVM)                VINF_SUCCESS
-# define tmTimerTryLock(pVM)             VINF_SUCCESS
-# define tmTimerUnlock(pVM)              ((void)0)
-# define tmVirtualSyncLock(pVM)     VINF_SUCCESS
-# define tmVirtualSyncTryLock(pVM)  VINF_SUCCESS
-# define tmVirtualSyncUnlock(pVM)   ((void)0)
-# define TM_ASSERT_LOCK(pVM)        VM_ASSERT_EMT(pVM)
-#else
-int                     tmTimerLock(PVM pVM);
-int                     tmTimerTryLock(PVM pVM);
-void                    tmTimerUnlock(PVM pVM);
-/** Checks that the caller owns the timer lock.  */
-#define TM_ASSERT_LOCK(pVM) Assert(PDMCritSectIsOwner(&pVM->tm.s.TimerCritSect))
-int                     tmVirtualSyncLock(PVM pVM);
-int                     tmVirtualSyncTryLock(PVM pVM);
-void                    tmVirtualSyncUnlock(PVM pVM);
-#endif
-
 const char             *tmTimerState(TMTIMERSTATE enmState);
 void                    tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
 #ifdef VBOX_STRICT
@@ -753,6 +734,38 @@ int                     tmVirtualPauseLocked(PVM pVM);
 int                     tmVirtualResumeLocked(PVM pVM);
 DECLEXPORT(void)        tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
 DECLEXPORT(uint64_t)    tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
+
+
+/**
+ * Try take the timer lock, wait in ring-3 return VERR_SEM_BUSY in R0/RC.
+ *
+ * @retval  VINF_SUCCESS on success (always in ring-3).
+ * @retval  VERR_SEM_BUSY in RC and R0 if the semaphore is busy.
+ *
+ * @param   a_pVM       The VM handle.
+ *
+ * @remarks The virtual sync timer queue requires the virtual sync lock.
+ */
+#define TM_LOCK_TIMERS(a_pVM)       PDMCritSectEnter(&(a_pVM)->tm.s.TimerCritSect, VERR_SEM_BUSY)
+
+/**
+ * Try take the timer lock, no waiting.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SEM_BUSY if busy.
+ *
+ * @param   a_pVM       The VM handle.
+ *
+ * @remarks The virtual sync timer queue requires the virtual sync lock.
+ */
+#define TM_TRY_LOCK_TIMERS(a_pVM)   PDMCritSectTryEnter(&(a_pVM)->tm.s.TimerCritSect)
+
+/** Lock the timers (sans the virtual sync queue). */
+#define TM_UNLOCK_TIMERS(a_pVM)     do { PDMCritSectLeave(&(a_pVM)->tm.s.TimerCritSect); } while (0)
+
+/** Checks that the caller owns the timer lock.  */
+#define TM_ASSERT_TIMER_LOCK_OWNERSHIP(a_pVM) \
+    Assert(PDMCritSectIsOwner(&(a_pVM)->tm.s.TimerCritSect))
 
 
 /** @} */

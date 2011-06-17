@@ -487,7 +487,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
                                                         pVM->tm.s.u32VirtualSyncCatchUpPercentage + 100);
             *pcNsToDeadline = tmVirtualVirtToNsDeadline(pVM, cNsToDeadline);
         }
-        tmVirtualSyncUnlock(pVM);
+        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
     }
     else
     {
@@ -500,7 +500,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
         Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
         Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [vsghcul]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
-        tmVirtualSyncUnlock(pVM);
+        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 
         if (pcNsToDeadline)
             *pcNsToDeadline = 0;
@@ -537,7 +537,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
     if (!pVM->tm.s.fVirtualSyncTicking)
     {
         u64 = ASMAtomicUoReadU64(&pVM->tm.s.u64VirtualSync);
-        tmVirtualSyncUnlock(pVM);
+        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
         if (pcNsToDeadline)
             *pcNsToDeadline = 0;
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
@@ -571,7 +571,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
     if (u64 < u64Expire)
     {
         ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, u64);
-        tmVirtualSyncUnlock(pVM);
+        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
         if (pcNsToDeadline)
             *pcNsToDeadline = tmVirtualVirtToNsDeadline(pVM, u64Expire - u64);
     }
@@ -586,7 +586,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVM pVM, uint64_t u64, uint64_t *pcN
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
         Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, !!VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
         Log4(("TM: %'RU64/-%'8RU64: exp tmr=>ff [vsgl]\n", u64, pVM->tm.s.offVirtualSync - pVM->tm.s.offVirtualSyncGivenUp));
-        tmVirtualSyncUnlock(pVM);
+        PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 
 #ifdef IN_RING3
         REMR3NotifyTimerPending(pVM, pVCpuDst);
@@ -657,7 +657,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
      *       will be owning the lock already.  The 'else' is taken by code
      *       which is less picky or hasn't been adjusted yet
      */
-    if (tmVirtualSyncTryLock(pVM) == VINF_SUCCESS)
+    if (PDMCritSectTryEnter(&pVM->tm.s.VirtualSyncLock) == VINF_SUCCESS)
         return tmVirtualSyncGetLocked(pVM, u64, pcNsToDeadline);
 
     /*
@@ -725,7 +725,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
     for (;; cOuterTries--)
     {
         /* Try grab the lock, things get simpler when owning the lock. */
-        int rcLock = tmVirtualSyncTryLock(pVM);
+        int rcLock = PDMCritSectTryEnter(&pVM->tm.s.VirtualSyncLock);
         if (RT_SUCCESS_NP(rcLock))
             return tmVirtualSyncGetLocked(pVM, u64, pcNsToDeadline);
 
