@@ -39,7 +39,7 @@ protected:
     MachineCloneVM(MachineCloneVMPrivate &d);
     MachineCloneVMPrivate *d_ptr;
 
-    friend class MachineCloneVMPrivate;
+    friend struct MachineCloneVMPrivate;
 };
 
 #endif // ____H_MACHINEIMPLCLONEVM
