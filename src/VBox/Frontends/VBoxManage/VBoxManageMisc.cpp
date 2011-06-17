@@ -272,6 +272,7 @@ static const RTGETOPTDEF g_aCloneVMOptions[] =
     { "--snapshot",       's', RTGETOPT_REQ_STRING },
     { "--name",           'n', RTGETOPT_REQ_STRING },
     { "--mode",           'm', RTGETOPT_REQ_STRING },
+    { "--options",        'o', RTGETOPT_REQ_STRING },
     { "--register",       'r', RTGETOPT_REQ_NOTHING },
     { "--basefolder",     'p', RTGETOPT_REQ_STRING },
     { "--uuid",           'u', RTGETOPT_REQ_STRING },
@@ -291,16 +292,48 @@ static int parseCloneMode(const char *psz, CloneMode_T *pMode)
     return VINF_SUCCESS;
 }
 
+static int parseCloneOptions(const char *psz, com::SafeArray<CloneOptions_T> *options)
+{
+    int rc = VINF_SUCCESS;
+    while (psz && *psz && RT_SUCCESS(rc))
+    {
+        size_t len;
+        const char *pszComma = strchr(psz, ',');
+        if (pszComma)
+            len = pszComma - psz;
+        else
+            len = strlen(psz);
+        if (len > 0)
+        {
+            if (!RTStrNICmp(psz, "KeepAllMACs", len))
+                options->push_back(CloneOptions_KeepAllMACs);
+            else if (!RTStrNICmp(psz, "KeepNATMACs", len))
+                options->push_back(CloneOptions_KeepNATMACs);
+//            else if (!RTStrNICmp(psz, "Link", len))
+//                *options.push_back(CloneOptions_Link)
+            else
+                rc = VERR_PARSE_ERROR;
+        }
+        if (pszComma)
+            psz += len + 1;
+        else
+            psz += len;
+    }
+
+    return rc;
+}
+
 int handleCloneVM(HandlerArg *a)
 {
-    HRESULT     rc;
-    const char *pszSrcName       = NULL;
-    const char *pszSnapshotName  = NULL;
-    CloneMode_T mode             = CloneMode_MachineState;
-    const char *pszTrgName       = NULL;
-    const char *pszTrgBaseFolder = NULL;
-    bool        fRegister        = false;
-    RTUUID      trgUuid;
+    HRESULT                        rc;
+    const char                    *pszSrcName       = NULL;
+    const char                    *pszSnapshotName  = NULL;
+    CloneMode_T                    mode             = CloneMode_MachineState;
+    com::SafeArray<CloneOptions_T> options;
+    const char                    *pszTrgName       = NULL;
+    const char                    *pszTrgBaseFolder = NULL;
+    bool                           fRegister        = false;
+    RTUUID                         trgUuid;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -319,6 +352,11 @@ int handleCloneVM(HandlerArg *a)
             case 'm':   // --mode
                 if (RT_FAILURE(parseCloneMode(ValueUnion.psz, &mode)))
                     return errorArgument("Invalid clone mode '%s'\n", ValueUnion.psz);
+                break;
+
+            case 'o':   // --options
+                if (RT_FAILURE(parseCloneOptions(ValueUnion.psz, &options)))
+                    return errorArgument("Invalid clone options '%s'\n", ValueUnion.psz);
                 break;
 
             case 'n':   // --name
@@ -391,10 +429,6 @@ int handleCloneVM(HandlerArg *a)
                                                  FALSE,
                                                  trgMachine.asOutParam()),
                     RTEXITCODE_FAILURE);
-
-    /* Clone options */
-    com::SafeArray<CloneOptions_T> options;
-    options.push_back(CloneOptions_KeepNATMACs);
 
     /* Start the cloning */
     ComPtr<IProgress> progress;
