@@ -39,6 +39,7 @@
 #include "UIGlobalSettingsLanguage.h"
 #include "UIGlobalSettingsNetwork.h"
 #include "UIGlobalSettingsExtension.h"
+#include "UIGlobalSettingsProxy.h"
 
 #include "UIMachineSettingsGeneral.h"
 #include "UIMachineSettingsSystem.h"
@@ -384,6 +385,15 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                             iPageIndex, "#extension", pSettingsPage);
                     break;
                 }
+                /* Proxy page: */
+                case GLSettingsPage_Proxy:
+                {
+                    pSettingsPage = new UIGlobalSettingsProxy;
+                    addItem(":/extension_pack_32px.png", ":/extension_pack_disabled_32px.png",
+                            ":/extension_pack_16px.png", ":/extension_pack_disabled_16px.png",
+                            iPageIndex, "#proxy", pSettingsPage);
+                    break;
+                }
                 default:
                     break;
             }
@@ -482,6 +492,9 @@ void UISettingsDialogGlobal::retranslateUi()
 
     /* Extension page: */
     m_pSelector->setItemText(GLSettingsPage_Extension, tr("Extensions"));
+
+    /* Proxy page: */
+    m_pSelector->setItemText(GLSettingsPage_Proxy, tr("Proxy"));
 
     /* Translate the selector: */
     m_pSelector->polish();

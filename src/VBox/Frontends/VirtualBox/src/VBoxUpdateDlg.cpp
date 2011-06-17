@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +27,7 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxUpdateDlg.h"
 #include "UIIconPool.h"
+#include "VBoxUtils.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* VBoxVersion stuff */
@@ -243,7 +244,7 @@ VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun, QWidget *aP
     : QIWithRetranslateUI <QDialog> (aParent)
     , mSelf (aSelf)
     , mUrl ("http://update.virtualbox.org/query.php")
-    , mHttp (new QIHttp (this, mUrl.host()))
+    , mHttp (new QIHttp (this))
     , mForceRun (aForceRun)
 {
     /* Store external pointer to this dialog. */
@@ -255,6 +256,17 @@ VBoxUpdateDlg::VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun, QWidget *aP
     /* Apply window icons */
     setWindowIcon(UIIconPool::iconSetFull(QSize (32, 32), QSize (16, 16),
                                           ":/refresh_32px.png", ":/refresh_16px.png"));
+
+    /* Setup HTTP proxy: */
+    UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
+    if (proxyManager.proxyEnabled())
+    {
+        mHttp->setProxy(proxyManager.proxyHost(), proxyManager.proxyPort().toInt(),
+                        proxyManager.authEnabled() ? proxyManager.authLogin() : QString(),
+                        proxyManager.authEnabled() ? proxyManager.authPassword() : QString());
+    }
+    /* Set HTTP host: */
+    mHttp->setHost(mUrl.host());
 
     /* Setup other connections */
     connect (mBtnCheck, SIGNAL (clicked()), this, SLOT (search()));

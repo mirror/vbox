@@ -53,6 +53,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
     languageId  = QString::null;
     maxGuestRes = "auto";
     remapScancodes = QString::null;
+    proxySettings = QString::null;
     trayIconEnabled = false;
     presentationModeEnabled = false;
     hostScreenSaverDisabled = false;
@@ -66,6 +67,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &th
     languageId  = that.languageId;
     maxGuestRes = that.maxGuestRes;
     remapScancodes = that.remapScancodes;
+    proxySettings = that.proxySettings;
     trayIconEnabled = that.trayIconEnabled;
     presentationModeEnabled = that.presentationModeEnabled;
     hostScreenSaverDisabled = that.hostScreenSaverDisabled;
@@ -84,6 +86,7 @@ bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) con
          languageId  == that.languageId &&
          maxGuestRes == that.maxGuestRes &&
          remapScancodes == that.remapScancodes &&
+         proxySettings == that.proxySettings &&
          trayIconEnabled == that.trayIconEnabled &&
          presentationModeEnabled == that.presentationModeEnabled &&
          hostScreenSaverDisabled == that.hostScreenSaverDisabled
@@ -114,6 +117,7 @@ gPropertyMap[] =
     { "GUI/LanguageID",                            "languageId",              gVBoxLangIDRegExp, true },
     { "GUI/MaxGuestResolution",                    "maxGuestRes",             "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true },
     { "GUI/RemapScancodes",                        "remapScancodes",          "(\\d+=\\d+,)*\\d+=\\d+", true },
+    { "GUI/ProxySettings",                         "proxySettings",           "[\\s\\S]*", true },
     { "GUI/TrayIcon/Enabled",                      "trayIconEnabled",         "true|false", true },
 #ifdef Q_WS_MAC
     { VBoxDefs::GUI_PresentationModeEnabled,       "presentationModeEnabled", "true|false", true },

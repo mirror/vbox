@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,6 +23,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "UISpecialControls.h"
+#include "VBoxUtils.h"
 
 /* Global includes */
 #include <QFile>
@@ -149,12 +150,25 @@ void UIDownloader::startDownload()
  * checking file presence & size */
 void UIDownloader::acknowledgeStart()
 {
+    /* Recreate HTTP: */
     delete m_pHttp;
-    m_pHttp = new QIHttp(this, m_source.host());
+    m_pHttp = new QIHttp(this);
+    /* Setup HTTP proxy: */
+    UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
+    if (proxyManager.proxyEnabled())
+    {
+        m_pHttp->setProxy(proxyManager.proxyHost(), proxyManager.proxyPort().toInt(),
+                          proxyManager.authEnabled() ? proxyManager.authLogin() : QString(),
+                          proxyManager.authEnabled() ? proxyManager.authPassword() : QString());
+    }
+    /* Set HTTP host: */
+    m_pHttp->setHost(m_source.host());
+    /* Setup connections: */
     connect(m_pHttp, SIGNAL(responseHeaderReceived(const QHttpResponseHeader &)),
             this, SLOT(acknowledgeProcess(const QHttpResponseHeader &)));
     connect(m_pHttp, SIGNAL(allIsDone(bool)),
             this, SLOT(acknowledgeFinished(bool)));
+    /* Make a request: */
     m_pHttp->get(m_source.toEncoded());
 }
 
@@ -205,12 +219,25 @@ void UIDownloader::acknowledgeFinished(bool /* fError */)
  * downloading and saving the target */
 void UIDownloader::downloadStart()
 {
+    /* Recreate HTTP: */
     delete m_pHttp;
-    m_pHttp = new QIHttp(this, m_source.host());
+    m_pHttp = new QIHttp(this);
+    /* Setup HTTP proxy: */
+    UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
+    if (proxyManager.proxyEnabled())
+    {
+        m_pHttp->setProxy(proxyManager.proxyHost(), proxyManager.proxyPort().toInt(),
+                          proxyManager.authEnabled() ? proxyManager.authLogin() : QString(),
+                          proxyManager.authEnabled() ? proxyManager.authPassword() : QString());
+    }
+    /* Set HTTP host: */
+    m_pHttp->setHost(m_source.host());
+    /* Setup connections: */
     connect(m_pHttp, SIGNAL(dataReadProgress (int, int)),
             this, SLOT (downloadProcess(int, int)));
     connect(m_pHttp, SIGNAL(allIsDone(bool)),
             this, SLOT(downloadFinished(bool)));
+    /* Make a request: */
     m_pHttp->get(m_source.toEncoded());
 }
 
