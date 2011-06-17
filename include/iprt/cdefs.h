@@ -1305,61 +1305,103 @@
  */
 #define RT_BOOL(Value)                          ( !!(Value) )
 
-/** @def RT_LODWORD
- * Gets the low dword (=uint32_t) of something. */
-#define RT_LODWORD(a)                           ( (uint32_t)(a) )
+/** @def RT_LO_U8
+ * Gets the low uint8_t of a uint16_t or something equivalent. */
+#ifdef __GNUC__
+# define RT_LO_U8(a)    __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint16_t)); (uint8_t)(a); })
+#else
+# define RT_LO_U8(a)                            ( (uint8_t)(a) )
+#endif
+/** @def RT_HI_U16
+ * Gets the high uint16_t of a uint32_t or something equivalent). */
+#ifdef __GNUC__
+# define RT_HI_U8(a)    __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint16_t)); (uint8_t)((a) >> 8); })
+#else
+# define RT_HI_U8(a)                            ( (uint8_t)((a) >> 8) )
+#endif
 
-/** @def RT_HIDWORD
- * Gets the high dword (=uint32_t) of a 64-bit of something. */
-#define RT_HIDWORD(a)                           ( (uint32_t)((a) >> 32) )
+/** @def RT_LO_U16
+ * Gets the low uint16_t of a uint32_t or something equivalent. */
+#ifdef __GNUC__
+# define RT_LO_U16(a)   __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint64_t)); (uint32_t)(a); })
+#else
+# define RT_LO_U16(a)                           ( (uint32_t)(a) )
+#endif
+/** @def RT_HI_U16
+ * Gets the high uint16_t of a uint32_t or something equivalent). */
+#ifdef __GNUC__
+# define RT_HI_U16(a)   __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint32_t)); (uint16_t)((a) >> 16); })
+#else
+# define RT_HI_U16(a)                           ( (uint16_t)((a) >> 16) )
+#endif
 
-/** @def RT_LOWORD
- * Gets the low word (=uint16_t) of something. */
-#define RT_LOWORD(a)                            ( (a) & 0xffff )
-
-/** @def RT_HIWORD
- * Gets the high word (=uint16_t) of a 32-bit something. */
-#define RT_HIWORD(a)                            ( (a) >> 16 )
-
-/** @def RT_LOBYTE
- * Gets the low byte of something. */
-#define RT_LOBYTE(a)                            ( (a) & 0xff )
-
-/** @def RT_HIBYTE
- * Gets the low byte of a 16-bit something. */
-#define RT_HIBYTE(a)                            ( (a) >> 8 )
+/** @def RT_LO_U32
+ * Gets the low uint32_t of a uint64_t or something equivalent. */
+#ifdef __GNUC__
+# define RT_LO_U32(a)   __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint64_t)); (uint32_t)(a); })
+#else
+# define RT_LO_U32(a)                           ( (uint32_t)(a) )
+#endif
+/** @def RT_HI_U32
+ * Gets the high uint32_t of a uint64_t or something equivalent). */
+#ifdef __GNUC__
+# define RT_HI_U32(a)   __extension__ ({ AssertCompile(sizeof((a)) == sizeof(uint64_t)); (uint32_t)((a) >> 32); })
+#else
+# define RT_HI_U32(a)                           ( (uint32_t)((a) >> 32) )
+#endif
 
 /** @def RT_BYTE1
  * Gets the first byte of something. */
-#define RT_BYTE1(a)                             ( (a) & 0xff )
-
+#define RT_BYTE1(a)                             ( (a)         & 0xff )
 /** @def RT_BYTE2
  * Gets the second byte of something. */
-#define RT_BYTE2(a)                             ( ((a) >> 8) & 0xff )
-
+#define RT_BYTE2(a)                             ( ((a) >>  8) & 0xff )
 /** @def RT_BYTE3
  * Gets the second byte of something. */
 #define RT_BYTE3(a)                             ( ((a) >> 16) & 0xff )
-
 /** @def RT_BYTE4
  * Gets the fourth byte of something. */
 #define RT_BYTE4(a)                             ( ((a) >> 24) & 0xff )
-
 /** @def RT_BYTE5
  * Gets the fifth byte of something. */
-#define RT_BYTE5(a)                             (((a) >> 32) & 0xff)
-
+#define RT_BYTE5(a)                             ( ((a) >> 32) & 0xff )
 /** @def RT_BYTE6
  * Gets the sixth byte of something. */
-#define RT_BYTE6(a)                             (((a) >> 40) & 0xff)
-
+#define RT_BYTE6(a)                             ( ((a) >> 40) & 0xff )
 /** @def RT_BYTE7
  * Gets the seventh byte of something. */
-#define RT_BYTE7(a)                             (((a) >> 48) & 0xff)
-
+#define RT_BYTE7(a)                             ( ((a) >> 48) & 0xff )
 /** @def RT_BYTE8
  * Gets the eight byte of something. */
-#define RT_BYTE8(a)                             (((a) >> 56) & 0xff)
+#define RT_BYTE8(a)                             ( ((a) >> 56) & 0xff )
+
+
+/** @def RT_LODWORD
+ * Gets the low dword (=uint32_t) of something.
+ * @deprecated  Use RT_LO_U32. */
+#define RT_LODWORD(a)                           ( (uint32_t)(a) )
+/** @def RT_HIDWORD
+ * Gets the high dword (=uint32_t) of a 64-bit of something.
+ * @deprecated  Use RT_HI_U32. */
+#define RT_HIDWORD(a)                           ( (uint32_t)((a) >> 32) )
+
+/** @def RT_LOWORD
+ * Gets the low word (=uint16_t) of something.
+ * @deprecated  Use RT_LO_U16. */
+#define RT_LOWORD(a)                            ( (a) & 0xffff )
+/** @def RT_HIWORD
+ * Gets the high word (=uint16_t) of a 32-bit something.
+ * @deprecated  Use RT_HI_U16. */
+#define RT_HIWORD(a)                            ( (a) >> 16 )
+
+/** @def RT_LOBYTE
+ * Gets the low byte of something.
+ * @deprecated  Use RT_LO_U8. */
+#define RT_LOBYTE(a)                            ( (a) & 0xff )
+/** @def RT_HIBYTE
+ * Gets the low byte of a 16-bit something.
+ * @deprecated  Use RT_HI_U8. */
+#define RT_HIBYTE(a)                            ( (a) >> 8 )
 
 
 /** @def RT_MAKE_U64
