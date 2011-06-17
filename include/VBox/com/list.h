@@ -195,7 +195,11 @@ public:
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
+#if !defined (VBOX_WITH_XPCOM)
+template <typename T> RTCList<T> SafeArrayToRTCList(SAFEARRAY *other)
+#else
 template <typename T> RTCList<T> SafeArrayToRTCList(ComSafeArrayIn(T, other))
+#endif
 {
     com::SafeArray<T> sfaOther(ComSafeArrayInArg(other));
     RTCList<T> list(sfaOther.size());
