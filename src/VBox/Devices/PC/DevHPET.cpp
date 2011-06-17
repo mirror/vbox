@@ -399,6 +399,13 @@ static void hpetProgramTimer(HpetTimer *pHpetTimer)
 
     Log4(("HPET: next IRQ in %lld ticks (%lld ns)\n", u64Diff, hpetTicksToNs(pHpetTimer->CTX_SUFF(pHpet), u64Diff)));
     TMTimerSetNano(pHpetTimer->CTX_SUFF(pTimer), hpetTicksToNs(pHpetTimer->CTX_SUFF(pHpet), u64Diff));
+    if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
+    {
+        uint64_t const u64Period = pHpetTimer->u64Period;
+        uint32_t const u32Freq   = RT_HI_U32(pHpetTimer->CTX_SUFF(pHpet)->u64Capabilities);
+        if (u64Period > 0 && u64Period < u32Freq)
+            TMTimerSetFrequencyHint(pHpetTimer->CTX_SUFF(pTimer), u32Freq / (uint32_t)u64Period);
+    }
 }
 
 
@@ -1101,12 +1108,13 @@ static DECLCALLBACK(void) hpetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const
 
     pHlp->pfnPrintf(pHlp,
                     "HPET status:\n"
-                    " config = %016RX64\n"
-                    " offset = %016RX64 counter = %016RX64 isr = %016RX64\n"
-                    " legacy mode is %s\n",
-                    pThis->u64HpetConfig,
-                    pThis->u64HpetOffset, pThis->u64HpetCounter, pThis->u64Isr,
-                    !!(pThis->u64HpetConfig & HPET_CFG_LEGACY) ? "on" : "off");
+                    " config=%016RX64     isr=%016RX64\n"
+                    " offset=%016RX64 counter=%016RX64 frequency=%08x\n"
+                    " legacy-mode=%s  timer-count=%u\n",
+                    pThis->u64HpetConfig, pThis->u64Isr,
+                    pThis->u64HpetOffset, pThis->u64HpetCounter, RT_HI_U32(pThis->u64Capabilities),
+                    !!(pThis->u64HpetConfig & HPET_CFG_LEGACY) ? "on " : "off",
+                    (unsigned)((pThis->u64Capabilities >> 8) & 0x1f));
     pHlp->pfnPrintf(pHlp,
                     "Timers:\n");
     for (unsigned i = 0; i < HPET_NUM_TIMERS; i++)
@@ -1216,7 +1224,28 @@ static DECLCALLBACK(int) hpetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     SSMR3GetU64(pSSM, &pThis->u64Capabilities);
     SSMR3GetU64(pSSM, &pThis->u64HpetConfig);
     SSMR3GetU64(pSSM, &pThis->u64Isr);
-    return SSMR3GetU64(pSSM, &pThis->u64HpetCounter);
+    rc = SSMR3GetU64(pSSM, &pThis->u64HpetCounter);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Set the timer frequency hints.
+     */
+    PDMCritSectEnter(&pThis->csLock, VERR_IGNORED);
+    for (uint32_t iTimer = 0; iTimer < HPET_NUM_TIMERS; iTimer++)
+    {
+        HpetTimer *pHpetTimer = &pThis->aTimers[iTimer];
+        if (   (pHpetTimer->u64Config & HPET_TN_PERIODIC)
+            && TMTimerIsActive(pHpetTimer->CTX_SUFF(pTimer)))
+        {
+            uint64_t const u64Period = pHpetTimer->u64Period;
+            uint32_t const u32Freq   = RT_HI_U32(pHpetTimer->CTX_SUFF(pHpet)->u64Capabilities);
+            if (u64Period > 0 && u64Period < u32Freq)
+                TMTimerSetFrequencyHint(pHpetTimer->CTX_SUFF(pTimer), u32Freq / (uint32_t)u64Period);
+        }
+    }
+    PDMCritSectLeave(&pThis->csLock);
+    return VINF_SUCCESS;
 }
 
 
