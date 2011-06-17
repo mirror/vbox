@@ -225,6 +225,8 @@ EXPORTS
     TMTimerGetMilli
     TMTimerGetNano
     TMTimerIsActive
+    TMTimerIsLockOwner
+    TMTimerLock
     TMTimerR0Ptr
     TMTimerR3Ptr
     TMTimerRCPtr
@@ -238,6 +240,8 @@ EXPORTS
     TMTimerToMicro
     TMTimerToMilli
     TMTimerToNano
+    TMTimerUnlock
+
     VMMGetSvnRev
     VMSetError
     VMSetErrorV
