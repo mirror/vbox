@@ -139,6 +139,7 @@ public:
     STDMETHOD(OpenMedium)(IN_BSTR aLocation,
                           DeviceType_T deviceType,
                           AccessMode_T accessMode,
+                          BOOL fForceNewUuid,
                           IMedium **aMedium);
     STDMETHOD(FindMedium)(IN_BSTR aLocation,
                           DeviceType_T deviceType,

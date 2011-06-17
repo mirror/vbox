@@ -3447,6 +3447,13 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para>The method <xref linkend="IVirtualBox__openMedium"
+          xreflabel="IVirtualBox::openMedium()" /> has one more parameter
+          now, which allows resolving duplicate medium UUIDs without the need
+          for external tools.</para>
+        </listitem>
+
+        <listitem>
           <para>The <xref linkend="INetworkAdapter" xreflabel="INetworkAdapter"/>
           interface has been cleaned up. The various methods to activate an
           attachment type have been replaced by the

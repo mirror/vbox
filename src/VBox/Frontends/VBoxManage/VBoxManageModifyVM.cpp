@@ -711,7 +711,8 @@ int handleModifyVM(HandlerArg *a)
                 {
                     ComPtr<IMedium> hardDisk;
                     rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_HardDisk,
-                                          hardDisk, NULL);
+                                          hardDisk, false /* fForceNewUuidOnOpen */,
+                                          NULL);
                     if (FAILED(rc))
                         break;
                     if (hardDisk)
@@ -806,7 +807,8 @@ int handleModifyVM(HandlerArg *a)
                 {
                     ComPtr<IMedium> hardDisk;
                     rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_HardDisk,
-                                          hardDisk, NULL);
+                                          hardDisk, false /* fForceNewUuidOnOpen */,
+                                          NULL);
                     if (FAILED(rc))
                         break;
                     if (hardDisk)
@@ -933,7 +935,8 @@ int handleModifyVM(HandlerArg *a)
                 else
                 {
                     rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_DVD,
-                                          dvdMedium, NULL);
+                                          dvdMedium, false /* fForceNewUuidOnOpen */,
+                                          NULL);
                     if (FAILED(rc))
                         break;
                     if (!dvdMedium)
@@ -996,7 +999,8 @@ int handleModifyVM(HandlerArg *a)
                     else
                     {
                         rc = findOrOpenMedium(a, ValueUnion.psz, DeviceType_Floppy,
-                                              floppyMedium, NULL);
+                                              floppyMedium, false /* fForceNewUuidOnOpen */,
+                                              NULL);
                         if (FAILED(rc))
                             break;
                         if (!floppyMedium)

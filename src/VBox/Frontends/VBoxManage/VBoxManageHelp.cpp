@@ -461,6 +461,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--mtype normal|writethrough|immutable|shareable|\n"
                      "                                     readonly|multiattach]\n"
                      "                            [--comment <text>]\n"
+                     "                            [--setuuid <uuid>]\n"
+                     "                            [--setparentuuid <uuid>]\n"
                      "                            [--passthrough on|off]\n"
                      "                            [--bandwidthgroup <name>]\n"
                      "                            [--forceunmount]\n"

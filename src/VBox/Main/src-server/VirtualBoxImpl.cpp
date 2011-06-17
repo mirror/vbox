@@ -1481,6 +1481,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
 STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
                                     DeviceType_T deviceType,
                                     AccessMode_T accessMode,
+                                    BOOL fForceNewUuid,
                                     IMedium **aMedium)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
@@ -1528,6 +1529,7 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
         rc = pMedium->init(this,
                            aLocation,
                            (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
+                           fForceNewUuid,
                            deviceType);
 
         if (SUCCEEDED(rc))

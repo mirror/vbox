@@ -1506,6 +1506,8 @@ Virtual system 0:
                                       &lt;uuid&gt;|&lt;filename&gt;|host:&lt;drive&gt;|iscsi]
                             [--mtype normal|writethrough|immutable|shareable]
                             [--comment &lt;text&gt;]
+                            [--setuuid &lt;uuid&gt;]
+                            [--setparentuuid &lt;uuid&gt;]
                             [--passthrough on|off]
                             [--bandwidthgroup name|none]
                             [--forceunmount]
@@ -1642,6 +1644,21 @@ Virtual system 0:
             medium (optional; for example, for an iSCSI target, "Big storage
             server downstairs"). This is purely descriptive and not needed for
             the medium to function correctly.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>setuuid, setparentuuid</glossterm>
+
+          <glossdef>
+            <para>Modifies the UUID or parent UUID of a medium before
+            attaching it to a VM. This is an expert option. Inappropriate use
+            can make the medium unusable or lead to broken VM configurations
+            if any other VM is referring to the same media already. The most
+            frequently used variant is <code>--setuuid ""</code>, which assigns
+            a new (random) UUID to an image. This is useful to resolve the
+            duplicate UUID errors if one duplicated an image using file copy
+            utilities.</para>
           </glossdef>
         </glossentry>
 
