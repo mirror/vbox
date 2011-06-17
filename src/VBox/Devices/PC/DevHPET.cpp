@@ -107,6 +107,10 @@
 #define HPET_TN_INT_ROUTE_CAP_SHIFT           32
 #define HPET_TN_CFG_BITS_READONLY_OR_RESERVED 0xffff80b1U
 
+/** Extract the timer count from the capabilities.
+ * @todo Check if the mask is correct.  */
+#define HPET_CAP_GET_TIMERS(a_u64)          ( ((a_u64) >> 8) & 0xf )
+
 /** The version of the saved state. */
 #define HPET_SAVED_STATE_VERSION       2
 /** Empty saved state */
@@ -427,7 +431,7 @@ static int hpetTimerRegRead32(HpetState const *pThis, uint32_t iTimerNo, uint32_
 {
     Assert(PDMCritSectIsOwner(&pThis->csLock));
 
-    if (iTimerNo >= HPET_NUM_TIMERS)
+    if (iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u64Capabilities))
     {
         static unsigned s_cOccurences = 0;
         if (s_cOccurences++ < 10)
@@ -495,7 +499,7 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
 {
     Assert(!PDMCritSectIsOwner(&pThis->csLock) || TMTimerIsLockOwner(pThis->aTimers[0].CTX_SUFF(pTimer)));
 
-    if (iTimerNo >= HPET_NUM_TIMERS)
+    if (iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u64Capabilities))
     {
         LogRel(("HPET: using timer above configured range: %d\n", iTimerNo));
         return VINF_SUCCESS;
@@ -752,13 +756,14 @@ static int hpetConfigRegWrite32(HpetState *pThis, uint32_t idxReg, uint32_t u32N
 
             pThis->u64HpetConfig = hpetUpdateMasked(u32NewValue, iOldValue, HPET_CFG_WRITE_MASK);
 
+            uint32_t const cTimers = HPET_CAP_GET_TIMERS(pThis->u64Capabilities);
             if (hpetBitJustSet(iOldValue, u32NewValue, HPET_CFG_ENABLE))
             {
 /** @todo Only get the time stamp once when reprogramming? */
                 /* Enable main counter and interrupt generation. */
                 pThis->u64HpetOffset = hpetTicksToNs(pThis, pThis->u64HpetCounter)
                                      - TMTimerGet(pThis->aTimers[0].CTX_SUFF(pTimer));
-                for (uint32_t i = 0; i < HPET_NUM_TIMERS; i++)
+                for (uint32_t i = 0; i < cTimers; i++)
                     if (pThis->aTimers[i].u64Cmp != hpetInvalidValue(&pThis->aTimers[i]))
                         hpetProgramTimer(&pThis->aTimers[i]);
             }
@@ -766,7 +771,7 @@ static int hpetConfigRegWrite32(HpetState *pThis, uint32_t idxReg, uint32_t u32N
             {
                 /* Halt main counter and disable interrupt generation. */
                 pThis->u64HpetCounter = hpetGetTicks(pThis);
-                for (uint32_t i = 0; i < HPET_NUM_TIMERS; i++)
+                for (uint32_t i = 0; i < cTimers; i++)
                     TMTimerStop(pThis->aTimers[i].CTX_SUFF(pTimer));
             }
 
@@ -1114,10 +1119,10 @@ static DECLCALLBACK(void) hpetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const
                     pThis->u64HpetConfig, pThis->u64Isr,
                     pThis->u64HpetOffset, pThis->u64HpetCounter, RT_HI_U32(pThis->u64Capabilities),
                     !!(pThis->u64HpetConfig & HPET_CFG_LEGACY) ? "on " : "off",
-                    (unsigned)((pThis->u64Capabilities >> 8) & 0x1f));
+                    HPET_CAP_GET_TIMERS(pThis->u64Capabilities));
     pHlp->pfnPrintf(pHlp,
                     "Timers:\n");
-    for (unsigned i = 0; i < HPET_NUM_TIMERS; i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
         pHlp->pfnPrintf(pHlp, " %d: comparator=%016RX64 period(hidden)=%016RX64 cfg=%016RX64\n",
                         pThis->aTimers[i].idxTimer,
@@ -1138,7 +1143,7 @@ static DECLCALLBACK(int) hpetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
 {
     HpetState *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
 
-    SSMR3PutU8(pSSM, HPET_NUM_TIMERS);
+    SSMR3PutU8(pSSM, HPET_CAP_GET_TIMERS(pThis->u64Capabilities));
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -1159,7 +1164,8 @@ static DECLCALLBACK(int) hpetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * The state.
      */
-    for (uint32_t iTimer = 0; iTimer < HPET_NUM_TIMERS; iTimer++)
+    uint32_t const cTimers = HPET_CAP_GET_TIMERS(pThis->u64Capabilities);
+    for (uint32_t iTimer = 0; iTimer < cTimers; iTimer++)
     {
         HpetTimer *pHpetTimer = &pThis->aTimers[iTimer];
         TMR3TimerSave(pHpetTimer->pTimerR3, pSSM);
@@ -1199,9 +1205,9 @@ static DECLCALLBACK(int) hpetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     uint8_t cTimers;
     int rc = SSMR3GetU8(pSSM, &cTimers);
     AssertRCReturn(rc, rc);
-    if (cTimers != HPET_NUM_TIMERS)
-        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - wrong number of timers: saved=%#x config=%#x"),
-                                cTimers, HPET_NUM_TIMERS);
+    if (cTimers > RT_ELEMENTS(pThis->aTimers))
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch - too many timers: saved=%#x config=%#x"),
+                                cTimers, RT_ELEMENTS(pThis->aTimers));
 
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
@@ -1209,7 +1215,7 @@ static DECLCALLBACK(int) hpetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     /*
      * The state.
      */
-    for (uint32_t iTimer = 0; iTimer < HPET_NUM_TIMERS; iTimer++)
+    for (uint32_t iTimer = 0; iTimer < cTimers; iTimer++)
     {
         HpetTimer *pHpetTimer = &pThis->aTimers[iTimer];
         TMR3TimerLoad(pHpetTimer->pTimerR3, pSSM);
@@ -1221,18 +1227,23 @@ static DECLCALLBACK(int) hpetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     }
 
     SSMR3GetU64(pSSM, &pThis->u64HpetOffset);
-    SSMR3GetU64(pSSM, &pThis->u64Capabilities);
+    uint64_t u64Capabilities;
+    SSMR3GetU64(pSSM, &u64Capabilities);
     SSMR3GetU64(pSSM, &pThis->u64HpetConfig);
     SSMR3GetU64(pSSM, &pThis->u64Isr);
     rc = SSMR3GetU64(pSSM, &pThis->u64HpetCounter);
     if (RT_FAILURE(rc))
         return rc;
+    if (HPET_CAP_GET_TIMERS(u64Capabilities) != cTimers)
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Capabilities does not match timer count: cTimers=%#x caps=%#x"),
+                                cTimers, HPET_CAP_GET_TIMERS(u64Capabilities));
+    pThis->u64Capabilities = u64Capabilities;
 
     /*
      * Set the timer frequency hints.
      */
     PDMCritSectEnter(&pThis->csLock, VERR_IGNORED);
-    for (uint32_t iTimer = 0; iTimer < HPET_NUM_TIMERS; iTimer++)
+    for (uint32_t iTimer = 0; iTimer < cTimers; iTimer++)
     {
         HpetTimer *pHpetTimer = &pThis->aTimers[iTimer];
         if (   (pHpetTimer->u64Config & HPET_TN_PERIODIC)
@@ -1285,7 +1296,7 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
      * The timers first.
      */
     TMTimerLock(pThis->aTimers[0].pTimerR3, VERR_IGNORED);
-    for (unsigned i = 0; i < HPET_NUM_TIMERS; i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
         HpetTimer *pHpetTimer = &pThis->aTimers[i];
         Assert(pHpetTimer->idxTimer == i);
@@ -1322,6 +1333,7 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
                      | (HPET_NUM_TIMERS << 8) /* NUM_TIM_CAP      - Number of timers -1.
                                                  Actually ICH9 has 4 timers, but to avoid breaking
                                                  saved state we'll stick with 3 so far. */ /** @todo fix this ICH9 timer count bug. */
+                                              /** @todo what about the '-1' bit?? Linux thinks it has 4 timers. */
                      | 1                      /* REV_ID           - Revision, must not be 0 */
                      ;
     pThis->u64Capabilities = (u32Vendor << 16) | u32Caps;
@@ -1382,8 +1394,8 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);
 
-    /* Init the HPET timers. */
-    for (unsigned i = 0; i < HPET_NUM_TIMERS; i++)
+    /* Init the HPET timers (init all regardless of how many we expose). */
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aTimers); i++)
     {
         HpetTimer *pHpetTimer = &pThis->aTimers[i];
 
