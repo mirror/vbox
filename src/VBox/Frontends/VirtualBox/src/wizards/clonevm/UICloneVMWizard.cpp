@@ -79,8 +79,14 @@ bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode)
         return false;
     }
 
+    /* NAT network adapters should keep there MAC address to prevent any
+     * reactivation. For the other modes they should be regenerated to prevent
+     * address conflicts in the network. */
+    QVector<KCloneOptions> options;
+    options.append(KCloneOptions_KeepNATMACs);
+
     /* Start cloning. */
-    CProgress progress = m_machine.CloneTo(cloneMachine, mode, false);
+    CProgress progress = m_machine.CloneTo(cloneMachine, mode, options);
     if (!m_machine.isOk())
     {
         vboxProblem().cannotCreateClone(m_machine, this);

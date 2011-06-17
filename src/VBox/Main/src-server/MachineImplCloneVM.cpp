@@ -19,6 +19,7 @@
 
 #include "VirtualBoxImpl.h"
 #include "MediumImpl.h"
+#include "HostImpl.h"
 
 #include <iprt/path.h>
 #include <iprt/dir.h>
@@ -54,13 +55,13 @@ typedef struct
 
 struct MachineCloneVMPrivate
 {
-    MachineCloneVMPrivate(MachineCloneVM *a_q, ComObjPtr<Machine> &a_pSrcMachine, ComObjPtr<Machine> &a_pTrgMachine, CloneMode_T a_mode, bool a_fFullClone)
+    MachineCloneVMPrivate(MachineCloneVM *a_q, ComObjPtr<Machine> &a_pSrcMachine, ComObjPtr<Machine> &a_pTrgMachine, CloneMode_T a_mode, const RTCList<CloneOptions_T> &opts)
       : q_ptr(a_q)
       , p(a_pSrcMachine)
       , pSrcMachine(a_pSrcMachine)
       , pTrgMachine(a_pTrgMachine)
       , mode(a_mode)
-      , fLinkDisks(!a_fFullClone)
+      , options(opts)
     {}
 
     /* Thread management */
@@ -90,12 +91,14 @@ struct MachineCloneVMPrivate
     }
 
     /* Private helper methods */
-    HRESULT cloneCreateMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComObjPtr<Machine> > &machineList) const;
-    settings::Snapshot cloneFindSnapshot(settings::MachineConfigFile *pMCF, const settings::SnapshotsList &snl, const Guid &id) const;
-    void cloneUpdateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
-    void cloneUpdateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
-    void cloneUpdateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const;
-    static int cloneCopyStateFileProgress(unsigned uPercentage, void *pvUser);
+    HRESULT createMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComObjPtr<Machine> > &machineList) const;
+    settings::Snapshot findSnapshot(settings::MachineConfigFile *pMCF, const settings::SnapshotsList &snl, const Guid &id) const;
+    void updateMACAddresses(settings::NetworkAdaptersList &nwl) const;
+    void updateMACAddresses(settings::SnapshotsList &sl) const;
+    void updateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
+    void updateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
+    void updateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const;
+    static int copyStateFileProgress(unsigned uPercentage, void *pvUser);
 
     /* Private q and parent pointer */
     MachineCloneVM             *q_ptr;
@@ -108,12 +111,12 @@ struct MachineCloneVMPrivate
     ComObjPtr<Progress>         pProgress;
     Guid                        snapshotId;
     CloneMode_T                 mode;
-    bool                        fLinkDisks;
+    RTCList<CloneOptions_T>     options;
     RTCList<MEDIUMTASKCHAIN>    llMedias;
     RTCList<SAVESTATETASK>      llSaveStateFiles; /* Snapshot UUID -> File path */
 };
 
-HRESULT MachineCloneVMPrivate::cloneCreateMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComObjPtr<Machine> > &machineList) const
+HRESULT MachineCloneVMPrivate::createMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComObjPtr<Machine> > &machineList) const
 {
     HRESULT rc = S_OK;
     Bstr name;
@@ -130,14 +133,14 @@ HRESULT MachineCloneVMPrivate::cloneCreateMachineList(const ComPtr<ISnapshot> &p
     if (FAILED(rc)) return rc;
     for (size_t i = 0; i < sfaChilds.size(); ++i)
     {
-        rc = cloneCreateMachineList(sfaChilds[i], machineList);
+        rc = createMachineList(sfaChilds[i], machineList);
         if (FAILED(rc)) return rc;
     }
 
     return rc;
 }
 
-settings::Snapshot MachineCloneVMPrivate::cloneFindSnapshot(settings::MachineConfigFile *pMCF, const settings::SnapshotsList &snl, const Guid &id) const
+settings::Snapshot MachineCloneVMPrivate::findSnapshot(settings::MachineConfigFile *pMCF, const settings::SnapshotsList &snl, const Guid &id) const
 {
     settings::SnapshotsList::const_iterator it;
     for (it = snl.begin(); it != snl.end(); ++it)
@@ -145,12 +148,36 @@ settings::Snapshot MachineCloneVMPrivate::cloneFindSnapshot(settings::MachineCon
         if (it->uuid == id)
             return *it;
         else if (!it->llChildSnapshots.empty())
-            return cloneFindSnapshot(pMCF, it->llChildSnapshots, id);
+            return findSnapshot(pMCF, it->llChildSnapshots, id);
     }
     return settings::Snapshot();
 }
 
-void MachineCloneVMPrivate::cloneUpdateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const
+void MachineCloneVMPrivate::updateMACAddresses(settings::NetworkAdaptersList &nwl) const
+{
+    const bool fNotNAT = options.contains(CloneOptions_KeepNATMACs);
+    settings::NetworkAdaptersList::iterator it;
+    for (it = nwl.begin(); it != nwl.end(); ++it)
+    {
+        if (   fNotNAT
+            && it->mode == NetworkAttachmentType_NAT)
+            continue;
+        Host::generateMACAddress(it->strMACAddress);
+    }
+}
+
+void MachineCloneVMPrivate::updateMACAddresses(settings::SnapshotsList &sl) const
+{
+    settings::SnapshotsList::iterator it;
+    for (it = sl.begin(); it != sl.end(); ++it)
+    {
+        updateMACAddresses(it->hardware.llNetworkAdapters);
+        if (!it->llChildSnapshots.empty())
+            updateMACAddresses(it->llChildSnapshots);
+    }
+}
+
+void MachineCloneVMPrivate::updateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const
 {
     settings::StorageControllersList::iterator it3;
     for (it3 = sc.begin();
@@ -172,20 +199,20 @@ void MachineCloneVMPrivate::cloneUpdateStorageLists(settings::StorageControllers
     }
 }
 
-void MachineCloneVMPrivate::cloneUpdateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const
+void MachineCloneVMPrivate::updateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const
 {
     settings::SnapshotsList::iterator it;
     for (  it  = sl.begin();
            it != sl.end();
          ++it)
     {
-        cloneUpdateStorageLists(it->storage.llStorageControllers, bstrOldId, bstrNewId);
+        updateStorageLists(it->storage.llStorageControllers, bstrOldId, bstrNewId);
         if (!it->llChildSnapshots.empty())
-            cloneUpdateSnapshotStorageLists(it->llChildSnapshots, bstrOldId, bstrNewId);
+            updateSnapshotStorageLists(it->llChildSnapshots, bstrOldId, bstrNewId);
     }
 }
 
-void MachineCloneVMPrivate::cloneUpdateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const
+void MachineCloneVMPrivate::updateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const
 {
     settings::SnapshotsList::iterator it;
     for (it = snl.begin(); it != snl.end(); ++it)
@@ -193,12 +220,12 @@ void MachineCloneVMPrivate::cloneUpdateStateFile(settings::SnapshotsList &snl, c
         if (it->uuid == id)
             it->strStateFile = strFile;
         else if (!it->llChildSnapshots.empty())
-            cloneUpdateStateFile(it->llChildSnapshots, id, strFile);
+            updateStateFile(it->llChildSnapshots, id, strFile);
     }
 }
 
 /* static */
-int MachineCloneVMPrivate::cloneCopyStateFileProgress(unsigned uPercentage, void *pvUser)
+int MachineCloneVMPrivate::copyStateFileProgress(unsigned uPercentage, void *pvUser)
 {
     ComObjPtr<Progress> pProgress = *static_cast< ComObjPtr<Progress>* >(pvUser);
 
@@ -214,12 +241,11 @@ int MachineCloneVMPrivate::cloneCopyStateFileProgress(unsigned uPercentage, void
     return VINF_SUCCESS;
 }
 
-
 // The public class
 /////////////////////////////////////////////////////////////////////////////
 
-MachineCloneVM::MachineCloneVM(ComObjPtr<Machine> pSrcMachine, ComObjPtr<Machine> pTrgMachine, CloneMode_T mode, bool fFullClone)
-    : d_ptr(new MachineCloneVMPrivate(this, pSrcMachine, pTrgMachine, mode, fFullClone))
+MachineCloneVM::MachineCloneVM(ComObjPtr<Machine> pSrcMachine, ComObjPtr<Machine> pTrgMachine, CloneMode_T mode, const RTCList<CloneOptions_T> &opts)
+    : d_ptr(new MachineCloneVMPrivate(this, pSrcMachine, pTrgMachine, mode, opts))
 {
 }
 
@@ -282,7 +308,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                 ComPtr<ISnapshot> pSnapshot;
                 rc = d->pSrcMachine->FindSnapshot(Bstr(id).raw(), pSnapshot.asOutParam());
                 if (FAILED(rc)) throw rc;
-                rc = d->cloneCreateMachineList(pSnapshot, machineList);
+                rc = d->createMachineList(pSnapshot, machineList);
                 if (FAILED(rc)) throw rc;
                 if (d->mode == CloneMode_MachineAndChildStates)
                 {
@@ -443,7 +469,7 @@ HRESULT MachineCloneVM::run()
          * with the stuff from the snapshot. */
         settings::Snapshot sn;
         if (!d->snapshotId.isEmpty())
-            sn = d->cloneFindSnapshot(&trgMCF, trgMCF.llFirstSnapshot, d->snapshotId);
+            sn = d->findSnapshot(&trgMCF, trgMCF.llFirstSnapshot, d->snapshotId);
 
         if (d->mode == CloneMode_MachineState)
         {
@@ -468,6 +494,13 @@ HRESULT MachineCloneVM::run()
             trgMCF.uuidCurrentSnapshot = sn.uuid;
             trgMCF.llFirstSnapshot.clear();
             trgMCF.llFirstSnapshot.push_back(sn);
+        }
+
+        /* Generate new MAC addresses for all machines when not forbidden. */
+        if (!d->options.contains(CloneOptions_KeepAllMACs))
+        {
+            d->updateMACAddresses(trgMCF.hardwareMachine.llNetworkAdapters);
+            d->updateMACAddresses(trgMCF.llFirstSnapshot);
         }
 
         /* When the current snapshot folder is absolute we reset it to the
@@ -641,8 +674,8 @@ HRESULT MachineCloneVM::run()
             if (FAILED(rc)) throw rc;
             /* We have to patch the configuration, so it contains the new
              * medium uuid instead of the old one. */
-            d->cloneUpdateStorageLists(trgMCF.storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
-            d->cloneUpdateSnapshotStorageLists(trgMCF.llFirstSnapshot, bstrSrcId, bstrTrgId);
+            d->updateStorageLists(trgMCF.storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
+            d->updateSnapshotStorageLists(trgMCF.llFirstSnapshot, bstrSrcId, bstrTrgId);
         }
         /* Clone all save state files. */
         for (size_t i = 0; i < d->llSaveStateFiles.size(); ++i)
@@ -656,7 +689,7 @@ HRESULT MachineCloneVM::run()
             /* Copy the file only if it was not copied already. */
             if (!newFiles.contains(strTrgSaveState.c_str()))
             {
-                int vrc = RTFileCopyEx(sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), 0, MachineCloneVMPrivate::cloneCopyStateFileProgress, &d->pProgress);
+                int vrc = RTFileCopyEx(sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), 0, MachineCloneVMPrivate::copyStateFileProgress, &d->pProgress);
                 if (RT_FAILURE(vrc))
                     throw p->setError(VBOX_E_IPRT_ERROR,
                                       p->tr("Could not copy state file '%s' to '%s' (%Rrc)"), sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
@@ -667,7 +700,7 @@ HRESULT MachineCloneVM::run()
             if (sst.snapshotUuid.isEmpty())
                 trgMCF.strStateFile = strTrgSaveState;
             else
-                d->cloneUpdateStateFile(trgMCF.llFirstSnapshot, sst.snapshotUuid, strTrgSaveState);
+                d->updateStateFile(trgMCF.llFirstSnapshot, sst.snapshotUuid, strTrgSaveState);
         }
 
         if (false)
