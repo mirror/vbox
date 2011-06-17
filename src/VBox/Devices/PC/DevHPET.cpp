@@ -244,8 +244,7 @@ typedef struct HpetState
     /** Global device lock. */
     PDMCRITSECT          csLock;
 
-    /** If we emulate ICH9 HPET (different frequency).
-     * @todo different number of timers */
+    /** If we emulate ICH9 HPET (different frequency & timer count). */
     bool                 fIch9;
     uint8_t              padding0[7];
 } HpetState;
@@ -513,7 +512,9 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
 
     if (iTimerNo >= HPET_CAP_GET_TIMERS(pThis->u32Capabilities))
     {
-        LogRel(("HPET: using timer above configured range: %d\n", iTimerNo));
+        static unsigned s_cOccurences = 0;
+        if (s_cOccurences++ < 10)
+            LogRel(("HPET: using timer above configured range: %d\n", iTimerNo));
         return VINF_SUCCESS;
     }
     HpetTimer *pHpetTimer = &pThis->aTimers[iTimerNo];
@@ -527,15 +528,15 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
             uint64_t const iOldValue = (uint32_t)pHpetTimer->u64Config;
 
             uint64_t u64Mask = HPET_TN_CFG_WRITE_MASK;
-            if ((pHpetTimer->u64Config & HPET_TN_PERIODIC_CAP) != 0)
+            if (pHpetTimer->u64Config & HPET_TN_PERIODIC_CAP)
                 u64Mask |= HPET_TN_PERIODIC;
 
-            if ((pHpetTimer->u64Config & HPET_TN_SIZE_CAP) != 0)
+            if (pHpetTimer->u64Config & HPET_TN_SIZE_CAP)
                 u64Mask |= HPET_TN_32BIT;
             else
                 u32NewValue &= ~HPET_TN_32BIT;
 
-            if ((u32NewValue & HPET_TN_32BIT) != 0)
+            if (u32NewValue & HPET_TN_32BIT)
             {
                 Log(("setting timer %d to 32-bit mode\n", iTimerNo));
                 pHpetTimer->u64Cmp    = (uint32_t)pHpetTimer->u64Cmp;
@@ -543,7 +544,9 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
             }
             if ((u32NewValue & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_LEVEL)
             {
-                LogRel(("level-triggered config not yet supported\n"));
+                static unsigned s_cOccurences = 0;
+                if (s_cOccurences++ < 10)
+                    LogRel(("level-triggered config not yet supported\n"));
                 AssertFailed();
             }
 
@@ -566,14 +569,10 @@ static int hpetTimerRegWrite32(HpetState *pThis, uint32_t iTimerNo, uint32_t iTi
 
             if (pHpetTimer->u64Config & HPET_TN_PERIODIC)
             {
-                u32NewValue &= hpetInvalidValue(pHpetTimer) >> 1;
-                pHpetTimer->u64Period = (pHpetTimer->u64Period & UINT64_C(0xffffffff00000000))
-                                      | u32NewValue;
+                u32NewValue &= hpetInvalidValue(pHpetTimer) >> 1; /** @todo check this in the docs and add a not why? */
+                pHpetTimer->u64Period = RT_MAKE_U64(u32NewValue, pHpetTimer->u64Period);
             }
-
-            pHpetTimer->u64Cmp = (pHpetTimer->u64Cmp & UINT64_C(0xffffffff00000000))
-                               | u32NewValue; /** @todo RT_MAKE_U64 */
-
+            pHpetTimer->u64Cmp     = RT_MAKE_U64(u32NewValue, pHpetTimer->u64Cmp);
             pHpetTimer->u64Config &= ~HPET_TN_SETVAL;
             Log2(("after HPET_TN_CMP cmp=%#llx per=%#llx\n", pHpetTimer->u64Cmp, pHpetTimer->u64Period));
 
