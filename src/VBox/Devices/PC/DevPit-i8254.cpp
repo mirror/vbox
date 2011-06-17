@@ -976,7 +976,9 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             TMR3TimerLoad(s->CTX_SUFF(pTimer), pSSM);
             LogRel(("PIT: mode=%d count=%#x (%u) - %d.%02d Hz (ch=%d) (restore)\n",
                     s->mode, s->count, s->count, PIT_FREQ / s->count, (PIT_FREQ * 100 / s->count) % 100, i));
+            PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
             TMTimerSetFrequencyHint(s->CTX_SUFF(pTimer), PIT_FREQ / s->count);
+            PDMCritSectLeave(&pThis->CritSect);
         }
         pThis->channels[i].cRelLogEntries = 0;
     }

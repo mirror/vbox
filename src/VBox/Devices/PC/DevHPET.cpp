@@ -1252,7 +1252,10 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
     HpetState *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
     LogFlow(("hpetReset:\n"));
 
-    pThis->u64HpetConfig = 0;
+    /*
+     * The timers first.
+     */
+    TMTimerLock(pThis->aTimers[0].pTimerR3, VERR_IGNORED);
     for (unsigned i = 0; i < HPET_NUM_TIMERS; i++)
     {
         HpetTimer *pHpetTimer = &pThis->aTimers[i];
@@ -1274,6 +1277,12 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
         pHpetTimer->u8Wrap     = 0;
         pHpetTimer->u64Cmp     = hpetInvalidValue(pHpetTimer);
     }
+    TMTimerUnlock(pThis->aTimers[0].pTimerR3);
+
+    /*
+     * The HPET state.
+     */
+    pThis->u64HpetConfig  = 0;
     pThis->u64HpetCounter = 0;
     pThis->u64HpetOffset  = 0;
 
@@ -1289,7 +1298,9 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
     pThis->u64Capabilities = (u32Vendor << 16) | u32Caps;
     pThis->u64Capabilities |= ((uint64_t)(pThis->fIch9 ? HPET_CLK_PERIOD_ICH9 : HPET_CLK_PERIOD) << 32);
 
-    /* Notify PIT/RTC devices */
+    /*
+     * Notify the PIT/RTC devices.
+     */
     if (pThis->pHpetHlpR3)
         pThis->pHpetHlpR3->pfnSetLegacyMode(pDevIns, false /*fActive*/);
 }
