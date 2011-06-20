@@ -1106,7 +1106,7 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
             pfnProgress = pCbProgress->pfnProgress;
         pvUser = pIfProgress->pvUser;
     }
-    
+
     /* Check the image flags. */
     if ((uImageFlags & ~VD_VDI_IMAGE_FLAGS_MASK) != 0)
     {
@@ -1354,7 +1354,8 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                 }
             }
 
-            if (cbToWrite == getImageBlockSize(&pImage->Header))
+            if (   cbToWrite == getImageBlockSize(&pImage->Header)
+                && !(fWrite & VD_WRITE_NO_ALLOC))
             {
                 /* Full block write to previously unallocated block.
                  * Allocate block and write data. */
