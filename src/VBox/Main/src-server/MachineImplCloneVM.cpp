@@ -453,7 +453,7 @@ HRESULT MachineCloneVM::run()
     AutoReadLock  srcLock(p COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock trgLock(d->pTrgMachine COMMA_LOCKVAL_SRC_POS);
 
-    MultiResult rc = S_OK;
+    HRESULT rc = S_OK;
 
     /*
      * Todo:
@@ -586,11 +586,6 @@ HRESULT MachineCloneVM::run()
                         if (FAILED(rc)) throw rc;
                     }
 
-                    /* Start creating the clone. */
-                    ComObjPtr<Medium> pTarget;
-                    rc = pTarget.createObject();
-                    if (FAILED(rc)) throw rc;
-
                     /* Check if this medium comes from the snapshot folder, if
                      * so, put it there in the cloned machine as well.
                      * Otherwise it goes to the machine folder. */
@@ -604,11 +599,16 @@ HRESULT MachineCloneVM::run()
                     else
                         strFile = Utf8StrFmt("%s%c%lS", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
 
+                    /* Start creating the clone. */
+                    ComObjPtr<Medium> pTarget;
+                    rc = pTarget.createObject();
+                    if (FAILED(rc)) throw rc;
+
                     rc = pTarget->init(p->mParent,
                                        Utf8Str(bstrSrcFormat),
                                        strFile,
-                                       d->pTrgMachine->mData->mUuid,  /* media registry */
-                                       NULL                           /* llRegistriesThatNeedSaving */);
+                                       Guid(),  /* empty media registry */
+                                       NULL     /* llRegistriesThatNeedSaving */);
                     if (FAILED(rc)) throw rc;
 
                     /* Do the disk cloning. */
@@ -637,6 +637,13 @@ HRESULT MachineCloneVM::run()
                         throw p->setError(iRc, Utf8Str(info.getText()).c_str());
                     }
 
+                    /* Get the medium type from the source and set it to the
+                     * new medium. */
+                    MediumType_T type;
+                    rc = pMedium->COMGETTER(Type)(&type);
+                    if (FAILED(rc)) throw rc;
+                    rc = pTarget->COMSETTER(Type)(type);
+                    if (FAILED(rc)) throw rc;
                     map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pTarget));
 
                     /* Remember created medias. */
@@ -653,16 +660,15 @@ HRESULT MachineCloneVM::run()
                 Bstr bstrSrcId;
                 rc = pNewParent->COMGETTER(Id)(bstrSrcId.asOutParam());
                 if (FAILED(rc)) throw rc;
-                GuidList *pllRegistriesThatNeedSaving;
                 ComObjPtr<Medium> diff;
                 diff.createObject();
                 rc = diff->init(p->mParent,
                                 pNewParent->getPreferredDiffFormat(),
                                 Utf8StrFmt("%s%c", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER),
-                                d->pTrgMachine->mData->mUuid,
-                                NULL); // pllRegistriesThatNeedSaving
+                                Guid(), /* empty media registry */
+                                NULL);  /* pllRegistriesThatNeedSaving */
                 if (FAILED(rc)) throw rc;
-                MediumLockList *pMediumLockList(new MediumLockList()); /* todo: deleteeeeeeeee */
+                MediumLockList *pMediumLockList(new MediumLockList());
                 rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
                                                 true /* fMediumLockWrite */,
                                                 pNewParent,
@@ -690,6 +696,10 @@ HRESULT MachineCloneVM::run()
              * medium uuid instead of the old one. */
             d->updateStorageLists(trgMCF.storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
             d->updateSnapshotStorageLists(trgMCF.llFirstSnapshot, bstrSrcId, bstrTrgId);
+            /* Make sure all disks know of the new machine uuid. We do this
+             * last to be able to change the medium type above. */
+            rc = pNewParent->addRegistry(d->pTrgMachine->mData->mUuid, true /* fRecursive */);
+            if (FAILED(rc)) throw rc;
         }
         /* Clone all save state files. */
         for (size_t i = 0; i < d->llSaveStateFiles.size(); ++i)
@@ -782,16 +792,6 @@ HRESULT MachineCloneVM::run()
             if (FAILED(rc)) throw rc;
         }
 
-        /* The medias are created before the machine was there. We have to make
-         * sure the new medias know of there new parent or we get in trouble
-         * when the media registry is saved for this VM, especially in case of
-         * difference image chain's. See VirtualBox::saveMediaRegistry.*/
-//        for (size_t i = 0; i < newBaseMedias.size(); ++i)
-//        {
-//            rc = newBaseMedias.at(i)->addRegistry(d->pTrgMachine->mData->mUuid, true /* fRecursive */);
-//            if (FAILED(rc)) throw rc;
-//        }
-
         /* Now save the new configuration to disk. */
         rc = d->pTrgMachine->SaveSettings();
         if (FAILED(rc)) throw rc;
@@ -805,6 +805,7 @@ HRESULT MachineCloneVM::run()
         rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
     }
 
+    MultiResult mrc(rc);
     /* Cleanup on failure (CANCEL also) */
     if (FAILED(rc))
     {
@@ -814,7 +815,7 @@ HRESULT MachineCloneVM::run()
         {
             vrc = RTFileDelete(newFiles.at(i).c_str());
             if (RT_FAILURE(vrc))
-                rc = p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not delete file '%s' (%Rrc)"), newFiles.at(i).c_str(), vrc);
+                mrc = p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not delete file '%s' (%Rrc)"), newFiles.at(i).c_str(), vrc);
         }
         /* Delete all already created medias. (Reverse, cause there could be
          * parent->child relations.) */
@@ -825,7 +826,7 @@ HRESULT MachineCloneVM::run()
             ComObjPtr<Medium> &pMedium = newMedias.at(i - 1);
             {
                 AutoCaller mac(pMedium);
-                if (FAILED(mac.rc())) { continue; rc = mac.rc(); }
+                if (FAILED(mac.rc())) { continue; mrc = mac.rc(); }
                 AutoReadLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
                 fFile = pMedium->isMediumFormatFile();
                 strLoc = pMedium->getLocationFull();
@@ -834,7 +835,7 @@ HRESULT MachineCloneVM::run()
             {
                 vrc = RTFileDelete(strLoc.c_str());
                 if (RT_FAILURE(vrc))
-                    rc = p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not delete file '%s' (%Rrc)"), strLoc.c_str(), vrc);
+                    mrc = p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not delete file '%s' (%Rrc)"), strLoc.c_str(), vrc);
             }
         }
         /* Delete the snapshot folder when not empty. */
@@ -844,7 +845,7 @@ HRESULT MachineCloneVM::run()
         RTDirRemove(strTrgMachineFolder.c_str());
     }
 
-    return rc;
+    return mrc;
 }
 
 void MachineCloneVM::destroy()
