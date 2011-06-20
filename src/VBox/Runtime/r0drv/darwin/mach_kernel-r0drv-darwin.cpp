@@ -38,6 +38,7 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include "../../include/internal/ldrMach-O.h"
