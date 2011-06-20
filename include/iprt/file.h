@@ -29,9 +29,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
-#ifdef IN_RING3
-# include <iprt/fs.h>
-#endif
+#include <iprt/fs.h>
 
 RT_C_DECLS_BEGIN
 
@@ -69,8 +67,6 @@ RT_C_DECLS_BEGIN
 # define RTFILE_NATIVE_STDERR 2
 #endif
 
-
-#ifdef IN_RING3
 
 /**
  * Checks if the specified file name exists and is a regular file.
@@ -235,6 +231,7 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
 /** @} */
 
 
+#ifdef IN_RING3
 /**
  * Force the use of open flags for all files opened after the setting is
  * changed. The caller is responsible for not causing races with RTFileOpen().
@@ -245,6 +242,7 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
  * @param   fMask           Open flags to be masked out.
  */
 RTR3DECL(int)  RTFileSetForceFlags(unsigned fOpenForAccess, unsigned fSet, unsigned fMask);
+#endif /* IN_RING3 */
 
 /**
  * Open a file.
@@ -255,7 +253,7 @@ RTR3DECL(int)  RTFileSetForceFlags(unsigned fOpenForAccess, unsigned fSet, unsig
  * @param   fOpen           Open flags, i.e a combination of the RTFILE_O_* defines.
  *                          The ACCESS, ACTION and DENY flags are mandatory!
  */
-RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen);
+RTDECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen);
 
 /**
  * Open a file given as a format string.
@@ -268,7 +266,7 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen
  *                          be opened. (UTF-8)
  * @param   ...             Arguments to the format string.
  */
-RTR3DECL(int)  RTFileOpenF(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, ...);
+RTDECL(int)  RTFileOpenF(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, ...);
 
 /**
  * Open a file given as a format string.
@@ -281,7 +279,7 @@ RTR3DECL(int)  RTFileOpenF(PRTFILE pFile, uint32_t fOpen, const char *pszFilenam
  *                          be opened. (UTF-8)
  * @param   va              Arguments to the format string.
  */
-RTR3DECL(int)  RTFileOpenV(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, va_list va);
+RTDECL(int)  RTFileOpenV(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, va_list va);
 
 /**
  * Open the bit bucket (aka /dev/null or nul).
@@ -290,7 +288,7 @@ RTR3DECL(int)  RTFileOpenV(PRTFILE pFile, uint32_t fOpen, const char *pszFilenam
  * @param   phFile          Where to store the handle to the opened file.
  * @param   fAccess         The desired access only, i.e. read, write or both.
  */
-RTR3DECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint32_t fAccess);
+RTDECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint32_t fAccess);
 
 /**
  * Close a file opened by RTFileOpen().
@@ -298,7 +296,7 @@ RTR3DECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint32_t fAccess);
  * @returns iprt status code.
  * @param   File            The file handle to close.
  */
-RTR3DECL(int)  RTFileClose(RTFILE File);
+RTDECL(int)  RTFileClose(RTFILE File);
 
 /**
  * Creates an IPRT file handle from a native one.
@@ -307,7 +305,7 @@ RTR3DECL(int)  RTFileClose(RTFILE File);
  * @param   pFile           Where to store the IPRT file handle.
  * @param   uNative         The native handle.
  */
-RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative);
+RTDECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative);
 
 /**
  * Gets the native handle for an IPRT file handle.
@@ -315,7 +313,7 @@ RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative);
  * @return  The native handle.
  * @param   File            The IPRT file handle.
  */
-RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE File);
+RTDECL(RTHCINTPTR) RTFileToNative(RTFILE File);
 
 /**
  * Delete a file.
@@ -324,7 +322,7 @@ RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE File);
  * @param   pszFilename     Path to the file which is to be deleted. (UTF-8)
  * @todo    This is a RTPath api!
  */
-RTR3DECL(int)  RTFileDelete(const char *pszFilename);
+RTDECL(int)  RTFileDelete(const char *pszFilename);
 
 /** @name Seek flags.
  * @{ */
@@ -351,7 +349,7 @@ RTR3DECL(int)  RTFileDelete(const char *pszFilename);
  * @param   poffActual  Where to store the new file position.
  *                      NULL is allowed.
  */
-RTR3DECL(int)  RTFileSeek(RTFILE File, int64_t offSeek, unsigned uMethod, uint64_t *poffActual);
+RTDECL(int)  RTFileSeek(RTFILE File, int64_t offSeek, unsigned uMethod, uint64_t *poffActual);
 
 /**
  * Read bytes from a file.
@@ -363,7 +361,7 @@ RTR3DECL(int)  RTFileSeek(RTFILE File, int64_t offSeek, unsigned uMethod, uint64
  * @param   *pcbRead    How much we actually read .
  *                      If NULL an error will be returned for a partial read.
  */
-RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+RTDECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 
 /**
  * Read bytes from a file at a given offset.
@@ -377,7 +375,7 @@ RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcb
  * @param   *pcbRead    How much we actually read .
  *                      If NULL an error will be returned for a partial read.
  */
-RTR3DECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+RTDECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 
 /**
  * Write bytes to a file.
@@ -389,7 +387,7 @@ RTR3DECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, size_t cbToRea
  * @param   *pcbWritten How much we actually wrote.
  *                      If NULL an error will be returned for a partial write.
  */
-RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
+RTDECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
 /**
  * Write bytes to a file at a given offset.
@@ -403,7 +401,7 @@ RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, siz
  * @param   *pcbWritten How much we actually wrote.
  *                      If NULL an error will be returned for a partial write.
  */
-RTR3DECL(int)  RTFileWriteAt(RTFILE File, RTFOFF off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
+RTDECL(int)  RTFileWriteAt(RTFILE File, RTFOFF off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
 /**
  * Flushes the buffers for the specified file.
@@ -411,7 +409,7 @@ RTR3DECL(int)  RTFileWriteAt(RTFILE File, RTFOFF off, const void *pvBuf, size_t 
  * @returns iprt status code.
  * @param   File        Handle to the file.
  */
-RTR3DECL(int)  RTFileFlush(RTFILE File);
+RTDECL(int)  RTFileFlush(RTFILE File);
 
 /**
  * Set the size of the file.
@@ -420,7 +418,7 @@ RTR3DECL(int)  RTFileFlush(RTFILE File);
  * @param   File        Handle to the file.
  * @param   cbSize      The new file size.
  */
-RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize);
+RTDECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize);
 
 /**
  * Query the size of the file.
@@ -429,7 +427,7 @@ RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize);
  * @param   File        Handle to the file.
  * @param   pcbSize     Where to store the filesize.
  */
-RTR3DECL(int)  RTFileGetSize(RTFILE File, uint64_t *pcbSize);
+RTDECL(int)  RTFileGetSize(RTFILE File, uint64_t *pcbSize);
 
 /**
  * Determine the maximum file size.
@@ -439,7 +437,7 @@ RTR3DECL(int)  RTFileGetSize(RTFILE File, uint64_t *pcbSize);
  * @param   File        Handle to the file.
  * @see     RTFileGetMaxSizeEx.
  */
-RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
+RTDECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
 
 /**
  * Determine the maximum file size.
@@ -449,7 +447,7 @@ RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
  * @param   pcbMax      Where to store the max file size.
  * @see     RTFileGetMaxSize.
  */
-RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax);
+RTDECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax);
 
 /**
  * Determine the maximum file size depending on the file system the file is stored on.
@@ -458,7 +456,7 @@ RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax);
  *          -1 on failure.
  * @param   File        Handle to the file.
  */
-RTR3DECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
+RTDECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
 
 /**
  * Gets the current file position.
@@ -476,7 +474,7 @@ RTDECL(uint64_t)  RTFileTell(RTFILE File);
  * @returns false if invalid.
  * @param   File        The file handle
  */
-RTR3DECL(bool) RTFileIsValid(RTFILE File);
+RTDECL(bool) RTFileIsValid(RTFILE File);
 
 /**
  * Copies a file.
@@ -640,7 +638,7 @@ RTDECL(int) RTFileMove(const char *pszSrc, const char *pszDst, unsigned fMove);
  * @param   offLock     Offset of lock start.
  * @param   cbLock      Length of region to lock, may overlap the end of file.
  */
-RTR3DECL(int)  RTFileLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t cbLock);
+RTDECL(int)  RTFileLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t cbLock);
 
 /**
  * Changes a lock type from read to write or from write to read.
@@ -665,7 +663,7 @@ RTR3DECL(int)  RTFileLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t
  * @param   offLock     Offset of lock start.
  * @param   cbLock      Length of region to lock, may overlap the end of file.
  */
-RTR3DECL(int)  RTFileChangeLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t cbLock);
+RTDECL(int)  RTFileChangeLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t cbLock);
 
 /**
  * Unlocks previously locked region of file.
@@ -677,7 +675,7 @@ RTR3DECL(int)  RTFileChangeLock(RTFILE File, unsigned fLock, int64_t offLock, ui
  * @param   offLock     Offset of lock start.
  * @param   cbLock      Length of region to unlock, may overlap the end of file.
  */
-RTR3DECL(int)  RTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock);
+RTDECL(int)  RTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock);
 
 
 /**
@@ -690,7 +688,7 @@ RTR3DECL(int)  RTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock);
  * @param   enmAdditionalAttribs    Which set of additional attributes to request.
  *                                  Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
  */
-RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs);
+RTDECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs);
 
 /**
  * Changes one or more of the timestamps associated of file system object.
@@ -716,8 +714,8 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
  *
  * @remark  POSIX can only set Access & Modification and will always set both.
  */
-RTR3DECL(int) RTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                             PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
+RTDECL(int) RTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                           PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
 
 /**
  * Gets one or more of the timestamps associated of file system object.
@@ -731,8 +729,8 @@ RTR3DECL(int) RTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC
  *
  * @remark  This is wrapper around RTFileQueryInfo() and exists to complement RTFileSetTimes().
  */
-RTR3DECL(int) RTFileGetTimes(RTFILE File, PRTTIMESPEC pAccessTime, PRTTIMESPEC pModificationTime,
-                             PRTTIMESPEC pChangeTime, PRTTIMESPEC pBirthTime);
+RTDECL(int) RTFileGetTimes(RTFILE File, PRTTIMESPEC pAccessTime, PRTTIMESPEC pModificationTime,
+                           PRTTIMESPEC pChangeTime, PRTTIMESPEC pBirthTime);
 
 /**
  * Changes the mode flags of an open file.
@@ -744,7 +742,7 @@ RTR3DECL(int) RTFileGetTimes(RTFILE File, PRTTIMESPEC pAccessTime, PRTTIMESPEC p
  * @param   File        Handle to the file.
  * @param   fMode       The new file mode, see @ref grp_rt_fs for details.
  */
-RTR3DECL(int) RTFileSetMode(RTFILE File, RTFMODE fMode);
+RTDECL(int) RTFileSetMode(RTFILE File, RTFMODE fMode);
 
 /**
  * Gets the mode flags of an open file.
@@ -756,7 +754,7 @@ RTR3DECL(int) RTFileSetMode(RTFILE File, RTFMODE fMode);
  * @remark  This is wrapper around RTFileQueryInfo()
  *          and exists to complement RTFileSetMode().
  */
-RTR3DECL(int) RTFileGetMode(RTFILE File, uint32_t *pfMode);
+RTDECL(int) RTFileGetMode(RTFILE File, uint32_t *pfMode);
 
 /**
  * Changes the owner and/or group of an open file.
@@ -768,7 +766,7 @@ RTR3DECL(int) RTFileGetMode(RTFILE File, uint32_t *pfMode);
  * @param   gid         The new group id.  Pass NIL_RTGID to leave this
  *                      unchanged.
  */
-RTR3DECL(int) RTFileSetOwner(RTFILE File, uint32_t uid, uint32_t gid);
+RTDECL(int) RTFileSetOwner(RTFILE File, uint32_t uid, uint32_t gid);
 
 /**
  * Gets the owner and/or group of an open file.
@@ -780,7 +778,7 @@ RTR3DECL(int) RTFileSetOwner(RTFILE File, uint32_t uid, uint32_t gid);
  *
  * @remark  This is wrapper around RTFileQueryInfo() and exists to complement RTFileGetOwner().
  */
-RTR3DECL(int) RTFileGetOwner(RTFILE File, uint32_t *pUid, uint32_t *pGid);
+RTDECL(int) RTFileGetOwner(RTFILE File, uint32_t *pUid, uint32_t *pGid);
 
 /**
  * Executes an IOCTL on a file descriptor.
@@ -799,7 +797,7 @@ RTR3DECL(int) RTFileGetOwner(RTFILE File, uint32_t *pUid, uint32_t *pGid);
  * @param   cbData      Size of the IOCTL data.
  * @param   piRet       Return value of the IOCTL request.
  */
-RTR3DECL(int) RTFileIoCtl(RTFILE File, unsigned long ulRequest, void *pvData, unsigned cbData, int *piRet);
+RTDECL(int) RTFileIoCtl(RTFILE File, unsigned long ulRequest, void *pvData, unsigned cbData, int *piRet);
 
 /**
  * Query the sizes of a filesystem.
@@ -816,8 +814,8 @@ RTR3DECL(int) RTFileIoCtl(RTFILE File, unsigned long ulRequest, void *pvData, un
  *
  * @sa      RTFsQuerySizes
  */
-RTR3DECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree,
-                                 uint32_t *pcbBlock, uint32_t *pcbSector);
+RTDECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree,
+                               uint32_t *pcbBlock, uint32_t *pcbSector);
 
 /**
  * Reads the file into memory.
@@ -911,6 +909,8 @@ RTDECL(void) RTFileReadAllFree(void *pvFile, size_t cbFile);
 #define RTFILE_RDALL_VALID_MASK             RTFILE_RDALL_O_DENY_MASK
 /** @} */
 
+
+#ifdef IN_RING3
 
 /** @page pg_rt_asyncio RT File async I/O API
  *
