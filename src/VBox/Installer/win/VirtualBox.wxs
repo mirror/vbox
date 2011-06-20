@@ -385,6 +385,18 @@
                                 <Verb Id="open" Command="Open" TargetFile="file_VirtualBox.exe" Argument="&quot;%1&quot;" />
                             </Extension>
                         </ProgId>
+                        <ProgId Id="progId_VirtualBox.Shell.vdi" Description="Virtual Disk Image" Icon="file_VBoxRes.dll" IconIndex="-303">
+                            <Extension Id="vdi" ContentType="application/x-virtualbox-vdi" />
+                        </ProgId>
+                        <ProgId Id="progId_VirtualBox.Shell.vmdk" Description="Virtual Machine Disk Format" Icon="file_VBoxRes.dll" IconIndex="-304">
+                            <Extension Id="vmdk" ContentType="application/x-virtualbox-vmdk" />
+                        </ProgId>
+                        <ProgId Id="progId_VirtualBox.Shell.vhd" Description="Virtual Hard Disk" Icon="file_VBoxRes.dll" IconIndex="-305">
+                            <Extension Id="vhd" ContentType="application/x-virtualbox-vhd" />
+                        </ProgId>
+                        <ProgId Id="progId_VirtualBox.Shell.hdd" Description="Virtual Hard Disk" Icon="file_VBoxRes.dll" IconIndex="-306">
+                            <Extension Id="hdd" ContentType="application/x-virtualbox-hdd" />
+                        </ProgId>
 
                         <!-- Files -->
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>

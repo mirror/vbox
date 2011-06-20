@@ -35,6 +35,30 @@
       <key>CFBundleTypeRole</key>               <string>Viewer</string>
       <key>CFBundleTypeIconFile</key>           <string>virtualbox-ova</string>
      </dict>
+     <dict>
+      <key>CFBundleTypeName</key>               <string>Virtual Disk Image</string>
+      <key>CFBundleTypeExtensions</key>         <array><string>vdi</string></array>
+      <key>CFBundleTypeRole</key>               <string>None</string>
+      <key>CFBundleTypeIconFile</key>           <string>virtualbox-vdi</string>
+     </dict>
+     <dict>
+      <key>CFBundleTypeName</key>               <string>Virtual Machine Disk Format</string>
+      <key>CFBundleTypeExtensions</key>         <array><string>vmdk</string></array>
+      <key>CFBundleTypeRole</key>               <string>None</string>
+      <key>CFBundleTypeIconFile</key>           <string>virtualbox-vmdk</string>
+     </dict>
+     <dict>
+      <key>CFBundleTypeName</key>               <string>Virtual Hard Disk</string>
+      <key>CFBundleTypeExtensions</key>         <array><string>vhd</string></array>
+      <key>CFBundleTypeRole</key>               <string>None</string>
+      <key>CFBundleTypeIconFile</key>           <string>virtualbox-vhd</string>
+     </dict>
+     <dict>
+      <key>CFBundleTypeName</key>               <string>Virtual Hard Disk</string>
+      <key>CFBundleTypeExtensions</key>         <array><string>hdd</string></array>
+      <key>CFBundleTypeRole</key>               <string>None</string>
+      <key>CFBundleTypeIconFile</key>           <string>virtualbox-hdd</string>
+     </dict>
     </array>
 </dict>
 </plist>

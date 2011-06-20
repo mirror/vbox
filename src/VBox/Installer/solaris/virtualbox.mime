@@ -9,3 +9,15 @@ application/x-virtualbox-ovf:
 
 application/x-virtualbox-ova:
     ext: ova
+
+application/x-virtualbox-vdi:
+    ext: vdi
+
+application/x-virtualbox-vmdk:
+    ext: vmdk
+
+application/x-virtualbox-vhd:
+    ext: vhd
+
+application/x-virtualbox-hdd:
+    ext: hdd
