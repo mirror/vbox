@@ -6082,9 +6082,9 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayI
 
     /* Convert the options. */
     RTCList<CloneOptions_T> optList;
-	if (options != NULL)
-		optList = com::SafeArray<CloneOptions_T>(ComSafeArrayInArg(options)).toList();
-		
+    if (options != NULL)
+        optList = com::SafeArray<CloneOptions_T>(ComSafeArrayInArg(options)).toList();
+
     AssertReturn(!optList.contains(CloneOptions_Link), E_NOTIMPL);
     AssertReturn(!(optList.contains(CloneOptions_KeepAllMACs) && optList.contains(CloneOptions_KeepNATMACs)), E_FAIL);
 
