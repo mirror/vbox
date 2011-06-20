@@ -25,6 +25,7 @@
  */
 
 
+#define RTMEM_WRAP_TO_EF_APIS
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -172,6 +173,7 @@ static void rtR0DarwinMachKernelClose(PRTR0DARWINKERNEL pKernel)
 {
     RTMemFree(pKernel->pachStrTab);
     pKernel->pachStrTab = NULL;
+
     RTMemFree(pKernel->paSyms);
     pKernel->paSyms = NULL;
 
@@ -191,7 +193,7 @@ static void rtR0DarwinMachKernelLoadDone(PRTR0DARWINKERNEL pKernel)
 
     RTMemFree(pKernel->pLoadCmds);
     pKernel->pLoadCmds = NULL;
-    RT_ZERO(pKernel->apSections);
+    memset((void *)&pKernel->apSections[0], 0, sizeof(pKernel->apSections[0]) * MACHO_MAX_SECT);
 }
 
 
@@ -229,13 +231,25 @@ static uintptr_t rtR0DarwinMachKernelLookup(PRTR0DARWINKERNEL pKernel, const cha
 }
 
 
+/* Rainy day: Find the right headers for these symbols ... if there are any. */
 extern "C" void ev_try_lock(void);
 extern "C" void OSMalloc(void);
 extern "C" void OSlibkernInit(void);
-extern "C" int osrelease;
-extern "C" int ostype;
+extern "C" int  osrelease;
+extern "C" int  ostype;
 extern "C" void kdp_set_interface(void);
 
+
+/**
+ * Check the symbol table against symbols we known symbols. 
+ *  
+ * This is done to detect whether the on disk image and the in 
+ * memory images matches.  Mismatches could stem from user 
+ * replacing the default kernel image on disk.
+ *  
+ * @returns IPRT status code.
+ * @param   pKernel             The internal scratch data.
+ */
 static int rtR0DarwinMachKernelCheckStandardSymbols(PRTR0DARWINKERNEL pKernel)
 {
     static struct
@@ -803,8 +817,18 @@ static int rtR0DarwinMachKernelLoadFileHeaders(PRTR0DARWINKERNEL pKernel)
 }
 
 
+/**
+ * Opens symbol table of the mach_kernel. 
+ *  
+ * @returns IPRT status code.
+ * @param   pszMachKernel   The path to the mach_kernel image.
+ * @param   ppHandle        Where to return a handle on success. 
+ *                          Call rtR0DarwinMachKernelClose on it
+ *                          when done.
+ */
 static int rtR0DarwinMachKernelOpen(const char *pszMachKernel, PRTR0DARWINKERNEL *ppHandle)
 {
+    *ppHandle = NULL;
     PRTR0DARWINKERNEL pKernel = (PRTR0DARWINKERNEL)RTMemAllocZ(sizeof(*pKernel));
     if (!pKernel)
         return VERR_NO_MEMORY;
@@ -821,7 +845,9 @@ static int rtR0DarwinMachKernelOpen(const char *pszMachKernel, PRTR0DARWINKERNEL
         rc = rtR0DarwinMachKernelCheckStandardSymbols(pKernel);
 
     rtR0DarwinMachKernelLoadDone(pKernel);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        *ppHandle = pKernel;
+    else
         rtR0DarwinMachKernelClose(pKernel);
     return rc;
 }
