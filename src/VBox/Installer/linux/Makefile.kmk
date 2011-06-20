@@ -282,7 +282,7 @@ endif
 
 VBOX_MIME_ICONS = \
 	$(addprefix $(PATH_ROOT)/src/VBox/Resources/other/,\
-	    $(foreach f,ova ovf vbox vbox-extpack, \
+	    $(foreach f,ova ovf vbox vbox-extpack vdi vmdk vhd hdd, \
 	        $(foreach s,16 20 24 32 48 64 72 96 128 256,\
 		    virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/virtualbox-$(f).png)))
 

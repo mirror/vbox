@@ -660,6 +660,10 @@ VBOX_DI_VBAPP_MISC_FILES = \
 	Resources/virtualbox-vbox-extpack.icns \
 	Resources/virtualbox-ovf.icns \
 	Resources/virtualbox-ova.icns \
+	Resources/virtualbox-vdi.icns \
+	Resources/virtualbox-vmdk.icns \
+	Resources/virtualbox-vhd.icns \
+	Resources/virtualbox-hdd.icns \
 	MacOS/components/VBoxXPCOMBase.xpt \
 	MacOS/components/VirtualBox_XPCOM.xpt
 ifdef VBOX_WITH_DOCS_PACKING
