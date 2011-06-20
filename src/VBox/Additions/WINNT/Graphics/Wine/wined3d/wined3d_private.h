@@ -710,6 +710,10 @@ enum fogmode {
 
 struct wined3d_context;
 
+#define WINED3D_PSARGS_PROJECTED          (1<<3)
+#define WINED3D_PSARGS_TEXTRANSFORM_SHIFT 4
+#define WINED3D_PSARGS_TEXTRANSFORM_MASK  0xF
+
 /* Stateblock dependent parameters which have to be hardcoded
  * into the shader code
  */
@@ -718,8 +722,9 @@ struct ps_compile_args {
     enum vertexprocessing_mode  vp_mode;
     enum fogmode                fog;
     /* Projected textures(ps 1.0-1.3) */
+    WORD                        tex_transform;
     /* Texture types(2D, Cube, 3D) in ps 1.x */
-    BOOL                        srgb_correction;
+    WORD                        srgb_correction;
     WORD                        np2_fixup;
     /* Bitmap for NP2 texcoord fixups (16 samplers max currently).
        D3D9 has a limit of 16 samplers and the fixup is superfluous

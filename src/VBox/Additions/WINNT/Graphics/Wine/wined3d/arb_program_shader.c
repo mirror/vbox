@@ -1854,10 +1854,12 @@ static void pshader_hw_tex(const struct wined3d_shader_instruction *ins)
     if (shader_version < WINED3D_SHADER_VERSION(1,4))
     {
         DWORD flags = 0;
+        struct shader_arb_ctx_priv *priv = ins->ctx->backend_data;
+
         if(reg_sampler_code < MAX_TEXTURES) {
-            flags = deviceImpl->stateBlock->textureState[reg_sampler_code][WINED3DTSS_TEXTURETRANSFORMFLAGS];
+            flags = priv->cur_ps_args->super.tex_transform >> (reg_sampler_code*WINED3D_PSARGS_TEXTRANSFORM_SHIFT);
         }
-        if (flags & WINED3DTTFF_PROJECTED) {
+        if (flags & WINED3D_PSARGS_PROJECTED) {
             myflags |= TEX_PROJ;
         }
     }
@@ -1909,7 +1911,7 @@ static void pshader_hw_texreg2ar(const struct wined3d_shader_instruction *ins)
      struct wined3d_shader_buffer *buffer = ins->ctx->buffer;
      IWineD3DBaseShaderImpl *shader = (IWineD3DBaseShaderImpl *)ins->ctx->shader;
      IWineD3DDeviceImpl *deviceImpl = (IWineD3DDeviceImpl *)shader->baseShader.device;
-     DWORD flags;
+     DWORD flags=0;
 
      DWORD reg1 = ins->dst[0].reg.idx;
      char dst_str[50];
@@ -1921,8 +1923,14 @@ static void pshader_hw_texreg2ar(const struct wined3d_shader_instruction *ins)
      /* Move .x first in case src_str is "TA" */
      shader_addline(buffer, "MOV TA.y, %s.x;\n", src_str);
      shader_addline(buffer, "MOV TA.x, %s.w;\n", src_str);
-     flags = reg1 < MAX_TEXTURES ? deviceImpl->stateBlock->textureState[reg1][WINED3DTSS_TEXTURETRANSFORMFLAGS] : 0;
-     shader_hw_sample(ins, reg1, dst_str, "TA", flags & WINED3DTTFF_PROJECTED ? TEX_PROJ : 0, NULL, NULL);
+
+     if (reg1 < MAX_TEXTURES)
+     {
+         struct shader_arb_ctx_priv *priv = ins->ctx->backend_data;
+         flags = priv->cur_ps_args->super.tex_transform >> (reg1 * WINED3D_PSARGS_TEXTRANSFORM_SHIFT);
+     }
+
+     shader_hw_sample(ins, reg1, dst_str, "TA", flags & WINED3D_PSARGS_PROJECTED ? TEX_PROJ : 0, NULL, NULL);
 }
 
 static void pshader_hw_texreg2gb(const struct wined3d_shader_instruction *ins)
@@ -1959,8 +1967,10 @@ static void pshader_hw_texbem(const struct wined3d_shader_instruction *ins)
     IWineD3DDeviceImpl *device = (IWineD3DDeviceImpl *)shader->baseShader.device;
     const struct wined3d_shader_dst_param *dst = &ins->dst[0];
     struct wined3d_shader_buffer *buffer = ins->ctx->buffer;
+    struct shader_arb_ctx_priv *priv = ins->ctx->backend_data;
     char reg_coord[40], dst_reg[50], src_reg[50];
     DWORD reg_dest_code;
+    DWORD flags;
 
     /* All versions have a destination register. The Tx where the texture coordinates come
      * from is the varying incarnation of the texture register
@@ -1988,7 +1998,8 @@ static void pshader_hw_texbem(const struct wined3d_shader_instruction *ins)
     /* with projective textures, texbem only divides the static texture coord, not the displacement,
      * so we can't let the GL handle this.
      */
-    if (device->stateBlock->textureState[reg_dest_code][WINED3DTSS_TEXTURETRANSFORMFLAGS] & WINED3DTTFF_PROJECTED)
+    flags = priv->cur_ps_args->super.tex_transform >> (reg_dest_code * WINED3D_PSARGS_TEXTRANSFORM_SHIFT);
+    if (flags & WINED3D_PSARGS_PROJECTED)
     {
         shader_addline(buffer, "RCP TB.w, %s.w;\n", reg_coord);
         shader_addline(buffer, "MUL TB.xy, %s, TB.w;\n", reg_coord);
