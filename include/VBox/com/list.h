@@ -195,14 +195,5 @@ public:
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
-//template <typename T> RTCList<T> SafeArrayToRTCList(ComSafeArrayIn(T, other), T* = 0)
-//{
-//    com::SafeArray<T> sfaOther(ComSafeArrayInArg(other));
-//    RTCList<T> list(sfaOther.size());
-//    for (size_t i = 0; i < sfaOther.size(); ++i)
-//        list.append(sfaOther[i]);
-//    return list;
-//}
-
 #endif /* !___VBox_com_list_h */
 
