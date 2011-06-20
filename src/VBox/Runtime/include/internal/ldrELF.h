@@ -82,5 +82,5 @@ typedef	Elf32_Sym           Elf_Sym;
 # error Unknown arch!
 #endif
 
-#endif  /* ___internal_ldrELF_h */
+#endif /* !___internal_ldrELF_h */
 
