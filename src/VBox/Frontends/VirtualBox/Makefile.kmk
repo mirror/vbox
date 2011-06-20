@@ -227,11 +227,11 @@ else
  endif
 endif
 
-# delay loading causes VM process crashes due to the misbehave of the current QtOpenGLVBox4.dll we use 
+# delay loading causes VM process crashes due to the misbehave of the current QtOpenGLVBox4.dll we use
 # (i.e. it does not create the ogl context properly when loaded this way)
 #
 # @todo: investigate a better work-around and enable back delay loading since it is needed to avoid
-# crashes caused by buggy ogl drivers for the case 2D is not used (i.e. no ogl stuff loaded)  
+# crashes caused by buggy ogl drivers for the case 2D is not used (i.e. no ogl stuff loaded)
 #if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
 # VirtualBox_LDFLAGS.win += /DelayLoad:QtOpenGLVBox4.dll /DelayLoad:OPENGL32.dll
 #endif
@@ -870,7 +870,11 @@ VirtualBox.app_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vbox-extpack.icns=>Resources/virtualbox-vbox-extpack.icns \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
-	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns
+	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns \
+	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vdi.icns=>Resources/virtualbox-vdi.icns \
+	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vmdk.icns=>Resources/virtualbox-vmdk.icns \
+	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vhd.icns=>Resources/virtualbox-vhd.icns \
+	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-hdd.icns=>Resources/virtualbox-hdd.icns
 
 $$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
