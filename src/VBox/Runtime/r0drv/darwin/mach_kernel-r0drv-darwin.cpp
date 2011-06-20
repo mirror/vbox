@@ -210,9 +210,10 @@ static uintptr_t rtR0DarwinMachKernelLookup(PRTR0DARWINKERNEL pKernel, const cha
     {
         if (pSym->n_type & MACHO_N_STAB)
             continue;
-        const char *pszSym = &pKernel->pachStrTab[(uint32_t)pSym->n_un.n_strx];
-        if (   *pszSym == '_'
-            && strcmp(pszSym + 1, pszSymbol) == 0)
+
+        const char *pszTabName= &pKernel->pachStrTab[(uint32_t)pSym->n_un.n_strx];
+        if (   *pszTabName == '_'
+            && strcmp(pszTabName + 1, pszSymbol) == 0)
             return pSym->n_value;
     }
 #else
@@ -223,6 +224,9 @@ static uintptr_t rtR0DarwinMachKernelLookup(PRTR0DARWINKERNEL pKernel, const cha
 }
 
 
+extern "C" void OSRuntimeFinalizeCPP(void);
+extern "C" void OSRuntimeInitializeCPP(void);
+
 static int rtR0DarwinMachKernelCheckStandardSymbols(PRTR0DARWINKERNEL pKernel)
 {
     static struct
@@ -231,12 +235,12 @@ static int rtR0DarwinMachKernelCheckStandardSymbols(PRTR0DARWINKERNEL pKernel)
         uintptr_t   uAddr;
     } const s_aStandardCandles[] =
     {
-#if 0/// @todo def IN_RING0
+#ifdef IN_RING0
 # define KNOWN_ENTRY(a_Sym)  { #a_Sym, (uintptr_t)&a_Sym }
 #else
 # define KNOWN_ENTRY(a_Sym)  { #a_Sym, 0 }
 #endif
-        KNOWN_ENTRY(IOMAlloc),
+        KNOWN_ENTRY(IOMalloc),
         KNOWN_ENTRY(IOFree),
         KNOWN_ENTRY(OSRuntimeFinalizeCPP),
         KNOWN_ENTRY(OSRuntimeInitializeCPP)
@@ -321,7 +325,7 @@ static int rtR0DarwinMachKernelLoadSymTab(PRTR0DARWINKERNEL pKernel)
                         RETURN_VERR_BAD_EXE_FORMAT;
                     if (pSym->n_sect > pKernel->cSections)
                         RETURN_VERR_BAD_EXE_FORMAT;
-                    if (pSym->n_desc != 0)
+                    if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY))
                         RETURN_VERR_BAD_EXE_FORMAT;
                     if (pSym->n_value < pKernel->apSections[pSym->n_sect - 1]->addr)
                         RETURN_VERR_BAD_EXE_FORMAT;
@@ -331,9 +335,13 @@ static int rtR0DarwinMachKernelLoadSymTab(PRTR0DARWINKERNEL pKernel)
                     break;
 
                 case MACHO_N_ABS:
+#if 0 /* Spec say MACHO_NO_SECT, __mh_execute_header has 1 with 10.7/amd64 */
                     if (pSym->n_sect != MACHO_NO_SECT)
+#else
+                    if (pSym->n_sect > pKernel->cSections) 
+#endif
                         RETURN_VERR_BAD_EXE_FORMAT;
-                    if (pSym->n_desc != 0)
+                    if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY))
                         RETURN_VERR_BAD_EXE_FORMAT;
                     break;
 
