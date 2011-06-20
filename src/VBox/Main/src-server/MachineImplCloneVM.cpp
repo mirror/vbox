@@ -373,14 +373,28 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                     mt.uSize   = lSize;
                     mtc.chain.append(mt);
 
-                    /* Calculate progress data */
-                    ++uCount;
-                    uTotalWeight += lSize;
-
                     /* Query next parent. */
                     rc = pSrcMedium->COMGETTER(Parent)(pSrcMedium.asOutParam());
                     if (FAILED(rc)) throw rc;
                 };
+                /* Currently the creation of diff images involves reading at least
+                 * the biggest parent in the previous chain. So even if the new
+                 * diff image is small in size, it could need some time to create
+                 * it. Adding the biggest size in the chain should balance this a
+                 * little bit more. */
+                int64_t uMaxSize = 0;
+                for (size_t e = mtc.chain.size(); e > 0; --e)
+                {
+                    MEDIUMTASK &mt = mtc.chain.at(e - 1);
+                    /* Save the max size for better weighting of diff image
+                     * creation. */
+                    uMaxSize = RT_MAX(uMaxSize, mt.uSize);
+                    mt.uSize = (mt.uSize + uMaxSize) / 2;
+
+                    /* Calculate progress data */
+                    ++uCount;
+                    uTotalWeight += mt.uSize;
+                }
                 d->llMedias.append(mtc);
             }
             Bstr bstrSrcSaveStatePath;
