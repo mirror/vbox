@@ -31,6 +31,7 @@
 #define LOG_GROUP RTLOGGROUP_PATH
 #include "internal/iprt.h"
 #include "internal/path.h"
+#include "internal/string.h"
 #include "internal/thread.h"
 
 #include <iprt/env.h>
