@@ -1012,17 +1012,17 @@ public:
     /**
      * Returns a copy of this SafeArray as RTCList<T>.
      */
-	RTCList<T> toList()
-	{
-		RTCList<T> list(size());
-		for (size_t i = 0; i < size(); ++i)
+    RTCList<T> toList()
+    {
+        RTCList<T> list(size());
+        for (size_t i = 0; i < size(); ++i)
 #ifdef VBOX_WITH_XPCOM
-			list.append(m.arr[i]);
+            list.append(m.arr[i]);
 #else
-			list.append(m.raw[i]);
+            list.append(m.raw[i]);
 #endif
-		return list;
-	}
+        return list;
+    }
 
     inline void initFrom(const com::SafeArray<T> & aRef);
     inline void initFrom(const T* aPtr, size_t aSize);
