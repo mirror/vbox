@@ -184,5 +184,5 @@ typedef struct
 #define ELF32_R_INFO(sym, type)     (((sym) << 8) + (unsigned char)(type))
 
 
-#endif /* ___internal_ldrELF32_h */
+#endif /* !___internal_ldrELF32_h */
 
