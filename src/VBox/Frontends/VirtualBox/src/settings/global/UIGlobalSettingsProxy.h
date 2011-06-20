@@ -61,6 +61,9 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
+    /* Validation stuff: */
+    void setValidator(QIWidgetValidator *pValidator);
+
     /* Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
 
@@ -73,6 +76,9 @@ private slots:
     void sltAuthToggled();
 
 private:
+
+    /* Validator: */
+    QIWidgetValidator *m_pValidator;
 
     /* Cache: */
     UISettingsCacheGlobalProxy m_cache;

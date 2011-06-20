@@ -21,21 +21,23 @@
 #include <QRegExpValidator>
 
 /* Local includes */
+#include "QIWidgetValidator.h"
 #include "UIGlobalSettingsProxy.h"
 #include "VBoxUtils.h"
 
 /* General page constructor: */
 UIGlobalSettingsProxy::UIGlobalSettingsProxy()
+    : m_pValidator(0)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsProxy::setupUi(this);
 
     /* Setup widgets: */
     m_pPortEditor->setFixedWidthByText(QString().fill('0', 6));
-    m_pHostEditor->setValidator(new QRegExpValidator(QRegExp("\\S*"), m_pPortEditor));
-    m_pPortEditor->setValidator(new QRegExpValidator(QRegExp("\\d*"), m_pPortEditor));
-    m_pLoginEditor->setValidator(new QRegExpValidator(QRegExp("\\S*"), m_pPortEditor));
-    m_pPasswordEditor->setValidator(new QRegExpValidator(QRegExp("\\S*"), m_pPortEditor));
+    m_pHostEditor->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pHostEditor));
+    m_pPortEditor->setValidator(new QRegExpValidator(QRegExp("\\d+"), m_pPortEditor));
+    m_pLoginEditor->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pLoginEditor));
+    m_pPasswordEditor->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pPasswordEditor));
 
     /* Setup connections: */
     connect(m_pProxyCheckbox, SIGNAL(stateChanged(int)), this, SLOT(sltProxyToggled()));
@@ -112,6 +114,12 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
+/* Validation stuff: */
+void UIGlobalSettingsProxy::setValidator(QIWidgetValidator *pValidator)
+{
+    m_pValidator = pValidator;
+}
+
 /* Navigation stuff: */
 void UIGlobalSettingsProxy::setOrderAfter(QWidget *pWidget)
 {
@@ -132,19 +140,27 @@ void UIGlobalSettingsProxy::retranslateUi()
 
 void UIGlobalSettingsProxy::sltProxyToggled()
 {
+    /* Update widgets availability: */
     m_pHostLabel->setEnabled(m_pProxyCheckbox->isChecked());
     m_pHostEditor->setEnabled(m_pProxyCheckbox->isChecked());
     m_pPortLabel->setEnabled(m_pProxyCheckbox->isChecked());
     m_pPortEditor->setEnabled(m_pProxyCheckbox->isChecked());
     m_pAuthCheckbox->setEnabled(m_pProxyCheckbox->isChecked());
+
+    /* Update auth widgets also: */
     sltAuthToggled();
 }
 
 void UIGlobalSettingsProxy::sltAuthToggled()
 {
+    /* Update widgets availability: */
     m_pLoginLabel->setEnabled(m_pProxyCheckbox->isChecked() && m_pAuthCheckbox->isChecked());
     m_pLoginEditor->setEnabled(m_pProxyCheckbox->isChecked() && m_pAuthCheckbox->isChecked());
     m_pPasswordLabel->setEnabled(m_pProxyCheckbox->isChecked() && m_pAuthCheckbox->isChecked());
     m_pPasswordEditor->setEnabled(m_pProxyCheckbox->isChecked() && m_pAuthCheckbox->isChecked());
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
