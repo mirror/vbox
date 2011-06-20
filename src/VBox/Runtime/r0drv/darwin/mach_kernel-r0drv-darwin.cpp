@@ -30,6 +30,11 @@
 *******************************************************************************/
 #ifdef IN_RING0
 # include "the-darwin-kernel.h"
+# include <sys/kauth.h>
+RT_C_DECLS_BEGIN /* Buggy 10.4 headers, fixed in 10.5. */
+# include <sys/kpi_mbuf.h>
+# include <net/kpi_interfacefilter.h>
+RT_C_DECLS_END
 #endif
 #include "../../include/internal/iprt.h"
 
@@ -224,8 +229,12 @@ static uintptr_t rtR0DarwinMachKernelLookup(PRTR0DARWINKERNEL pKernel, const cha
 }
 
 
-extern "C" void OSRuntimeFinalizeCPP(void);
-extern "C" void OSRuntimeInitializeCPP(void);
+extern "C" void ev_try_lock(void);
+extern "C" void OSMalloc(void);
+extern "C" void OSlibkernInit(void);
+extern "C" int osrelease;
+extern "C" int ostype;
+extern "C" void kdp_set_interface(void);
 
 static int rtR0DarwinMachKernelCheckStandardSymbols(PRTR0DARWINKERNEL pKernel)
 {
@@ -240,10 +249,105 @@ static int rtR0DarwinMachKernelCheckStandardSymbols(PRTR0DARWINKERNEL pKernel)
 #else
 # define KNOWN_ENTRY(a_Sym)  { #a_Sym, 0 }
 #endif
+        /* IOKit: */
         KNOWN_ENTRY(IOMalloc),
         KNOWN_ENTRY(IOFree),
-        KNOWN_ENTRY(OSRuntimeFinalizeCPP),
-        KNOWN_ENTRY(OSRuntimeInitializeCPP)
+        KNOWN_ENTRY(IOSleep),
+        KNOWN_ENTRY(IORWLockAlloc),
+        KNOWN_ENTRY(IORecursiveLockLock),
+        KNOWN_ENTRY(IOSimpleLockAlloc),
+        KNOWN_ENTRY(PE_cpu_halt),
+        KNOWN_ENTRY(gIOKitDebug),
+        KNOWN_ENTRY(gIOServicePlane),
+        KNOWN_ENTRY(ev_try_lock),
+
+        /* Libkern: */
+        KNOWN_ENTRY(OSAddAtomic),
+        KNOWN_ENTRY(OSBitAndAtomic),
+        KNOWN_ENTRY(OSBitOrAtomic),
+        KNOWN_ENTRY(OSBitXorAtomic),
+        KNOWN_ENTRY(OSCompareAndSwap),
+        KNOWN_ENTRY(OSMalloc),
+        KNOWN_ENTRY(OSlibkernInit),
+        KNOWN_ENTRY(bcmp),
+        KNOWN_ENTRY(copyout),
+        KNOWN_ENTRY(copyin),
+        KNOWN_ENTRY(kprintf),
+        KNOWN_ENTRY(printf),
+        KNOWN_ENTRY(lck_grp_alloc_init),
+        KNOWN_ENTRY(lck_mtx_alloc_init),
+        KNOWN_ENTRY(lck_rw_alloc_init),
+        KNOWN_ENTRY(lck_spin_alloc_init),
+        KNOWN_ENTRY(osrelease),
+        KNOWN_ENTRY(ostype),
+        KNOWN_ENTRY(panic),
+        KNOWN_ENTRY(strprefix),
+        KNOWN_ENTRY(sysctlbyname),
+        KNOWN_ENTRY(vsscanf),
+        KNOWN_ENTRY(page_mask),
+
+        /* Mach: */
+        KNOWN_ENTRY(absolutetime_to_nanoseconds),
+        KNOWN_ENTRY(assert_wait),
+        KNOWN_ENTRY(clock_delay_until),
+        KNOWN_ENTRY(clock_get_uptime),
+        KNOWN_ENTRY(current_task),
+        KNOWN_ENTRY(current_thread),
+        KNOWN_ENTRY(kernel_task),
+        KNOWN_ENTRY(lck_mtx_sleep),
+        KNOWN_ENTRY(lck_rw_sleep),
+        KNOWN_ENTRY(lck_spin_sleep),
+        KNOWN_ENTRY(mach_absolute_time),
+        KNOWN_ENTRY(semaphore_create),
+        KNOWN_ENTRY(task_reference),
+        KNOWN_ENTRY(thread_block),
+        KNOWN_ENTRY(thread_reference),
+        KNOWN_ENTRY(thread_terminate),
+        KNOWN_ENTRY(thread_wakeup_prim),
+
+        /* BSDKernel: */
+        //KNOWN_ENTRY(buf_size),
+        KNOWN_ENTRY(copystr),
+        //KNOWN_ENTRY(current_proc),
+        KNOWN_ENTRY(ifnet_hdrlen),
+        KNOWN_ENTRY(ifnet_set_promiscuous),
+        KNOWN_ENTRY(kauth_getuid),
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
+        KNOWN_ENTRY(kauth_cred_unref),
+#else 
+        KNOWN_ENTRY(kauth_cred_rele),
+#endif
+        //KNOWN_ENTRY(mbuf_data),
+        KNOWN_ENTRY(msleep),
+        KNOWN_ENTRY(nanotime),
+        //KNOWN_ENTRY(nop_close),
+        KNOWN_ENTRY(proc_pid),
+        //KNOWN_ENTRY(sock_accept),
+        //KNOWN_ENTRY(sockopt_name),
+        //KNOWN_ENTRY(spec_write),
+        //KNOWN_ENTRY(suword),
+        //KNOWN_ENTRY(sysctl_int),
+        KNOWN_ENTRY(uio_rw),
+        //KNOWN_ENTRY(vfs_flags),
+        //KNOWN_ENTRY(vfs_name),
+        //KNOWN_ENTRY(vfs_statfs),
+        //KNOWN_ENTRY(vn_rdwr),
+        //KNOWN_ENTRY(vnode_get),
+        //KNOWN_ENTRY(vnode_open),
+        //KNOWN_ENTRY(vnode_ref),
+        //KNOWN_ENTRY(vnode_rele),
+        //KNOWN_ENTRY(vnop_close_desc),
+        KNOWN_ENTRY(wakeup),
+        KNOWN_ENTRY(wakeup_one),
+
+        /* Unsupported: */
+        KNOWN_ENTRY(kdp_set_interface),
+        KNOWN_ENTRY(pmap_find_phys),
+        KNOWN_ENTRY(vm_map),
+        KNOWN_ENTRY(vm_protect),
+        KNOWN_ENTRY(vm_region),
+        KNOWN_ENTRY(vm_map_wire),
+        KNOWN_ENTRY(PE_kputc),
     };
 
     for (unsigned i = 0; i < RT_ELEMENTS(s_aStandardCandles); i++)
