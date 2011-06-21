@@ -39,6 +39,15 @@ RT_C_DECLS_END
 #endif
 #include "../../include/internal/iprt.h"
 
+#if 0//def IN_RING0  /* till RTFILE is changed in types.h */
+# include <iprt/types.h>
+typedef struct RTFILENEWINT *RTFILENEW;
+typedef RTFILENEW *PRTFILENEW;
+# undef NIL_RTFILE
+# define RTFILE         RTFILENEW
+# define PRTFILE        PRTFILENEW
+# define NIL_RTFILE     ((RTFILENEW)-1)
+#endif
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -161,6 +170,79 @@ typedef RTR0DARWINKERNEL *PRTR0DARWINKERNEL;
 *******************************************************************************/
 #ifdef DEBUG
 static bool g_fBreakpointOnError = true;
+#endif
+
+
+#if 0//def IN_RING0 
+
+RTDECL(int) RTFileOpen(PRTFILE phFile, const char *pszFilename, uint32_t fOpen)
+{
+    vfs_context_t   hVfsCtx  = vfs_context_current();
+    int             fCMode   = (fOpen & RTFILE_O_CREATE_MODE_MASK)
+                             ? (fOpen & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT
+                             : RT_FILE_PERMISSION;
+    int             fVnFlags = 0; /* VNODE_LOOKUP_XXX */
+
+    int fOpenMode = 0;
+    if (fOpen & RTFILE_O_NON_BLOCK)
+        fOpenMode |= O_NONBLOCK;
+    if (fOpen & RTFILE_O_WRITE_THROUGH)
+        fOpenMode |= O_SYNC;
+
+    /* create/truncate file */
+    switch (fOpen & RTFILE_O_ACTION_MASK)
+    {
+        case RTFILE_O_OPEN:             break;
+        case RTFILE_O_OPEN_CREATE:      fOpenMode |= O_CREAT; break;
+        case RTFILE_O_CREATE:           fOpenMode |= O_CREAT | O_EXCL; break;
+        case RTFILE_O_CREATE_REPLACE:   fOpenMode |= O_CREAT | O_TRUNC; break; /** @todo replacing needs fixing, this is *not* a 1:1 mapping! */
+    }
+    if (fOpen & RTFILE_O_TRUNCATE)
+        fOpenMode |= O_TRUNC;
+
+    switch (fOpen & RTFILE_O_ACCESS_MASK)
+    {
+        case RTFILE_O_READ:
+            fOpenMode |= FREAD
+            break;
+        case RTFILE_O_WRITE:
+            fOpenMode |= fOpen & RTFILE_O_APPEND ? O_APPEND | FWRITE : FWRITE;
+            break;
+        case RTFILE_O_READWRITE:
+            fOpenMode |= fOpen & RTFILE_O_APPEND ? O_APPEND | FWRITE | FREAD : FWRITE | FREAD;
+            break;
+        default:
+            AssertMsgFailed(("RTFileOpen received an invalid RW value, fOpen=%#x\n", fOpen));
+            return VERR_INVALID_PARAMETER;
+    }    *phFile = (RTFILENEW)hVnode;
+
+
+    vnode_t hVnode = NULL;
+    errno_t rc = vnode_open(pszFilename, fOpenMode, fCMode, fVnFlags, &hVnode, hVfsCtx)
+    if (rc != 0)
+        return RTErrConvertFromErrno(rc);
+
+    vnode_put(hVnode);
+    *phFile = (RTFILENEW)hVnode;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFileClose(RTFILE hFile)
+{
+    if (hFile == NIL_RTFILE)
+        return VINF_SUCCESS;
+    vnode_t hVnode = (vnode_t)hFile;
+    errno_t rc = vnode_close(hVnode, vfs_context_current());
+    return RTErrConvertFromErrno(rc);
+}
+
+
+RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 #endif
 
 
