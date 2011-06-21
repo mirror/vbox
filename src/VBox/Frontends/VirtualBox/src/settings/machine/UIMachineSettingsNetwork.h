@@ -43,6 +43,7 @@ struct UIDataSettingsMachineNetworkAdapter
         , m_strInternalNetworkName(QString())
         , m_strHostInterfaceName(QString())
         , m_strGenericDriver(QString())
+        , m_strGenericProperties(QString())
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
         , m_redirects(UIPortForwardingDataList()) {}
@@ -58,6 +59,7 @@ struct UIDataSettingsMachineNetworkAdapter
                (m_strInternalNetworkName == other.m_strInternalNetworkName) &&
                (m_strHostInterfaceName == other.m_strHostInterfaceName) &&
                (m_strGenericDriver == other.m_strGenericDriver) &&
+               (m_strGenericProperties == other.m_strGenericProperties) &&
                (m_strMACAddress == other.m_strMACAddress) &&
                (m_fCableConnected == other.m_fCableConnected) &&
                (m_redirects == other.m_redirects);
@@ -75,6 +77,7 @@ struct UIDataSettingsMachineNetworkAdapter
     QString m_strInternalNetworkName;
     QString m_strHostInterfaceName;
     QString m_strGenericDriver;
+    QString m_strGenericProperties;
     QString m_strMACAddress;
     bool m_fCableConnected;
     UIPortForwardingDataList m_redirects;
@@ -193,6 +196,9 @@ private slots:
 private:
 
     void polishPage();
+
+    static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
+    static void updateGenericProperties(CNetworkAdapter &adapter, const QString &strPropText);
 
     QIWidgetValidator *m_pValidator;
     QITabWidget *m_pTwAdapters;
