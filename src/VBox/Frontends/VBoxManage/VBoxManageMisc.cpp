@@ -149,28 +149,27 @@ int handleUnregisterVM(HandlerArg *a)
         return errorSyntax(USAGE_UNREGISTERVM, "VM name required");
 
     ComPtr<IMachine> machine;
-    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName).raw(),
-                                           machine.asOutParam()));
-    if (machine)
+    CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(VMName).raw(),
+                                               machine.asOutParam()),
+                    RTEXITCODE_FAILURE);
+    SafeIfaceArray<IMedium> aMedia;
+    CHECK_ERROR_RET(machine, Unregister(fDelete ? (CleanupMode_T)CleanupMode_DetachAllReturnHardDisksOnly : (CleanupMode_T)CleanupMode_DetachAllReturnNone,
+                                        ComSafeArrayAsOutParam(aMedia)),
+                    RTEXITCODE_FAILURE);
+    if (fDelete)
     {
-        SafeIfaceArray<IMedium> aMedia;
-        CleanupMode_T cleanupMode = CleanupMode_DetachAllReturnNone;
-        if (fDelete)
-            cleanupMode = CleanupMode_DetachAllReturnHardDisksOnly;
-        CHECK_ERROR(machine, Unregister(cleanupMode,
-                                        ComSafeArrayAsOutParam(aMedia)));
-        if (SUCCEEDED(rc))
+        ComPtr<IProgress> pProgress;
+        CHECK_ERROR_RET(machine, Delete(ComSafeArrayAsInParam(aMedia), pProgress.asOutParam()),
+                        RTEXITCODE_FAILURE);
+        rc = showProgress(pProgress);
+        if (FAILED(rc))
         {
-            if (fDelete)
-            {
-                ComPtr<IProgress> pProgress;
-                CHECK_ERROR(machine, Delete(ComSafeArrayAsInParam(aMedia), pProgress.asOutParam()));
-                if (SUCCEEDED(rc))
-                    CHECK_ERROR(pProgress, WaitForCompletion(-1));
-            }
+            com::ProgressErrorInfo ErrInfo(pProgress);
+            com::GluePrintErrorInfo(ErrInfo);
+            return RTEXITCODE_FAILURE;
         }
     }
-    return SUCCEEDED(rc) ? 0 : 1;
+    return RTEXITCODE_SUCCESS;
 }
 
 int handleCreateVM(HandlerArg *a)
