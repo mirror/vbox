@@ -563,7 +563,7 @@ PDMBOTHCBDECL(uint8_t) apicGetTPR(PPDMDEVINS pDevIns, VMCPUID idCpu)
  *                              PDMCritSectEnter for a description.
  * @param   fMsr                Set if called via MSR, clear if MMIO.
  */
-static int acpiWriteRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iReg, uint64_t u64Value,
+static int apicWriteRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iReg, uint64_t u64Value,
                              int rcBusy, bool fMsr)
 {
     Assert(!PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
@@ -588,7 +588,7 @@ static int acpiWriteRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iR
             break;
 
         case 0x09: case 0x0a:
-            Log(("acpiWriteRegister: write to read-only register %d ignored\n", iReg));
+            Log(("apicWriteRegister: write to read-only register %d ignored\n", iReg));
             break;
 
         case 0x0b: /* EOI */
@@ -620,7 +620,7 @@ static int acpiWriteRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iR
         case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
         case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
         case 0x28:
-            Log(("acpiWriteRegister: write to read-only register %d ignored\n", iReg));
+            Log(("apicWriteRegister: write to read-only register %d ignored\n", iReg));
             break;
 
         case 0x30:
@@ -663,7 +663,7 @@ static int acpiWriteRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iR
             break;
 
         case 0x39:
-            Log(("acpiWriteRegister: write to read-only register %d ignored\n", iReg));
+            Log(("apicWriteRegister: write to read-only register %d ignored\n", iReg));
             break;
 
         case 0x3e:
@@ -712,7 +712,7 @@ PDMBOTHCBDECL(int) apicWriteMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32R
 
     APICState      *pApic = getLapicById(pDev, idCpu);
     uint32_t        iReg = (u32Reg - MSR_IA32_APIC_START) & 0xff;
-    return acpiWriteRegister(pDev, pApic, iReg, u64Value, VINF_SUCCESS /*rcBusy*/, true /*fMsr*/);
+    return apicWriteRegister(pDev, pApic, iReg, u64Value, VINF_SUCCESS /*rcBusy*/, true /*fMsr*/);
 }
 
 
@@ -1727,7 +1727,7 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 
         case 4:
             /* It does its own locking. */
-            return acpiWriteRegister(pDev, s, (GCPhysAddr >> 4) & 0xff, *(uint32_t const *)pv,
+            return apicWriteRegister(pDev, s, (GCPhysAddr >> 4) & 0xff, *(uint32_t const *)pv,
                                      VINF_IOM_HC_MMIO_WRITE, false /*fMsr*/);
 
         default:
