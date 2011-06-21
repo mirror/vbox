@@ -34,7 +34,7 @@
 typedef struct
 {
     ComPtr<IMedium>         pMedium;
-    uint64_t                uSize;
+    ULONG                   uWeight;
 }MEDIUMTASK;
 
 typedef struct
@@ -47,7 +47,7 @@ typedef struct
 {
     Guid                    snapshotUuid;
     Utf8Str                 strSaveStateFile;
-    uint64_t                cbSize;
+    ULONG                   uWeight;
 }SAVESTATETASK;
 
 // The private class
@@ -332,7 +332,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
             SafeIfaceArray<IMediumAttachment> sfaAttachments;
             rc = machine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
             if (FAILED(rc)) throw rc;
-            /* Add all attachments (and there parents) of the different
+            /* Add all attachments (and their parents) of the different
              * machines to a worker list. */
             for (size_t a = 0; a < sfaAttachments.size(); ++a)
             {
@@ -370,7 +370,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                     /* Save the current medium, for later cloning. */
                     MEDIUMTASK mt;
                     mt.pMedium = pSrcMedium;
-                    mt.uSize   = lSize;
+                    mt.uWeight = (lSize + _1M - 1) / _1M;
                     mtc.chain.append(mt);
 
                     /* Query next parent. */
@@ -381,19 +381,21 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                  * the biggest parent in the previous chain. So even if the new
                  * diff image is small in size, it could need some time to create
                  * it. Adding the biggest size in the chain should balance this a
-                 * little bit more. */
-                int64_t uMaxSize = 0;
+                 * little bit more, i.e. the weight is the sum of the data which
+                 * needs to be read and written. */
+                uint64_t uMaxSize = 0;
                 for (size_t e = mtc.chain.size(); e > 0; --e)
                 {
                     MEDIUMTASK &mt = mtc.chain.at(e - 1);
-                    /* Save the max size for better weighting of diff image
-                     * creation. */
-                    uMaxSize = RT_MAX(uMaxSize, mt.uSize);
-                    mt.uSize = (mt.uSize + uMaxSize) / 2;
+                    mt.uWeight += uMaxSize;
 
                     /* Calculate progress data */
                     ++uCount;
-                    uTotalWeight += mt.uSize;
+                    uTotalWeight += mt.uWeight;
+
+                    /* Save the max size for better weighting of diff image
+                     * creation. */
+                    uMaxSize = RT_MAX(uMaxSize, mt.uWeight);
                 }
                 d->llMedias.append(mtc);
             }
@@ -405,12 +407,16 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                 SAVESTATETASK sst;
                 sst.snapshotUuid     = machine->getSnapshotId();
                 sst.strSaveStateFile = bstrSrcSaveStatePath;
-                int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &sst.cbSize);
+                uint64_t cbSize;
+                int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &cbSize);
                 if (RT_FAILURE(vrc))
                     throw p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not query file size of '%s' (%Rrc)"), sst.strSaveStateFile.c_str(), vrc);
+                /* same rule as above: count both the data which needs to
+                 * be read and written */
+                sst.uWeight = 2 * (cbSize + _1M - 1) / _1M;
                 d->llSaveStateFiles.append(sst);
                 ++uCount;
-                uTotalWeight += sst.cbSize;
+                uTotalWeight += sst.uWeight;
             }
         }
 
@@ -554,7 +560,7 @@ HRESULT MachineCloneVM::run()
                 rc = pMedium->COMGETTER(Name)(bstrSrcName.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Cloning Disk '%ls' ..."), bstrSrcName.raw()).raw(), mt.uSize);
+                rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Cloning Disk '%ls' ..."), bstrSrcName.raw()).raw(), mt.uWeight);
                 if (FAILED(rc)) throw rc;
 
                 Bstr bstrSrcId;
@@ -708,7 +714,7 @@ HRESULT MachineCloneVM::run()
             const Utf8Str &strTrgSaveState = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER, RTPathFilename(sst.strSaveStateFile.c_str()));
 
             /* Move to next sub-operation. */
-            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy save state file '%s' ..."), RTPathFilename(sst.strSaveStateFile.c_str())).raw(), sst.cbSize);
+            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy save state file '%s' ..."), RTPathFilename(sst.strSaveStateFile.c_str())).raw(), sst.uWeight);
             if (FAILED(rc)) throw rc;
             /* Copy the file only if it was not copied already. */
             if (!newFiles.contains(strTrgSaveState.c_str()))
