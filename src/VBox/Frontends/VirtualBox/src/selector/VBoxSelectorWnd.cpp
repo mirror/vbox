@@ -767,7 +767,7 @@ void VBoxSelectorWnd::vmDelete(const QString &aUuid /* = QString::null */)
                 {
                     vboxProblem().showModalProgressDialog(progress, item->name(), ":/progress_delete_90px.png", 0, true);
                     if (progress.GetResultCode() != 0)
-                        vboxProblem().cannotDeleteMachine(machine);
+                        vboxProblem().cannotDeleteMachine(machine, progress);
                 }
             }
             if (!machine.isOk())
