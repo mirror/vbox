@@ -245,7 +245,7 @@
       <item row="6" column="1" colspan="3">
        <widget class="QTextEdit" name="m_pGenericPropertiesTextEdit">
         <property name="whatsThis">
-         <string>Allows to specify the generic properties passed to the generic driver.&lt;br&gt;Please use &lt;b&gt;shift-enter&lt;/b&gt; to insert a new line.</string>
+         <string>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</string>
         </property>
        </widget>
       </item>
