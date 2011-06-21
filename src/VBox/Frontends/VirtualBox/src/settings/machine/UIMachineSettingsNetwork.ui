@@ -232,7 +232,24 @@
         </property>
        </widget>
       </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="m_pGenericPropertiesLabel">
+        <property name="text">
+         <string>Generic Properties:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignTop</set>
+        </property>
+       </widget>
+      </item>
       <item row="6" column="1" colspan="3">
+       <widget class="QTextEdit" name="m_pGenericPropertiesTextEdit">
+        <property name="whatsThis">
+         <string>Allows to specify the generic properties passed to the generic driver.&lt;br&gt;Please use &lt;b&gt;shift-enter&lt;/b&gt; to insert a new line.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1" colspan="3">
        <widget class="QCheckBox" name="m_pCableConnectedCheckBox">
         <property name="whatsThis">
          <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
@@ -242,7 +259,7 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="1">
+      <item row="8" column="1">
        <widget class="QPushButton" name="m_pPortForwardingButton">
         <property name="whatsThis">
          <string>Opens dialog to manage port forwarding rules.</string>
@@ -252,7 +269,7 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="0" colspan="4">
+      <item row="9" column="0" colspan="4">
        <spacer name="m_pVerticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>

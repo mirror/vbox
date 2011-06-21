@@ -79,9 +79,11 @@ void UIMachineSettingsNetwork::polishTab()
     m_pAdapterTypeCombo->setEnabled(m_pParent->isMachineOffline());
     m_pPromiscuousModeLabel->setEnabled(m_pParent->isMachineInValidMode() &&
                                         attachmentType() != KNetworkAttachmentType_Null &&
+                                        attachmentType() != KNetworkAttachmentType_Generic &&
                                         attachmentType() != KNetworkAttachmentType_NAT);
     m_pPromiscuousModeCombo->setEnabled(m_pParent->isMachineInValidMode() &&
                                         attachmentType() != KNetworkAttachmentType_Null &&
+                                        attachmentType() != KNetworkAttachmentType_Generic &&
                                         attachmentType() != KNetworkAttachmentType_NAT);
     m_pMACLabel->setEnabled(m_pParent->isMachineOffline());
     m_pMACEditor->setEnabled(m_pParent->isMachineOffline());
@@ -140,6 +142,7 @@ void UIMachineSettingsNetwork::fetchAdapterCache(const UICacheSettingsMachineNet
 
     /* Other options: */
     m_pMACEditor->setText(adapterData.m_strMACAddress);
+    m_pGenericPropertiesTextEdit->setText(adapterData.m_strGenericProperties);
     m_pCableConnectedCheckBox->setChecked(adapterData.m_fCableConnected);
 
     /* Load port forwarding rules: */
@@ -173,6 +176,7 @@ void UIMachineSettingsNetwork::uploadAdapterCache(UICacheSettingsMachineNetworkA
             break;
         case KNetworkAttachmentType_Generic:
             adapterData.m_strGenericDriver = alternativeName();
+            adapterData.m_strGenericProperties = m_pGenericPropertiesTextEdit->toPlainText();
             break;
         default:
             break;
@@ -334,8 +338,10 @@ void UIMachineSettingsNetwork::sltUpdateAttachmentAlternative()
     m_pAdapterNameCombo->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
                                     attachmentType() != KNetworkAttachmentType_NAT);
     m_pPromiscuousModeLabel->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
+                                        attachmentType() != KNetworkAttachmentType_Generic &&
                                         attachmentType() != KNetworkAttachmentType_NAT);
     m_pPromiscuousModeCombo->setEnabled(attachmentType() != KNetworkAttachmentType_Null &&
+                                        attachmentType() != KNetworkAttachmentType_Generic &&
                                         attachmentType() != KNetworkAttachmentType_NAT);
 
     /* Refresh list: */
@@ -415,6 +421,12 @@ void UIMachineSettingsNetwork::sltUpdateAttachmentAlternative()
     /* Remember selected item: */
     sltUpdateAlternativeName();
 
+    /* Update visibility of "generic" properties editor: */
+    m_pGenericPropertiesLabel->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
+                                          m_pAdvancedArrow->isExpanded());
+    m_pGenericPropertiesTextEdit->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
+                                             m_pAdvancedArrow->isExpanded());
+
     /* Update Forwarding rules button availability: */
     m_pPortForwardingButton->setEnabled(attachmentType() == KNetworkAttachmentType_NAT);
 
@@ -488,6 +500,10 @@ void UIMachineSettingsNetwork::sltToggleAdvanced()
     m_pAdapterTypeCombo->setVisible(m_pAdvancedArrow->isExpanded());
     m_pPromiscuousModeLabel->setVisible(m_pAdvancedArrow->isExpanded());
     m_pPromiscuousModeCombo->setVisible(m_pAdvancedArrow->isExpanded());
+    m_pGenericPropertiesLabel->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
+                                          m_pAdvancedArrow->isExpanded());
+    m_pGenericPropertiesTextEdit->setVisible(attachmentType() == KNetworkAttachmentType_Generic &&
+                                             m_pAdvancedArrow->isExpanded());
     m_pMACLabel->setVisible(m_pAdvancedArrow->isExpanded());
     m_pMACEditor->setVisible(m_pAdvancedArrow->isExpanded());
     m_pMACButton->setVisible(m_pAdvancedArrow->isExpanded());
@@ -773,6 +789,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             adapterData.m_adapterType = adapter.GetAdapterType();
             adapterData.m_promiscuousMode = adapter.GetPromiscModePolicy();
             adapterData.m_strMACAddress = adapter.GetMACAddress();
+            adapterData.m_strGenericProperties = summarizeGenericProperties(adapter);
             adapterData.m_fCableConnected = adapter.GetCableConnected();
 
             /* Gather redirect options: */
@@ -897,6 +914,7 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
                                 break;
                             case KNetworkAttachmentType_Generic:
                                 adapter.SetGenericDriver(adapterData.m_strGenericDriver);
+                                updateGenericProperties(adapter, adapterData.m_strGenericProperties);
                                 break;
                             default:
                                 break;
@@ -983,6 +1001,59 @@ void UIMachineSettingsNetworkPage::polishPage()
                                      (isMachineInValidMode() && m_cache.child(iSlot).base().m_fAdapterEnabled));
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(iSlot));
         pTab->polishTab();
+    }
+}
+
+/* static */
+QString UIMachineSettingsNetworkPage::summarizeGenericProperties(const CNetworkAdapter &adapter)
+{
+    /* Prepare formatted string: */
+    QVector<QString> names;
+    QVector<QString> props;
+    props = adapter.GetProperties(QString(), names);
+    QString strResult;
+    /* Load generic properties: */
+    for (int i = 0; i < names.size(); ++i)
+    {
+        strResult += names[i] + "=" + props[i];
+        if (i < names.size() - 1)
+          strResult += "\n";
+    }
+    /* Return formatted string: */
+    return strResult;
+}
+
+/* static */
+void UIMachineSettingsNetworkPage::updateGenericProperties(CNetworkAdapter &adapter, const QString &strPropText)
+{
+    /* Parse new properties: */
+    QStringList newProps = strPropText.split("\n");
+    QHash<QString, QString> hash;
+
+    /* Save new properties: */
+    for (int i = 0; i < newProps.size(); ++i)
+    {
+        QString strLine = newProps[i];
+        int iSplitPos = strLine.indexOf("=");
+        if (iSplitPos)
+        {
+            QString strKey = strLine.left(iSplitPos);
+            QString strVal = strLine.mid(iSplitPos+1);
+            adapter.SetProperty(strKey, strVal);
+            hash[strKey] = strVal;
+        }
+    }
+
+    /* Removing deleted properties: */
+    QVector<QString> names;
+    QVector<QString> props;
+    props = adapter.GetProperties(QString(), names);
+    for (int i = 0; i < names.size(); ++i)
+    {
+        QString strName = names[i];
+        QString strValue = props[i];
+        if (strValue != hash[strName])
+            adapter.SetProperty(strName, hash[strName]);
     }
 }
 
