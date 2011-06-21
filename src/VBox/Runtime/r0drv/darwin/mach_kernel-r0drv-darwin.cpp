@@ -39,7 +39,7 @@ RT_C_DECLS_END
 #endif
 #include "../../include/internal/iprt.h"
 
-#if 0//def IN_RING0  /* till RTFILE is changed in types.h */
+#ifdef IN_RING0  /* till RTFILE is changed in types.h */
 # include <iprt/types.h>
 typedef struct RTFILENEWINT *RTFILENEW;
 typedef RTFILENEW *PRTFILENEW;
@@ -173,58 +173,99 @@ static bool g_fBreakpointOnError = true;
 #endif
 
 
-#if 0//def IN_RING0 
+#ifdef IN_RING0
+
+/** Default file permissions for newly created files. */
+#if defined(S_IRUSR) && defined(S_IWUSR)
+# define RT_FILE_PERMISSION  (S_IRUSR | S_IWUSR)
+#else
+# define RT_FILE_PERMISSION  (00600)
+#endif
+
+/**
+ * Darwin kernel file handle data.
+ */
+typedef struct RTFILENEWINT
+{
+    /** Magic value (RTFILE_MAGIC). */
+    uint32_t        u32Magic;
+    /** The open mode flags passed to the kernel API. */
+    int             fOpenMode;
+    /** The open flags passed to RTFileOpen. */
+    uint64_t        fOpen;
+    /** The VFS context in which the file was opened. */
+    vfs_context_t   hVfsCtx;
+    /** The vnode returned by vnode_open. */
+    vnode_t         hVnode;
+} RTFILENEWINT;
+/** Magic number for RTFILENEWINT::u32Magic (To Be Determined). */
+#define RTFILE_MAGIC                    UINT32_C(0x01020304)
+
 
 RTDECL(int) RTFileOpen(PRTFILE phFile, const char *pszFilename, uint32_t fOpen)
 {
-    vfs_context_t   hVfsCtx  = vfs_context_current();
-    int             fCMode   = (fOpen & RTFILE_O_CREATE_MODE_MASK)
-                             ? (fOpen & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT
-                             : RT_FILE_PERMISSION;
-    int             fVnFlags = 0; /* VNODE_LOOKUP_XXX */
+    RTFILENEWINT *pThis = (RTFILENEWINT *)RTMemAllocZ(sizeof(*pThis));
+    if (!pThis)
+        return VERR_NO_MEMORY;
 
-    int fOpenMode = 0;
-    if (fOpen & RTFILE_O_NON_BLOCK)
-        fOpenMode |= O_NONBLOCK;
-    if (fOpen & RTFILE_O_WRITE_THROUGH)
-        fOpenMode |= O_SYNC;
-
-    /* create/truncate file */
-    switch (fOpen & RTFILE_O_ACTION_MASK)
+    errno_t rc;
+    pThis->u32Magic = RTFILE_MAGIC;
+    pThis->fOpen    = fOpen;
+    pThis->hVfsCtx  = vfs_context_current();
+    if (pThis->hVfsCtx != NULL)
     {
-        case RTFILE_O_OPEN:             break;
-        case RTFILE_O_OPEN_CREATE:      fOpenMode |= O_CREAT; break;
-        case RTFILE_O_CREATE:           fOpenMode |= O_CREAT | O_EXCL; break;
-        case RTFILE_O_CREATE_REPLACE:   fOpenMode |= O_CREAT | O_TRUNC; break; /** @todo replacing needs fixing, this is *not* a 1:1 mapping! */
+        int             fCMode    = (fOpen & RTFILE_O_CREATE_MODE_MASK)
+                                  ? (fOpen & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT
+                                  : RT_FILE_PERMISSION;
+        int             fVnFlags  = 0; /* VNODE_LOOKUP_XXX */
+        int             fOpenMode = 0;
+        if (fOpen & RTFILE_O_NON_BLOCK)
+            fOpenMode |= O_NONBLOCK;
+        if (fOpen & RTFILE_O_WRITE_THROUGH)
+            fOpenMode |= O_SYNC;
+
+        /* create/truncate file */
+        switch (fOpen & RTFILE_O_ACTION_MASK)
+        {
+            case RTFILE_O_OPEN:             break;
+            case RTFILE_O_OPEN_CREATE:      fOpenMode |= O_CREAT; break;
+            case RTFILE_O_CREATE:           fOpenMode |= O_CREAT | O_EXCL; break;
+            case RTFILE_O_CREATE_REPLACE:   fOpenMode |= O_CREAT | O_TRUNC; break; /** @todo replacing needs fixing, this is *not* a 1:1 mapping! */
+        }
+        if (fOpen & RTFILE_O_TRUNCATE)
+            fOpenMode |= O_TRUNC;
+
+        switch (fOpen & RTFILE_O_ACCESS_MASK)
+        {
+            case RTFILE_O_READ:
+                fOpenMode |= FREAD;
+                break;
+            case RTFILE_O_WRITE:
+                fOpenMode |= fOpen & RTFILE_O_APPEND ? O_APPEND | FWRITE : FWRITE;
+                break;
+            case RTFILE_O_READWRITE:
+                fOpenMode |= fOpen & RTFILE_O_APPEND ? O_APPEND | FWRITE | FREAD : FWRITE | FREAD;
+                break;
+            default:
+                AssertMsgFailed(("RTFileOpen received an invalid RW value, fOpen=%#x\n", fOpen));
+                return VERR_INVALID_PARAMETER;
+        }
+
+        pThis->fOpenMode = fOpenMode;
+        rc = vnode_open(pszFilename, fOpenMode, fCMode, fVnFlags, &pThis->hVnode, pThis->hVfsCtx);
+        if (rc == 0)
+        {
+            *phFile = pThis;
+            return VINF_SUCCESS;
+        }
+
+        rc = RTErrConvertFromErrno(rc);
     }
-    if (fOpen & RTFILE_O_TRUNCATE)
-        fOpenMode |= O_TRUNC;
+    else
+        rc = VERR_INTERNAL_ERROR_5;
+    RTMemFree(pThis);
 
-    switch (fOpen & RTFILE_O_ACCESS_MASK)
-    {
-        case RTFILE_O_READ:
-            fOpenMode |= FREAD
-            break;
-        case RTFILE_O_WRITE:
-            fOpenMode |= fOpen & RTFILE_O_APPEND ? O_APPEND | FWRITE : FWRITE;
-            break;
-        case RTFILE_O_READWRITE:
-            fOpenMode |= fOpen & RTFILE_O_APPEND ? O_APPEND | FWRITE | FREAD : FWRITE | FREAD;
-            break;
-        default:
-            AssertMsgFailed(("RTFileOpen received an invalid RW value, fOpen=%#x\n", fOpen));
-            return VERR_INVALID_PARAMETER;
-    }    *phFile = (RTFILENEW)hVnode;
-
-
-    vnode_t hVnode = NULL;
-    errno_t rc = vnode_open(pszFilename, fOpenMode, fCMode, fVnFlags, &hVnode, hVfsCtx)
-    if (rc != 0)
-        return RTErrConvertFromErrno(rc);
-
-    vnode_put(hVnode);
-    *phFile = (RTFILENEW)hVnode;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -232,15 +273,41 @@ RTDECL(int) RTFileClose(RTFILE hFile)
 {
     if (hFile == NIL_RTFILE)
         return VINF_SUCCESS;
-    vnode_t hVnode = (vnode_t)hFile;
-    errno_t rc = vnode_close(hVnode, vfs_context_current());
+
+    RTFILENEWINT *pThis = hFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic != RTFILE_MAGIC, VERR_INVALID_HANDLE);
+    pThis->u32Magic = ~RTFILE_MAGIC;
+
+    errno_t rc = vnode_close(pThis->hVnode, pThis->fOpenMode & (FREAD | FWRITE), pThis->hVfsCtx);
+
+    RTMemFree(pThis);
     return RTErrConvertFromErrno(rc);
 }
 
 
 RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
-    return VERR_NOT_IMPLEMENTED;
+    RTFILENEWINT *pThis = hFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic != RTFILE_MAGIC, VERR_INVALID_HANDLE);
+
+    off_t offNative = (off_t)off;
+    AssertReturn((RTFOFF)offNative == off, VERR_OUT_OF_RANGE);
+
+
+    errno_t rc;
+    if (!pcbRead)
+        rc = vn_rdwr(UIO_READ, pThis->hVnode, (char *)pvBuf, cbToRead, offNative, UIO_SYSSPACE, 0 /*ioflg*/,
+                     vfs_context_ucred(pThis->hVfsCtx), NULL, vfs_context_proc(pThis->hVfsCtx));
+    else
+    {
+        int cbLeft = 0;
+        rc = vn_rdwr(UIO_READ, pThis->hVnode, (char *)pvBuf, cbToRead, offNative, UIO_SYSSPACE, 0 /*ioflg*/,
+                     vfs_context_ucred(pThis->hVfsCtx), &cbLeft, vfs_context_proc(pThis->hVfsCtx));
+        *pcbRead = cbToRead - cbLeft;
+    }
+    return !rc ? VINF_SUCCESS : RTErrConvertFromErrno(rc);
 }
 
 #endif
@@ -323,12 +390,12 @@ extern "C" void kdp_set_interface(void);
 
 
 /**
- * Check the symbol table against symbols we known symbols. 
- *  
- * This is done to detect whether the on disk image and the in 
- * memory images matches.  Mismatches could stem from user 
+ * Check the symbol table against symbols we known symbols.
+ *
+ * This is done to detect whether the on disk image and the in
+ * memory images matches.  Mismatches could stem from user
  * replacing the default kernel image on disk.
- *  
+ *
  * @returns IPRT status code.
  * @param   pKernel             The internal scratch data.
  */
@@ -410,7 +477,7 @@ static int rtR0DarwinMachKernelCheckStandardSymbols(PRTR0DARWINKERNEL pKernel)
         KNOWN_ENTRY(kauth_getuid),
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
         KNOWN_ENTRY(kauth_cred_unref),
-#else 
+#else
         KNOWN_ENTRY(kauth_cred_rele),
 #endif
         //KNOWN_ENTRY(mbuf_data),
@@ -538,7 +605,7 @@ static int rtR0DarwinMachKernelLoadSymTab(PRTR0DARWINKERNEL pKernel)
 #if 0 /* Spec say MACHO_NO_SECT, __mh_execute_header has 1 with 10.7/amd64 */
                     if (pSym->n_sect != MACHO_NO_SECT)
 #else
-                    if (pSym->n_sect > pKernel->cSections) 
+                    if (pSym->n_sect > pKernel->cSections)
 #endif
                         RETURN_VERR_BAD_EXE_FORMAT;
                     if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY))
@@ -900,11 +967,11 @@ static int rtR0DarwinMachKernelLoadFileHeaders(PRTR0DARWINKERNEL pKernel)
 
 
 /**
- * Opens symbol table of the mach_kernel. 
- *  
+ * Opens symbol table of the mach_kernel.
+ *
  * @returns IPRT status code.
  * @param   pszMachKernel   The path to the mach_kernel image.
- * @param   ppHandle        Where to return a handle on success. 
+ * @param   ppHandle        Where to return a handle on success.
  *                          Call rtR0DarwinMachKernelClose on it
  *                          when done.
  */
