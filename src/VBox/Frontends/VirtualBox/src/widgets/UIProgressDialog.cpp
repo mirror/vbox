@@ -247,7 +247,7 @@ void UIProgressDialog::timerEvent(QTimerEvent * /* pEvent */)
         else if (days > 0)
             m_pEtaLbl->setText(strOneComp.arg(strDays));
         else if (hours > 2)
-            m_pEtaLbl->setText(strTwoComp.arg(strHours));
+            m_pEtaLbl->setText(strOneComp.arg(strHours));
         else if (hours > 0 && minutes > 0)
             m_pEtaLbl->setText(strTwoComp.arg(strHours).arg(strMinutes));
         else if (hours > 0)
