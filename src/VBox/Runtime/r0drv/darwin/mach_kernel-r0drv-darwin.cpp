@@ -306,7 +306,7 @@ RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead,
     off_t offNative = (off_t)off;
     AssertReturn((RTFOFF)offNative == off, VERR_OUT_OF_RANGE);
 
-
+#if 0 /* Added in 10.6, grr. */
     errno_t rc;
     if (!pcbRead)
         rc = vn_rdwr(UIO_READ, pThis->hVnode, (char *)pvBuf, cbToRead, offNative, UIO_SYSSPACE, 0 /*ioflg*/,
@@ -319,6 +319,26 @@ RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead,
         *pcbRead = cbToRead - cbLeft;
     }
     return !rc ? VINF_SUCCESS : RTErrConvertFromErrno(rc);
+
+#else
+    uio_t hUio = uio_create(1, offNative, UIO_SYSSPACE, UIO_READ);
+    if (!hUio)
+        return VERR_NO_MEMORY;
+    errno_t rc;
+    if (uio_addiov(hUio, (user_addr_t)(uintptr_t)pvBuf, cbToRead) == 0)
+    {
+        rc = VNOP_READ(pThis->hVnode, hUio, 0 /*ioflg*/, pThis->hVfsCtx);
+        if (pcbRead)
+            *pcbRead = cbToRead - uio_resid(hUio);
+        else if (!rc && uio_resid(hUio))
+            rc = VERR_FILE_IO_ERROR;
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_3;
+    uio_free(hUio);
+    return rc;
+
+#endif
 }
 
 #endif
