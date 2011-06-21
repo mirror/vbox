@@ -24,42 +24,48 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/darwin/machkernel.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 
-#include "../r0drv/darwin/mach_kernel-r0drv-darwin.cpp"
 
 
 static void dotest(const char *pszMachKernel)
 {
-    PRTR0DARWINKERNEL pKernel;
-    RTTESTI_CHECK_RC_RETV(rtR0DarwinMachKernelOpen(pszMachKernel, &pKernel), VINF_SUCCESS);
+    RTR0MACHKERNEL hKernel;
+    RTTESTI_CHECK_RC_RETV(RTR0MachKernelOpen(pszMachKernel, &hKernel), VINF_SUCCESS);
     static const char * const s_apszSyms[] =
     {
         "ast_pending",
-        "i386_signal_cpu",
-        "i386_cpu_IPI",
+        "cpu_interrupt",
         "dtrace_register",
         "dtrace_suspend",
     };
     for (unsigned i = 0; i < RT_ELEMENTS(s_apszSyms); i++)
     {
-        uintptr_t uPtr = rtR0DarwinMachKernelLookup(pKernel, s_apszSyms[i]);
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "%p %s\n", uPtr, s_apszSyms[i]);
-        RTTESTI_CHECK(uPtr != 0);
+        void *pvValue = NULL;
+        int rc = RTR0MachKernelGetSymbol(hKernel, s_apszSyms[i], &pvValue);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%Rrc %p %s\n", rc, pvValue, s_apszSyms[i]);
+        RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+        if (RT_SUCCESS(rc))
+            RTTESTI_CHECK_RC(RTR0MachKernelGetSymbol(hKernel, s_apszSyms[i], NULL), VINF_SUCCESS);
     }
-    rtR0DarwinMachKernelClose(pKernel);
+
+    RTTESTI_CHECK_RC(RTR0MachKernelGetSymbol(hKernel, "no_such_symbol_name_really", NULL), VERR_SYMBOL_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTR0MachKernelClose(hKernel), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTR0MachKernelClose(NIL_RTR0MACHKERNEL), VINF_SUCCESS);
 }
 
 
 int main(int argc, char **argv)
 {
     RTTEST hTest;
-    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTDarwinMachKernel", &hTest);
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTMachKernel", &hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(hTest);

@@ -37,7 +37,9 @@ RT_C_DECLS_BEGIN /* Buggy 10.4 headers, fixed in 10.5. */
 # include <net/kpi_interfacefilter.h>
 RT_C_DECLS_END
 #endif
-#include "../../include/internal/iprt.h"
+
+#include "internal/iprt.h"
+#include <iprt/darwin/machkernel.h>
 
 #ifdef IN_RING0  /* till RTFILE is changed in types.h */
 # include <iprt/types.h>
@@ -56,7 +58,7 @@ typedef RTFILENEW *PRTFILENEW;
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
-#include "../../include/internal/ldrMach-O.h"
+#include "internal/ldrMach-O.h"
 
 /** @def MY_CPU_TYPE
  * The CPU type targeted by the compiler. */
@@ -121,7 +123,7 @@ typedef RTFILENEW *PRTFILENEW;
  * Our internal representation of the mach_kernel after loading it's symbols
  * and successfully resolving their addresses.
  */
-typedef struct RTR0DARWINKERNEL
+typedef struct RTR0MACHKERNELINT
 {
     /** @name Result.
      * @{ */
@@ -161,15 +163,14 @@ typedef struct RTR0DARWINKERNEL
 
     /** Buffer space. */
     char                abBuf[_4K];
-} RTR0DARWINKERNEL;
-typedef RTR0DARWINKERNEL *PRTR0DARWINKERNEL;
+} RTR0MACHKERNELINT;
 
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 #ifdef DEBUG
-static bool g_fBreakpointOnError = true;
+static bool g_fBreakpointOnError = false;
 #endif
 
 
@@ -314,35 +315,18 @@ RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead,
 
 
 /**
- * Frees up the internal scratch data when done looking up symbols.
- *
- * @param   pKernel             The internal scratch data.
- */
-static void rtR0DarwinMachKernelClose(PRTR0DARWINKERNEL pKernel)
-{
-    RTMemFree(pKernel->pachStrTab);
-    pKernel->pachStrTab = NULL;
-
-    RTMemFree(pKernel->paSyms);
-    pKernel->paSyms = NULL;
-
-    RTMemFree(pKernel);
-}
-
-
-/**
  * Close and free up resources we no longer needs.
  *
- * @param   pKernel             The internal scratch data.
+ * @param   pThis               The internal scratch data.
  */
-static void rtR0DarwinMachKernelLoadDone(PRTR0DARWINKERNEL pKernel)
+static void rtR0MachKernelLoadDone(RTR0MACHKERNELINT *pThis)
 {
-    RTFileClose(pKernel->hFile);
-    pKernel->hFile = NIL_RTFILE;
+    RTFileClose(pThis->hFile);
+    pThis->hFile = NIL_RTFILE;
 
-    RTMemFree(pKernel->pLoadCmds);
-    pKernel->pLoadCmds = NULL;
-    memset((void *)&pKernel->apSections[0], 0, sizeof(pKernel->apSections[0]) * MACHO_MAX_SECT);
+    RTMemFree(pThis->pLoadCmds);
+    pThis->pLoadCmds = NULL;
+    memset((void *)&pThis->apSections[0], 0, sizeof(pThis->apSections[0]) * MACHO_MAX_SECT);
 }
 
 
@@ -351,14 +335,14 @@ static void rtR0DarwinMachKernelLoadDone(PRTR0DARWINKERNEL pKernel)
  *
  *
  * @returns The symbol address on success, 0 on failure.
- * @param   pKernel             The internal scratch data.
+ * @param   pThis               The internal scratch data.
  * @param   pszSymbol           The symbol to resolve.  Automatically prefixed
  *                              with an underscore.
  */
-static uintptr_t rtR0DarwinMachKernelLookup(PRTR0DARWINKERNEL pKernel, const char *pszSymbol)
+static uintptr_t rtR0MachKernelLookup(RTR0MACHKERNELINT *pThis, const char *pszSymbol)
 {
-    uint32_t const  cSyms = pKernel->cSyms;
-    MY_NLIST const *pSym = pKernel->paSyms;
+    uint32_t const  cSyms = pThis->cSyms;
+    MY_NLIST const *pSym = pThis->paSyms;
 
 #if 1
     /* linear search. */
@@ -367,7 +351,7 @@ static uintptr_t rtR0DarwinMachKernelLookup(PRTR0DARWINKERNEL pKernel, const cha
         if (pSym->n_type & MACHO_N_STAB)
             continue;
 
-        const char *pszTabName= &pKernel->pachStrTab[(uint32_t)pSym->n_un.n_strx];
+        const char *pszTabName= &pThis->pachStrTab[(uint32_t)pSym->n_un.n_strx];
         if (   *pszTabName == '_'
             && strcmp(pszTabName + 1, pszSymbol) == 0)
             return pSym->n_value;
@@ -397,9 +381,9 @@ extern "C" void kdp_set_interface(void);
  * replacing the default kernel image on disk.
  *
  * @returns IPRT status code.
- * @param   pKernel             The internal scratch data.
+ * @param   pThis               The internal scratch data.
  */
-static int rtR0DarwinMachKernelCheckStandardSymbols(PRTR0DARWINKERNEL pKernel)
+static int rtR0MachKernelCheckStandardSymbols(RTR0MACHKERNELINT *pThis)
 {
     static struct
     {
@@ -515,7 +499,7 @@ static int rtR0DarwinMachKernelCheckStandardSymbols(PRTR0DARWINKERNEL pKernel)
 
     for (unsigned i = 0; i < RT_ELEMENTS(s_aStandardCandles); i++)
     {
-        uintptr_t uAddr = rtR0DarwinMachKernelLookup(pKernel, s_aStandardCandles[i].pszName);
+        uintptr_t uAddr = rtR0MachKernelLookup(pThis, s_aStandardCandles[i].pszName);
 #ifdef IN_RING0
         if (uAddr != s_aStandardCandles[i].uAddr)
 #else
@@ -534,48 +518,48 @@ static int rtR0DarwinMachKernelCheckStandardSymbols(PRTR0DARWINKERNEL pKernel)
  * Loads and validates the symbol and string tables.
  *
  * @returns IPRT status code.
- * @param   pKernel             The internal scratch data.
+ * @param   pThis               The internal scratch data.
  */
-static int rtR0DarwinMachKernelLoadSymTab(PRTR0DARWINKERNEL pKernel)
+static int rtR0MachKernelLoadSymTab(RTR0MACHKERNELINT *pThis)
 {
     /*
      * Load the tables.
      */
-    pKernel->paSyms = (MY_NLIST *)RTMemAllocZ(pKernel->cSyms * sizeof(MY_NLIST));
-    if (!pKernel->paSyms)
+    pThis->paSyms = (MY_NLIST *)RTMemAllocZ(pThis->cSyms * sizeof(MY_NLIST));
+    if (!pThis->paSyms)
         return VERR_NO_MEMORY;
 
-    int rc = RTFileReadAt(pKernel->hFile, pKernel->offArch + pKernel->offSyms,
-                          pKernel->paSyms, pKernel->cSyms * sizeof(MY_NLIST), NULL);
+    int rc = RTFileReadAt(pThis->hFile, pThis->offArch + pThis->offSyms,
+                          pThis->paSyms, pThis->cSyms * sizeof(MY_NLIST), NULL);
     if (RT_FAILURE(rc))
         return rc;
 
-    pKernel->pachStrTab = (char *)RTMemAllocZ(pKernel->cbStrTab + 1);
-    if (!pKernel->pachStrTab)
+    pThis->pachStrTab = (char *)RTMemAllocZ(pThis->cbStrTab + 1);
+    if (!pThis->pachStrTab)
         return VERR_NO_MEMORY;
 
-    rc = RTFileReadAt(pKernel->hFile, pKernel->offArch + pKernel->offStrTab,
-                      pKernel->pachStrTab, pKernel->cbStrTab, NULL);
+    rc = RTFileReadAt(pThis->hFile, pThis->offArch + pThis->offStrTab,
+                      pThis->pachStrTab, pThis->cbStrTab, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
     /*
      * The first string table symbol must be a zero length name.
      */
-    if (pKernel->pachStrTab[0] != '\0')
+    if (pThis->pachStrTab[0] != '\0')
         RETURN_VERR_BAD_EXE_FORMAT;
 
     /*
      * Validate the symbol table.
      */
     const char     *pszPrev = "";
-    uint32_t const  cSyms   = pKernel->cSyms;
-    MY_NLIST const  *pSym   = pKernel->paSyms;
+    uint32_t const  cSyms   = pThis->cSyms;
+    MY_NLIST const  *pSym   = pThis->paSyms;
     for (uint32_t iSym = 0; iSym < cSyms; iSym++, pSym++)
     {
-        if ((uint32_t)pSym->n_un.n_strx >= pKernel->cbStrTab)
+        if ((uint32_t)pSym->n_un.n_strx >= pThis->cbStrTab)
             RETURN_VERR_BAD_EXE_FORMAT;
-        const char *pszSym = &pKernel->pachStrTab[(uint32_t)pSym->n_un.n_strx];
+        const char *pszSym = &pThis->pachStrTab[(uint32_t)pSym->n_un.n_strx];
 #ifdef IN_RING3
         RTAssertMsg2("%05i: %02x:%08x %02x %04x %s\n", iSym, pSym->n_sect, pSym->n_value, pSym->n_type, pSym->n_desc, pszSym);
 #endif
@@ -590,14 +574,14 @@ static int rtR0DarwinMachKernelLoadSymTab(PRTR0DARWINKERNEL pKernel)
                 case MACHO_N_SECT:
                     if (pSym->n_sect == MACHO_NO_SECT)
                         RETURN_VERR_BAD_EXE_FORMAT;
-                    if (pSym->n_sect > pKernel->cSections)
+                    if (pSym->n_sect > pThis->cSections)
                         RETURN_VERR_BAD_EXE_FORMAT;
                     if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY))
                         RETURN_VERR_BAD_EXE_FORMAT;
-                    if (pSym->n_value < pKernel->apSections[pSym->n_sect - 1]->addr)
+                    if (pSym->n_value < pThis->apSections[pSym->n_sect - 1]->addr)
                         RETURN_VERR_BAD_EXE_FORMAT;
-                    if (   pSym->n_value - pKernel->apSections[pSym->n_sect - 1]->addr
-                        > pKernel->apSections[pSym->n_sect - 1]->size)
+                    if (   pSym->n_value - pThis->apSections[pSym->n_sect - 1]->addr
+                        > pThis->apSections[pSym->n_sect - 1]->size)
                         RETURN_VERR_BAD_EXE_FORMAT;
                     break;
 
@@ -605,7 +589,7 @@ static int rtR0DarwinMachKernelLoadSymTab(PRTR0DARWINKERNEL pKernel)
 #if 0 /* Spec say MACHO_NO_SECT, __mh_execute_header has 1 with 10.7/amd64 */
                     if (pSym->n_sect != MACHO_NO_SECT)
 #else
-                    if (pSym->n_sect > pKernel->cSections)
+                    if (pSym->n_sect > pThis->cSections)
 #endif
                         RETURN_VERR_BAD_EXE_FORMAT;
                     if (pSym->n_desc & ~(REFERENCED_DYNAMICALLY))
@@ -639,22 +623,22 @@ static int rtR0DarwinMachKernelLoadSymTab(PRTR0DARWINKERNEL pKernel)
  * Loads the load commands and validates them.
  *
  * @returns IPRT status code.
- * @param   pKernel             The internal scratch data.
+ * @param   pThis               The internal scratch data.
  */
-static int rtR0DarwinMachKernelLoadCommands(PRTR0DARWINKERNEL pKernel)
+static int rtR0MachKernelLoadCommands(RTR0MACHKERNELINT *pThis)
 {
-    pKernel->offStrTab = 0;
-    pKernel->cbStrTab  = 0;
-    pKernel->offSyms   = 0;
-    pKernel->cSyms     = 0;
-    pKernel->cSections = 0;
+    pThis->offStrTab = 0;
+    pThis->cbStrTab  = 0;
+    pThis->offSyms   = 0;
+    pThis->cSyms     = 0;
+    pThis->cSections = 0;
 
-    pKernel->pLoadCmds = (load_command_t *)RTMemAlloc(pKernel->cbLoadCmds);
-    if (!pKernel->pLoadCmds)
+    pThis->pLoadCmds = (load_command_t *)RTMemAlloc(pThis->cbLoadCmds);
+    if (!pThis->pLoadCmds)
         return VERR_NO_MEMORY;
 
-    int rc = RTFileReadAt(pKernel->hFile, pKernel->offArch + sizeof(MY_MACHO_HEADER),
-                          pKernel->pLoadCmds, pKernel->cbLoadCmds, NULL);
+    int rc = RTFileReadAt(pThis->hFile, pThis->offArch + sizeof(MY_MACHO_HEADER),
+                          pThis->pLoadCmds, pThis->cbLoadCmds, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -662,22 +646,22 @@ static int rtR0DarwinMachKernelLoadCommands(PRTR0DARWINKERNEL pKernel)
      * Validate the relevant commands, picking up sections and the symbol
      * table location.
      */
-    load_command_t const   *pCmd = pKernel->pLoadCmds;
+    load_command_t const   *pCmd = pThis->pLoadCmds;
     for (uint32_t iCmd = 0; ; iCmd++)
     {
         /* cmd index & offset. */
-        uintptr_t offCmd = (uintptr_t)pCmd - (uintptr_t)pKernel->pLoadCmds;
-        if (offCmd == pKernel->cbLoadCmds && iCmd == pKernel->cLoadCmds)
+        uintptr_t offCmd = (uintptr_t)pCmd - (uintptr_t)pThis->pLoadCmds;
+        if (offCmd == pThis->cbLoadCmds && iCmd == pThis->cLoadCmds)
             break;
-        if (offCmd + sizeof(*pCmd) > pKernel->cbLoadCmds)
+        if (offCmd + sizeof(*pCmd) > pThis->cbLoadCmds)
             RETURN_VERR_BAD_EXE_FORMAT;
-        if (iCmd >= pKernel->cLoadCmds)
+        if (iCmd >= pThis->cLoadCmds)
             RETURN_VERR_BAD_EXE_FORMAT;
 
         /* cmdsize */
         if (pCmd->cmdsize < sizeof(*pCmd))
             RETURN_VERR_BAD_EXE_FORMAT;
-        if (pCmd->cmdsize > pKernel->cbLoadCmds)
+        if (pCmd->cmdsize > pThis->cbLoadCmds)
             RETURN_VERR_BAD_EXE_FORMAT;
         if (RT_ALIGN_32(pCmd->cmdsize, 4) != pCmd->cmdsize)
             RETURN_VERR_BAD_EXE_FORMAT;
@@ -696,10 +680,10 @@ static int rtR0DarwinMachKernelLoadCommands(PRTR0DARWINKERNEL pKernel)
                 if (pSymTab->strsize > _2M)
                     RETURN_VERR_BAD_EXE_FORMAT;
 
-                pKernel->offStrTab = pSymTab->stroff;
-                pKernel->cbStrTab  = pSymTab->strsize;
-                pKernel->offSyms   = pSymTab->symoff;
-                pKernel->cSyms     = pSymTab->nsyms;
+                pThis->offStrTab = pSymTab->stroff;
+                pThis->cbStrTab  = pSymTab->strsize;
+                pThis->offSyms   = pSymTab->symoff;
+                pThis->cSyms     = pSymTab->nsyms;
                 break;
             }
 
@@ -795,9 +779,9 @@ static int rtR0DarwinMachKernelLoadCommands(PRTR0DARWINKERNEL pKernel)
                         uAlignment = paSects[i].align;
 
                     /* Add to the section table. */
-                    if (pKernel->cSections == MACHO_MAX_SECT)
+                    if (pThis->cSections == MACHO_MAX_SECT)
                         RETURN_VERR_BAD_EXE_FORMAT;
-                    pKernel->apSections[pKernel->cSections++] = &paSects[i];
+                    pThis->apSections[pThis->cSections++] = &paSects[i];
                 }
 
                 if (RT_ALIGN_Z(pSeg->vmaddr, RT_BIT_32(uAlignment)) != pSeg->vmaddr)
@@ -865,23 +849,23 @@ static int rtR0DarwinMachKernelLoadCommands(PRTR0DARWINKERNEL pKernel)
  * Loads the FAT and MACHO headers, noting down the relevant info.
  *
  * @returns IPRT status code.
- * @param   pKernel             The internal scratch data.
+ * @param   pThis               The internal scratch data.
  */
-static int rtR0DarwinMachKernelLoadFileHeaders(PRTR0DARWINKERNEL pKernel)
+static int rtR0MachKernelLoadFileHeaders(RTR0MACHKERNELINT *pThis)
 {
     uint32_t i;
 
-    pKernel->offArch = 0;
-    pKernel->cbArch  = 0;
+    pThis->offArch = 0;
+    pThis->cbArch  = 0;
 
     /*
      * Read the first bit of the file, parse the FAT if found there.
      */
-    int rc = RTFileReadAt(pKernel->hFile, 0, pKernel->abBuf, sizeof(fat_header_t) + sizeof(fat_arch_t) * 16, NULL);
+    int rc = RTFileReadAt(pThis->hFile, 0, pThis->abBuf, sizeof(fat_header_t) + sizeof(fat_arch_t) * 16, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
-    fat_header_t   *pFat        = (fat_header *)pKernel->abBuf;
+    fat_header_t   *pFat        = (fat_header *)pThis->abBuf;
     fat_arch_t     *paFatArches = (fat_arch_t *)(pFat + 1);
 
     /* Correct FAT endian first. */
@@ -911,13 +895,13 @@ static int rtR0DarwinMachKernelLoadFileHeaders(PRTR0DARWINKERNEL pKernel)
             if (   paFatArches[i].cputype == MY_CPU_TYPE
                 && paFatArches[i].cpusubtype == MY_CPU_SUBTYPE_ALL)
             {
-                pKernel->offArch = paFatArches[i].offset;
-                pKernel->cbArch  = paFatArches[i].size;
-                if (!pKernel->cbArch)
+                pThis->offArch = paFatArches[i].offset;
+                pThis->cbArch  = paFatArches[i].size;
+                if (!pThis->cbArch)
                     RETURN_VERR_BAD_EXE_FORMAT;
-                if (pKernel->offArch < sizeof(fat_header_t) + sizeof(fat_arch_t) * pFat->nfat_arch)
+                if (pThis->offArch < sizeof(fat_header_t) + sizeof(fat_arch_t) * pFat->nfat_arch)
                     RETURN_VERR_BAD_EXE_FORMAT;
-                if (pKernel->offArch + pKernel->cbArch <= pKernel->offArch)
+                if (pThis->offArch + pThis->cbArch <= pThis->offArch)
                     RETURN_VERR_LDR_ARCH_MISMATCH;
                 break;
             }
@@ -929,10 +913,10 @@ static int rtR0DarwinMachKernelLoadFileHeaders(PRTR0DARWINKERNEL pKernel)
     /*
      * Read the Mach-O header and validate it.
      */
-    rc = RTFileReadAt(pKernel->hFile, pKernel->offArch, pKernel->abBuf, sizeof(MY_MACHO_HEADER), NULL);
+    rc = RTFileReadAt(pThis->hFile, pThis->offArch, pThis->abBuf, sizeof(MY_MACHO_HEADER), NULL);
     if (RT_FAILURE(rc))
         return rc;
-    MY_MACHO_HEADER const *pHdr = (MY_MACHO_HEADER const *)pKernel->abBuf;
+    MY_MACHO_HEADER const *pHdr = (MY_MACHO_HEADER const *)pThis->abBuf;
     if (pHdr->magic != MY_MACHO_MAGIC)
     {
         if (   pHdr->magic == IMAGE_MACHO32_SIGNATURE
@@ -960,44 +944,69 @@ static int rtR0DarwinMachKernelLoadFileHeaders(PRTR0DARWINKERNEL pKernel)
     if (pHdr->flags & ~MH_VALID_FLAGS)
         RETURN_VERR_LDR_UNEXPECTED;
 
-    pKernel->cLoadCmds  = pHdr->ncmds;
-    pKernel->cbLoadCmds = pHdr->sizeofcmds;
+    pThis->cLoadCmds  = pHdr->ncmds;
+    pThis->cbLoadCmds = pHdr->sizeofcmds;
     return VINF_SUCCESS;
 }
 
 
-/**
- * Opens symbol table of the mach_kernel.
- *
- * @returns IPRT status code.
- * @param   pszMachKernel   The path to the mach_kernel image.
- * @param   ppHandle        Where to return a handle on success.
- *                          Call rtR0DarwinMachKernelClose on it
- *                          when done.
- */
-static int rtR0DarwinMachKernelOpen(const char *pszMachKernel, PRTR0DARWINKERNEL *ppHandle)
+RTDECL(int) RTR0MachKernelOpen(const char *pszMachKernel, PRTR0MACHKERNEL phKernel)
 {
-    *ppHandle = NULL;
-    PRTR0DARWINKERNEL pKernel = (PRTR0DARWINKERNEL)RTMemAllocZ(sizeof(*pKernel));
-    if (!pKernel)
+    *phKernel = NIL_RTR0MACHKERNEL;
+
+    RTR0MACHKERNELINT *pThis = (RTR0MACHKERNELINT *)RTMemAllocZ(sizeof(*pThis));
+    if (!pThis)
         return VERR_NO_MEMORY;
-    pKernel->hFile = NIL_RTFILE;
+    pThis->hFile = NIL_RTFILE;
 
-    int rc = RTFileOpen(&pKernel->hFile, pszMachKernel, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    int rc = RTFileOpen(&pThis->hFile, pszMachKernel, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
-        rc = rtR0DarwinMachKernelLoadFileHeaders(pKernel);
+        rc = rtR0MachKernelLoadFileHeaders(pThis);
     if (RT_SUCCESS(rc))
-        rc = rtR0DarwinMachKernelLoadCommands(pKernel);
+        rc = rtR0MachKernelLoadCommands(pThis);
     if (RT_SUCCESS(rc))
-        rc = rtR0DarwinMachKernelLoadSymTab(pKernel);
+        rc = rtR0MachKernelLoadSymTab(pThis);
     if (RT_SUCCESS(rc))
-        rc = rtR0DarwinMachKernelCheckStandardSymbols(pKernel);
+        rc = rtR0MachKernelCheckStandardSymbols(pThis);
 
-    rtR0DarwinMachKernelLoadDone(pKernel);
+    rtR0MachKernelLoadDone(pThis);
     if (RT_SUCCESS(rc))
-        *ppHandle = pKernel;
+        *phKernel = pThis;
     else
-        rtR0DarwinMachKernelClose(pKernel);
+        RTR0MachKernelClose(pThis);
     return rc;
+}
+
+
+RTR0DECL(int) RTR0MachKernelGetSymbol(RTR0MACHKERNEL hKernel, const char *pszSymbol, void **ppvValue)
+{
+    RTR0MACHKERNELINT *pThis = hKernel;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    uintptr_t uValue = rtR0MachKernelLookup(pThis, pszSymbol);
+    if (ppvValue)
+        *ppvValue = (void *)uValue;
+    if (!uValue)
+        return VERR_SYMBOL_NOT_FOUND;
+    return VINF_SUCCESS;
+}
+
+
+RTR0DECL(int) RTR0MachKernelClose(RTR0MACHKERNEL hKernel)
+{
+    if (hKernel == NIL_RTR0MACHKERNEL)
+        return VINF_SUCCESS;
+
+    RTR0MACHKERNELINT *pThis = hKernel;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    RTMemFree(pThis->pachStrTab);
+    pThis->pachStrTab = NULL;
+
+    RTMemFree(pThis->paSyms);
+    pThis->paSyms = NULL;
+
+    RTMemFree(pThis);
+    return VINF_SUCCESS;
 }
 
