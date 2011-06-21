@@ -35,7 +35,16 @@
 RT_C_DECLS_BEGIN /* Buggy 10.4 headers, fixed in 10.5. */
 # include <sys/kpi_mbuf.h>
 # include <net/kpi_interfacefilter.h>
+# include <sys/kpi_socket.h>
+# include <sys/kpi_socketfilter.h>
 RT_C_DECLS_END
+# include <sys/buf.h>
+# include <sys/vm.h>
+# include <sys/vnode_if.h>
+/*# include <sys/sysctl.h>*/
+# include <sys/systm.h>
+# include <vfs/vfs_support.h>
+/*# include <miscfs/specfs/specdev.h>*/
 #endif
 
 #include "internal/iprt.h"
@@ -50,6 +59,7 @@ typedef RTFILENEW *PRTFILENEW;
 # define PRTFILE        PRTFILENEW
 # define NIL_RTFILE     ((RTFILENEW)-1)
 #endif
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -277,7 +287,7 @@ RTDECL(int) RTFileClose(RTFILE hFile)
 
     RTFILENEWINT *pThis = hFile;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic != RTFILE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTFILE_MAGIC, VERR_INVALID_HANDLE);
     pThis->u32Magic = ~RTFILE_MAGIC;
 
     errno_t rc = vnode_close(pThis->hVnode, pThis->fOpenMode & (FREAD | FWRITE), pThis->hVfsCtx);
@@ -291,7 +301,7 @@ RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead,
 {
     RTFILENEWINT *pThis = hFile;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic != RTFILE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTFILE_MAGIC, VERR_INVALID_HANDLE);
 
     off_t offNative = (off_t)off;
     AssertReturn((RTFOFF)offNative == off, VERR_OUT_OF_RANGE);
@@ -453,9 +463,9 @@ static int rtR0MachKernelCheckStandardSymbols(RTR0MACHKERNELINT *pThis)
         KNOWN_ENTRY(thread_wakeup_prim),
 
         /* BSDKernel: */
-        //KNOWN_ENTRY(buf_size),
+        KNOWN_ENTRY(buf_size),
         KNOWN_ENTRY(copystr),
-        //KNOWN_ENTRY(current_proc),
+        KNOWN_ENTRY(current_proc),
         KNOWN_ENTRY(ifnet_hdrlen),
         KNOWN_ENTRY(ifnet_set_promiscuous),
         KNOWN_ENTRY(kauth_getuid),
@@ -464,26 +474,26 @@ static int rtR0MachKernelCheckStandardSymbols(RTR0MACHKERNELINT *pThis)
 #else
         KNOWN_ENTRY(kauth_cred_rele),
 #endif
-        //KNOWN_ENTRY(mbuf_data),
+        KNOWN_ENTRY(mbuf_data),
         KNOWN_ENTRY(msleep),
         KNOWN_ENTRY(nanotime),
-        //KNOWN_ENTRY(nop_close),
+        KNOWN_ENTRY(nop_close),
         KNOWN_ENTRY(proc_pid),
-        //KNOWN_ENTRY(sock_accept),
-        //KNOWN_ENTRY(sockopt_name),
+        KNOWN_ENTRY(sock_accept),
+        KNOWN_ENTRY(sockopt_name),
         //KNOWN_ENTRY(spec_write),
-        //KNOWN_ENTRY(suword),
+        KNOWN_ENTRY(suword),
         //KNOWN_ENTRY(sysctl_int),
         KNOWN_ENTRY(uio_rw),
-        //KNOWN_ENTRY(vfs_flags),
-        //KNOWN_ENTRY(vfs_name),
-        //KNOWN_ENTRY(vfs_statfs),
-        //KNOWN_ENTRY(vn_rdwr),
-        //KNOWN_ENTRY(vnode_get),
-        //KNOWN_ENTRY(vnode_open),
-        //KNOWN_ENTRY(vnode_ref),
-        //KNOWN_ENTRY(vnode_rele),
-        //KNOWN_ENTRY(vnop_close_desc),
+        KNOWN_ENTRY(vfs_flags),
+        KNOWN_ENTRY(vfs_name),
+        KNOWN_ENTRY(vfs_statfs),
+        KNOWN_ENTRY(vn_rdwr),
+        KNOWN_ENTRY(vnode_get),
+        KNOWN_ENTRY(vnode_open),
+        KNOWN_ENTRY(vnode_ref),
+        KNOWN_ENTRY(vnode_rele),
+        KNOWN_ENTRY(vnop_close_desc),
         KNOWN_ENTRY(wakeup),
         KNOWN_ENTRY(wakeup_one),
 

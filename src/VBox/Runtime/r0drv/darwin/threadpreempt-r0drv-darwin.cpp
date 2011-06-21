@@ -104,26 +104,20 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
-    Assert(hThread == NIL_RTTHREAD);
+    if (!g_pfnR0DarwinAstPending)
+        return false;
+    uint32_t volatile *pfAstPending = g_pfnR0DarwinAstPending(); AssertPtr(pfAstPending);
+    uint32_t  const    fAstPending = *pfAstPending;
 
-    /* HACK ALERT! This ASSUMES that the cpu_pending_ast member of cpu_data_t doesn't move. */
-    uint32_t ast_pending;
-#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
-    __asm__ volatile("movl %%gs:%P1,%0\n\t"
-                     : "=r" (ast_pending)
-                     : "i"  (__builtin_offsetof(struct my_cpu_data_x86, cpu_pending_ast)) );
-#else
-# error "Port me"
-#endif
-    AssertMsg(!(ast_pending & UINT32_C(0xfffff000)),("%#x\n", ast_pending));
-    return (ast_pending & (AST_PREEMPT | AST_URGENT)) != 0;
+    AssertMsg(!(fAstPending & UINT32_C(0xfffff000)), ("%#x\n", fAstPending));
+    return (fAstPending & (AST_PREEMPT | AST_URGENT)) != 0;
 }
 
 
 RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
 {
     /* yes, we think that RTThreadPreemptIsPending is reliable... */
-    return true;
+    return g_pfnR0DarwinAstPending != NULL;
 }
 
 
