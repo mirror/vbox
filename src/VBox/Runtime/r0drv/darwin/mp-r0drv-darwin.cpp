@@ -264,7 +264,9 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
     RT_ASSERT_INTS_ON();
 
-    /* no unicast IPI */
-    return VERR_NOT_SUPPORTED;
+    if (g_pfnR0DarwinCpuInterrupt == NULL)
+        return VERR_NOT_SUPPORTED;
+    g_pfnR0DarwinCpuInterrupt(idCpu);
+    return VINF_SUCCESS;
 }
 

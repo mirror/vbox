@@ -33,14 +33,20 @@
 
 #include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/darwin/machkernel.h>
 #include "internal/initterm.h"
+
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Pointer to the lock group used by IPRT. */
-lck_grp_t *g_pDarwinLockGroup = NULL;
+lck_grp_t                  *g_pDarwinLockGroup = NULL;
+/** Pointer to the ast_pending function, if found. */
+PFNR0DARWINASTPENDING       g_pfnR0DarwinAstPending = NULL;
+/** Pointer to the cpu_interrupt function, if found. */
+PFNR0DARWINCPUINTERRUPT     g_pfnR0DarwinCpuInterrupt = NULL;
 
 
 DECLHIDDEN(int) rtR0InitNative(void)
@@ -55,6 +61,27 @@ DECLHIDDEN(int) rtR0InitNative(void)
      * Initialize the preemption hacks.
      */
     int rc = rtThreadPreemptDarwinInit();
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Try resolve kernel symbols we need but apple don't wish to give us.
+         */
+        RTR0MACHKERNEL hKernel;
+        rc = RTR0MachKernelOpen("/mach_kernel", &hKernel);
+        if (RT_SUCCESS(rc))
+        {
+            RTR0MachKernelGetSymbol(hKernel, "ast_pending",   (void **)&g_pfnR0DarwinAstPending);
+            printf("ast_pending=%p\n", g_pfnR0DarwinAstPending);
+            RTR0MachKernelGetSymbol(hKernel, "cpu_interrupt", (void **)&g_pfnR0DarwinCpuInterrupt);
+            printf("cpu_interrupt=%p\n", g_pfnR0DarwinCpuInterrupt);
+            RTR0MachKernelClose(hKernel);
+        }
+        if (RT_FAILURE(rc))
+        {
+            printf("rtR0InitNative: warning! failed to resolve special kernel symbols\n");
+            rc = VINF_SUCCESS;
+        }
+    }
     if (RT_FAILURE(rc))
         rtR0TermNative();
 
