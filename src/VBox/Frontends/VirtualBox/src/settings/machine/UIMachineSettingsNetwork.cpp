@@ -242,6 +242,13 @@ bool UIMachineSettingsNetwork::revalidate(QString &strWarning, QString &strTitle
                 fValid = false;
             }
             break;
+        case KNetworkAttachmentType_Generic:
+            if (alternativeName().isNull())
+            {
+                strWarning = tr("no generic driver is selected");
+                fValid = false;
+            }
+            break;
         default:
             break;
     }

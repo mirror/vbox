@@ -841,7 +841,7 @@ void UIDetailsPagePrivate::sltUpdateNetwork()
                         attType = attType.arg(tr("Host-only adapter, '%1'",
                                                  "details report (network)").arg(adapter.GetHostOnlyInterface()));
                     else if (type == KNetworkAttachmentType_Generic)
-                        attType = attType.arg(tr("Generic, '%1' {&nbsp;%2&nbsp;}",
+                        attType = attType.arg(tr("Generic driver, '%1' {&nbsp;%2&nbsp;}",
                                                  "details report (network)").arg(adapter.GetGenericDriver(), summarizeGenericProperties(adapter)));
                     else
                         attType = attType.arg(vboxGlobal().toString(type));

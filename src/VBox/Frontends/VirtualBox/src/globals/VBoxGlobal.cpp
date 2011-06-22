@@ -2985,7 +2985,7 @@ void VBoxGlobal::retranslateUi()
     mNetworkAttachmentTypes [KNetworkAttachmentType_HostOnly] =
         tr ("Host-only Adapter", "NetworkAttachmentType");
     mNetworkAttachmentTypes [KNetworkAttachmentType_Generic] =
-        tr ("Generic", "NetworkAttachmentType");
+        tr ("Generic Driver", "NetworkAttachmentType");
 
     mNetworkAdapterPromiscModePolicyTypes [KNetworkAdapterPromiscModePolicy_Deny] =
         tr ("Deny", "NetworkAdapterPromiscModePolicyType");
