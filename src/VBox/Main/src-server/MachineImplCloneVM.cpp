@@ -707,6 +707,16 @@ HRESULT MachineCloneVM::run()
             rc = pNewParent->addRegistry(d->pTrgMachine->mData->mUuid, true /* fRecursive */);
             if (FAILED(rc)) throw rc;
         }
+        /* Check if a snapshot folder is necessary and if so doesn't already
+         * exists. */
+        if (   !d->llSaveStateFiles.isEmpty()
+            && !RTDirExists(strTrgSnapshotFolder.c_str()))
+        {
+            int vrc = RTDirCreateFullPath(strTrgSnapshotFolder.c_str(), 0777);
+            if (RT_FAILURE(vrc))
+                throw p->setError(VBOX_E_IPRT_ERROR,
+                                  p->tr("Could not create snapshots folder '%s' (%Rrc)"), strTrgSnapshotFolder.c_str(), vrc);
+        }
         /* Clone all save state files. */
         for (size_t i = 0; i < d->llSaveStateFiles.size(); ++i)
         {
