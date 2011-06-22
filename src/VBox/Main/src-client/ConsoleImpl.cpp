@@ -5992,24 +5992,26 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         }
     }
 
-    PRTLOGGER loggerRelease;
-    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    RTUINT fFlags = RTLOGFLAGS_PREFIX_TIME_PROG;
+    static const char * const   s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    char                        szError[RTPATH_MAX + 128] = "";
+    PRTLOGGER                   pReleaseLogger;
+    uint32_t                    fFlags = RTLOGFLAGS_PREFIX_TIME_PROG | RTLOGFLAGS_RESTRICT_GROUPS;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
-    char szError[RTPATH_MAX + 128] = "";
-    int vrc = RTLogCreateEx(&loggerRelease, fFlags, "all",
+    int vrc = RTLogCreateEx(&pReleaseLogger, fFlags, "all all.restrict default.unrestricted",
                             "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_FILE,
                             NULL /* pfnBeginEnd */, 0 /* cHistory */, 0 /* cbHistoryFileMax */, 0 /* uHistoryTimeMax */,
                             szError, sizeof(szError), logFile.c_str());
     if (RT_SUCCESS(vrc))
     {
+        RTLogSetGroupLimit(pReleaseLogger, 32768);
+
         /* some introductory information */
         RTTIMESPEC timeSpec;
         char szTmp[256];
         RTTimeSpecToString(RTTimeNow(&timeSpec), szTmp, sizeof(szTmp));
-        RTLogRelLogger(loggerRelease, 0, ~0U,
+        RTLogRelLogger(pReleaseLogger, 0, ~0U,
                        "VirtualBox %s r%u %s (%s %s) release log\n"
 #ifdef VBOX_BLEEDING_EDGE
                        "EXPERIMENTAL build " VBOX_BLEEDING_EDGE "\n"
@@ -6020,22 +6022,22 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
 
         vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(loggerRelease, 0, ~0U, "OS Product: %s\n", szTmp);
+            RTLogRelLogger(pReleaseLogger, 0, ~0U, "OS Product: %s\n", szTmp);
         vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(loggerRelease, 0, ~0U, "OS Release: %s\n", szTmp);
+            RTLogRelLogger(pReleaseLogger, 0, ~0U, "OS Release: %s\n", szTmp);
         vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(loggerRelease, 0, ~0U, "OS Version: %s\n", szTmp);
+            RTLogRelLogger(pReleaseLogger, 0, ~0U, "OS Version: %s\n", szTmp);
         vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(loggerRelease, 0, ~0U, "OS Service Pack: %s\n", szTmp);
+            RTLogRelLogger(pReleaseLogger, 0, ~0U, "OS Service Pack: %s\n", szTmp);
         vrc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_NAME, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(loggerRelease, 0, ~0U, "DMI Product Name: %s\n", szTmp);
+            RTLogRelLogger(pReleaseLogger, 0, ~0U, "DMI Product Name: %s\n", szTmp);
         vrc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_VERSION, szTmp, sizeof(szTmp));
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
-            RTLogRelLogger(loggerRelease, 0, ~0U, "DMI Product Version: %s\n", szTmp);
+            RTLogRelLogger(pReleaseLogger, 0, ~0U, "DMI Product Version: %s\n", szTmp);
 
         ComPtr<IHost> pHost;
         pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
@@ -6043,13 +6045,13 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         ULONG cMbHostRamAvail = 0;
         pHost->COMGETTER(MemorySize)(&cMbHostRam);
         pHost->COMGETTER(MemoryAvailable)(&cMbHostRamAvail);
-        RTLogRelLogger(loggerRelease, 0, ~0U, "Host RAM: %uMB RAM, available: %uMB\n",
+        RTLogRelLogger(pReleaseLogger, 0, ~0U, "Host RAM: %uMB RAM, available: %uMB\n",
                        cMbHostRam, cMbHostRamAvail);
 
         /* the package type is interesting for Linux distributions */
         char szExecName[RTPATH_MAX];
         char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
-        RTLogRelLogger(loggerRelease, 0, ~0U,
+        RTLogRelLogger(pReleaseLogger, 0, ~0U,
                        "Executable: %s\n"
                        "Process ID: %u\n"
                        "Package type: %s"
@@ -6062,11 +6064,11 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
                        VBOX_PACKAGE_STRING);
 
         /* register this logger as the release logger */
-        RTLogRelSetDefaultInstance(loggerRelease);
+        RTLogRelSetDefaultInstance(pReleaseLogger);
         hrc = S_OK;
 
         /* Explicitly flush the log in case of VBOX_RELEASE_LOG=buffered. */
-        RTLogFlush(loggerRelease);
+        RTLogFlush(pReleaseLogger);
     }
     else
         hrc = setError(E_FAIL,

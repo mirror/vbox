@@ -338,6 +338,7 @@ static int vmmR3InitStacks(PVM pVM)
 static int vmmR3InitLoggers(PVM pVM)
 {
     int rc;
+#define RTLogCalcSizeForR0(cGroups, fFlags) (RT_OFFSETOF(VMMR0LOGGER, Logger.afGroups[cGroups]) + PAGE_SIZE)
 
     /*
      * Allocate RC & R0 Logger instances (they are finalized in the relocator).
@@ -353,18 +354,17 @@ static int vmmR3InitLoggers(PVM pVM)
         pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
 
 # ifdef VBOX_WITH_R0_LOGGING
+        size_t const cbLogger = RTLogCalcSizeForR0(pLogger->cGroups, 0);
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
-
-            rc = MMR3HyperAllocOnceNoRelEx(pVM, RT_OFFSETOF(VMMR0LOGGER, Logger.afGroups[pLogger->cGroups]),
-                                           0, MM_TAG_VMM, MMHYPER_AONR_FLAGS_KERNEL_MAPPING,
+            rc = MMR3HyperAllocOnceNoRelEx(pVM, cbLogger, PAGE_SIZE, MM_TAG_VMM, MMHYPER_AONR_FLAGS_KERNEL_MAPPING,
                                            (void **)&pVCpu->vmm.s.pR0LoggerR3);
             if (RT_FAILURE(rc))
                 return rc;
-            pVCpu->vmm.s.pR0LoggerR3->pVM = pVM->pVMR0;
+            pVCpu->vmm.s.pR0LoggerR3->pVM        = pVM->pVMR0;
             //pVCpu->vmm.s.pR0LoggerR3->fCreated = false;
-            pVCpu->vmm.s.pR0LoggerR3->cbLogger = RT_OFFSETOF(RTLOGGER, afGroups[pLogger->cGroups]);
+            pVCpu->vmm.s.pR0LoggerR3->cbLogger   = cbLogger;
             pVCpu->vmm.s.pR0LoggerR0 = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pR0LoggerR3);
         }
 # endif
@@ -860,7 +860,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 
         pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
         rc = RTLogCloneRC(NULL /* default */, pVM->vmm.s.pRCLoggerR3, pVM->vmm.s.cbRCLogger,
-                          RCPtrLoggerWrapper,  RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
+                          RCPtrLoggerWrapper, RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
         AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Rra\n", rc));
     }
 
@@ -873,7 +873,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 
         pVM->vmm.s.pRCRelLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCRelLoggerR3);
         rc = RTLogCloneRC(RTLogRelDefaultInstance(), pVM->vmm.s.pRCRelLoggerR3, pVM->vmm.s.cbRCRelLogger,
-                          RCPtrLoggerWrapper,  RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
+                          RCPtrLoggerWrapper, RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
         AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Rra\n", rc));
     }
 #endif /* VBOX_WITH_RC_RELEASE_LOGGING */
@@ -883,6 +883,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
      * For the ring-0 EMT logger, we use a per-thread logger instance
      * in ring-0. Only initialize it once.
      */
+    PRTLOGGER const pDefault = RTLogRelDefaultInstance();
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU       pVCpu = &pVM->aCpus[i];
@@ -899,15 +900,15 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
                 rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerFlush", &pfnLoggerFlush);
                 AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerFlush not found! rc=%Rra\n", rc), rc);
 
-                rc = RTLogCreateForR0(&pR0LoggerR3->Logger, pR0LoggerR3->cbLogger,
-                                      *(PFNRTLOGGER *)&pfnLoggerWrapper, *(PFNRTLOGFLUSH *)&pfnLoggerFlush,
+                rc = RTLogCreateForR0(&pR0LoggerR3->Logger, pR0LoggerR3->cbLogger, pVCpu->vmm.s.pR0LoggerR0,
+                                      pfnLoggerWrapper, pfnLoggerFlush,
                                       RTLOGFLAGS_BUFFERED, RTLOGDEST_DUMMY);
                 AssertReleaseMsgRCReturn(rc, ("RTLogCreateForR0 failed! rc=%Rra\n", rc), rc);
 
                 RTR0PTR pfnLoggerPrefix = NIL_RTR0PTR;
                 rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerPrefix", &pfnLoggerPrefix);
                 AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerPrefix not found! rc=%Rra\n", rc), rc);
-                rc = RTLogSetCustomPrefixCallback(&pR0LoggerR3->Logger, *(PFNRTLOGPREFIX *)&pfnLoggerPrefix, NULL);
+                rc = RTLogSetCustomPrefixCallbackForR0(&pR0LoggerR3->Logger, pVCpu->vmm.s.pR0LoggerR0, pfnLoggerPrefix, NULL);
                 AssertReleaseMsgRCReturn(rc, ("RTLogSetCustomPrefixCallback failed! rc=%Rra\n", rc), rc);
 
                 pR0LoggerR3->idCpu = i;
@@ -916,7 +917,8 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 
             }
 
-            rc = RTLogCopyGroupsAndFlags(&pR0LoggerR3->Logger, NULL /* default */, pVM->vmm.s.pRCLoggerR3->fFlags, RTLOGFLAGS_BUFFERED);
+            rc = RTLogCopyGroupsAndFlagsForR0(&pR0LoggerR3->Logger, pVCpu->vmm.s.pR0LoggerR0, pDefault,
+                                              UINT32_MAX, RTLOGFLAGS_BUFFERED);
             AssertRC(rc);
         }
     }
