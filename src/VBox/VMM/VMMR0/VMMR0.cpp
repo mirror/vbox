@@ -482,26 +482,19 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
         case VINF_EM_RAW_TO_R3:
             if (VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3TMVirt);
-            else
-            if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
+            else if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NEED_HANDY_PAGES))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3HandyPages);
-            else
-            if (VM_FF_ISPENDING(pVM, VM_FF_PDM_QUEUES))
+            else if (VM_FF_ISPENDING(pVM, VM_FF_PDM_QUEUES))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3PDMQueues);
-            else
-            if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            else if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Rendezvous);
-            else
-            if (VM_FF_ISPENDING(pVM, VM_FF_PDM_DMA))
+            else if (VM_FF_ISPENDING(pVM, VM_FF_PDM_DMA))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3DMA);
-            else
-            if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER))
+            else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Timer);
-            else
-            if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
+            else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3CritSect);
-            else
-            if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TO_R3))
+            else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TO_R3))
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3);
             else
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetToR3Unknown);
