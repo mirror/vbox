@@ -450,7 +450,7 @@ void VBoxSnapshotsWgt::retranslateUi()
     mDeleteSnapshotAction->setText (tr ("&Delete Snapshot"));
     mShowSnapshotDetailsAction->setText (tr ("S&how Details"));
     mTakeSnapshotAction->setText (tr ("Take &Snapshot"));
-    mCloneSnapshotAction->setText(tr("&Clone"));
+    mCloneSnapshotAction->setText(tr("&Clone..."));
 
 
     mRestoreSnapshotAction->setStatusTip (tr ("Restore the selected snapshot of the virtual machine"));
