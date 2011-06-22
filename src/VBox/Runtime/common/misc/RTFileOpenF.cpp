@@ -32,7 +32,7 @@
 #include "internal/iprt.h"
 
 
-RTR3DECL(int) RTFileOpenF(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, ...)
+RTR3DECL(int) RTFileOpenF(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameFmt, ...)
 {
     va_list va;
     va_start(va, pszFilenameFmt);

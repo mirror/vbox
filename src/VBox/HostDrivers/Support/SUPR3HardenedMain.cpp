@@ -1018,9 +1018,9 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
      * to basic CRT functions that everyone agree upon.
      */
     g_pszSupLibHardenedProgName = pszProgName;
-    g_SupPreInitData.u32Magic = SUPPREINITDATA_MAGIC;
-    g_SupPreInitData.Data.hDevice = NIL_RTFILE;
-    g_SupPreInitData.u32EndMagic = SUPPREINITDATA_MAGIC;
+    g_SupPreInitData.u32Magic     = SUPPREINITDATA_MAGIC;
+    g_SupPreInitData.Data.hDevice = SUP_HDEVICE_NIL;
+    g_SupPreInitData.u32EndMagic  = SUPPREINITDATA_MAGIC;
 
 #ifdef SUP_HARDENED_SUID
 # ifdef RT_OS_LINUX

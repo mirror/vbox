@@ -187,7 +187,7 @@ static int vbglR3Init(const char *pszDeviceName)
                 DosClose(ahfs[i]);
         }
     }
-    g_File = hf;
+    g_File = (RTFILE)hf;
 
 #elif defined(VBOX_VBGLR3_XFREE86)
     int File = xf86open(pszDeviceName, XF86_O_RDWR);
@@ -266,7 +266,7 @@ VBGLR3DECL(void) VbglR3Term(void)
     RTFILE File = g_File;
     g_File = NIL_RTFILE;
     AssertReturnVoid(File != NIL_RTFILE);
-    APIRET rc = DosClose(File);
+    APIRET rc = DosClose((uintptr_t)File);
     AssertMsg(!rc, ("%ld\n", rc));
 
 # else /* The IPRT case. */
@@ -322,7 +322,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     ULONG cbOS2Parm = cbData;
     int32_t vrc = VERR_INTERNAL_ERROR;
     ULONG cbOS2Data = sizeof(vrc);
-    APIRET rc = DosDevIOCtl(g_File, VBOXGUEST_IOCTL_CATEGORY, iFunction,
+    APIRET rc = DosDevIOCtl((uintptr_t)g_File, VBOXGUEST_IOCTL_CATEGORY, iFunction,
                             pvData, cbData, &cbOS2Parm,
                             &vrc, sizeof(vrc), &cbOS2Data);
     if (RT_LIKELY(!rc))
@@ -343,7 +343,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
  *        error instead of an errno.h one. Alternatively, extend/redefine the
  *        header with an error code return field (much better alternative
  *        actually). */
-    int rc = ioctl((int)g_File, iFunction, &Hdr);
+    int rc = ioctl(RTFileToNative(g_File), iFunction, &Hdr);
     if (rc == -1)
     {
         rc = errno;
@@ -355,7 +355,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 # ifdef VBOX_VBGLR3_XFREE86
     int rc = xf86ioctl((int)g_File, iFunction, pvData);
 # else
-    int rc = ioctl((int)g_File, iFunction, pvData);
+    int rc = ioctl(RTFileToNative(g_File), iFunction, pvData);
 # endif
     if (RT_LIKELY(rc == 0))
         return VINF_SUCCESS;

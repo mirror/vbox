@@ -38,7 +38,7 @@
 
 
 
-RTDECL(int)         RTVfsIoStrmFromStdHandle(RTHANDLESTD enmStdHandle, uint32_t fOpen, bool fLeaveOpen,
+RTDECL(int)         RTVfsIoStrmFromStdHandle(RTHANDLESTD enmStdHandle, uint64_t fOpen, bool fLeaveOpen,
                                              PRTVFSIOSTREAM phVfsIos)
 {
     /*

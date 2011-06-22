@@ -79,7 +79,7 @@ typedef struct USBPROXYDEVSOL
     /** Path of the USB device in the devices tree (persistent). */
     char                          *pszDevicePath;
     /** The connection to the client driver. */
-    RTFILE                         File;
+    RTFILE                         hFile;
     /** Pointer to the proxy device instance. */
     PUSBPROXYDEV                   pProxyDev;
     /** Critical section protecting the two lists. */
@@ -195,11 +195,8 @@ static void usbProxySolarisUrbFree(PUSBPROXYDEVSOL pDevSol, PUSBPROXYURBSOL pUrb
  */
 static void usbProxySolarisCloseFile(PUSBPROXYDEVSOL pDevSol)
 {
-    if (pDevSol->File != NIL_RTFILE)
-    {
-        RTFileClose(pDevSol->File);
-        pDevSol->File = NIL_RTFILE;
-    }
+    RTFileClose(pDevSol->hFile);
+    pDevSol->hFile = NIL_RTFILE;
 }
 
 
@@ -214,7 +211,7 @@ static void usbProxySolarisCloseFile(PUSBPROXYDEVSOL pDevSol)
  */
 static int usbProxySolarisIOCtl(PUSBPROXYDEVSOL pDevSol, unsigned Function, void *pvData, size_t cbData)
 {
-    if (RT_UNLIKELY(pDevSol->File == NIL_RTFILE))
+    if (RT_UNLIKELY(pDevSol->hFile == NIL_RTFILE))
     {
         LogFlow((USBPROXY ":usbProxySolarisIOCtl connection to driver gone!\n"));
         return VERR_VUSB_DEVICE_NOT_ATTACHED;
@@ -227,7 +224,7 @@ static int usbProxySolarisIOCtl(PUSBPROXYDEVSOL pDevSol, unsigned Function, void
     Req.pvDataR3 = pvData;
 
     int Ret = -1;
-    int rc = RTFileIoCtl(pDevSol->File, Function, &Req, sizeof(Req), &Ret);
+    int rc = RTFileIoCtl(pDevSol->hFile, Function, &Req, sizeof(Req), &Ret);
     if (RT_SUCCESS(rc))
     {
         if (RT_FAILURE(Req.rc))
@@ -326,11 +323,11 @@ static int usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, v
                         /*
                          * Open the client driver.
                          */
-                        RTFILE File;
-                        rc = RTFileOpen(&File, pDevSol->pszDevicePath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+                        RTFILE hFile;
+                        rc = RTFileOpen(&hFile, pDevSol->pszDevicePath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
                         if (RT_SUCCESS(rc))
                         {
-                            pDevSol->File = File;
+                            pDevSol->hFile = hFile;
                             pDevSol->pProxyDev = pProxyDev;
 
                             /*
@@ -362,8 +359,8 @@ static int usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, v
                                 LogRel((USBPROXY ":failed to query driver version. rc=%Rrc\n", rc));
                             }
 
-                            RTFileClose(pDevSol->File);
-                            pDevSol->File = NIL_RTFILE;
+                            RTFileClose(pDevSol->hFile);
+                            pDevSol->hFile = NIL_RTFILE;
                             pDevSol->pProxyDev = NULL;
                         }
                         else
@@ -720,13 +717,10 @@ static PVUSBURB usbProxySolarisUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMil
         for (;;)
         {
             struct pollfd pfd;
-            int rc;
-
-            pfd.fd = pDevSol->File;
+            pfd.fd = RTFileToNative(pDevSol->hFile);
             pfd.events = POLLIN;
             pfd.revents = 0;
-            rc = poll(&pfd, 1, cMillies);
-
+            int rc = poll(&pfd, 1, cMillies);
             if (rc > 0)
             {
                 if (pfd.revents & POLLHUP)

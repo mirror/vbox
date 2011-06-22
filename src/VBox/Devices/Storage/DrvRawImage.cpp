@@ -60,7 +60,7 @@ typedef struct DRVRAWIMAGE
     /** Pointer to the filename. (Freed by MM) */
     char           *pszFilename;
     /** File handle of the raw image file. */
-    RTFILE          File;
+    RTFILE          hFile;
     /** True if the image is operating in readonly mode. */
     bool            fReadOnly;
 } DRVRAWIMAGE, *PDRVRAWIMAGE;
@@ -76,7 +76,7 @@ static DECLCALLBACK(uint64_t) drvRawImageGetSize(PPDMIMEDIA pInterface)
     LogFlow(("drvRawImageGetSize: '%s'\n", pThis->pszFilename));
 
     uint64_t cbFile;
-    int rc = RTFileGetSize(pThis->File, &cbFile);
+    int rc = RTFileGetSize(pThis->hFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
         LogFlow(("drvRawImageGetSize: returns %lld (%s)\n", cbFile, pThis->pszFilename));
@@ -126,16 +126,16 @@ static DECLCALLBACK(int) drvRawImageRead(PPDMIMEDIA pInterface, uint64_t off, vo
     PDRVRAWIMAGE pThis = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
     LogFlow(("drvRawImageRead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n", off, pvBuf, cbRead, pThis->pszFilename));
 
-    Assert(pThis->File);
+    Assert(pThis->hFile != NIL_RTFILE);
     Assert(pvBuf);
 
     /*
      * Seek to the position and read.
      */
-    int rc = RTFileSeek(pThis->File, off, RTFILE_SEEK_BEGIN, NULL);
+    int rc = RTFileSeek(pThis->hFile, off, RTFILE_SEEK_BEGIN, NULL);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileRead(pThis->File, pvBuf, cbRead, NULL);
+        rc = RTFileRead(pThis->hFile, pvBuf, cbRead, NULL);
         if (RT_SUCCESS(rc))
         {
             Log2(("drvRawImageRead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n"
@@ -144,11 +144,11 @@ static DECLCALLBACK(int) drvRawImageRead(PPDMIMEDIA pInterface, uint64_t off, vo
                   cbRead, pvBuf));
         }
         else
-            AssertMsgFailed(("RTFileRead(%d, %p, %#x) -> %Rrc (off=%#llx '%s')\n",
-                             pThis->File, pvBuf, cbRead, rc, off, pThis->pszFilename));
+            AssertMsgFailed(("RTFileRead(%RTfile, %p, %#x) -> %Rrc (off=%#llx '%s')\n",
+                             pThis->hFile, pvBuf, cbRead, rc, off, pThis->pszFilename));
     }
     else
-        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Rrc\n", pThis->File, off, rc));
+        AssertMsgFailed(("RTFileSeek(%RTfile,%#llx,) -> %Rrc\n", pThis->hFile, off, rc));
     LogFlow(("drvRawImageRead: returns %Rrc\n", rc));
     return rc;
 }
@@ -160,16 +160,16 @@ static DECLCALLBACK(int) drvRawImageWrite(PPDMIMEDIA pInterface, uint64_t off, c
     PDRVRAWIMAGE pThis = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
     LogFlow(("drvRawImageWrite: off=%#llx pvBuf=%p cbWrite=%#x (%s)\n", off, pvBuf, cbWrite, pThis->pszFilename));
 
-    Assert(pThis->File);
+    Assert(pThis->hFile != NIL_RTFILE);
     Assert(pvBuf);
 
     /*
      * Seek to the position and write.
      */
-    int rc = RTFileSeek(pThis->File, off, RTFILE_SEEK_BEGIN, NULL);
+    int rc = RTFileSeek(pThis->hFile, off, RTFILE_SEEK_BEGIN, NULL);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileWrite(pThis->File, pvBuf, cbWrite, NULL);
+        rc = RTFileWrite(pThis->hFile, pvBuf, cbWrite, NULL);
         if (RT_SUCCESS(rc))
         {
             Log2(("drvRawImageWrite: off=%#llx pvBuf=%p cbWrite=%#x (%s)\n"
@@ -178,11 +178,11 @@ static DECLCALLBACK(int) drvRawImageWrite(PPDMIMEDIA pInterface, uint64_t off, c
                   cbWrite, pvBuf));
         }
         else
-            AssertMsgFailed(("RTFileWrite(%d, %p, %#x) -> %Rrc (off=%#llx '%s')\n",
-                             pThis->File, pvBuf, cbWrite, rc, off, pThis->pszFilename));
+            AssertMsgFailed(("RTFileWrite(%RTfile, %p, %#x) -> %Rrc (off=%#llx '%s')\n",
+                             pThis->hFile, pvBuf, cbWrite, rc, off, pThis->pszFilename));
     }
     else
-        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Rrc\n", pThis->File, off, rc));
+        AssertMsgFailed(("RTFileSeek(%RTfile,%#llx,) -> %Rrc\n", pThis->hFile, off, rc));
     LogFlow(("drvRawImageWrite: returns %Rrc\n", rc));
     return rc;
 }
@@ -194,8 +194,8 @@ static DECLCALLBACK(int) drvRawImageFlush(PPDMIMEDIA pInterface)
     PDRVRAWIMAGE pThis = PDMIMEDIA_2_DRVRAWIMAGE(pInterface);
     LogFlow(("drvRawImageFlush: (%s)\n", pThis->pszFilename));
 
-    Assert(pThis->File != NIL_RTFILE);
-    int rc = RTFileFlush(pThis->File);
+    Assert(pThis->hFile != NIL_RTFILE);
+    int rc = RTFileFlush(pThis->hFile);
     LogFlow(("drvRawImageFlush: returns %Rrc\n", rc));
     return rc;
 }
@@ -248,13 +248,14 @@ static DECLCALLBACK(void) drvRawImageDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("drvRawImageDestruct: '%s'\n", pThis->pszFilename));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    if (pThis->File != NIL_RTFILE)
-    {
-        RTFileClose(pThis->File);
-        pThis->File = NIL_RTFILE;
-    }
+    RTFileClose(pThis->hFile);
+    pThis->hFile = NIL_RTFILE;
+
     if (pThis->pszFilename)
+    {
         MMR3HeapFree(pThis->pszFilename);
+        pThis->pszFilename = NULL;
+    }
 }
 
 
@@ -272,7 +273,7 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Init the static parts.
      */
     pThis->pDrvIns                      = pDrvIns;
-    pThis->File                         = NIL_RTFILE;
+    pThis->hFile                        = NIL_RTFILE;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvRawImageQueryInterface;
     /* IMedia */
@@ -304,8 +305,7 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Open the image.
      */
-    rc = RTFileOpen(&pThis->File, pszName,
-                    RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    rc = RTFileOpen(&pThis->hFile, pszName, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
@@ -314,8 +314,7 @@ static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     }
     else
     {
-        rc = RTFileOpen(&pThis->File, pszName,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        rc = RTFileOpen(&pThis->hFile, pszName, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {
             LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));

@@ -99,7 +99,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
         return vrc;
     }
 
-    pThis->hDevice = (RTFILE)hDevice;
+    pThis->hDevice = hDevice;
     return VINF_SUCCESS;
 }
 
@@ -111,11 +111,11 @@ int suplibOsTerm(PSUPLIBDATA pThis)
     /*
      * Check if we're inited at all.
      */
-    if (pThis->hDevice != NIL_RTFILE)
+    if (pThis->hDevice != (intptr_t)NIL_RTFILE)
     {
         APIRET rc = DosClose((HFILE)pThis->hDevice);
         AssertMsg(rc == NO_ERROR, ("%d\n", rc)); NOREF(rc);
-        pThis->hDevice = NIL_RTFILE;
+        pThis->hDevice = (intptr_t)NIL_RTFILE;
     }
 
     return 0;

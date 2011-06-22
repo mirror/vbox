@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -406,7 +406,7 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
     memset(&pReqInt->AioCB, 0, sizeof(struct aiocb));
     pReqInt->fFlush               = false;
     pReqInt->AioCB.aio_lio_opcode = uTransferDirection;
-    pReqInt->AioCB.aio_fildes     = (int)hFile;
+    pReqInt->AioCB.aio_fildes     = RTFileToNative(hFile);
     pReqInt->AioCB.aio_offset     = off;
     pReqInt->AioCB.aio_nbytes     = cbTransfer;
     pReqInt->AioCB.aio_buf        = pvBuf;
@@ -444,7 +444,7 @@ RTDECL(int) RTFileAioReqPrepareFlush(RTFILEAIOREQ hReq, RTFILE hFile, void *pvUs
     Assert(hFile != NIL_RTFILE);
 
     pReqInt->fFlush           = true;
-    pReqInt->AioCB.aio_fildes = (int)hFile;
+    pReqInt->AioCB.aio_fildes = RTFileToNative(hFile);
     pReqInt->AioCB.aio_offset = 0;
     pReqInt->AioCB.aio_nbytes = 0;
     pReqInt->AioCB.aio_buf    = NULL;

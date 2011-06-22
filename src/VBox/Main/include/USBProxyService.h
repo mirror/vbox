@@ -255,11 +255,11 @@ private:
 
 private:
     /** File handle to the '/proc/bus/usb/devices' file. */
-    RTFILE mFile;
+    RTFILE mhFile;
     /** Pipe used to interrupt wait(), the read end. */
-    RTFILE mWakeupPipeR;
+    RTPIPE mhWakeupPipeR;
     /** Pipe used to interrupt wait(), the write end. */
-    RTFILE mWakeupPipeW;
+    RTPIPE mhWakeupPipeW;
     /** The root of usbfs. */
     Utf8Str mDevicesRoot;
     /** Whether we're using <mUsbfsRoot>/devices or /sys/whatever. */

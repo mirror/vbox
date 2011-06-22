@@ -41,7 +41,7 @@ RT_C_DECLS_BEGIN
  *                      Updated on successful return.
  * @internal
  */
-int rtFileRecalcAndValidateFlags(uint32_t *pfOpen);
+int rtFileRecalcAndValidateFlags(uint64_t *pfOpen);
 
 
 /**

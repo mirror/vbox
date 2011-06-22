@@ -26,6 +26,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
+#include <iprt/pipe.h>
 #include <iprt/semaphore.h>
 #include <iprt/stream.h>
 #include <iprt/uuid.h>
@@ -63,13 +64,13 @@ typedef struct DRVHOSTPARALLEL
     /** Device Path */
     char                         *pszDevicePath;
     /** Device Handle */
-    RTFILE                        FileDevice;
+    RTFILE                        hFileDevice;
     /** Thread waiting for interrupts. */
     PPDMTHREAD                    pMonitorThread;
     /** Wakeup pipe read end. */
-    RTFILE                        WakeupPipeR;
+    RTPIPE                        hWakeupPipeR;
     /** Wakeup pipe write end. */
-    RTFILE                        WakeupPipeW;
+    RTPIPE                        hWakeupPipeW;
 } DRVHOSTPARALLEL, *PDRVHOSTPARALLEL;
 
 /** Converts a pointer to DRVHOSTPARALLEL::IHostDeviceConnector to a PDRHOSTPARALLEL. */
@@ -101,7 +102,7 @@ static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterf
 
     LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, *cbWrite));
 
-    ioctl(pThis->FileDevice, PPWDATA, pBuffer);
+    ioctl(RTFileToNative(pThis->hFileDevice), PPWDATA, pBuffer);
     *cbWrite = 1;
 
     return VINF_SUCCESS;
@@ -114,7 +115,7 @@ static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterfa
 
     LogFlow(("%s: pvBuf=%#p cbRead=%d\n", __FUNCTION__, pvBuf, cbRead));
 
-    ioctl(pThis->FileDevice, PPRDATA, pBuffer);
+    ioctl(RTFileToNative(pThis->hFileDevice), PPRDATA, pBuffer);
     *cbRead = 1;
 
     return VINF_SUCCESS;
@@ -139,7 +140,7 @@ static DECLCALLBACK(int) drvHostParallelSetMode(PPDMIHOSTPARALLELCONNECTOR pInte
             break;
     }
 
-    ioctl(pThis->FileDevice, PPSETMODE, &ppdev_mode);
+    ioctl(RTFileToNative(pThis->hFileDevice), PPSETMODE, &ppdev_mode);
 
     return VINF_SUCCESS;
 }
@@ -149,8 +150,7 @@ static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR 
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
 
     LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
-
-    ioctl(pThis->FileDevice, PPWCONTROL, &fReg);
+    ioctl(RTFileToNative(pThis->hFileDevice), PPWCONTROL, &fReg);
 
     return VINF_SUCCESS;
 }
@@ -158,12 +158,10 @@ static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR 
 static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-    uint8_t fReg;
 
-    ioctl(pThis->FileDevice, PPRCONTROL, &fReg);
-
+    uint8_t fReg = 0;
+    ioctl(RTFileToNative(pThis->hFileDevice), PPRCONTROL, &fReg);
     LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
-
     *pfReg = fReg;
 
     return VINF_SUCCESS;
@@ -172,12 +170,10 @@ static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR p
 static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-    uint8_t fReg;
 
-    ioctl(pThis->FileDevice, PPRSTATUS, &fReg);
-
+    uint8_t fReg = 0;
+    ioctl(RTFileToNative(pThis->hFileDevice), PPRSTATUS, &fReg);
     LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
-
     *pfReg = fReg;
 
     return VINF_SUCCESS;
@@ -195,10 +191,10 @@ static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTH
     {
         int rc;
 
-        aFDs[0].fd      = pThis->FileDevice;
+        aFDs[0].fd      = RTFileToNative(pThis->hFileDevice);
         aFDs[0].events  = POLLIN;
         aFDs[0].revents = 0;
-        aFDs[1].fd      = pThis->WakeupPipeR;
+        aFDs[1].fd      = RTPipeToNative(pThis->hWakeupPipeR);
         aFDs[1].events  = POLLIN | POLLERR | POLLHUP;
         aFDs[1].revents = 0;
         rc = poll(aFDs, RT_ELEMENTS(aFDs), -1);
@@ -217,7 +213,7 @@ static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTH
             /* notification to terminate -- drain the pipe */
             char ch;
             size_t cbRead;
-            RTFileRead(pThis->WakeupPipeR, &ch, 1, &cbRead);
+            RTPipeRead(pThis->hWakeupPipeR, &ch, 1, &cbRead);
             continue;
         }
 
@@ -239,8 +235,8 @@ static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTH
 static DECLCALLBACK(int) drvHostParallelWakeupMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-
-    return RTFileWrite(pThis->WakeupPipeW, "", 1, NULL);
+    size_t cbIgnored;
+    return RTPipeWrite(pThis->hWakeupPipeW, "", 1, &cbIgnored);
 }
 
 /**
@@ -256,27 +252,20 @@ static DECLCALLBACK(void) drvHostParallelDestruct(PPDMDRVINS pDrvIns)
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    int rc;
 
-    ioctl(pThis->FileDevice, PPRELEASE);
+    if (pThis->hFileDevice != NIL_RTFILE)
+        ioctl(RTFileToNative(pThis->hFileDevice), PPRELEASE);
 
-    if (pThis->WakeupPipeW != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->WakeupPipeW);
-        AssertRC(rc);
-        pThis->WakeupPipeW = NIL_RTFILE;
-    }
-    if (pThis->WakeupPipeR != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->WakeupPipeR);
-        AssertRC(rc);
-        pThis->WakeupPipeR = NIL_RTFILE;
-    }
-    if (pThis->FileDevice != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->FileDevice);
-        AssertRC(rc);
-        pThis->FileDevice = NIL_RTFILE;
-    }
+    rc = RTPipeClose(pThis->hWakeupPipeW); AssertRC(rc);
+    pThis->hWakeupPipeW = NIL_RTPIPE;
+
+    rc = RTPipeClose(pThis->hWakeupPipeR); AssertRC(rc);
+    pThis->hWakeupPipeR = NIL_RTPIPE;
+
+    rc = RTFileClose(pThis->hFileDevice); AssertRC(rc);
+    pThis->hFileDevice = NIL_RTFILE;
+
     if (pThis->pszDevicePath)
     {
         MMR3HeapFree(pThis->pszDevicePath);
@@ -296,15 +285,13 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
-     * Validate the config.
-     */
-    if (!CFGMR3AreValuesValid(pCfg, "DevicePath\0"))
-        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
-                                N_("Unknown host parallel configuration option, only supports DevicePath"));
-
-    /*
      * Init basic data members and interfaces.
+     *
+     * Must be done before returning any failure because we've got a destructor.
      */
+    pThis->hFileDevice  = NIL_RTFILE;
+    pThis->hWakeupPipeR = NIL_RTPIPE;
+    pThis->hWakeupPipeW = NIL_RTPIPE;
 
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface               = drvHostParallelQueryInterface;
@@ -315,6 +302,13 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     pThis->IHostParallelConnector.pfnWriteControl  = drvHostParallelWriteControl;
     pThis->IHostParallelConnector.pfnReadControl   = drvHostParallelReadControl;
     pThis->IHostParallelConnector.pfnReadStatus    = drvHostParallelReadStatus;
+
+    /*
+     * Validate the config.
+     */
+    if (!CFGMR3AreValuesValid(pCfg, "DevicePath\0"))
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
+                                N_("Unknown host parallel configuration option, only supports DevicePath"));
 
     /*
      * Query configuration.
@@ -330,7 +324,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Open the device
      */
-    rc = RTFileOpen(&pThis->FileDevice, pThis->pszDevicePath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    rc = RTFileOpen(&pThis->hFileDevice, pThis->pszDevicePath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("Parallel#%d could not open '%s'"),
                                    pDrvIns->iInstance, pThis->pszDevicePath);
@@ -338,7 +332,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Try to get exclusive access to parallel port
      */
-    rc = ioctl(pThis->FileDevice, PPEXCL);
+    rc = ioctl(RTFileToNative(pThis->hFileDevice), PPEXCL);
     if (rc < 0)
         return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
                                    N_("Parallel#%d could not get exclusive access for parallel port '%s'"
@@ -348,7 +342,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Claim the parallel port
      */
-    rc = ioctl(pThis->FileDevice, PPCLAIM);
+    rc = ioctl(RTFileToNative(pThis->hFileDevice), PPCLAIM);
     if (rc < 0)
         return PDMDrvHlpVMSetError(pDrvIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
                                    N_("Parallel#%d could not claim parallel port '%s'"
@@ -366,15 +360,8 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Create wakeup pipe.
      */
-    int aFDs[2];
-    if (pipe(aFDs) != 0)
-    {
-        rc = RTErrConvertFromErrno(errno);
-        AssertRC(rc);
-        return rc;
-    }
-    pThis->WakeupPipeR = aFDs[0];
-    pThis->WakeupPipeW = aFDs[1];
+    rc = RTPipeCreate(&pThis->hWakeupPipeR, &pThis->hWakeupPipeR, 0 /*fFlags*/);
+    AssertRCReturn(rc, rc);
 
     /*
      * Start waiting for interrupts.

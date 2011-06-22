@@ -1011,14 +1011,14 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
          * which will trash the host cache but ensures that the host cache will not
          * contain dirty buffers.
          */
-        RTFILE File = NIL_RTFILE;
+        RTFILE hFile = NIL_RTFILE;
 
-        rc = RTFileOpen(&File, pszUri, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        rc = RTFileOpen(&hFile, pszUri, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {
             uint64_t cbSize;
 
-            rc = pdmacFileEpNativeGetSize(File, &cbSize);
+            rc = pdmacFileEpNativeGetSize(hFile, &cbSize);
             Assert(RT_FAILURE(rc) || cbSize != 0);
 
             if (RT_SUCCESS(rc) && ((cbSize % 512) == 0))
@@ -1033,12 +1033,12 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 enmMgrType   = PDMACEPFILEMGRTYPE_SIMPLE;
 #endif
             }
-            RTFileClose(File);
+            RTFileClose(hFile);
         }
     }
 
     /* Open with final flags. */
-    rc = RTFileOpen(&pEpFile->File, pszUri, fFileFlags);
+    rc = RTFileOpen(&pEpFile->hFile, pszUri, fFileFlags);
     if ((rc == VERR_INVALID_FUNCTION) || (rc == VERR_INVALID_PARAMETER))
     {
         LogRel(("pdmacFileEpInitialize: RTFileOpen %s / %08x failed with %Rrc\n",
@@ -1063,7 +1063,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
 #endif
 
         /* Open again. */
-        rc = RTFileOpen(&pEpFile->File, pszUri, fFileFlags);
+        rc = RTFileOpen(&pEpFile->hFile, pszUri, fFileFlags);
 
         if (RT_FAILURE(rc))
         {
@@ -1076,7 +1076,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     {
         pEpFile->fFlags = fFileFlags;
 
-        rc = pdmacFileEpNativeGetSize(pEpFile->File, (uint64_t *)&pEpFile->cbFile);
+        rc = pdmacFileEpNativeGetSize(pEpFile->hFile, (uint64_t *)&pEpFile->cbFile);
         Assert(RT_FAILURE(rc) || pEpFile->cbFile != 0);
 
         if (RT_SUCCESS(rc))
@@ -1146,7 +1146,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
         }
 
         if (RT_FAILURE(rc))
-            RTFileClose(pEpFile->File);
+            RTFileClose(pEpFile->hFile);
     }
 
 #ifdef VBOX_WITH_STATISTICS
@@ -1206,7 +1206,7 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
     /* Destroy the locked ranges tree now. */
     RTAvlrFileOffsetDestroy(pEpFile->AioMgr.pTreeRangesLocked, pdmacFileEpRangesLockedDestroy, NULL);
 
-    RTFileClose(pEpFile->File);
+    RTFileClose(pEpFile->hFile);
 
 #ifdef VBOX_WITH_STATISTICS
     STAMR3Deregister(pEpClassFile->Core.pVM, &pEpFile->StatRead);
@@ -1300,7 +1300,7 @@ static int pdmacFileEpSetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t cb
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
 
     ASMAtomicWriteU64(&pEpFile->cbFile, cbSize);
-    return RTFileSetSize(pEpFile->File, cbSize);
+    return RTFileSetSize(pEpFile->hFile, cbSize);
 }
 
 const PDMASYNCCOMPLETIONEPCLASSOPS g_PDMAsyncCompletionEndpointClassFile =

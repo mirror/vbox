@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -188,7 +188,7 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
     Assert(cbTransfer > 0);
 
     pReqInt->enmTransferDirection  = enmTransferDirection;
-    pReqInt->hFile                 = (HANDLE)hFile;
+    pReqInt->hFile                 = RTFileToNative(hFile);
     pReqInt->Overlapped.Offset     = (DWORD)(off & 0xffffffff);
     pReqInt->Overlapped.OffsetHigh = (DWORD)(off >> 32);
     pReqInt->cbTransfer            = cbTransfer;
@@ -317,7 +317,7 @@ RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile)
     PRTFILEAIOCTXINTERNAL pCtxInt = hAioCtx;
     RTFILEAIOCTX_VALID_RETURN(pCtxInt);
 
-    HANDLE hTemp = CreateIoCompletionPort((HANDLE)hFile, pCtxInt->hIoCompletionPort, 0, 1);
+    HANDLE hTemp = CreateIoCompletionPort(RTFileToNative(hFile), pCtxInt->hIoCompletionPort, 0, 1);
     if (hTemp != pCtxInt->hIoCompletionPort)
         rc = RTErrConvertFromWin32(GetLastError());
 

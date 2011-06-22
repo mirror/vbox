@@ -33,6 +33,7 @@
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/pipe.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
@@ -63,18 +64,16 @@ typedef struct DRVVDE
     PPDMINETWORKDOWN        pIAboveNet;
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
-    /** VDE device file handle. */
-    RTFILE                  FileDevice;
     /** The configured VDE device name. */
     char                   *pszDeviceName;
     /** The write end of the control pipe. */
-    RTFILE                  PipeWrite;
+    RTPIPE                  hPipeWrite;
     /** The read end of the control pipe. */
-    RTFILE                  PipeRead;
+    RTPIPE                  hPipeRead;
     /** Reader thread. */
     PPDMTHREAD              pThread;
     /** The connection to the VDE switch */
-    VDECONN                *vdeconn;
+    VDECONN                *pVdeConn;
 
     /** @todo The transmit thread. */
     /** Transmit lock used by drvTAPNetworkUp_BeginXmit. */
@@ -224,7 +223,7 @@ static DECLCALLBACK(int) drvVDENetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
               pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, pSgBuf->cbUsed, pSgBuf->aSegs[0].pvSeg));
 
         ssize_t cbSent;
-        cbSent = vde_send(pThis->vdeconn, pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, 0);
+        cbSent = vde_send(pThis->pVdeConn, pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, 0);
         rc = cbSent < 0 ? RTErrConvertFromErrno(-cbSent) : VINF_SUCCESS;
     }
     else
@@ -240,7 +239,7 @@ static DECLCALLBACK(int) drvVDENetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
             void *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)pbFrame, pSgBuf->cbUsed, abHdrScratch,
                                                        iSeg, cSegs, &cbSegFrame);
             ssize_t cbSent;
-            cbSent = vde_send(pThis->vdeconn, pvSegFrame, cbSegFrame, 0);
+            cbSent = vde_send(pThis->pVdeConn, pvSegFrame, cbSegFrame, 0);
             rc = cbSent < 0 ? RTErrConvertFromErrno(-cbSent) : VINF_SUCCESS;
             if (RT_FAILURE(rc))
                 break;
@@ -318,10 +317,10 @@ static DECLCALLBACK(int) drvVDEAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
          * Wait for something to become available.
          */
         struct pollfd aFDs[2];
-        aFDs[0].fd      = vde_datafd(pThis->vdeconn);
+        aFDs[0].fd      = vde_datafd(pThis->pVdeConn);
         aFDs[0].events  = POLLIN | POLLPRI;
         aFDs[0].revents = 0;
-        aFDs[1].fd      = pThis->PipeRead;
+        aFDs[1].fd      = RTPipeToNative(pThis->hPipeRead);
         aFDs[1].events  = POLLIN | POLLPRI | POLLERR | POLLHUP;
         aFDs[1].revents = 0;
         STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
@@ -342,7 +341,7 @@ static DECLCALLBACK(int) drvVDEAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
              */
             char achBuf[16384];
             ssize_t cbRead = 0;
-            cbRead = vde_recv(pThis->vdeconn, achBuf, sizeof(achBuf), 0);
+            cbRead = vde_recv(pThis->pVdeConn, achBuf, sizeof(achBuf), 0);
             rc = cbRead < 0 ? RTErrConvertFromErrno(-cbRead) : VINF_SUCCESS;
             if (RT_SUCCESS(rc))
             {
@@ -403,7 +402,7 @@ static DECLCALLBACK(int) drvVDEAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             /* drain the pipe */
             char ch;
             size_t cbRead;
-            RTFileRead(pThis->PipeRead, &ch, 1, &cbRead);
+            RTPipeRead(pThis->hPipeRead, &ch, 1, &cbRead);
         }
         else
         {
@@ -439,7 +438,8 @@ static DECLCALLBACK(int) drvVDEAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 {
     PDRVVDE pThis = PDMINS_2_DATA(pDrvIns, PDRVVDE);
 
-    int rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
+    size_t cbIgnored;
+    int rc = RTPipeWrite(pThis->hPipeWrite, "", 1, &cbIgnored);
     AssertRC(rc);
 
     return VINF_SUCCESS;
@@ -480,18 +480,10 @@ static DECLCALLBACK(void) drvVDEDestruct(PPDMDRVINS pDrvIns)
     /*
      * Terminate the control pipe.
      */
-    if (pThis->PipeWrite != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->PipeWrite);
-        AssertRC(rc);
-        pThis->PipeWrite = NIL_RTFILE;
-    }
-    if (pThis->PipeRead != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->PipeRead);
-        AssertRC(rc);
-        pThis->PipeRead = NIL_RTFILE;
-    }
+    RTPipeClose(pThis->hPipeWrite);
+    pThis->hPipeWrite = NIL_RTPIPE;
+    RTPipeClose(pThis->hPipeRead);
+    pThis->hPipeRead = NIL_RTPIPE;
 
     MMR3HeapFree(pThis->pszDeviceName);
 
@@ -501,7 +493,9 @@ static DECLCALLBACK(void) drvVDEDestruct(PPDMDRVINS pDrvIns)
     if (RTCritSectIsInitialized(&pThis->XmitLock))
         RTCritSectDelete(&pThis->XmitLock);
 
-    vde_close(pThis->vdeconn);
+    vde_close(pThis->pVdeConn);
+    pThis->pVdeConn = NULL;
+
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Deregister statistics.
@@ -529,14 +523,13 @@ static DECLCALLBACK(int) drvVDEConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /*
      * Init the static parts.
      */
-    pThis->pDrvIns                      = pDrvIns;
-    pThis->FileDevice                   = NIL_RTFILE;
-    pThis->pszDeviceName                = NULL;
-    pThis->PipeRead                     = NIL_RTFILE;
-    pThis->PipeWrite                    = NIL_RTFILE;
+    pThis->pDrvIns                              = pDrvIns;
+    pThis->pszDeviceName                        = NULL;
+    pThis->hPipeRead                            = NIL_RTPIPE;
+    pThis->hPipeWrite                           = NIL_RTPIPE;
 
     /* IBase */
-    pDrvIns->IBase.pfnQueryInterface    = drvVDEQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface            = drvVDEQueryInterface;
     /* INetwork */
     pThis->INetworkUp.pfnBeginXmit              = drvVDENetworkUp_BeginXmit;
     pThis->INetworkUp.pfnAllocBuf               = drvVDENetworkUp_AllocBuf;
@@ -591,8 +584,8 @@ static DECLCALLBACK(int) drvVDEConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     if (RT_FAILURE(DrvVDELoadVDEPlug()))
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("VDEplug library: not found"));
-    pThis->vdeconn = vde_open(szNetwork, "VirtualBOX", NULL);
-    if (pThis->vdeconn == NULL)
+    pThis->pVdeConn = vde_open(szNetwork, "VirtualBOX", NULL);
+    if (pThis->pVdeConn == NULL)
         return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_PDM_HIF_OPEN_FAILED, RT_SRC_POS,
                                    N_("Failed to connect to the VDE SWITCH"));
 
@@ -605,15 +598,8 @@ static DECLCALLBACK(int) drvVDEConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /*
      * Create the control pipe.
      */
-    int fds[2];
-    if (pipe(&fds[0]) != 0) /** @todo RTPipeCreate() or something... */
-    {
-        rc = RTErrConvertFromErrno(errno);
-        AssertRC(rc);
-        return rc;
-    }
-    pThis->PipeRead = fds[0];
-    pThis->PipeWrite = fds[1];
+    rc = RTPipeCreate(&pThis->hPipeRead, &pThis->hPipeWrite, 0 /*fFlags*/);
+    AssertRCReturn(rc, rc);
 
     /*
      * Create the async I/O thread.

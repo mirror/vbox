@@ -96,7 +96,7 @@ static bool                     g_fPreInited = false;
  * via the pre-init mechanism from the hardened executable stub.  */
 SUPLIBDATA                      g_supLibData =
 {
-    NIL_RTFILE
+    SUP_HDEVICE_NIL
 #if   defined(RT_OS_DARWIN)
     , NULL
 #elif defined(RT_OS_LINUX)
@@ -184,10 +184,10 @@ DECLEXPORT(int) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_t fFlags)
         ||  pPreInitData->u32EndMagic != SUPPREINITDATA_MAGIC)
         return VERR_INVALID_MAGIC;
     if (    !(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
-        &&  pPreInitData->Data.hDevice == NIL_RTFILE)
+        &&  pPreInitData->Data.hDevice == SUP_HDEVICE_NIL)
         return VERR_INVALID_HANDLE;
     if (    (fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
-        &&  pPreInitData->Data.hDevice != NIL_RTFILE)
+        &&  pPreInitData->Data.hDevice != SUP_HDEVICE_NIL)
         return VERR_INVALID_PARAMETER;
 
     /*

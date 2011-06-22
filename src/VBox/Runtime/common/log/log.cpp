@@ -128,11 +128,7 @@ typedef struct RTLOGGERINTERNAL
     PFNRTLOGPHASE           pfnPhase;
 
     /** Handle to log file (if open). */
-    union
-    {
-        RTFILE              hFile;
-        RTHCUINTPTR         uPaddingForNewRTFILE;
-    } u;
+    RTFILE                  hFile;
     /** Log file history settings: maximum amount of data to put in a file. */
     uint64_t                cbHistoryFileMax;
     /** Log file history settings: current amount of data in a file. */
@@ -156,7 +152,7 @@ typedef struct RTLOGGERINTERNAL
 #ifdef IN_RING3
 /** The size of the RTLOGGERINTERNAL structure in ring-0.  */
 # define RTLOGGERINTERNAL_R0_SIZE       RT_OFFSETOF(RTLOGGERINTERNAL, pfnPhase)
-AssertCompileMemberAlignment(RTLOGGERINTERNAL, u.hFile, sizeof(void *));
+AssertCompileMemberAlignment(RTLOGGERINTERNAL, hFile, sizeof(void *));
 AssertCompileMemberAlignment(RTLOGGERINTERNAL, cbHistoryFileMax, sizeof(uint64_t));
 #endif
 
@@ -340,7 +336,7 @@ DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
 static DECLCALLBACK(size_t) rtlogPhaseWrite(void *pvArg, const char *pachChars, size_t cbChars)
 {
     PRTLOGGER pLogger = (PRTLOGGER)pvArg;
-    RTFileWrite(pLogger->pInt->u.hFile, pachChars, cbChars, NULL);
+    RTFileWrite(pLogger->pInt->hFile, pachChars, cbChars, NULL);
     return cbChars;
 }
 
@@ -478,7 +474,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         pLogger->pInt->cMaxEntriesPerGroup      = UINT32_MAX;
 # ifdef IN_RING3
         pLogger->pInt->pfnPhase                 = pfnPhase;
-        pLogger->pInt->u.hFile                  = NIL_RTFILE;
+        pLogger->pInt->hFile                    = NIL_RTFILE;
         pLogger->pInt->cHistory                 = cHistory;
         if (cbHistoryFileMax == 0)
             pLogger->pInt->cbHistoryFileMax     = UINT64_MAX;
@@ -595,7 +591,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                     rtlogRotate(pLogger, 0, true /* fFirst */);
 
                     /* If the file is not open then rotation is not set up. */
-                    if (pLogger->pInt->u.hFile == NIL_RTFILE)
+                    if (pLogger->pInt->hFile == NIL_RTFILE)
                     {
                         pLogger->pInt->cbHistoryFileWritten = 0;
                         rc = rtlogFileOpen(pLogger, pszErrorMsg, cchErrorMsg);
@@ -637,7 +633,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                     RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("failed to create semaphore"));
             }
 # ifdef IN_RING3
-            RTFileClose(pLogger->pInt->u.hFile);
+            RTFileClose(pLogger->pInt->hFile);
 # endif
 # if defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC)
             RTMemFree(*(void **)&pLogger->pfnLogger);
@@ -735,19 +731,19 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
      * Add end of logging message.
      */
     if (   (pLogger->fDestFlags & RTLOGDEST_FILE)
-        && pLogger->pInt->u.hFile != NIL_RTFILE)
+        && pLogger->pInt->hFile != NIL_RTFILE)
         pLogger->pInt->pfnPhase(pLogger, RTLOGPHASE_END, rtlogPhaseMsgLocked);
 
     /*
      * Close output stuffs.
      */
-    if (pLogger->pInt->u.hFile != NIL_RTFILE)
+    if (pLogger->pInt->hFile != NIL_RTFILE)
     {
-        int rc2 = RTFileClose(pLogger->pInt->u.hFile);
+        int rc2 = RTFileClose(pLogger->pInt->hFile);
         AssertRC(rc2);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
-        pLogger->pInt->u.hFile = NIL_RTFILE;
+        pLogger->pInt->hFile = NIL_RTFILE;
     }
 # endif
 
@@ -2557,16 +2553,16 @@ static int rtlogFileOpen(PRTLOGGER pLogger, char *pszErrorMsg, size_t cchErrorMs
     if (pLogger->fFlags & RTLOGFLAGS_WRITE_THROUGH)
         fOpen |= RTFILE_O_WRITE_THROUGH;
 
-    int rc = RTFileOpen(&pLogger->pInt->u.hFile, pLogger->pInt->szFilename, fOpen);
+    int rc = RTFileOpen(&pLogger->pInt->hFile, pLogger->pInt->szFilename, fOpen);
     if (RT_FAILURE(rc))
     {
-        pLogger->pInt->u.hFile = NIL_RTFILE;
+        pLogger->pInt->hFile = NIL_RTFILE;
         if (pszErrorMsg)
             RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("could not open file '%s' (fOpen=%#x)"), pLogger->pInt->szFilename, fOpen);
     }
     else
     {
-        rc = RTFileGetSize(pLogger->pInt->u.hFile, &pLogger->pInt->cbHistoryFileWritten);
+        rc = RTFileGetSize(pLogger->pInt->hFile, &pLogger->pInt->cbHistoryFileWritten);
         if (RT_FAILURE(rc))
         {
             /* Don't complain if this fails, assume the file is empty. */
@@ -2618,7 +2614,7 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
     /*
      * Close the old log file.
      */
-    if (pLogger->pInt->u.hFile != NIL_RTFILE)
+    if (pLogger->pInt->hFile != NIL_RTFILE)
     {
         /* Use the callback to generate some final log contents, but only if
          * this is a rotation with a fully set up logger. Leave the other case
@@ -2630,8 +2626,8 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
             pLogger->pInt->pfnPhase(pLogger, RTLOGPHASE_PREROTATE, rtlogPhaseMsgLocked);
             pLogger->fDestFlags = fODestFlags;
         }
-        RTFileClose(pLogger->pInt->u.hFile);
-        pLogger->pInt->u.hFile = NIL_RTFILE;
+        RTFileClose(pLogger->pInt->hFile);
+        pLogger->pInt->hFile = NIL_RTFILE;
     }
 
     if (cSavedHistory)
@@ -2716,11 +2712,11 @@ static void rtlogFlush(PRTLOGGER pLogger)
 # ifdef IN_RING3
     if (pLogger->fDestFlags & RTLOGDEST_FILE)
     {
-        if (pLogger->pInt->u.hFile != NIL_RTFILE)
+        if (pLogger->pInt->hFile != NIL_RTFILE)
         {
-            RTFileWrite(pLogger->pInt->u.hFile, pLogger->achScratch, pLogger->offScratch, NULL);
+            RTFileWrite(pLogger->pInt->hFile, pLogger->achScratch, pLogger->offScratch, NULL);
             if (pLogger->fFlags & RTLOGFLAGS_FLUSH)
-                RTFileFlush(pLogger->pInt->u.hFile);
+                RTFileFlush(pLogger->pInt->hFile);
         }
         if (pLogger->pInt->cHistory)
             pLogger->pInt->cbHistoryFileWritten += pLogger->offScratch;

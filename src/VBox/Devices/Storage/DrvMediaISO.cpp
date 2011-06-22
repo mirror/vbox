@@ -59,7 +59,7 @@ typedef struct DRVMEDIAISO
     /** Pointer to the filename. (Freed by MM) */
     char           *pszFilename;
     /** File handle of the ISO file. */
-    RTFILE          File;
+    RTFILE          hFile;
 } DRVMEDIAISO, *PDRVMEDIAISO;
 
 
@@ -73,7 +73,7 @@ static DECLCALLBACK(uint64_t) drvMediaISOGetSize(PPDMIMEDIA pInterface)
     LogFlow(("drvMediaISOGetSize: '%s'\n", pThis->pszFilename));
 
     uint64_t cbFile;
-    int rc = RTFileGetSize(pThis->File, &cbFile);
+    int rc = RTFileGetSize(pThis->hFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
         LogFlow(("drvMediaISOGetSize: returns %lld (%s)\n", cbFile, pThis->pszFilename));
@@ -123,29 +123,21 @@ static DECLCALLBACK(int) drvMediaISORead(PPDMIMEDIA pInterface, uint64_t off, vo
     PDRVMEDIAISO pThis = PDMIMEDIA_2_DRVMEDIAISO(pInterface);
     LogFlow(("drvMediaISORead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n", off, pvBuf, cbRead, pThis->pszFilename));
 
-    Assert(pThis->File);
+    Assert(pThis->hFile != NIL_RTFILE);
     Assert(pvBuf);
 
     /*
      * Seek to the position and read.
      */
-    int rc = RTFileSeek(pThis->File, off, RTFILE_SEEK_BEGIN, NULL);
+    int rc = RTFileReadAt(pThis->hFile, off, pvBuf, cbRead, NULL);
     if (RT_SUCCESS(rc))
-    {
-        rc = RTFileRead(pThis->File, pvBuf, cbRead, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            Log2(("drvMediaISORead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n"
-                  "%16.*Rhxd\n",
-                  off, pvBuf, cbRead, pThis->pszFilename,
-                  cbRead, pvBuf));
-        }
-        else
-            AssertMsgFailed(("RTFileRead(%d, %p, %#x) -> %Rrc (off=%#llx '%s')\n",
-                             pThis->File, pvBuf, cbRead, rc, off, pThis->pszFilename));
-    }
+        Log2(("drvMediaISORead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n"
+              "%16.*Rhxd\n",
+              off, pvBuf, cbRead, pThis->pszFilename,
+              cbRead, pvBuf));
     else
-        AssertMsgFailed(("RTFileSeek(%d,%#llx,) -> %Rrc\n", pThis->File, off, rc));
+        AssertMsgFailed(("RTFileReadAt(%RTfile, %#llx, %p, %#x) -> %Rrc ('%s')\n",
+                         pThis->hFile, off, pvBuf, cbRead, rc, pThis->pszFilename));
     LogFlow(("drvMediaISORead: returns %Rrc\n", rc));
     return rc;
 }
@@ -211,13 +203,14 @@ static DECLCALLBACK(void) drvMediaISODestruct(PPDMDRVINS pDrvIns)
     LogFlow(("drvMediaISODestruct: '%s'\n", pThis->pszFilename));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    if (pThis->File != NIL_RTFILE)
-    {
-        RTFileClose(pThis->File);
-        pThis->File = NIL_RTFILE;
-    }
+    RTFileClose(pThis->hFile);
+    pThis->hFile = NIL_RTFILE;
+
     if (pThis->pszFilename)
+    {
         MMR3HeapFree(pThis->pszFilename);
+        pThis->pszFilename = NULL;
+    }
 }
 
 
@@ -235,7 +228,7 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Init the static parts.
      */
     pThis->pDrvIns                      = pDrvIns;
-    pThis->File                         = NIL_RTFILE;
+    pThis->hFile                        = NIL_RTFILE;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvMediaISOQueryInterface;
     /* IMedia */
@@ -264,8 +257,7 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Open the image.
      */
-    rc = RTFileOpen(&pThis->File, pszName,
-                    RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    rc = RTFileOpen(&pThis->hFile, pszName, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
     {
         LogFlow(("drvMediaISOConstruct: ISO image '%s' opened successfully.\n", pszName));

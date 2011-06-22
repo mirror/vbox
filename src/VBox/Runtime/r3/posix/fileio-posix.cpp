@@ -92,7 +92,7 @@ RTDECL(bool) RTFileExists(const char *pszPath)
 }
 
 
-RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
+RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
 {
     /*
      * Validate input.
@@ -110,7 +110,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
 #ifndef O_NONBLOCK
     if (fOpen & RTFILE_O_NON_BLOCK)
     {
-        AssertMsgFailed(("Invalid parameters! fOpen=%#x\n", fOpen));
+        AssertMsgFailed(("Invalid parameters! fOpen=%#llx\n", fOpen));
         return VERR_INVALID_PARAMETER;
     }
 #endif
@@ -176,7 +176,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
             fOpenMode |= fOpen & RTFILE_O_APPEND ? O_APPEND | O_RDWR   : O_RDWR;
             break;
         default:
-            AssertMsgFailed(("RTFileOpen received an invalid RW value, fOpen=%#x\n", fOpen));
+            AssertMsgFailed(("RTFileOpen received an invalid RW value, fOpen=%#llx\n", fOpen));
             return VERR_INVALID_PARAMETER;
     }
 
@@ -321,9 +321,9 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
          */
         if (iErr == 0)
         {
-            *pFile = (RTFILE)fh;
-            Assert((int)*pFile == fh);
-            LogFlow(("RTFileOpen(%p:{%RTfile}, %p:{%s}, %#x): returns %Rrc\n",
+            *pFile = (RTFILE)(uintptr_t)fh;
+            Assert((intptr_t)*pFile == fh);
+            LogFlow(("RTFileOpen(%p:{%RTfile}, %p:{%s}, %#llx): returns %Rrc\n",
                      pFile, *pFile, pszFilename, pszFilename, fOpen, rc));
             return VINF_SUCCESS;
         }
@@ -334,7 +334,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
 }
 
 
-RTR3DECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint32_t fAccess)
+RTR3DECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint64_t fAccess)
 {
     AssertReturn(   fAccess == RTFILE_O_READ
                  || fAccess == RTFILE_O_WRITE
@@ -344,11 +344,11 @@ RTR3DECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint32_t fAccess)
 }
 
 
-RTR3DECL(int)  RTFileClose(RTFILE File)
+RTR3DECL(int)  RTFileClose(RTFILE hFile)
 {
-    if (File == NIL_RTFILE)
+    if (hFile == NIL_RTFILE)
         return VINF_SUCCESS;
-    if (close((int)File) == 0)
+    if (close(RTFileToNative(hFile)) == 0)
         return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
 }
@@ -356,8 +356,8 @@ RTR3DECL(int)  RTFileClose(RTFILE File)
 
 RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative)
 {
-    if (    uNative < 0
-        ||  (RTFILE)uNative != (RTUINTPTR)uNative)
+    AssertCompile(sizeof(uNative) == sizeof(*pFile));
+    if (uNative < 0)
     {
         AssertMsgFailed(("%p\n", uNative));
         *pFile = NIL_RTFILE;
@@ -368,10 +368,10 @@ RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative)
 }
 
 
-RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE File)
+RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE hFile)
 {
-    AssertReturn(File != NIL_RTFILE, -1);
-    return (RTHCINTPTR)File;
+    AssertReturn(hFile != NIL_RTFILE, -1);
+    return (intptr_t)hFile;
 }
 
 
@@ -410,7 +410,7 @@ RTR3DECL(int)  RTFileDelete(const char *pszFilename)
 }
 
 
-RTR3DECL(int)  RTFileSeek(RTFILE File, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
+RTR3DECL(int)  RTFileSeek(RTFILE hFile, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
 {
     static const unsigned aSeekRecode[] =
     {
@@ -437,7 +437,7 @@ RTR3DECL(int)  RTFileSeek(RTFILE File, int64_t offSeek, unsigned uMethod, uint64
         return VERR_NOT_SUPPORTED;
     }
 
-    off_t offCurrent = lseek((int)File, (off_t)offSeek, aSeekRecode[uMethod]);
+    off_t offCurrent = lseek(RTFileToNative(hFile), (off_t)offSeek, aSeekRecode[uMethod]);
     if (offCurrent != ~0)
     {
         if (poffActual)
@@ -448,7 +448,7 @@ RTR3DECL(int)  RTFileSeek(RTFILE File, int64_t offSeek, unsigned uMethod, uint64
 }
 
 
-RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+RTR3DECL(int)  RTFileRead(RTFILE hFile, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     if (cbToRead <= 0)
         return VINF_SUCCESS;
@@ -456,7 +456,7 @@ RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcb
     /*
      * Attempt read.
      */
-    ssize_t cbRead = read((int)File, pvBuf, cbToRead);
+    ssize_t cbRead = read(RTFileToNative(hFile), pvBuf, cbToRead);
     if (cbRead >= 0)
     {
         if (pcbRead)
@@ -467,7 +467,7 @@ RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcb
             /* Caller expects all to be read. */
             while ((ssize_t)cbToRead > cbRead)
             {
-                ssize_t cbReadPart = read((int)File, (char*)pvBuf + cbRead, cbToRead - cbRead);
+                ssize_t cbReadPart = read(RTFileToNative(hFile), (char*)pvBuf + cbRead, cbToRead - cbRead);
                 if (cbReadPart <= 0)
                 {
                     if (cbReadPart == 0)
@@ -484,7 +484,7 @@ RTR3DECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcb
 }
 
 
-RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
+RTR3DECL(int)  RTFileWrite(RTFILE hFile, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     if (cbToWrite <= 0)
         return VINF_SUCCESS;
@@ -492,7 +492,7 @@ RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, siz
     /*
      * Attempt write.
      */
-    ssize_t cbWritten = write((int)File, pvBuf, cbToWrite);
+    ssize_t cbWritten = write(RTFileToNative(hFile), pvBuf, cbToWrite);
     if (cbWritten >= 0)
     {
         if (pcbWritten)
@@ -503,7 +503,7 @@ RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, siz
             /* Caller expects all to be write. */
             while ((ssize_t)cbToWrite > cbWritten)
             {
-                ssize_t cbWrittenPart = write((int)File, (const char *)pvBuf + cbWritten, cbToWrite - cbWritten);
+                ssize_t cbWrittenPart = write(RTFileToNative(hFile), (const char *)pvBuf + cbWritten, cbToWrite - cbWritten);
                 if (cbWrittenPart <= 0)
                     return RTErrConvertFromErrno(errno);
                 cbWritten += cbWrittenPart;
@@ -515,7 +515,7 @@ RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, siz
 }
 
 
-RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize)
+RTR3DECL(int)  RTFileSetSize(RTFILE hFile, uint64_t cbSize)
 {
     /*
      * Validate offset.
@@ -528,23 +528,23 @@ RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize)
     }
 
 #if defined(_MSC_VER) || (defined(RT_OS_OS2) && (!defined(__INNOTEK_LIBC__) || __INNOTEK_LIBC__ < 0x006))
-    if (chsize((int)File, (off_t)cbSize) == 0)
+    if (chsize(RTFileToNative(hFile), (off_t)cbSize) == 0)
 #else
     /* This relies on a non-standard feature of FreeBSD, Linux, and OS/2
      * LIBC v0.6 and higher. (SuS doesn't define ftruncate() and size bigger
      * than the file.)
      */
-    if (ftruncate((int)File, (off_t)cbSize) == 0)
+    if (ftruncate(RTFileToNative(hFile), (off_t)cbSize) == 0)
 #endif
         return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
 }
 
 
-RTR3DECL(int)   RTFileGetSize(RTFILE File, uint64_t *pcbSize)
+RTR3DECL(int)   RTFileGetSize(RTFILE hFile, uint64_t *pcbSize)
 {
     struct stat st;
-    if (!fstat((int)File, &st))
+    if (!fstat(RTFileToNative(hFile), &st))
     {
         *pcbSize = st.st_size;
         return VINF_SUCCESS;
@@ -553,21 +553,13 @@ RTR3DECL(int)   RTFileGetSize(RTFILE File, uint64_t *pcbSize)
 }
 
 
-/**
- * Determine the maximum file size.
- *
- * @returns IPRT status code.
- * @param   File        Handle to the file.
- * @param   pcbMax      Where to store the max file size.
- * @see     RTFileGetMaxSize.
- */
-RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
+RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE hFile, PRTFOFF pcbMax)
 {
     /*
      * Save the current location
      */
     uint64_t offOld;
-    int rc = RTFileSeek(File, 0, RTFILE_SEEK_CURRENT, &offOld);
+    int rc = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offOld);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -587,10 +579,10 @@ RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
         {
             if (pcbMax)
                 *pcbMax = offLow;
-            return RTFileSeek(File, offOld, RTFILE_SEEK_BEGIN, NULL);
+            return RTFileSeek(hFile, offOld, RTFILE_SEEK_BEGIN, NULL);
         }
 
-        rc = RTFileSeek(File, offLow + cbInterval, RTFILE_SEEK_BEGIN, NULL);
+        rc = RTFileSeek(hFile, offLow + cbInterval, RTFILE_SEEK_BEGIN, NULL);
         if (RT_FAILURE(rc))
             offHigh = offLow + cbInterval;
         else
@@ -599,11 +591,11 @@ RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax)
 }
 
 
-RTR3DECL(bool) RTFileIsValid(RTFILE File)
+RTR3DECL(bool) RTFileIsValid(RTFILE hFile)
 {
-    if (File != NIL_RTFILE)
+    if (hFile != NIL_RTFILE)
     {
-        int fFlags = fcntl(File, F_GETFD);
+        int fFlags = fcntl(RTFileToNative(hFile), F_GETFD);
         if (fFlags >= 0)
             return true;
     }
@@ -611,24 +603,24 @@ RTR3DECL(bool) RTFileIsValid(RTFILE File)
 }
 
 
-RTR3DECL(int)  RTFileFlush(RTFILE File)
+RTR3DECL(int)  RTFileFlush(RTFILE hFile)
 {
-    if (fsync((int)File))
+    if (fsync(RTFileToNative(hFile)))
         return RTErrConvertFromErrno(errno);
     return VINF_SUCCESS;
 }
 
 
-RTR3DECL(int) RTFileIoCtl(RTFILE File, unsigned long ulRequest, void *pvData, unsigned cbData, int *piRet)
+RTR3DECL(int) RTFileIoCtl(RTFILE hFile, unsigned long ulRequest, void *pvData, unsigned cbData, int *piRet)
 {
-    int rc = ioctl((int)File, ulRequest, pvData);
+    int rc = ioctl(RTFileToNative(hFile), ulRequest, pvData);
     if (piRet)
         *piRet = rc;
     return rc >= 0 ? VINF_SUCCESS : RTErrConvertFromErrno(errno);
 }
 
 
-RTR3DECL(int) RTFileSetMode(RTFILE File, RTFMODE fMode)
+RTR3DECL(int) RTFileSetMode(RTFILE hFile, RTFMODE fMode)
 {
     /*
      * Normalize the mode and call the API.
@@ -637,10 +629,10 @@ RTR3DECL(int) RTFileSetMode(RTFILE File, RTFMODE fMode)
     if (!rtFsModeIsValid(fMode))
         return VERR_INVALID_PARAMETER;
 
-    if (fchmod((int)File, fMode & RTFS_UNIX_MASK))
+    if (fchmod(RTFileToNative(hFile), fMode & RTFS_UNIX_MASK))
     {
         int rc = RTErrConvertFromErrno(errno);
-        Log(("RTFileSetMode(%RTfile,%RTfmode): returns %Rrc\n", File, fMode, rc));
+        Log(("RTFileSetMode(%RTfile,%RTfmode): returns %Rrc\n", hFile, fMode, rc));
         return rc;
     }
     return VINF_SUCCESS;

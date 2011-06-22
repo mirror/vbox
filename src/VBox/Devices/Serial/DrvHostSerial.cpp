@@ -29,6 +29,7 @@
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
+#include <iprt/pipe.h>
 #include <iprt/semaphore.h>
 #include <iprt/uuid.h>
 
@@ -102,16 +103,16 @@ typedef struct DRVHOSTSERIAL
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     /** the device handle */
-    RTFILE                      DeviceFile;
+    RTFILE                      hDeviceFile;
 # ifdef RT_OS_DARWIN
     /** The device handle used for reading.
      * Used to prevent the read select from blocking the writes. */
-    RTFILE                      DeviceFileR;
+    RTFILE                      hDeviceFileR;
 # endif
     /** The read end of the control pipe */
-    RTFILE                      WakeupPipeR;
+    RTPIPE                      hWakeupPipeR;
     /** The write end of the control pipe */
-    RTFILE                      WakeupPipeW;
+    RTPIPE                      hWakeupPipeW;
 # ifndef RT_OS_LINUX
     /** The current line status.
      * Used by the polling version of drvHostSerialMonitorThread.  */
@@ -264,14 +265,14 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
         default:
 #ifdef RT_OS_LINUX
             struct serial_struct serialStruct;
-            if (ioctl(pThis->DeviceFile, TIOCGSERIAL, &serialStruct) != -1)
+            if (ioctl(RTFileToNative(pThis->hDeviceFile), TIOCGSERIAL, &serialStruct) != -1)
             {
                 serialStruct.custom_divisor = serialStruct.baud_base / Bps;
                 if (!serialStruct.custom_divisor)
                     serialStruct.custom_divisor = 1;
                 serialStruct.flags &= ~ASYNC_SPD_MASK;
                 serialStruct.flags |= ASYNC_SPD_CUST;
-                ioctl(pThis->DeviceFile, TIOCSSERIAL, &serialStruct);
+                ioctl(RTFileToNative(pThis->hDeviceFile), TIOCSSERIAL, &serialStruct);
                 baud_rate = B38400;
             }
             else
@@ -327,7 +328,7 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
     /* set serial port to raw input */
     termiosSetup->c_lflag &= ~(ICANON | ECHO | ECHOE | ECHONL | ECHOK | ISIG | IEXTEN);
 
-    tcsetattr(pThis->DeviceFile, TCSANOW, termiosSetup);
+    tcsetattr(RTFileToNative(pThis->hDeviceFile), TCSANOW, termiosSetup);
     RTMemTmpFree(termiosSetup);
 
 #ifdef RT_OS_LINUX
@@ -485,7 +486,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 
             size_t cbWritten;
-            rc = RTFileWrite(pThis->DeviceFile, &ch, 1, &cbWritten);
+            rc = RTFileWrite(pThis->hDeviceFile, &ch, 1, &cbWritten);
             if (rc == VERR_TRY_AGAIN)
                 cbWritten = 0;
             if (cbWritten < 1 && (RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN))
@@ -497,21 +498,21 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     /* wait */
                     fd_set WrSet;
                     FD_ZERO(&WrSet);
-                    FD_SET(pThis->DeviceFile, &WrSet);
+                    FD_SET(RTFileToNative(pThis->hDeviceFile), &WrSet);
                     fd_set XcptSet;
                     FD_ZERO(&XcptSet);
-                    FD_SET(pThis->DeviceFile, &XcptSet);
+                    FD_SET(RTFileToNative(pThis->hDeviceFile), &XcptSet);
 # ifdef DEBUG
                     uint64_t u64Now = RTTimeMilliTS();
 # endif
-                    rc = select(pThis->DeviceFile + 1, NULL, &WrSet, &XcptSet, NULL);
+                    rc = select(RTFileToNative(pThis->hDeviceFile) + 1, NULL, &WrSet, &XcptSet, NULL);
                     /** @todo check rc? */
 
 # ifdef DEBUG
                     Log2(("select wait for %dms\n", RTTimeMilliTS() - u64Now));
 # endif
                     /* try write more */
-                    rc = RTFileWrite(pThis->DeviceFile, &ch, 1, &cbWritten);
+                    rc = RTFileWrite(pThis->hDeviceFile, &ch, 1, &cbWritten);
                     if (rc == VERR_TRY_AGAIN)
                         cbWritten = 0;
                     else if (RT_FAILURE(rc))
@@ -626,17 +627,19 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 #if defined(RT_OS_DARWIN) /* poll is broken on x86 darwin, returns POLLNVAL. */
             fd_set RdSet;
             FD_ZERO(&RdSet);
-            FD_SET(pThis->DeviceFileR, &RdSet);
-            FD_SET(pThis->WakeupPipeR, &RdSet);
+            FD_SET(RTFileToNative(pThis->hDeviceFileR), &RdSet);
+            FD_SET(RTPipeToNative(pThis->hWakeupPipeR), &RdSet);
             fd_set XcptSet;
             FD_ZERO(&XcptSet);
-            FD_SET(pThis->DeviceFileR, &XcptSet);
-            FD_SET(pThis->WakeupPipeR, &XcptSet);
+            FD_SET(RTFileToNative(pThis->hDeviceFile), &XcptSet);
+            FD_SET(RTPipeToNative(pThis->hWakeupPipeR), &XcptSet);
 # if 1 /* it seems like this select is blocking the write... */
-            rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFileR) + 1, &RdSet, NULL, &XcptSet, NULL);
+            rc = select(RT_MAX(RTFileToPipe(pThis->hWakeupPipeR), RTFileToNative(pThis->hDeviceFileR)) + 1,
+                        &RdSet, NULL, &XcptSet, NULL);
 # else
             struct timeval tv = { 0, 1000 };
-            rc = select(RT_MAX(pThis->WakeupPipeR, pThis->DeviceFileR) + 1, &RdSet, NULL, &XcptSet, &tv);
+            rc = select(RTFileToPipe(pThis->hWakeupPipeR), RTFileToNative(pThis->hDeviceFileR) + 1,
+                        &RdSet, NULL, &XcptSet, &tv);
 # endif
             if (rc == -1)
             {
@@ -654,10 +657,10 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 
             /* drain the wakeup pipe */
             size_t cbRead;
-            if (   FD_ISSET(pThis->WakeupPipeR, &RdSet)
-                || FD_ISSET(pThis->WakeupPipeR, &XcptSet))
+            if (   FD_ISSET(RTPipeToNative(pThis->hWakeupPipeR), &RdSet)
+                || FD_ISSET(pThis->hWakeupPipeR, &XcptSet))
             {
-                rc = RTFileRead(pThis->WakeupPipeR, abBuffer, 1, &cbRead);
+                rc = RTPipeRead(pThis->hWakeupPipeR, abBuffer, 1, &cbRead);
                 if (RT_FAILURE(rc))
                 {
                     LogRel(("HostSerial#%d: draining the wakeup pipe failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
@@ -668,7 +671,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             }
 
             /* read data from the serial port. */
-            rc = RTFileRead(pThis->DeviceFileR, abBuffer, sizeof(abBuffer), &cbRead);
+            rc = RTFileRead(pThis->hDeviceFileR, abBuffer, sizeof(abBuffer), &cbRead);
             if (RT_FAILURE(rc))
             {
                 LogRel(("HostSerial#%d: (1) Read failed with %Rrc, terminating the worker thread.\n", pDrvIns->iInstance, rc));
@@ -681,10 +684,10 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 
             size_t cbRead;
             struct pollfd aFDs[2];
-            aFDs[0].fd      = pThis->DeviceFile;
+            aFDs[0].fd      = RTFileToNative(pThis->hDeviceFile);
             aFDs[0].events  = POLLIN;
             aFDs[0].revents = 0;
-            aFDs[1].fd      = pThis->WakeupPipeR;
+            aFDs[1].fd      = RTPipeToNative(pThis->hWakeupPipeR);
             aFDs[1].events  = POLLIN | POLLERR | POLLHUP;
             aFDs[1].revents = 0;
             rc = poll(aFDs, RT_ELEMENTS(aFDs), -1);
@@ -703,10 +706,10 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 if (aFDs[1].revents & (POLLHUP | POLLERR | POLLNVAL))
                     break;
                 /* notification to terminate -- drain the pipe */
-                RTFileRead(pThis->WakeupPipeR, &abBuffer, 1, &cbRead);
+                RTPipeRead(pThis->hWakeupPipeR, &abBuffer, 1, &cbRead);
                 continue;
             }
-            rc = RTFileRead(pThis->DeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
+            rc = RTFileRead(pThis->hDeviceFile, abBuffer, sizeof(abBuffer), &cbRead);
             if (RT_FAILURE(rc))
             {
                 /* don't terminate worker thread when data unavailable */
@@ -843,7 +846,9 @@ static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMT
 {
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-    return RTFileWrite(pThis->WakeupPipeW, "", 1, NULL);
+    size_t cbIgnored;
+    return RTPipeWrite(pThis->hWakeupPipeW, "", 1, &cbIgnored);
+
 #elif defined(RT_OS_WINDOWS)
     if (!SetEvent(pThis->hHaltEventSem))
         return RTErrConvertFromWin32(GetLastError());
@@ -882,7 +887,7 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
         /*
          * Get the status line state.
          */
-        rc = ioctl(pThis->DeviceFile, TIOCMGET, &statusLines);
+        rc = ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMGET, &statusLines);
         if (rc < 0)
         {
             PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "DrvHostSerialFail",
@@ -915,7 +920,7 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
          * modem irqs and so the monitor thread never gets released. The workaround
          * is to send a signal after each tcsetattr.
          */
-        ioctl(pThis->DeviceFile, TIOCMIWAIT, uStatusLinesToCheck);
+        ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMIWAIT, uStatusLinesToCheck);
 # else
         /* Poll for status line change. */
         if (!((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck))
@@ -988,10 +993,10 @@ static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHARCONNECTOR pInterfac
         modemStateClear |= TIOCM_DTR;
 
     if (modemStateSet)
-        ioctl(pThis->DeviceFile, TIOCMBIS, &modemStateSet);
+        ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMBIS, &modemStateSet);
 
     if (modemStateClear)
-        ioctl(pThis->DeviceFile, TIOCMBIC, &modemStateClear);
+        ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMBIC, &modemStateClear);
 
 #elif defined(RT_OS_WINDOWS)
     if (RequestToSend)
@@ -1023,9 +1028,9 @@ static DECLCALLBACK(int) drvHostSerialSetBreak(PPDMICHARCONNECTOR pInterface, bo
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     if (fBreak)
-        ioctl(pThis->DeviceFile, TIOCSBRK);
+        ioctl(RTFileToNative(pThis->hDeviceFile), TIOCSBRK);
     else
-        ioctl(pThis->DeviceFile, TIOCCBRK);
+        ioctl(RTFileToNative(pThis->hDeviceFile), TIOCCBRK);
 
 #elif defined(RT_OS_WINDOWS)
     if (fBreak)
@@ -1057,40 +1062,29 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
     RTSemEventDestroy(pThis->SendSem);
     pThis->SendSem = NIL_RTSEMEVENT;
 
+    int rc;
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 
-    if (pThis->WakeupPipeW != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->WakeupPipeW);
-        AssertRC(rc);
-        pThis->WakeupPipeW = NIL_RTFILE;
-    }
-    if (pThis->WakeupPipeR != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->WakeupPipeR);
-        AssertRC(rc);
-        pThis->WakeupPipeR = NIL_RTFILE;
-    }
+    rc = RTPipeClose(pThis->hWakeupPipeW); AssertRC(rc);
+    pThis->hWakeupPipeW = NIL_RTPIPE;
+    rc = RTPipeClose(pThis->hWakeupPipeR); AssertRC(rc);
+    pThis->hWakeupPipeR = NIL_RTPIPE;
+
 # if defined(RT_OS_DARWIN)
-    if (pThis->DeviceFileR != NIL_RTFILE)
+    if (pThis->hDeviceFileR != NIL_RTFILE)
     {
-        if (pThis->DeviceFileR != pThis->DeviceFile)
+        if (pThis->hDeviceFileR != pThis->hDeviceFile)
         {
-            int rc = RTFileClose(pThis->DeviceFileR);
+            rc = RTFileClose(pThis->hDeviceFileR);
             AssertRC(rc);
         }
-        pThis->DeviceFileR = NIL_RTFILE;
+        pThis->hDeviceFileR = NIL_RTFILE;
     }
 # endif
-    if (pThis->DeviceFile != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->DeviceFile);
-        AssertRC(rc);
-        pThis->DeviceFile = NIL_RTFILE;
-    }
+    rc = RTFileClose(pThis->hDeviceFile); AssertRC(rc);
+    pThis->hDeviceFile = NIL_RTFILE;
 
 #elif defined(RT_OS_WINDOWS)
-
     CloseHandle(pThis->hEventRecv);
     CloseHandle(pThis->hEventSend);
     CancelIo(pThis->hDeviceFile);
@@ -1120,12 +1114,16 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Init basic data members and interfaces.
      */
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-    pThis->DeviceFile  = NIL_RTFILE;
+    pThis->hDeviceFile  = NIL_RTFILE;
 # ifdef RT_OS_DARWIN
-    pThis->DeviceFileR = NIL_RTFILE;
+    pThis->hDeviceFileR = NIL_RTFILE;
 # endif
-    pThis->WakeupPipeR = NIL_RTFILE;
-    pThis->WakeupPipeW = NIL_RTFILE;
+    pThis->hWakeupPipeR = NIL_RTPIPE;
+    pThis->hWakeupPipeW = NIL_RTPIPE;
+#elif defined(RT_OS_WINDOWS)
+    pThis->hEventRecv  = INVALID_HANDLE_VALUE;
+    pThis->hEventSend  = INVALID_HANDLE_VALUE;
+    pThis->hDeviceFile = INVALID_HANDLE_VALUE;
 #endif
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvHostSerialQueryInterface;
@@ -1190,15 +1188,15 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* This seems to be necessary on some Linux hosts, otherwise we hang here forever. */
     fOpen |= RTFILE_O_NON_BLOCK;
 # endif
-    rc = RTFileOpen(&pThis->DeviceFile, pThis->pszDevicePath, fOpen);
+    rc = RTFileOpen(&pThis->hDeviceFile, pThis->pszDevicePath, fOpen);
 # ifdef RT_OS_LINUX
     /* RTFILE_O_NON_BLOCK not supported? */
     if (rc == VERR_INVALID_PARAMETER)
-        rc = RTFileOpen(&pThis->DeviceFile, pThis->pszDevicePath, fOpen & ~RTFILE_O_NON_BLOCK);
+        rc = RTFileOpen(&pThis->hDeviceFile, pThis->pszDevicePath, fOpen & ~RTFILE_O_NON_BLOCK);
 # endif
 # ifdef RT_OS_DARWIN
     if (RT_SUCCESS(rc))
-        rc = RTFileOpen(&pThis->DeviceFileR, pThis->pszDevicePath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        rc = RTFileOpen(&pThis->hDeviceFileR, pThis->pszDevicePath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
 # endif
 
 
@@ -1231,19 +1229,12 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* Set to non blocking I/O */
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 
-    fcntl(pThis->DeviceFile, F_SETFL, O_NONBLOCK);
+    fcntl(RTFileToNative(pThis->hDeviceFile), F_SETFL, O_NONBLOCK);
 # ifdef RT_OS_DARWIN
-    fcntl(pThis->DeviceFileR, F_SETFL, O_NONBLOCK);
+    fcntl(RTFileToNative(pThis->hDeviceFileR), F_SETFL, O_NONBLOCK);
 # endif
-    int aFDs[2];
-    if (pipe(aFDs) != 0)
-    {
-        rc = RTErrConvertFromErrno(errno);
-        AssertRC(rc);
-        return rc;
-    }
-    pThis->WakeupPipeR = aFDs[0];
-    pThis->WakeupPipeW = aFDs[1];
+    rc = RTPipeCreate(&pThis->hWakeupPipeR, &pThis->hWakeupPipeW, 0 /*fFlags*/);
+    AssertRCReturn(rc, rc);
 
 #elif defined(RT_OS_WINDOWS)
 

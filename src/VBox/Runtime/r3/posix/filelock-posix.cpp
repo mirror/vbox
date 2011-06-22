@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -49,7 +49,7 @@
 
 
 
-RTR3DECL(int)  RTFileLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t cbLock)
+RTR3DECL(int)  RTFileLock(RTFILE hFile, unsigned fLock, int64_t offLock, uint64_t cbLock)
 {
     Assert(offLock >= 0);
 
@@ -82,7 +82,7 @@ RTR3DECL(int)  RTFileLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t
     fl.l_pid    = 0;
 
     Assert(RTFILE_LOCK_WAIT);
-    if (fcntl(File, (fLock & RTFILE_LOCK_WAIT) ? F_SETLKW : F_SETLK, &fl) >= 0)
+    if (fcntl(RTFileToNative(hFile), (fLock & RTFILE_LOCK_WAIT) ? F_SETLKW : F_SETLK, &fl) >= 0)
         return VINF_SUCCESS;
 
     int iErr = errno;
@@ -94,14 +94,14 @@ RTR3DECL(int)  RTFileLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t
 }
 
 
-RTR3DECL(int)  RTFileChangeLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t cbLock)
+RTR3DECL(int)  RTFileChangeLock(RTFILE hFile, unsigned fLock, int64_t offLock, uint64_t cbLock)
 {
     /** @todo We never returns VERR_FILE_NOT_LOCKED for now. */
-    return RTFileLock(File, fLock, offLock, cbLock);
+    return RTFileLock(hFile, fLock, offLock, cbLock);
 }
 
 
-RTR3DECL(int)  RTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock)
+RTR3DECL(int)  RTFileUnlock(RTFILE hFile, int64_t offLock, uint64_t cbLock)
 {
     Assert(offLock >= 0);
 
@@ -125,7 +125,7 @@ RTR3DECL(int)  RTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock)
     fl.l_len    = (off_t)cbLock;
     fl.l_pid    = 0;
 
-    if (fcntl(File, F_SETLK, &fl) >= 0)
+    if (fcntl(RTFileToNative(hFile), F_SETLK, &fl) >= 0)
         return VINF_SUCCESS;
 
     /* @todo check error codes for non existing lock. */

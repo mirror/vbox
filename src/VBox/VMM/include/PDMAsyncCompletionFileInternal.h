@@ -326,7 +326,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     /** Flags for opening the file. */
     unsigned                               fFlags;
     /** File handle. */
-    RTFILE                                 File;
+    RTFILE                                 hFile;
     /**
      * Real size of the file. Only updated if
      * data is appended.
