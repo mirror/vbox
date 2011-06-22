@@ -59,8 +59,7 @@ VMMDECL(int)        PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR
 VMMR3DECL(int)      PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3);
 VMMDECL(void)       PDMCritSectLeave(PPDMCRITSECT pCritSect);
 VMMDECL(bool)       PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
-VMMDECL(bool)       PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, VMCPUID idCpu);
-VMMDECL(bool)       PDMCritSectIsOwned(PCPDMCRITSECT pCritSect);
+VMMDECL(bool)       PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, PVMCPU pVCpu);
 VMMDECL(bool)       PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
 VMMDECL(bool)       PDMCritSectHasWaiters(PCPDMCRITSECT pCritSect);
 VMMDECL(uint32_t)   PDMCritSectGetRecursion(PCPDMCRITSECT pCritSect);
