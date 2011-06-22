@@ -922,8 +922,8 @@ void Medium::FinalRelease()
  * is set to the registry of the parent image to make sure they all end up in the same
  * file.
  *
- * For hard disks that don't have the VD_CAP_CREATE_FIXED or
- * VD_CAP_CREATE_DYNAMIC capability (and therefore cannot be created or deleted
+ * For hard disks that don't have the MediumFormatCapabilities_CreateFixed or
+ * MediumFormatCapabilities_CreateDynamic capability (and therefore cannot be created or deleted
  * with the means of VirtualBox) the associated storage unit is assumed to be
  * ready for use so the state of the hard disk object will be set to Created.
  *
@@ -1184,24 +1184,29 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         m->mapProperties[name] = value;
     }
 
-    // compose full path of the medium, if it's not fully qualified...
-    // slightly convoluted logic here. If the caller has given us a
-    // machine folder, then a relative path will be relative to that:
     Utf8Str strFull;
-    if (    !strMachineFolder.isEmpty()
-         && !RTPathStartsWithRoot(data.strLocation.c_str())
-       )
+    if (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
     {
-        strFull = strMachineFolder;
-        strFull += RTPATH_SLASH;
-        strFull += data.strLocation;
+        // compose full path of the medium, if it's not fully qualified...
+        // slightly convoluted logic here. If the caller has given us a
+        // machine folder, then a relative path will be relative to that:
+        if (    !strMachineFolder.isEmpty()
+             && !RTPathStartsWithRoot(data.strLocation.c_str())
+           )
+        {
+            strFull = strMachineFolder;
+            strFull += RTPATH_SLASH;
+            strFull += data.strLocation;
+        }
+        else
+        {
+            // Otherwise use the old VirtualBox "make absolute path" logic:
+            rc = m->pVirtualBox->calculateFullPath(data.strLocation, strFull);
+            if (FAILED(rc)) return rc;
+        }
     }
     else
-    {
-        // Otherwise use the old VirtualBox "make absolute path" logic:
-        rc = m->pVirtualBox->calculateFullPath(data.strLocation, strFull);
-        if (FAILED(rc)) return rc;
-    }
+        strFull = data.strLocation;
 
     rc = setLocation(strFull);
     if (FAILED(rc)) return rc;
@@ -5677,8 +5682,9 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
             }
         }
 
-        // we must always have full paths now
-        if (!RTPathStartsWithRoot(locationFull.c_str()))
+        // we must always have full paths now (if it refers to a file)
+        if (   (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
+            && !RTPathStartsWithRoot(locationFull.c_str()))
             return setError(VBOX_E_FILE_ERROR,
                             tr("The given path '%s' is not fully qualified"),
                             locationFull.c_str());
@@ -6197,8 +6203,8 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
         Utf8Str format(m->strFormat);
         Utf8Str location(m->strLocationFull);
         uint64_t capabilities = m->formatObj->getCapabilities();
-        ComAssertThrow(capabilities & (  VD_CAP_CREATE_FIXED
-                                       | VD_CAP_CREATE_DYNAMIC), E_FAIL);
+        ComAssertThrow(capabilities & (  MediumFormatCapabilities_CreateFixed
+                                       | MediumFormatCapabilities_CreateDynamic), E_FAIL);
         Assert(m->state == MediumState_Creating);
 
         PVBOXHDD hdd;
@@ -6211,7 +6217,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
         try
         {
             /* ensure the directory exists */
-            if (capabilities & VD_CAP_FILE)
+            if (capabilities & MediumFormatCapabilities_File)
             {
                 rc = VirtualBox::ensureFilePathExists(location);
                 if (FAILED(rc))
@@ -6328,7 +6334,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
         Utf8Str targetFormat(pTarget->m->strFormat);
         Utf8Str targetLocation(pTarget->m->strLocationFull);
         uint64_t capabilities = pTarget->m->formatObj->getCapabilities();
-        ComAssertThrow(capabilities & VD_CAP_CREATE_DYNAMIC, E_FAIL);
+        ComAssertThrow(capabilities & MediumFormatCapabilities_CreateDynamic, E_FAIL);
 
         Assert(pTarget->m->state == MediumState_Creating);
         Assert(m->state == MediumState_LockedRead);
@@ -6378,7 +6384,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
             }
 
             /* ensure the target directory exists */
-            if (capabilities & VD_CAP_FILE)
+            if (capabilities & MediumFormatCapabilities_File)
             {
                 HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation);
                 if (FAILED(rc))
@@ -6881,7 +6887,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             thisLock.release();
 
             /* ensure the target directory exists */
-            if (capabilities & VD_CAP_FILE)
+            if (capabilities & MediumFormatCapabilities_File)
             {
                 HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation);
                 if (FAILED(rc))
@@ -7530,7 +7536,7 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
             thisLock.release();
 
             /* ensure the target directory exists */
-            if (capabilities & VD_CAP_FILE)
+            if (capabilities & MediumFormatCapabilities_File)
             {
                 rc = VirtualBox::ensureFilePathExists(targetLocation);
                 if (FAILED(rc))
@@ -7655,7 +7661,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
             thisLock.release();
 
             /* ensure the target directory exists */
-            if (capabilities & VD_CAP_FILE)
+            if (capabilities & MediumFormatCapabilities_File)
             {
                 HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation);
                 if (FAILED(rc))

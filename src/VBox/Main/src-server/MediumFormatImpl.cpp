@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -65,7 +65,7 @@ HRESULT MediumFormat::init(const VDBACKENDINFO *aVDInfo)
     /* Use id for now as long as VDBACKENDINFO hasn't any extra
      * name/description field. */
     unconst(m.strName) = aVDInfo->pszBackend;
-    /* The capabilities of the backend */
+    /* The capabilities of the backend. Assumes 1:1 mapping! */
     unconst(m.capabilities) = aVDInfo->uBackendCaps;
     /* Save the supported file extensions in a list */
     if (aVDInfo->paFileExtensions)
