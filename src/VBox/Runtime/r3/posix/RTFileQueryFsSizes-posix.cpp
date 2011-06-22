@@ -47,7 +47,7 @@ RTR3DECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree
 {
     struct statvfs StatVFS;
     RT_ZERO(StatVFS);
-    if (fstatvfs(hFile, &StatVFS))
+    if (fstatvfs(RTFileToNative(hFile), &StatVFS))
         return RTErrConvertFromErrno(errno);
 
     /*

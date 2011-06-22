@@ -38,6 +38,7 @@
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/pipe.h>
 #include <iprt/stream.h>
 #include <iprt/linux/sysfs.h>
 
@@ -59,8 +60,8 @@
  * Initialize data members.
  */
 USBProxyServiceLinux::USBProxyServiceLinux(Host *aHost)
-    : USBProxyService(aHost), mFile(NIL_RTFILE), mWakeupPipeR(NIL_RTFILE),
-      mWakeupPipeW(NIL_RTFILE), mUsingUsbfsDevices(true /* see init */),
+    : USBProxyService(aHost), mhFile(NIL_RTFILE), mhWakeupPipeR(NIL_RTPIPE),
+      mhWakeupPipeW(NIL_RTPIPE), mUsingUsbfsDevices(true /* see init */),
       mUdevPolls(0), mpWaiter(NULL)
 #ifdef UNIT_TEST
       , mpcszTestUsbfsRoot(NULL), mfTestUsbfsAccessible(false),
@@ -208,48 +209,30 @@ int USBProxyServiceLinux::initUsbfs(void)
     char *pszDevices = RTPathJoinA(mDevicesRoot.c_str(), "devices");
     if (pszDevices)
     {
-        rc = RTFileOpen(&mFile, pszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        rc = RTFileOpen(&mhFile, pszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {
-            int pipes[2];
-            if (!pipe(pipes))
+            rc = RTPipeCreate(&mhWakeupPipeR, &mhWakeupPipeW, 0 /*fFlags*/);
+            if (RT_SUCCESS(rc))
             {
-                /* Set close on exec (race here!) */
-                if (   fcntl(pipes[0], F_SETFD, FD_CLOEXEC) >= 0
-                    && fcntl(pipes[1], F_SETFD, FD_CLOEXEC) >= 0)
+                /*
+                 * Start the poller thread.
+                 */
+                rc = start();
+                if (RT_SUCCESS(rc))
                 {
-                    mWakeupPipeR = pipes[0];
-                    mWakeupPipeW = pipes[1];
-                    /*
-                     * Start the poller thread.
-                     */
-                    rc = start();
-                    if (RT_SUCCESS(rc))
-                    {
-                        RTStrFree(pszDevices);
-                        LogFlowThisFunc(("returns successfully - mWakeupPipeR/W=%d/%d\n",
-                                         mWakeupPipeR, mWakeupPipeW));
-                        return VINF_SUCCESS;
-                    }
+                    RTStrFree(pszDevices);
+                    LogFlowThisFunc(("returns successfully\n"));
+                    return VINF_SUCCESS;
+                }
 
-                    RTFileClose(mWakeupPipeR);
-                    RTFileClose(mWakeupPipeW);
-                    mWakeupPipeW = mWakeupPipeR = NIL_RTFILE;
-                }
-                else
-                {
-                    rc = RTErrConvertFromErrno(errno);
-                    Log(("USBProxyServiceLinux::USBProxyServiceLinux: fcntl failed, errno=%d\n", errno));
-                    close(pipes[0]);
-                    close(pipes[1]);
-                }
+                RTPipeClose(mhWakeupPipeR);
+                RTPipeClose(mhWakeupPipeW);
+                mhWakeupPipeW = mhWakeupPipeR = NIL_RTPIPE;
             }
             else
-            {
-                rc = RTErrConvertFromErrno(errno);
-                Log(("USBProxyServiceLinux::USBProxyServiceLinux: pipe failed, errno=%d\n", errno));
-            }
-            RTFileClose(mFile);
+                Log(("USBProxyServiceLinux::USBProxyServiceLinux: RTFilePipe failed with rc=%Rrc\n", rc));
+            RTFileClose(mhFile);
         }
 
         RTStrFree(pszDevices);
@@ -331,17 +314,12 @@ void USBProxyServiceLinux::doUsbfsCleanupAsNeeded()
     /*
      * Free resources.
      */
-    if (mFile != NIL_RTFILE)
-    {
-        RTFileClose(mFile);
-        mFile = NIL_RTFILE;
-    }
+    RTFileClose(mhFile);
+    mhFile = NIL_RTFILE;
 
-    if (mWakeupPipeR != NIL_RTFILE)
-        RTFileClose(mWakeupPipeR);
-    if (mWakeupPipeW != NIL_RTFILE)
-        RTFileClose(mWakeupPipeW);
-    mWakeupPipeW = mWakeupPipeR = NIL_RTFILE;
+    RTPipeClose(mhWakeupPipeR);
+    RTPipeClose(mhWakeupPipeW);
+    mhWakeupPipeW = mhWakeupPipeR = NIL_RTPIPE;
 }
 
 
@@ -433,9 +411,9 @@ int USBProxyServiceLinux::waitUsbfs(RTMSINTERVAL aMillies)
     }
 
     memset(&PollFds, 0, sizeof(PollFds));
-    PollFds[0].fd        = mFile;
+    PollFds[0].fd        = RTFileToNative(mhFile);
     PollFds[0].events    = POLLIN;
-    PollFds[1].fd        = mWakeupPipeR;
+    PollFds[1].fd        = RTPipeToNative(mhWakeupPipeR);
     PollFds[1].events    = POLLIN | POLLERR | POLLHUP;
 
     int rc = poll(&PollFds[0], 2, aMillies);
@@ -447,7 +425,7 @@ int USBProxyServiceLinux::waitUsbfs(RTMSINTERVAL aMillies)
         if (PollFds[1].revents & POLLIN)
         {
             char szBuf[WAKE_UP_STRING_LEN];
-            rc = RTFileRead(mWakeupPipeR, szBuf, sizeof(szBuf), NULL);
+            rc = RTPipeReadBlocking(mhWakeupPipeR, szBuf, sizeof(szBuf), NULL);
             AssertRC(rc);
         }
         return VINF_SUCCESS;
@@ -483,9 +461,9 @@ int USBProxyServiceLinux::interruptWait(void)
         return VINF_SUCCESS;
     }
 #endif /* VBOX_USB_WITH_SYSFS */
-    int rc = RTFileWrite(mWakeupPipeW, WAKE_UP_STRING, WAKE_UP_STRING_LEN, NULL);
+    int rc = RTPipeWriteBlocking(mhWakeupPipeW, WAKE_UP_STRING, WAKE_UP_STRING_LEN, NULL);
     if (RT_SUCCESS(rc))
-        RTFileFlush(mWakeupPipeW);
+        RTPipeFlush(mhWakeupPipeW);
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }

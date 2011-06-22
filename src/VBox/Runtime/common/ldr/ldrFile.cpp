@@ -54,7 +54,7 @@ typedef struct RTLDRREADERFILE
     /** The core. */
     RTLDRREADER     Core;
     /** The file. */
-    RTFILE          File;
+    RTFILE          hFile;
     /** The file size. */
     RTFOFF          cbFile;
     /** The current offset. */
@@ -78,7 +78,7 @@ static DECLCALLBACK(int) rtldrFileRead(PRTLDRREADER pReader, void *pvBuf, size_t
      */
     if (pFileReader->off != off)
     {
-        int rc = RTFileSeek(pFileReader->File, off, RTFILE_SEEK_BEGIN, NULL);
+        int rc = RTFileSeek(pFileReader->hFile, off, RTFILE_SEEK_BEGIN, NULL);
         if (RT_FAILURE(rc))
         {
             pFileReader->off = -1;
@@ -90,7 +90,7 @@ static DECLCALLBACK(int) rtldrFileRead(PRTLDRREADER pReader, void *pvBuf, size_t
     /*
      * Read.
      */
-    int rc = RTFileRead(pFileReader->File, pvBuf, cb, NULL);
+    int rc = RTFileRead(pFileReader->hFile, pvBuf, cb, NULL);
     if (RT_SUCCESS(rc))
         pFileReader->off += cb;
     else
@@ -184,11 +184,11 @@ static DECLCALLBACK(int) rtldrFileDestroy(PRTLDRREADER pReader)
 {
     int rc = VINF_SUCCESS;
     PRTLDRREADERFILE pFileReader = (PRTLDRREADERFILE)pReader;
-    if (pFileReader->File != NIL_RTFILE)
+    if (pFileReader->hFile != NIL_RTFILE)
     {
-        rc = RTFileClose(pFileReader->File);
+        rc = RTFileClose(pFileReader->hFile);
         AssertRC(rc);
-        pFileReader->File = NIL_RTFILE;
+        pFileReader->hFile = NIL_RTFILE;
     }
     RTMemFree(pFileReader);
     return rc;
@@ -210,10 +210,10 @@ static int rtldrFileCreate(PRTLDRREADER *ppReader, const char *pszFilename)
     if (pFileReader)
     {
         memcpy(pFileReader->szFilename, pszFilename, cchFilename + 1);
-        rc = RTFileOpen(&pFileReader->File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        rc = RTFileOpen(&pFileReader->hFile, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFileGetSize(pFileReader->File, (uint64_t *)&pFileReader->cbFile);
+            rc = RTFileGetSize(pFileReader->hFile, (uint64_t *)&pFileReader->cbFile);
             if (RT_SUCCESS(rc))
             {
                 pFileReader->Core.pfnRead    = rtldrFileRead;
@@ -229,7 +229,8 @@ static int rtldrFileCreate(PRTLDRREADER *ppReader, const char *pszFilename)
                 *ppReader = &pFileReader->Core;
                 return VINF_SUCCESS;
             }
-            RTFileClose(pFileReader->File);
+
+            RTFileClose(pFileReader->hFile);
         }
         RTMemFree(pFileReader);
     }

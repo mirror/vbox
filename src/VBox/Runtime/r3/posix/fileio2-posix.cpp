@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -68,21 +68,13 @@ extern int futimes(int __fd, __const struct timeval __tvp[2]) __THROW;
 
 
 
-RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
+RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
 {
     /*
      * Validate input.
      */
-    if (File == NIL_RTFILE)
-    {
-        AssertMsgFailed(("Invalid File=%RTfile\n", File));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!pObjInfo)
-    {
-        AssertMsgFailed(("Invalid pObjInfo=%p\n", pObjInfo));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(hFile != NIL_RTFILE, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pObjInfo, VERR_INVALID_PARAMETER);
     if (    enmAdditionalAttribs < RTFSOBJATTRADD_NOTHING
         ||  enmAdditionalAttribs > RTFSOBJATTRADD_LAST)
     {
@@ -94,10 +86,10 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
      * Query file info.
      */
     struct stat Stat;
-    if (fstat((int)File, &Stat))
+    if (fstat(RTFileToNative(hFile), &Stat))
     {
         int rc = RTErrConvertFromErrno(errno);
-        Log(("RTFileQueryInfo(%RTfile,,%d): returns %Rrc\n", File, enmAdditionalAttribs, rc));
+        Log(("RTFileQueryInfo(%RTfile,,%d): returns %Rrc\n", hFile, enmAdditionalAttribs, rc));
         return rc;
     }
 
@@ -134,12 +126,12 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
             return VERR_INTERNAL_ERROR;
     }
 
-    LogFlow(("RTFileQueryInfo(%RTfile,,%d): returns VINF_SUCCESS\n", File, enmAdditionalAttribs));
+    LogFlow(("RTFileQueryInfo(%RTfile,,%d): returns VINF_SUCCESS\n", hFile, enmAdditionalAttribs));
     return VINF_SUCCESS;
 }
 
 
-RTR3DECL(int) RTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+RTR3DECL(int) RTFileSetTimes(RTFILE hFile, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
     /*
@@ -162,17 +154,17 @@ RTR3DECL(int) RTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC
     else
     {
         RTFSOBJINFO ObjInfo;
-        int rc = RTFileQueryInfo(File, &ObjInfo, RTFSOBJATTRADD_UNIX);
+        int rc = RTFileQueryInfo(hFile, &ObjInfo, RTFSOBJATTRADD_UNIX);
         if (RT_FAILURE(rc))
             return rc;
         RTTimeSpecGetTimeval(pAccessTime        ? pAccessTime       : &ObjInfo.AccessTime,       &aTimevals[0]);
         RTTimeSpecGetTimeval(pModificationTime  ? pModificationTime : &ObjInfo.ModificationTime, &aTimevals[1]);
     }
 
-    if (futimes((int)File, aTimevals))
+    if (futimes(RTFileToNative(hFile), aTimevals))
     {
         int rc = RTErrConvertFromErrno(errno);
-        Log(("RTFileSetTimes(%RTfile,%p,%p,,): returns %Rrc\n", File, pAccessTime, pModificationTime, rc));
+        Log(("RTFileSetTimes(%RTfile,%p,%p,,): returns %Rrc\n", hFile, pAccessTime, pModificationTime, rc));
         return rc;
     }
     return VINF_SUCCESS;

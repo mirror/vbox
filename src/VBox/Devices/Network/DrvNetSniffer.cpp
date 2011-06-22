@@ -65,7 +65,7 @@ typedef struct DRVNETSNIFFER
     /** The filename. */
     char                    szFilename[RTPATH_MAX];
     /** The filehandle. */
-    RTFILE                  File;
+    RTFILE                  hFile;
     /** The lock serializing the file access. */
     RTCRITSECT              Lock;
     /** The NanoTS delta we pass to the pcap writers. */
@@ -133,12 +133,12 @@ static DECLCALLBACK(int) drvNetSnifferUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
     /* output to sniffer */
     RTCritSectEnter(&pThis->Lock);
     if (!pSgBuf->pvUser)
-        PcapFileFrame(pThis->File, pThis->StartNanoTS,
+        PcapFileFrame(pThis->hFile, pThis->StartNanoTS,
                       pSgBuf->aSegs[0].pvSeg,
                       pSgBuf->cbUsed,
                       RT_MIN(pSgBuf->cbUsed, pSgBuf->aSegs[0].cbSeg));
     else
-        PcapFileGsoFrame(pThis->File, pThis->StartNanoTS, (PCPDMNETWORKGSO)pSgBuf->pvUser,
+        PcapFileGsoFrame(pThis->hFile, pThis->StartNanoTS, (PCPDMNETWORKGSO)pSgBuf->pvUser,
                          pSgBuf->aSegs[0].pvSeg,
                          pSgBuf->cbUsed,
                          RT_MIN(pSgBuf->cbUsed, pSgBuf->aSegs[0].cbSeg));
@@ -205,7 +205,7 @@ static DECLCALLBACK(int) drvNetSnifferDown_Receive(PPDMINETWORKDOWN pInterface, 
 
     /* output to sniffer */
     RTCritSectEnter(&pThis->Lock);
-    PcapFileFrame(pThis->File, pThis->StartNanoTS, pvBuf, cb, cb);
+    PcapFileFrame(pThis->hFile, pThis->StartNanoTS, pvBuf, cb, cb);
     RTCritSectLeave(&pThis->Lock);
 
     /* pass up */
@@ -216,7 +216,7 @@ static DECLCALLBACK(int) drvNetSnifferDown_Receive(PPDMINETWORKDOWN pInterface, 
     Hdr.ts_sec = (uint32_t)(u64TS / 1000000000);
     Hdr.ts_usec = (uint32_t)((u64TS / 1000) % 1000000);
     Hdr.incl_len = 0;
-    RTFileWrite(pThis->File, &Hdr, sizeof(Hdr), NULL);
+    RTFileWrite(pThis->hFile, &Hdr, sizeof(Hdr), NULL);
     RTCritSectLeave(&pThis->Lock);
 #endif
     return rc;
@@ -357,11 +357,8 @@ static DECLCALLBACK(void) drvNetSnifferDestruct(PPDMDRVINS pDrvIns)
     if (RTCritSectIsInitialized(&pThis->XmitLock))
         RTCritSectDelete(&pThis->XmitLock);
 
-    if (pThis->File != NIL_RTFILE)
-    {
-        RTFileClose(pThis->File);
-        pThis->File = NIL_RTFILE;
-    }
+    RTFileClose(pThis->hFile);
+    pThis->hFile = NIL_RTFILE;
 }
 
 
@@ -379,7 +376,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Init the static parts.
      */
     pThis->pDrvIns                                  = pDrvIns;
-    pThis->File                                     = NIL_RTFILE;
+    pThis->hFile                                    = NIL_RTFILE;
     /* The pcap file *must* start at time offset 0,0. */
     pThis->StartNanoTS                              = RTTimeNanoTS() - RTTimeProgramNanoTS();
     /* IBase */
@@ -482,7 +479,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Open output file / pipe.
      */
-    rc = RTFileOpen(&pThis->File, pThis->szFilename,
+    rc = RTFileOpen(&pThis->hFile, pThis->szFilename,
                     RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
@@ -493,7 +490,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Some time has gone by since capturing pThis->StartNanoTS so get the
      * current time again.
      */
-    PcapFileHdr(pThis->File, RTTimeNanoTS());
+    PcapFileHdr(pThis->hFile, RTTimeNanoTS());
 
     return VINF_SUCCESS;
 }

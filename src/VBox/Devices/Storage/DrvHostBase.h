@@ -82,11 +82,11 @@ typedef struct DRVHOSTBASE
     uint64_t volatile       cbSize;
 #if !defined(RT_OS_DARWIN)
     /** The filehandle of the device. */
-    RTFILE                  FileDevice;
+    RTFILE                  hFileDevice;
 #endif
 #ifdef RT_OS_SOLARIS
     /** The raw filehandle of the device. */
-    RTFILE                  FileRawDevice;
+    RTFILE                  hFileRawDevice;
 #endif
 
     /** Handle of the poller thread. */

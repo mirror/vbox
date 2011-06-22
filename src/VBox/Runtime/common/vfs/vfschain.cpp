@@ -562,7 +562,7 @@ RTDECL(int) RTVfsChainElementDeregisterProvider(PRTVFSCHAINELEMENTREG pRegRec, b
 }
 
 
-RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint32_t fOpen, PRTVFSFILE phVfsFile, const char **ppszError)
+RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint64_t fOpen, PRTVFSFILE phVfsFile, const char **ppszError)
 {
     AssertPtrReturn(pszSpec, VERR_INVALID_POINTER);
     AssertReturn(*pszSpec != '\0', VERR_INVALID_PARAMETER);
@@ -609,7 +609,7 @@ RTDECL(int) RTVfsChainOpenFile(const char *pszSpec, uint32_t fOpen, PRTVFSFILE p
 }
 
 
-RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint32_t fOpen, PRTVFSIOSTREAM phVfsIos, const char **ppszError)
+RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos, const char **ppszError)
 {
     AssertPtrReturn(pszSpec, VERR_INVALID_POINTER);
     AssertReturn(*pszSpec != '\0', VERR_INVALID_PARAMETER);

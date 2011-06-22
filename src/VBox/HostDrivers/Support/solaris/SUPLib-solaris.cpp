@@ -161,7 +161,7 @@ int suplibOsTerm(PSUPLIBDATA pThis)
     {
         if (close(pThis->hDevice))
             AssertFailed();
-        pThis->hDevice = NIL_RTFILE;
+        pThis->hDevice = (intptr_t)NIL_RTFILE;
     }
 
     return VINF_SUCCESS;

@@ -1476,11 +1476,11 @@ typedef RTCONDVAR                                  *PRTCONDVAR;
 #define NIL_RTCONDVAR                               0
 
 /** File handle. */
-typedef RTUINT                                      RTFILE;
+typedef R3R0PTRTYPE(struct RTFILEINT *)             RTFILE;
 /** Pointer to file handle. */
 typedef RTFILE                                     *PRTFILE;
 /** Nil file handle. */
-#define NIL_RTFILE                                  (~(RTFILE)0)
+#define NIL_RTFILE                                  ((RTFILE)~(RTHCINTPTR)0)
 
 /** Async I/O request handle. */
 typedef R3PTRTYPE(struct RTFILEAIOREQINTERNAL *)    RTFILEAIOREQ;

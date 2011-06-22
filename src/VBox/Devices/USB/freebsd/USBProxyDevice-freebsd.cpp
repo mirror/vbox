@@ -93,7 +93,7 @@ typedef struct USBENDPOINTFBSD
 typedef struct USBPROXYDEVFBSD
 {
     /** The open file. */
-    RTFILE                 File;
+    RTFILE                 hFile;
     /** Software endpoint structures */
     USBENDPOINTFBSD        aSwEndpoint[USBFBSD_MAXENDPOINTS];
     /** Flag whether an URB is cancelling. */
@@ -132,7 +132,7 @@ static int usbProxyFreeBSDDoIoCtl(PUSBPROXYDEV pProxyDev, unsigned long iCmd,
 
     do
     {
-        rc = ioctl(pDevFBSD->File, iCmd, pvArg);
+        rc = ioctl(RTFileToNative(pDevFBSD->hFile), iCmd, pvArg);
         if (rc >= 0)
             return VINF_SUCCESS;
     } while (errno == EINTR);
@@ -368,29 +368,24 @@ static int usbProxyFreeBSDOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress,
     /*
      * Try open the device node.
      */
-    RTFILE File;
-
-    rc = RTFileOpen(&File, pszAddress, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    RTFILE hFile;
+    rc = RTFileOpen(&hFile, pszAddress, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         /*
-             * Allocate and initialize the linux backend data.
-             */
-        PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)
-        RTMemAllocZ(sizeof(USBPROXYDEVFBSD));
-
+         * Allocate and initialize the linux backend data.
+         */
+        PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)RTMemAllocZ(sizeof(USBPROXYDEVFBSD));
         if (pDevFBSD)
         {
-            pDevFBSD->File = File;
+            pDevFBSD->hFile = hFile;
             pProxyDev->Backend.pv = pDevFBSD;
 
             rc = usbProxyFreeBSDFsInit(pProxyDev);
             if (RT_SUCCESS(rc))
             {
-                LogFlow(("usbProxyFreeBSDOpen(%p, %s): returns "
-                         "successfully File=%d iActiveCfg=%d\n",
-                         pProxyDev, pszAddress,
-                         pDevFBSD->File, pProxyDev->iActiveCfg));
+                LogFlow(("usbProxyFreeBSDOpen(%p, %s): returns successfully hFile=%RTfile iActiveCfg=%d\n",
+                         pProxyDev, pszAddress, pDevFBSD->hFile, pProxyDev->iActiveCfg));
 
                 return VINF_SUCCESS;
             }
@@ -400,7 +395,7 @@ static int usbProxyFreeBSDOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress,
         else
             rc = VERR_NO_MEMORY;
 
-        RTFileClose(File);
+        RTFileClose(hFile);
     }
     else if (rc == VERR_ACCESS_DENIED)
         rc = VERR_VUSB_USBFS_PERMISSION;
@@ -454,7 +449,7 @@ static int usbProxyFreeBSDInit(PUSBPROXYDEV pProxyDev)
  */
 static void usbProxyFreeBSDClose(PUSBPROXYDEV pProxyDev)
 {
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
 
     LogFlow(("usbProxyFreeBSDClose: pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
 
@@ -463,12 +458,10 @@ static void usbProxyFreeBSDClose(PUSBPROXYDEV pProxyDev)
 
     usbProxyFreeBSDFsUnInit(pProxyDev);
 
-    RTFileClose(pDevFBSD->File);
-
-    pDevFBSD->File = NIL_RTFILE;
+    RTFileClose(pDevFBSD->hFile);
+    pDevFBSD->hFile = NIL_RTFILE;
 
     RTMemFree(pDevFBSD);
-
     pProxyDev->Backend.pv = NULL;
 
     LogFlow(("usbProxyFreeBSDClose: returns\n"));
@@ -990,7 +983,7 @@ repeat:
     else if (cMillies && rc == VERR_RESOURCE_BUSY)
     {
         /* Poll for finished transfers */
-        PollFd.fd = (int)pDevFBSD->File;
+        PollFd.fd = RTFileToNative(pDevFBSD->hFile);
         PollFd.events = POLLIN | POLLRDNORM;
         PollFd.revents = 0;
 

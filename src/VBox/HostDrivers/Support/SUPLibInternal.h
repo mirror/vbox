@@ -184,7 +184,11 @@ typedef SUPVERIFIEDDIR const *PCSUPVERIFIEDDIR;
 typedef struct SUPLIBDATA
 {
     /** The device handle. */
-    RTFILE              hDevice;
+#if defined(RT_OS_WINDOWS)
+    void               *hDevice;
+#else
+    int                 hDevice;
+#endif
 #if   defined(RT_OS_DARWIN)
     /** The connection to the VBoxSupDrv service. */
     uintptr_t           uConnection;
@@ -202,6 +206,13 @@ typedef struct SUPLIBDATA
 typedef SUPLIBDATA *PSUPLIBDATA;
 /** Pointer to const pre-init data. */
 typedef SUPLIBDATA const *PCSUPLIBDATA;
+
+/** The NIL value of SUPLIBDATA::hDevice. */
+#if defined(RT_OS_WINDOWS)
+# define SUP_HDEVICE_NIL NULL
+#else
+# define SUP_HDEVICE_NIL (-1)
+#endif
 
 
 /**

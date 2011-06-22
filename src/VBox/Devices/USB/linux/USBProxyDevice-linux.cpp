@@ -136,7 +136,7 @@ typedef struct USBPROXYURBLNX
 typedef struct USBPROXYDEVLNX
 {
     /** The open file. */
-    RTFILE              File;
+    RTFILE              hFile;
     /** Critical section protecting the two lists. */
     RTCRITSECT          CritSect;
     /** The list of free linux URBs. Singly linked. */
@@ -193,7 +193,7 @@ static int usbProxyLinuxDoIoCtl(PUSBPROXYDEV pProxyDev, unsigned long iCmd, void
     {
         do
         {
-            rc = ioctl(pDevLnx->File, iCmd, pvArg);
+            rc = ioctl(RTFileToNative(pDevLnx->hFile), iCmd, pvArg);
             if (rc >= 0)
                 return rc;
         } while (errno == EINTR);
@@ -235,7 +235,7 @@ static void usbProxLinuxUrbUnplugged(PUSBPROXYDEV pProxyDev)
         PUSBPROXYURBLNX pCur = pUrbLnx;
         pUrbLnx = pUrbLnx->pNext;
 
-        ioctl(pDevLnx->File, USBDEVFS_DISCARDURB, &pCur->KUrb); /* not sure if this is required.. */
+        ioctl(RTFileToNative(pDevLnx->hFile), USBDEVFS_DISCARDURB, &pCur->KUrb); /* not sure if this is required.. */
         if (!pCur->KUrb.status)
             pCur->KUrb.status = -ENODEV;
 
@@ -595,8 +595,8 @@ static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *psz
 RTDECL(int) USBProxyDeviceLinuxGetFD(PUSBPROXYDEV pProxyDev)
 {
     PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
-    AssertReturn(pDevLnx->File != NIL_RTFILE, -1);
-    return pDevLnx->File;
+    AssertReturn(pDevLnx->hFile != NIL_RTFILE, -1);
+    return RTFileToNative(pDevLnx->hFile);
 }
 
 
@@ -652,8 +652,8 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
     /*
      * Try open the device node.
      */
-    RTFILE File;
-    int rc = RTFileOpen(&File, pszDevNode, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pszDevNode, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -665,14 +665,14 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
             pDevLnx->fUsingSysfs = fUsingSysfs;
             memcpy(&pDevLnx->szPath[0], pszPath, cchPath);
             pDevLnx->szPath[cchPath] = '\0';
-            pDevLnx->File = File;
+            pDevLnx->hFile = hFile;
             rc = RTCritSectInit(&pDevLnx->CritSect);
             if (RT_SUCCESS(rc))
             {
                 pProxyDev->Backend.pv = pDevLnx;
 
-                LogFlow(("usbProxyLinuxOpen(%p, %s): returns successfully File=%d iActiveCfg=%d\n",
-                         pProxyDev, pszAddress, pDevLnx->File, pProxyDev->iActiveCfg));
+                LogFlow(("usbProxyLinuxOpen(%p, %s): returns successfully File=%RTfile iActiveCfg=%d\n",
+                         pProxyDev, pszAddress, pDevLnx->hFile, pProxyDev->iActiveCfg));
 
                 return VINF_SUCCESS;
             }
@@ -681,7 +681,7 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
         }
         else
             rc = VERR_NO_MEMORY;
-        RTFileClose(File);
+        RTFileClose(hFile);
     }
     else if (rc == VERR_ACCESS_DENIED)
         rc = VERR_VUSB_USBFS_PERMISSION;
@@ -811,8 +811,8 @@ static void usbProxyLinuxClose(PUSBPROXYDEV pProxyDev)
         RTMemFree(pUrbLnx);
     }
 
-    RTFileClose(pDevLnx->File);
-    pDevLnx->File = NIL_RTFILE;
+    RTFileClose(pDevLnx->hFile);
+    pDevLnx->hFile = NIL_RTFILE;
 
     RTMemFree(pDevLnx);
     pProxyDev->Backend.pv = NULL;
@@ -1277,7 +1277,7 @@ static bool usbProxyLinuxSubmitURB(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pCur,
     PUSBPROXYDEVLNX pDevLnx = (PUSBPROXYDEVLNX)pProxyDev->Backend.pv;
     unsigned        cTries = 0;
 
-    while (ioctl(pDevLnx->File, USBDEVFS_SUBMITURB, &pCur->KUrb))
+    while (ioctl(RTFileToNative(pDevLnx->hFile), USBDEVFS_SUBMITURB, &pCur->KUrb))
     {
         if (errno == EINTR)
             continue;
@@ -1515,7 +1515,7 @@ static int usbProxyLinuxUrbQueue(PVUSBURB pUrb)
      * Submit it.
      */
     cTries = 0;
-    while (ioctl(pDevLnx->File, USBDEVFS_SUBMITURB, &pUrbLnx->KUrb))
+    while (ioctl(RTFileToNative(pDevLnx->hFile), USBDEVFS_SUBMITURB, &pUrbLnx->KUrb))
     {
         if (errno == EINTR)
             continue;
@@ -1759,13 +1759,11 @@ static PVUSBURB usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMilli
             for (;;)
             {
                 struct pollfd pfd;
-                int rc;
-
-                pfd.fd = pDevLnx->File;
+                pfd.fd = RTFileToNative(pDevLnx->hFile);
                 pfd.events = POLLOUT | POLLWRNORM /* completed async */
                            | POLLERR | POLLHUP    /* disconnected */;
                 pfd.revents = 0;
-                rc = poll(&pfd, 1, cMillies);
+                int rc = poll(&pfd, 1, cMillies);
                 Log(("usbProxyLinuxUrbReap: poll rc = %d\n", rc));
                 if (rc >= 1)
                     break;
@@ -1789,7 +1787,7 @@ static PVUSBURB usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMilli
         for (;;)
         {
             struct usbdevfs_urb *pKUrb;
-            while (ioctl(pDevLnx->File, USBDEVFS_REAPURBNDELAY, &pKUrb))
+            while (ioctl(RTFileToNative(pDevLnx->hFile), USBDEVFS_REAPURBNDELAY, &pKUrb))
                 if (errno != EINTR)
                 {
                     if (errno == ENODEV)

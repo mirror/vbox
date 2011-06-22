@@ -57,7 +57,7 @@ typedef struct DRVSCSIHOST
     /** Path to the device file. */
     char                   *pszDevicePath;
     /** Handle to the device. */
-    RTFILE                  DeviceFile;
+    RTFILE                  hDeviceFile;
 
     /** The dedicated I/O thread. */
     PPDMTHREAD              pAsyncIOThread;
@@ -301,8 +301,8 @@ static int drvscsihostProcessRequestOne(PDRVSCSIHOST pThis, PPDMSCSIREQUEST pReq
         ScsiIoReq.timeout = UINT_MAX;
         ScsiIoReq.flags  |= SG_FLAG_DIRECT_IO;
 
-        /** Issue command. */
-        rc = ioctl(pThis->DeviceFile, SG_IO, &ScsiIoReq);
+        /* Issue command. */
+        rc = ioctl(RTFileToNative(pThis->hDeviceFile), SG_IO, &ScsiIoReq);
         if (rc < 0)
         {
             AssertMsgFailed(("Ioctl failed with rc=%d\n", rc));
@@ -419,11 +419,14 @@ static DECLCALLBACK(void) drvscsihostDestruct(PPDMDRVINS pDrvIns)
     PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    if (pThis->DeviceFile != NIL_RTFILE)
-        RTFileClose(pThis->DeviceFile);
+    RTFileClose(pThis->hDeviceFile);
+    pThis->hDeviceFile = NIL_RTFILE;
 
     if (pThis->pszDevicePath)
+    {
         MMR3HeapFree(pThis->pszDevicePath);
+        pThis->pszDevicePath = NULL;
+    }
 
     if (pThis->pQueueRequests)
     {
@@ -456,8 +459,8 @@ static DECLCALLBACK(int) drvscsihostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      */
     pDrvIns->IBase.pfnQueryInterface                    = drvscsihostQueryInterface;
     pThis->ISCSIConnector.pfnSCSIRequestSend            = drvscsihostRequestSend;
-    pThis->pDrvIns    = pDrvIns;
-    pThis->DeviceFile = NIL_RTFILE;
+    pThis->pDrvIns     = pDrvIns;
+    pThis->hDeviceFile = NIL_RTFILE;
 
     /* Query the SCSI port interface above. */
     pThis->pDevScsiPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISCSIPORT);
@@ -473,7 +476,7 @@ static DECLCALLBACK(int) drvscsihostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"DevicePath\" value"));
 
-    rc = RTFileOpen(&pThis->DeviceFile, pThis->pszDevicePath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    rc = RTFileOpen(&pThis->hDeviceFile, pThis->pszDevicePath, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("DrvSCSIHost#%d: Failed to open device '%s'"), pDrvIns->iInstance, pThis->pszDevicePath);

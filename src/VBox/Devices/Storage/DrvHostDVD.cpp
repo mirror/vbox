@@ -155,7 +155,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce, b
             rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
 
 #elif defined(RT_OS_LINUX)
-            rc = ioctl(pThis->FileDevice, CDROMEJECT, 0);
+            rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROMEJECT, 0);
             if (rc < 0)
             {
                 if (errno == EBUSY)
@@ -167,7 +167,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce, b
             }
 
 #elif defined(RT_OS_SOLARIS)
-            rc = ioctl(pThis->FileRawDevice, DKIOCEJECT, 0);
+            rc = ioctl(RTFileToNative(pThis->hFileRawDevice), DKIOCEJECT, 0);
             if (rc < 0)
             {
                 if (errno == EBUSY)
@@ -181,14 +181,14 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce, b
             }
 
 #elif defined(RT_OS_WINDOWS)
-            RTFILE FileDevice = pThis->FileDevice;
-            if (FileDevice == NIL_RTFILE) /* obsolete crap */
-                rc = RTFileOpen(&FileDevice, pThis->pszDeviceOpen, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+            RTFILE hFileDevice = pThis->hFileDevice;
+            if (hFileDevice == NIL_RTFILE) /* obsolete crap */
+                rc = RTFileOpen(&hFileDevice, pThis->pszDeviceOpen, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
             if (RT_SUCCESS(rc))
             {
                 /* do ioctl */
                 DWORD cbReturned;
-                if (DeviceIoControl((HANDLE)FileDevice, IOCTL_STORAGE_EJECT_MEDIA,
+                if (DeviceIoControl(RTFileToNative(hFileDevice), IOCTL_STORAGE_EJECT_MEDIA,
                                     NULL, 0,
                                     NULL, 0, &cbReturned,
                                     NULL))
@@ -197,8 +197,8 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce, b
                     rc = RTErrConvertFromWin32(GetLastError());
 
                 /* clean up handle */
-                if (FileDevice != pThis->FileDevice)
-                    RTFileClose(FileDevice);
+                if (hFileDevice != pThis->hFileDevice)
+                    RTFileClose(hFileDevice);
             }
             else
                 AssertMsgFailed(("Failed to open '%s' for ejecting this tray.\n",  rc));
@@ -245,7 +245,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
     int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMBLOCKTXDIR_NONE, NULL, NULL, NULL, 0, 0);
 
 #elif defined(RT_OS_LINUX)
-    int rc = ioctl(pThis->FileDevice, CDROM_LOCKDOOR, (int)fLock);
+    int rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_LOCKDOOR, (int)fLock);
     if (rc < 0)
     {
         if (errno == EBUSY)
@@ -257,7 +257,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
     }
 
 #elif defined(RT_OS_SOLARIS)
-    int rc = ioctl(pThis->FileRawDevice, fLock ? DKIOCLOCK : DKIOCUNLOCK, 0);
+    int rc = ioctl(RTFileToNative(pThis->hFileRawDevice), fLock ? DKIOCLOCK : DKIOCUNLOCK, 0);
     if (rc < 0)
     {
         if (errno == EBUSY)
@@ -273,7 +273,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
     PREVENT_MEDIA_REMOVAL PreventMediaRemoval = {fLock};
     DWORD cbReturned;
     int rc;
-    if (DeviceIoControl((HANDLE)pThis->FileDevice, IOCTL_STORAGE_MEDIA_REMOVAL,
+    if (DeviceIoControl(RTFileToNative(pThis->hFileDevice), IOCTL_STORAGE_MEDIA_REMOVAL,
                         &PreventMediaRemoval, sizeof(PreventMediaRemoval),
                         NULL, 0, &cbReturned,
                         NULL))
@@ -308,8 +308,8 @@ static int drvHostDvdGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
      * Query the media size.
      */
     /* Clear the media-changed-since-last-call-thingy just to be on the safe side. */
-    ioctl(pThis->FileDevice, CDROM_MEDIA_CHANGED, CDSL_CURRENT);
-    return RTFileSeek(pThis->FileDevice, 0, RTFILE_SEEK_END, pcb);
+    ioctl(RTFileToNative(pThis->hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT);
+    return RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
 
 }
 #endif /* RT_OS_LINUX */
@@ -356,7 +356,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
     }
 
 #elif defined(RT_OS_LINUX)
-    bool fMediaPresent = ioctl(pThis->FileDevice, CDROM_DRIVE_STATUS, CDSL_CURRENT) == CDS_DISC_OK;
+    bool fMediaPresent = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_DRIVE_STATUS, CDSL_CURRENT) == CDS_DISC_OK;
 
 #elif defined(RT_OS_SOLARIS)
     bool fMediaPresent = false;
@@ -365,7 +365,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
     /* Need to pass the previous state and DKIO_NONE for the first time. */
     static dkio_state s_DeviceState = DKIO_NONE;
     dkio_state PreviousState = s_DeviceState;
-    int rc2 = ioctl(pThis->FileRawDevice, DKIOCSTATE, &s_DeviceState);
+    int rc2 = ioctl(RTFileToNative(pThis->hFileRawDevice), DKIOCSTATE, &s_DeviceState);
     if (rc2 == 0)
     {
         fMediaPresent = (s_DeviceState == DKIO_INSERTED);
@@ -397,7 +397,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
         /* taken care of above. */
 #elif defined(RT_OS_LINUX)
-        bool fMediaChanged = ioctl(pThis->FileDevice, CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
+        bool fMediaChanged = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
 #else
 # error "Unsupported platform."
 #endif
@@ -483,7 +483,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
     cgc.data_direction = direction;
     cgc.quiet = false;
     cgc.timeout = cTimeoutMillies;
-    rc = ioctl(pThis->FileDevice, CDROM_SEND_PACKET, &cgc);
+    rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_SEND_PACKET, &cgc);
     if (rc < 0)
     {
         if (errno == EBUSY)
@@ -559,7 +559,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
     uid_t effUserID = geteuid();
     solarisEnterRootMode(&effUserID); /** @todo check return code when this really works. */
 #endif
-    rc = ioctl(pThis->FileRawDevice, USCSICMD, &usc);
+    rc = ioctl(RTFileToNative(pThis->hFileRawDevice), USCSICMD, &usc);
 #ifdef VBOX_WITH_SUID_WRAPPER
     solarisExitRootMode(&effUserID);
 #endif
@@ -619,7 +619,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
     Assert(cbSense <= sizeof(Req.aSense));
     Req.spt.SenseInfoLength = (UCHAR)RT_MIN(sizeof(Req.aSense), cbSense);
     Req.spt.SenseInfoOffset = RT_OFFSETOF(struct _REQ, aSense);
-    if (DeviceIoControl((HANDLE)pThis->FileDevice, IOCTL_SCSI_PASS_THROUGH_DIRECT,
+    if (DeviceIoControl(RTFileToNative(pThis->hFileDevice), IOCTL_SCSI_PASS_THROUGH_DIRECT,
                         &Req, sizeof(Req), &Req, sizeof(Req), &cbReturned, NULL))
     {
         if (cbReturned > RT_OFFSETOF(struct _REQ, aSense))

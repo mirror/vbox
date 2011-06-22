@@ -149,8 +149,8 @@ typedef struct RTRANDINT
 
         struct RTRandFile
         {
-            /** The file handle. */
-            RTFILE      hFile;
+            /** The file handle (native). */
+            intptr_t    hFile;
         } File;
     } u;
 } RTRANDINT;

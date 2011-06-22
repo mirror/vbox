@@ -34,6 +34,7 @@
 #include <iprt/stream.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
+#include <iprt/pipe.h>
 #include <iprt/getopt.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
@@ -89,8 +90,8 @@ public:
 #ifdef RT_OS_WINDOWS
     HANDLE m_hWakeupEvent;
 #else
-    RTFILE m_PipeWrite;
-    RTFILE m_PipeRead;
+    RTPIPE m_hPipeWrite;
+    RTPIPE m_hPipeRead;
 #endif
     /** Queue for NAT-thread-external events. */
     /** event to wakeup the guest receive thread */
@@ -125,7 +126,8 @@ static void natNotifyNATThread(void)
     int rc;
 #ifndef RT_OS_WINDOWS
     /* kick select() */
-    rc = RTFileWrite(g_pNAT->m_PipeWrite, "", 1, NULL);
+    size_t cbIgnored;
+    rc = RTPipeWrite(g_pNAT->m_hPipeWrite, "", 1, &cbIgnored);
 #else
     /* kick WSAWaitForMultipleEvents */
     rc = WSASetEvent(g_pNAT->hWakeupEvent);
@@ -169,17 +171,11 @@ void VBoxNetNAT::init()
     /*
      * Create the control pipe.
      */
-    int fds[2];
-    if (pipe(&fds[0]) != 0) /** @todo RTPipeCreate() or something... */
-    {
-        rc = RTErrConvertFromErrno(errno);
-        AssertReleaseRC(rc);
-        return;
-    }
-    m_PipeRead = fds[0];
-    m_PipeWrite = fds[1];
+    rc = RTPipeCreate(&m_hPipeRead, &m_hPipeWrite, 0 /*fFlags*/);
+    AssertReleaseRC(rc);
 #else
     m_hWakeupEvent = CreateEvent(NULL, FALSE, FALSE, NULL); /* auto-reset event */
+    AssertReleaseRC(m_hWakeupEvent != NULL);
     slirp_register_external_event(m_pNATState, m_hWakeupEvent, VBOX_WAKEUP_EVENT_INDEX);
 #endif
     rc = RTReqCreateQueue(&m_pReqQueue);
@@ -298,7 +294,8 @@ void VBoxNetNAT::run()
 
 #ifndef RT_OS_WINDOWS
                 /* kick select() */
-                rc = RTFileWrite(m_PipeWrite, "", 1, NULL);
+                size_t cbIgnored;
+                rc = RTPipeWrite(m_hPipeWrite, "", 1, &cbIgnored);
                 AssertRC(rc);
 #else
                 /* kick WSAWaitForMultipleEvents */
@@ -467,7 +464,7 @@ static DECLCALLBACK(int) AsyncIoThread(RTTHREAD pThread, void *pvUser)
         slirp_select_fill(pThis->m_pNATState, &nFDs, &polls[1]);
         unsigned int cMsTimeout = slirp_get_timeout_ms(pThis->m_pNATState);
 
-        polls[0].fd = pThis->m_PipeRead;
+        polls[0].fd = RTPipeToNative(pThis->m_hPipeRead);
         /* POLLRDBAND usually doesn't used on Linux but seems used on Solaris */
         polls[0].events = POLLRDNORM|POLLPRI|POLLRDBAND;
         polls[0].revents = 0;
@@ -493,11 +490,9 @@ static DECLCALLBACK(int) AsyncIoThread(RTTHREAD pThread, void *pvUser)
             slirp_select_poll(pThis->m_pNATState, &polls[1], nFDs);
             if (polls[0].revents & (POLLRDNORM|POLLPRI|POLLRDBAND))
             {
-                /* drain the pipe */
-                char ch[1];
-                size_t cbRead;
-                int counter = 0;
-                /*
+                /* drain the pipe
+                 *
+                 * Note!
                  * drvNATSend decoupled so we don't know how many times
                  * device's thread sends before we've entered multiplex,
                  * so to avoid false alarm drain pipe here to the very end
@@ -505,9 +500,12 @@ static DECLCALLBACK(int) AsyncIoThread(RTTHREAD pThread, void *pvUser)
                  * @todo: Probably we should counter drvNATSend to count how
                  * deep pipe has been filed before drain.
                  *
-                 * XXX:Make it reading exactly we need to drain the pipe.
                  */
-                RTFileRead(pThis->m_PipeRead, &ch, 1, &cbRead);
+                 /** @todo XXX: Make it reading exactly we need to drain the
+                  *  pipe.  */
+                char    ch;
+                size_t  cbRead;
+                RTPipeRead(pThis->m_hPipeRead, &ch, 1, &cbRead);
             }
         }
         /* process _all_ outstanding requests but don't wait */

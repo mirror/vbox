@@ -40,25 +40,6 @@
 #include "internal/ldr.h"
 
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
-typedef struct RTLDRREADERFILE
-{
-    /** The core. */
-    RTLDRREADER     Core;
-    /** The file. */
-    RTFILE          File;
-    /** The file size. */
-    RTFOFF          cbFile;
-    /** The current offset. */
-    RTFOFF          off;
-    /** The filename (variable size). */
-    char            szFilename[1];
-} RTLDRREADERFILE, *PRTLDRREADERFILE;
-
-
-
 /**
  * Checks if a library is loadable or not.
  *

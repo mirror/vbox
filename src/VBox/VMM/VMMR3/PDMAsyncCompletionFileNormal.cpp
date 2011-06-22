@@ -204,8 +204,8 @@ static bool pdmacFileAioMgrNormalRemoveEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE 
         Assert(!pEndpointRemove->pFlushReq);
 
         /* Reopen the file so that the new endpoint can re-associate with the file */
-        RTFileClose(pEndpointRemove->File);
-        int rc = RTFileOpen(&pEndpointRemove->File, pEndpointRemove->Core.pszUri, pEndpointRemove->fFlags);
+        RTFileClose(pEndpointRemove->hFile);
+        int rc = RTFileOpen(&pEndpointRemove->hFile, pEndpointRemove->Core.pszUri, pEndpointRemove->fFlags);
         AssertRC(rc);
         return false;
     }
@@ -340,8 +340,8 @@ static int pdmacFileAioMgrNormalGrow(PPDMACEPFILEMGR pAioMgr)
 
     while (pCurr)
     {
-        RTFileClose(pCurr->File);
-        rc = RTFileOpen(&pCurr->File, pCurr->Core.pszUri, pCurr->fFlags);
+        RTFileClose(pCurr->hFile);
+        rc = RTFileOpen(&pCurr->hFile, pCurr->Core.pszUri, pCurr->fFlags);
         AssertRC(rc);
 
         pCurr = pCurr->AioMgr.pEndpointNext;
@@ -389,7 +389,7 @@ static int pdmacFileAioMgrNormalGrow(PPDMACEPFILEMGR pAioMgr)
 
     while (pCurr)
     {
-        rc = RTFileAioCtxAssociateWithFile(pAioMgr->hAioCtx, pCurr->File);
+        rc = RTFileAioCtxAssociateWithFile(pAioMgr->hAioCtx, pCurr->hFile);
         AssertRC(rc);
 
         pCurr = pCurr->AioMgr.pEndpointNext;
@@ -789,15 +789,15 @@ static int pdmacFileAioMgrNormalTaskPrepareBuffered(PPDMACEPFILEMGR pAioMgr,
             if (RT_UNLIKELY((uint64_t)(pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
             {
                 ASMAtomicWriteU64(&pEndpoint->cbFile, pTask->Off + pTask->DataSeg.cbSeg);
-                RTFileSetSize(pEndpoint->File, pTask->Off + pTask->DataSeg.cbSeg);
+                RTFileSetSize(pEndpoint->hFile, pTask->Off + pTask->DataSeg.cbSeg);
             }
 
-            rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File,
+            rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->hFile,
                                           pTask->Off, pTask->DataSeg.pvSeg,
                                           pTask->DataSeg.cbSeg, pTask);
         }
         else
-            rc = RTFileAioReqPrepareRead(hReq, pEndpoint->File,
+            rc = RTFileAioReqPrepareRead(hReq, pEndpoint->hFile,
                                          pTask->Off, pTask->DataSeg.pvSeg,
                                          pTask->DataSeg.cbSeg, pTask);
         AssertRC(rc);
@@ -924,14 +924,14 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
                 if (RT_UNLIKELY((uint64_t)(pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
                 {
                     ASMAtomicWriteU64(&pEndpoint->cbFile, pTask->Off + pTask->DataSeg.cbSeg);
-                    RTFileSetSize(pEndpoint->File, pTask->Off + pTask->DataSeg.cbSeg);
+                    RTFileSetSize(pEndpoint->hFile, pTask->Off + pTask->DataSeg.cbSeg);
                 }
 
-                rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File,
+                rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->hFile,
                                               offStart, pvBuf, cbToTransfer, pTask);
             }
             else
-                rc = RTFileAioReqPrepareRead(hReq, pEndpoint->File,
+                rc = RTFileAioReqPrepareRead(hReq, pEndpoint->hFile,
                                              offStart, pvBuf, cbToTransfer, pTask);
             AssertRC(rc);
 
@@ -1003,7 +1003,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
 
                     LogFlow(("Flush request %#p\n", hReq));
 
-                    rc = RTFileAioReqPrepareFlush(hReq, pEndpoint->File, pCurr);
+                    rc = RTFileAioReqPrepareFlush(hReq, pEndpoint->hFile, pCurr);
                     if (RT_FAILURE(rc))
                     {
                         pEndpoint->fAsyncFlushSupported = false;
@@ -1188,7 +1188,7 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
             pAioMgr->pEndpointsHead = pEndpointNew;
 
             /* Assign the completion point to this file. */
-            rc = RTFileAioCtxAssociateWithFile(pAioMgr->hAioCtx, pEndpointNew->File);
+            rc = RTFileAioCtxAssociateWithFile(pAioMgr->hAioCtx, pEndpointNew->hFile);
             fNotifyWaiter = true;
             pAioMgr->cEndpoints++;
             break;
@@ -1288,8 +1288,8 @@ static int pdmacFileAioMgrNormalCheckEndpoints(PPDMACEPFILEMGR pAioMgr)
                  && pEndpoint->enmState != PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE)
         {
             /* Reopen the file so that the new endpoint can re-associate with the file */
-            RTFileClose(pEndpoint->File);
-            rc = RTFileOpen(&pEndpoint->File, pEndpoint->Core.pszUri, pEndpoint->fFlags);
+            RTFileClose(pEndpoint->hFile);
+            rc = RTFileOpen(&pEndpoint->hFile, pEndpoint->Core.pszUri, pEndpoint->fFlags);
             AssertRC(rc);
 
             if (pEndpoint->AioMgr.fMoving)
@@ -1471,14 +1471,14 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
 
                 if (pTask->fPrefetch || pTask->enmTransferType == PDMACTASKFILETRANSFER_READ)
                 {
-                    rc = RTFileAioReqPrepareRead(hReq, pEndpoint->File, offStart,
+                    rc = RTFileAioReqPrepareRead(hReq, pEndpoint->hFile, offStart,
                                                  pbBuf, cbToTransfer, pTask);
                 }
                 else
                 {
                     AssertMsg(pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE,
                                   ("Invalid transfer type\n"));
-                    rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File, offStart,
+                    rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->hFile, offStart,
                                                   pbBuf, cbToTransfer, pTask);
                 }
                 AssertRC(rc);
@@ -1506,10 +1506,10 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
                 if (RT_UNLIKELY((uint64_t)(pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
                 {
                     ASMAtomicWriteU64(&pEndpoint->cbFile, pTask->Off + pTask->DataSeg.cbSeg);
-                    RTFileSetSize(pEndpoint->File, pTask->Off + pTask->DataSeg.cbSeg);
+                    RTFileSetSize(pEndpoint->hFile, pTask->Off + pTask->DataSeg.cbSeg);
                 }
 
-                rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File,
+                rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->hFile,
                                               offStart, pTask->pvBounceBuffer, cbToTransfer, pTask);
                 AssertRC(rc);
                 pTask->hReq = hReq;

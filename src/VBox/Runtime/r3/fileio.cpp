@@ -106,7 +106,7 @@ RTR3DECL(int)  RTFileSetForceFlags(unsigned fOpenForAccess, unsigned fSet, unsig
  *                      Updated on successful return.
  * @internal
  */
-int rtFileRecalcAndValidateFlags(uint32_t *pfOpen)
+int rtFileRecalcAndValidateFlags(uint64_t *pfOpen)
 {
     /*
      * Recalc.
@@ -127,20 +127,20 @@ int rtFileRecalcAndValidateFlags(uint32_t *pfOpen)
             fOpen &= ~g_fOpenReadWriteMask;
             break;
         default:
-            AssertMsgFailed(("Invalid RW value, fOpen=%#x\n", fOpen));
+            AssertMsgFailed(("Invalid RW value, fOpen=%#llx\n", fOpen));
             return VERR_INVALID_PARAMETER;
     }
 
     /*
      * Validate                                                                                                                                       .
      */
-    AssertMsgReturn(fOpen & RTFILE_O_ACCESS_MASK, ("Missing RTFILE_O_READ/WRITE: fOpen=%#x\n", fOpen), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(fOpen & RTFILE_O_ACCESS_MASK, ("Missing RTFILE_O_READ/WRITE: fOpen=%#llx\n", fOpen), VERR_INVALID_PARAMETER);
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    AssertMsgReturn(!(fOpen & (~RTFILE_O_VALID_MASK | RTFILE_O_NON_BLOCK)), ("%#x\n", fOpen), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fOpen & (~(uint64_t)RTFILE_O_VALID_MASK | RTFILE_O_NON_BLOCK)), ("%#llx\n", fOpen), VERR_INVALID_PARAMETER);
 #else
-    AssertMsgReturn(!(fOpen & ~RTFILE_O_VALID_MASK), ("%#x\n", fOpen), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fOpen & ~(uint64_t)RTFILE_O_VALID_MASK), ("%#llx\n", fOpen), VERR_INVALID_PARAMETER);
 #endif
-    AssertMsgReturn((fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_WRITE)) != RTFILE_O_TRUNCATE, ("%#x\n", fOpen), VERR_INVALID_PARAMETER);
+    AssertMsgReturn((fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_WRITE)) != RTFILE_O_TRUNCATE, ("%#llx\n", fOpen), VERR_INVALID_PARAMETER);
 
     switch (fOpen & RTFILE_O_ACTION_MASK)
     {
@@ -149,13 +149,13 @@ int rtFileRecalcAndValidateFlags(uint32_t *pfOpen)
             fOpen |= RTFILE_O_OPEN;
             break;
         case RTFILE_O_OPEN:
-            AssertMsgReturn(!(RTFILE_O_NOT_CONTENT_INDEXED & fOpen), ("%#x\n", fOpen), VERR_INVALID_PARAMETER);
+            AssertMsgReturn(!(RTFILE_O_NOT_CONTENT_INDEXED & fOpen), ("%#llx\n", fOpen), VERR_INVALID_PARAMETER);
         case RTFILE_O_OPEN_CREATE:
         case RTFILE_O_CREATE:
         case RTFILE_O_CREATE_REPLACE:
             break;
         default:
-            AssertMsgFailed(("Invalid action value: fOpen=%#x\n", fOpen));
+            AssertMsgFailed(("Invalid action value: fOpen=%#llx\n", fOpen));
             return VERR_INVALID_PARAMETER;
     }
 
@@ -175,7 +175,7 @@ int rtFileRecalcAndValidateFlags(uint32_t *pfOpen)
         case RTFILE_O_DENY_NOT_DELETE | RTFILE_O_DENY_WRITE | RTFILE_O_DENY_READ:
             break;
         default:
-            AssertMsgFailed(("Invalid deny value: fOpen=%#x\n", fOpen));
+            AssertMsgFailed(("Invalid deny value: fOpen=%#llx\n", fOpen));
             return VERR_INVALID_PARAMETER;
     }
 

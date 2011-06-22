@@ -206,7 +206,7 @@ typedef struct USBPROXYDEV
         /** Pointer to some backend data.
          * The Linux and Darwin backends are making use of this. */
         void *pv;
-        RTFILE File;
+        RTFILE hFile;
         int fd;
         struct vrdp_priv
         {

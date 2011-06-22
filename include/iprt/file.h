@@ -253,7 +253,7 @@ RTR3DECL(int)  RTFileSetForceFlags(unsigned fOpenForAccess, unsigned fSet, unsig
  * @param   fOpen           Open flags, i.e a combination of the RTFILE_O_* defines.
  *                          The ACCESS, ACTION and DENY flags are mandatory!
  */
-RTDECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen);
+RTDECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen);
 
 /**
  * Open a file given as a format string.
@@ -266,7 +266,7 @@ RTDECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen);
  *                          be opened. (UTF-8)
  * @param   ...             Arguments to the format string.
  */
-RTDECL(int)  RTFileOpenF(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, ...);
+RTDECL(int)  RTFileOpenF(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameFmt, ...);
 
 /**
  * Open a file given as a format string.
@@ -279,7 +279,7 @@ RTDECL(int)  RTFileOpenF(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameF
  *                          be opened. (UTF-8)
  * @param   va              Arguments to the format string.
  */
-RTDECL(int)  RTFileOpenV(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, va_list va);
+RTDECL(int)  RTFileOpenV(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameFmt, va_list va);
 
 /**
  * Open the bit bucket (aka /dev/null or nul).
@@ -288,7 +288,7 @@ RTDECL(int)  RTFileOpenV(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameF
  * @param   phFile          Where to store the handle to the opened file.
  * @param   fAccess         The desired access only, i.e. read, write or both.
  */
-RTDECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint32_t fAccess);
+RTDECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint64_t fAccess);
 
 /**
  * Close a file opened by RTFileOpen().

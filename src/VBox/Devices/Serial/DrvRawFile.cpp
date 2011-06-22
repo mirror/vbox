@@ -59,7 +59,7 @@ typedef struct DRVRAWFILE
     /** Pointer to the file name. (Freed by MM) */
     char               *pszLocation;
     /** Flag whether VirtualBox represents the server or client side. */
-    RTFILE              OutputFile;
+    RTFILE              hOutputFile;
 } DRVRAWFILE, *PDRVRAWFILE;
 
 
@@ -74,14 +74,14 @@ static DECLCALLBACK(int) drvRawFileWrite(PPDMISTREAM pInterface, const void *pvB
     LogFlow(("%s: pvBuf=%p *pcbWrite=%#x (%s)\n", __FUNCTION__, pvBuf, *pcbWrite, pThis->pszLocation));
 
     Assert(pvBuf);
-    if (pThis->OutputFile != NIL_RTFILE)
+    if (pThis->hOutputFile != NIL_RTFILE)
     {
         size_t cbWritten;
-        rc = RTFileWrite(pThis->OutputFile, pvBuf, *pcbWrite, &cbWritten);
+        rc = RTFileWrite(pThis->hOutputFile, pvBuf, *pcbWrite, &cbWritten);
 #if 0
         /* don't flush here, takes too long and we will loose characters */
         if (RT_SUCCESS(rc))
-            RTFileFlush(pThis->OutputFile);
+            RTFileFlush(pThis->hOutputFile);
 #endif
         *pcbWrite = cbWritten;
     }
@@ -120,11 +120,8 @@ static DECLCALLBACK(void) drvRawFilePowerOff(PPDMDRVINS pDrvIns)
     PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
     LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
 
-    if (pThis->OutputFile != NIL_RTFILE)
-    {
-        RTFileClose(pThis->OutputFile);
-        pThis->OutputFile = NIL_RTFILE;
-    }
+    RTFileClose(pThis->hOutputFile);
+    pThis->hOutputFile = NIL_RTFILE;
 }
 
 
@@ -145,11 +142,8 @@ static DECLCALLBACK(void) drvRawFileDestruct(PPDMDRVINS pDrvIns)
     if (pThis->pszLocation)
         MMR3HeapFree(pThis->pszLocation);
 
-    if (pThis->OutputFile != NIL_RTFILE)
-    {
-        RTFileClose(pThis->OutputFile);
-        pThis->OutputFile = NIL_RTFILE;
-    }
+    RTFileClose(pThis->hOutputFile);
+    pThis->hOutputFile = NIL_RTFILE;
 }
 
 
@@ -168,7 +162,7 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
      */
     pThis->pDrvIns                      = pDrvIns;
     pThis->pszLocation                  = NULL;
-    pThis->OutputFile                   = NIL_RTFILE;
+    pThis->hOutputFile                  = NIL_RTFILE;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvRawFileQueryInterface;
     /* IStream */
@@ -187,7 +181,7 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     /*
      * Open the raw file.
      */
-    rc = RTFileOpen(&pThis->OutputFile, pThis->pszLocation, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
+    rc = RTFileOpen(&pThis->hOutputFile, pThis->pszLocation, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
     {
         LogRel(("RawFile%d: CreateFile failed rc=%Rrc\n", pDrvIns->iInstance));

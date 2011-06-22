@@ -30,6 +30,7 @@
 #include <iprt/file.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
+#include <iprt/pipe.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
@@ -92,7 +93,7 @@ typedef struct DRVTAP
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
     /** TAP device file handle. */
-    RTFILE                  FileDevice;
+    RTFILE                  hFileDevice;
     /** The configured TAP device name. */
     char                   *pszDeviceName;
 #ifdef RT_OS_SOLARIS
@@ -103,7 +104,7 @@ typedef struct DRVTAP
     dlpi_handle_t           pDeviceHandle;
 # else
     /** IP device file handle (/dev/udp). */
-    RTFILE                  IPFileDevice;
+    int                     iIPFileDes;
 # endif
     /** Whether device name is obtained from setup application. */
     bool                    fStatic;
@@ -113,9 +114,9 @@ typedef struct DRVTAP
     /** TAP terminate application. */
     char                   *pszTerminateApplication;
     /** The write end of the control pipe. */
-    RTFILE                  PipeWrite;
+    RTPIPE                  hPipeWrite;
     /** The read end of the control pipe. */
-    RTFILE                  PipeRead;
+    RTPIPE                  hPipeRead;
     /** Reader thread. */
     PPDMTHREAD              pThread;
 
@@ -274,7 +275,7 @@ static DECLCALLBACK(int) drvTAPNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
               "%.*Rhxd\n",
               pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, pSgBuf->cbUsed, pSgBuf->aSegs[0].pvSeg));
 
-        rc = RTFileWrite(pThis->FileDevice, pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, NULL);
+        rc = RTFileWrite(pThis->hFileDevice, pSgBuf->aSegs[0].pvSeg, pSgBuf->cbUsed, NULL);
     }
     else
     {
@@ -288,7 +289,7 @@ static DECLCALLBACK(int) drvTAPNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
             uint32_t cbSegFrame;
             void *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)pbFrame, pSgBuf->cbUsed, abHdrScratch,
                                                        iSeg, cSegs, &cbSegFrame);
-            rc = RTFileWrite(pThis->FileDevice, pvSegFrame, cbSegFrame, NULL);
+            rc = RTFileWrite(pThis->hFileDevice, pvSegFrame, cbSegFrame, NULL);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -365,10 +366,10 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
          * Wait for something to become available.
          */
         struct pollfd aFDs[2];
-        aFDs[0].fd      = pThis->FileDevice;
+        aFDs[0].fd      = RTFileToNative(pThis->hFileDevice);
         aFDs[0].events  = POLLIN | POLLPRI;
         aFDs[0].revents = 0;
-        aFDs[1].fd      = pThis->PipeRead;
+        aFDs[1].fd      = RTPipeToNative(pThis->hPipeRead);
         aFDs[1].events  = POLLIN | POLLPRI | POLLERR | POLLHUP;
         aFDs[1].revents = 0;
         STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
@@ -397,7 +398,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             /** @note At least on Linux we will never receive more than one network packet
              *        after poll() returned successfully. I don't know why but a second
              *        RTFileRead() operation will return with VERR_TRY_AGAIN in any case. */
-            rc = RTFileRead(pThis->FileDevice, achBuf, sizeof(achBuf), &cbRead);
+            rc = RTFileRead(pThis->hFileDevice, achBuf, sizeof(achBuf), &cbRead);
 #endif
             if (RT_SUCCESS(rc))
             {
@@ -458,7 +459,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             /* drain the pipe */
             char ch;
             size_t cbRead;
-            RTFileRead(pThis->PipeRead, &ch, 1, &cbRead);
+            RTPipeRead(pThis->hPipeRead, &ch, 1, &cbRead);
         }
         else
         {
@@ -494,7 +495,8 @@ static DECLCALLBACK(int) drvTapAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 {
     PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
 
-    int rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
+    size_t cbIgnored;
+    int rc = RTPipeWrite(pThis->hPipeWrite, "", 1, &cbIgnored);
     AssertRC(rc);
 
     return VINF_SUCCESS;
@@ -656,15 +658,19 @@ static int SolarisOpenVNIC(PDRVTAP pThis)
                         rc = g_pfnLibDlpiPromiscon(pThis->pDeviceHandle, DL_PROMISC_PHYS);
                         if (rc == DLPI_SUCCESS)
                         {
-                            pThis->FileDevice = g_pfnLibDlpiFd(pThis->pDeviceHandle);
+                            int fd = g_pfnLibDlpiFd(pThis->pDeviceHandle);
                             if (pThis->FileDevice >= 0)
                             {
-                                Log(("SolarisOpenVNIC: %s -> %d\n", pThis->pszDeviceName, pThis->FileDevice));
-                                return VINF_SUCCESS;
+                                rc = RTFileFromNative(&pThis->hFileDevice, fd);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    Log(("SolarisOpenVNIC: %s -> %RTfile\n", pThis->pszDeviceName, pThis->hFileDevice));
+                                    return VINF_SUCCESS;
+                                }
                             }
-
-                            rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                                     N_("Failed to obtain file descriptor for VNIC"));
+                            else
+                                rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
+                                                         N_("Failed to obtain file descriptor for VNIC"));
                         }
                         else
                             rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
@@ -878,8 +884,14 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
                                    N_("Failed to set Mux ID. Check TAP interface name. errno=%d"), errno);
     }
 
-    pThis->FileDevice = (RTFILE)TapFileDes;
-    pThis->IPFileDevice = (RTFILE)IPFileDes;
+    int rc = RTFileFromNative(&pThis->hFileDevice, TapFileDes);
+    AssertLogRelRC(rc);
+    if (RT_FAILURE(rc)))
+    {
+        close(IPFileDes);
+        close(TapFileDes);
+    }
+    pThis->iIPFileDes = IPFileDes;
 
     return VINF_SUCCESS;
 }
@@ -921,34 +933,26 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
     /*
      * Terminate the control pipe.
      */
-    if (pThis->PipeWrite != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->PipeWrite);
-        AssertRC(rc);
-        pThis->PipeWrite = NIL_RTFILE;
-    }
-    if (pThis->PipeRead != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->PipeRead);
-        AssertRC(rc);
-        pThis->PipeRead = NIL_RTFILE;
-    }
+    int rc;
+    rc = RTPipeClose(pThis->hPipeWrite); AssertRC(rc);
+    pThis->hPipeWrite = NIL_RTPIPE;
+    rc = RTPipeClose(pThis->hPipeRead); AssertRC(rc);
+    pThis->hPipeRead = NIL_RTPIPE;
 
 #ifdef RT_OS_SOLARIS
     /** @todo r=bird: This *does* need checking against ConsoleImpl2.cpp if used on non-solaris systems. */
-    if (pThis->FileDevice != NIL_RTFILE)
+    if (pThis->hFileDevice != NIL_RTFILE)
     {
-        int rc = RTFileClose(pThis->FileDevice);
+        int rc = RTFileClose(pThis->hFileDevice);
         AssertRC(rc);
-        pThis->FileDevice = NIL_RTFILE;
+        pThis->hFileDevice = NIL_RTFILE;
     }
 
 # ifndef VBOX_WITH_CROSSBOW
-    if (pThis->IPFileDevice != NIL_RTFILE)
+    if (pThis->iIPFileDes != -1)
     {
-        int rc = RTFileClose(pThis->IPFileDevice);
-        AssertRC(rc);
-        pThis->IPFileDevice = NIL_RTFILE;
+        close(pThis->iIPFileDes);
+        pThis->iIPFileDes = -1;
     }
 # endif
 
@@ -1006,13 +1010,13 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      * Init the static parts.
      */
     pThis->pDrvIns                      = pDrvIns;
-    pThis->FileDevice                   = NIL_RTFILE;
+    pThis->hFileDevice                  = NIL_RTFILE;
     pThis->pszDeviceName                = NULL;
 #ifdef RT_OS_SOLARIS
 # ifdef VBOX_WITH_CROSSBOW
     pThis->pDeviceHandle                = NULL;
 # else
-    pThis->IPFileDevice                 = NIL_RTFILE;
+    pThis->iIPFileDes                   = -1;
 # endif
     pThis->fStatic                      = true;
 #endif
@@ -1125,15 +1129,15 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
 #else /* !RT_OS_SOLARIS */
 
-    int32_t iFile;
-    rc = CFGMR3QueryS32(pCfg, "FileHandle", &iFile);
+    uint64_t u64File;
+    rc = CFGMR3QueryU64(pCfg, "FileHandle", &u64File);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Query for \"FileHandle\" 32-bit signed integer failed"));
-    pThis->FileDevice = (RTFILE)iFile;
-    if (!RTFileIsValid(pThis->FileDevice))
+    pThis->hFileDevice = (RTFILE)(uintptr_t)u64File;
+    if (!RTFileIsValid(pThis->hFileDevice))
         return PDMDrvHlpVMSetError(pDrvIns, VERR_INVALID_HANDLE, RT_SRC_POS,
-                                   N_("The TAP file handle %RTfile is not valid"), pThis->FileDevice);
+                                   N_("The TAP file handle %RTfile is not valid"), pThis->hFileDevice);
 #endif /* !RT_OS_SOLARIS */
 
     /*
@@ -1148,29 +1152,18 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      * We should actually query if it's a TAP device, but I haven't
      * found any way to do that.
      */
-    if (fcntl(pThis->FileDevice, F_SETFL, O_NONBLOCK) == -1)
+    if (fcntl(RTFileToNative(pThis->hFileDevice), F_SETFL, O_NONBLOCK) == -1)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_IOCTL, RT_SRC_POS,
                                    N_("Configuration error: Failed to configure /dev/net/tun. errno=%d"), errno);
     /** @todo determine device name. This can be done by reading the link /proc/<pid>/fd/<fd> */
-    Log(("drvTAPContruct: %d (from fd)\n", pThis->FileDevice));
+    Log(("drvTAPContruct: %d (from fd)\n", pThis->hFileDevice));
     rc = VINF_SUCCESS;
 
     /*
      * Create the control pipe.
      */
-    int fds[2];
-#ifdef RT_OS_L4
-    /* XXX We need to tell the library which interface we are using */
-    fds[0] = vboxrtLinuxFd2VBoxFd(VBOXRT_FT_TAP, 0);
-#endif
-    if (pipe(&fds[0]) != 0) /** @todo RTPipeCreate() or something... */
-    {
-        rc = RTErrConvertFromErrno(errno);
-        AssertRC(rc);
-        return rc;
-    }
-    pThis->PipeRead = fds[0];
-    pThis->PipeWrite = fds[1];
+    rc = RTPipeCreate(&pThis->hPipeRead, &pThis->hPipeWrite, 0 /*fFlags*/);
+    AssertRCReturn(rc, rc);
 
     /*
      * Create the async I/O thread.

@@ -1702,7 +1702,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                     else
                         strcpy(IfReq.ifr_name, "tun%d");
                     IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
-                    rc = ioctl(tapFD, TUNSETIFF, &IfReq);
+                    rc = ioctl(RTFileToNative(tapFD), TUNSETIFF, &IfReq);
                     if (rc)
                     {
                         int rc2 = RTErrConvertFromErrno(errno);
@@ -1711,7 +1711,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                         return rc2;
                     }
 
-                    rc = fcntl(tapFD, F_SETFL, O_NONBLOCK);
+                    rc = fcntl(RTFileToNative(tapFD), F_SETFL, O_NONBLOCK);
                     if (rc)
                     {
                         int rc2 = RTErrConvertFromErrno(errno);
@@ -1721,7 +1721,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
                     }
 
                     rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName);        UPDATE_RC();
-                    rc = CFGMR3InsertInteger(pCfg, "FileHandle", (RTFILE)tapFD);                    UPDATE_RC();
+                    rc = CFGMR3InsertInteger(pCfg, "FileHandle", (uintptr_t)tapFD);                 UPDATE_RC();
 
 #elif defined(RT_OS_SOLARIS)
                     rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName); UPDATE_RC();

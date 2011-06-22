@@ -138,7 +138,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * We're done.
      */
-    pThis->hDevice = (RTFILE)hDevice;
+    pThis->hDevice = hDevice;
     return VINF_SUCCESS;
 }
 
@@ -474,11 +474,11 @@ int suplibOsTerm(PSUPLIBDATA pThis)
     /*
      * Check if we're inited at all.
      */
-    if (pThis->hDevice != NIL_RTFILE)
+    if (pThis->hDevice != NULL)
     {
         if (!CloseHandle((HANDLE)pThis->hDevice))
             AssertFailed();
-        pThis->hDevice = NIL_RTFILE;
+        pThis->hDevice = NIL_RTFILE; /* yes, that's right */
     }
 
     return VINF_SUCCESS;

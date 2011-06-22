@@ -438,7 +438,7 @@ RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size
  *                          is released, or to close it (@c false).
  * @param   phVfsIos        Where to return the VFS I/O stream handle.
  */
-RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint32_t fOpen, bool fLeaveOpen, PRTVFSIOSTREAM phVfsIos);
+RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, PRTVFSIOSTREAM phVfsIos);
 
 /**
  * Create a VFS I/O stream handle from one of the standard handles.
@@ -451,7 +451,7 @@ RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint32_t fOpen, bool fLe
  *                          is released, or to close it (@c false).
  * @param   phVfsIos        Where to return the VFS I/O stream handle.
  */
-RTDECL(int)         RTVfsIoStrmFromStdHandle(RTHANDLESTD enmStdHandle, uint32_t fOpen, bool fLeaveOpen,
+RTDECL(int)         RTVfsIoStrmFromStdHandle(RTHANDLESTD enmStdHandle, uint64_t fOpen, bool fLeaveOpen,
                                              PRTVFSIOSTREAM phVfsIos);
 
 /**
@@ -675,7 +675,7 @@ RTDECL(int)        RTVfsIoStrmValidateUtf8Encoding(RTVFSIOSTREAM hVfsIos, uint32
 /** @defgroup grp_vfs_file          VFS File API
  * @{
  */
-RTDECL(int)         RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint32_t fOpen, PRTVFSFILE phVfsFile);
+RTDECL(int)         RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile);
 
 /**
  * Create a VFS file handle from a standard IPRT file handle (RTFILE).
@@ -688,7 +688,7 @@ RTDECL(int)         RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint32_t 
  *                          is released, or to close it (@c false).
  * @param   phVfsFile       Where to return the VFS file handle.
  */
-RTDECL(int)         RTVfsFileFromRTFile(RTFILE hFile, uint32_t fOpen, bool fLeaveOpen, PRTVFSFILE phVfsFile);
+RTDECL(int)         RTVfsFileFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, PRTVFSFILE phVfsFile);
 RTDECL(RTHCUINTPTR) RTVfsFileToNative(RTFILE hVfsFile);
 
 /**
@@ -897,10 +897,10 @@ RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsI
 
 RTDECL(int) RTVfsChainOpenVfs(      const char *pszSpec,                 PRTVFS          phVfs,     const char **ppszError);
 RTDECL(int) RTVfsChainOpenFsStream( const char *pszSpec,                 PRTVFSFSSTREAM  phVfsFss,  const char **ppszError);
-RTDECL(int) RTVfsChainOpenDir(      const char *pszSpec, uint32_t fOpen, PRTVFSDIR       phVfsDir,  const char **ppszError);
-RTDECL(int) RTVfsChainOpenFile(     const char *pszSpec, uint32_t fOpen, PRTVFSFILE      phVfsFile, const char **ppszError);
+RTDECL(int) RTVfsChainOpenDir(      const char *pszSpec, uint64_t fOpen, PRTVFSDIR       phVfsDir,  const char **ppszError);
+RTDECL(int) RTVfsChainOpenFile(     const char *pszSpec, uint64_t fOpen, PRTVFSFILE      phVfsFile, const char **ppszError);
 RTDECL(int) RTVfsChainOpenSymlink(  const char *pszSpec,                 PRTVFSSYMLINK   phVfsSym,  const char **ppszError);
-RTDECL(int) RTVfsChainOpenIoStream( const char *pszSpec, uint32_t fOpen, PRTVFSIOSTREAM  phVfsIos,  const char **ppszError);
+RTDECL(int) RTVfsChainOpenIoStream( const char *pszSpec, uint64_t fOpen, PRTVFSIOSTREAM  phVfsIos,  const char **ppszError);
 
 /**
  * Tests if the given string is a chain specification or not.

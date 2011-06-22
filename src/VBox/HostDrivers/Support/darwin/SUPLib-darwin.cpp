@@ -193,7 +193,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * Do the job.
      */
-    Assert(pThis->hDevice == NIL_RTFILE);
+    Assert(pThis->hDevice == (intptr_t)NIL_RTFILE);
     int rc = suplibDarwinOpenService(pThis);
     if (RT_SUCCESS(rc))
     {
@@ -236,11 +236,11 @@ int suplibOsTerm(PSUPLIBDATA pThis)
     /*
      * Check if we're inited at all.
      */
-    if (pThis->hDevice != NIL_RTFILE)
+    if (pThis->hDevice != (intptr_t)NIL_RTFILE)
     {
         if (close(pThis->hDevice))
             AssertFailed();
-        pThis->hDevice = NIL_RTFILE;
+        pThis->hDevice = (intptr_t)NIL_RTFILE;
     }
 
     return VINF_SUCCESS;
