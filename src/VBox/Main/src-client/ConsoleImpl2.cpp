@@ -2423,7 +2423,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                     pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
 
                     parm.setUInt32(!useHostClipboard());
-                    
+
                     pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
 
                     Log(("Set VBoxSharedClipboard mode\n"));
@@ -4766,7 +4766,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
     {
         HGCMSVCEXTHANDLE hDummy;
         rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestControlSvc",
-                                              &Guest::doGuestCtrlNotification,
+                                              &Guest::notifyCtrlDispatcher,
                                               pConsole->getGuest());
         if (RT_FAILURE(rc))
             Log(("Cannot register VBoxGuestControlSvc extension!\n"));
