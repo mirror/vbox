@@ -1447,7 +1447,7 @@ static DECLCALLBACK(void) apicTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     APICState      *pApic = (APICState *)pvUser;
     Assert(pApic->pTimerR3 == pTimer);
     Assert(pApic->fTimerArmed);
-    Assert(PDMCritSectIsOwned(pDev->pCritSectR3));
+    Assert(PDMCritSectIsOwner(pDev->pCritSectR3));
     Assert(TMTimerIsLockOwner(pTimer));
 
     if (!(pApic->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
