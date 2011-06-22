@@ -637,7 +637,7 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
 #ifdef RT_OS_WINDOWS
         DISK_GEOMETRY DriveGeo;
         DWORD cbDriveGeo;
-        if (DeviceIoControl((HANDLE)hFile,
+        if (DeviceIoControl((HANDLE)RTFileToNative(hFile),
                             IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
                             &DriveGeo, sizeof(DriveGeo), &cbDriveGeo, NULL))
         {
@@ -651,7 +651,7 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
 
                 GET_LENGTH_INFORMATION DiskLenInfo;
                 DWORD junk;
-                if (DeviceIoControl((HANDLE)hFile,
+                if (DeviceIoControl((HANDLE)RTFileToNative(hFile),
                                     IOCTL_DISK_GET_LENGTH_INFO, NULL, 0,
                                     &DiskLenInfo, sizeof(DiskLenInfo), &junk, (LPOVERLAPPED)NULL))
                 {
@@ -667,18 +667,17 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
             }
         }
         else
-        {
             rc = RTErrConvertFromWin32(GetLastError());
-        }
+
 #elif defined(RT_OS_DARWIN)
         struct stat DevStat;
-        if (!fstat(hFile, &DevStat) && S_ISBLK(DevStat.st_mode))
+        if (!fstat(RTFileToNative(hFile), &DevStat) && S_ISBLK(DevStat.st_mode))
         {
             uint64_t cBlocks;
             uint32_t cbBlock;
-            if (!ioctl(hFile, DKIOCGETBLOCKCOUNT, &cBlocks))
+            if (!ioctl(RTFileToNative(hFile), DKIOCGETBLOCKCOUNT, &cBlocks))
             {
-                if (!ioctl(hFile, DKIOCGETBLOCKSIZE, &cbBlock))
+                if (!ioctl(RTFileToNative(hFile), DKIOCGETBLOCKSIZE, &cbBlock))
                     cbSize = cBlocks * cbBlock;
                 else
                     rc = RTErrConvertFromErrno(errno);
@@ -688,25 +687,28 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
         }
         else
             rc = VERR_INVALID_PARAMETER;
+
 #elif defined(RT_OS_SOLARIS)
         struct stat DevStat;
-        if (!fstat(hFile, &DevStat) && (   S_ISBLK(DevStat.st_mode)
-                                        || S_ISCHR(DevStat.st_mode)))
+        if (   !fstat(RTFileToNative(hFile), &DevStat)
+            && (   S_ISBLK(DevStat.st_mode)
+                || S_ISCHR(DevStat.st_mode)))
         {
             struct dk_minfo mediainfo;
-            if (!ioctl(hFile, DKIOCGMEDIAINFO, &mediainfo))
+            if (!ioctl(RTFileToNative(hFile), DKIOCGMEDIAINFO, &mediainfo))
                 cbSize = mediainfo.dki_capacity * mediainfo.dki_lbsize;
             else
                 rc = RTErrConvertFromErrno(errno);
         }
         else
             rc = VERR_INVALID_PARAMETER;
+
 #elif defined(RT_OS_FREEBSD)
         struct stat DevStat;
-        if (!fstat(hFile, &DevStat) && S_ISCHR(DevStat.st_mode))
+        if (!fstat(RTFileToNative(hFile), &DevStat) && S_ISCHR(DevStat.st_mode))
         {
             off_t cbMedia = 0;
-            if (!ioctl(hFile, DIOCGMEDIASIZE, &cbMedia))
+            if (!ioctl(RTFileToNative(hFile), DIOCGMEDIASIZE, &cbMedia))
             {
                 cbSize = cbMedia;
             }
@@ -1011,8 +1013,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
          * which will trash the host cache but ensures that the host cache will not
          * contain dirty buffers.
          */
-        RTFILE hFile = NIL_RTFILE;
-
+        RTFILE hFile;
         rc = RTFileOpen(&hFile, pszUri, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {

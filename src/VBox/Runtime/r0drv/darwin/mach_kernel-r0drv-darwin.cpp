@@ -25,7 +25,6 @@
  */
 
 
-#define RTMEM_WRAP_TO_EF_APIS
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -49,16 +48,6 @@ RT_C_DECLS_END
 
 #include "internal/iprt.h"
 #include <iprt/darwin/machkernel.h>
-
-#ifdef IN_RING0  /* till RTFILE is changed in types.h */
-# include <iprt/types.h>
-typedef struct RTFILENEWINT *RTFILENEW;
-typedef RTFILENEW *PRTFILENEW;
-# undef NIL_RTFILE
-# define RTFILE         RTFILENEW
-# define PRTFILE        PRTFILENEW
-# define NIL_RTFILE     ((RTFILENEW)-1)
-#endif
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -196,7 +185,7 @@ static bool g_fBreakpointOnError = false;
 /**
  * Darwin kernel file handle data.
  */
-typedef struct RTFILENEWINT
+typedef struct RTFILEINT
 {
     /** Magic value (RTFILE_MAGIC). */
     uint32_t        u32Magic;
@@ -208,14 +197,14 @@ typedef struct RTFILENEWINT
     vfs_context_t   hVfsCtx;
     /** The vnode returned by vnode_open. */
     vnode_t         hVnode;
-} RTFILENEWINT;
-/** Magic number for RTFILENEWINT::u32Magic (To Be Determined). */
+} RTFILEINT;
+/** Magic number for RTFILEINT::u32Magic (To Be Determined). */
 #define RTFILE_MAGIC                    UINT32_C(0x01020304)
 
 
-RTDECL(int) RTFileOpen(PRTFILE phFile, const char *pszFilename, uint32_t fOpen)
+RTDECL(int) RTFileOpen(PRTFILE phFile, const char *pszFilename, uint64_t fOpen)
 {
-    RTFILENEWINT *pThis = (RTFILENEWINT *)RTMemAllocZ(sizeof(*pThis));
+    RTFILEINT *pThis = (RTFILEINT *)RTMemAllocZ(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
 
@@ -285,7 +274,7 @@ RTDECL(int) RTFileClose(RTFILE hFile)
     if (hFile == NIL_RTFILE)
         return VINF_SUCCESS;
 
-    RTFILENEWINT *pThis = hFile;
+    RTFILEINT *pThis = hFile;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTFILE_MAGIC, VERR_INVALID_HANDLE);
     pThis->u32Magic = ~RTFILE_MAGIC;
@@ -299,7 +288,7 @@ RTDECL(int) RTFileClose(RTFILE hFile)
 
 RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
-    RTFILENEWINT *pThis = hFile;
+    RTFILEINT *pThis = hFile;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTFILE_MAGIC, VERR_INVALID_HANDLE);
 
