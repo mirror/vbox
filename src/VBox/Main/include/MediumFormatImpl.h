@@ -58,7 +58,7 @@ public:
 
     struct Data
     {
-        Data() : capabilities(0) {}
+        Data() : capabilities((MediumFormatCapabilities_T)0) {}
 
         const Utf8Str        strId;
         const Utf8Str        strName;

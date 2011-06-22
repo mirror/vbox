@@ -66,7 +66,7 @@ HRESULT MediumFormat::init(const VDBACKENDINFO *aVDInfo)
      * name/description field. */
     unconst(m.strName) = aVDInfo->pszBackend;
     /* The capabilities of the backend. Assumes 1:1 mapping! */
-    unconst(m.capabilities) = aVDInfo->uBackendCaps;
+    unconst(m.capabilities) = (MediumFormatCapabilities_T)aVDInfo->uBackendCaps;
     /* Save the supported file extensions in a list */
     if (aVDInfo->paFileExtensions)
     {
@@ -183,7 +183,7 @@ void MediumFormat::uninit()
     unconst(m.llProperties).clear();
     unconst(m.llFileExtensions).clear();
     unconst(m.llDeviceTypes).clear();
-    unconst(m.capabilities) = 0;
+    unconst(m.capabilities) = (MediumFormatCapabilities_T)0;
     unconst(m.strName).setNull();
     unconst(m.strId).setNull();
 }
@@ -229,10 +229,11 @@ STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ULONG *aCaps)
     /// @todo add COMGETTER(ExtendedCapabilities) when we reach the 32 bit
     /// limit (or make the argument ULONG64 after checking that COM is capable
     /// of defining enums (used to represent bit flags) that contain 64-bit
-    /// values)
-    ComAssertRet(m.capabilities == ((ULONG)m.capabilities), E_FAIL);
+    /// values). Or go away from the enum/ulong hack for bit sets and use
+    /// a safearray like elsewhere.
+    ComAssertRet((uint64_t)m.capabilities == ((ULONG)m.capabilities), E_FAIL);
 
-    *aCaps = (ULONG) m.capabilities;
+    *aCaps = (ULONG)m.capabilities;
 
     return S_OK;
 }
