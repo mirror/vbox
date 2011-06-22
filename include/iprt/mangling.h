@@ -639,10 +639,11 @@
 # define RTLockValidatorWriteLockInc                    RT_MANGLER(RTLockValidatorWriteLockInc)
 # define RTLogBackdoorPrintf                            RT_MANGLER(RTLogBackdoorPrintf) /* r0drv-guest */
 # define RTLogBackdoorPrintfV                           RT_MANGLER(RTLogBackdoorPrintfV) /* r0drv-guest */
+# define RTLogCalcSizeForR0                             RT_MANGLER(RTLogCalcSizeForR0)
 # define RTLogCloneRC                                   RT_MANGLER(RTLogCloneRC)
 # define RTLogComPrintf                                 RT_MANGLER(RTLogComPrintf)
 # define RTLogComPrintfV                                RT_MANGLER(RTLogComPrintfV)
-# define RTLogCopyGroupsAndFlags                        RT_MANGLER(RTLogCopyGroupsAndFlags)
+# define RTLogCopyGroupsAndFlagsForR0                   RT_MANGLER(RTLogCopyGroupsAndFlagsForR0)
 # define RTLogCreate                                    RT_MANGLER(RTLogCreate)
 # define RTLogCreateEx                                  RT_MANGLER(RTLogCreateEx)
 # define RTLogCreateExV                                 RT_MANGLER(RTLogCreateExV)
@@ -676,8 +677,10 @@
 # define RTLogRelSetDefaultInstance                     RT_MANGLER(RTLogRelSetDefaultInstance)
 # define RTLogSetBuffering                              RT_MANGLER(RTLogSetBuffering)
 # define RTLogSetCustomPrefixCallback                   RT_MANGLER(RTLogSetCustomPrefixCallback)
+# define RTLogSetCustomPrefixCallbackForR0              RT_MANGLER(RTLogSetCustomPrefixCallbackForR0)
 # define RTLogSetDefaultInstance                        RT_MANGLER(RTLogSetDefaultInstance)
 # define RTLogSetDefaultInstanceThread                  RT_MANGLER(RTLogSetDefaultInstanceThread) /* r0drv */
+# define RTLogSetGroupLimit                             RT_MANGLER(RTLogSetGroupLimit)
 # define RTLogWriteCom                                  RT_MANGLER(RTLogWriteCom)
 # define RTLogWriteCom                                  RT_MANGLER(RTLogWriteCom)
 # define RTLogWriteDebugger                             RT_MANGLER(RTLogWriteDebugger)

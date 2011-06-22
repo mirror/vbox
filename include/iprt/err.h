@@ -1639,6 +1639,12 @@ RT_C_DECLS_END
 #define VERR_DVM_MAP_NO_VOLUME                      (-22201)
 /** @} */
 
+/** @name RTDvm status codes
+ * @{ */
+/** The internal logger revision did not match. */
+#define VERR_LOG_REVISION_MISMATCH                  (-22300)
+/** @} */
+
 /* SED-END */
 
 /** @} */

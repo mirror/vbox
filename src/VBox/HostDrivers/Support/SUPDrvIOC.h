@@ -189,13 +189,10 @@ typedef SUPREQHDR *PSUPREQHDR;
  *     any IOC version requirements in SUPLib.cpp.
  *  -# When increment the major number, execute all pending work.
  *
- * Skip versions:
- *  - 0x0018XXXX - Used by 4.0 for the >= 32/64 CPUs support.
- *
  * @todo Pending work on next major version change:
  *          - None.
  */
-#define SUPDRV_IOC_VERSION                              0x00170002
+#define SUPDRV_IOC_VERSION                              0x00190000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
