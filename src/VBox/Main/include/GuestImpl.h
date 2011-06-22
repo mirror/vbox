@@ -129,7 +129,7 @@ public:
     BOOL isPageFusionEnabled();
 # ifdef VBOX_WITH_GUEST_CONTROL
     /** Static callback for handling guest notifications. */
-    static DECLCALLBACK(int) doGuestCtrlNotification(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
+    static DECLCALLBACK(int) notifyCtrlDispatcher(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
 # endif
     static HRESULT setErrorStatic(HRESULT aResultCode,
                                   const Utf8Str &aText)
@@ -145,8 +145,8 @@ private:
     HRESULT taskCopyFileFromGuest(TaskGuest *aTask);
     HRESULT taskUpdateGuestAdditions(TaskGuest *aTask);
 
-    // Internal callback context handling.
-    struct CallbackContext
+    // Internal guest callback representation.
+    typedef struct VBOXGUESTCTRL_CALLBACK
     {
         eVBoxGuestCtrlCallbackType  mType;
         /** Pointer to user-supplied data. */
@@ -155,42 +155,58 @@ private:
         uint32_t                    cbData;
         /** Pointer to user-supplied IProgress. */
         ComObjPtr<Progress>         pProgress;
-    };
-    /*
-     * The map key is the context ID.
-     */
-    typedef std::map< uint32_t, CallbackContext > CallbackMap;
-    typedef std::map< uint32_t, CallbackContext >::iterator CallbackMapIter;
-    typedef std::map< uint32_t, CallbackContext >::const_iterator CallbackMapIterConst;
+    } VBOXGUESTCTRL_CALLBACK, *PVBOXGUESTCTRL_CALLBACK;
+    typedef std::map< uint32_t, VBOXGUESTCTRL_CALLBACK > CallbackMap;
+    typedef std::map< uint32_t, VBOXGUESTCTRL_CALLBACK >::iterator CallbackMapIter;
+    typedef std::map< uint32_t, VBOXGUESTCTRL_CALLBACK >::const_iterator CallbackMapIterConst;
 
-    struct GuestProcess
-    {
-        ExecuteProcessStatus_T      mStatus;
-        uint32_t                    mFlags;
-        uint32_t                    mExitCode;
-    };
-    /*
-     * The map key is the PID (process identifier).
-     */
-    typedef std::map< uint32_t, GuestProcess > GuestProcessMap;
-    typedef std::map< uint32_t, GuestProcess >::iterator GuestProcessMapIter;
-    typedef std::map< uint32_t, GuestProcess >::const_iterator GuestProcessMapIterConst;
+    int callbackAdd(const PVBOXGUESTCTRL_CALLBACK pCallbackData, uint32_t *puContextID);
+    void callbackDestroy(uint32_t uContextID);
+    bool callbackExists(uint32_t uContextID);
+    void callbackFreeUserData(void *pvData);
+    int callbackGetUserData(uint32_t uContextID, eVBoxGuestCtrlCallbackType *pEnmType, void **ppvData, size_t *pcbData);
+    void* callbackGetUserDataMutableRaw(uint32_t uContextID, size_t *pcbData);
+    bool callbackIsCanceled(uint32_t uContextID);
+    bool callbackIsComplete(uint32_t uContextID);
+    int callbackMoveForward(uint32_t uContextID, const char *pszMessage);
+    int callbackNotifyEx(uint32_t uContextID, int iRC, const char *pszMessage);
+    int callbackNotifyComplete(uint32_t uContextID);
+    int callbackNotifyAllForPID(uint32_t uPID, int iRC, const char *pszMessage);
+    int callbackWaitForCompletion(uint32_t uContextID, LONG lStage, LONG lTimeout);
 
-    int directoryEntryAppend(const char *pszPath, PRTLISTNODE pList);
-    int directoryRead(const char *pszDirectory, const char *pszFilter, ULONG uFlags, ULONG *pcObjects, PRTLISTNODE pList);
-
-    int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
-    /** Handler for guest execution control notifications. */
     int notifyCtrlClientDisconnected(uint32_t u32Function, PCALLBACKDATACLIENTDISCONNECTED pData);
     int notifyCtrlExecStatus(uint32_t u32Function, PCALLBACKDATAEXECSTATUS pData);
     int notifyCtrlExecOut(uint32_t u32Function, PCALLBACKDATAEXECOUT pData);
     int notifyCtrlExecInStatus(uint32_t u32Function, PCALLBACKDATAEXECINSTATUS pData);
-    CallbackMapIter getCtrlCallbackContextByID(uint32_t u32ContextID);
-    GuestProcessMapIter getProcessByPID(uint32_t u32PID);
-    void notifyCtrlCallbackContext(Guest::CallbackMapIter it, const char *pszText);
-    void destroyCtrlCallbackContext(CallbackMapIter it);
-    uint32_t addCtrlCallbackContext(eVBoxGuestCtrlCallbackType enmType, void *pvData, uint32_t cbData, Progress* pProgress);
+
+    // Internal guest process representation.
+    typedef struct VBOXGUESTCTRL_PROCESS
+    {
+        ExecuteProcessStatus_T      mStatus;
+        uint32_t                    mFlags;
+        uint32_t                    mExitCode;
+    } VBOXGUESTCTRL_PROCESS, *PVBOXGUESTCTRL_PROCESS;
+    typedef std::map< uint32_t, VBOXGUESTCTRL_PROCESS > GuestProcessMap;
+    typedef std::map< uint32_t, VBOXGUESTCTRL_PROCESS >::iterator GuestProcessMapIter;
+    typedef std::map< uint32_t, VBOXGUESTCTRL_PROCESS >::const_iterator GuestProcessMapIterConst;
+
+    int processAdd(uint32_t u32PID, ExecuteProcessStatus_T enmStatus, uint32_t uExitCode, uint32_t uFlags);
+    int processGetByPID(uint32_t u32PID, PVBOXGUESTCTRL_PROCESS pProcess);
+    int processSetStatus(uint32_t u32PID, ExecuteProcessStatus_T enmStatus, uint32_t uExitCode, uint32_t uFlags);
+
+    // Utility functions.
+    int directoryEntryAppend(const char *pszPath, PRTLISTNODE pList);
+    int directoryRead(const char *pszDirectory, const char *pszFilter, ULONG uFlags, ULONG *pcObjects, PRTLISTNODE pList);
+    int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
+
+    /*
+     * Handler for guest execution control notifications.
+     */
+    HRESULT handleErrorCompletion(int rc);
+    HRESULT handleErrorHGCM(int rc);
+
     HRESULT waitForProcessStatusChange(ULONG uPID, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS);
+    HRESULT executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout, PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID);
 # endif
 
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> > FacilityMap;
@@ -219,10 +235,10 @@ private:
 # ifdef VBOX_WITH_GUEST_CONTROL
     /** General extension callback for guest control. */
     HGCMSVCEXTHANDLE  mhExtCtrl;
-
+    /** Next upcoming context ID. */
     volatile uint32_t mNextContextID;
-    CallbackMap mCallbackMap;
-    GuestProcessMap mGuestProcessMap;
+    CallbackMap       mCallbackMap;
+    GuestProcessMap   mGuestProcessMap;
 # endif
 };
 

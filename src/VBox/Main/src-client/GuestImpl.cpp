@@ -122,7 +122,7 @@ void Guest::uninit()
         /* Clean up callback data. */
         CallbackMapIter it;
         for (it = mCallbackMap.begin(); it != mCallbackMap.end(); it++)
-            destroyCtrlCallbackContext(it);
+            callbackDestroy(it->first);
 
         /* Clear process map. */
         mGuestProcessMap.clear();
