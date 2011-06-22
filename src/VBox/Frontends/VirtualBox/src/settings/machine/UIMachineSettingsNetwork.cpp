@@ -356,24 +356,36 @@ void UIMachineSettingsNetwork::sltUpdateAttachmentAlternative()
     switch (attachmentType())
     {
         case KNetworkAttachmentType_Bridged:
+            m_pAdapterNameCombo->setWhatsThis(tr("Selects the network adapter on the host system that traffic "
+                                                 "to and from this network card will go through."));
             m_pAdapterNameCombo->insertItems(0, m_pParent->brgList());
             m_pAdapterNameCombo->setEditable(false);
             break;
         case KNetworkAttachmentType_Internal:
+            m_pAdapterNameCombo->setWhatsThis(tr("Enter the name of the internal network that this network card "
+                                                 "will be connected to. You can create a new internal network by "
+                                                 "choosing a name which is not used by any other network cards "
+                                                 "in this virtual machine or others."));
             m_pAdapterNameCombo->insertItems(0, m_pParent->fullIntList());
             m_pAdapterNameCombo->setEditable(true);
             m_pAdapterNameCombo->setCompleter(0);
             break;
         case KNetworkAttachmentType_HostOnly:
+            m_pAdapterNameCombo->setWhatsThis(tr("Selects the virtual network adapter on the host system that traffic "
+                                                 "to and from this network card will go through. "
+                                                 "You can create and remove adapters using the global network "
+                                                 "settings in the virtual machine manager window."));
             m_pAdapterNameCombo->insertItems(0, m_pParent->hoiList());
             m_pAdapterNameCombo->setEditable(false);
             break;
         case KNetworkAttachmentType_Generic:
+            m_pAdapterNameCombo->setWhatsThis(tr("Selects the driver to be used with this network card."));
             m_pAdapterNameCombo->insertItem(0, alternativeName());
             m_pAdapterNameCombo->setEditable(true);
             m_pAdapterNameCombo->setCompleter(0);
             break;
         default:
+            m_pAdapterNameCombo->setWhatsThis(QString());
             break;
     }
 

@@ -105,9 +105,6 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="whatsThis">
-         <string>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</string>
-        </property>
        </widget>
       </item>
       <item row="2" column="0">
