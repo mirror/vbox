@@ -133,10 +133,6 @@ typedef struct RTLOGGERINTERNAL
         RTFILE              hFile;
         RTHCUINTPTR         uPaddingForNewRTFILE;
     } u;
-# if ARCH_BITS == 32
-    /** Alignment padding.  */
-    uint32_t                u32Padding;
-# endif
     /** Log file history settings: maximum amount of data to put in a file. */
     uint64_t                cbHistoryFileMax;
     /** Log file history settings: current amount of data in a file. */
