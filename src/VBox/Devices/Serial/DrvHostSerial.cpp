@@ -634,11 +634,11 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             FD_SET(RTFileToNative(pThis->hDeviceFile), &XcptSet);
             FD_SET(RTPipeToNative(pThis->hWakeupPipeR), &XcptSet);
 # if 1 /* it seems like this select is blocking the write... */
-            rc = select(RT_MAX(RTFileToPipe(pThis->hWakeupPipeR), RTFileToNative(pThis->hDeviceFileR)) + 1,
+            rc = select(RT_MAX(RTPipeToNative(pThis->hWakeupPipeR), RTFileToNative(pThis->hDeviceFileR)) + 1,
                         &RdSet, NULL, &XcptSet, NULL);
 # else
             struct timeval tv = { 0, 1000 };
-            rc = select(RTFileToPipe(pThis->hWakeupPipeR), RTFileToNative(pThis->hDeviceFileR) + 1,
+            rc = select(RTPipeToNative(pThis->hWakeupPipeR), RTFileToNative(pThis->hDeviceFileR) + 1,
                         &RdSet, NULL, &XcptSet, &tv);
 # endif
             if (rc == -1)
@@ -658,7 +658,7 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             /* drain the wakeup pipe */
             size_t cbRead;
             if (   FD_ISSET(RTPipeToNative(pThis->hWakeupPipeR), &RdSet)
-                || FD_ISSET(pThis->hWakeupPipeR, &XcptSet))
+                || FD_ISSET(RTPipeToNative(pThis->hWakeupPipeR), &XcptSet))
             {
                 rc = RTPipeRead(pThis->hWakeupPipeR, abBuffer, 1, &cbRead);
                 if (RT_FAILURE(rc))
@@ -1275,7 +1275,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     /* Linux & darwin needs a separate thread which monitors the status lines. */
 # ifndef RT_OS_LINUX
-    ioctl(pThis->DeviceFile, TIOCMGET, &pThis->fStatusLines);
+    ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMGET, &pThis->fStatusLines);
 # endif
     rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pMonitorThread, pThis, drvHostSerialMonitorThread, drvHostSerialWakeupMonitorThread, 0, RTTHREADTYPE_IO, "SerMon");
     if (RT_FAILURE(rc))
