@@ -1157,13 +1157,13 @@ static int drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
     /* use NT api, retry a few times if the media is being verified. */
     IO_STATUS_BLOCK             IoStatusBlock = {0};
     FILE_FS_SIZE_INFORMATION    FsSize= {0};
-    NTSTATUS rcNt = NtQueryVolumeInformationFile(RTFileToNative(pThis->hFileDevice),  &IoStatusBlock,
+    NTSTATUS rcNt = NtQueryVolumeInformationFile((HANDLE)RTFileToNative(pThis->hFileDevice),  &IoStatusBlock,
                                                  &FsSize, sizeof(FsSize), FileFsSizeInformation);
     int cRetries = 5;
     while (rcNt == STATUS_VERIFY_REQUIRED && cRetries-- > 0)
     {
         RTThreadSleep(10);
-        rcNt = NtQueryVolumeInformationFile(RTFileToNative(pThis->hFileDevice),  &IoStatusBlock,
+        rcNt = NtQueryVolumeInformationFile((HANDLE)RTFileToNative(pThis->hFileDevice),  &IoStatusBlock,
                                             &FsSize, sizeof(FsSize), FileFsSizeInformation);
     }
     if (rcNt >= 0)
