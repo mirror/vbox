@@ -74,7 +74,7 @@ DECLINLINE(bool) MySetFilePointer(RTFILE hFile, uint64_t offSeek, uint64_t *poff
     else
     {
         SetLastError(NO_ERROR);
-        off.LowPart = SetFilePointer(RTFileToNative(hFile), off.LowPart, &off.HighPart, uMethod);
+        off.LowPart = SetFilePointer((HANDLE)RTFileToNative(hFile), off.LowPart, &off.HighPart, uMethod);
         fRc = GetLastError() == NO_ERROR;
     }
 #else
@@ -122,8 +122,8 @@ DECLINLINE(bool) IsBeyondLimit(RTFILE hFile, uint64_t offSeek, unsigned uMethod)
 RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative)
 {
     HANDLE h = (HANDLE)uNative;
-    if (    h == INVALID_HANDLE_VALUE
-        ||  (RTFILE)uNative != uNative)
+    AssertCompile(sizeof(h) == sizeof(uNative));
+    if (h == INVALID_HANDLE_VALUE)
     {
         AssertMsgFailed(("%p\n", uNative));
         *pFile = NIL_RTFILE;
@@ -501,7 +501,7 @@ RTR3DECL(int)  RTFileWrite(RTFILE hFile, const void *pvBuf, size_t cbToWrite, si
                 {
                     int rc = RTErrConvertFromWin32(GetLastError());
                     if (   rc == VERR_DISK_FULL
-                        && IsBeyondLimit(RTFileToNative(hFile), cbToWriteAdj - cbWritten, FILE_CURRENT)
+                        && IsBeyondLimit(hFile, cbToWriteAdj - cbWritten, FILE_CURRENT)
                        )
                         rc = VERR_FILE_TOO_BIG;
                     return rc;
