@@ -329,10 +329,6 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
         RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
         rc = pdmCritSectEnter(pCritSect, VERR_SEM_BUSY, &SrcPos);
 # endif
-        if (rc == VERR_SEM_BUSY)
-        {
-
-        }
     }
     else
 #endif /* !IN_RING3 */
