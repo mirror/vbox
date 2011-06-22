@@ -52,12 +52,6 @@ USBProxyServiceWindows::USBProxyServiceWindows(Host *aHost)
 HRESULT USBProxyServiceWindows::init(void)
 {
     /*
-     * Call the superclass method first.
-     */
-    HRESULT hrc = USBProxyService::init();
-    AssertComRCReturn(hrc, hrc);
-
-    /*
      * Create the semaphore (considered fatal).
      */
     mhEventInterrupt = CreateEvent(NULL, FALSE, FALSE, NULL);

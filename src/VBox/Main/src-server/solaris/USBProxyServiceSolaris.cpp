@@ -68,12 +68,6 @@ USBProxyServiceSolaris::USBProxyServiceSolaris (Host *aHost)
 HRESULT USBProxyServiceSolaris::init(void)
 {
     /*
-     * Call the superclass method first.
-     */
-    HRESULT hrc = USBProxyService::init();
-    AssertComRCReturn(hrc, hrc);
-
-    /*
      * Create semaphore.
      */
     int rc = RTSemEventCreate(&mNotifyEventSem);
