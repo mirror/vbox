@@ -908,7 +908,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
                 RTR0PTR pfnLoggerPrefix = NIL_RTR0PTR;
                 rc = PDMR3LdrGetSymbolR0(pVM, VMMR0_MAIN_MODULE_NAME, "vmmR0LoggerPrefix", &pfnLoggerPrefix);
                 AssertReleaseMsgRCReturn(rc, ("vmmR0LoggerPrefix not found! rc=%Rra\n", rc), rc);
-                rc = RTLogSetCustomPrefixCallbackForR0(&pR0LoggerR3->Logger, pVCpu->vmm.s.pR0LoggerR0, pfnLoggerPrefix, NULL);
+                rc = RTLogSetCustomPrefixCallbackForR0(&pR0LoggerR3->Logger, pVCpu->vmm.s.pR0LoggerR0, pfnLoggerPrefix, NIL_RTR0PTR);
                 AssertReleaseMsgRCReturn(rc, ("RTLogSetCustomPrefixCallback failed! rc=%Rra\n", rc), rc);
 
                 pR0LoggerR3->idCpu = i;
