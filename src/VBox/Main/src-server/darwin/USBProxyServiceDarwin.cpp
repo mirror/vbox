@@ -52,12 +52,6 @@ USBProxyServiceDarwin::USBProxyServiceDarwin (Host *aHost)
  */
 HRESULT USBProxyServiceDarwin::init(void)
 {
-    /*
-     * Call the superclass method first.
-     */
-    HRESULT hrc = USBProxyService::init();
-    AssertComRCReturn(hrc, hrc);
-
 #ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
     /*
      * Initialize the USB library.

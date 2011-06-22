@@ -44,11 +44,7 @@ USBProxyService::USBProxyService(Host *aHost)
 
 
 /**
- * Initialize the object.
- *
- * Child classes should override and call this method
- *
- * @returns S_OK on success, or COM error status on fatal error.
+ * Stub needed as long as the class isn't virtual
  */
 HRESULT USBProxyService::init(void)
 {
