@@ -442,10 +442,10 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
      */
     offInternal = RT_OFFSETOF(RTLOGGER, afGroups[cGroups]);
     offInternal = RT_ALIGN_Z(offInternal, sizeof(uint64_t));
-    cbLogger = offInternal;
+    cbLogger = offInternal + sizeof(RTLOGGERINTERNAL);
     if (fFlags & RTLOGFLAGS_RESTRICT_GROUPS)
         cbLogger += cGroups * sizeof(uint32_t);
-    pLogger = (PRTLOGGER)RTMemAllocZVar(offInternal + sizeof(RTLOGGERINTERNAL));
+    pLogger = (PRTLOGGER)RTMemAllocZVar(cbLogger);
     if (pLogger)
     {
 # if defined(RT_ARCH_X86) && (!defined(LOG_USE_C99) || !defined(RT_WITHOUT_EXEC_ALLOC))
