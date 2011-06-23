@@ -84,6 +84,26 @@ extern bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot,
                                          bool fIsDeviceNodes);
 
 #ifdef UNIT_TEST
+void TestUSBSetupInit(const char *pcszUsbfsRoot, bool fUsbfsAccessible,
+                      const char *pcszDevicesRoot, bool fDevicesAccessible,
+                      int rcMethodInitResult);
+void TestUSBSetEnv(const char *pcszEnvUsb, const char *pcszEnvUsbRoot);
+#endif
+
+/**
+ * Selects the access method that will be used to access USB devices based on
+ * what is available on the host and what if anything the user has specified
+ * in the environment.
+ * @returns iprt status value
+ * @param  pfUsingUsbfsDevices  on success this will be set to true if 
+ *                              the prefered access method is USBFS-like and to
+ *                              false if it is sysfs/device node-like
+ * @param  ppcszDevicesRoot     on success the root of the tree of USBFS-like
+ *                              device nodes will be stored here
+ */
+extern int USBProxyLinuxChooseMethod(bool *pfUsingUsbfsDevices,
+                                     const char **ppcszDevicesRoot);
+#ifdef UNIT_TEST
 /**
  * Specify the list of devices that will appear to be available through
  * usbfs during unit testing (of USBProxyLinuxGetDevices)

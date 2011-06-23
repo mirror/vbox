@@ -88,16 +88,12 @@ static struct
 {
     /* "sysfs" and valid root in the environment */
     { "sysfs", "/dev/bus/usb", "/dev/bus/usb", true, NULL, false, VINF_SUCCESS, "/dev/bus/usb", false, VINF_SUCCESS },
-    /* "sysfs" and valid root in the environment, method-specific init failed */
-    { "sysfs", "/dev/bus/usb",  "/dev/bus/usb", true, NULL, false, VERR_NO_MEMORY, "/dev/bus/usb", false, VERR_NO_MEMORY },
     /* "sysfs" and bad root in the environment */
     { "sysfs", "/dev/bus/usb", "/dev/vboxusb", false, "/proc/usb/bus", false, VINF_SUCCESS, "", true, VERR_NOT_FOUND },
     /* "sysfs" and no root in the environment */
     { "sysfs", NULL, "/dev/vboxusb", true, NULL, false, VINF_SUCCESS, "/dev/vboxusb", false, VINF_SUCCESS },
     /* "usbfs" and valid root in the environment */
     { "usbfs", "/dev/bus/usb", NULL, false, "/dev/bus/usb", true, VINF_SUCCESS, "/dev/bus/usb", true, VINF_SUCCESS },
-    /* "usbfs" and valid root in the environment, method-specific init failed */
-    { "usbfs", "/dev/bus/usb", NULL, false, "/dev/bus/usb", true, VERR_NO_MEMORY, "/dev/bus/usb", true, VERR_NO_MEMORY },
     /* "usbfs" and bad root in the environment */
     { "usbfs", "/dev/bus/usb", "/dev/vboxusb", false, "/proc/usb/bus", false, VINF_SUCCESS, "", true, VERR_NOT_FOUND },
     /* "usbfs" and no root in the environment */
@@ -118,42 +114,34 @@ static struct
     { NULL, NULL, "/dev/vboxusb", false, "/proc/bus/usb", true, VINF_SUCCESS, "/proc/bus/usb", true, VINF_SUCCESS },
     /* No environment, sysfs available but without access permissions. */
     { NULL, NULL, "/dev/vboxusb", false, NULL, false, VERR_NO_MEMORY, "", true, VERR_VUSB_USB_DEVICE_PERMISSION },
-    /* No environment, sysfs available with access permissions, method-specific init failed. */
-    { NULL, NULL, "/dev/vboxusb", true, NULL, false, VERR_NO_MEMORY, "/dev/vboxusb", false, VERR_NO_MEMORY },
     /* No environment, usbfs available but without access permissions. */
     { NULL, NULL, NULL, false, "/proc/bus/usb", false, VERR_NO_MEMORY, "", true, VERR_VUSB_USBFS_PERMISSION },
-    /* No environment, usbfs available with access permissions, method-specific
-     * init failed. */
-    { NULL, NULL, NULL, false, "/proc/bus/usb", true, VERR_NO_MEMORY, "/proc/bus/usb", true, VERR_NO_MEMORY }
 };
 
 static void testInit(RTTEST hTest)
 {
-    RTTestSub(hTest, "Testing USBProxyServiceLinux initialisation");
+    RTTestSub(hTest, "Testing USBProxyLinuxChooseMethod");
     for (unsigned i = 0; i < RT_ELEMENTS(s_testEnvironment); ++i)
     {
-        USBProxyServiceLinux test(NULL);
+        bool fUsingUsbfs = true;
+        const char *pcszDevicesRoot = "";
+
         TestUSBSetEnv(s_testEnvironment[i].pcszEnvUsb,
-                        s_testEnvironment[i].pcszEnvUsbRoot);
+                      s_testEnvironment[i].pcszEnvUsbRoot);
         TestUSBSetupInit(s_testEnvironment[i].pcszUsbfsRoot,
-                           s_testEnvironment[i].fUsbfsAccessible,
-                           s_testEnvironment[i].pcszDevicesRoot,
-                           s_testEnvironment[i].fDevicesAccessible,
-                           s_testEnvironment[i].rcMethodInit);
-        HRESULT hrc = test.init();
-        RTTESTI_CHECK_MSG(hrc == S_OK,
-                           ("init() returned 0x%x (test index %i)!\n", hrc, i));
-        int rc = test.getLastError();
+                         s_testEnvironment[i].fUsbfsAccessible,
+                         s_testEnvironment[i].pcszDevicesRoot,
+                         s_testEnvironment[i].fDevicesAccessible,
+                         s_testEnvironment[i].rcMethodInit);
+        int rc = USBProxyLinuxChooseMethod(&fUsingUsbfs, &pcszDevicesRoot);
         RTTESTI_CHECK_MSG(rc == s_testEnvironment[i].rcExpected,
-                          ("getLastError() returned %Rrc (test index %i) instead of %Rrc!\n",
+                          ("rc=%Rrc (test index %i) instead of %Rrc!\n",
                            rc, i, s_testEnvironment[i].rcExpected));
-        const char *pcszDevicesRoot = test.testGetDevicesRoot();
         RTTESTI_CHECK_MSG(!RTStrCmp(pcszDevicesRoot,
                                s_testEnvironment[i].pcszDevicesRootExpected),
                           ("testGetDevicesRoot() returned %s (test index %i) instead of %s!\n",
                            pcszDevicesRoot, i,
                            s_testEnvironment[i].pcszDevicesRootExpected));
-        bool fUsingUsbfs = test.testGetUsingUsbfs();
         RTTESTI_CHECK_MSG(   fUsingUsbfs
                           == s_testEnvironment[i].fUsingUsbfsExpected,
                           ("testGetUsingUsbfs() returned %RTbool (test index %i) instead of %RTbool!\n",
