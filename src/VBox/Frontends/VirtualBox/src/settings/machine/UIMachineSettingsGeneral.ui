@@ -60,9 +60,6 @@
             <property name="whatsThis" >
              <string>Displays the name of the virtual machine.</string>
             </property>
-            <property name="text" >
-             <string/>
-            </property>
            </widget>
           </item>
          </layout>
