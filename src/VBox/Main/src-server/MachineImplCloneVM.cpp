@@ -579,7 +579,10 @@ HRESULT MachineCloneVM::run()
                     rc = pSrcFormat->COMGETTER(Capabilities)(&uSrcCaps);
                     if (FAILED(rc)) throw rc;
 
-                    Bstr bstrSrcFormat = "VDI";
+                    /* Default format? */
+                    Utf8Str strDefaultFormat;
+                    p->mParent->getDefaultHardDiskFormat(strDefaultFormat);
+                    Bstr bstrSrcFormat(strDefaultFormat);
                     ULONG srcVar = MediumVariant_Standard;
                     /* Is the source file based? */
                     if ((uSrcCaps & MediumFormatCapabilities_File) == MediumFormatCapabilities_File)
@@ -613,8 +616,8 @@ HRESULT MachineCloneVM::run()
                     rc = pTarget->init(p->mParent,
                                        Utf8Str(bstrSrcFormat),
                                        strFile,
-                                       Guid(),  /* empty media registry */
-                                       NULL     /* llRegistriesThatNeedSaving */);
+                                       Guid::Empty,  /* empty media registry */
+                                       NULL          /* llRegistriesThatNeedSaving */);
                     if (FAILED(rc)) throw rc;
 
                     /* Do the disk cloning. */
@@ -642,7 +645,8 @@ HRESULT MachineCloneVM::run()
                         ProgressErrorInfo info(progress2);
                         throw p->setError(iRc, Utf8Str(info.getText()).c_str());
                     }
-
+                    /* Remember created medias. */
+                    newMedias.append(pTarget);
                     /* Get the medium type from the source and set it to the
                      * new medium. */
                     MediumType_T type;
@@ -651,9 +655,9 @@ HRESULT MachineCloneVM::run()
                     rc = pTarget->COMSETTER(Type)(type);
                     if (FAILED(rc)) throw rc;
                     map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pTarget));
-
-                    /* Remember created medias. */
-                    newMedias.append(pTarget);
+                    /* Global register the new harddisk */
+                    rc = p->mParent->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
+                    if (FAILED(rc)) return rc;
                     /* This medium becomes the parent of the next medium in the
                      * chain. */
                     pNewParent = pTarget;
@@ -671,8 +675,8 @@ HRESULT MachineCloneVM::run()
                 rc = diff->init(p->mParent,
                                 pNewParent->getPreferredDiffFormat(),
                                 Utf8StrFmt("%s%c", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER),
-                                Guid(), /* empty media registry */
-                                NULL);  /* pllRegistriesThatNeedSaving */
+                                Guid::Empty, /* empty media registry */
+                                NULL);       /* pllRegistriesThatNeedSaving */
                 if (FAILED(rc)) throw rc;
                 MediumLockList *pMediumLockList(new MediumLockList());
                 rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
@@ -689,8 +693,14 @@ HRESULT MachineCloneVM::run()
                                                    NULL); // pllRegistriesThatNeedSaving
                 delete pMediumLockList;
                 if (FAILED(rc)) throw rc;
-                pNewParent = diff;
+                /* Remember created medias. */
                 newMedias.append(diff);
+                /* Global register the new harddisk */
+                rc = p->mParent->registerHardDisk(diff, NULL /* pllRegistriesThatNeedSaving */);
+                if (FAILED(rc)) return rc;
+                /* This medium becomes the parent of the next medium in the
+                 * chain. */
+                pNewParent = diff;
             }
             Bstr bstrSrcId;
             rc = mtc.chain.first().pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
@@ -702,9 +712,9 @@ HRESULT MachineCloneVM::run()
              * medium uuid instead of the old one. */
             d->updateStorageLists(trgMCF.storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
             d->updateSnapshotStorageLists(trgMCF.llFirstSnapshot, bstrSrcId, bstrTrgId);
-            /* Make sure all disks know of the new machine uuid. We do this
-             * last to be able to change the medium type above. */
-            rc = pNewParent->addRegistry(d->pTrgMachine->mData->mUuid, true /* fRecursive */);
+            /* Make sure all parent disks know of the new machine uuid. We do
+             * this last to be able to change the medium type above. */
+            rc = pNewParent->addRegistry(d->pTrgMachine->mData->mUuid, false /* fRecursive */);
             if (FAILED(rc)) throw rc;
         }
         /* Check if a snapshot folder is necessary and if so doesn't already
