@@ -284,15 +284,22 @@ void VBoxSettingsTreeViewSelector::setVisibleById (int aId, bool aShow)
 
 void VBoxSettingsTreeViewSelector::polish()
 {
-    mTwSelector->setFixedWidth (static_cast<QAbstractItemView*> (mTwSelector)
-        ->sizeHintForColumn (treeWidget_Category) + 2 * mTwSelector->frameWidth());
+    /* Get recommended size hint: */
+    int iItemWidth = static_cast<QAbstractItemView*>(mTwSelector)->sizeHintForColumn(treeWidget_Category);
+    int iItemHeight = qMax(16 /* icon height */, mTwSelector->fontMetrics().height() /* text height */);
+    /* Add some margin to every item in the tree: */
+    iItemHeight += 4 /* margin itself */ * 2 /* margin count */;
+    /* Set final size hint for items: */
+    mTwSelector->setSizeHintForItems(QSize(iItemWidth , iItemHeight));
 
-    /* Sort selector by the id column */
-    mTwSelector->sortItems (treeWidget_Id, Qt::AscendingOrder);
-    mTwSelector->resizeColumnToContents (treeWidget_Category);
+    /* Fix selector width to minimum possible: */
+    mTwSelector->setFixedWidth(iItemWidth + 2 * mTwSelector->frameWidth());
 
-    /* Add some margin to every item in the tree */
-    mTwSelector->addTopBottomMarginToItems (12);
+    /* Sort selector by the id column: */
+    mTwSelector->sortItems(treeWidget_Id, Qt::AscendingOrder);
+
+    /* Resize column(s) to content: */
+    mTwSelector->resizeColumnToContents(treeWidget_Category);
 }
 
 void VBoxSettingsTreeViewSelector::settingsGroupChanged (QTreeWidgetItem *aItem,

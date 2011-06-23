@@ -33,7 +33,7 @@ public:
 
     QITreeWidget (QWidget *aParent = 0);
 
-    void addTopBottomMarginToItems (int aMargin);
+    void setSizeHintForItems(const QSize &sizeHint);
 
 signals:
 
