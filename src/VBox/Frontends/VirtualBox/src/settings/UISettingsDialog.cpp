@@ -267,6 +267,11 @@ void UISettingsDialog::retranslateUi()
     else if (!m_fSilent)
         m_pWarningPane->setWarningText(m_strWarningHint);
 
+#ifndef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    /* Retranslate current page headline: */
+    m_pLbTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
+#endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+
     /* Get the list of validators: */
     QList<QIWidgetValidator*> validatorsList = findChildren<QIWidgetValidator*>();
     /* Retranslate all validators: */
