@@ -133,9 +133,9 @@ static void testInit(RTTEST hTest)
     for (unsigned i = 0; i < RT_ELEMENTS(s_testEnvironment); ++i)
     {
         USBProxyServiceLinux test(NULL);
-        test.testSetEnv(s_testEnvironment[i].pcszEnvUsb,
+        TestUSBSetEnv(s_testEnvironment[i].pcszEnvUsb,
                         s_testEnvironment[i].pcszEnvUsbRoot);
-        test.testSetupInit(s_testEnvironment[i].pcszUsbfsRoot,
+        TestUSBSetupInit(s_testEnvironment[i].pcszUsbfsRoot,
                            s_testEnvironment[i].fUsbfsAccessible,
                            s_testEnvironment[i].pcszDevicesRoot,
                            s_testEnvironment[i].fDevicesAccessible,
