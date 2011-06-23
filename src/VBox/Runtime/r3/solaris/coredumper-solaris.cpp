@@ -217,7 +217,7 @@ static size_t GetFileSize(const char *pszPath)
     int fd = open(pszPath, O_RDONLY);
     if (fd >= 0)
     {
-        RTFILE hFile = fd;
+        RTFILE hFile = (RTFILE)(uintptr_t)fd;
         RTFileGetSize(hFile, &cb);
         RTFileClose(hFile);
     }
@@ -366,7 +366,7 @@ static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, vo
     int fd = open(szPath, O_RDONLY);
     if (fd >= 0)
     {
-        RTFILE hFile = fd;
+        RTFILE hFile = (RTFILE)(uintptr_t)fd;
         uint64_t u64Size;
         RTFileGetSize(hFile, &u64Size);
         *pcb = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
@@ -414,7 +414,7 @@ static int ProcReadInfo(PVBOXCORE pVBoxCore)
     int fd = open(szPath, O_RDONLY);
     if (fd >= 0)
     {
-        RTFILE hFile = fd;
+        RTFILE hFile = (RTFILE)(uintptr_t)fd;
         size_t cbProcInfo = sizeof(psinfo_t);
         rc = ReadFileNoIntr(hFile, &pVBoxProc->ProcInfo, cbProcInfo);
         RTFileClose(hFile);
@@ -449,7 +449,7 @@ static int ProcReadStatus(PVBOXCORE pVBoxCore)
     int fd = open(szPath, O_RDONLY);
     if (fd >= 0)
     {
-        RTFILE hFile = fd;
+        RTFILE hFile = (RTFILE)(uintptr_t)fd;
         size_t cbRead;
         size_t cbProcStatus = sizeof(pstatus_t);
         AssertCompile(sizeof(pstatus_t) == sizeof(pVBoxProc->ProcStatus));
@@ -549,7 +549,7 @@ static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
         return rc;
     }
 
-    RTFILE hFile = fd;
+    RTFILE hFile = (RTFILE)(uintptr_t)fd;
     uint64_t u64Size;
     RTFileGetSize(hFile, &u64Size);
     size_t cbAuxFile = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
@@ -644,12 +644,12 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
         return rc;
     }
 
-    RTFILE hFile = fd;
+    RTFILE hFile = (RTFILE)(uintptr_t)fd;
     RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pVBoxProc->Process);
     fd = open(szPath, O_RDONLY);
     if (fd >= 0)
     {
-        pVBoxProc->hAs = fd;
+        pVBoxProc->hAs = (RTFILE)(uintptr_t)fd;
 
         /*
          * Allocate and read all the prmap_t objects from proc.
@@ -1184,7 +1184,7 @@ static int rtCoreDumperForEachThread(PVBOXCORE pVBoxCore,  uint64_t *pcThreads, 
     int fd = open(szLpsInfoPath, O_RDONLY);
     if (fd >= 0)
     {
-        RTFILE hFile = fd;
+        RTFILE hFile = (RTFILE)(uintptr_t)fd;
         uint64_t u64Size;
         RTFileGetSize(hFile, &u64Size);
         size_t cbInfoHdrAndData = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
@@ -1818,7 +1818,7 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
         goto WriteCoreDone;
     }
 
-    pVBoxProc->hAs = fd;
+    pVBoxProc->hAs = (RTFILE)(uintptr_t)fd;
 
     /*
      * Create the core file.
@@ -1831,7 +1831,7 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
         goto WriteCoreDone;
     }
 
-    pVBoxCore->hCoreFile = fd;
+    pVBoxCore->hCoreFile = (RTFILE)(uintptr_t)fd;
 
     pVBoxCore->offWrite = 0;
     uint32_t cProgHdrs  = pVBoxProc->cMappings + 2; /* two PT_NOTE program headers (old, new style) */
