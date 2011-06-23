@@ -188,7 +188,7 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
     Assert(cbTransfer > 0);
 
     pReqInt->enmTransferDirection  = enmTransferDirection;
-    pReqInt->hFile                 = RTFileToNative(hFile);
+    pReqInt->hFile                 = (HANDLE)RTFileToNative(hFile);
     pReqInt->Overlapped.Offset     = (DWORD)(off & 0xffffffff);
     pReqInt->Overlapped.OffsetHigh = (DWORD)(off >> 32);
     pReqInt->cbTransfer            = cbTransfer;
@@ -317,7 +317,7 @@ RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile)
     PRTFILEAIOCTXINTERNAL pCtxInt = hAioCtx;
     RTFILEAIOCTX_VALID_RETURN(pCtxInt);
 
-    HANDLE hTemp = CreateIoCompletionPort(RTFileToNative(hFile), pCtxInt->hIoCompletionPort, 0, 1);
+    HANDLE hTemp = CreateIoCompletionPort((HANDLE)RTFileToNative(hFile), pCtxInt->hIoCompletionPort, 0, 1);
     if (hTemp != pCtxInt->hIoCompletionPort)
         rc = RTErrConvertFromWin32(GetLastError());
 
