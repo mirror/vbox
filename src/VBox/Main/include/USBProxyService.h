@@ -196,13 +196,6 @@ private:
 #   include <HostHardwareLinux.h>
 #  endif
 
-#ifdef UNIT_TEST
-void TestUSBSetupInit(const char *pcszUsbfsRoot, bool fUsbfsAccessible,
-                      const char *pcszDevicesRoot, bool fDevicesAccessible,
-                      int rcMethodInitResult);
-void TestUSBSetEnv(const char *pcszEnvUsb, const char *pcszEnvUsbRoot);
-#endif
-
 /**
  * The Linux hosted USB Proxy Service.
  */
@@ -216,12 +209,6 @@ public:
 
     virtual int captureDevice(HostUSBDevice *aDevice);
     virtual int releaseDevice(HostUSBDevice *aDevice);
-
-#  ifdef UNIT_TEST
-    /* Test getters for querying internal state.  This will go away. */
-    bool testGetUsingUsbfs(void) { return mUsingUsbfsDevices; }
-    const char *testGetDevicesRoot(void) { return mDevicesRoot.c_str(); }
-#  endif
 
 protected:
     int initUsbfs(void);
