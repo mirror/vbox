@@ -189,31 +189,28 @@
             pack.</para>
             <para>At the moment there are potentially two available
             sub-modes:</para>
+            <para>
+              <glosslist>
+                <glossentry>
+                  <glossterm>UDP Tunnel</glossterm>
+                  <glossdef>
+                    <para>This can be used to interconnect virtual machines running on
+                      different hosts directly, easily and transparently, over existing
+                      network infrastructure.</para>
+                  </glossdef>
+                </glossentry>
+                <glossentry>
+                  <glossterm>VDE (Virtual Distributed Ethernet) networking</glossterm>
+                  <glossdef>
+                    <para>This option can be used to connect to a Virtual Distributed
+                      Ethernet switch on a Linux or a FreeBSD host. At the moment this
+                      needs compiling VirtualBox from sources, as the Oracle packages
+                      do not include it.</para>
+                  </glossdef>
+                </glossentry>
+              </glosslist>
+            </para>
           </glossdef>
-        <glosslist>
-
-        <glossentry>
-          <glossterm>UDP Tunnel</glossterm>
-
-          <glossdef>
-            <para>This can be used to interconnect virtual machines running on
-            different hosts directly, easily and transparently, over existing
-            network infrastructure.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>VDE (Virtual Distributed Ethernet) networking</glossterm>
-
-          <glossdef>
-            <para>This option can be used to connect to a Virtual Distributed
-            Ethernet switch on a Linux or a FreeBSD host. At the moment this
-            needs compiling VirtualBox from sources, as the Oracle packages
-            do not include it.</para>
-          </glossdef>
-        </glossentry>
-
-        </glosslist>
         </glossentry>
       </glosslist></para>
 
