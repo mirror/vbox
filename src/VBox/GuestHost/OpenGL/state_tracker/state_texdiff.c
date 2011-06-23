@@ -685,24 +685,27 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                         if (tl->generateMipmap) {
                             diff_api.TexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP_SGIS, 1);
                         }
-                        if (tl->compressed) {
-                            diff_api.CompressedTexImage1DARB(GL_TEXTURE_1D, lvl,
-                                                             tl->internalFormat, tl->width,
-                                                             tl->border, tl->bytes, tl->img);
-                        }
-                        else {
-                            /* alignment must be one */
-                            diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-                            diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-                            diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-                            diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                            if (tl->generateMipmap) {
-                                diff_api.TexParameteri(GL_TEXTURE_1D, GL_GENERATE_MIPMAP_SGIS, 1);
+                        if (tl->width)
+                        {
+                            if (tl->compressed) {
+                                diff_api.CompressedTexImage1DARB(GL_TEXTURE_1D, lvl,
+                                                                 tl->internalFormat, tl->width,
+                                                                 tl->border, tl->bytes, tl->img);
                             }
-                            diff_api.TexImage1D(GL_TEXTURE_1D, lvl,
-                                                tl->internalFormat,
-                                                tl->width, tl->border,
-                                                tl->format, tl->type, tl->img);
+                            else {
+                                /* alignment must be one */
+                                diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+                                diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+                                diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+                                diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                                if (tl->generateMipmap) {
+                                    diff_api.TexParameteri(GL_TEXTURE_1D, GL_GENERATE_MIPMAP_SGIS, 1);
+                                }
+                                diff_api.TexImage1D(GL_TEXTURE_1D, lvl,
+                                                    tl->internalFormat,
+                                                    tl->width, tl->border,
+                                                    tl->format, tl->type, tl->img);
+                            }
                         }
                         if (!alwaysDirty)
                         {
@@ -728,22 +731,25 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                             diff_api.TexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP_SGIS, 1);
                         }
 
-                        if (tl->compressed) {
-                            diff_api.CompressedTexImage2DARB(GL_TEXTURE_2D, lvl,
-                                     tl->internalFormat, tl->width,
-                                     tl->height, tl->border,
-                                     tl->bytes, tl->img);
-                        }
-                        else {
-                            /* alignment must be one */
-                            diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-                            diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-                            diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-                            diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                            diff_api.TexImage2D(GL_TEXTURE_2D, lvl,
-                                                tl->internalFormat,
-                                                tl->width, tl->height, tl->border,
-                                                tl->format, tl->type, tl->img);
+                        if (tl->width && tl->height)
+                        {
+                            if (tl->compressed) {
+                                diff_api.CompressedTexImage2DARB(GL_TEXTURE_2D, lvl,
+                                         tl->internalFormat, tl->width,
+                                         tl->height, tl->border,
+                                         tl->bytes, tl->img);
+                            }
+                            else {
+                                /* alignment must be one */
+                                diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+                                diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+                                diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+                                diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                                diff_api.TexImage2D(GL_TEXTURE_2D, lvl,
+                                                    tl->internalFormat,
+                                                    tl->width, tl->height, tl->border,
+                                                    tl->format, tl->type, tl->img);
+                            }
                         }
 
                         if (!alwaysDirty)
@@ -770,24 +776,29 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                         if (tl->generateMipmap) {
                             diff_api.TexParameteri(GL_TEXTURE_3D, GL_GENERATE_MIPMAP_SGIS, 1);
                         }
-                        if (tl->compressed) {
-                            diff_api.CompressedTexImage3DARB(GL_TEXTURE_3D, lvl,
-                                                             tl->internalFormat, tl->width,
-                                                             tl->height, tl->depth,
-                                                             tl->border, tl->bytes, tl->img);
+
+                        if (tl->width && tl->height)
+                        {
+                            if (tl->compressed) {
+                                diff_api.CompressedTexImage3DARB(GL_TEXTURE_3D, lvl,
+                                                                 tl->internalFormat, tl->width,
+                                                                 tl->height, tl->depth,
+                                                                 tl->border, tl->bytes, tl->img);
+                            }
+                            else {
+                                /* alignment must be one */
+                                diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+                                diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+                                diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+                                diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                                diff_api.TexImage3D(GL_TEXTURE_3D, lvl,
+                                                    tl->internalFormat,
+                                                    tl->width, tl->height, tl->depth,
+                                                    tl->border, tl->format,
+                                                    tl->type, tl->img);
+                            }
                         }
-                        else {
-                            /* alignment must be one */
-                            diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-                            diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-                            diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-                            diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                            diff_api.TexImage3D(GL_TEXTURE_3D, lvl,
-                                                tl->internalFormat,
-                                                tl->width, tl->height, tl->depth,
-                                                tl->border, tl->format,
-                                                tl->type, tl->img);
-                        }
+
                         if (!alwaysDirty)
                         {
                             CLEARDIRTY(tl->dirty, nbitID);
@@ -811,23 +822,27 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                     CRTextureLevel *tl = &(tobj->level[0][lvl]);
                     if (alwaysDirty || CHECKDIRTY(tl->dirty, bitID))
                     {
-                        if (tl->compressed) {
-                            diff_api.CompressedTexImage2DARB(GL_TEXTURE_RECTANGLE_NV, lvl,
-                                                             tl->internalFormat, tl->width,
-                                                             tl->height, tl->border,
-                                                             tl->bytes, tl->img);
+                        if (tl->width && tl->height)
+                        {
+                            if (tl->compressed) {
+                                diff_api.CompressedTexImage2DARB(GL_TEXTURE_RECTANGLE_NV, lvl,
+                                                                 tl->internalFormat, tl->width,
+                                                                 tl->height, tl->border,
+                                                                 tl->bytes, tl->img);
+                            }
+                            else {
+                                /* alignment must be one */
+                                diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+                                diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+                                diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+                                diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                                diff_api.TexImage2D(GL_TEXTURE_RECTANGLE_NV, lvl,
+                                                    tl->internalFormat,
+                                                    tl->width, tl->height, tl->border,
+                                                    tl->format, tl->type, tl->img);
+                            }
                         }
-                        else {
-                            /* alignment must be one */
-                            diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-                            diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-                            diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-                            diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                            diff_api.TexImage2D(GL_TEXTURE_RECTANGLE_NV, lvl,
-                                                tl->internalFormat,
-                                                tl->width, tl->height, tl->border,
-                                                tl->format, tl->type, tl->img);
-                        }
+
                         if (!alwaysDirty)
                         {
                             CLEARDIRTY(tl->dirty, nbitID);
@@ -857,23 +872,28 @@ crStateTextureObjectDiff(CRContext *fromCtx,
                                 diff_api.TexParameteri(GL_TEXTURE_CUBE_MAP_ARB,
                                                        GL_GENERATE_MIPMAP_SGIS, 1);
                             }
-                            if (tl->compressed) {
-                                diff_api.CompressedTexImage2DARB(target,
-                                                                 lvl, tl->internalFormat,
-                                                                 tl->width, tl->height,
-                                                                 tl->border, tl->bytes, tl->img);
+
+                            if (tl->width && tl->height)
+                            {
+                                if (tl->compressed) {
+                                    diff_api.CompressedTexImage2DARB(target,
+                                                                     lvl, tl->internalFormat,
+                                                                     tl->width, tl->height,
+                                                                     tl->border, tl->bytes, tl->img);
+                                }
+                                else {
+                                    /* alignment must be one */
+                                    diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+                                    diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+                                    diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+                                    diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                                    diff_api.TexImage2D(target, lvl,
+                                                        tl->internalFormat,
+                                                        tl->width, tl->height, tl->border,
+                                                        tl->format, tl->type, tl->img);
+                                }
                             }
-                            else {
-                                /* alignment must be one */
-                                diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-                                diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-                                diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-                                diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                                diff_api.TexImage2D(target, lvl,
-                                                    tl->internalFormat,
-                                                    tl->width, tl->height, tl->border,
-                                                    tl->format, tl->type, tl->img);
-                            }
+
                             if (!alwaysDirty)
                             {
                                 CLEARDIRTY(tl->dirty, nbitID);

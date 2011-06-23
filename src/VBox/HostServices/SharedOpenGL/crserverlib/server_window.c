@@ -102,6 +102,9 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
         crHashtableAdd(cr_server.pWindowCreateInfoTable, windowID, pCreateInfo);
 
         crServerSetupOutputRedirect(mural);
+
+        crStateGetCurrent()->buffer.width = mural->width;
+        crStateGetCurrent()->buffer.height = mural->height;
     }
 
     crDebug("CRServer: client %p created new window %d (SPU window %d)",
@@ -250,6 +253,9 @@ crServerDispatchWindowSize( GLint window, GLint width, GLint height )
     }
     mural->width = width;
     mural->height = height;
+
+    crStateGetCurrent()->buffer.width = mural->width;
+    crStateGetCurrent()->buffer.height = mural->height;
 
     crServerCheckMuralGeometry(mural);
 

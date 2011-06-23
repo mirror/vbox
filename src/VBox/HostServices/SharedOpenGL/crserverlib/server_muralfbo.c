@@ -229,6 +229,9 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir)
         {
             cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->idFBO);
         }
+
+        crStateGetCurrent()->buffer.width = 0;
+        crStateGetCurrent()->buffer.height = 0;
     }
     else
     {
@@ -245,6 +248,9 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir)
                 cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
             }
         }
+
+        crStateGetCurrent()->buffer.width = mural->width;
+        crStateGetCurrent()->buffer.height = mural->height;
     }
 
     mural->bUseFBO = redir;
