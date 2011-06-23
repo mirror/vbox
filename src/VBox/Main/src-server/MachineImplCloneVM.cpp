@@ -620,6 +620,7 @@ HRESULT MachineCloneVM::run()
                                        NULL          /* llRegistriesThatNeedSaving */);
                     if (FAILED(rc)) throw rc;
 
+                    srcLock.release();
                     /* Do the disk cloning. */
                     ComPtr<IProgress> progress2;
                     rc = pMedium->CloneTo(pTarget,
@@ -629,7 +630,6 @@ HRESULT MachineCloneVM::run()
                     if (FAILED(rc)) throw rc;
 
                     /* Wait until the asynchrony process has finished. */
-                    srcLock.release();
                     rc = d->pProgress->WaitForAsyncProgressCompletion(progress2);
                     srcLock.acquire();
                     if (FAILED(rc)) throw rc;
@@ -656,8 +656,11 @@ HRESULT MachineCloneVM::run()
                     if (FAILED(rc)) throw rc;
                     map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pTarget));
                     /* Global register the new harddisk */
-                    rc = p->mParent->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
-                    if (FAILED(rc)) return rc;
+                    {
+                        AutoWriteLock tlock(p->mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                        rc = p->mParent->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
+                        if (FAILED(rc)) return rc;
+                    }
                     /* This medium becomes the parent of the next medium in the
                      * chain. */
                     pNewParent = pTarget;
@@ -696,8 +699,11 @@ HRESULT MachineCloneVM::run()
                 /* Remember created medias. */
                 newMedias.append(diff);
                 /* Global register the new harddisk */
-                rc = p->mParent->registerHardDisk(diff, NULL /* pllRegistriesThatNeedSaving */);
-                if (FAILED(rc)) return rc;
+                {
+                    AutoWriteLock tlock(p->mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                    rc = p->mParent->registerHardDisk(diff, NULL /* pllRegistriesThatNeedSaving */);
+                    if (FAILED(rc)) return rc;
+                }
                 /* This medium becomes the parent of the next medium in the
                  * chain. */
                 pNewParent = diff;
