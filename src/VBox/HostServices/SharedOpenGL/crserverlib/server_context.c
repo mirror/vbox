@@ -317,5 +317,16 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
             cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->bUseFBO ? mural->idFBO:0);
         }
     }
+
+    if (!mural->bUseFBO)
+    {
+        ctx->buffer.width = mural->width;
+        ctx->buffer.height = mural->height;
+    }
+    else
+    {
+        ctx->buffer.width = 0;
+        ctx->buffer.height = 0;
+    }
 }
 

@@ -16,6 +16,13 @@ void crStateBufferInit (CRContext *ctx)
     CRBufferBits *bb = &(sb->buffer);
     GLcolorf zero_colorf = {0.0f, 0.0f, 0.0f, 0.0f};
 
+    b->width = 640;
+    b->height = 480;
+    b->storedWidth = 0;
+    b->storedHeight = 0;
+    b->pFrontImg = NULL;
+    b->pBackImg = NULL;
+
     b->depthTest = GL_FALSE;
     b->blend     = GL_FALSE;
     b->alphaTest = GL_FALSE;

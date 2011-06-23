@@ -7,6 +7,7 @@
 #include "state.h"
 #include "cr_error.h"
 #include "cr_mem.h"
+#include "cr_pixeldata.h"
 
 void crStateDiffContext( CRContext *from, CRContext *to )
 {
@@ -122,9 +123,9 @@ void crStateDiffContext( CRContext *from, CRContext *to )
 
 void crStateApplyFBImage(CRContext *to)
 {
-    if (to->pImage)
+    if (to->buffer.pFrontImg || to->buffer.pBackImg)
     {
-        CRViewportState *pVP = &to->viewport;
+        CRBufferState *pBuf = &to->buffer;
         CRPixelPackState unpack = to->client.unpack;
 
         diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, 0);
@@ -136,13 +137,69 @@ void crStateApplyFBImage(CRContext *to)
         diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, 0);
         diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, 0);
 
-        diff_api.DrawBuffer(GL_FRONT);
-        diff_api.WindowPos2iARB(0, 0);
-        diff_api.DrawPixels(pVP->viewportW, pVP->viewportH, GL_RGBA, GL_UNSIGNED_BYTE, to->pImage);
+        if (to->framebufferobject.drawFB)
+        {
+            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
+        }
+
+        if (to->bufferobject.unpackBuffer->hwid>0)
+        {
+            diff_api.BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
+        }
+
+        diff_api.Disable(GL_ALPHA_TEST);
+        diff_api.Disable(GL_SCISSOR_TEST);
+        diff_api.Disable(GL_BLEND);
+        diff_api.Disable(GL_COLOR_LOGIC_OP);
+
+        if (pBuf->pFrontImg)
+        {
+            diff_api.DrawBuffer(GL_FRONT);
+            diff_api.WindowPos2iARB(0, 0);
+            diff_api.DrawPixels(pBuf->storedWidth, pBuf->storedHeight, GL_RGBA, GL_UNSIGNED_BYTE, pBuf->pFrontImg);
+            crDebug("Applied %ix%i fb image", pBuf->storedWidth, pBuf->storedHeight);
+            crFree(pBuf->pFrontImg);
+            pBuf->pFrontImg = NULL;
+        }
+
+        if (pBuf->pBackImg)
+        {
+            diff_api.DrawBuffer(GL_BACK);
+            diff_api.WindowPos2iARB(0, 0);
+            diff_api.DrawPixels(pBuf->storedWidth, pBuf->storedHeight, GL_RGBA, GL_UNSIGNED_BYTE, pBuf->pBackImg);
+            crDebug("Applied %ix%i bb image", pBuf->storedWidth, pBuf->storedHeight);
+            crFree(pBuf->pBackImg);
+            pBuf->pBackImg = NULL;
+        }
 
         diff_api.WindowPos3fvARB(to->current.rasterAttrib[VERT_ATTRIB_POS]);
+        if (to->bufferobject.unpackBuffer->hwid>0)
+        {
+            diff_api.BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, to->bufferobject.unpackBuffer->hwid);
+        }
+        if (to->framebufferobject.drawFB)
+        {
+            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, to->framebufferobject.drawFB->hwid);
+        }
         diff_api.DrawBuffer(to->framebufferobject.drawFB ? 
                             to->framebufferobject.drawFB->drawbuffer[0] : to->buffer.drawBuffer);
+        if (to->buffer.alphaTest)
+        {
+            diff_api.Enable(GL_ALPHA_TEST);
+        }
+        if (to->viewport.scissorTest)
+        {
+            diff_api.Enable(GL_SCISSOR_TEST);
+        }
+        if (to->buffer.blend)
+        {
+            diff_api.Enable(GL_BLEND);
+        }
+        if (to->buffer.logicOp)
+        {
+            diff_api.Enable(GL_COLOR_LOGIC_OP);
+        }
+
         diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, unpack.skipRows);
         diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, unpack.skipPixels);
         diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, unpack.alignment);
@@ -153,11 +210,6 @@ void crStateApplyFBImage(CRContext *to)
         diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, unpack.psLSBFirst);
 
         diff_api.Finish();
-
-        crDebug("Applied %ix%i fb image", pVP->viewportW, pVP->viewportH);
-
-        crFree(to->pImage);
-        to->pImage = NULL;
     }
 }
 

@@ -74,6 +74,11 @@ typedef struct {
 #if defined(CR_EXT_blend_minmax) || defined(CR_EXT_blend_subtract)
 	GLenum		blendEquation;
 #endif
+
+    GLint       width, height;
+    GLint       storedWidth, storedHeight;
+    GLvoid      *pFrontImg;
+    GLvoid      *pBackImg;
 } CRBufferState;
 
 DECLEXPORT(void) crStateBufferInit(CRContext *ctx);

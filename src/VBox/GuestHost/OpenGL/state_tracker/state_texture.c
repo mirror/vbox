@@ -55,16 +55,16 @@ void crStateTextureInit(CRContext *ctx)
 
     /* compute max levels from max sizes */
     for (i=0, a=limits->maxTextureSize; a; i++, a=a>>1);
-    t->maxLevel = i;
+    t->maxLevel = i-1;
     for (i=0, a=limits->max3DTextureSize; a; i++, a=a>>1);
-    t->max3DLevel = i;
+    t->max3DLevel = i-1;
 #ifdef CR_ARB_texture_cube_map
     for (i=0, a=limits->maxCubeMapTextureSize; a; i++, a=a>>1);
-    t->maxCubeMapLevel = i;
+    t->maxCubeMapLevel = i-1;
 #endif
 #ifdef CR_NV_texture_rectangle
     for (i=0, a=limits->maxRectTextureSize; a; i++, a=a>>1);
-    t->maxRectLevel = i;
+    t->maxRectLevel = i-1;
 #endif
 
     crStateTextureInitTextureObj(ctx, &(t->base1D), 0, GL_TEXTURE_1D);

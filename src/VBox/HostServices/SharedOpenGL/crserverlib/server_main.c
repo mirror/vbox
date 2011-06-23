@@ -1205,11 +1205,11 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
         {
             cr_server.curClient = cr_server.clients[i];
             if (cr_server.curClient->currentCtx
-                && cr_server.curClient->currentCtx->pImage
+                && (cr_server.curClient->currentCtx->buffer.pFrontImg || cr_server.curClient->currentCtx->buffer.pBackImg)
                 && cr_server.curClient->currentMural
                 && cr_server.curClient->currentMural->screenId == sIndex
-                && cr_server.curClient->currentCtx->viewport.viewportH == h
-                && cr_server.curClient->currentCtx->viewport.viewportW == w)
+                && cr_server.curClient->currentCtx->buffer.storedHeight == h
+                && cr_server.curClient->currentCtx->buffer.storedWidth == w)
             {
                 int clientWindow = cr_server.curClient->currentWindow;
                 int clientContext = cr_server.curClient->currentContextNumber;
