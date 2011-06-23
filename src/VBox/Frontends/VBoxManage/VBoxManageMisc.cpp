@@ -332,7 +332,7 @@ int handleCloneVM(HandlerArg *a)
     const char                    *pszTrgName       = NULL;
     const char                    *pszTrgBaseFolder = NULL;
     bool                           fRegister        = false;
-    RTUUID                         trgUuid;
+    Bstr                           bstrUuid;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -367,8 +367,11 @@ int handleCloneVM(HandlerArg *a)
                 break;
 
             case 'u':   // --uuid
+                RTUUID trgUuid;
                 if (RT_FAILURE(RTUuidFromStr(&trgUuid, ValueUnion.psz)))
                     return errorArgument("Invalid UUID format %s\n", ValueUnion.psz);
+                else
+                    bstrUuid = Guid(trgUuid).toUtf16().raw();
                 break;
 
             case 'r':   // --register
@@ -424,7 +427,7 @@ int handleCloneVM(HandlerArg *a)
     CHECK_ERROR_RET(a->virtualBox, CreateMachine(bstrSettingsFile.raw(),
                                                  Bstr(pszTrgName).raw(),
                                                  NULL,
-                                                 Guid(trgUuid).toUtf16().raw(),
+                                                 bstrUuid.raw(),
                                                  FALSE,
                                                  trgMachine.asOutParam()),
                     RTEXITCODE_FAILURE);
