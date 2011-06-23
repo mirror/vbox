@@ -21,6 +21,10 @@
       </listitem>
 
       <listitem>
+        <para>Windows guests: Experimental WDDM graphics driver</para>
+      </listitem>
+
+      <listitem>
         <para>Guest Additions: modules and features now are represented as facilities
           to have a common interface for frontends.</para>
       </listitem>
@@ -38,7 +42,11 @@
     <itemizedlist>
 
       <listitem>
-        <para>VMM: raised the memory limit for 64-bit hosts to 2TB</para>
+        <para>VMM: raised the memory limit for 64-bit hosts to 1TB</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: more SMP timer fixes</para>
       </listitem>
 
       <listitem>
@@ -53,6 +61,11 @@
       <listitem>
         <para>GUI: added setting for the promiscuous mode policy for
           internal networks, bridged networks and host-only networks</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: the VM description is editable during the runtime of
+          a VM</para>
       </listitem>
 
       <listitem>
@@ -71,7 +84,7 @@
       </listitem>
 
       <listitem>
-        <para>USB: many fixes for the Windows USB driver</para>
+        <para>USB: many fixes for the Windows USB host driver</para>
       </listitem>
 
       <listitem>
