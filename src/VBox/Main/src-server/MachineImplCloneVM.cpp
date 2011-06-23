@@ -718,10 +718,16 @@ HRESULT MachineCloneVM::run()
              * medium uuid instead of the old one. */
             d->updateStorageLists(trgMCF.storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
             d->updateSnapshotStorageLists(trgMCF.llFirstSnapshot, bstrSrcId, bstrTrgId);
-            /* Make sure all parent disks know of the new machine uuid. We do
-             * this last to be able to change the medium type above. */
-            rc = pNewParent->addRegistry(d->pTrgMachine->mData->mUuid, false /* fRecursive */);
-            if (FAILED(rc)) throw rc;
+        }
+        /* Make sure all disks know of the new machine uuid. We do this last to
+         * be able to change the medium type above. */
+        for (size_t i = newMedias.size(); i > 0; --i)
+        {
+            ComObjPtr<Medium> &pMedium = newMedias.at(i - 1);
+            AutoCaller mac(pMedium);
+            if (FAILED(mac.rc())) throw mac.rc();
+            AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
+            pMedium->addRegistry(d->pTrgMachine->mData->mUuid, false /* fRecursive */);
         }
         /* Check if a snapshot folder is necessary and if so doesn't already
          * exists. */
@@ -757,58 +763,6 @@ HRESULT MachineCloneVM::run()
                 trgMCF.strStateFile = strTrgSaveState;
             else
                 d->updateStateFile(trgMCF.llFirstSnapshot, sst.snapshotUuid, strTrgSaveState);
-        }
-
-        if (false)
-//        if (!d->pOldMachineState.isNull())
-        {
-            SafeIfaceArray<IMediumAttachment> sfaAttachments;
-            rc = d->pOldMachineState->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
-            if (FAILED(rc)) throw rc;
-            for (size_t a = 0; a < sfaAttachments.size(); ++a)
-            {
-                const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[a];
-                DeviceType_T type;
-                rc = pAtt->COMGETTER(Type)(&type);
-                if (FAILED(rc)) throw rc;
-
-                /* Only harddisk's are of interest. */
-                if (type != DeviceType_HardDisk)
-                    continue;
-
-                /* Valid medium attached? */
-                ComPtr<IMedium> pSrcMedium;
-                rc = pAtt->COMGETTER(Medium)(pSrcMedium.asOutParam());
-                if (FAILED(rc)) throw rc;
-                if (pSrcMedium.isNull())
-                    continue;
-
-//                ComObjPtr<Medium> pMedium = static_cast<Medium*>((IMedium*)pSrcMedium);
-//                ComObjPtr<Medium> diff;
-//                diff.createObject();
-                // store this diff in the same registry as the parent
-//                Guid uuidRegistryParent;
-//                if (!medium->getFirstRegistryMachineId(uuidRegistryParent))
-//                {
-                    // parent image has no registry: this can happen if we're attaching a new immutable
-                    // image that has not yet been attached (medium then points to the base and we're
-                    // creating the diff image for the immutable, and the parent is not yet registered);
-                    // put the parent in the machine registry then
-//                    addMediumToRegistry(medium, llRegistriesThatNeedSaving, &uuidRegistryParent);
-//                }
-//                rc = diff->init(mParent,
-//                                pMedium->getPreferredDiffFormat(),
-//                                strFullSnapshotFolder.append(RTPATH_SLASH_STR),
-//                                uuidRegistryParent,
-//                                pllRegistriesThatNeedSaving);
-//                if (FAILED(rc)) throw rc;
-//
-//                rc = pMedium->createDiffStorage(diff, MediumVariant_Standard,
-//                                                pMediumLockList,
-//                                                NULL /* aProgress */,
-//                                                true /* aWait */,
-//                                                pllRegistriesThatNeedSaving);
-            }
         }
 
         {
