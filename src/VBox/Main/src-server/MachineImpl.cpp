@@ -7391,7 +7391,6 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
     /* set the machine state to Aborted or Saved when appropriate */
     if (config.fAborted)
     {
-        Assert(!mSSData->strStateFilePath.isEmpty());
         mSSData->strStateFilePath.setNull();
 
         /* no need to use setMachineState() during init() */
