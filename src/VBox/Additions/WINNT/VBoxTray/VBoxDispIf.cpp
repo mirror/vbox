@@ -441,7 +441,7 @@ static BOOL vboxDispIfValidateResize(DISPLAY_DEVICE *paDisplayDevices, DEVMODE *
                             || (paDeviceModes[j].dmPelsHeight & 0xfff8) != (DeviceMode.dmPelsHeight & 0xfff8)
                             || (paDeviceModes[j].dmPosition.x & 0xfff8) != (DeviceMode.dmPosition.x & 0xfff8)
                             || (paDeviceModes[j].dmPosition.y & 0xfff8) != (DeviceMode.dmPosition.y & 0xfff8)
-                            || (paDisplayDevices[j].StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) == (DisplayDevice.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP))
+                            || (paDisplayDevices[j].StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) != (DisplayDevice.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP))
                     {
                         return FALSE;
                     }
