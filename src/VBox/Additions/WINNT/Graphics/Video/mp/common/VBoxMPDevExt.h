@@ -87,7 +87,8 @@ typedef struct _VBOXMP_DEVEXT
    VBOXVIDEOCM_MGR CmMgr;
    /* hgsmi allocation manager */
    VBOXVIDEOCM_ALLOC_MGR AllocMgr;
-   VBOXVDMADDI_CMD_QUEUE DdiCmdQueue;
+   VBOXVDMADDI_NODE aNodes[VBOXWDDM_NUM_NODES];
+   LIST_ENTRY DpcCmdQueue;
    LIST_ENTRY SwapchainList3D;
    /* mutex for context list operations */
    FAST_MUTEX ContextMutex;

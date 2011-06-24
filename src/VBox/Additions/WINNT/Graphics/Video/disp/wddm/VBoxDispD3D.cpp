@@ -890,6 +890,175 @@ VBOXWDDMDISP_DECL(void*) VBoxDispCrHgsmiQueryClient()
 }
 #endif
 
+typedef struct VBOXWDDMDISP_NSCADD
+{
+    VOID* pvCommandBuffer;
+    UINT cbCommandBuffer;
+    D3DDDI_ALLOCATIONLIST* pAllocationList;
+    UINT cAllocationList;
+    D3DDDI_PATCHLOCATIONLIST* pPatchLocationList;
+    UINT cPatchLocationList;
+    UINT cAllocations;
+}VBOXWDDMDISP_NSCADD, *PVBOXWDDMDISP_NSCADD;
+
+static HRESULT vboxWddmNSCAddAlloc(PVBOXWDDMDISP_NSCADD pData, PVBOXWDDMDISP_ALLOCATION pAlloc, BOOL bWrite)
+{
+    HRESULT hr = S_OK;
+    if (pData->cAllocationList && pData->cPatchLocationList && pData->cbCommandBuffer > 4)
+    {
+        memset(pData->pAllocationList, 0, sizeof (D3DDDI_ALLOCATIONLIST));
+        pData->pAllocationList[0].hAllocation = pAlloc->hAllocation;
+        if (bWrite)
+            pData->pAllocationList[0].WriteOperation = 1;
+
+        memset(pData->pPatchLocationList, 0, sizeof (D3DDDI_PATCHLOCATIONLIST));
+        pData->pPatchLocationList[0].PatchOffset = pData->cAllocations*4;
+        pData->pPatchLocationList[0].AllocationIndex = pData->cAllocations;
+
+        pData->cbCommandBuffer -= 4;
+        --pData->cAllocationList;
+        --pData->cPatchLocationList;
+        ++pData->cAllocations;
+
+        ++pData->pAllocationList;
+        ++pData->pPatchLocationList;
+        pData->pvCommandBuffer = (VOID*)(((uint8_t*)pData->pvCommandBuffer) + 4);
+
+    }
+    else
+        hr = S_FALSE;
+
+    return hr;
+}
+
+static HRESULT vboxWddmDalNotifyChange(PVBOXWDDMDISP_DEVICE pDevice)
+{
+    VBOXWDDMDISP_NSCADD NscAdd;
+    BOOL bReinitRenderData = TRUE;
+
+    do
+    {
+        if (bReinitRenderData)
+        {
+            NscAdd.pvCommandBuffer = pDevice->DefaultContext.ContextInfo.pCommandBuffer;
+            NscAdd.cbCommandBuffer = pDevice->DefaultContext.ContextInfo.CommandBufferSize;
+            NscAdd.pAllocationList = pDevice->DefaultContext.ContextInfo.pAllocationList;
+            NscAdd.cAllocationList = pDevice->DefaultContext.ContextInfo.AllocationListSize;
+            NscAdd.pPatchLocationList = pDevice->DefaultContext.ContextInfo.pPatchLocationList;
+            NscAdd.cPatchLocationList = pDevice->DefaultContext.ContextInfo.PatchLocationListSize;
+            NscAdd.cAllocations = 0;
+            Assert(NscAdd.cbCommandBuffer >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR));
+            if (NscAdd.cbCommandBuffer < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
+                return E_FAIL;
+
+            PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pHdr = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)NscAdd.pvCommandBuffer;
+            pHdr->enmCmd = VBOXVDMACMD_TYPE_DMA_NOP;
+            NscAdd.pvCommandBuffer = (VOID*)(((uint8_t*)NscAdd.pvCommandBuffer) + sizeof (*pHdr));
+            NscAdd.cbCommandBuffer -= sizeof (*pHdr);
+            bReinitRenderData = FALSE;
+        }
+
+        EnterCriticalSection(&pDevice->DirtyAllocListLock);
+
+        PVBOXWDDMDISP_ALLOCATION pAlloc = RTListGetFirst(&pDevice->DirtyAllocList, VBOXWDDMDISP_ALLOCATION, DirtyAllocListEntry);
+        if (pAlloc)
+        {
+            HRESULT tmpHr = vboxWddmNSCAddAlloc(&NscAdd, pAlloc, TRUE);
+            Assert(tmpHr == S_OK || tmpHr == S_FALSE);
+            if (tmpHr == S_OK)
+            {
+                RTListNodeRemove(&pAlloc->DirtyAllocListEntry);
+                LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+                continue;
+            }
+
+            LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+
+        }
+        else
+        {
+            LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+            if (!NscAdd.cAllocations)
+                break;
+        }
+
+        D3DDDICB_RENDER RenderData = {0};
+        RenderData.CommandLength = pDevice->DefaultContext.ContextInfo.CommandBufferSize - NscAdd.cbCommandBuffer;
+        Assert(RenderData.CommandLength);
+        Assert(RenderData.CommandLength < UINT32_MAX/2);
+        RenderData.CommandOffset = 0;
+        RenderData.NumAllocations = pDevice->DefaultContext.ContextInfo.AllocationListSize - NscAdd.cAllocationList;
+        Assert(RenderData.NumAllocations == NscAdd.cAllocations);
+        RenderData.NumPatchLocations = pDevice->DefaultContext.ContextInfo.PatchLocationListSize - NscAdd.cPatchLocationList;
+        Assert(RenderData.NumPatchLocations == NscAdd.cAllocations);
+//        RenderData.NewCommandBufferSize = sizeof (VBOXVDMACMD) + 4 * (100);
+//        RenderData.NewAllocationListSize = 100;
+//        RenderData.NewPatchLocationListSize = 100;
+        RenderData.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+
+        HRESULT hr = pDevice->RtCallbacks.pfnRenderCb(pDevice->hDevice, &RenderData);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            pDevice->DefaultContext.ContextInfo.CommandBufferSize = RenderData.NewCommandBufferSize;
+            pDevice->DefaultContext.ContextInfo.pCommandBuffer = RenderData.pNewCommandBuffer;
+            pDevice->DefaultContext.ContextInfo.AllocationListSize = RenderData.NewAllocationListSize;
+            pDevice->DefaultContext.ContextInfo.pAllocationList = RenderData.pNewAllocationList;
+            pDevice->DefaultContext.ContextInfo.PatchLocationListSize = RenderData.NewPatchLocationListSize;
+            pDevice->DefaultContext.ContextInfo.pPatchLocationList = RenderData.pNewPatchLocationList;
+            bReinitRenderData = TRUE;
+        }
+        else
+            break;
+    } while (1);
+
+    return S_OK;
+}
+
+static BOOLEAN vboxWddmDalCheckAdd(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pAlloc)
+{
+    if (!pAlloc->pRc->RcDesc.fFlags.SharedResource)
+    {
+        Assert(!pAlloc->DirtyAllocListEntry.pNext);
+        return FALSE;
+    }
+
+    EnterCriticalSection(&pDevice->DirtyAllocListLock);
+    if (!pAlloc->DirtyAllocListEntry.pNext)
+    {
+        RTListAppend(&pDevice->DirtyAllocList, &pAlloc->DirtyAllocListEntry);
+    }
+    LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+
+    return TRUE;
+}
+
+static VOID vboxWddmDalCheckAddRts(PVBOXWDDMDISP_DEVICE pDevice)
+{
+    for (UINT i = 0; i < pDevice->cRTs; ++i)
+    {
+        if (pDevice->apRTs[i])
+        {
+            vboxWddmDalCheckAdd(pDevice, pDevice->apRTs[i]);
+        }
+    }
+}
+
+static BOOLEAN vboxWddmDalCheckRemove(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pAlloc)
+{
+    BOOLEAN fRemoved = FALSE;
+
+    EnterCriticalSection(&pDevice->DirtyAllocListLock);
+    if (pAlloc->DirtyAllocListEntry.pNext)
+    {
+        RTListNodeRemove(&pAlloc->DirtyAllocListEntry);
+        fRemoved = TRUE;
+    }
+    LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+
+    return fRemoved;
+}
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
 
 static bool vboxVhwaIsEnabled(PVBOXWDDMDISP_ADAPTER pAdapter)
@@ -3513,213 +3682,6 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
         Assert(hr == S_OK);
 
 //        vboxVDbgMpPrintF((pDevice, __FUNCTION__": DrawPrimitive\n"));
-#if 0
-        IDirect3DVertexDeclaration9* pDecl;
-        hr = pDevice9If->GetVertexDeclaration(&pDecl);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
-        {
-            Assert(pDecl);
-            D3DVERTEXELEMENT9 aDecls9[MAXD3DDECLLENGTH];
-            UINT cDecls9 = 0;
-            hr = pDecl->GetDeclaration(aDecls9, &cDecls9);
-            Assert(hr == S_OK);
-            if (hr == S_OK)
-            {
-                Assert(cDecls9);
-                for (UINT i = 0; i < cDecls9 - 1 /* the last one is D3DDECL_END */; ++i)
-                {
-                    D3DVERTEXELEMENT9 *pDecl9 = &aDecls9[i];
-                    Assert(pDecl9->Stream < RT_ELEMENTS(pDevice->aStreamSourceUm) || pDecl9->Stream == 0xff);
-                    if (pDecl9->Stream != 0xff)
-                    {
-                        PVBOXWDDMDISP_STREAMSOURCEUM pStrSrc = &pDevice->aStreamSourceUm[pDecl9->Stream];
-                        if (pStrSrc->pvBuffer)
-                        {
-                            WORD iStream = pDecl9->Stream;
-                            D3DVERTEXELEMENT9 *pLastCDecl9 = pDecl9;
-                            for (UINT j = i+1; j < cDecls9 - 1 /* the last one is D3DDECL_END */; ++j)
-                            {
-                                pDecl9 = &aDecls9[j];
-                                if (iStream == pDecl9->Stream)
-                                {
-                                    pDecl9->Stream = 0xff; /* mark as done */
-                                    Assert(pDecl9->Offset != pLastCDecl9->Offset);
-                                    if (pDecl9->Offset > pLastCDecl9->Offset)
-                                        pLastCDecl9 = pDecl9;
-                                }
-                            }
-                            /* vertex size is MAX(all Offset's) + sizeof (data_type with MAX offset) + stride*/
-                            UINT cbVertex = pLastCDecl9->Offset + pStrSrc->cbStride;
-                            UINT cbType;
-                            switch (pLastCDecl9->Type)
-                            {
-                                case D3DDECLTYPE_FLOAT1:
-                                    cbType = sizeof (float);
-                                    break;
-                                case D3DDECLTYPE_FLOAT2:
-                                    cbType = sizeof (float) * 2;
-                                    break;
-                                case D3DDECLTYPE_FLOAT3:
-                                    cbType = sizeof (float) * 3;
-                                    break;
-                                case D3DDECLTYPE_FLOAT4:
-                                    cbType = sizeof (float) * 4;
-                                    break;
-                                case D3DDECLTYPE_D3DCOLOR:
-                                    cbType = 4;
-                                    break;
-                                case D3DDECLTYPE_UBYTE4:
-                                    cbType = 4;
-                                    break;
-                                case D3DDECLTYPE_SHORT2:
-                                    cbType = sizeof (short) * 2;
-                                    break;
-                                case D3DDECLTYPE_SHORT4:
-                                    cbType = sizeof (short) * 4;
-                                    break;
-                                case D3DDECLTYPE_UBYTE4N:
-                                    cbType = 4;
-                                    break;
-                                case D3DDECLTYPE_SHORT2N:
-                                    cbType = sizeof (short) * 2;
-                                    break;
-                                case D3DDECLTYPE_SHORT4N:
-                                    cbType = sizeof (short) * 4;
-                                    break;
-                                case D3DDECLTYPE_USHORT2N:
-                                    cbType = sizeof (short) * 2;
-                                    break;
-                                case D3DDECLTYPE_USHORT4N:
-                                    cbType = sizeof (short) * 4;
-                                    break;
-                                case D3DDECLTYPE_UDEC3:
-                                    cbType = sizeof (signed) * 3;
-                                    break;
-                                case D3DDECLTYPE_DEC3N:
-                                    cbType = sizeof (unsigned) * 3;
-                                    break;
-                                case D3DDECLTYPE_FLOAT16_2:
-                                    cbType = 2 * 2;
-                                    break;
-                                case D3DDECLTYPE_FLOAT16_4:
-                                    cbType = 2 * 4;
-                                    break;
-                                default:
-                                    Assert(0);
-                                    cbType = 1;
-                            }
-                            cbVertex += cbType;
-
-                            UINT cVertexes;
-                            switch (pData->PrimitiveType)
-                            {
-                                case D3DPT_POINTLIST:
-                                    cVertexes = pData->PrimitiveCount;
-                                    break;
-                                case D3DPT_LINELIST:
-                                    cVertexes = pData->PrimitiveCount * 2;
-                                    break;
-                                case D3DPT_LINESTRIP:
-                                    cVertexes = pData->PrimitiveCount + 1;
-                                    break;
-                                case D3DPT_TRIANGLELIST:
-                                    cVertexes = pData->PrimitiveCount * 3;
-                                    break;
-                                case D3DPT_TRIANGLESTRIP:
-                                    cVertexes = pData->PrimitiveCount + 2;
-                                    break;
-                                case D3DPT_TRIANGLEFAN:
-                                    cVertexes = pData->PrimitiveCount + 2;
-                                    break;
-                                default:
-                                    Assert(0);
-                                    cVertexes = pData->PrimitiveCount;
-                            }
-                            UINT cbVertexes = cVertexes * cbVertex;
-                            IDirect3DVertexBuffer9 *pCurVb = NULL, *pVb = NULL;
-                            UINT cbOffset;
-                            UINT cbStride;
-                            hr = pDevice9If->GetStreamSource(iStream, &pCurVb, &cbOffset, &cbStride);
-                            Assert(hr == S_OK);
-                            if (hr == S_OK)
-                            {
-                                if (pCurVb)
-                                {
-                                    if (cbStride == pStrSrc->cbStride)
-                                    {
-                                        /* ensure our data feets in the buffer */
-                                        D3DVERTEXBUFFER_DESC Desc;
-                                        hr = pCurVb->GetDesc(&Desc);
-                                        Assert(hr == S_OK);
-                                        if (hr == S_OK)
-                                        {
-                                            if (Desc.Size >= cbVertexes)
-                                                pVb = pCurVb;
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                pCurVb = NULL;
-                            }
-
-                            if (!pVb)
-                            {
-                                hr = pDevice9If->CreateVertexBuffer(cbVertexes,
-                                        0, /* DWORD Usage */
-                                        0, /* DWORD FVF */
-                                        D3DPOOL_DEFAULT, /* D3DPOOL Pool */
-                                        &pVb,
-                                        NULL /*HANDLE* pSharedHandle*/);
-                                Assert(hr == S_OK);
-                                if (hr == S_OK)
-                                {
-                                    hr = pDevice9If->SetStreamSource(iStream, pVb, 0, pStrSrc->cbStride);
-                                    Assert(hr == S_OK);
-                                    if (hr == S_OK)
-                                    {
-                                        if (pCurVb)
-                                            pCurVb->Release();
-                                    }
-                                    else
-                                    {
-                                        pVb->Release();
-                                        pVb = NULL;
-                                    }
-                                }
-                            }
-
-                            if (pVb)
-                            {
-                                Assert(hr == S_OK);
-                                VOID *pvData;
-                                hr = pVb->Lock(0, /* UINT OffsetToLock */
-                                        cbVertexes,
-                                        &pvData,
-                                        D3DLOCK_DISCARD);
-                                Assert(hr == S_OK);
-                                if (hr == S_OK)
-                                {
-                                    memcpy (pvData, ((uint8_t*)pStrSrc->pvBuffer) + pData->VStart * cbVertex, cbVertexes);
-                                    HRESULT tmpHr = pVb->Unlock();
-                                    Assert(tmpHr == S_OK);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (hr == S_OK)
-            {
-                hr = pDevice9If->DrawPrimitive(pData->PrimitiveType,
-                        0 /* <- since we use our own StreamSource buffer which has data at the very beginning*/,
-                        pData->PrimitiveCount);
-                Assert(hr == S_OK);
-            }
-        }
-#endif
     }
 
     VBOXVDBG_DUMP_DRAWPRIM_LEAVE(pDevice9If);
@@ -3897,12 +3859,12 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
 static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive2(HANDLE hDevice, CONST D3DDDIARG_DRAWINDEXEDPRIMITIVE2* pData, UINT dwIndicesSize, CONST VOID* pIndexBuffer, CONST UINT* pFlagBuffer)
 {
     VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE();
-    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     Assert(0);
-    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
 
@@ -3990,6 +3952,11 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
             }
             pDstSurfIf->Release();
         }
+    }
+
+    for (UINT i = 0; i < pDstRc->cAllocations; ++i)
+    {
+        PVBOXWDDMDISP_ALLOCATION pDAlloc = &pDstRc->aAllocations[i];
     }
 
     VBOXVDBG_DUMP_TEXBLT_LEAVE(pSrcRc, &pData->SrcRect, pDstRc, &pData->DstPoint);
@@ -5520,10 +5487,7 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
                     vboxWddmSwapchainDestroy(pDevice, pSwapchain);
             }
 
-            EnterCriticalSection(&pDevice->DirtyAllocListLock);
-            if (pAlloc->DirtyAllocListEntry.pNext)
-                RTListNodeRemove(&pAlloc->DirtyAllocListEntry);
-            LeaveCriticalSection(&pDevice->DirtyAllocListLock);
+            vboxWddmDalCheckRemove(pDevice, pAlloc);
         }
     }
 
@@ -5656,14 +5620,11 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     {
 #ifdef VBOXWDDM_TEST_UHGSMI
         {
-//            Assert(0);
             static uint32_t cCals = 100000;
             static uint32_t cbData = 8 * 1024 * 1024;
             uint64_t TimeMs;
             int rc = vboxUhgsmiTst(&pDevice->Uhgsmi.Base, cbData, cCals, &TimeMs);
             uint32_t cCPS = (((uint64_t)cCals) * 1000ULL)/TimeMs;
-//            Assert(0);
-//            vboxVDbgDoMpPrintF(pDevice, "Time : %I64u ms, calls: %d, cps: %d\n", TimeMs, cCals, cCPS);
         }
 #endif
 #if 1
@@ -5777,131 +5738,6 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     return hr;
 }
 
-typedef struct VBOXWDDMDISP_NSCADD
-{
-    VOID* pvCommandBuffer;
-    UINT cbCommandBuffer;
-    D3DDDI_ALLOCATIONLIST* pAllocationList;
-    UINT cAllocationList;
-    D3DDDI_PATCHLOCATIONLIST* pPatchLocationList;
-    UINT cPatchLocationList;
-    UINT cAllocations;
-}VBOXWDDMDISP_NSCADD, *PVBOXWDDMDISP_NSCADD;
-
-static HRESULT vboxWddmNSCAddAlloc(PVBOXWDDMDISP_NSCADD pData, PVBOXWDDMDISP_ALLOCATION pAlloc, BOOL bWrite)
-{
-    HRESULT hr = S_OK;
-    if (pData->cAllocationList && pData->cPatchLocationList && pData->cbCommandBuffer > 4)
-    {
-        memset(pData->pAllocationList, 0, sizeof (D3DDDI_ALLOCATIONLIST));
-        pData->pAllocationList[0].hAllocation = pAlloc->hAllocation;
-        if (bWrite)
-            pData->pAllocationList[0].WriteOperation = 1;
-
-        memset(pData->pPatchLocationList, 0, sizeof (D3DDDI_PATCHLOCATIONLIST));
-        pData->pPatchLocationList[0].PatchOffset = pData->cAllocations*4;
-        pData->pPatchLocationList[0].AllocationIndex = pData->cAllocations;
-
-        pData->cbCommandBuffer -= 4;
-        --pData->cAllocationList;
-        --pData->cPatchLocationList;
-        ++pData->cAllocations;
-
-        ++pData->pAllocationList;
-        ++pData->pPatchLocationList;
-        pData->pvCommandBuffer = (VOID*)(((uint8_t*)pData->pvCommandBuffer) + 4);
-
-    }
-    else
-        hr = S_FALSE;
-
-    return hr;
-}
-
-static HRESULT vboxWddmNotifySharedChange(PVBOXWDDMDISP_DEVICE pDevice)
-{
-    VBOXWDDMDISP_NSCADD NscAdd;
-    BOOL bReinitRenderData = TRUE;
-
-    do
-    {
-        if (bReinitRenderData)
-        {
-            NscAdd.pvCommandBuffer = pDevice->DefaultContext.ContextInfo.pCommandBuffer;
-            NscAdd.cbCommandBuffer = pDevice->DefaultContext.ContextInfo.CommandBufferSize;
-            NscAdd.pAllocationList = pDevice->DefaultContext.ContextInfo.pAllocationList;
-            NscAdd.cAllocationList = pDevice->DefaultContext.ContextInfo.AllocationListSize;
-            NscAdd.pPatchLocationList = pDevice->DefaultContext.ContextInfo.pPatchLocationList;
-            NscAdd.cPatchLocationList = pDevice->DefaultContext.ContextInfo.PatchLocationListSize;
-            NscAdd.cAllocations = 0;
-            Assert(NscAdd.cbCommandBuffer >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR));
-            if (NscAdd.cbCommandBuffer < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
-                return E_FAIL;
-
-            PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR pHdr = (PVBOXWDDM_DMA_PRIVATEDATA_BASEHDR)NscAdd.pvCommandBuffer;
-            pHdr->enmCmd = VBOXVDMACMD_TYPE_DMA_NOP;
-            NscAdd.pvCommandBuffer = (VOID*)(((uint8_t*)NscAdd.pvCommandBuffer) + sizeof (*pHdr));
-            NscAdd.cbCommandBuffer -= sizeof (*pHdr);
-            bReinitRenderData = FALSE;
-        }
-
-        EnterCriticalSection(&pDevice->DirtyAllocListLock);
-
-        PVBOXWDDMDISP_ALLOCATION pAlloc = RTListGetFirst(&pDevice->DirtyAllocList, VBOXWDDMDISP_ALLOCATION, DirtyAllocListEntry);
-        if (pAlloc)
-        {
-            HRESULT tmpHr = vboxWddmNSCAddAlloc(&NscAdd, pAlloc, TRUE);
-            Assert(tmpHr == S_OK || tmpHr == S_FALSE);
-            if (tmpHr == S_OK)
-            {
-                RTListNodeRemove(&pAlloc->DirtyAllocListEntry);
-                LeaveCriticalSection(&pDevice->DirtyAllocListLock);
-                continue;
-            }
-
-            LeaveCriticalSection(&pDevice->DirtyAllocListLock);
-
-        }
-        else
-        {
-            LeaveCriticalSection(&pDevice->DirtyAllocListLock);
-            if (!NscAdd.cAllocations)
-                break;
-        }
-
-        D3DDDICB_RENDER RenderData = {0};
-        RenderData.CommandLength = pDevice->DefaultContext.ContextInfo.CommandBufferSize - NscAdd.cbCommandBuffer;
-        Assert(RenderData.CommandLength);
-        Assert(RenderData.CommandLength < UINT32_MAX/2);
-        RenderData.CommandOffset = 0;
-        RenderData.NumAllocations = pDevice->DefaultContext.ContextInfo.AllocationListSize - NscAdd.cAllocationList;
-        Assert(RenderData.NumAllocations == NscAdd.cAllocations);
-        RenderData.NumPatchLocations = pDevice->DefaultContext.ContextInfo.PatchLocationListSize - NscAdd.cPatchLocationList;
-        Assert(RenderData.NumPatchLocations == NscAdd.cAllocations);
-//        RenderData.NewCommandBufferSize = sizeof (VBOXVDMACMD) + 4 * (100);
-//        RenderData.NewAllocationListSize = 100;
-//        RenderData.NewPatchLocationListSize = 100;
-        RenderData.hContext = pDevice->DefaultContext.ContextInfo.hContext;
-
-        HRESULT hr = pDevice->RtCallbacks.pfnRenderCb(pDevice->hDevice, &RenderData);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
-        {
-            pDevice->DefaultContext.ContextInfo.CommandBufferSize = RenderData.NewCommandBufferSize;
-            pDevice->DefaultContext.ContextInfo.pCommandBuffer = RenderData.pNewCommandBuffer;
-            pDevice->DefaultContext.ContextInfo.AllocationListSize = RenderData.NewAllocationListSize;
-            pDevice->DefaultContext.ContextInfo.pAllocationList = RenderData.pNewAllocationList;
-            pDevice->DefaultContext.ContextInfo.PatchLocationListSize = RenderData.NewPatchLocationListSize;
-            pDevice->DefaultContext.ContextInfo.pPatchLocationList = RenderData.pNewPatchLocationList;
-            bReinitRenderData = TRUE;
-        }
-        else
-            break;
-    } while (1);
-
-    return S_OK;
-}
-
 static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
 {
     VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE();
@@ -5912,28 +5748,11 @@ static HRESULT APIENTRY vboxWddmDDevFlush(HANDLE hDevice)
     HRESULT hr = S_OK;
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
-//        Assert(pDevice->cScreens);
-//        UINT cProcessed = 0;
-//        for (UINT i = 0; cProcessed < pDevice->cScreens && i < RT_ELEMENTS(pDevice->aScreens); ++i)
-//        {
-//            PVBOXWDDMDISP_SCREEN pScreen = &pDevice->aScreens[i];
-//            if (pScreen->pDevice9If)
-//            {
-//                ++cProcessed;
-////                if (pScreen->pRenderTargetRc->cAllocations == 1)
-////                {
-////                    hr = pScreen->pDevice9If->Present(NULL, NULL, NULL, NULL);
-////                    Assert(hr == S_OK);
-////                }
-////                else
-                {
-                    hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pDevice->pDevice9If);
-                    Assert(hr == S_OK);
-                }
-//            }
-//        }
 
-        vboxWddmNotifySharedChange(pDevice);
+        hr = pDevice->pAdapter->D3D.pfnVBoxWineExD3DDev9Flush((IDirect3DDevice9Ex*)pDevice->pDevice9If);
+        Assert(hr == S_OK);
+
+        vboxWddmDalNotifyChange(pDevice);
     }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
@@ -6490,14 +6309,8 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
     }
 #endif
 
-    if (pDstRc->RcDesc.fFlags.SharedResource)
-    {
-        PVBOXWDDMDISP_ALLOCATION pAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
-        EnterCriticalSection(&pDevice->DirtyAllocListLock);
-        if (!pAlloc->DirtyAllocListEntry.pNext)
-            RTListAppend(&pDevice->DirtyAllocList, &pAlloc->DirtyAllocListEntry);
-        LeaveCriticalSection(&pDevice->DirtyAllocListLock);
-    }
+    PVBOXWDDMDISP_ALLOCATION pDAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
+    vboxWddmDalCheckAdd(pDevice, pDAlloc);
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;

@@ -147,4 +147,7 @@ NTSTATUS vboxVideoAMgrCtxAllocDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXD
 NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_CONTEXT pContext, UINT cBuffers, VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE *paBuffers);
 #endif
 
+
+VOID vboxWddmCounterU32Wait(uint32_t volatile * pu32, uint32_t u32Val);
+
 #endif /* #ifndef ___VBoxMPMisc_h__ */

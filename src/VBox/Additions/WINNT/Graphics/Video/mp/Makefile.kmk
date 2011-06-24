@@ -82,7 +82,6 @@ ifdef VBOX_WITH_WDDM
  ifdef VBOX_WITH_CRHGSMI
   VBoxVideoWddm_DEFS     += VBOX_WITH_CRHGSMI
  endif
-
  ifdef DEBUG_misha
   VBoxVideoWddm_DEFS       += LOG_ENABLED
  endif

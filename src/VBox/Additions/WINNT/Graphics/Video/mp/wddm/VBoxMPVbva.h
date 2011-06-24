@@ -50,6 +50,7 @@ void vboxVbvaBufferEndUpdate(PVBOXMP_DEVEXT pDevExt, VBOXVBVAINFO *pVbva);
 
 #define VBOXVBVA_OP_WITHLOCK_ATDPC(_op, _pdext, _psrc, _arg) \
         do { \
+            Assert(KeGetCurrentIrql() == DISPATCH_LEVEL); \
             KeAcquireSpinLockAtDpcLevel(&(_psrc)->Vbva.Lock);  \
             VBOXVBVA_OP(_op, _pdext, _psrc, _arg);        \
             KeReleaseSpinLockFromDpcLevel(&(_psrc)->Vbva.Lock);\

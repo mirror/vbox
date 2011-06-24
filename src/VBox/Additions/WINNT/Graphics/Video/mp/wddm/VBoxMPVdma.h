@@ -24,6 +24,8 @@
 #include <VBox/VBoxVideo.h>
 #include <VBox/HGSMI/HGSMI.h>
 
+typedef struct _VBOXMP_DEVEXT *PVBOXMP_DEVEXT;
+
 /* ddi dma command queue handling */
 typedef enum
 {
@@ -43,9 +45,9 @@ typedef struct VBOXVDMADDI_CMD
 {
     LIST_ENTRY QueueEntry;
     VBOXVDMADDI_STATE enmState;
+    uint32_t u32NodeOrdinal;
     uint32_t u32FenceId;
     DXGK_INTERRUPT_TYPE enmComplType;
-    PVBOXWDDM_CONTEXT pContext;
     PFNVBOXVDMADDICMDCOMPLETE_DPC pfnComplete;
     PVOID pvComplete;
 } VBOXVDMADDI_CMD, *PVBOXVDMADDI_CMD;
@@ -54,25 +56,30 @@ typedef struct VBOXVDMADDI_CMD_QUEUE
 {
     volatile uint32_t cQueuedCmds;
     LIST_ENTRY CmdQueue;
-    LIST_ENTRY DpcCmdQueue;
 } VBOXVDMADDI_CMD_QUEUE, *PVBOXVDMADDI_CMD_QUEUE;
 
-VOID vboxVdmaDdiQueueInit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue);
-BOOLEAN vboxVdmaDdiCmdCompletedIrq(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType);
-VOID vboxVdmaDdiCmdSubmittedIrq(PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd);
+typedef struct VBOXVDMADDI_NODE
+{
+    VBOXVDMADDI_CMD_QUEUE CmdQueue;
+    UINT uLastCompletedFenceId;
+} VBOXVDMADDI_NODE, *PVBOXVDMADDI_NODE;
 
-NTSTATUS vboxVdmaDdiCmdCompleted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType);
-NTSTATUS vboxVdmaDdiCmdSubmitted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd);
+VOID vboxVdmaDdiNodesInit(PVBOXMP_DEVEXT pDevExt);
+BOOLEAN vboxVdmaDdiCmdCompletedIrq(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType);
+VOID vboxVdmaDdiCmdSubmittedIrq(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd);
+
+NTSTATUS vboxVdmaDdiCmdCompleted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType);
+NTSTATUS vboxVdmaDdiCmdSubmitted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd);
 
 DECLINLINE(VOID) vboxVdmaDdiCmdInit(PVBOXVDMADDI_CMD pCmd,
-        uint32_t u32FenceId, PVBOXWDDM_CONTEXT pContext,
+        uint32_t u32NodeOrdinal, uint32_t u32FenceId,
         PFNVBOXVDMADDICMDCOMPLETE_DPC pfnComplete, PVOID pvComplete)
 {
     pCmd->QueueEntry.Blink = NULL;
     pCmd->QueueEntry.Flink = NULL;
     pCmd->enmState = VBOXVDMADDI_STATE_NOT_QUEUED;
+    pCmd->u32NodeOrdinal = u32NodeOrdinal;
     pCmd->u32FenceId = u32FenceId;
-    pCmd->pContext = pContext;
     pCmd->pfnComplete = pfnComplete;
     pCmd->pvComplete = pvComplete;
 }
@@ -86,23 +93,17 @@ DECLINLINE(VOID) vboxVdmaDdiCmdSubmittedNotDx(PVBOXVDMADDI_CMD pCmd)
     pCmd->enmState = VBOXVDMADDI_STATE_NOT_DX_CMD;
 }
 
-NTSTATUS vboxVdmaDdiCmdFenceComplete(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext, uint32_t u32FenceId, DXGK_INTERRUPT_TYPE enmComplType);
+NTSTATUS vboxVdmaDdiCmdFenceComplete(PVBOXMP_DEVEXT pDevExt, uint32_t u32NodeOrdinal, uint32_t u32FenceId, DXGK_INTERRUPT_TYPE enmComplType);
 
 DECLCALLBACK(VOID) vboxVdmaDdiCmdCompletionCbFree(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext);
 
-DECLINLINE(VOID) vboxVdmaDdiCmdGetCompletedListIsr(PVBOXVDMADDI_CMD_QUEUE pQueue, LIST_ENTRY *pList)
-{
-    vboxVideoLeDetach(&pQueue->DpcCmdQueue, pList);
-}
+VOID vboxVdmaDdiCmdGetCompletedListIsr(PVBOXMP_DEVEXT pDevExt, LIST_ENTRY *pList);
 
-DECLINLINE(BOOLEAN) vboxVdmaDdiCmdIsCompletedListEmptyIsr(PVBOXVDMADDI_CMD_QUEUE pQueue)
-{
-    return IsListEmpty(&pQueue->DpcCmdQueue);
-}
+BOOLEAN vboxVdmaDdiCmdIsCompletedListEmptyIsr(PVBOXMP_DEVEXT pDevExt);
 
 #define VBOXVDMADDI_CMD_FROM_ENTRY(_pEntry) ((PVBOXVDMADDI_CMD)(((uint8_t*)(_pEntry)) - RT_OFFSETOF(VBOXVDMADDI_CMD, QueueEntry)))
 
-DECLINLINE(VOID) vboxVdmaDdiCmdHandleCompletedList(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, LIST_ENTRY *pList)
+DECLINLINE(VOID) vboxVdmaDdiCmdHandleCompletedList(PVBOXMP_DEVEXT pDevExt, LIST_ENTRY *pList)
 {
     LIST_ENTRY *pEntry = pList->Flink;
     while (pEntry != pList)
@@ -187,7 +188,6 @@ typedef struct VBOXVDMAPIPE_RECTS
 typedef struct VBOXVDMAPIPE_CMD_RECTSINFO
 {
     VBOXVDMAPIPE_CMD_DR Hdr;
-    PVBOXMP_DEVEXT pDevExt;
     PVBOXWDDM_CONTEXT pContext;
     struct VBOXWDDM_SWAPCHAIN *pSwapchain;
     VBOXVDMAPIPE_RECTS ContextsRects;
@@ -201,8 +201,7 @@ typedef struct VBOXVDMAPIPE_FLAGS_DMACMD
         {
             UINT b2DRelated     : 1;
             UINT b3DRelated     : 1;
-            UINT bDecVBVAUnlock : 1;
-            UINT Reserved       : 29;
+            UINT Reserved       : 30;
         };
         UINT Value;
     };
@@ -210,8 +209,10 @@ typedef struct VBOXVDMAPIPE_FLAGS_DMACMD
 typedef struct VBOXVDMAPIPE_CMD_DMACMD
 {
     VBOXVDMAPIPE_CMD_DR Hdr;
+#ifndef VBOX_WDDM_IRQ_COMPLETION
     VBOXVDMADDI_CMD DdiCmd;
-    PVBOXMP_DEVEXT pDevExt;
+#endif
+    PVBOXWDDM_CONTEXT pContext;
     VBOXVDMACMD_TYPE enmCmd;
     VBOXVDMAPIPE_FLAGS_DMACMD fFlags;
 } VBOXVDMAPIPE_CMD_DMACMD, *PVBOXVDMAPIPE_CMD_DMACMD;
@@ -308,11 +309,17 @@ AssertCompile(sizeof (VBOXVDMADDI_CMD) <= RT_SIZEOFMEMB(VBOXVDMACBUF_DR, aGuestD
 #define VBOXVDMACBUF_DR_FROM_DDI_CMD(_pCmd) ((PVBOXVDMACBUF_DR)(((uint_8*)(_pCmd)) - RT_OFFSETOF(VBOXVDMACBUF_DR, aGuestData)))
 
 #endif
-NTSTATUS vboxVdmaGgCmdSubmit(PVBOXVDMAGG pVdma, PVBOXVDMAPIPE_CMD_DR pCmd);
-PVBOXVDMAPIPE_CMD_DR vboxVdmaGgCmdCreate(PVBOXVDMAGG pVdma, VBOXVDMAPIPE_CMD_TYPE enmType, uint32_t cbCmd);
-void vboxVdmaGgCmdDestroy(PVBOXVDMAPIPE_CMD_DR pDr);
+NTSTATUS vboxVdmaGgCmdSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DR pCmd);
+PVBOXVDMAPIPE_CMD_DR vboxVdmaGgCmdCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE_CMD_TYPE enmType, uint32_t cbCmd);
+void vboxVdmaGgCmdDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DR pDr);
 
 NTSTATUS vboxVdmaPostHideSwapchain(PVBOXWDDM_SWAPCHAIN pSwapchain);
+
+NTSTATUS vboxVdmaGgCmdDmaNotifyCompleted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DMACMD pCmd, DXGK_INTERRUPT_TYPE enmComplType);
+NTSTATUS vboxVdmaGgCmdDmaNotifySubmitted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DMACMD pCmd);
+VOID vboxVdmaGgCmdDmaNotifyInit(PVBOXVDMAPIPE_CMD_DMACMD pCmd,
+        uint32_t u32NodeOrdinal, uint32_t u32FenceId,
+        PFNVBOXVDMADDICMDCOMPLETE_DPC pfnComplete, PVOID pvComplete);
 
 #define VBOXVDMAPIPE_CMD_DR_FROM_DDI_CMD(_pCmd) ((PVBOXVDMAPIPE_CMD_DR)(((uint8_t*)(_pCmd)) - RT_OFFSETOF(VBOXVDMAPIPE_CMD_DR, DdiCmd)))
 DECLCALLBACK(VOID) vboxVdmaGgDdiCmdDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext);

@@ -32,7 +32,31 @@
 #include <VBox/VBoxUhgsmi.h>
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 9
+#define VBOXVIDEOIF_VERSION 10
+
+#define VBOXWDDM_NODE_ID_SYSTEM           0
+#define VBOXWDDM_NODE_ID_3D               (VBOXWDDM_NODE_ID_SYSTEM)
+#define VBOXWDDM_NODE_ID_3D_KMT           (VBOXWDDM_NODE_ID_3D)
+#define VBOXWDDM_NODE_ID_2D_VIDEO         (VBOXWDDM_NODE_ID_3D_KMT+1)
+#define VBOXWDDM_NUM_NODES                (VBOXWDDM_NODE_ID_2D_VIDEO+1)
+
+#define VBOXWDDM_ENGINE_ID_SYSTEM         0
+#if (VBOXWDDM_NODE_ID_3D == VBOXWDDM_NODE_ID_SYSTEM)
+# define VBOXWDDM_ENGINE_ID_3D            (VBOXWDDM_ENGINE_ID_SYSTEM+1)
+#else
+# define VBOXWDDM_ENGINE_ID_3D            0
+#endif
+#if (VBOXWDDM_NODE_ID_3D_KMT == VBOXWDDM_NODE_ID_3D)
+# define VBOXWDDM_ENGINE_ID_3D_KMT     VBOXWDDM_ENGINE_ID_3D
+#else
+# define VBOXWDDM_ENGINE_ID_3D_KMT     0
+#endif
+#if (VBOXWDDM_NODE_ID_2D_VIDEO == VBOXWDDM_NODE_ID_3D)
+# define VBOXWDDM_ENGINE_ID_2D_VIDEO       VBOXWDDM_ENGINE_ID_3D
+#else
+# define VBOXWDDM_ENGINE_ID_2D_VIDEO       0
+#endif
+
 
 /* create allocation func */
 typedef enum
