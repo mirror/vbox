@@ -61,6 +61,24 @@ DECLINLINE(PVBOXWDDM_RESOURCE) vboxWddmResourceForAlloc(PVBOXWDDM_ALLOCATION pAl
 #endif
 }
 
+VOID vboxWddmAllocationDestroy(PVBOXWDDM_ALLOCATION pAllocation);
+
+DECLINLINE(VOID) vboxWddmAllocationRelease(PVBOXWDDM_ALLOCATION pAllocation)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pAllocation->cRefs);
+    Assert(cRefs < UINT32_MAX/2);
+    if (!cRefs)
+    {
+        vboxWddmAllocationDestroy(pAllocation);
+    }
+}
+
+DECLINLINE(VOID) vboxWddmAllocationRetain(PVBOXWDDM_ALLOCATION pAllocation)
+{
+    ASMAtomicIncU32(&pAllocation->cRefs);
+}
+
+
 #define VBOXWDDMENTRY_2_SWAPCHAIN(_pE) ((PVBOXWDDM_SWAPCHAIN)((uint8_t*)(_pE) - RT_OFFSETOF(VBOXWDDM_SWAPCHAIN, DevExtListEntry)))
 
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW

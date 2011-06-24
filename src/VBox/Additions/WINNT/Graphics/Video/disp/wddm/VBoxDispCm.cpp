@@ -118,8 +118,16 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
     Info.hUmEvent = (uint64_t)g_pVBoxCmMgr.Session.hEvent;
     Info.u64UmInfo = (uint64_t)pContext;
 
-    pContext->ContextInfo.NodeOrdinal = 0;
-    pContext->ContextInfo.EngineAffinity = 0;
+    if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
+    {
+        pContext->ContextInfo.NodeOrdinal = VBOXWDDM_NODE_ID_3D;
+        pContext->ContextInfo.EngineAffinity = VBOXWDDM_ENGINE_ID_3D;
+    }
+    else
+    {
+        pContext->ContextInfo.NodeOrdinal = VBOXWDDM_NODE_ID_2D_VIDEO;
+        pContext->ContextInfo.EngineAffinity = VBOXWDDM_ENGINE_ID_2D_VIDEO;
+    }
     pContext->ContextInfo.Flags.Value = 0;
     pContext->ContextInfo.pPrivateDriverData = &Info;
     pContext->ContextInfo.PrivateDriverDataSize = sizeof (Info);

@@ -1259,7 +1259,7 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
         if (Status == STATUS_SUCCESS)
         {
             PVBOXVDMADDI_CMD pDdiCmd = VBOXVDMADDI_CMD_FROM_BUF_DR(pDr);
-            vboxVdmaDdiCmdInit(pDdiCmd, 0, NULL, vboxVideoAMgrAllocSubmitCompletion, pDr);
+            vboxVdmaDdiCmdInit(pDdiCmd, 0, 0, vboxVideoAMgrAllocSubmitCompletion, pDr);
             /* mark command as submitted & invisible for the dx runtime since dx did not originate it */
             vboxVdmaDdiCmdSubmittedNotDx(pDdiCmd);
             int rc = vboxVdmaCBufDrSubmit(pDevExt, &pDevExt->u.primary.Vdma, pDr);
@@ -1380,3 +1380,17 @@ NTSTATUS vboxVideoAMgrCtxDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pCtx)
     return Status;
 }
 
+VOID vboxWddmCounterU32Wait(uint32_t volatile * pu32, uint32_t u32Val)
+{
+    LARGE_INTEGER Interval;
+    Interval.QuadPart = -(int64_t) 2 /* ms */ * 10000;
+    uint32_t u32CurVal;
+
+    while ((u32CurVal = ASMAtomicReadU32(pu32)) != u32Val)
+    {
+        Assert(u32CurVal >= u32Val);
+        Assert(u32CurVal < UINT32_MAX/2);
+
+        KeDelayExecutionThread(KernelMode, FALSE, &Interval);
+    }
+}
