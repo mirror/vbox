@@ -1043,9 +1043,9 @@ static int ctrlCopyConstructDestinationsForGuest(SOURCEFILEENTRY &sourceEntry, u
     {
         /* Source is a single file. */
         char *pszFileName = RTPathFilename(pszSource);
-        mapDest[Utf8Str(pszDestRoot)].push_back(DESTFILEENTRY(pszFileName));
+        mapDest[Utf8Str("")].push_back(DESTFILEENTRY(pszFileName));
 
-        *pcObjects++;
+        *pcObjects += 1;
     }
     else
     {
@@ -1095,58 +1095,6 @@ static int ctrlCopyConstructDestinationsForHost(IGuest *pGuest,
 }
 
 /**
- * Determines the destination root for a specified source entry.
- *
- * @return  IPRT status code.
- * @param   ppszDestRoot            Receives pointer of allocated destination root. Must be
- *                                  free'd with ctrlCopyFreeDestinationRoot().
- * @param   sourceEntry             Source entry to determine the destination root for.
- * @param   pszDest                 Original destination string to use.
- */
-static int ctrlCopyAllocDestinationRoot(char **ppszDestRoot, SOURCEFILEENTRY &sourceEntry, const char *pszDest)
-{
-    AssertPtrReturn(ppszDestRoot, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszDest, VERR_INVALID_POINTER);
-
-    int rc = VINF_SUCCESS;
-
-    /*
-     * If a source filter is set (e.g. *.dll) use the original
-     * destination as our final root, because we want to copy all filtered
-     * files directly into the original root (and its sub directories if apply).
-     */
-    char *pszDestRoot;
-    if (!sourceEntry.mFilter.isEmpty())
-        pszDestRoot = RTStrDup(pszDest);
-    else
-    {
-        /*
-         * However, if no source filter is set we want to also copy the original
-         * source directory to our destination so that source "c:\foo", dest "c:\temp"
-         * becomes "c:\temp\foo".
-         */
-        int iLen = RTStrAPrintf(&pszDestRoot, "%s/%s",
-                                pszDest, RTPathFilename(sourceEntry.mSource.c_str()));
-        if (!iLen)
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_SUCCESS(rc))
-        *ppszDestRoot = pszDestRoot;
-    return rc;
-}
-
-/**
- * Frees a formerly allocated destination root.
- *
- * @param   pszDestRoot             Pointer to destination root to free.
- */
-static void ctrlCopyFreeDestinationRoot(char *pszDestRoot)
-{
-    RTStrFree(pszDestRoot);
-}
-
-/**
  * Prepares the destination directory hirarchy on the guest side by creating the directories
  * and sets the appropriate access rights.
  *
@@ -1159,11 +1107,12 @@ static void ctrlCopyFreeDestinationRoot(char *pszDestRoot)
  * @param   pszPassword             Password to use.
  */
 static int ctrlCopyPrepareDestDirectory(IGuest *pGuest, bool fHostToGuest,
-                                        DESTDIRMAPITER itDest, const char *pszDestRoot,
+                                        const char *pszDestRoot, const char *pszDestSub,
                                         const char *pszUsername, const char *pszPassword)
 {
     AssertPtrReturn(pGuest, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDestRoot, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszDestSub, VERR_INVALID_POINTER);
     AssertPtrReturn(pszUsername, VERR_INVALID_POINTER);
     AssertPtrReturn(pszPassword, VERR_INVALID_POINTER);
 
@@ -1172,7 +1121,7 @@ static int ctrlCopyPrepareDestDirectory(IGuest *pGuest, bool fHostToGuest,
 
     /* Create root directory (= empty name) and skip the rest for
      * this round. */
-    if (itDest->first.isEmpty())
+    if (!strlen(pszDestSub))
     {
         pszDestFinal = RTStrDup(pszDestRoot);
         if (!pszDestFinal)
@@ -1180,7 +1129,7 @@ static int ctrlCopyPrepareDestDirectory(IGuest *pGuest, bool fHostToGuest,
     }
     else /* Create sub-directories, also empty ones. */
     {
-        if (!RTStrAPrintf(&pszDestFinal, "%s/%s", pszDestRoot, itDest->first.c_str()))
+        if (!RTStrAPrintf(&pszDestFinal, "%s/%s", pszDestRoot, pszDestSub))
             rc = VERR_NO_MEMORY;
     }
 
@@ -1277,61 +1226,59 @@ static int ctrlCopyFileToHost(IGuest *pGuest, const char *pszSource, const char 
     return vrc;
 }
 
-static int ctrlCopyToDestDirectory(IGuest *pGuest, bool fVerbose, bool fDryRun, bool fHostToGuest, DESTDIRMAPITER itDest, const char *pszDestRoot,
-                                   SOURCEFILEENTRY &sourceEntry, uint32_t uFlags, const char *pszUsername, const char *pszPassword)
+static int ctrlCopyToDestDirectory(IGuest *pGuest, bool fVerbose, bool fDryRun, bool fHostToGuest,
+                                   const char *pszSourceDir,
+                                   const char *pszDestRoot, const char *pszDestSub, const char *pszFileName,
+                                   uint32_t uFlags, const char *pszUsername, const char *pszPassword)
 {
     AssertPtrReturn(pGuest, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDestRoot, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszDestSub, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszSourceDir, VERR_INVALID_POINTER);
     AssertPtrReturn(pszUsername, VERR_INVALID_POINTER);
     AssertPtrReturn(pszPassword, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
-    for (unsigned long l = 0; l < itDest->second.size(); l++)
+    int iLen;
+    char *pszSource;
+    if (!strlen(pszDestSub))
+        iLen = RTStrAPrintf(&pszSource, "%s/%s", pszSourceDir, pszFileName);
+    else
+        iLen = RTStrAPrintf(&pszSource, "%s/%s/%s",
+                            pszSourceDir, pszDestSub, pszFileName);
+    if (!iLen)
+        return VERR_NO_MEMORY;
+
+    char *pszDest;
+    if (!strlen(pszDestSub))
+        iLen = RTStrAPrintf(&pszDest, "%s/%s", pszDestRoot, pszFileName);
+    else
+        iLen = RTStrAPrintf(&pszDest, "%s/%s/%s", pszDestRoot, pszDestSub,
+                            pszFileName);
+    if (!iLen)
     {
-        int iLen;
-        char *pszSource;
-        if (itDest->first.isEmpty())
-            iLen = RTStrAPrintf(&pszSource, "%s/%s", sourceEntry.mSource.c_str(),
-                                itDest->second[l].mFileName.c_str());
-        else
-            iLen = RTStrAPrintf(&pszSource, "%s/%s/%s", sourceEntry.mSource.c_str(),
-                                itDest->first.c_str(), itDest->second[l].mFileName.c_str());
-        if (!iLen)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        char *pszDest;
-        if (itDest->first.isEmpty())
-            iLen = RTStrAPrintf(&pszDest, "%s/%s", pszDestRoot,
-                                itDest->second[l].mFileName.c_str());
-        else
-            iLen = RTStrAPrintf(&pszDest, "%s/%s/%s", pszDestRoot, itDest->first.c_str(),
-                                itDest->second[l].mFileName.c_str());
-        if (!iLen)
-        {
-            rc = VERR_NO_MEMORY;
-            RTStrFree(pszSource);
-            break;
-        }
-
-        if (fVerbose)
-            RTPrintf("\"%s\" -> \"%s\"\n", pszSource, pszDest);
-
-        /* Finally copy the desired file (if no dry run selected). */
-        if (!fDryRun)
-        {
-            if (fHostToGuest)
-                rc = ctrlCopyFileToGuest(pGuest, pszSource, pszDest,
-                                         pszUsername, pszPassword, uFlags);
-            else
-                rc = ctrlCopyFileToHost(pGuest, pszSource, pszDest,
-                                        pszUsername, pszPassword, uFlags);
-        }
         RTStrFree(pszSource);
-        RTStrFree(pszDest);
+        return VERR_NO_MEMORY;
     }
+
+    if (fVerbose)
+        RTPrintf("\"%s\" -> \"%s\"\n", pszSource, pszDest);
+
+    int rc = VINF_SUCCESS;
+
+    /* Finally copy the desired file (if no dry run selected). */
+    if (!fDryRun)
+    {
+        if (fHostToGuest)
+            rc = ctrlCopyFileToGuest(pGuest, pszSource, pszDest,
+                                     pszUsername, pszPassword, uFlags);
+        else
+            rc = ctrlCopyFileToHost(pGuest, pszSource, pszDest,
+                                    pszUsername, pszPassword, uFlags);
+    }
+    RTStrFree(pszSource);
+    RTStrFree(pszDest);
+
     return rc;
 }
 
@@ -1474,77 +1421,108 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
      */
     for (unsigned long s = 0; s < vecSources.size(); s++)
     {
+        char *pszSourceDir;
+        if (RTDirExists(vecSources[s].mSource.c_str()))
+            pszSourceDir = RTStrDup(vecSources[s].mSource.c_str());
+        else
+        {
+            pszSourceDir = RTStrDup(vecSources[s].mSource.c_str());
+            RTPathStripFilename(pszSourceDir);
+        }
+
         uint32_t cObjects = 0;
         DESTDIRMAP mapDest;
+        const char *pszDestRoot = Utf8Dest.c_str();
 
-        char *pszDestRoot;
-        vrc = ctrlCopyAllocDestinationRoot(&pszDestRoot, vecSources[s], Utf8Dest.c_str());
-        if (RT_SUCCESS(vrc))
+        if (fHostToGuest)
+            vrc = ctrlCopyConstructDestinationsForGuest(vecSources[s], fFlags, pszDestRoot,
+                                                        mapDest, &cObjects);
+        else
+            vrc = ctrlCopyConstructDestinationsForHost(guest, Utf8UserName.c_str(), Utf8Password.c_str(),
+                                                       vecSources[s], fFlags, pszDestRoot,
+                                                       mapDest, &cObjects);
+        if (RT_FAILURE(vrc))
         {
-            if (fHostToGuest)
-                vrc = ctrlCopyConstructDestinationsForGuest(vecSources[s], fFlags, pszDestRoot,
-                                                            mapDest, &cObjects);
-            else
-                vrc = ctrlCopyConstructDestinationsForHost(guest, Utf8UserName.c_str(), Utf8Password.c_str(),
-                                                           vecSources[s], fFlags, pszDestRoot,
-                                                           mapDest, &cObjects);
-            if (RT_FAILURE(vrc))
+            if (   fVerbose
+                && vrc == VERR_FILE_NOT_FOUND)
             {
-                if (   fVerbose
-                    && vrc == VERR_FILE_NOT_FOUND)
-                {
-                    RTPrintf("Warning: Source \"%s\" does not exist, skipping!\n",
-                             vecSources[s].mSource.c_str());
-                }
+                RTPrintf("Warning: Source \"%s\" does not exist, skipping!\n",
+                         vecSources[s].mSource.c_str());
             }
-            else
+        }
+        else
+        {
+            /*
+             * Prepare directory structure of each destination directory.
+             */
+            DESTDIRMAPITER itDest;
+            for (itDest = mapDest.begin(); itDest != mapDest.end(); itDest++)
             {
-                /*
-                 * Prepare directory structure of each destination directory.
-                 */
-                DESTDIRMAPITER itDest;
-                ComPtr<IProgress> progress;
-                for (itDest = mapDest.begin(); itDest != mapDest.end(); itDest++)
-                {
-                    if (!fDryRun)
-                        vrc = ctrlCopyPrepareDestDirectory(guest, fHostToGuest, itDest, pszDestRoot,
-                                                           Utf8UserName.c_str(), Utf8Password.c_str());
-                    if (RT_FAILURE(vrc))
-                        break;
-                }
-
                 if (fVerbose)
                 {
-                    if (!cObjects)
-                        RTPrintf("Warning: Source \"%s\" has no (matching) files to copy, skipping!\n",
-                                 vecSources[s].mSource.c_str());
+                    const char *pszSubDir = itDest->first.c_str();
+                    AssertPtr(pszSubDir);
+                    if (!strlen(pszSubDir))
+                        RTPrintf("Preparing directory \"%s\" ...\n", pszDestRoot);
                     else
-                        RTPrintf("Copying \"%s\" (%u files) ...\n",
-                                 vecSources[s].mSource.c_str(), cObjects);
+                        RTPrintf("Preparing directory \"%s/%s\" ...\n", pszDestRoot,
+                                 itDest->first.c_str());
+                }
+                if (!fDryRun)
+                    vrc = ctrlCopyPrepareDestDirectory(guest, fHostToGuest,
+                                                       pszDestRoot, itDest->first.c_str(),
+                                                       Utf8UserName.c_str(), Utf8Password.c_str());
+                if (RT_FAILURE(vrc))
+                    break;
+            }
+
+            if (RT_FAILURE(vrc))
+                break;
+
+            if (fVerbose)
+            {
+                if (!cObjects)
+                    RTPrintf("Warning: Source \"%s\" has no (matching) files to copy, skipping!\n",
+                             vecSources[s].mSource.c_str());
+                else
+                    RTPrintf("Copying \"%s\" (%u files) ...\n",
+                             vecSources[s].mSource.c_str(), cObjects);
+            }
+
+            /*
+             * Copy files of each destination root directory to the guest.
+             */
+            for (itDest = mapDest.begin(); itDest != mapDest.end(); itDest++)
+            {
+                if (fVerbose && itDest->second.size())
+                {
+                    if (itDest->first.isEmpty())
+                        RTPrintf("Copying %u files ...\n", itDest->second.size());
+                    else
+                        RTPrintf("Copying directory \"%s\" (%u files) ...\n",
+                                 itDest->first.c_str(), itDest->second.size());
                 }
 
-                /*
-                 * Copy files of each destination root directory to the guest.
-                 */
-                for (itDest = mapDest.begin(); itDest != mapDest.end(); itDest++)
+                for (unsigned long l = 0; l < itDest->second.size(); l++)
                 {
-                    if (fVerbose && itDest->second.size())
-                    {
-                        if (itDest->first.isEmpty())
-                            RTPrintf("Copying %u files ...\n", itDest->second.size());
-                        else
-                            RTPrintf("Copying directory \"%s\" (%u files) ...\n",
-                                     itDest->first.c_str(), itDest->second.size());
-                    }
-
-                    vrc = ctrlCopyToDestDirectory(guest, fVerbose, fDryRun, fHostToGuest, itDest, pszDestRoot,
-                                                  vecSources[s], fFlags, Utf8UserName.c_str(), Utf8Password.c_str());
+                    vrc = ctrlCopyToDestDirectory(guest, fVerbose, fDryRun, fHostToGuest,
+                                                  pszSourceDir,
+                                                  pszDestRoot, itDest->first.c_str() /* Sub directory */,
+                                                  itDest->second[l].mFileName.c_str() /* Filename */,
+                                                  fFlags, Utf8UserName.c_str(), Utf8Password.c_str());
                     if (RT_FAILURE(vrc))
                         break;
                 }
+
+                if (RT_FAILURE(vrc))
+                    break;
             }
-            ctrlCopyFreeDestinationRoot(pszDestRoot);
+
+            if (RT_FAILURE(vrc))
+                break;
         }
+
+        RTStrFree(pszSourceDir);
     }
 
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
