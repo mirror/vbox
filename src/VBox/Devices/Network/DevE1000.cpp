@@ -1124,13 +1124,6 @@ typedef struct E1kState_st E1KSTATE;
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /* Forward declarations ******************************************************/
-RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(int) e1kMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int) e1kIOPortIn (PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t u32, unsigned cb);
-RT_C_DECLS_END
-
 static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread);
 
 static int e1kRegReadUnimplemented (E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
@@ -4317,7 +4310,7 @@ static int e1kRegRead(E1KSTATE *pState, uint32_t uOffset, void *pv, uint32_t cb)
  * @param   cb          Number of bytes to write.
  * @thread  EMT
  */
-static int e1kRegWrite(E1KSTATE *pState, uint32_t uOffset, void *pv, unsigned cb)
+static int e1kRegWrite(E1KSTATE *pState, uint32_t uOffset, void const *pv, unsigned cb)
 {
     int         rc     = VINF_SUCCESS;
     int         index  = e1kRegLookup(pState, uOffset);
@@ -4420,7 +4413,7 @@ PDMBOTHCBDECL(int) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser,
  * @thread  EMT
  */
 PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
-                                RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+                                RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     NOREF(pvUser);
     E1KSTATE  *pState = PDMINS_2_DATA(pDevIns, E1KSTATE *);

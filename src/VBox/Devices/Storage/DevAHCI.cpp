@@ -895,15 +895,7 @@ typedef struct pAhciPort_opreg
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 static void ahciHBAReset(PAHCI pThis);
-PDMBOTHCBDECL(int) ahciIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) ahciIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) ahciIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) ahciIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) ahciLegacyFakeWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) ahciLegacyFakeRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 #ifdef IN_RING3
 static int  ahciPostFisIntoMemory(PAHCIPort pAhciPort, unsigned uFisType, uint8_t *cmdFis);
 static void ahciPostFirstD2HFisIntoMemory(PAHCIPort pAhciPort);
@@ -2152,7 +2144,7 @@ static int ahciRegisterRead(PAHCI pAhci, uint32_t uReg, void *pv, unsigned cb)
  * @param   pv          Where to fetch the result.
  * @param   cb          Number of bytes to write.
  */
-static int ahciRegisterWrite(PAHCI pAhci, uint32_t uReg, void *pv, unsigned cb)
+static int ahciRegisterWrite(PAHCI pAhci, uint32_t uReg, void const *pv, unsigned cb)
 {
     int rc = VINF_SUCCESS;
     uint32_t iReg;
@@ -2246,7 +2238,7 @@ PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
  * @param   pv          Where to fetch the result.
  * @param   cb          Number of bytes to write.
  */
-PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
     int   rc = VINF_SUCCESS;

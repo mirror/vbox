@@ -160,7 +160,7 @@ PDMBOTHCBDECL(int)  lpcMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
  * @param   cb          Number of bytes to write.
  * @thread  EMT
  */
-PDMBOTHCBDECL(int) lpcMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) lpcMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     LPCState *s = PDMINS_2_DATA(pDevIns, LPCState*);
 

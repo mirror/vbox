@@ -778,17 +778,6 @@ typedef struct BUSLOGICTASKSTATE
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(int) buslogicIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
-                                        RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) buslogicIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
-                                       RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) buslogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
-                                     RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int) buslogicMMIORead(PPDMDEVINS pDevIns, void *pvUser,
-                                    RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-RT_C_DECLS_END
-
 #define PDMIBASE_2_PBUSLOGICDEVICE(pInterface)     ( (PBUSLOGICDEVICE)((uintptr_t)(pInterface) - RT_OFFSETOF(BUSLOGICDEVICE, IBase)) )
 #define PDMISCSIPORT_2_PBUSLOGICDEVICE(pInterface) ( (PBUSLOGICDEVICE)((uintptr_t)(pInterface) - RT_OFFSETOF(BUSLOGICDEVICE, ISCSIPort)) )
 #define PDMILEDPORTS_2_PBUSLOGICDEVICE(pInterface) ( (PBUSLOGICDEVICE)((uintptr_t)(pInterface) - RT_OFFSETOF(BUSLOGICDEVICE, ILed)) )
@@ -1798,7 +1787,7 @@ PDMBOTHCBDECL(int) buslogicMMIORead(PPDMDEVINS pDevIns, void *pvUser,
  * @param   cb          Number of bytes to write.
  */
 PDMBOTHCBDECL(int) buslogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
-                                     RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+                                     RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     /* the linux driver does not make use of the MMIO area. */
     AssertMsgFailed(("MMIO Write\n"));
