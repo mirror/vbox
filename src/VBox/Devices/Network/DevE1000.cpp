@@ -2855,6 +2855,14 @@ static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 {
     E1KSTATE *pState = (E1KSTATE *)pvUser;
 
+    /*
+     * This can happen if we set the link status to down when the Link up timer was
+     * already armed (shortly after e1kLoadDone() or when the cable was disconnected
+     * and connect+disconnect the cable very quick.
+     */
+    if (!pState->fCableConnected)
+        return;
+
     if (RT_LIKELY(e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
     {
         STATUS |= STATUS_LU;
