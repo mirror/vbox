@@ -256,16 +256,16 @@ $(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi: $(MAKEFILE_CURRENT) | $$(dir $
 	#
   ifdef VBOX_WITH_DOCS_CHM
 	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_ManualCHM_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_UserManual) (CHM, English)" Description="!(loc.StartMenu_UserManual)"' \
-	             '            Target="[INSTALLDIR]VirtualBox.chm" WorkingDirectory="INSTALLDIR" Advertise="no"/>'
+	             '            Target="[INSTALLDIR]\doc\VirtualBox.chm" WorkingDirectory="[INSTALLDIR]\doc\" Advertise="no"/>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
 	             '	<Shortcut Id="sc_StartMenu_ManualCHM_$(lang)" Directory="dir_StartMenuVBox" Name="$!(loc.StartMenu_UserManual) (CHM, $(VBOX_BRAND_$(lang)_LANG_NAME))"' \
-		     '            Description="$!(loc.StartMenu_UserManual) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="VirtualBox_$(lang).chm" WorkingDirectory="INSTALLDIR"/>')
+		     '            Description="$!(loc.StartMenu_UserManual) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="[INSTALLDIR]\doc\VirtualBox_$(lang).chm" WorkingDirectory="[INSTALLDIR]\doc\"/>')
   endif
 	$(APPEND) $@ '	<Shortcut Id="sc_StartMenu_ManualPDF_en_US" Directory="dir_StartMenuVBox" Name="!(loc.StartMenu_UserManual) (PDF, English)" Description="!(loc.StartMenu_UserManual)"' \
-	             '            Target="[INSTALLDIR]UserManual.pdf" WorkingDirectory="INSTALLDIR" Advertise="no"/>'
+	             '            Target="[INSTALLDIR]\doc\UserManual.pdf" WorkingDirectory="[INSTALLDIR]\doc\" Advertise="no"/>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
 	             '	<Shortcut Id="sc_StartMenu_ManualPDF_$(lang)" Directory="dir_StartMenuVBox" Name="$!(loc.StartMenu_UserManual) (PDF, $(VBOX_BRAND_$(lang)_LANG_NAME))"' \
-		     '            Description="$!(loc.StartMenu_UserManual) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="UserManual_$(lang).pdf" WorkingDirectory="INSTALLDIR"/>')
+		     '            Description="$!(loc.StartMenu_UserManual) ($(VBOX_BRAND_$(lang)_LANG_NAME))" Target="[INSTALLDIR]\doc\UserManual_$(lang).pdf" WorkingDirectory="[INSTALLDIR]\doc\"/>')
 	#
 	# License(s) (RTF)
 	#
