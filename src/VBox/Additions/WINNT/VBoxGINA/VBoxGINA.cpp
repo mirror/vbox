@@ -113,16 +113,6 @@ BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
 
     Log(("VBoxGINA::WlxNegotiate: dwWinlogonVersion: %ld\n", dwWinlogonVersion));
 
-    /* Load global configuration from registry. */
-    DWORD dwRet = loadConfiguration();
-    if (ERROR_SUCCESS != dwRet)
-        Log(("VBoxGINA: Error loading global configuration, error=%ld\n", dwRet));
-
-    /* If we have a remote session (that is, a connection via remote desktop /
-     * terminal services) deny it if not specified explicitly. */
-    if (!handleCurrentSession())
-        Log(("VBoxGINA: Handling of remote desktop sessions is disabled.\n"));
-
     /* Load the standard Microsoft GINA DLL. */
     if (!(hDll = LoadLibrary(TEXT("MSGINA.DLL"))))
     {
@@ -255,6 +245,16 @@ BOOL WINAPI WlxInitialize(LPWSTR lpWinsta, HANDLE hWlx, PVOID pvReserved,
 
     /* store handle to Winlogon service*/
     hGinaWlx = hWlx;
+
+    /* Load global configuration from registry. */
+    DWORD dwRet = loadConfiguration();
+    if (ERROR_SUCCESS != dwRet)
+        LogRel(("VBoxGINA: Error loading global configuration, error=%ld\n", dwRet));
+
+    /* If we have a remote session (that is, a connection via remote desktop /
+     * terminal services) deny it if not specified explicitly. */
+    if (!handleCurrentSession())
+        LogRel(("VBoxGINA: Handling of remote desktop sessions is disabled.\n"));
 
     /* hook the dialogs */
     hookDialogBoxes(pWlxFuncs, wlxVersion);
