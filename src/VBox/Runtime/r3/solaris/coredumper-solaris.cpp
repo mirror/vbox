@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - Core Dumper.
+ * IPRT - Custom Core Dumper, Solaris.
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,21 +24,22 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_CORE_DUMPER
-#include <VBox/log.h>
+#define LOG_GROUP RTLOGGROUP_DEFAULT
 #include <iprt/coredumper.h>
-#include <iprt/types.h>
-#include <iprt/file.h>
-#include <iprt/err.h>
+
+#include <iprt/asm.h>
 #include <iprt/dir.h>
+#include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
-#include <iprt/param.h>
-#include <iprt/asm.h>
 #include "coredumper-solaris.h"
 
 #ifdef RT_OS_SOLARIS
@@ -60,6 +61,7 @@
 
 #include "internal/ldrELF.h"
 #include "internal/ldrELF64.h"
+
 
 /*******************************************************************************
 *   Globals                                                                    *
@@ -126,67 +128,96 @@ static bool IsBigEndian()
 /**
  * Reads from a file making sure an interruption doesn't cause a failure.
  *
- * @param hFile             Handle to the file to read.
+ * @param fd                Handle to the file to read.
  * @param pv                Where to store the read data.
  * @param cbToRead          Size of data to read.
  *
  * @return IPRT status code.
  */
-static int ReadFileNoIntr(RTFILE hFile, void *pv, size_t cbToRead)
+static int ReadFileNoIntr(int fd, void *pv, size_t cbToRead)
 {
-    int rc = VERR_READ_ERROR;
-    while (1)
+    for (;;)
     {
-        rc = RTFileRead(hFile, pv, cbToRead, NULL /* Read all */);
-        if (rc == VERR_INTERRUPTED)
-            continue;
-        break;
+        ssize_t cbRead = read(fd, pv, cbToRead);
+        if (cbRead < 0)
+        {
+            if (errno == EINTR)
+                continue;
+            return RTErrConvertFromErrno(errno);
+        }
+        if ((size_t)cbRead == cbToRead)
+            return VINF_SUCCESS;
+        if ((size_t)cbRead > cbToRead)
+            return VERR_INTERNAL_ERROR_3;
+        if (cbRead == 0)
+            return VERR_EOF;
+        pv = (uint8_t *)pv + cbRead;
+        cbToRead -= cbRead;
     }
-    return rc;
 }
 
 
 /**
  * Writes to a file making sure an interruption doesn't cause a failure.
  *
- * @param hFile             Handle to the file to write.
+ * @param fd                Handle to the file to write to.
  * @param pv                Pointer to what to write.
- * @param cbToRead          Size of data to write.
+ * @param cbToWrite          Size of data to write.
  *
  * @return IPRT status code.
  */
-static int WriteFileNoIntr(RTFILE hFile, const void *pcv, size_t cbToRead)
+static int WriteFileNoIntr(int fd, const void *pv, size_t cbToWrite)
 {
-    int rc = VERR_READ_ERROR;
-    while (1)
+    for (;;)
     {
-        rc = RTFileWrite(hFile, pcv, cbToRead, NULL /* Write all */);
-        if (rc == VERR_INTERRUPTED)
-            continue;
-        break;
+        ssize_t cbWritten = write(fd, pv, cbToWrite);
+        if (cbWritten < 0)
+        {
+            if (errno == EINTR)
+                continue;
+            return RTErrConvertFromErrno(errno);
+        }
+        if ((size_t)cbWritten == cbToWrite)
+            return VINF_SUCCESS;
+        if ((size_t)cbWritten > cbToWrite)
+            return VERR_INTERNAL_ERROR_2;
+        pv = (uint8_t const *)pv + cbWritten;
+        cbToWrite -= cbWritten;
     }
-    return rc;
 }
 
 
 /**
  * Read from a given offset in the process' address space.
  *
- * @param pVBoxProc         Pointer to the VBox process.
+ * @param pSolProc         Pointer to the solaris process.
  * @param pv                Where to read the data into.
  * @param cb                Size of the read buffer.
  * @param off               Offset to read from.
  *
  * @return VINF_SUCCESS, if all the given bytes was read in, otherwise VERR_READ_ERROR.
  */
-static ssize_t ProcReadAddrSpace(PVBOXPROCESS pVBoxProc, RTFOFF off, void *pvBuf, size_t cbToRead)
+static ssize_t ProcReadAddrSpace(PRTSOLCOREPROCESS pSolProc, RTFOFF off, void *pvBuf, size_t cbToRead)
 {
-    while (1)
+    for (;;)
     {
-        int rc = RTFileReadAt(pVBoxProc->hAs, off, pvBuf, cbToRead, NULL);
-        if (rc == VERR_INTERRUPTED)
-            continue;
-        return rc;
+        ssize_t cbRead = pread(pSolProc->fdAs, pvBuf, cbToRead, off);
+        if (cbRead < 0)
+        {
+            if (errno == EINTR)
+                continue;
+            return RTErrConvertFromErrno(errno);
+        }
+        if ((size_t)cbRead == cbToRead)
+            return VINF_SUCCESS;
+        if ((size_t)cbRead > cbToRead)
+            return VERR_INTERNAL_ERROR_4;
+        if (cbRead == 0)
+            return VERR_EOF;
+
+        pvBuf     = (uint8_t *)pvBuf + cbRead;
+        cbToRead -= cbRead;
+        off      += cbRead;
     }
 }
 
@@ -194,36 +225,52 @@ static ssize_t ProcReadAddrSpace(PVBOXPROCESS pVBoxProc, RTFOFF off, void *pvBuf
 /**
  * Determines if the current process' architecture is suitable for dumping core.
  *
- * @param pVBoxProc         Pointer to the VBox process.
+ * @param pSolProc         Pointer to the solaris process.
  *
  * @return true if the architecture matches the current one.
  */
-static inline bool IsProcessArchNative(PVBOXPROCESS pVBoxProc)
+static inline bool IsProcessArchNative(PRTSOLCOREPROCESS pSolProc)
 {
-    return pVBoxProc->ProcInfo.pr_dmodel == PR_MODEL_NATIVE;
+    return pSolProc->ProcInfo.pr_dmodel == PR_MODEL_NATIVE;
 }
 
 
 /**
- * Helper function to get the size of a file given it's path.
+ * Helper function to get the size_t compatible file size from a file
+ * descriptor.
  *
- * @param pszPath           Pointer to the full path of the file.
- *
- * @return The size of the file in bytes.
+ * @return  The file size (in bytes).
+ * @param   fd              The file descriptor.
  */
-static size_t GetFileSize(const char *pszPath)
+static size_t GetFileSizeByFd(int fd)
 {
-    uint64_t cb = 0;
+    struct stat st;
+    if (fstat(fd, &st) == 0)
+        return st.st_size < ~(size_t)0 ? (size_t)st.st_size : ~(size_t)0;
+
+    CORELOGRELSYS((CORELOG_NAME "GetFileSizeByFd: fstat failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
+    return 0;
+}
+
+
+/**
+ * Helper function to get the size_t compatible size of a file given its path.
+ *
+ * @return  The file size (in bytes).
+ * @param   pszPath         Pointer to the full path of the file.
+ */
+static size_t GetFileSizeByName(const char *pszPath)
+{
     int fd = open(pszPath, O_RDONLY);
-    if (fd >= 0)
+    if (fd < 0)
     {
-        RTFILE hFile = (RTFILE)(uintptr_t)fd;
-        RTFileGetSize(hFile, &cb);
-        RTFileClose(hFile);
+        CORELOGRELSYS((CORELOG_NAME "GetFileSizeByName: failed to open %s rc=%Rrc\n", pszPath, RTErrConvertFromErrno(errno)));
+        return 0;
     }
-    else
-        CORELOGRELSYS((CORELOG_NAME "GetFileSize: failed to open %s rc=%Rrc\n", pszPath, RTErrConvertFromErrno(fd)));
-    return cb < ~(size_t)0 ? (size_t)cb : ~(size_t)0;
+
+    size_t cb = GetFileSizeByFd(fd);
+    close(fd);
+    return cb;
 }
 
 
@@ -232,24 +279,25 @@ static size_t GetFileSize(const char *pszPath)
  * This is meant to be called once, as a single-large anonymously
  * mapped memory area which will be used during the core dumping routines.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @return IPRT status code.
  */
-static int AllocMemoryArea(PVBOXCORE pVBoxCore)
+static int AllocMemoryArea(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore->pvCore == NULL, VERR_ALREADY_EXISTS);
+    AssertReturn(pSolCore->pvCore == NULL, VERR_ALREADY_EXISTS);
 
-    struct VBOXSOLPREALLOCTABLE
+    static struct
     {
         const char *pszFilePath;        /* Proc based path */
         size_t      cbHeader;           /* Size of header */
         size_t      cbEntry;            /* Size of each entry in file */
         size_t      cbAccounting;       /* Size of each accounting entry per entry */
-    } aPreAllocTable[] = {
-        { "/proc/%d/map",        0,                  sizeof(prmap_t),       sizeof(VBOXSOLMAPINFO) },
+    } const s_aPreAllocTable[] =
+    {
+        { "/proc/%d/map",        0,                  sizeof(prmap_t),       sizeof(RTSOLCOREMAPINFO) },
         { "/proc/%d/auxv",       0,                  0,                     0 },
-        { "/proc/%d/lpsinfo",    sizeof(prheader_t), sizeof(lwpsinfo_t),    sizeof(VBOXSOLTHREADINFO) },
+        { "/proc/%d/lpsinfo",    sizeof(prheader_t), sizeof(lwpsinfo_t),    sizeof(RTSOLCORETHREADINFO) },
         { "/proc/%d/lstatus",    0,                  0,                     0 },
         { "/proc/%d/ldt",        0,                  0,                     0 },
         { "/proc/%d/cred",       sizeof(prcred_t),   sizeof(gid_t),         0 },
@@ -257,25 +305,25 @@ static int AllocMemoryArea(PVBOXCORE pVBoxCore)
     };
 
     size_t cb = 0;
-    for (int i = 0; i < (int)RT_ELEMENTS(aPreAllocTable); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aPreAllocTable); i++)
     {
         char szPath[PATH_MAX];
-        RTStrPrintf(szPath, sizeof(szPath), aPreAllocTable[i].pszFilePath, (int)pVBoxCore->VBoxProc.Process);
-        size_t cbFile = GetFileSize(szPath);
+        RTStrPrintf(szPath, sizeof(szPath), s_aPreAllocTable[i].pszFilePath, (int)pSolCore->SolProc.Process);
+        size_t cbFile = GetFileSizeByName(szPath);
         cb += cbFile;
         if (   cbFile > 0
-            && aPreAllocTable[i].cbEntry > 0)
+            && s_aPreAllocTable[i].cbEntry > 0)
         {
-            cb += ((cbFile - aPreAllocTable[i].cbHeader) / aPreAllocTable[i].cbEntry) * (aPreAllocTable[i].cbAccounting > 0 ?
-                                                                                         aPreAllocTable[i].cbAccounting : 1);
-            cb += aPreAllocTable[i].cbHeader;
+            cb += ((cbFile - s_aPreAllocTable[i].cbHeader) / s_aPreAllocTable[i].cbEntry)
+                * (s_aPreAllocTable[i].cbAccounting > 0 ? s_aPreAllocTable[i].cbAccounting : 1);
+            cb += s_aPreAllocTable[i].cbHeader;
         }
     }
 
     /*
      * Make room for our own mapping accountant entry which will also be included in the core.
      */
-    cb += sizeof(VBOXSOLMAPINFO);
+    cb += sizeof(RTSOLCOREMAPINFO);
 
     /*
      * Allocate the required space, plus some extra room.
@@ -285,58 +333,55 @@ static int AllocMemoryArea(PVBOXCORE pVBoxCore)
     if (pv != MAP_FAILED)
     {
         CORELOG((CORELOG_NAME "AllocMemoryArea: memory area of %u bytes allocated.\n", cb));
-        pVBoxCore->pvCore = pv;
-        pVBoxCore->pvFree = pv;
-        pVBoxCore->cbCore = cb;
+        pSolCore->pvCore = pv;
+        pSolCore->pvFree = pv;
+        pSolCore->cbCore = cb;
         return VINF_SUCCESS;
     }
-    else
-    {
-        CORELOGRELSYS((CORELOG_NAME "AllocMemoryArea: failed cb=%u\n", cb));
-        return VERR_NO_MEMORY;
-    }
+    CORELOGRELSYS((CORELOG_NAME "AllocMemoryArea: failed cb=%u\n", cb));
+    return VERR_NO_MEMORY;
 }
 
 
 /**
  * Free memory area used by the core object.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  */
-static void FreeMemoryArea(PVBOXCORE pVBoxCore)
+static void FreeMemoryArea(PRTSOLCORE pSolCore)
 {
-    AssertReturnVoid(pVBoxCore);
-    AssertReturnVoid(pVBoxCore->pvCore);
-    AssertReturnVoid(pVBoxCore->cbCore > 0);
+    AssertReturnVoid(pSolCore);
+    AssertReturnVoid(pSolCore->pvCore);
+    AssertReturnVoid(pSolCore->cbCore > 0);
 
-    munmap(pVBoxCore->pvCore, pVBoxCore->cbCore);
-    CORELOG((CORELOG_NAME "FreeMemoryArea: memory area of %u bytes freed.\n", pVBoxCore->cbCore));
+    munmap(pSolCore->pvCore, pSolCore->cbCore);
+    CORELOG((CORELOG_NAME "FreeMemoryArea: memory area of %u bytes freed.\n", pSolCore->cbCore));
 
-    pVBoxCore->pvCore = NULL;
-    pVBoxCore->pvFree= NULL;
-    pVBoxCore->cbCore = 0;
+    pSolCore->pvCore = NULL;
+    pSolCore->pvFree= NULL;
+    pSolCore->cbCore = 0;
 }
 
 
 /**
  * Get a chunk from the area of allocated memory.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  * @param cb                Size of requested chunk.
  *
  * @return Pointer to allocated memory, or NULL on failure.
  */
-static void *GetMemoryChunk(PVBOXCORE pVBoxCore, size_t cb)
+static void *GetMemoryChunk(PRTSOLCORE pSolCore, size_t cb)
 {
-    AssertReturn(pVBoxCore, NULL);
-    AssertReturn(pVBoxCore->pvCore, NULL);
-    AssertReturn(pVBoxCore->pvFree, NULL);
+    AssertReturn(pSolCore, NULL);
+    AssertReturn(pSolCore->pvCore, NULL);
+    AssertReturn(pSolCore->pvFree, NULL);
 
-    size_t cbAllocated = (char *)pVBoxCore->pvFree - (char *)pVBoxCore->pvCore;
-    if (cbAllocated < pVBoxCore->cbCore)
+    size_t cbAllocated = (char *)pSolCore->pvFree - (char *)pSolCore->pvCore;
+    if (cbAllocated < pSolCore->cbCore)
     {
-        char *pb = (char *)pVBoxCore->pvFree;
-        pVBoxCore->pvFree = pb + cb;
+        char *pb = (char *)pSolCore->pvFree;
+        pSolCore->pvFree = pb + cb;
         return pb;
     }
 
@@ -347,7 +392,7 @@ static void *GetMemoryChunk(PVBOXCORE pVBoxCore, size_t cb)
 /**
  * Reads the proc file's content into a newly allocated buffer.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  * @param pszFileFmt        Only the name of the file to read from (/proc/<pid> will be prepended)
  * @param ppv               Where to store the allocated buffer.
  * @param pcb               Where to store size of the buffer.
@@ -356,25 +401,22 @@ static void *GetMemoryChunk(PVBOXCORE pVBoxCore, size_t cb)
  *          returned with pointed to values of @c ppv, @c pcb set to NULL and 0
  *          respectively.
  */
-static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, void **ppv, size_t *pcb)
+static int ProcReadFileInto(PRTSOLCORE pSolCore, const char *pszProcFileName, void **ppv, size_t *pcb)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
     char szPath[PATH_MAX];
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/%s", (int)pVBoxCore->VBoxProc.Process, pszProcFileName);
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/%s", (int)pSolCore->SolProc.Process, pszProcFileName);
     int rc = VINF_SUCCESS;
     int fd = open(szPath, O_RDONLY);
     if (fd >= 0)
     {
-        RTFILE hFile = (RTFILE)(uintptr_t)fd;
-        uint64_t u64Size;
-        RTFileGetSize(hFile, &u64Size);
-        *pcb = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
+        *pcb = GetFileSizeByFd(fd);
         if (*pcb > 0)
         {
-            *ppv = GetMemoryChunk(pVBoxCore, *pcb);
+            *ppv = GetMemoryChunk(pSolCore, *pcb);
             if (*ppv)
-                rc = ReadFileNoIntr(hFile, *ppv, *pcb);
+                rc = ReadFileNoIntr(fd, *ppv, *pcb);
             else
                 rc = VERR_NO_MEMORY;
         }
@@ -384,7 +426,7 @@ static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, vo
             *ppv = NULL;
             rc = VINF_SUCCESS;
         }
-        RTFileClose(hFile);
+        close(fd);
     }
     else
     {
@@ -398,26 +440,25 @@ static int ProcReadFileInto(PVBOXCORE pVBoxCore, const char *pszProcFileName, vo
 /**
  * Read process information (format psinfo_t) from /proc.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @return IPRT status code.
  */
-static int ProcReadInfo(PVBOXCORE pVBoxCore)
+static int ProcReadInfo(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
     char szPath[PATH_MAX];
     int rc = VINF_SUCCESS;
 
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/psinfo", (int)pVBoxProc->Process);
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/psinfo", (int)pSolProc->Process);
     int fd = open(szPath, O_RDONLY);
     if (fd >= 0)
     {
-        RTFILE hFile = (RTFILE)(uintptr_t)fd;
         size_t cbProcInfo = sizeof(psinfo_t);
-        rc = ReadFileNoIntr(hFile, &pVBoxProc->ProcInfo, cbProcInfo);
-        RTFileClose(hFile);
+        rc = ReadFileNoIntr(fd, &pSolProc->ProcInfo, cbProcInfo);
+        close(fd);
     }
     else
     {
@@ -432,29 +473,27 @@ static int ProcReadInfo(PVBOXCORE pVBoxCore)
 /**
  * Read process status (format pstatus_t) from /proc.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @return IPRT status code.
  */
-static int ProcReadStatus(PVBOXCORE pVBoxCore)
+static int ProcReadStatus(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
 
     char szPath[PATH_MAX];
     int rc = VINF_SUCCESS;
 
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/status", (int)pVBoxProc->Process);
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/status", (int)pSolProc->Process);
     int fd = open(szPath, O_RDONLY);
     if (fd >= 0)
     {
-        RTFILE hFile = (RTFILE)(uintptr_t)fd;
-        size_t cbRead;
         size_t cbProcStatus = sizeof(pstatus_t);
-        AssertCompile(sizeof(pstatus_t) == sizeof(pVBoxProc->ProcStatus));
-        rc = ReadFileNoIntr(hFile, &pVBoxProc->ProcStatus, cbProcStatus);
-        RTFileClose(hFile);
+        AssertCompile(sizeof(pstatus_t) == sizeof(pSolProc->ProcStatus));
+        rc = ReadFileNoIntr(fd, &pSolProc->ProcStatus, cbProcStatus);
+        close(fd);
     }
     else
     {
@@ -468,38 +507,38 @@ static int ProcReadStatus(PVBOXCORE pVBoxCore)
 /**
  * Read process credential information (format prcred_t + array of guid_t)
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
  * @return IPRT status code.
  */
-static int ProcReadCred(PVBOXCORE pVBoxCore)
+static int ProcReadCred(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
-    return ProcReadFileInto(pVBoxCore, "cred", &pVBoxProc->pvCred, &pVBoxProc->cbCred);
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
+    return ProcReadFileInto(pSolCore, "cred", &pSolProc->pvCred, &pSolProc->cbCred);
 }
 
 
 /**
  * Read process privilege information (format prpriv_t + array of priv_chunk_t)
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
  * @return IPRT status code.
  */
-static int ProcReadPriv(PVBOXCORE pVBoxCore)
+static int ProcReadPriv(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
-    int rc = ProcReadFileInto(pVBoxCore, "priv", (void **)&pVBoxProc->pPriv, &pVBoxProc->cbPriv);
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
+    int rc = ProcReadFileInto(pSolCore, "priv", (void **)&pSolProc->pPriv, &pSolProc->cbPriv);
     if (RT_FAILURE(rc))
         return rc;
-    pVBoxProc->pcPrivImpl = getprivimplinfo();
-    if (!pVBoxProc->pcPrivImpl)
+    pSolProc->pcPrivImpl = getprivimplinfo();
+    if (!pSolProc->pcPrivImpl)
     {
         CORELOGRELSYS((CORELOG_NAME "ProcReadPriv: getprivimplinfo returned NULL.\n"));
         return VERR_INVALID_STATE;
@@ -511,36 +550,36 @@ static int ProcReadPriv(PVBOXCORE pVBoxCore)
 /**
  * Read process LDT information (format array of struct ssd) from /proc.
  *
- * @param pVBoxProc         Pointer to the core object.
+ * @param pSolProc         Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
  * @return IPRT status code.
  */
-static int ProcReadLdt(PVBOXCORE pVBoxCore)
+static int ProcReadLdt(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
-    return ProcReadFileInto(pVBoxCore, "ldt", &pVBoxProc->pvLdt, &pVBoxProc->cbLdt);
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
+    return ProcReadFileInto(pSolCore, "ldt", &pSolProc->pvLdt, &pSolProc->cbLdt);
 }
 
 
 /**
  * Read process auxiliary vectors (format auxv_t) for the process.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
  * @return IPRT status code.
  */
-static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
+static int ProcReadAuxVecs(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
     char szPath[PATH_MAX];
     int rc = VINF_SUCCESS;
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/auxv", (int)pVBoxProc->Process);
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/auxv", (int)pSolProc->Process);
     int fd = open(szPath, O_RDONLY);
     if (fd < 0)
     {
@@ -549,40 +588,35 @@ static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
         return rc;
     }
 
-    RTFILE hFile = (RTFILE)(uintptr_t)fd;
-    uint64_t u64Size;
-    RTFileGetSize(hFile, &u64Size);
-    size_t cbAuxFile = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
+    size_t cbAuxFile = GetFileSizeByFd(fd);
     if (cbAuxFile >= sizeof(auxv_t))
     {
-        pVBoxProc->pAuxVecs = (auxv_t*)GetMemoryChunk(pVBoxCore, cbAuxFile + sizeof(auxv_t));
-        if (pVBoxProc->pAuxVecs)
+        pSolProc->pAuxVecs = (auxv_t*)GetMemoryChunk(pSolCore, cbAuxFile + sizeof(auxv_t));
+        if (pSolProc->pAuxVecs)
         {
-            rc = ReadFileNoIntr(hFile, pVBoxProc->pAuxVecs, cbAuxFile);
+            rc = ReadFileNoIntr(fd, pSolProc->pAuxVecs, cbAuxFile);
             if (RT_SUCCESS(rc))
             {
                 /* Terminate list of vectors */
-                pVBoxProc->cAuxVecs = cbAuxFile / sizeof(auxv_t);
+                pSolProc->cAuxVecs = cbAuxFile / sizeof(auxv_t);
                 CORELOG((CORELOG_NAME "ProcReadAuxVecs: cbAuxFile=%u auxv_t size %d cAuxVecs=%u\n", cbAuxFile, sizeof(auxv_t),
-                         pVBoxProc->cAuxVecs));
-                if (pVBoxProc->cAuxVecs > 0)
+                         pSolProc->cAuxVecs));
+                if (pSolProc->cAuxVecs > 0)
                 {
-                    pVBoxProc->pAuxVecs[pVBoxProc->cAuxVecs].a_type = AT_NULL;
-                    pVBoxProc->pAuxVecs[pVBoxProc->cAuxVecs].a_un.a_val = 0L;
-                    RTFileClose(hFile);
+                    pSolProc->pAuxVecs[pSolProc->cAuxVecs].a_type = AT_NULL;
+                    pSolProc->pAuxVecs[pSolProc->cAuxVecs].a_un.a_val = 0L;
+                    close(fd);
                     return VINF_SUCCESS;
                 }
-                else
-                {
-                    CORELOGRELSYS((CORELOG_NAME "ProcReadAuxVecs: Invalid vector count %u\n", pVBoxProc->cAuxVecs));
-                    rc = VERR_READ_ERROR;
-                }
+
+                CORELOGRELSYS((CORELOG_NAME "ProcReadAuxVecs: Invalid vector count %u\n", pSolProc->cAuxVecs));
+                rc = VERR_READ_ERROR;
             }
             else
                 CORELOGRELSYS((CORELOG_NAME "ProcReadAuxVecs: ReadFileNoIntr failed. rc=%Rrc cbAuxFile=%u\n", rc, cbAuxFile));
 
-            pVBoxProc->pAuxVecs = NULL;
-            pVBoxProc->cAuxVecs = 0;
+            pSolProc->pAuxVecs = NULL;
+            pSolProc->cAuxVecs = 0;
         }
         else
         {
@@ -596,7 +630,7 @@ static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
         rc = VERR_READ_ERROR;
     }
 
-    RTFileClose(hFile);
+    close(fd);
     return rc;
 }
 
@@ -604,12 +638,12 @@ static int ProcReadAuxVecs(PVBOXCORE pVBoxCore)
 /*
  * Find an element in the process' auxiliary vector.
  */
-static long GetAuxVal(PVBOXPROCESS pVBoxProc, int Type)
+static long GetAuxVal(PRTSOLCOREPROCESS pSolProc, int Type)
 {
-    AssertReturn(pVBoxProc, -1);
-    if (pVBoxProc->pAuxVecs)
+    AssertReturn(pSolProc, -1);
+    if (pSolProc->pAuxVecs)
     {
-        auxv_t *pAuxVec = pVBoxProc->pAuxVecs;
+        auxv_t *pAuxVec = pSolProc->pAuxVecs;
         for (; pAuxVec->a_type != AT_NULL; pAuxVec++)
         {
             if (pAuxVec->a_type == Type)
@@ -623,64 +657,59 @@ static long GetAuxVal(PVBOXPROCESS pVBoxProc, int Type)
 /**
  * Read the process mappings (format prmap_t array).
  *
- * @param   pVBoxCore           Pointer to the core object.
+ * @param   pSolCore            Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
  * @return IPRT status code.
  */
-static int ProcReadMappings(PVBOXCORE pVBoxCore)
+static int ProcReadMappings(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
     char szPath[PATH_MAX];
     int rc = VINF_SUCCESS;
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/map", (int)pVBoxProc->Process);
-    int fd = open(szPath, O_RDONLY);
-    if (fd < 0)
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/map", (int)pSolProc->Process);
+    int fdMap = open(szPath, O_RDONLY);
+    if (fdMap < 0)
     {
-        rc = RTErrConvertFromErrno(fd);
+        rc = RTErrConvertFromErrno(errno);
         CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: failed to open %s. rc=%Rrc\n", szPath, rc));
         return rc;
     }
 
-    RTFILE hFile = (RTFILE)(uintptr_t)fd;
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pVBoxProc->Process);
-    fd = open(szPath, O_RDONLY);
-    if (fd >= 0)
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pSolProc->Process);
+    pSolProc->fdAs = open(szPath, O_RDONLY);
+    if (pSolProc->fdAs >= 0)
     {
-        pVBoxProc->hAs = (RTFILE)(uintptr_t)fd;
-
         /*
          * Allocate and read all the prmap_t objects from proc.
          */
-        uint64_t u64Size;
-        RTFileGetSize(hFile, &u64Size);
-        size_t cbMapFile = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
+        size_t cbMapFile = GetFileSizeByFd(fdMap);
         if (cbMapFile >= sizeof(prmap_t))
         {
-            prmap_t *pMap = (prmap_t*)GetMemoryChunk(pVBoxCore, cbMapFile);
+            prmap_t *pMap = (prmap_t*)GetMemoryChunk(pSolCore, cbMapFile);
             if (pMap)
             {
-                rc = ReadFileNoIntr(hFile, pMap, cbMapFile);
+                rc = ReadFileNoIntr(fdMap, pMap, cbMapFile);
                 if (RT_SUCCESS(rc))
                 {
-                    pVBoxProc->cMappings = cbMapFile / sizeof(prmap_t);
-                    if (pVBoxProc->cMappings > 0)
+                    pSolProc->cMappings = cbMapFile / sizeof(prmap_t);
+                    if (pSolProc->cMappings > 0)
                     {
                         /*
-                         * Allocate for each prmap_t object, a corresponding VBOXSOLMAPINFO object.
+                         * Allocate for each prmap_t object, a corresponding RTSOLCOREMAPINFO object.
                          */
-                        pVBoxProc->pMapInfoHead = (PVBOXSOLMAPINFO)GetMemoryChunk(pVBoxCore, pVBoxProc->cMappings * sizeof(VBOXSOLMAPINFO));
-                        if (pVBoxProc->pMapInfoHead)
+                        pSolProc->pMapInfoHead = (PRTSOLCOREMAPINFO)GetMemoryChunk(pSolCore, pSolProc->cMappings * sizeof(RTSOLCOREMAPINFO));
+                        if (pSolProc->pMapInfoHead)
                         {
                             /*
                              * Associate the prmap_t with the mapping info object.
                              */
-                            Assert(pVBoxProc->pMapInfoHead == NULL);
-                            PVBOXSOLMAPINFO pCur = pVBoxProc->pMapInfoHead;
-                            PVBOXSOLMAPINFO pPrev = NULL;
-                            for (uint64_t i = 0; i < pVBoxProc->cMappings; i++, pMap++, pCur++)
+                            /*Assert(pSolProc->pMapInfoHead == NULL); - does not make sense */
+                            PRTSOLCOREMAPINFO pCur = pSolProc->pMapInfoHead;
+                            PRTSOLCOREMAPINFO pPrev = NULL;
+                            for (uint64_t i = 0; i < pSolProc->cMappings; i++, pMap++, pCur++)
                             {
                                 memcpy(&pCur->pMap, pMap, sizeof(pCur->pMap));
                                 if (pPrev)
@@ -696,7 +725,7 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
                                 while (k < pCur->pMap.pr_size)
                                 {
                                     size_t cb = RT_MIN(sizeof(achBuf), pCur->pMap.pr_size - k);
-                                    int rc2 = ProcReadAddrSpace(pVBoxProc, pCur->pMap.pr_vaddr + k, &achBuf, cb);
+                                    int rc2 = ProcReadAddrSpace(pSolProc, pCur->pMap.pr_vaddr + k, &achBuf, cb);
                                     if (RT_FAILURE(rc2))
                                     {
                                         CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: skipping mapping. vaddr=%#x rc=%Rrc\n",
@@ -721,22 +750,20 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
                             if (pPrev)
                                 pPrev->pNext = NULL;
 
-                            RTFileClose(hFile);
-                            RTFileClose(pVBoxProc->hAs);
-                            pVBoxProc->hAs = NIL_RTFILE;
-                            CORELOG((CORELOG_NAME "ProcReadMappings: successfully read in %u mappings\n", pVBoxProc->cMappings));
+                            close(fdMap);
+                            close(pSolProc->fdAs);
+                            pSolProc->fdAs = -1;
+                            CORELOG((CORELOG_NAME "ProcReadMappings: successfully read in %u mappings\n", pSolProc->cMappings));
                             return VINF_SUCCESS;
                         }
-                        else
-                        {
-                            CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: GetMemoryChunk failed %u\n",
-                                           pVBoxProc->cMappings * sizeof(VBOXSOLMAPINFO)));
-                            rc = VERR_NO_MEMORY;
-                        }
+
+                        CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: GetMemoryChunk failed %u\n",
+                                       pSolProc->cMappings * sizeof(RTSOLCOREMAPINFO)));
+                        rc = VERR_NO_MEMORY;
                     }
                     else
                     {
-                        CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: Invalid mapping count %u\n", pVBoxProc->cMappings));
+                        CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: Invalid mapping count %u\n", pSolProc->cMappings));
                         rc = VERR_READ_ERROR;
                     }
                 }
@@ -750,13 +777,13 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
             }
         }
 
-        RTFileClose(pVBoxProc->hAs);
-        pVBoxProc->hAs = NIL_RTFILE;
+        close(pSolProc->fdAs);
+        pSolProc->fdAs = -1;
     }
     else
         CORELOGRELSYS((CORELOG_NAME "ProcReadMappings: failed to open %s. rc=%Rrc\n", szPath, rc));
 
-    RTFileClose(hFile);
+    close(fdMap);
     return rc;
 }
 
@@ -764,17 +791,17 @@ static int ProcReadMappings(PVBOXCORE pVBoxCore)
 /**
  * Reads the thread information for all threads in the process.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @remarks Should not be called before successful call to @see AllocMemoryArea()
  * @return IPRT status code.
  */
-static int ProcReadThreads(PVBOXCORE pVBoxCore)
+static int ProcReadThreads(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
-    AssertReturn(pVBoxProc->pCurThreadCtx, VERR_NO_DATA);
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
+    AssertReturn(pSolProc->pCurThreadCtx, VERR_NO_DATA);
 
     /*
      * Read the information for threads.
@@ -782,7 +809,7 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
      */
     size_t cbInfoHdrAndData;
     void *pvInfoHdr = NULL;
-    int rc = ProcReadFileInto(pVBoxCore, "lpsinfo", &pvInfoHdr, &cbInfoHdrAndData);
+    int rc = ProcReadFileInto(pSolCore, "lpsinfo", &pvInfoHdr, &cbInfoHdrAndData);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -791,7 +818,7 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
          */
         void *pvStatusHdr = NULL;
         size_t cbStatusHdrAndData;
-        rc = ProcReadFileInto(pVBoxCore, "lstatus", &pvStatusHdr, &cbStatusHdrAndData);
+        rc = ProcReadFileInto(pSolCore, "lstatus", &pvStatusHdr, &cbStatusHdrAndData);
         if (RT_SUCCESS(rc))
         {
             prheader_t *pInfoHdr   = (prheader_t *)pvInfoHdr;
@@ -843,12 +870,12 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
                     cInfo = pInfoHdr->pr_nent;
                     cStatus = pInfoHdr->pr_nent;
 
-                    size_t cbThreadInfo = RT_MAX(cStatus, cInfo) * sizeof(VBOXSOLTHREADINFO);
-                    pVBoxProc->pThreadInfoHead = (PVBOXSOLTHREADINFO)GetMemoryChunk(pVBoxCore, cbThreadInfo);
-                    if (pVBoxProc->pThreadInfoHead)
+                    size_t cbThreadInfo = RT_MAX(cStatus, cInfo) * sizeof(RTSOLCORETHREADINFO);
+                    pSolProc->pThreadInfoHead = (PRTSOLCORETHREADINFO)GetMemoryChunk(pSolCore, cbThreadInfo);
+                    if (pSolProc->pThreadInfoHead)
                     {
-                        PVBOXSOLTHREADINFO pCur = pVBoxProc->pThreadInfoHead;
-                        PVBOXSOLTHREADINFO pPrev = NULL;
+                        PRTSOLCORETHREADINFO pCur = pSolProc->pThreadInfoHead;
+                        PRTSOLCORETHREADINFO pPrev = NULL;
                         for (uint64_t i = 0; i < cInfo; i++, pCur++)
                         {
                             pCur->Info = *pInfo;
@@ -860,16 +887,16 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
                                  * when the core dump got initiated before whatever signal caused it.
                                  */
                                 if (   pStatus          /* noid droid */
-                                    && pStatus->pr_lwpid == (id_t)pVBoxProc->hCurThread)
+                                    && pStatus->pr_lwpid == (id_t)pSolProc->hCurThread)
                                 {
-                                    AssertCompile(sizeof(pStatus->pr_reg) == sizeof(pVBoxProc->pCurThreadCtx->uc_mcontext.gregs));
-                                    AssertCompile(sizeof(pStatus->pr_fpreg) == sizeof(pVBoxProc->pCurThreadCtx->uc_mcontext.fpregs));
-                                    memcpy(&pStatus->pr_reg, &pVBoxProc->pCurThreadCtx->uc_mcontext.gregs, sizeof(pStatus->pr_reg));
-                                    memcpy(&pStatus->pr_fpreg, &pVBoxProc->pCurThreadCtx->uc_mcontext.fpregs, sizeof(pStatus->pr_fpreg));
+                                    AssertCompile(sizeof(pStatus->pr_reg) == sizeof(pSolProc->pCurThreadCtx->uc_mcontext.gregs));
+                                    AssertCompile(sizeof(pStatus->pr_fpreg) == sizeof(pSolProc->pCurThreadCtx->uc_mcontext.fpregs));
+                                    memcpy(&pStatus->pr_reg, &pSolProc->pCurThreadCtx->uc_mcontext.gregs, sizeof(pStatus->pr_reg));
+                                    memcpy(&pStatus->pr_fpreg, &pSolProc->pCurThreadCtx->uc_mcontext.fpregs, sizeof(pStatus->pr_fpreg));
 
-                                    AssertCompile(sizeof(pStatus->pr_lwphold) == sizeof(pVBoxProc->pCurThreadCtx->uc_sigmask));
-                                    memcpy(&pStatus->pr_lwphold, &pVBoxProc->pCurThreadCtx->uc_sigmask, sizeof(pStatus->pr_lwphold));
-                                    pStatus->pr_ustack = (uintptr_t)&pVBoxProc->pCurThreadCtx->uc_stack;
+                                    AssertCompile(sizeof(pStatus->pr_lwphold) == sizeof(pSolProc->pCurThreadCtx->uc_sigmask));
+                                    memcpy(&pStatus->pr_lwphold, &pSolProc->pCurThreadCtx->uc_sigmask, sizeof(pStatus->pr_lwphold));
+                                    pStatus->pr_ustack = (uintptr_t)&pSolProc->pCurThreadCtx->uc_stack;
 
                                     CORELOG((CORELOG_NAME "ProcReadThreads: patched dumper thread context with pre-dump time context.\n"));
                                 }
@@ -892,7 +919,7 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
                             pPrev->pNext = NULL;
 
                         CORELOG((CORELOG_NAME "ProcReadThreads: successfully read %u threads.\n", cInfo));
-                        pVBoxProc->cThreads = cInfo;
+                        pSolProc->cThreads = cInfo;
                         return VINF_SUCCESS;
                     }
                     else
@@ -926,43 +953,43 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
  * Reads miscellaneous information that is collected as part of a core file.
  * This may include platform name, zone name and other OS-specific information.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @return IPRT status code.
  */
-static int ProcReadMiscInfo(PVBOXCORE pVBoxCore)
+static int ProcReadMiscInfo(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
 
 #ifdef RT_OS_SOLARIS
     /*
      * Read the platform name, uname string and zone name.
      */
-    int rc = sysinfo(SI_PLATFORM, pVBoxProc->szPlatform, sizeof(pVBoxProc->szPlatform));
+    int rc = sysinfo(SI_PLATFORM, pSolProc->szPlatform, sizeof(pSolProc->szPlatform));
     if (rc == -1)
     {
         CORELOGRELSYS((CORELOG_NAME "ProcReadMiscInfo: sysinfo failed. rc=%d errno=%d\n", rc, errno));
         return VERR_GENERAL_FAILURE;
     }
-    pVBoxProc->szPlatform[sizeof(pVBoxProc->szPlatform) - 1] = '\0';
+    pSolProc->szPlatform[sizeof(pSolProc->szPlatform) - 1] = '\0';
 
-    rc = uname(&pVBoxProc->UtsName);
+    rc = uname(&pSolProc->UtsName);
     if (rc == -1)
     {
         CORELOGRELSYS((CORELOG_NAME "ProcReadMiscInfo: uname failed. rc=%d errno=%d\n", rc, errno));
         return VERR_GENERAL_FAILURE;
     }
 
-    rc = getzonenamebyid(pVBoxProc->ProcInfo.pr_zoneid, pVBoxProc->szZoneName, sizeof(pVBoxProc->szZoneName));
+    rc = getzonenamebyid(pSolProc->ProcInfo.pr_zoneid, pSolProc->szZoneName, sizeof(pSolProc->szZoneName));
     if (rc < 0)
     {
         CORELOGRELSYS((CORELOG_NAME "ProcReadMiscInfo: getzonenamebyid failed. rc=%d errno=%d zoneid=%d\n", rc, errno,
-                       pVBoxProc->ProcInfo.pr_zoneid));
+                       pSolProc->ProcInfo.pr_zoneid));
         return VERR_GENERAL_FAILURE;
     }
-    pVBoxProc->szZoneName[sizeof(pVBoxProc->szZoneName) - 1] = '\0';
+    pSolProc->szZoneName[sizeof(pSolProc->szZoneName) - 1] = '\0';
     rc = VINF_SUCCESS;
 
 #else
@@ -976,16 +1003,16 @@ static int ProcReadMiscInfo(PVBOXCORE pVBoxCore)
  * On Solaris use the old-style procfs interfaces but the core file still should have this
  * info. for backward and GDB compatibility, hence the need for this ugly function.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  * @param pInfo             Pointer to the old prpsinfo_t structure to update.
  */
-static void GetOldProcessInfo(PVBOXCORE pVBoxCore, prpsinfo_t *pInfo)
+static void GetOldProcessInfo(PRTSOLCORE pSolCore, prpsinfo_t *pInfo)
 {
-    AssertReturnVoid(pVBoxCore);
+    AssertReturnVoid(pSolCore);
     AssertReturnVoid(pInfo);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
-    psinfo_t *pSrc = &pVBoxProc->ProcInfo;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
+    psinfo_t *pSrc = &pSolProc->ProcInfo;
     memset(pInfo, 0, sizeof(prpsinfo_t));
     pInfo->pr_state    = pSrc->pr_lwp.pr_state;
     pInfo->pr_zomb     = (pInfo->pr_state == SZOMB);
@@ -1032,20 +1059,20 @@ static void GetOldProcessInfo(PVBOXCORE pVBoxCore, prpsinfo_t *pInfo)
  * On Solaris use the old-style procfs interfaces but the core file still should have this
  * info. for backward and GDB compatibility, hence the need for this ugly function.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  * @param pInfo             Pointer to the thread info.
  * @param pStatus           Pointer to the thread status.
  * @param pDst              Pointer to the old-style status structure to update.
  *
  */
-static void GetOldProcessStatus(PVBOXCORE pVBoxCore, lwpsinfo_t *pInfo, lwpstatus_t *pStatus, prstatus_t *pDst)
+static void GetOldProcessStatus(PRTSOLCORE pSolCore, lwpsinfo_t *pInfo, lwpstatus_t *pStatus, prstatus_t *pDst)
 {
-    AssertReturnVoid(pVBoxCore);
+    AssertReturnVoid(pSolCore);
     AssertReturnVoid(pInfo);
     AssertReturnVoid(pStatus);
     AssertReturnVoid(pDst);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
     memset(pDst, 0, sizeof(prstatus_t));
     if (pStatus->pr_flags & PR_STOPPED)
         pDst->pr_flags = 0x0001;
@@ -1095,20 +1122,20 @@ static void GetOldProcessStatus(PVBOXCORE pVBoxCore, lwpsinfo_t *pInfo, lwpstatu
     memcpy(pDst->pr_sysarg, pStatus->pr_sysarg, sizeof(pDst->pr_sysarg));
     RTStrCopy(pDst->pr_clname, sizeof(pDst->pr_clname), pStatus->pr_clname);
 
-    pDst->pr_nlwp       = pVBoxProc->ProcStatus.pr_nlwp;
-    pDst->pr_sigpend    = pVBoxProc->ProcStatus.pr_sigpend;
-    pDst->pr_pid        = pVBoxProc->ProcStatus.pr_pid;
-    pDst->pr_ppid       = pVBoxProc->ProcStatus.pr_ppid;
-    pDst->pr_pgrp       = pVBoxProc->ProcStatus.pr_pgid;
-    pDst->pr_sid        = pVBoxProc->ProcStatus.pr_sid;
-    pDst->pr_utime      = pVBoxProc->ProcStatus.pr_utime;
-    pDst->pr_stime      = pVBoxProc->ProcStatus.pr_stime;
-    pDst->pr_cutime     = pVBoxProc->ProcStatus.pr_cutime;
-    pDst->pr_cstime     = pVBoxProc->ProcStatus.pr_cstime;
-    pDst->pr_brkbase    = (caddr_t)pVBoxProc->ProcStatus.pr_brkbase;
-    pDst->pr_brksize    = pVBoxProc->ProcStatus.pr_brksize;
-    pDst->pr_stkbase    = (caddr_t)pVBoxProc->ProcStatus.pr_stkbase;
-    pDst->pr_stksize    = pVBoxProc->ProcStatus.pr_stksize;
+    pDst->pr_nlwp       = pSolProc->ProcStatus.pr_nlwp;
+    pDst->pr_sigpend    = pSolProc->ProcStatus.pr_sigpend;
+    pDst->pr_pid        = pSolProc->ProcStatus.pr_pid;
+    pDst->pr_ppid       = pSolProc->ProcStatus.pr_ppid;
+    pDst->pr_pgrp       = pSolProc->ProcStatus.pr_pgid;
+    pDst->pr_sid        = pSolProc->ProcStatus.pr_sid;
+    pDst->pr_utime      = pSolProc->ProcStatus.pr_utime;
+    pDst->pr_stime      = pSolProc->ProcStatus.pr_stime;
+    pDst->pr_cutime     = pSolProc->ProcStatus.pr_cutime;
+    pDst->pr_cstime     = pSolProc->ProcStatus.pr_cstime;
+    pDst->pr_brkbase    = (caddr_t)pSolProc->ProcStatus.pr_brkbase;
+    pDst->pr_brksize    = pSolProc->ProcStatus.pr_brksize;
+    pDst->pr_stkbase    = (caddr_t)pSolProc->ProcStatus.pr_stkbase;
+    pDst->pr_stksize    = pSolProc->ProcStatus.pr_stksize;
 
     pDst->pr_processor  = (short)pInfo->pr_onpro;
     pDst->pr_bind       = (short)pInfo->pr_bindpro;
@@ -1119,19 +1146,19 @@ static void GetOldProcessStatus(PVBOXCORE pVBoxCore, lwpsinfo_t *pInfo, lwpstatu
 /**
  * Callback for rtCoreDumperForEachThread to suspend a thread.
  *
- * @param pVBoxCore             Pointer to the core object.
+ * @param pSolCore              Pointer to the core object.
  * @param pvThreadInfo          Opaque pointer to thread information.
  *
  * @return IPRT status code.
  */
-static int suspendThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
+static int suspendThread(PRTSOLCORE pSolCore, void *pvThreadInfo)
 {
     AssertPtrReturn(pvThreadInfo, VERR_INVALID_POINTER);
-    NOREF(pVBoxCore);
+    NOREF(pSolCore);
 
     lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)pvThreadInfo;
     CORELOG((CORELOG_NAME ":suspendThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
-    if ((lwpid_t)pThreadInfo->pr_lwpid != pVBoxCore->VBoxProc.hCurThread)
+    if ((lwpid_t)pThreadInfo->pr_lwpid != pSolCore->SolProc.hCurThread)
         _lwp_suspend(pThreadInfo->pr_lwpid);
     return VINF_SUCCESS;
 }
@@ -1140,19 +1167,19 @@ static int suspendThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
 /**
  * Callback for rtCoreDumperForEachThread to resume a thread.
  *
- * @param pVBoxCore             Pointer to the core object.
+ * @param pSolCore              Pointer to the core object.
  * @param pvThreadInfo          Opaque pointer to thread information.
  *
  * @return IPRT status code.
  */
-static int resumeThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
+static int resumeThread(PRTSOLCORE pSolCore, void *pvThreadInfo)
 {
     AssertPtrReturn(pvThreadInfo, VERR_INVALID_POINTER);
-    NOREF(pVBoxCore);
+    NOREF(pSolCore);
 
     lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)pvThreadInfo;
     CORELOG((CORELOG_NAME ":resumeThread %d\n", (lwpid_t)pThreadInfo->pr_lwpid));
-    if ((lwpid_t)pThreadInfo->pr_lwpid != (lwpid_t)pVBoxCore->VBoxProc.hCurThread)
+    if ((lwpid_t)pThreadInfo->pr_lwpid != (lwpid_t)pSolCore->SolProc.hCurThread)
         _lwp_continue(pThreadInfo->pr_lwpid);
     return VINF_SUCCESS;
 }
@@ -1161,44 +1188,42 @@ static int resumeThread(PVBOXCORE pVBoxCore, void *pvThreadInfo)
 /**
  * Calls a thread worker function for all threads in the process as described by /proc
  *
- * @param pVBoxCore             Pointer to the core object.
+ * @param pSolCore              Pointer to the core object.
  * @param pcThreads             Number of threads read.
  * @param pfnWorker             Callback function for each thread.
  *
  * @return IPRT status code.
  */
-static int rtCoreDumperForEachThread(PVBOXCORE pVBoxCore,  uint64_t *pcThreads, PFNCORETHREADWORKER pfnWorker)
+static int rtCoreDumperForEachThread(PRTSOLCORE pSolCore,  uint64_t *pcThreads, PFNRTSOLCORETHREADWORKER pfnWorker)
 {
-    AssertPtrReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
 
     /*
      * Read the information for threads.
      * Format: prheader_t + array of lwpsinfo_t's.
      */
     char szLpsInfoPath[PATH_MAX];
-    RTStrPrintf(szLpsInfoPath, sizeof(szLpsInfoPath), "/proc/%d/lpsinfo", (int)pVBoxProc->Process);
+    RTStrPrintf(szLpsInfoPath, sizeof(szLpsInfoPath), "/proc/%d/lpsinfo", (int)pSolProc->Process);
 
     int rc = VINF_SUCCESS;
     int fd = open(szLpsInfoPath, O_RDONLY);
     if (fd >= 0)
     {
-        RTFILE hFile = (RTFILE)(uintptr_t)fd;
-        uint64_t u64Size;
-        RTFileGetSize(hFile, &u64Size);
-        size_t cbInfoHdrAndData = u64Size < ~(size_t)0 ? u64Size : ~(size_t)0;
-        void *pvInfoHdr = mmap(NULL, cbInfoHdrAndData, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1 /* fd */, 0 /* offset */);
+        size_t cbInfoHdrAndData = GetFileSizeByFd(fd);
+        void *pvInfoHdr = mmap(NULL, cbInfoHdrAndData, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON,
+                               -1 /* fd */, 0 /* offset */);
         if (pvInfoHdr != MAP_FAILED)
         {
-            rc = RTFileRead(hFile, pvInfoHdr, cbInfoHdrAndData, NULL);
+            rc = ReadFileNoIntr(fd, pvInfoHdr, cbInfoHdrAndData);
             if (RT_SUCCESS(rc))
             {
                 prheader_t *pHeader = (prheader_t *)pvInfoHdr;
                 lwpsinfo_t *pThreadInfo = (lwpsinfo_t *)((uintptr_t)pvInfoHdr + sizeof(prheader_t));
                 for (long i = 0; i < pHeader->pr_nent; i++)
                 {
-                    pfnWorker(pVBoxCore, pThreadInfo);
+                    pfnWorker(pSolCore, pThreadInfo);
                     pThreadInfo = (lwpsinfo_t *)((uintptr_t)pThreadInfo + pHeader->pr_entsize);
                 }
                 if (pcThreads)
@@ -1209,7 +1234,7 @@ static int rtCoreDumperForEachThread(PVBOXCORE pVBoxCore,  uint64_t *pcThreads, 
         }
         else
             rc = VERR_NO_MEMORY;
-        RTFileClose(hFile);
+        close(fd);
     }
     else
         rc = RTErrConvertFromErrno(rc);
@@ -1221,26 +1246,26 @@ static int rtCoreDumperForEachThread(PVBOXCORE pVBoxCore,  uint64_t *pcThreads, 
 /**
  * Resume all threads of this process.
  *
- * @param pVBoxCore             Pointer to the core object.
+ * @param pSolCore              Pointer to the core object.
  *
  * @return IPRT status code..
  */
-static int rtCoreDumperResumeThreads(PVBOXCORE pVBoxCore)
+static int rtCoreDumperResumeThreads(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
 #if 1
     uint64_t cThreads;
-    return rtCoreDumperForEachThread(pVBoxCore, &cThreads, resumeThread);
+    return rtCoreDumperForEachThread(pSolCore, &cThreads, resumeThread);
 #else
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
 
     char szCurThread[128];
     char szPath[PATH_MAX];
     PRTDIR pDir = NULL;
 
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/lwp", (int)pVBoxProc->Process);
-    RTStrPrintf(szCurThread, sizeof(szCurThread), "%d", (int)pVBoxProc->hCurThread);
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/lwp", (int)pSolProc->Process);
+    RTStrPrintf(szCurThread, sizeof(szCurThread), "%d", (int)pSolProc->hCurThread);
 
     int32_t cRunningThreads = 0;
     int rc = RTDirOpen(&pDir, szPath);
@@ -1280,13 +1305,13 @@ static int rtCoreDumperResumeThreads(PVBOXCORE pVBoxCore)
 /**
  * Stop all running threads of this process except the current one.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @return IPRT status code.
  */
-static int rtCoreDumperSuspendThreads(PVBOXCORE pVBoxCore)
+static int rtCoreDumperSuspendThreads(PRTSOLCORE pSolCore)
 {
-    AssertPtrReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSolCore, VERR_INVALID_POINTER);
 
     /*
      * This function tries to ensures while we suspend threads, no newly spawned threads
@@ -1302,7 +1327,7 @@ static int rtCoreDumperSuspendThreads(PVBOXCORE pVBoxCore)
     size_t cb = 0;
     for (cTries = 0; cTries < RT_ELEMENTS(aThreads); cTries++)
     {
-        rc = rtCoreDumperForEachThread(pVBoxCore, &aThreads[cTries], suspendThread);
+        rc = rtCoreDumperForEachThread(pSolCore, &aThreads[cTries], suspendThread);
         if (RT_FAILURE(rc))
             break;
     }
@@ -1314,14 +1339,14 @@ static int rtCoreDumperSuspendThreads(PVBOXCORE pVBoxCore)
     }
     return rc;
 #else
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
 
     char szCurThread[128];
     char szPath[PATH_MAX];
     PRTDIR pDir = NULL;
 
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/lwp", (int)pVBoxProc->Process);
-    RTStrPrintf(szCurThread, sizeof(szCurThread), "%d", (int)pVBoxProc->hCurThread);
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/lwp", (int)pSolProc->Process);
+    RTStrPrintf(szCurThread, sizeof(szCurThread), "%d", (int)pSolProc->hCurThread);
 
     int rc = -1;
     uint32_t cThreads = 0;
@@ -1390,20 +1415,20 @@ static inline size_t ElfNoteHeaderSize(size_t cb)
 /**
  * Write an ELF NOTE header into the core file.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  * @param Type              Type of this NOTE section.
  * @param pcv               Opaque pointer to the data, if NULL only computes size.
  * @param cb                Size of the data.
  *
  * @return IPRT status code.
  */
-static int ElfWriteNoteHeader(PVBOXCORE pVBoxCore, uint_t Type, const void *pcv, size_t cb)
+static int ElfWriteNoteHeader(PRTSOLCORE pSolCore, uint_t Type, const void *pcv, size_t cb)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
     AssertReturn(pcv, VERR_INVALID_POINTER);
     AssertReturn(cb > 0, VERR_NO_DATA);
-    AssertReturn(pVBoxCore->pfnWriter, VERR_WRITE_ERROR);
-    AssertReturn(pVBoxCore->hCoreFile, VERR_INVALID_HANDLE);
+    AssertReturn(pSolCore->pfnWriter, VERR_WRITE_ERROR);
+    AssertReturn(pSolCore->fdCoreFile >= 0, VERR_INVALID_HANDLE);
 
     int rc = VERR_GENERAL_FAILURE;
 #ifdef RT_OS_SOLARIS
@@ -1427,14 +1452,14 @@ static int ElfWriteNoteHeader(PVBOXCORE pVBoxCore, uint_t Type, const void *pcv,
     /*
      * Write note header and description.
      */
-    rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, &ElfNoteHdr, sizeof(ElfNoteHdr));
+    rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, &ElfNoteHdr, sizeof(ElfNoteHdr));
     if (RT_SUCCESS(rc))
     {
-       rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, pcv, cb);
+       rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, pcv, cb);
        if (RT_SUCCESS(rc))
        {
            if (cbAlign > cb)
-               rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, s_achPad, cbAlign - cb);
+               rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, s_achPad, cbAlign - cb);
        }
     }
 
@@ -1451,24 +1476,24 @@ static int ElfWriteNoteHeader(PVBOXCORE pVBoxCore, uint_t Type, const void *pcv,
  * Computes the size of NOTE section for the given core type.
  * Solaris has two types of program header information (new and old).
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  * @param enmType           Type of core file information required.
  *
  * @return Size of NOTE section.
  */
-static size_t ElfNoteSectionSize(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
+static size_t ElfNoteSectionSize(PRTSOLCORE pSolCore, RTSOLCORETYPE enmType)
 {
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
     size_t cb = 0;
     switch (enmType)
     {
         case enmOldEra:
         {
             cb += ElfNoteHeaderSize(sizeof(prpsinfo_t));
-            cb += ElfNoteHeaderSize(pVBoxProc->cAuxVecs * sizeof(auxv_t));
-            cb += ElfNoteHeaderSize(strlen(pVBoxProc->szPlatform));
+            cb += ElfNoteHeaderSize(pSolProc->cAuxVecs * sizeof(auxv_t));
+            cb += ElfNoteHeaderSize(strlen(pSolProc->szPlatform));
 
-            PVBOXSOLTHREADINFO pThreadInfo = pVBoxProc->pThreadInfoHead;
+            PRTSOLCORETHREADINFO pThreadInfo = pSolProc->pThreadInfoHead;
             while (pThreadInfo)
             {
                 if (pThreadInfo->pStatus)
@@ -1486,23 +1511,23 @@ static size_t ElfNoteSectionSize(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
         {
             cb += ElfNoteHeaderSize(sizeof(psinfo_t));
             cb += ElfNoteHeaderSize(sizeof(pstatus_t));
-            cb += ElfNoteHeaderSize(pVBoxProc->cAuxVecs * sizeof(auxv_t));
-            cb += ElfNoteHeaderSize(strlen(pVBoxProc->szPlatform) + 1);
+            cb += ElfNoteHeaderSize(pSolProc->cAuxVecs * sizeof(auxv_t));
+            cb += ElfNoteHeaderSize(strlen(pSolProc->szPlatform) + 1);
             cb += ElfNoteHeaderSize(sizeof(struct utsname));
             cb += ElfNoteHeaderSize(sizeof(core_content_t));
-            cb += ElfNoteHeaderSize(pVBoxProc->cbCred);
+            cb += ElfNoteHeaderSize(pSolProc->cbCred);
 
-            if (pVBoxProc->pPriv)
-                cb += ElfNoteHeaderSize(PRIV_PRPRIV_SIZE(pVBoxProc->pPriv));   /* Ought to be same as cbPriv!? */
+            if (pSolProc->pPriv)
+                cb += ElfNoteHeaderSize(PRIV_PRPRIV_SIZE(pSolProc->pPriv));   /* Ought to be same as cbPriv!? */
 
-            if (pVBoxProc->pcPrivImpl)
-                cb += ElfNoteHeaderSize(PRIV_IMPL_INFO_SIZE(pVBoxProc->pcPrivImpl));
+            if (pSolProc->pcPrivImpl)
+                cb += ElfNoteHeaderSize(PRIV_IMPL_INFO_SIZE(pSolProc->pcPrivImpl));
 
-            cb += ElfNoteHeaderSize(strlen(pVBoxProc->szZoneName) + 1);
-            if (pVBoxProc->cbLdt > 0)
-                cb += ElfNoteHeaderSize(pVBoxProc->cbLdt);
+            cb += ElfNoteHeaderSize(strlen(pSolProc->szZoneName) + 1);
+            if (pSolProc->cbLdt > 0)
+                cb += ElfNoteHeaderSize(pSolProc->cbLdt);
 
-            PVBOXSOLTHREADINFO pThreadInfo = pVBoxProc->pThreadInfoHead;
+            PRTSOLCORETHREADINFO pThreadInfo = pSolProc->pThreadInfoHead;
             while (pThreadInfo)
             {
                 cb += ElfNoteHeaderSize(sizeof(lwpsinfo_t));
@@ -1530,20 +1555,20 @@ static size_t ElfNoteSectionSize(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
  * Write the note section for the given era into the core file.
  * Solaris has two types of program  header information (new and old).
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  * @param enmType           Type of core file information required.
  *
  * @return IPRT status code.
  */
-static int ElfWriteNoteSection(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
+static int ElfWriteNoteSection(PRTSOLCORE pSolCore, RTSOLCORETYPE enmType)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
     int rc = VERR_GENERAL_FAILURE;
 
 #ifdef RT_OS_SOLARIS
-    typedef int (*PFNELFWRITENOTEHDR)(PVBOXCORE pVBoxCore, uint_t, const void *pcv, size_t cb);
+    typedef int (*PFNELFWRITENOTEHDR)(PRTSOLCORE pSolCore, uint_t, const void *pcv, size_t cb);
     typedef struct ELFWRITENOTE
     {
         const char        *pszType;
@@ -1558,14 +1583,14 @@ static int ElfWriteNoteSection(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
         {
             ELFWRITENOTE aElfNotes[] =
             {
-                { "NT_PRPSINFO", NT_PRPSINFO, &pVBoxProc->ProcInfoOld,  sizeof(prpsinfo_t) },
-                { "NT_AUXV",     NT_AUXV,      pVBoxProc->pAuxVecs,      pVBoxProc->cAuxVecs * sizeof(auxv_t) },
-                { "NT_PLATFORM", NT_PLATFORM,  pVBoxProc->szPlatform,    strlen(pVBoxProc->szPlatform) + 1 }
+                { "NT_PRPSINFO", NT_PRPSINFO, &pSolProc->ProcInfoOld,  sizeof(prpsinfo_t) },
+                { "NT_AUXV",     NT_AUXV,      pSolProc->pAuxVecs,      pSolProc->cAuxVecs * sizeof(auxv_t) },
+                { "NT_PLATFORM", NT_PLATFORM,  pSolProc->szPlatform,    strlen(pSolProc->szPlatform) + 1 }
             };
 
             for (unsigned i = 0; i < RT_ELEMENTS(aElfNotes); i++)
             {
-                rc = ElfWriteNoteHeader(pVBoxCore, aElfNotes[i].Type, aElfNotes[i].pcv, aElfNotes[i].cb);
+                rc = ElfWriteNoteHeader(pSolCore, aElfNotes[i].Type, aElfNotes[i].pcv, aElfNotes[i].cb);
                 if (RT_FAILURE(rc))
                 {
                     CORELOGRELSYS((CORELOG_NAME "ElfWriteNoteSection: ElfWriteNoteHeader failed for %s. rc=%Rrc\n", aElfNotes[i].pszType, rc));
@@ -1577,18 +1602,18 @@ static int ElfWriteNoteSection(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
              * Write old-style thread info., they contain nothing about zombies,
              * so we just skip if there is no status information for them.
              */
-            PVBOXSOLTHREADINFO pThreadInfo = pVBoxProc->pThreadInfoHead;
+            PRTSOLCORETHREADINFO pThreadInfo = pSolProc->pThreadInfoHead;
             for (; pThreadInfo; pThreadInfo = pThreadInfo->pNext)
             {
                 if (!pThreadInfo->pStatus)
                     continue;
 
                 prstatus_t OldProcessStatus;
-                GetOldProcessStatus(pVBoxCore, &pThreadInfo->Info, pThreadInfo->pStatus, &OldProcessStatus);
-                rc = ElfWriteNoteHeader(pVBoxCore, NT_PRSTATUS, &OldProcessStatus, sizeof(prstatus_t));
+                GetOldProcessStatus(pSolCore, &pThreadInfo->Info, pThreadInfo->pStatus, &OldProcessStatus);
+                rc = ElfWriteNoteHeader(pSolCore, NT_PRSTATUS, &OldProcessStatus, sizeof(prstatus_t));
                 if (RT_SUCCESS(rc))
                 {
-                    rc = ElfWriteNoteHeader(pVBoxCore, NT_PRFPREG, &pThreadInfo->pStatus->pr_fpreg, sizeof(prfpregset_t));
+                    rc = ElfWriteNoteHeader(pSolCore, NT_PRFPREG, &pThreadInfo->pStatus->pr_fpreg, sizeof(prfpregset_t));
                     if (RT_FAILURE(rc))
                     {
                         CORELOGRELSYS((CORELOG_NAME "ElfWriteSegment: ElfWriteNote failed for NT_PRFPREF. rc=%Rrc\n", rc));
@@ -1608,21 +1633,21 @@ static int ElfWriteNoteSection(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
         {
             ELFWRITENOTE aElfNotes[] =
             {
-                { "NT_PSINFO",     NT_PSINFO,     &pVBoxProc->ProcInfo,     sizeof(psinfo_t) },
-                { "NT_PSTATUS",    NT_PSTATUS,    &pVBoxProc->ProcStatus,   sizeof(pstatus_t) },
-                { "NT_AUXV",       NT_AUXV,        pVBoxProc->pAuxVecs,     pVBoxProc->cAuxVecs * sizeof(auxv_t) },
-                { "NT_PLATFORM",   NT_PLATFORM,    pVBoxProc->szPlatform,   strlen(pVBoxProc->szPlatform) + 1 },
-                { "NT_UTSNAME",    NT_UTSNAME,    &pVBoxProc->UtsName,      sizeof(struct utsname) },
-                { "NT_CONTENT",    NT_CONTENT,    &pVBoxProc->CoreContent,  sizeof(core_content_t) },
-                { "NT_PRCRED",     NT_PRCRED,      pVBoxProc->pvCred,       pVBoxProc->cbCred },
-                { "NT_PRPRIV",     NT_PRPRIV,      pVBoxProc->pPriv,        PRIV_PRPRIV_SIZE(pVBoxProc->pPriv) },
-                { "NT_PRPRIVINFO", NT_PRPRIVINFO,  pVBoxProc->pcPrivImpl,   PRIV_IMPL_INFO_SIZE(pVBoxProc->pcPrivImpl) },
-                { "NT_ZONENAME",   NT_ZONENAME,    pVBoxProc->szZoneName,   strlen(pVBoxProc->szZoneName) + 1 }
+                { "NT_PSINFO",     NT_PSINFO,     &pSolProc->ProcInfo,     sizeof(psinfo_t) },
+                { "NT_PSTATUS",    NT_PSTATUS,    &pSolProc->ProcStatus,   sizeof(pstatus_t) },
+                { "NT_AUXV",       NT_AUXV,        pSolProc->pAuxVecs,     pSolProc->cAuxVecs * sizeof(auxv_t) },
+                { "NT_PLATFORM",   NT_PLATFORM,    pSolProc->szPlatform,   strlen(pSolProc->szPlatform) + 1 },
+                { "NT_UTSNAME",    NT_UTSNAME,    &pSolProc->UtsName,      sizeof(struct utsname) },
+                { "NT_CONTENT",    NT_CONTENT,    &pSolProc->CoreContent,  sizeof(core_content_t) },
+                { "NT_PRCRED",     NT_PRCRED,      pSolProc->pvCred,       pSolProc->cbCred },
+                { "NT_PRPRIV",     NT_PRPRIV,      pSolProc->pPriv,        PRIV_PRPRIV_SIZE(pSolProc->pPriv) },
+                { "NT_PRPRIVINFO", NT_PRPRIVINFO,  pSolProc->pcPrivImpl,   PRIV_IMPL_INFO_SIZE(pSolProc->pcPrivImpl) },
+                { "NT_ZONENAME",   NT_ZONENAME,    pSolProc->szZoneName,   strlen(pSolProc->szZoneName) + 1 }
             };
 
             for (unsigned i = 0; i < RT_ELEMENTS(aElfNotes); i++)
             {
-                rc = ElfWriteNoteHeader(pVBoxCore, aElfNotes[i].Type, aElfNotes[i].pcv, aElfNotes[i].cb);
+                rc = ElfWriteNoteHeader(pSolCore, aElfNotes[i].Type, aElfNotes[i].pcv, aElfNotes[i].cb);
                 if (RT_FAILURE(rc))
                 {
                     CORELOGRELSYS((CORELOG_NAME "ElfWriteNoteSection: ElfWriteNoteHeader failed for %s. rc=%Rrc\n", aElfNotes[i].pszType, rc));
@@ -1634,10 +1659,10 @@ static int ElfWriteNoteSection(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
              * Write new-style thread info., missing lwpstatus_t indicates it's a zombie thread
              * we only dump the lwpsinfo_t in that case.
              */
-            PVBOXSOLTHREADINFO pThreadInfo = pVBoxProc->pThreadInfoHead;
+            PRTSOLCORETHREADINFO pThreadInfo = pSolProc->pThreadInfoHead;
             for (; pThreadInfo; pThreadInfo = pThreadInfo->pNext)
             {
-                rc = ElfWriteNoteHeader(pVBoxCore, NT_LWPSINFO, &pThreadInfo->Info, sizeof(lwpsinfo_t));
+                rc = ElfWriteNoteHeader(pSolCore, NT_LWPSINFO, &pThreadInfo->Info, sizeof(lwpsinfo_t));
                 if (RT_FAILURE(rc))
                 {
                     CORELOGRELSYS((CORELOG_NAME "ElfWriteNoteSection: ElfWriteNoteHeader for NT_LWPSINFO failed. rc=%Rrc\n", rc));
@@ -1646,7 +1671,7 @@ static int ElfWriteNoteSection(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
 
                 if (pThreadInfo->pStatus)
                 {
-                    rc = ElfWriteNoteHeader(pVBoxCore, NT_LWPSTATUS, pThreadInfo->pStatus, sizeof(lwpstatus_t));
+                    rc = ElfWriteNoteHeader(pSolCore, NT_LWPSTATUS, pThreadInfo->pStatus, sizeof(lwpstatus_t));
                     if (RT_FAILURE(rc))
                     {
                         CORELOGRELSYS((CORELOG_NAME "ElfWriteNoteSection: ElfWriteNoteHeader for NT_LWPSTATUS failed. rc=%Rrc\n", rc));
@@ -1674,16 +1699,16 @@ static int ElfWriteNoteSection(PVBOXCORE pVBoxCore, VBOXSOLCORETYPE enmType)
 /**
  * Write mappings into the core file.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @return IPRT status code.
  */
-static int ElfWriteMappings(PVBOXCORE pVBoxCore)
+static int ElfWriteMappings(PRTSOLCORE pSolCore)
 {
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
 
     int rc = VERR_GENERAL_FAILURE;
-    PVBOXSOLMAPINFO pMapInfo = pVBoxProc->pMapInfoHead;
+    PRTSOLCOREMAPINFO pMapInfo = pSolProc->pMapInfoHead;
     while (pMapInfo)
     {
         if (!pMapInfo->fError)
@@ -1693,14 +1718,14 @@ static int ElfWriteMappings(PVBOXCORE pVBoxCore)
             while (k < pMapInfo->pMap.pr_size)
             {
                 size_t cb = RT_MIN(sizeof(achBuf), pMapInfo->pMap.pr_size - k);
-                int rc2 = ProcReadAddrSpace(pVBoxProc, pMapInfo->pMap.pr_vaddr + k, &achBuf, cb);
+                int rc2 = ProcReadAddrSpace(pSolProc, pMapInfo->pMap.pr_vaddr + k, &achBuf, cb);
                 if (RT_FAILURE(rc2))
                 {
                     CORELOGRELSYS((CORELOG_NAME "ElfWriteMappings: Failed to read mapping, can't recover. Bye. rc=%Rrc\n", rc));
                     return VERR_INVALID_STATE;
                 }
 
-                rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, achBuf, sizeof(achBuf));
+                rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, achBuf, sizeof(achBuf));
                 if (RT_FAILURE(rc))
                 {
                     CORELOGRELSYS((CORELOG_NAME "ElfWriteMappings: pfnWriter failed. rc=%Rrc\n", rc));
@@ -1716,7 +1741,7 @@ static int ElfWriteMappings(PVBOXCORE pVBoxCore)
             memcpy(achBuf, &pMapInfo->fError, sizeof(pMapInfo->fError));
             if (sizeof(achBuf) != pMapInfo->pMap.pr_size)
                 CORELOGRELSYS((CORELOG_NAME "ElfWriteMappings: Huh!? something is wrong!\n"));
-            rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, &achBuf, sizeof(achBuf));
+            rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, &achBuf, sizeof(achBuf));
             if (RT_FAILURE(rc))
             {
                 CORELOGRELSYS((CORELOG_NAME "ElfWriteMappings: pfnWriter(2) failed. rc=%Rrc\n", rc));
@@ -1734,25 +1759,25 @@ static int ElfWriteMappings(PVBOXCORE pVBoxCore)
 /**
  * Write program headers for all mappings into the core file.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @return IPRT status code.
  */
-static int ElfWriteMappingHeaders(PVBOXCORE pVBoxCore)
+static int ElfWriteMappingHeaders(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
     Elf_Phdr ProgHdr;
     RT_ZERO(ProgHdr);
     ProgHdr.p_type = PT_LOAD;
 
     int rc = VERR_GENERAL_FAILURE;
-    PVBOXSOLMAPINFO pMapInfo = pVBoxProc->pMapInfoHead;
+    PRTSOLCOREMAPINFO pMapInfo = pSolProc->pMapInfoHead;
     while (pMapInfo)
     {
         ProgHdr.p_vaddr  = pMapInfo->pMap.pr_vaddr;     /* Virtual address of this mapping in the process address space */
-        ProgHdr.p_offset = pVBoxCore->offWrite;         /* Where this mapping is located in the core file */
+        ProgHdr.p_offset = pSolCore->offWrite;         /* Where this mapping is located in the core file */
         ProgHdr.p_memsz  = pMapInfo->pMap.pr_size;      /* Size of the memory image of the mapping */
         ProgHdr.p_filesz = pMapInfo->pMap.pr_size;      /* Size of the file image of the mapping */
 
@@ -1767,14 +1792,14 @@ static int ElfWriteMappingHeaders(PVBOXCORE pVBoxCore)
         if (pMapInfo->fError)
             ProgHdr.p_flags |= PF_SUNW_FAILURE;
 
-        rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, &ProgHdr, sizeof(ProgHdr));
+        rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, &ProgHdr, sizeof(ProgHdr));
         if (RT_FAILURE(rc))
         {
             CORELOGRELSYS((CORELOG_NAME "ElfWriteMappingHeaders: pfnWriter failed. rc=%Rrc\n", rc));
             return rc;
         }
 
-        pVBoxCore->offWrite += ProgHdr.p_filesz;
+        pSolCore->offWrite += ProgHdr.p_filesz;
         pMapInfo = pMapInfo->pNext;
     }
     return rc;
@@ -1785,31 +1810,31 @@ static int ElfWriteMappingHeaders(PVBOXCORE pVBoxCore)
  * Write a prepared core file using a user-passed in writer function, requires all threads
  * to be in suspended state (i.e. called after CreateCore).
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  * @param pfnWriter         Pointer to the writer function to override default writer (NULL uses default).
  *
  * @remarks Resumes all suspended threads, unless it's an invalid core. This
  *          function must be called only -after- rtCoreDumperCreateCore().
- * @return VBox status.
+ * @return IPRT status.
  */
-static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
+static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
 
-    if (!pVBoxCore->fIsValid)
+    if (!pSolCore->fIsValid)
         return VERR_INVALID_STATE;
 
     if (pfnWriter)
-        pVBoxCore->pfnWriter = pfnWriter;
+        pSolCore->pfnWriter = pfnWriter;
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
     char szPath[PATH_MAX];
     int rc = VINF_SUCCESS;
 
     /*
      * Open the process address space file.
      */
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pVBoxProc->Process);
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pSolProc->Process);
     int fd = open(szPath, O_RDONLY);
     if (fd < 0)
     {
@@ -1818,23 +1843,23 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
         goto WriteCoreDone;
     }
 
-    pVBoxProc->hAs = (RTFILE)(uintptr_t)fd;
+    pSolProc->fdAs = fd;
 
     /*
      * Create the core file.
      */
-    fd = open(pVBoxCore->szCorePath, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR);
+    fd = open(pSolCore->szCorePath, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR);
     if (fd < 0)
     {
         rc = RTErrConvertFromErrno(fd);
-        CORELOGRELSYS((CORELOG_NAME "WriteCore: failed to open %s. rc=%Rrc\n", pVBoxCore->szCorePath, rc));
+        CORELOGRELSYS((CORELOG_NAME "WriteCore: failed to open %s. rc=%Rrc\n", pSolCore->szCorePath, rc));
         goto WriteCoreDone;
     }
 
-    pVBoxCore->hCoreFile = (RTFILE)(uintptr_t)fd;
+    pSolCore->fdCoreFile = fd;
 
-    pVBoxCore->offWrite = 0;
-    uint32_t cProgHdrs  = pVBoxProc->cMappings + 2; /* two PT_NOTE program headers (old, new style) */
+    pSolCore->offWrite = 0;
+    uint32_t cProgHdrs  = pSolProc->cMappings + 2; /* two PT_NOTE program headers (old, new style) */
 
     /*
      * Write the ELF header.
@@ -1863,7 +1888,7 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     ElfHdr.e_phoff           = sizeof(ElfHdr);
     ElfHdr.e_phentsize       = sizeof(Elf_Phdr);
     ElfHdr.e_shentsize       = sizeof(Elf_Shdr);
-    rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, &ElfHdr, sizeof(ElfHdr));
+    rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, &ElfHdr, sizeof(ElfHdr));
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: pfnWriter failed writing ELF header. rc=%Rrc\n", rc));
@@ -1881,10 +1906,10 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Write old-style NOTE program header.
      */
-    pVBoxCore->offWrite += sizeof(ElfHdr) + cProgHdrs * sizeof(ProgHdr);
-    ProgHdr.p_offset = pVBoxCore->offWrite;
-    ProgHdr.p_filesz = ElfNoteSectionSize(pVBoxCore, enmOldEra);
-    rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, &ProgHdr, sizeof(ProgHdr));
+    pSolCore->offWrite += sizeof(ElfHdr) + cProgHdrs * sizeof(ProgHdr);
+    ProgHdr.p_offset = pSolCore->offWrite;
+    ProgHdr.p_filesz = ElfNoteSectionSize(pSolCore, enmOldEra);
+    rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, &ProgHdr, sizeof(ProgHdr));
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: pfnWriter failed writing old-style ELF program Header. rc=%Rrc\n", rc));
@@ -1894,10 +1919,10 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Write new-style NOTE program header.
      */
-    pVBoxCore->offWrite += ProgHdr.p_filesz;
-    ProgHdr.p_offset = pVBoxCore->offWrite;
-    ProgHdr.p_filesz = ElfNoteSectionSize(pVBoxCore, enmNewEra);
-    rc = pVBoxCore->pfnWriter(pVBoxCore->hCoreFile, &ProgHdr, sizeof(ProgHdr));
+    pSolCore->offWrite += ProgHdr.p_filesz;
+    ProgHdr.p_offset = pSolCore->offWrite;
+    ProgHdr.p_filesz = ElfNoteSectionSize(pSolCore, enmNewEra);
+    rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, &ProgHdr, sizeof(ProgHdr));
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: pfnWriter failed writing new-style ELF program header. rc=%Rrc\n", rc));
@@ -1907,8 +1932,8 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Write program headers per mapping.
      */
-    pVBoxCore->offWrite += ProgHdr.p_filesz;
-    rc = ElfWriteMappingHeaders(pVBoxCore);
+    pSolCore->offWrite += ProgHdr.p_filesz;
+    rc = ElfWriteMappingHeaders(pSolCore);
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "Write: ElfWriteMappings failed. rc=%Rrc\n", rc));
@@ -1918,7 +1943,7 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Write old-style note section.
      */
-    rc = ElfWriteNoteSection(pVBoxCore, enmOldEra);
+    rc = ElfWriteNoteSection(pSolCore, enmOldEra);
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: ElfWriteNoteSection old-style failed. rc=%Rrc\n", rc));
@@ -1928,7 +1953,7 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Write new-style section.
      */
-    rc = ElfWriteNoteSection(pVBoxCore, enmNewEra);
+    rc = ElfWriteNoteSection(pSolCore, enmNewEra);
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: ElfWriteNoteSection new-style failed. rc=%Rrc\n", rc));
@@ -1938,7 +1963,7 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
     /*
      * Write all mappings.
      */
-    rc = ElfWriteMappings(pVBoxCore);
+    rc = ElfWriteMappings(pSolCore);
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: ElfWriteMappings failed. rc=%Rrc\n", rc));
@@ -1947,19 +1972,19 @@ static int rtCoreDumperWriteCore(PVBOXCORE pVBoxCore, PFNCOREWRITER pfnWriter)
 
 
 WriteCoreDone:
-    if (pVBoxCore->hCoreFile != NIL_RTFILE)     /* Initialized in rtCoreDumperCreateCore() */
+    if (pSolCore->fdCoreFile != -1)     /* Initialized in rtCoreDumperCreateCore() */
     {
-        RTFileClose(pVBoxCore->hCoreFile);
-        pVBoxCore->hCoreFile = NIL_RTFILE;
+        close(pSolCore->fdCoreFile);
+        pSolCore->fdCoreFile = -1;
     }
 
-    if (pVBoxProc->hAs != NIL_RTFILE)           /* Initialized in rtCoreDumperCreateCore() */
+    if (pSolProc->fdAs != -1)           /* Initialized in rtCoreDumperCreateCore() */
     {
-        RTFileClose(pVBoxProc->hAs);
-        pVBoxProc->hAs = NIL_RTFILE;
+        close(pSolProc->fdAs);
+        pSolProc->fdAs = -1;
     }
 
-    rtCoreDumperResumeThreads(pVBoxCore);
+    rtCoreDumperResumeThreads(pSolCore);
     return rc;
 }
 
@@ -1969,7 +1994,7 @@ WriteCoreDone:
  * all threads which can lead to things like spurious wakeups of threads (if and when threads
  * are ultimately resumed en-masse) already suspended while calling this function.
  *
- * @param pVBoxCore         Pointer to a core object.
+ * @param pSolCore          Pointer to a core object.
  * @param pContext          Pointer to the caller context thread.
  * @param pszCoreFilePath   Path to the core file. If NULL is passed, the global
  *                          path specified in RTCoreDumperSetup() would be used.
@@ -1977,29 +2002,29 @@ WriteCoreDone:
  * @remarks Halts all threads.
  * @return IPRT status code.
  */
-static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext, const char *pszCoreFilePath)
+static int rtCoreDumperCreateCore(PRTSOLCORE pSolCore, ucontext_t *pContext, const char *pszCoreFilePath)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
     AssertReturn(pContext, VERR_INVALID_POINTER);
 
     /*
      * Initialize core structures.
      */
-    memset(pVBoxCore, 0, sizeof(VBOXCORE));
-    pVBoxCore->pfnReader = &ReadFileNoIntr;
-    pVBoxCore->pfnWriter = &WriteFileNoIntr;
-    pVBoxCore->fIsValid  = false;
-    pVBoxCore->hCoreFile = NIL_RTFILE;
+    memset(pSolCore, 0, sizeof(RTSOLCORE));
+    pSolCore->pfnReader = &ReadFileNoIntr;
+    pSolCore->pfnWriter = &WriteFileNoIntr;
+    pSolCore->fIsValid  = false;
+    pSolCore->fdCoreFile = -1;
 
-    PVBOXPROCESS pVBoxProc = &pVBoxCore->VBoxProc;
-    pVBoxProc->Process        = RTProcSelf();
-    pVBoxProc->hCurThread     = _lwp_self(); /* thr_self() */
-    pVBoxProc->hAs            = NIL_RTFILE;
-    pVBoxProc->pCurThreadCtx  = pContext;
-    pVBoxProc->CoreContent    = CC_CONTENT_DEFAULT;
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
+    pSolProc->Process        = RTProcSelf();
+    pSolProc->hCurThread     = _lwp_self(); /* thr_self() */
+    pSolProc->fdAs           = -1;
+    pSolProc->pCurThreadCtx  = pContext;
+    pSolProc->CoreContent    = CC_CONTENT_DEFAULT;
 
-    RTProcGetExecutablePath(pVBoxProc->szExecPath, sizeof(pVBoxProc->szExecPath));  /* this gets full path not just name */
-    pVBoxProc->pszExecName = RTPathFilename(pVBoxProc->szExecPath);
+    RTProcGetExecutablePath(pSolProc->szExecPath, sizeof(pSolProc->szExecPath));  /* this gets full path not just name */
+    pSolProc->pszExecName = RTPathFilename(pSolProc->szExecPath);
 
     /*
      * If a path has been specified, use it. Otherwise use the global path.
@@ -2015,42 +2040,42 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext, con
         if (g_szCoreDumpFile[0] == '\0')
         {
             /* We cannot call RTPathAbs*() as they call getcwd() which calls malloc. */
-            RTStrPrintf(pVBoxCore->szCorePath, sizeof(pVBoxCore->szCorePath), "%s/core.vb.%s.%d",
-                        g_szCoreDumpDir, pVBoxProc->pszExecName, (int)pVBoxProc->Process);
+            RTStrPrintf(pSolCore->szCorePath, sizeof(pSolCore->szCorePath), "%s/core.vb.%s.%d",
+                        g_szCoreDumpDir, pSolProc->pszExecName, (int)pSolProc->Process);
         }
         else
-            RTStrPrintf(pVBoxCore->szCorePath, sizeof(pVBoxCore->szCorePath), "%s/core.vb.%s", g_szCoreDumpDir, g_szCoreDumpFile);
+            RTStrPrintf(pSolCore->szCorePath, sizeof(pSolCore->szCorePath), "%s/core.vb.%s", g_szCoreDumpDir, g_szCoreDumpFile);
     }
     else
-        RTStrCopy(pVBoxCore->szCorePath, sizeof(pVBoxCore->szCorePath), pszCoreFilePath);
+        RTStrCopy(pSolCore->szCorePath, sizeof(pSolCore->szCorePath), pszCoreFilePath);
 
-    CORELOG((CORELOG_NAME  "CreateCore: Taking Core %s from Thread %d\n", pVBoxCore->szCorePath, (int)pVBoxProc->hCurThread));
+    CORELOG((CORELOG_NAME  "CreateCore: Taking Core %s from Thread %d\n", pSolCore->szCorePath, (int)pSolProc->hCurThread));
 
     /*
      * Quiesce the process.
      */
-    int rc = rtCoreDumperSuspendThreads(pVBoxCore);
+    int rc = rtCoreDumperSuspendThreads(pSolCore);
     if (RT_SUCCESS(rc))
     {
-        rc = ProcReadInfo(pVBoxCore);
+        rc = ProcReadInfo(pSolCore);
         if (RT_SUCCESS(rc))
         {
-            GetOldProcessInfo(pVBoxCore, &pVBoxProc->ProcInfoOld);
-            if (IsProcessArchNative(pVBoxProc))
+            GetOldProcessInfo(pSolCore, &pSolProc->ProcInfoOld);
+            if (IsProcessArchNative(pSolProc))
             {
                 /*
                  * Read process status, information such as number of active LWPs will be invalid since we just quiesced the process.
                  */
-                rc = ProcReadStatus(pVBoxCore);
+                rc = ProcReadStatus(pSolCore);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = AllocMemoryArea(pVBoxCore);
+                    rc = AllocMemoryArea(pSolCore);
                     if (RT_SUCCESS(rc))
                     {
                         struct COREACCUMULATOR
                         {
                             const char        *pszName;
-                            PFNCOREACCUMULATOR pfnAcc;
+                            PFNRTSOLCOREACCUMULATOR pfnAcc;
                             bool               fOptional;
                         } aAccumulators[] =
                         {
@@ -2065,7 +2090,7 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext, con
 
                         for (unsigned i = 0; i < RT_ELEMENTS(aAccumulators); i++)
                         {
-                            rc = aAccumulators[i].pfnAcc(pVBoxCore);
+                            rc = aAccumulators[i].pfnAcc(pSolCore);
                             if (RT_FAILURE(rc))
                             {
                                 CORELOGRELSYS((CORELOG_NAME "CreateCore: %s failed. rc=%Rrc\n", aAccumulators[i].pszName, rc));
@@ -2076,11 +2101,11 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext, con
 
                         if (RT_SUCCESS(rc))
                         {
-                            pVBoxCore->fIsValid = true;
+                            pSolCore->fIsValid = true;
                             return VINF_SUCCESS;
                         }
 
-                        FreeMemoryArea(pVBoxCore);
+                        FreeMemoryArea(pSolCore);
                     }
                     else
                         CORELOGRELSYS((CORELOG_NAME "CreateCore: AllocMemoryArea failed. rc=%Rrc\n", rc));
@@ -2100,7 +2125,7 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext, con
         /*
          * Resume threads on failure.
          */
-        rtCoreDumperResumeThreads(pVBoxCore);
+        rtCoreDumperResumeThreads(pSolCore);
     }
     else
         CORELOG((CORELOG_NAME "CreateCore: SuspendAllThreads failed. Thread bomb!?! rc=%Rrc\n", rc));
@@ -2112,18 +2137,18 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext, con
 /**
  * Destroy an existing core object.
  *
- * @param pVBoxCore         Pointer to the core object.
+ * @param pSolCore          Pointer to the core object.
  *
  * @return IPRT status code.
  */
-static int rtCoreDumperDestroyCore(PVBOXCORE pVBoxCore)
+static int rtCoreDumperDestroyCore(PRTSOLCORE pSolCore)
 {
-    AssertReturn(pVBoxCore, VERR_INVALID_POINTER);
-    if (!pVBoxCore->fIsValid)
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
+    if (!pSolCore->fIsValid)
         return VERR_INVALID_STATE;
 
-    FreeMemoryArea(pVBoxCore);
-    pVBoxCore->fIsValid = false;
+    FreeMemoryArea(pSolCore);
+    pSolCore->fIsValid = false;
     return VINF_SUCCESS;
 }
 
@@ -2151,18 +2176,18 @@ static int rtCoreDumperTakeDump(ucontext_t *pContext, const char *pszOutputFile)
      * from before taking the snapshot until writing the core is completely finished.
      * Any errors would resume all threads if they were halted.
      */
-    VBOXCORE VBoxCore;
-    RT_ZERO(VBoxCore);
-    int rc = rtCoreDumperCreateCore(&VBoxCore, pContext, pszOutputFile);
+    RTSOLCORE SolCore;
+    RT_ZERO(SolCore);
+    int rc = rtCoreDumperCreateCore(&SolCore, pContext, pszOutputFile);
     if (RT_SUCCESS(rc))
     {
-        rc = rtCoreDumperWriteCore(&VBoxCore, &WriteFileNoIntr);
+        rc = rtCoreDumperWriteCore(&SolCore, &WriteFileNoIntr);
         if (RT_SUCCESS(rc))
-            CORELOGRELSYS((CORELOG_NAME "Core dumped in %s\n", VBoxCore.szCorePath));
+            CORELOGRELSYS((CORELOG_NAME "Core dumped in %s\n", SolCore.szCorePath));
         else
-            CORELOGRELSYS((CORELOG_NAME "TakeDump: WriteCore failed. szCorePath=%s rc=%Rrc\n", VBoxCore.szCorePath, rc));
+            CORELOGRELSYS((CORELOG_NAME "TakeDump: WriteCore failed. szCorePath=%s rc=%Rrc\n", SolCore.szCorePath, rc));
 
-        rtCoreDumperDestroyCore(&VBoxCore);
+        rtCoreDumperDestroyCore(&SolCore);
     }
     else
         CORELOGRELSYS((CORELOG_NAME "TakeDump: CreateCore failed. rc=%Rrc\n", rc));
