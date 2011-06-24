@@ -5683,7 +5683,8 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
         }
 
         // we must always have full paths now (if it refers to a file)
-        if (   (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
+        if (   (   m->formatObj.isNull()
+                || m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
             && !RTPathStartsWithRoot(locationFull.c_str()))
             return setError(VBOX_E_FILE_ERROR,
                             tr("The given path '%s' is not fully qualified"),
