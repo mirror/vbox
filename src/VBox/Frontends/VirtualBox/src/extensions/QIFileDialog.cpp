@@ -367,9 +367,10 @@ QString QIFileDialog::getExistingDirectory (const QString &aDir,
     QFileDialog::Options o;
 # if defined (Q_WS_X11)
     /** @todo see http://bugs.kde.org/show_bug.cgi?id=210904, make it conditional
-     *        when this bug is fixed (xtracker 5167) */
-    if (vboxGlobal().isKWinManaged())
-      o |= QFileDialog::DontUseNativeDialog;
+     *        when this bug is fixed (xtracker 5167).
+     *        Apparently not necessary anymore (xtracker 5748)! */
+//    if (vboxGlobal().isKWinManaged())
+//      o |= QFileDialog::DontUseNativeDialog;
 # endif
     if (aDirOnly)
         o |= QFileDialog::ShowDirsOnly;
@@ -581,9 +582,10 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
     QFileDialog::Options o;
 # if defined (Q_WS_X11)
     /** @todo see http://bugs.kde.org/show_bug.cgi?id=210904, make it conditional
-     *        when this bug is fixed (xtracker 5167) */
-    if (vboxGlobal().isKWinManaged())
-      o |= QFileDialog::DontUseNativeDialog;
+     *        when this bug is fixed (xtracker 5167)
+     *        Apparently not necessary anymore (xtracker 5748)! */
+//    if (vboxGlobal().isKWinManaged())
+//      o |= QFileDialog::DontUseNativeDialog;
 # endif
     if (!aResolveSymlinks)
         o |= QFileDialog::DontResolveSymlinks;
@@ -831,9 +833,10 @@ QStringList QIFileDialog::getOpenFileNames (const QString &aStartWith,
         o |= QFileDialog::DontResolveSymlinks;
 # if defined (Q_WS_X11)
     /** @todo see http://bugs.kde.org/show_bug.cgi?id=210904, make it conditional
-     *        when this bug is fixed (xtracker 5167) */
-    if (vboxGlobal().isKWinManaged())
-      o |= QFileDialog::DontUseNativeDialog;
+     *        when this bug is fixed (xtracker 5167)
+     *        Apparently not necessary anymore (xtracker 5748)! */
+//    if (vboxGlobal().isKWinManaged())
+//      o |= QFileDialog::DontUseNativeDialog;
 # endif
 
     if (aSingleFile)
