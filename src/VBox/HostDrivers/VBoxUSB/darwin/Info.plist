@@ -30,7 +30,7 @@
             <key>idVendor</key>                 <string>*</string>
             <key>idProduct</key>                <string>*</string>
             <key>bcdDevice</key>                <string>*</string>
-            <key>IOProbeScore</key>             <string>9942</string>
+            <key>IOProbeScore</key>             <integer>9942</integer>
             <key>IOProviderMergeProperties</key>
             <dict>
                 <key>IOCFPlugInTypes</key>
@@ -50,7 +50,7 @@
             <key>bcdDevice</key>                <string>*</string>
             <key>bConfigurationValue</key>      <string>*</string>
             <key>bInterfaceNumber</key>         <string>*</string>
-            <key>IOProbeScore</key>             <string>9942</string>
+            <key>IOProbeScore</key>             <integer>9942</integer>
             <key>IOProviderMergeProperties</key>
             <dict>
                 <key>IOCFPlugInTypes</key>
