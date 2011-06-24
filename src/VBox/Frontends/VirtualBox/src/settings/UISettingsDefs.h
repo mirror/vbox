@@ -156,7 +156,7 @@ private:
             if (iChildIndex == iIndex)
                 return childIterator.key();
         }
-        return QString::number(iIndex);
+        return QString("%1").arg(iIndex, 8 /* up to 8 digits */, 10 /* base */, QChar('0') /* filler */);
     }
 
     /* Children: */
