@@ -576,7 +576,7 @@ const static struct stIchIntelHDRegMap
     { 0x00020, 0x00004, 0xC00000FF, 0xC00000FF, hdaRegReadU32          , hdaRegWriteU32          , "INTCTL"    , "Interrupt Control" },
     { 0x00024, 0x00004, 0xC00000FF, 0x00000000, hdaRegReadINTSTS       , hdaRegWriteUnimplemented, "INTSTS"    , "Interrupt Status" },
     { 0x00030, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadWALCLK       , hdaRegWriteUnimplemented, "WALCLK"    , "Wall Clock Counter" },
-    //** @todo r=michaln: Doesn't the SSYNC register need to actually stop the stream(s)?
+    /// @todo r=michaln: Doesn't the SSYNC register need to actually stop the stream(s)?
     { 0x00034, 0x00004, 0x000000FF, 0x000000FF, hdaRegReadU32          , hdaRegWriteU32          , "SSYNC"     , "Stream Synchronization" },
     { 0x00040, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteBase         , "CORBLBASE" , "CORB Lower Base Address" },
     { 0x00044, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase         , "CORBUBASE" , "CORB Upper Base Address" },
@@ -734,9 +734,9 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
 
 static int hdaLookup(INTELHDLinkState* pState, uint32_t u32Offset)
 {
-    int index = 0;
-    //** @todo r=michaln: A linear search of an array with over 100 elements is very inefficient.
-    for (;index < (int)(sizeof(s_ichIntelHDRegMap)/sizeof(s_ichIntelHDRegMap[0])); ++index)
+    /// @todo r=michaln: A linear search of an array with over 100 elements is very inefficient.
+    /** @todo r=bird: Do a binary search, the array is sorted. */
+    for (int index = 0; index < (int)RT_ELEMENTS(s_ichIntelHDRegMap); ++index)
     {
         if (   u32Offset >= s_ichIntelHDRegMap[index].offset
             && u32Offset < s_ichIntelHDRegMap[index].offset + s_ichIntelHDRegMap[index].size)
@@ -1868,6 +1868,9 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
     if (index != -1)
     {
+        /** @todo r=bird: Accesses crossing register boundraries aren't handled
+         *        right from what I can tell?  If they are, please explain
+         *        what the rules are. */
         uint32_t mask = 0;
         uint32_t shift = (u32Offset - s_ichIntelHDRegMap[index].offset) % sizeof(uint32_t) * 8;
         uint32_t v = 0;
@@ -1885,7 +1888,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
         return rc;
     }
     *(uint32_t *)pv = 0xFF;
-    Log(("hda: hole at %X is accessed for read\n", u32Offset));
+    Log(("hda: hole at %x is accessed for read\n", u32Offset));
     return rc;
 }
 
@@ -1904,39 +1907,67 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
  */
 PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    int rc = VINF_SUCCESS;
-    PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    uint32_t  u32Offset = GCPhysAddr - pThis->hda.addrMMReg;
-    int index = hdaLookup(&pThis->hda, u32Offset);
+    PCIINTELHDLinkState    *pThis     = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
+    uint32_t                offReg    = GCPhysAddr - pThis->hda.addrMMReg;
+    int                     idxReg    = hdaLookup(&pThis->hda, offReg);
+    int                     rc        = VINF_SUCCESS;
 
-    if (pThis->hda.fInReset && index != ICH6_HDA_REG_GCTL)
+    if (pThis->hda.fInReset && idxReg != ICH6_HDA_REG_GCTL)
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
 
-    if (   index == -1
-           || cb > 4)
-        LogRel(("hda: Invalid write access @0x%x(of bytes:%d)\n", u32Offset, cb));
+    if (   idxReg == -1
+        || cb > 4)
+        LogRel(("hda: Invalid write access @0x%x(of bytes:%d)\n", offReg, cb));
 
-    if (index != -1)
+    if (idxReg != -1)
     {
-        /** @todo r=bird: What is all this masking and shifting about? And
-         *        WHY ON EARTH are you writing to the input data?!? */
-        uint32_t v = pThis->hda.au32Regs[index];
-        uint32_t mask = 0;
-        uint32_t shift = (u32Offset - s_ichIntelHDRegMap[index].offset) % sizeof(uint32_t) * 8;
-        switch(cb)
+        /** @todo r=bird: This looks like code for handling unalinged register
+         * accesses.  If it isn't then, add a comment explaing what you're
+         * trying to do here.  OTOH, if it is then it has the following
+         * issues:
+         *      -# You're calculating the wrong new value for the register.
+         *      -# You're not handling cross register accesses.  Imagine a
+         *       4-byte write starting at CORBCTL, or a 8-byte write.
+         *
+         * PS! consider dropping the 'offset' argument to pfnWrite/pfnRead as
+         * nobody seems to be using it and it just add complexity when reading
+         * the code.
+         *
+         * PPS. 'v' is not a very good variable name.
+         * PPPS. We don't do 3 byte writes, only 1, 2, 4 and 8.
+         */
+        uint32_t u32CurValue = pThis->hda.au32Regs[idxReg];
+        uint32_t u32NewValue;
+        uint32_t mask;
+        switch (cb)
         {
-            case 1: mask = 0xffffff00; break;
-            case 2: mask = 0xffff0000; break;
-            case 3: mask = 0xff000000; break;
-            case 4: mask = 0x00000000; break;
+            case 1:
+                u32NewValue = *(uint8_t const *)pv;
+                mask = 0xffffff00;
+                break;
+            case 2:
+                u32NewValue = *(uint16_t const *)pv;
+                mask = 0xffff0000;
+                break;
+            case 4:
+            case 8: /** @todo r=bird: Add a line about why 8-byte accesses are handled like 4-byte ones. */
+                u32NewValue = *(uint32_t const *)pv;
+                mask = 0;
+                break;
+            default:
+                AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* shall not happen. */
         }
+        uint32_t shift = (offReg - s_ichIntelHDRegMap[idxReg].offset) % sizeof(uint32_t) * 8;
         mask <<= shift;
-        *(uint32_t *)pv = ((v & mask) | (*(uint32_t *)pv & ~mask)) >> shift;
-        rc = s_ichIntelHDRegMap[index].pfnWrite(&pThis->hda, u32Offset, index, *(uint32_t *)pv);
-        Log(("hda: write %s:(%x) %x => %x\n", s_ichIntelHDRegMap[index].abbrev, *(uint32_t *)pv, v, pThis->hda.au32Regs[index]));
+        u32NewValue = ((u32CurValue & mask) | (u32NewValue & ~mask)) >> shift;
+
+        rc = s_ichIntelHDRegMap[idxReg].pfnWrite(&pThis->hda, offReg, idxReg, u32NewValue);
+        Log(("hda: write %s:(%x) %x => %x\n", s_ichIntelHDRegMap[idxReg].abbrev, u32NewValue,
+             u32CurValue, pThis->hda.au32Regs[idxReg]));
         return rc;
     }
-    Log(("hda: hole at %X is accessed for write\n", u32Offset));
+
+    Log(("hda: hole at %x is accessed for write\n", offReg));
     return rc;
 }
 
@@ -2383,7 +2414,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetCapabilityList     (&pThis->dev, 0x50);   /* ICH6 datasheet 18.1.16 */
 #endif
 
-    //** @todo r=michaln: If there are really no PCIDevSetXx for these, the meaning
+    /// @todo r=michaln: If there are really no PCIDevSetXx for these, the meaning
     // of these values needs to be properly documented!
     /* HDCTL off 0x40 bit 0 selects signaling mode (1-HDA, 0 - Ac97) 18.1.19 */
     PCIDevSetByte(&pThis->dev, 0x40, 0x01);
