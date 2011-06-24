@@ -2873,75 +2873,7 @@ STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
                                   IN_BSTR aUserName, IN_BSTR aPassword,
                                   ULONG aFlags, IProgress **aProgress)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else /* VBOX_WITH_GUEST_CONTROL */
-    CheckComArgStrNotEmptyOrNull(aSource);
-    CheckComArgStrNotEmptyOrNull(aDest);
-    CheckComArgStrNotEmptyOrNull(aUserName);
-    CheckComArgStrNotEmptyOrNull(aPassword);
-    CheckComArgOutPointerValid(aProgress);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* Validate flags. */
-    if (aFlags != CopyFileFlag_None)
-    {
-        if (   !(aFlags & CopyFileFlag_Recursive)
-            && !(aFlags & CopyFileFlag_Update)
-            && !(aFlags & CopyFileFlag_FollowLinks))
-        {
-            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
-        }
-    }
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = S_OK;
-
-    ComObjPtr<Progress> progress;
-    try
-    {
-        /* Create the progress object. */
-        progress.createObject();
-
-        rc = progress->init(static_cast<IGuest*>(this),
-                            Bstr(tr("Copying file from guest to host")).raw(),
-                            TRUE /* aCancelable */);
-        if (FAILED(rc)) throw rc;
-
-        /* Initialize our worker task. */
-        TaskGuest *pTask = new TaskGuest(TaskGuest::CopyFileFromGuest, this, progress);
-        AssertPtr(pTask);
-        std::auto_ptr<TaskGuest> task(pTask);
-
-        /* Assign data - aSource is the source file on the guest,
-         * aDest reflects the full path on the host. */
-        task->strSource   = (Utf8Str(aSource));
-        task->strDest     = (Utf8Str(aDest));
-        task->strUserName = (Utf8Str(aUserName));
-        task->strPassword = (Utf8Str(aPassword));
-        task->uFlags      = aFlags;
-
-        rc = task->startThread();
-        if (FAILED(rc)) throw rc;
-
-        /* Don't destruct on success. */
-        task.release();
-    }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
-
-    if (SUCCEEDED(rc))
-    {
-        /* Return progress to the caller. */
-        progress.queryInterfaceTo(aProgress);
-    }
-    return rc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
@@ -3021,13 +2953,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 
 STDMETHODIMP Guest::DirectoryClose(ULONG aHandle)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else /* VBOX_WITH_GUEST_CONTROL */
-    using namespace guestControl;
-
-    return VBOX_E_NOT_SUPPORTED;
-#endif
 }
 
 STDMETHODIMP Guest::DirectoryCreate(IN_BSTR aDirectory,
@@ -3164,24 +3090,12 @@ STDMETHODIMP Guest::DirectoryOpen(IN_BSTR aDirectory, IN_BSTR aFilter,
                                   ULONG aFlags, IN_BSTR aUserName, IN_BSTR aPassword,
                                   ULONG *aHandle)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else /* VBOX_WITH_GUEST_CONTROL */
-    using namespace guestControl;
-
-    return VBOX_E_NOT_SUPPORTED;
-#endif
 }
 
 STDMETHODIMP Guest::DirectoryRead(ULONG aHandle, IGuestDirEntry **aDirEntry)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else /* VBOX_WITH_GUEST_CONTROL */
-    using namespace guestControl;
-
-    return VBOX_E_NOT_SUPPORTED;
-#endif
 }
 
 STDMETHODIMP Guest::FileExists(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists)
