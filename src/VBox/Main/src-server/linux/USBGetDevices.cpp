@@ -1480,6 +1480,11 @@ static PUSBDEVICE testGetUsbfsDevices(const char *pcszUsbfsRoot, bool testfs)
 }
 # define getDevicesFromUsbfs testGetUsbfsDevices
 
+/**
+ * Specify the list of devices that will appear to be available through
+ * usbfs during unit testing (of USBProxyLinuxGetDevices)
+ * @param  pacszDeviceAddresses  NULL terminated array of usbfs device addresses
+ */
 void TestUSBSetAvailableUsbfsDevices(const char **pacszDeviceAddresses)
 {
     s_pacszUsbfsDeviceAddresses = pacszDeviceAddresses;
@@ -1499,6 +1504,13 @@ static int testAccess(const char *pcszPath, int mode)
 }
 # define access testAccess
 
+/**
+ * Specify the list of files that access will report as accessible (at present
+ * we only do accessible or not accessible) during unit testing (of
+ * USBProxyLinuxGetDevices)
+ * @param  pacszAccessibleFiles  NULL terminated array of file paths to be
+ *                               reported accessible
+ */
 void TestUSBSetAccessibleFiles(const char **pacszAccessibleFiles)
 {
     s_pacszAccessibleFiles = pacszAccessibleFiles;
@@ -1655,6 +1667,12 @@ int USBProxyLinuxChooseMethod(bool *pfUsingUsbfsDevices,
 # undef RTFileExists
 #endif
 
+/**
+ * Check whether a USB device tree root is usable
+ * @param pcszRoot        the path to the root of the device tree
+ * @param fIsDeviceNodes  whether this is a device node (or usbfs) tree
+ * @note  returns a pointer into a static array so it will stay valid
+ */
 bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNodes)
 {
     bool fOK = false;
@@ -1688,6 +1706,12 @@ bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot, bool fIsDeviceNodes)
 # undef access
 #endif
 
+/**
+ * Get the list of USB devices supported by the system.  Should be freed using
+ * @a deviceFree or something equivalent.
+ * @param pcszDevicesRoot  the path to the root of the device tree
+ * @param fUseSysfs        whether to use sysfs (or usbfs) for enumeration
+ */
 PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot,
                                    bool fUseSysfs)
 {

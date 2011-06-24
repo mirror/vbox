@@ -74,12 +74,6 @@ static inline void deviceListFree(PUSBDEVICE *ppHead)
 
 RT_C_DECLS_BEGIN
 
-/**
- * Check whether a USB device tree root is usable
- * @param pcszRoot        the path to the root of the device tree
- * @param fIsDeviceNodes  whether this is a device node (or usbfs) tree
- * @note  returns a pointer into a static array so it will stay valid
- */
 extern bool USBProxyLinuxCheckDeviceRoot(const char *pcszRoot,
                                          bool fIsDeviceNodes);
 
@@ -90,42 +84,13 @@ void TestUSBSetupInit(const char *pcszUsbfsRoot, bool fUsbfsAccessible,
 void TestUSBSetEnv(const char *pcszEnvUsb, const char *pcszEnvUsbRoot);
 #endif
 
-/**
- * Selects the access method that will be used to access USB devices based on
- * what is available on the host and what if anything the user has specified
- * in the environment.
- * @returns iprt status value
- * @param  pfUsingUsbfsDevices  on success this will be set to true if 
- *                              the prefered access method is USBFS-like and to
- *                              false if it is sysfs/device node-like
- * @param  ppcszDevicesRoot     on success the root of the tree of USBFS-like
- *                              device nodes will be stored here
- */
 extern int USBProxyLinuxChooseMethod(bool *pfUsingUsbfsDevices,
                                      const char **ppcszDevicesRoot);
 #ifdef UNIT_TEST
-/**
- * Specify the list of devices that will appear to be available through
- * usbfs during unit testing (of USBProxyLinuxGetDevices)
- * @param  pacszDeviceAddresses  NULL terminated array of usbfs device addresses
- */
 extern void TestUSBSetAvailableUsbfsDevices(const char **pacszDeviceAddresses);
-/**
- * Specify the list of files that access will report as accessible (at present
- * we only do accessible or not accessible) during unit testing (of
- * USBProxyLinuxGetDevices)
- * @param  pacszAccessibleFiles  NULL terminated array of file paths to be
- *                               reported accessible
- */
 extern void TestUSBSetAccessibleFiles(const char **pacszAccessibleFiles);
 #endif
 
-/**
- * Get the list of USB devices supported by the system.  Should be freed using
- * @a deviceFree or something equivalent.
- * @param pcszDevicesRoot  the path to the root of the device tree
- * @param fUseSysfs        whether to use sysfs (or usbfs) for enumeration
- */
 extern PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot,
                                           bool fUseSysfs);
 
