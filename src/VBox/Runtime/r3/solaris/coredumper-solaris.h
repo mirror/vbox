@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - Core dump, header.
+ * IPRT - Custom Core Dumper, Solaris.
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,8 +24,7 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#include <iprt/process.h>
-#include <iprt/file.h>
+#include <iprt/types.h>
 
 #ifdef RT_OS_SOLARIS
 # if defined(RT_ARCH_X86) && _FILE_OFFSET_BITS==64
@@ -61,98 +60,99 @@
 
 #ifdef RT_OS_SOLARIS
 /**
- * VBOXSOLMAPINFO: Memory mapping description.
+ * Memory mapping descriptor employed by the solaris core dumper.
  */
-typedef struct VBOXSOLMAPINFO
+typedef struct RTSOLCOREMAPINFO
 {
-    prmap_t                         pMap;                       /* Proc description of this mapping */
-    int                             fError;                     /* Any error reading this mapping (errno) */
-    struct VBOXSOLMAPINFO          *pNext;                      /* Pointer to the next mapping */
-} VBOXSOLMAPINFO;
-typedef VBOXSOLMAPINFO *PVBOXSOLMAPINFO;
+    prmap_t                         pMap;                       /**< Proc description of this mapping */
+    int                             fError;                     /**< Any error reading this mapping (errno) */
+    struct RTSOLCOREMAPINFO            *pNext;                      /**< Pointer to the next mapping */
+} RTSOLCOREMAPINFO;
+/** Pointer to a solaris memory mapping descriptor. */
+typedef RTSOLCOREMAPINFO *PRTSOLCOREMAPINFO;
 
 /**
- * VBOXSOLCORETYPE: Whether this is an old or new style core.
+ * Whether this is an old or new style solaris core.
  */
-typedef enum VBOXSOLCORETYPE
+typedef enum RTSOLCORETYPE
 {
-    enmOldEra       = 0x01d,        /* old */
-    enmNewEra       = 0x5c1f1       /* sci-fi */
-} VBOXSOLCORETYPE;
+    enmOldEra = 0x01d,   /**< old */
+    enmNewEra = 0x5c1f1  /**< sci-fi */
+} RTSOLCORETYPE;
 
 /**
- * VBOXSOLTHREADINFO: Per-Thread information.
+ * Per-Thread information employed by the solaris core dumper.
  */
-typedef struct VBOXSOLTHREADINFO
+typedef struct RTSOLCORETHREADINFO
 {
-    lwpsinfo_t                      Info;                       /* Proc description of this thread */
-    lwpstatus_t                    *pStatus;                    /* Proc description of this thread's status (can be NULL, zombie lwp) */
-    struct VBOXSOLTHREADINFO       *pNext;                      /* Pointer to the next thread */
-} VBOXSOLTHREADINFO;
-typedef VBOXSOLTHREADINFO *PVBOXSOLTHREADINFO;
+    lwpsinfo_t                      Info;                       /**< Proc description of this thread */
+    lwpstatus_t                    *pStatus;                    /**< Proc description of this thread's status (can be NULL, zombie lwp) */
+    struct RTSOLCORETHREADINFO     *pNext;                      /**< Pointer to the next thread */
+} RTSOLCORETHREADINFO;
+typedef RTSOLCORETHREADINFO *PRTSOLCORETHREADINFO;
 #endif
 
 
 /**
- * VBOXPROCESS: Current (also the core target) process information.
+ * Current (also the core target) process information.
  */
-typedef struct VBOXPROCESS
+typedef struct RTSOLCOREPROCESS
 {
-    RTPROCESS                       Process;                    /* The pid of the process */
-    char                            szExecPath[PATH_MAX];       /* Path of the executable */
-    char                           *pszExecName;                /* Name of the executable file */
+    RTPROCESS                       Process;                    /**< The pid of the process */
+    char                            szExecPath[PATH_MAX];       /**< Path of the executable */
+    char                           *pszExecName;                /**< Name of the executable file */
 #ifdef RT_OS_SOLARIS
-    psinfo_t                        ProcInfo;                   /* Process info. */
-    prpsinfo_t                      ProcInfoOld;                /* Process info. Older version (for GDB compat.) */
-    pstatus_t                       ProcStatus;                 /* Process status info. */
-    thread_t                        hCurThread;                 /* The current thread */
-    ucontext_t                     *pCurThreadCtx;              /* Context info. of current thread before starting to dump */
-    RTFILE                          hAs;                        /* proc/<pid/as file handle */
-    auxv_t                         *pAuxVecs;                   /* Aux vector of process */
-    int                             cAuxVecs;                   /* Number of aux vector entries */
-    PVBOXSOLMAPINFO                 pMapInfoHead;               /* Pointer to the head of list of mappings */
-    uint32_t                        cMappings;                  /* Number of mappings (count of pMapInfoHead list) */
-    PVBOXSOLTHREADINFO              pThreadInfoHead;            /* Pointer to the head of list of threads */
-    uint64_t                        cThreads;                   /* Number of threads (count of pThreadInfoHead list) */
-    char                            szPlatform[SYS_NMLN];       /* Platform name  */
-    char                            szZoneName[ZONENAME_MAX];   /* Zone name */
-    struct utsname                  UtsName;                    /* UTS name */
-    void                           *pvCred;                     /* Process credential info. */
-    size_t                          cbCred;                     /* Size of process credential info. */
-    void                           *pvLdt;                      /* Process LDT info. */
-    size_t                          cbLdt;                      /* Size of the LDT info. */
-    prpriv_t                       *pPriv;                      /* Process privilege info. */
-    size_t                          cbPriv;                     /* Size of process privilege info. */
-    const priv_impl_info_t         *pcPrivImpl;                 /* Process privilege implementation info. (opaque handle) */
-    core_content_t                  CoreContent;                /* What information goes in the core */
+    psinfo_t                        ProcInfo;                   /**< Process info. */
+    prpsinfo_t                      ProcInfoOld;                /**< Process info. Older version (for GDB compat.) */
+    pstatus_t                       ProcStatus;                 /**< Process status info. */
+    thread_t                        hCurThread;                 /**< The current thread */
+    ucontext_t                     *pCurThreadCtx;              /**< Context info. of current thread before starting to dump */
+    int                             fdAs;                       /**< proc/pid/as file handle */
+    auxv_t                         *pAuxVecs;                   /**< Aux vector of process */
+    int                             cAuxVecs;                   /**< Number of aux vector entries */
+    PRTSOLCOREMAPINFO               pMapInfoHead;               /**< Pointer to the head of list of mappings */
+    uint32_t                        cMappings;                  /**< Number of mappings (count of pMapInfoHead list) */
+    PRTSOLCORETHREADINFO            pThreadInfoHead;            /**< Pointer to the head of list of threads */
+    uint64_t                        cThreads;                   /**< Number of threads (count of pThreadInfoHead list) */
+    char                            szPlatform[SYS_NMLN];       /**< Platform name  */
+    char                            szZoneName[ZONENAME_MAX];   /**< Zone name */
+    struct utsname                  UtsName;                    /**< UTS name */
+    void                           *pvCred;                     /**< Process credential info. */
+    size_t                          cbCred;                     /**< Size of process credential info. */
+    void                           *pvLdt;                      /**< Process LDT info. */
+    size_t                          cbLdt;                      /**< Size of the LDT info. */
+    prpriv_t                       *pPriv;                      /**< Process privilege info. */
+    size_t                          cbPriv;                     /**< Size of process privilege info. */
+    const priv_impl_info_t         *pcPrivImpl;                 /**< Process privilege implementation info. (opaque handle) */
+    core_content_t                  CoreContent;                /**< What information goes in the core */
 #else
 # error Port Me!
 #endif
 
-} VBOXPROCESS;
-typedef VBOXPROCESS *PVBOXPROCESS;
+} RTSOLCOREPROCESS;
+typedef RTSOLCOREPROCESS *PRTSOLCOREPROCESS;
 
-typedef int (*PFNCOREREADER)(RTFILE hFile, void *pv, size_t cb);
-typedef int (*PFNCOREWRITER)(RTFILE hFile, const void *pcv, size_t cb);
+typedef int (*PFNRTCOREREADER)(int fdFile, void *pv, size_t cb);
+typedef int (*PFNRTCOREWRITER)(int fdhFile, const void *pcv, size_t cb);
 
 /**
- * VBOXCORE: Core file object.
+ * The solaris core file object.
  */
-typedef struct VBOXCORE
+typedef struct RTSOLCORE
 {
-    char                            szCorePath[PATH_MAX];       /* Path of the core file */
-    VBOXPROCESS                     VBoxProc;                   /* Current process information */
-    void                           *pvCore;                     /* Pointer to memory area during dumping */
-    size_t                          cbCore;                     /* Size of memory area during dumping */
-    void                           *pvFree;                     /* Pointer to base of free range in preallocated memory area */
-    bool                            fIsValid;                   /* Whether core information has been fully collected */
-    PFNCOREREADER                   pfnReader;                  /* Reader function */
-    PFNCOREWRITER                   pfnWriter;                  /* Writer function */
-    RTFILE                          hCoreFile;                  /* Core file (used only while writing the core) */
-    RTFOFF                          offWrite;                   /* Segment/section offset (used only while writing the core) */
-} VBOXCORE;
-typedef VBOXCORE *PVBOXCORE;
+    char                            szCorePath[PATH_MAX];       /**< Path of the core file */
+    RTSOLCOREPROCESS                SolProc;                    /**< Current process information */
+    void                           *pvCore;                     /**< Pointer to memory area during dumping */
+    size_t                          cbCore;                     /**< Size of memory area during dumping */
+    void                           *pvFree;                     /**< Pointer to base of free range in preallocated memory area */
+    bool                            fIsValid;                   /**< Whether core information has been fully collected */
+    PFNRTCOREREADER                 pfnReader;                  /**< Reader function */
+    PFNRTCOREWRITER                 pfnWriter;                  /**< Writer function */
+    int                             fdCoreFile;                 /**< Core file (used only while writing the core) */
+    RTFOFF                          offWrite;                   /**< Segment/section offset (used only while writing the core) */
+} RTSOLCORE;
+typedef RTSOLCORE *PRTSOLCORE;
 
-typedef int (*PFNCOREACCUMULATOR)(PVBOXCORE pVBoxCore);
-typedef int (*PFNCORETHREADWORKER)(PVBOXCORE pVBoxCore, void *pvThreadInfo);
+typedef int (*PFNRTSOLCOREACCUMULATOR)(PRTSOLCORE pSolCore);
+typedef int (*PFNRTSOLCORETHREADWORKER)(PRTSOLCORE pSolCore, void *pvThreadInfo);
 

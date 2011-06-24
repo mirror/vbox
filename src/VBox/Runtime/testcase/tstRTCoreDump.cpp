@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,80 +27,72 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/types.h>
+#include <iprt/coredumper.h>
+
+#include <iprt/test.h>
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/thread.h>
-#include <iprt/stream.h>
-#include <iprt/coredumper.h>
 
 
 /*******************************************************************************
 *   Globals                                                                    *
 *******************************************************************************/
-static unsigned volatile g_cErrors = 0;
-
-static DECLCALLBACK(int) SleepyThread(RTTHREAD Thread, void *pvUser)
+static DECLCALLBACK(int) SleepyThread(RTTHREAD hThread, void *pvUser)
 {
     NOREF(pvUser);
-    RTThreadSleep(90000000);
+    RTThreadUserWait(hThread, 90000000);
     return VINF_SUCCESS;
 }
 
 int main()
 {
-    RTR3Init();
-    RTPrintf("tstRTCoreDump: TESTING...\n");
+    RTTEST     hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTCoreDump", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+    RTTestBanner(hTest);
 
     /*
      * Setup core dumping.
      */
-    int rc = RTCoreDumperSetup(NULL, RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP | RTCOREDUMPER_FLAGS_LIVE_CORE);
+    int rc;
+    RTTESTI_CHECK_RC(rc = RTCoreDumperSetup(NULL, RTCOREDUMPER_FLAGS_REPLACE_SYSTEM_DUMP | RTCOREDUMPER_FLAGS_LIVE_CORE),
+                     VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
         /*
          * Spawn a few threads.
          */
         RTTHREAD ahThreads[5];
-        unsigned i = 0;
-        for (; i < RT_ELEMENTS(ahThreads); i++)
+        unsigned i;
+        for (i = 0; i < RT_ELEMENTS(ahThreads); i++)
         {
-            rc = RTThreadCreate(&ahThreads[i], SleepyThread, &ahThreads[i], 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "TEST1");
-            if (RT_FAILURE(rc))
-            {
-                RTPrintf("tstRTCoreDump: FAILURE(%d) - %d RTThreadCreate failed, rc=%Rrc\n", __LINE__, i, rc);
-                g_cErrors++;
-                ahThreads[i] = NIL_RTTHREAD;
-                break;
-            }
+            RTTESTI_CHECK_RC_BREAK(RTThreadCreate(&ahThreads[i], SleepyThread, &ahThreads[i], 0, RTTHREADTYPE_DEFAULT,
+                                                  RTTHREADFLAGS_WAITABLE, "TEST1"),
+                                   VINF_SUCCESS);
         }
-        RTPrintf("Spawned %d threads.\n", i);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Spawned %d threads.\n", i);
 
         /*
          * Write the core to disk.
          */
-        rc = RTCoreDumperTakeDump(NULL, false /* fLiveCore*/);
-        if (RT_FAILURE(rc))
+        RTTESTI_CHECK_RC(RTCoreDumperTakeDump(NULL, true /* fLiveCore*/), VINF_SUCCESS);
+
+        /*
+         * Clean up.
+         */
+        RTTESTI_CHECK_RC(RTCoreDumperDisable(), VINF_SUCCESS);
+        while (i-- > 0)
         {
-            g_cErrors++;
-            RTPrintf("RTCoreDumperTakeDump failed. rc=%Rrc\n", rc);
+            RTTESTI_CHECK_RC(RTThreadUserSignal(ahThreads[i]), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTThreadWait(ahThreads[i], 60*1000, NULL), VINF_SUCCESS);
         }
-        RTCoreDumperDisable();
-    }
-    else
-    {
-        g_cErrors++;
-        RTPrintf("RTCoreDumperSetup failed. rc=%Rrc\n", rc);
     }
 
     /*
      * Summary.
      */
-    if (!g_cErrors)
-        RTPrintf("tstRTCoreDump: SUCCESS\n");
-    else
-        RTPrintf("tstRTCoreDump: FAILURE - %d errors\n", g_cErrors);
-
-    return !!g_cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
