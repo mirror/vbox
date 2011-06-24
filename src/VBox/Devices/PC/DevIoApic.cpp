@@ -398,19 +398,19 @@ PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
     IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
 
     STAM_COUNTER_INC(&CTXSUFF(s->StatMMIOWrite));
-    switch (cb) {
-    case 1:
-    case 2:
-    case 4:
-        IOAPIC_LOCK(s, VINF_IOM_HC_MMIO_WRITE);
-        ioapic_mem_writel(s, GCPhysAddr, *(uint32_t *)pv); /** @todo r=bird: This cannot be right for cb!=4. */
-        IOAPIC_UNLOCK(s);
-        break;
+    IOAPIC_LOCK(s, VINF_IOM_HC_MMIO_WRITE);
+    switch (cb)
+    {
+        case 1: ioapic_mem_writel(s, GCPhysAddr, *(uint8_t  const *)pv); break;
+        case 2: ioapic_mem_writel(s, GCPhysAddr, *(uint16_t const *)pv); break;
+        case 4: ioapic_mem_writel(s, GCPhysAddr, *(uint32_t const *)pv); break;
 
-    default:
-        AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
-        return VERR_INTERNAL_ERROR;
+        default:
+            IOAPIC_UNLOCK(s);
+            AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
+            return VERR_INTERNAL_ERROR;
     }
+    IOAPIC_UNLOCK(s);
     return VINF_SUCCESS;
 }
 
