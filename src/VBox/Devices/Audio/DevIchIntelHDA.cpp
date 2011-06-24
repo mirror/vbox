@@ -1902,7 +1902,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
  * @param   cb          Number of bytes to write.
  * @thread  EMT
  */
-PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     int rc = VINF_SUCCESS;
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
@@ -1918,6 +1918,8 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 
     if (index != -1)
     {
+        /** @todo r=bird: What is all this masking and shifting about? And
+         *        WHY ON EARTH are you writing to the input data?!? */
         uint32_t v = pThis->hda.au32Regs[index];
         uint32_t mask = 0;
         uint32_t shift = (u32Offset - s_ichIntelHDRegMap[index].offset) % sizeof(uint32_t) * 8;

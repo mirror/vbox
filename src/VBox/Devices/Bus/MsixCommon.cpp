@@ -28,7 +28,8 @@
 #include "MsiCommon.h"
 
 #pragma pack(1)
-typedef struct {
+typedef struct
+{
     uint32_t  u32MsgAddressLo;
     uint32_t  u32MsgAddressHi;
     uint32_t  u32MsgData;
@@ -127,7 +128,7 @@ PDMBOTHCBDECL(int) msixMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     return VINF_SUCCESS;
 }
 
-PDMBOTHCBDECL(int) msixMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) msixMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     /// @todo: qword accesses?
     AssertMsgReturn(cb == 4,

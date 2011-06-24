@@ -765,8 +765,6 @@ static int                  ohci_in_done_queue_find(POHCI pOhci, uint32_t GCPhys
 # endif
 static DECLCALLBACK(void)   ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 #endif /* IN_RING3 */
-PDMBOTHCBDECL(int)          ohciWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int)          ohciRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 RT_C_DECLS_END
 
 
@@ -4824,7 +4822,7 @@ PDMBOTHCBDECL(int) ohciRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAdd
  * @param   pv          Pointer to the data being written.
  * @param   cb          The size of the data being written.
  */
-PDMBOTHCBDECL(int) ohciWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) ohciWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     POHCI pOhci = PDMINS_2_DATA(pDevIns, POHCI);
 

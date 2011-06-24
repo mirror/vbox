@@ -948,7 +948,7 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 /**
  * @callback_method_impl{FNIOMMMIOWRITE}
  */
-PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     HpetState  *pThis  = PDMINS_2_DATA(pDevIns, HpetState*);
     uint32_t    idxReg = (uint32_t)(GCPhysAddr - HPET_BASE);

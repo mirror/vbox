@@ -1143,18 +1143,6 @@ DECLINLINE(RTGCPHYS32) pcnetTdraAddr(PCNetState *pThis, int idx)
 }
 
 RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
-                                   RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
-                                    RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
-                                         RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser,
-                                        RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
-                                 RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
-                                  RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 #ifndef IN_RING3
 DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                      RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
@@ -3864,7 +3852,7 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
  * @param   cb          Number of bytes to write.
  */
 PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
-                                  RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+                                  RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     PCNetState *pThis = (PCNetState *)pvUser;
     int         rc    = VINF_SUCCESS;
