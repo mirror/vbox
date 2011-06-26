@@ -2590,6 +2590,26 @@ static HRESULT vboxWddmSwapchainPresentPerform(PVBOXWDDMDISP_DEVICE pDevice, PVB
     return hr;
 }
 
+static HRESULT vboxWddmSwapchainBbUpdate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain, PVBOXWDDMDISP_ALLOCATION pBbAlloc)
+{
+    for (UINT i = 0; i < pSwapchain->cRTs; ++i)
+    {
+        PVBOXWDDMDISP_ALLOCATION pCurBb = vboxWddmSwapchainGetBb(pSwapchain)->pAlloc;
+        if (pCurBb == pBbAlloc)
+            return S_OK;
+
+        HRESULT hr = vboxWddmSwapchainPresentPerform(pDevice, pSwapchain);
+        if (FAILED(hr))
+        {
+            WARN(("vboxWddmSwapchainPresentPerform failed, hr (0x%x)", hr));
+            return hr;
+        }
+    }
+
+    AssertMsgFailed(("the given allocation not par of the swapchain\n"));
+    return E_FAIL;
+}
+
 static HRESULT vboxWddmSwapchainPresent(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pBbAlloc)
 {
     BOOL bChanged = FALSE;
@@ -2962,13 +2982,14 @@ static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, P
 {
     IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
     PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainForAlloc(pAlloc);
+    HRESULT hr = S_OK;
     if (pSwapchain)
     {
-        /* backbuffer */
-        Assert(vboxWddmSwapchainGetBb(pSwapchain)->pAlloc == pAlloc);
+        hr = vboxWddmSwapchainBbUpdate(pDevice, pSwapchain, pAlloc);
+        if (FAILED(hr))
+            return hr;
     }
 
-    HRESULT hr = S_OK;
     IDirect3DSurface9 *pD3D9Surf;
     if (!bOnSwapchainSynch && pSwapchain)
     {
