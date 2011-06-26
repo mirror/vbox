@@ -320,7 +320,7 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pvTemplateUser;
 
-    LogFlowFunc(("pDrvIns=%#p pvTemplateUser=%#p pvUser=%#p rcReq\n",
+    LogFlowFunc(("pDrvIns=%#p pvTemplateUser=%#p pvUser=%#p rcReq=%d\n",
                  pDrvIns, pvTemplateUser, pvUser, rcReq));
 
     if (pStorageBackend->fSyncIoPending)
