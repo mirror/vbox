@@ -713,6 +713,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         s->msr = val & ~0x10;
         if (s->fRealRetrace)
             vga_update_retrace_state(s);
+        s->st00 = (s->st00 & ~0x10) | (0x90 >> ((val >> 2) & 0x3));
         break;
     case 0x3c4:
         s->sr_index = val & 7;
