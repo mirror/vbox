@@ -389,8 +389,8 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                 case GLSettingsPage_Proxy:
                 {
                     pSettingsPage = new UIGlobalSettingsProxy;
-                    addItem(":/extension_pack_32px.png", ":/extension_pack_disabled_32px.png",
-                            ":/extension_pack_16px.png", ":/extension_pack_disabled_16px.png",
+                    addItem(":/proxy_32px.png", ":/proxy_disabled_32px.png",
+                            ":/proxy_16px.png", ":/proxy_disabled_16px.png",
                             iPageIndex, "#proxy", pSettingsPage);
                     break;
                 }

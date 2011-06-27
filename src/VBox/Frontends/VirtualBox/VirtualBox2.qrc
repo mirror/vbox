@@ -177,5 +177,9 @@
     <file alias="extension_pack_uninstall_disabled_16px.png">images/extension_pack_uninstall_disabled_16px.png</file>
     <file alias="extension_pack_uninstall_32px.png">images/extension_pack_uninstall_32px.png</file>
     <file alias="extension_pack_uninstall_disabled_32px.png">images/extension_pack_uninstall_disabled_32px.png</file>
+    <file alias="proxy_16px.png">images/proxy_16px.png</file>
+    <file alias="proxy_disabled_16px.png">images/proxy_disabled_16px.png</file>
+    <file alias="proxy_32px.png">images/proxy_32px.png</file>
+    <file alias="proxy_disabled_32px.png">images/proxy_disabled_32px.png</file>
  </qresource>
  </RCC>
