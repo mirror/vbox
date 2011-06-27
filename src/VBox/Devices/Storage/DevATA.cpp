@@ -3123,7 +3123,7 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                         PDMCritSectLeave(&pCtl->lock);
                         rc = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
                                              (PFNRT)s->pDrvMount->pfnUnmount, 3,
-                                             s->pDrvMount /*=fForce*/, true /*=fEject*/);
+                                             s->pDrvMount, false /*=fForce*/, true /*=fEject*/);
                         Assert(RT_SUCCESS(rc) || (rc == VERR_PDM_MEDIA_LOCKED) || (rc = VERR_PDM_MEDIA_NOT_MOUNTED));
                         {
                             STAM_PROFILE_START(&pCtl->StatLockWait, a);
