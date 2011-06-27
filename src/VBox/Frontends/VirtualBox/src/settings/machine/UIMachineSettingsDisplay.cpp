@@ -219,8 +219,6 @@ void UIMachineSettingsDisplay::getFromCache()
         mLeVRDETimeout->setText(QString::number(displayData.m_uVRDETimeout));
         mCbMultipleConn->setChecked(displayData.m_fMultipleConnectionsAllowed);
     }
-    else
-        mTwDisplay->removeTab(1);
 
     /* Polish page finally: */
     polishPage();
@@ -507,6 +505,9 @@ bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVideoMemory()
 
 void UIMachineSettingsDisplay::polishPage()
 {
+    /* Get system data from cache: */
+    const UIDataSettingsMachineDisplay &displayData = m_cache.base();
+
     /* Video tab: */
     mLbMemory->setEnabled(isMachineOffline());
     mLbMemoryMin->setEnabled(isMachineOffline());
@@ -526,6 +527,7 @@ void UIMachineSettingsDisplay::polishPage()
     mCb2DVideo->setEnabled(isMachineOffline() && VBoxGlobal::isAcceleration2DVideoAvailable());
 #endif /* VBOX_WITH_VIDEOHWACCEL */
     /* VRDE tab: */
+    mTwDisplay->setTabEnabled(1, displayData.m_fVRDEServerSupported);
     mCbVRDE->setEnabled(isMachineInValidMode());
     mLbVRDPPort->setEnabled(isMachineInValidMode());
     mLeVRDEPort->setEnabled(isMachineInValidMode());
