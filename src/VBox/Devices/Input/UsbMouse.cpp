@@ -962,12 +962,12 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                     {
                         switch (pSetup->wValue >> 8)
                         {
+                            uint32_t        cbCopy;
+                            uint32_t        cbDesc;
+                            const uint8_t   *pDesc;
+
                             case DT_IF_HID_DESCRIPTOR:
                             {
-                                uint32_t        cbCopy;
-                                uint32_t        cbDesc;
-                                const uint8_t   *pDesc;
-
                                 if (pThis->isAbsolute)
                                 {
                                     cbDesc = sizeof(g_UsbHidTIfHidDesc);
@@ -988,10 +988,6 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
 
                             case DT_IF_HID_REPORT:
                             {
-                                uint32_t        cbCopy;
-                                uint32_t        cbDesc;
-                                const uint8_t   *pDesc;
-
                                 if (pThis->isAbsolute)
                                 {
                                     cbDesc = sizeof(g_UsbHidTReportDesc);
