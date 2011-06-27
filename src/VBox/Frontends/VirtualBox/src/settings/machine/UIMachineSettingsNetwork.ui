@@ -18,21 +18,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>431</width>
-    <height>248</height>
+    <width>430</width>
+    <height>250</height>
    </rect>
   </property>
-  <layout class="QGridLayout" name="VBoxVMSettingsNetworkGridLayout">
+  <layout class="QGridLayout" name="m_pMainLayout">
    <item row="0" column="0" colspan="2">
-    <widget class="QCheckBox" name="mCbEnableAdapter">
+    <widget class="QCheckBox" name="m_pEnableAdapterCheckBox">
      <property name="whatsThis">
       <string>When checked, plugs this virtual network adapter into the virtual machine.</string>
      </property>
      <property name="text">
       <string>&amp;Enable Network Adapter</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -53,8 +50,8 @@
     </spacer>
    </item>
    <item row="1" column="1">
-    <widget class="QWidget" name="m_pNetworkChild" native="1">
-     <layout class="QGridLayout" name="m_pNetworkChildGridLayout">
+    <widget class="QWidget" name="m_pAdapterOptionsContainer" native="1">
+     <layout class="QGridLayout" name="m_pAdapterOptionsLayout">
       <property name="margin">
        <number>0</number>
       </property>
@@ -67,12 +64,12 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy">
-         <cstring>m_pAttachmentTypeCombo</cstring>
+         <cstring>m_pAttachmentTypeComboBox</cstring>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="m_pAttachmentTypeCombo">
+       <widget class="QComboBox" name="m_pAttachmentTypeComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -305,22 +302,5 @@
  <resources>
   <include location="../VirtualBox1.qrc"/>
  </resources>
- <connections>
-  <connection>
-   <sender>mCbEnableAdapter</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>m_pNetworkChild</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>184</x>
-     <y>28</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>196</x>
-     <y>111</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

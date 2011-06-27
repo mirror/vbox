@@ -19,13 +19,12 @@
 #ifndef __UIMachineSettingsNetwork_h__
 #define __UIMachineSettingsNetwork_h__
 
-/* Local includes */
-#include "COMDefs.h"
+/* Local includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsNetwork.gen.h"
 #include "UIMachineSettingsPortForwardingDlg.h"
 
-/* Forward declarations */
+/* Forward declarations: */
 class UIMachineSettingsNetworkPage;
 class QITabWidget;
 
@@ -42,7 +41,7 @@ struct UIDataSettingsMachineNetworkAdapter
         , m_strBridgedAdapterName(QString())
         , m_strInternalNetworkName(QString())
         , m_strHostInterfaceName(QString())
-        , m_strGenericDriver(QString())
+        , m_strGenericDriverName(QString())
         , m_strGenericProperties(QString())
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
@@ -58,7 +57,7 @@ struct UIDataSettingsMachineNetworkAdapter
                (m_strBridgedAdapterName == other.m_strBridgedAdapterName) &&
                (m_strInternalNetworkName == other.m_strInternalNetworkName) &&
                (m_strHostInterfaceName == other.m_strHostInterfaceName) &&
-               (m_strGenericDriver == other.m_strGenericDriver) &&
+               (m_strGenericDriverName == other.m_strGenericDriverName) &&
                (m_strGenericProperties == other.m_strGenericProperties) &&
                (m_strMACAddress == other.m_strMACAddress) &&
                (m_fCableConnected == other.m_fCableConnected) &&
@@ -76,7 +75,7 @@ struct UIDataSettingsMachineNetworkAdapter
     QString m_strBridgedAdapterName;
     QString m_strInternalNetworkName;
     QString m_strHostInterfaceName;
-    QString m_strGenericDriver;
+    QString m_strGenericDriverName;
     QString m_strGenericProperties;
     QString m_strMACAddress;
     bool m_fCableConnected;
@@ -96,58 +95,76 @@ struct UIDataSettingsMachineNetwork
 typedef UISettingsCachePool<UIDataSettingsMachineNetwork, UICacheSettingsMachineNetworkAdapter> UICacheSettingsMachineNetwork;
 
 /* Machine settings / Network page / Adapter tab: */
-class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>,
-                                 public Ui::UIMachineSettingsNetwork
+class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>, public Ui::UIMachineSettingsNetwork
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent);
 
-    void polishTab();
-
+    /* Load / Save API: */
     void fetchAdapterCache(const UICacheSettingsMachineNetworkAdapter &adapterCache);
     void uploadAdapterCache(UICacheSettingsMachineNetworkAdapter &adapterCache);
 
+    /* Validation stuff: */
     void setValidator(QIWidgetValidator *pValidator);
     bool revalidate(QString &strWarning, QString &strTitle);
 
+    /* Navigation stuff: */
     QWidget* setOrderAfter(QWidget *pAfter);
 
-    QString pageTitle() const;
-
+    /* Other public stuff: */
+    QString tabTitle() const;
     KNetworkAttachmentType attachmentType() const;
-    QString alternativeName(int type = -1) const;
+    QString alternativeName(int iType = -1) const;
+    void polishTab();
+    void reloadAlternative();
+
+signals:
+
+    /* Signal to notify listeners about tab content changed: */
+    void sigTabUpdated();
 
 protected:
 
-    void showEvent(QShowEvent *pEvent);
-
+    /* Translation stuff: */
     void retranslateUi();
 
 private slots:
 
-    void sltUpdateAttachmentAlternative();
-    void sltUpdateAlternativeName();
-    void sltToggleAdvanced();
+    /* Different handlers: */
+    void sltHandleAdapterActivityChange();
+    void sltHandleAttachmentTypeChange();
+    void sltHandleAlternativeNameChange();
+    void sltHandleAdvancedButtonStateChange();
     void sltGenerateMac();
     void sltOpenPortForwardingDlg();
 
 private:
 
+    /* Helping stuff: */
     void populateComboboxes();
+    void updateAlternativeList();
+    void updateAlternativeName();
 
+    /* Various static stuff: */
+    static int position(QComboBox *pComboBox, int iData);
+    static int position(QComboBox *pComboBox, const QString &strText);
+
+    /* Parent page: */
     UIMachineSettingsNetworkPage *m_pParent;
+
+    /* Validator: */
     QIWidgetValidator *m_pValidator;
 
+    /* Other variables: */
     int m_iSlot;
-    QString m_strBrgName;
-    QString m_strIntName;
-    QString m_strHoiName;
-    QString m_strGenericDriver;
-
-    bool m_fPolished;
+    QString m_strBridgedAdapterName;
+    QString m_strInternalNetworkName;
+    QString m_strHostInterfaceName;
+    QString m_strGenericDriverName;
     UIPortForwardingDataList m_portForwardingRules;
 };
 
@@ -158,12 +175,17 @@ class UIMachineSettingsNetworkPage : public UISettingsPageMachine
 
 public:
 
+    /* Constructor: */
     UIMachineSettingsNetworkPage();
 
-    QStringList brgList(bool aRefresh = false);
-    QStringList intList(bool aRefresh = false);
-    QStringList fullIntList(bool aRefresh = false);
-    QStringList hoiList(bool aRefresh = false);
+    /* Bridged adapter list: */
+    const QStringList& bridgedAdapterList() const { return m_bridgedAdapterList; }
+    /* Internal network list: */
+    const QStringList& internalNetworkList() const { return m_internalNetworkList; }
+    /* Host-only interface list: */
+    const QStringList& hostInterfaceList() const { return m_hostInterfaceList; }
+    /* Generic driver list: */
+    const QStringList& genericDriverList() const { return m_genericDriverList; }
 
 protected:
 
@@ -184,28 +206,44 @@ protected:
     /* Page changed: */
     bool changed() const { return m_cache.wasChanged(); }
 
+    /* Validation stuff: */
     void setValidator(QIWidgetValidator *pValidator);
     bool revalidate(QString &strWarning, QString &strTitle);
 
+    /* Translation stuff: */
     void retranslateUi();
 
 private slots:
 
-    void updatePages();
+    /* Handles tab updates: */
+    void sltHandleUpdatedTab();
 
 private:
 
+    /* Private helpers: */
     void polishPage();
+    void refreshBridgedAdapterList();
+    void refreshInternalNetworkList(bool fFullRefresh = false);
+    void refreshHostInterfaceList();
+    void refreshGenericDriverList(bool fFullRefresh = false);
 
+    /* Various static stuff: */
+    static QStringList otherInternalNetworkList();
+    static QStringList otherGenericDriverList();
     static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
     static void updateGenericProperties(CNetworkAdapter &adapter, const QString &strPropText);
 
+    /* Validator: */
     QIWidgetValidator *m_pValidator;
+
+    /* Tab holder: */
     QITabWidget *m_pTwAdapters;
 
-    QStringList m_brgList;
-    QStringList m_intList;
-    QStringList m_hoiList;
+    /* Alternative-name lists: */
+    QStringList m_bridgedAdapterList;
+    QStringList m_internalNetworkList;
+    QStringList m_hostInterfaceList;
+    QStringList m_genericDriverList;
 
     /* Cache: */
     UICacheSettingsMachineNetwork m_cache;
