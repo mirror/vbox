@@ -734,15 +734,27 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
 
 static int hdaLookup(INTELHDLinkState* pState, uint32_t u32Offset)
 {
-    /// @todo r=michaln: A linear search of an array with over 100 elements is very inefficient.
-    /** @todo r=bird: Do a binary search, the array is sorted. */
-    for (int index = 0; index < (int)RT_ELEMENTS(s_ichIntelHDRegMap); ++index)
+    int idxMiddle;
+    int idxHigh = RT_ELEMENTS(s_ichIntelHDRegMap);
+    int idxLow = 0;
+    while (1)
     {
-        if (   u32Offset >= s_ichIntelHDRegMap[index].offset
-            && u32Offset < s_ichIntelHDRegMap[index].offset + s_ichIntelHDRegMap[index].size)
-        {
-            return index;
-        }
+            if (idxHigh < idxLow)
+                break;
+            idxMiddle = idxLow + (idxHigh - idxLow)/2;
+            if (u32Offset < s_ichIntelHDRegMap[idxMiddle].offset)
+            {
+                idxHigh = idxMiddle - 1;
+                continue;
+            }
+            if (u32Offset >= s_ichIntelHDRegMap[idxMiddle].offset + s_ichIntelHDRegMap[idxMiddle].size)
+            {
+                idxLow = idxMiddle + 1;
+                continue;
+            }
+            if (u32Offset >= s_ichIntelHDRegMap[idxMiddle].offset
+                && u32Offset < s_ichIntelHDRegMap[idxMiddle].offset + s_ichIntelHDRegMap[idxMiddle].size)
+                return idxMiddle;
     }
     /* Aliases HDA spec 3.3.45 */
     switch(u32Offset)
