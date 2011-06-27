@@ -65,7 +65,7 @@ svnver   := $(if $(NOSUBVER),,$(if $(svn_revision),-$(svn_revision),$(shell if \
 		svn info > /dev/null 2>&1; then \
 		svn info|sed -e "s/^Revision: \(.*\)/-\1/;t;d"; else \
 		date +"-%Y%m%d"; fi)))
-debver   :=$(subst _ALPHA,~alpha,$(subst _BETA,~beta,$(ver)))$(svnver)$(if \
+debver   :=$(subst _ALPHA,~alpha,$(subst _BETA,~beta,$(subst _OSE,~ose,$(ver))))$(svnver)$(if \
 		$(BLEEDING_EDGE),-$(BLEEDING_EDGE),)$(VERSUFFIX)$(if \
 		$(HEADLESS),~headless,)$(if $(DEBUG),~dbg,)
 archdir  := $(prefix)/opt/VirtualBox-$(ver)
