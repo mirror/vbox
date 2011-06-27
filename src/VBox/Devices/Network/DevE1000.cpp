@@ -4274,6 +4274,11 @@ static int e1kRegRead(E1KSTATE *pState, uint32_t uOffset, void *pv, uint32_t cb)
             //pState->iStatIntLost += pState->iStatIntLostOne;
             //pState->iStatIntLostOne = 0;
             rc = s_e1kRegMap[index].pfnRead(pState, uOffset & 0xFFFFFFFC, index, &u32) & mask;
+            /** r=vasily
+             * Looks like a typo, probably expected smth. like:
+             * rc = s_e1kRegMap[index].pfnRead(pState, uOffset & 0xFFFFFFFC, index, &u32);
+             * u32 &= mask;
+             */
             //e1kCsLeave(pState);
             e1kMutexRelease(pState);
             E1kLog2(("%s At %08X read  %s          from %s (%s)\n",
