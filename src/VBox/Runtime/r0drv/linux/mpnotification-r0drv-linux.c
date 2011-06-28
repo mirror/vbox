@@ -189,7 +189,7 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
      * Reschedule the callbacks to fire on the specific CPU with preemption disabled.
      */
     rc = RTMpOnSpecific(idCpu, rtMpNotificationLinuxOnCurrentCpu, pNotifierBlock, &ulNativeEvent);
-    Assert(RT_SUCCESS(rc));
+    Assert(RT_SUCCESS(rc)); NOREF(rc);
     return NOTIFY_DONE;
 }
 

@@ -179,6 +179,8 @@ RT_EXPORT_SYMBOL(RTMemAllocZVarTag);
 
 RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT_NO_THROW
 {
+    PRTMEMHDR pHdrOld;
+
     /* Free. */
     if (!cbNew && pvOld)
     {
@@ -193,7 +195,7 @@ RTDECL(void *) RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) RT
     /*
      * Realloc.
      */
-    PRTMEMHDR pHdrOld = (PRTMEMHDR)pvOld - 1;
+    pHdrOld = (PRTMEMHDR)pvOld - 1;
     RT_ASSERT_PREEMPTIBLE();
 
     if (pHdrOld->u32Magic == RTMEMHDR_MAGIC)

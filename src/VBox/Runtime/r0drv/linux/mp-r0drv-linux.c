@@ -203,7 +203,9 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     int rc;
     RTMPARGS Args;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+#endif
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
@@ -214,9 +216,7 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     rc = on_each_cpu(rtmpLinuxWrapper, &Args, 1 /* wait */);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     rc = on_each_cpu(rtmpLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
-
 #else /* older kernels */
-
     RTThreadPreemptDisable(&PreemptState);
     rc = smp_call_function(rtmpLinuxWrapper, &Args, 0 /* retry */, 1 /* wait */);
     local_irq_disable();
