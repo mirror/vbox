@@ -9601,7 +9601,7 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 
 
 /**
- * Keyboard driver registration record.
+ * Console status driver (LED) registration record.
  */
 const PDMDRVREG Console::DrvStatusReg =
 {
