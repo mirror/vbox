@@ -1700,7 +1700,19 @@ static int ohci_in_done_queue_find(POHCI pOhci, uint32_t GCPhysTD)
 static bool ohci_in_done_queue_check(POHCI pOhci, uint32_t GCPhysTD)
 {
     int i = ohci_in_done_queue_find(pOhci, GCPhysTD);
+#if 0
+    /* This condition has been observed with the USB tablet emulation or with
+     * a real USB mouse and an SMP XP guest.  I am also not sure if this is
+     * really a problem for us.  The assertion checks that the guest doesn't
+     * re-submit a TD which is still in the done queue.  It seems to me that
+     * this should only be a problem if we either keep track of TDs in the done
+     * queue somewhere else as well (in which case we should also free those
+     * references in time, and I can't see any code doing that) or if we
+     * manipulate TDs in the done queue in some way that might fail if they are
+     * re-submitted (can't see anything like that either).
+     */
     AssertMsg(i < 0, ("TD %#010x (i=%d)\n", GCPhysTD, i));
+#endif
     return i < 0;
 }
 
