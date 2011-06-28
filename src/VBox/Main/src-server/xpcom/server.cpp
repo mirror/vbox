@@ -42,6 +42,7 @@
 #include <iprt/critsect.h>
 #include <iprt/getopt.h>
 #include <iprt/message.h>
+#include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/path.h>
 #include <iprt/timer.h>
@@ -791,12 +792,20 @@ int main(int argc, char **argv)
 
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--automate",       'a', RTGETOPT_REQ_NOTHING },
-        { "--auto-shutdown",  'A', RTGETOPT_REQ_NOTHING },
-        { "--daemonize",      'd', RTGETOPT_REQ_NOTHING },
-        { "--pidfile",        'p', RTGETOPT_REQ_STRING  },
+        { "--automate",         'a', RTGETOPT_REQ_NOTHING },
+        { "--auto-shutdown",    'A', RTGETOPT_REQ_NOTHING },
+        { "--daemonize",        'd', RTGETOPT_REQ_NOTHING },
+        { "--pidfile",          'p', RTGETOPT_REQ_STRING  },
+        { "--logfile",          'F', RTGETOPT_REQ_STRING },
+        { "--logrotate",        'R', RTGETOPT_REQ_UINT32 },
+        { "--logsize",          'S', RTGETOPT_REQ_UINT64 },
+        { "--loginterval",      'I', RTGETOPT_REQ_UINT32 }
     };
 
+    const char      *pszLogFile = NULL;
+    uint32_t        cHistory = 10;                  // enable log rotation, 10 files
+    uint32_t        uHistoryFileTime = RT_SEC_1DAY; // max 1 day per file
+    uint64_t        uHistoryFileSize = 100 * _1M;   // max 100MB per file
     bool            fDaemonize = false;
     PRFileDesc      *daemon_pipe_wr = nsnull;
 
@@ -838,6 +847,22 @@ int main(int argc, char **argv)
                 break;
             }
 
+            case 'F':
+                pszLogFile = ValueUnion.psz;
+                break;
+
+            case 'R':
+                cHistory = ValueUnion.u32;
+                break;
+
+            case 'S':
+                uHistoryFileSize = ValueUnion.u64;
+                break;
+
+            case 'I':
+                uHistoryFileTime = ValueUnion.u32;
+                break;
+
             case 'h':
             {
                 RTPrintf("no help\n");
@@ -861,7 +886,18 @@ int main(int argc, char **argv)
         exit(126);
     }
 
-    nsresult    rc;
+    nsresult rc;
+
+    if (!pszLogFile)
+    {
+        char szLogFile[RTPATH_MAX];
+        vrc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+        if (RT_SUCCESS(vrc))
+            vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxSVC.log");
+        if (RT_SUCCESS(vrc))
+            pszLogFile = RTStrDup(szLogFile);
+    }
+    VBoxSVCLogRelCreate(pszLogFile, cHistory, uHistoryFileTime, uHistoryFileSize);
 
     daemon_pipe_wr = PR_GetInheritedFD(VBOXSVC_STARTUP_PIPE_NAME);
     RTEnvUnset("NSPR_INHERIT_FDS");

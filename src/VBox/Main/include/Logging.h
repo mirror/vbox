@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -49,45 +49,9 @@
 #endif
 
 #include <VBox/log.h>
-#include <iprt/assert.h>
 
-/** @def MyLogIt
- * Copy of LogIt that works even when logging is completely disabled (e.g. in
- * release builds) and doesn't interfere with the default release logger
- * instance (which is already in use by the VM process).
- *
- * @warning Logging using MyLog* is intended only as a temporary mean to debug
- *          release builds (e.g. in case if the error is not reproducible with
- *          the debug builds)! Any MyLog* usage must be removed from the sources
- *          after the error has been fixed.
- */
-#if defined(RT_ARCH_AMD64) || defined(LOG_USE_C99)
-# define _MyLogRemoveParentheseis(...)               __VA_ARGS__
-# define _MyLogIt(pvInst, fFlags, iGroup, ...)       RTLogLoggerEx((PRTLOGGER)pvInst, fFlags, iGroup, __VA_ARGS__)
-# define MyLogIt(pvInst, fFlags, iGroup, fmtargs)    _MyLogIt(pvInst, fFlags, iGroup, _MyLogRemoveParentheseis fmtargs)
-#else
-# define MyLogIt(pvInst, fFlags, iGroup, fmtargs) \
-    do \
-    { \
-        register PRTLOGGER LogIt_pLogger = (PRTLOGGER)(pvInst) ? (PRTLOGGER)(pvInst) : RTLogDefaultInstance(); \
-        if (LogIt_pLogger) \
-        { \
-            register unsigned LogIt_fFlags = LogIt_pLogger->afGroups[(unsigned)(iGroup) < LogIt_pLogger->cGroups ? (unsigned)(iGroup) : 0]; \
-            if ((LogIt_fFlags & ((fFlags) | RTLOGGRPFLAGS_ENABLED)) == ((fFlags) | RTLOGGRPFLAGS_ENABLED)) \
-                LogIt_pLogger->pfnLogger fmtargs; \
-        } \
-    } while (0)
-#endif
-
-/** @def MyLog
- * Equivalent to LogFlow but uses MyLogIt instead of LogIt.
- *
- * @warning Logging using MyLog* is intended only as a temporary mean to debug
- *          release builds (e.g. in case if the error is not reproducible with
- *          the debug builds)! Any MyLog* usage must be removed from the sources
- *          after the error has been fixed.
- */
-#define MyLog(a)            MyLogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, a)
+int VBoxSVCLogRelCreate(const char *pszLogFile, uint32_t cHistory,
+                        uint32_t uHistoryFileTime, uint64_t uHistoryFileSize);
 
 #endif // ____H_LOGGING
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
