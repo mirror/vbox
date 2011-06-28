@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2007 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -92,12 +92,15 @@ RT_C_DECLS_BEGIN
 #define RTGETOPT_FLAG_DEC                       RT_BIT(18)
 /** The index value is attached to the argument - only valid for long arguments. */
 #define RTGETOPT_FLAG_INDEX                     RT_BIT(19)
+/** Treat the long option as case insensitive. */
+#define RTGETOPT_FLAG_ICASE                     RT_BIT(20)
 /** Mask of valid bits - for validation. */
 #define RTGETOPT_VALID_MASK                     (  RTGETOPT_REQ_MASK \
                                                  | RTGETOPT_FLAG_HEX \
                                                  | RTGETOPT_FLAG_OCT \
                                                  | RTGETOPT_FLAG_DEC \
-                                                 | RTGETOPT_FLAG_INDEX)
+                                                 | RTGETOPT_FLAG_INDEX \
+                                                 | RTGETOPT_FLAG_ICASE)
 /** @} */
 
 /**
