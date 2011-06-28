@@ -15,7 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <Windows.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "VBox/com/defs.h"
 
@@ -29,9 +31,12 @@
 #include "svchlp.h"
 
 #include <VBox/err.h>
-#include <iprt/getopt.h>
+#include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
+#include <iprt/string.h>
+#include <iprt/uni.h>
 #include <iprt/path.h>
+#include <iprt/getopt.h>
 
 #include <atlbase.h>
 #include <atlcom.h>
@@ -149,10 +154,9 @@ static int WordCmpI(LPCTSTR psz1, LPCTSTR psz2) throw()
 
 /////////////////////////////////////////////////////////////////////////////
 //
-extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
-    HINSTANCE /*hPrevInstance*/, LPTSTR lpCmdLine, int /*nShowCmd*/)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int /*nShowCmd*/)
 {
-    lpCmdLine = GetCommandLine(); /* this line necessary for _ATL_MIN_CRT */
+    LPCTSTR lpCmdLine = GetCommandLine(); /* this line necessary for _ATL_MIN_CRT */
 
     /* Need to parse the command line before initializing the VBox runtime. */
     TCHAR szTokens[] = _T("-/");
@@ -228,7 +232,7 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
     uint64_t        uHistoryFileSize = 100 * _1M;   // max 100MB per file
 
     RTGETOPTSTATE   GetOptState;
-    int vrc = RTGetOptInit(&GetOptState, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
+    int vrc = RTGetOptInit(&GetOptState, __argc, __argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
     AssertRC(vrc);
 
     RTGETOPTUNION   ValueUnion;
@@ -279,6 +283,7 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
                 break;
 
             case 'h':
+            {
                 TCHAR txt[]= L"Options:\n\n"
                              L"/RegServer:\tregister COM out-of-proc server\n"
                              L"/UnregServer:\tunregister COM out-of-proc server\n"
@@ -287,40 +292,46 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
                 TCHAR title[]=_T("Usage");
                 fRun = false;
                 MessageBox(NULL, txt, title, MB_OK);
-                break;
+                return 0;
+            }
 
             case 'V':
+            {
                 char *psz = NULL;
                 RTStrAPrintf(&psz, "%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
-                TCHAR *txt;
-                RTStrToUni(psz, &txt);
+                PRTUTF16 txt = NULL;
+                RTStrToUtf16(psz, &txt);
                 TCHAR title[]=_T("Version");
                 fRun = false;
                 MessageBox(NULL, txt, title, MB_OK);
                 RTStrFree(psz);
-                RTUniFree(txt);
-                break;
+                RTUtf16Free(txt);
+                return 0;
+            }
 
             default:
                 /** @todo this assumes that stderr is visible, which is not
                  * true for standard Windows applications. */
-                return RTGetOptPrintError(vrc, &ValueUnion);
+                /* continue on command line errors... */
+                RTGetOptPrintError(vrc, &ValueUnion);
         }
     }
 
-    if (!pszLogFile)
-    {
-        char szLogFile[RTPATH_MAX];
-        vrc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
-        if (RT_SUCCESS(vrc))
-            vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxSVC.log");
-        if (RT_SUCCESS(vrc))
-            pszLogFile = RTStrDup(szLogFile);
-    }
     /* Only create the log file when running VBoxSVC normally, but not when
      * registering/unregistering or calling the helper functionality. */
     if (fRun)
+    {
+        if (!pszLogFile)
+        {
+            char szLogFile[RTPATH_MAX];
+            vrc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+            if (RT_SUCCESS(vrc))
+                vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxSVC.log");
+            if (RT_SUCCESS(vrc))
+                pszLogFile = RTStrDup(szLogFile);
+        }
         VBoxSVCLogRelCreate(pszLogFile, cHistory, uHistoryFileTime, uHistoryFileSize);
+    }
 
     int nRet = 0;
     HRESULT hRes = com::Initialize();
@@ -341,18 +352,18 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
             _Module.UpdateRegistryFromResource(IDR_VIRTUALBOX, TRUE);
             nRet = _Module.RegisterServer(TRUE);
         }
-        if (!pszPipeName)
+        if (pszPipeName)
         {
             Log(("SVCMAIN: Processing Helper request (cmdline=\"%s\")...\n", pszPipeName));
 
-            if (!*pipeName)
+            if (!*pszPipeName)
                 vrc = VERR_INVALID_PARAMETER;
 
             if (RT_SUCCESS(vrc))
             {
                 /* do the helper job */
                 SVCHlpServer server;
-                vrc = server.open(pipeName.c_str());
+                vrc = server.open(pszPipeName);
                 if (RT_SUCCESS(vrc))
                     vrc = server.run();
             }
