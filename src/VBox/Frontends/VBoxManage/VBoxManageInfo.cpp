@@ -337,6 +337,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("VRAM size:       %uMB\n", vramSize);
 
+    ULONG cpuCap;
+    rc = machine->COMGETTER(CPUExecutionCap)(&cpuCap);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("cpuexecutioncap=%u\n", cpuCap);
+    else
+        RTPrintf("CPU exec cap:    %u%%\n", cpuCap);
+
     BOOL fHpetEnabled;
     machine->COMGETTER(HpetEnabled)(&fHpetEnabled);
     if (details == VMINFO_MACHINEREADABLE)
