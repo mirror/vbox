@@ -7875,8 +7875,119 @@ static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
     if (pAhci->fBootable)
         for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
             ataControllerResume(&pAhci->aCts[i]);
-    return;
 }
+
+/**
+ * Initializes the VPD data of a attached device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns      The device instance.
+ * @param   pAhciPort    The attached device.
+ * @param   szName       Name of the port to get the CFGM node.
+ */
+static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *pszName)
+{
+    int rc = VINF_SUCCESS;
+    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+
+    /* Generate a default serial number. */
+    char szSerial[AHCI_SERIAL_NUMBER_LENGTH+1];
+    RTUUID Uuid;
+
+    if (pAhciPort->pDrvBlock)
+        rc = pAhciPort->pDrvBlock->pfnGetUuid(pAhciPort->pDrvBlock, &Uuid);
+    else
+        RTUuidClear(&Uuid);
+
+    if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
+    {
+        /* Generate a predictable serial for drives which don't have a UUID. */
+        RTStrPrintf(szSerial, sizeof(szSerial), "VB%x-1a2b3c4d",
+                    pAhciPort->iLUN);
+    }
+    else
+        RTStrPrintf(szSerial, sizeof(szSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
+
+    /* Get user config if present using defaults otherwise. */
+    PCFGMNODE pCfgNode = CFGMR3GetChild(pDevIns->pCfg, pszName);
+    rc = CFGMR3QueryStringDef(pCfgNode, "SerialNumber", pAhciPort->szSerialNumber, sizeof(pAhciPort->szSerialNumber),
+                              szSerial);
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+            return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                    N_("AHCI configuration error: \"SerialNumber\" is longer than 20 bytes"));
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AHCI configuration error: failed to read \"SerialNumber\" as string"));
+    }
+
+    rc = CFGMR3QueryStringDef(pCfgNode, "FirmwareRevision", pAhciPort->szFirmwareRevision, sizeof(pAhciPort->szFirmwareRevision),
+                              "1.0");
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+            return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                    N_("AHCI configuration error: \"FirmwareRevision\" is longer than 8 bytes"));
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AHCI configuration error: failed to read \"FirmwareRevision\" as string"));
+    }
+
+    rc = CFGMR3QueryStringDef(pCfgNode, "ModelNumber", pAhciPort->szModelNumber, sizeof(pAhciPort->szModelNumber),
+                              pAhciPort->fATAPI ? "VBOX CD-ROM" : "VBOX HARDDISK");
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+            return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                   N_("AHCI configuration error: \"ModelNumber\" is longer than 40 bytes"));
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AHCI configuration error: failed to read \"ModelNumber\" as string"));
+    }
+
+    rc = CFGMR3QueryBoolDef(pCfgNode, "NonRotationalMedium", &pAhciPort->fNonRotational, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                    N_("AHCI configuration error: failed to read \"NonRotationalMedium\" as boolean"));
+
+    /* There are three other identification strings for CD drives used for INQUIRY */
+    if (pAhciPort->fATAPI)
+    {
+        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIVendorId", pAhciPort->szInquiryVendorId, sizeof(pAhciPort->szInquiryVendorId),
+                                  "VBOX");
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+                return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                N_("AHCI configuration error: \"ATAPIVendorId\" is longer than 16 bytes"));
+            return PDMDEV_SET_ERROR(pDevIns, rc,
+                    N_("AHCI configuration error: failed to read \"ATAPIVendorId\" as string"));
+        }
+
+        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIProductId", pAhciPort->szInquiryProductId, sizeof(pAhciPort->szInquiryProductId),
+                                  "CD-ROM");
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+                return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                N_("AHCI configuration error: \"ATAPIProductId\" is longer than 16 bytes"));
+            return PDMDEV_SET_ERROR(pDevIns, rc,
+                    N_("AHCI configuration error: failed to read \"ATAPIProductId\" as string"));
+        }
+
+        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIRevision", pAhciPort->szInquiryRevision, sizeof(pAhciPort->szInquiryRevision),
+                                  "1.0");
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
+                return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
+                                N_("AHCI configuration error: \"ATAPIRevision\" is longer than 4 bytes"));
+            return PDMDEV_SET_ERROR(pDevIns, rc,
+                    N_("AHCI configuration error: failed to read \"ATAPIRevision\" as string"));
+        }
+    }
+
+    return rc;
+}
+
 
 /**
  * Detach notification.
@@ -8022,6 +8133,9 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 
         if (RT_SUCCESS(rc))
         {
+            char szName[24];
+            RTStrPrintf(szName, sizeof(szName), "Port%d", iLUN);
+
             if (   pAhciPort->pDrvBlockAsync
                 && !pAhciPort->fATAPI)
             {
@@ -8029,9 +8143,6 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             }
             else
             {
-                char szName[24];
-                RTStrPrintf(szName, sizeof(szName), "Port%d", iLUN);
-
                 pAhciPort->fAsyncInterface = false;
 
                 /* Create event semaphore. */
@@ -8054,6 +8165,12 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 
             if (RT_SUCCESS(rc) && pAhciPort->fATAPI)
                 ahciMediumInserted(pAhciPort);
+
+            /*
+             * Init vendor product data.
+             */
+            if (RT_SUCCESS(rc))
+                rc = ahciR3VpdInit(pDevIns, pAhciPort, szName);
 
             /* Inform the guest about the added device in case of hotplugging. */
             if (   RT_SUCCESS(rc)
@@ -8439,99 +8556,9 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             /*
              * Init vendor product data.
              */
-            /* Generate a default serial number. */
-            char szSerial[AHCI_SERIAL_NUMBER_LENGTH+1];
-            RTUUID Uuid;
-            if (pAhciPort->pDrvBlock)
-                rc = pAhciPort->pDrvBlock->pfnGetUuid(pAhciPort->pDrvBlock, &Uuid);
-            else
-                RTUuidClear(&Uuid);
-
-            if (RT_FAILURE(rc) || RTUuidIsNull(&Uuid))
-            {
-                /* Generate a predictable serial for drives which don't have a UUID. */
-                RTStrPrintf(szSerial, sizeof(szSerial), "VB%x-1a2b3c4d",
-                            pAhciPort->iLUN);
-            }
-            else
-                RTStrPrintf(szSerial, sizeof(szSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
-
-            /* Get user config if present using defaults otherwise. */
-            PCFGMNODE pCfgNode = CFGMR3GetChild(pCfg, szName);
-            rc = CFGMR3QueryStringDef(pCfgNode, "SerialNumber", pAhciPort->szSerialNumber, sizeof(pAhciPort->szSerialNumber),
-                                      szSerial);
+            rc = ahciR3VpdInit(pDevIns, pAhciPort, szName);
             if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-                    return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                N_("AHCI configuration error: \"SerialNumber\" is longer than 20 bytes"));
-                return PDMDEV_SET_ERROR(pDevIns, rc,
-                            N_("AHCI configuration error: failed to read \"SerialNumber\" as string"));
-            }
-
-            rc = CFGMR3QueryStringDef(pCfgNode, "FirmwareRevision", pAhciPort->szFirmwareRevision, sizeof(pAhciPort->szFirmwareRevision),
-                                      "1.0");
-            if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-                    return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                N_("AHCI configuration error: \"FirmwareRevision\" is longer than 8 bytes"));
-                return PDMDEV_SET_ERROR(pDevIns, rc,
-                            N_("AHCI configuration error: failed to read \"FirmwareRevision\" as string"));
-            }
-
-            rc = CFGMR3QueryStringDef(pCfgNode, "ModelNumber", pAhciPort->szModelNumber, sizeof(pAhciPort->szModelNumber),
-                                      pAhciPort->fATAPI ? "VBOX CD-ROM" : "VBOX HARDDISK");
-            if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-                    return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                               N_("AHCI configuration error: \"ModelNumber\" is longer than 40 bytes"));
-                return PDMDEV_SET_ERROR(pDevIns, rc,
-                            N_("AHCI configuration error: failed to read \"ModelNumber\" as string"));
-            }
-
-            rc = CFGMR3QueryBoolDef(pCfgNode, "NonRotationalMedium", &pAhciPort->fNonRotational, false);
-            if (RT_FAILURE(rc))
-                return PDMDEV_SET_ERROR(pDevIns, rc,
-                            N_("PIIX3 configuration error: failed to read \"NonRotationalMedium\" as boolean"));
-
-            /* There are three other identification strings for CD drives used for INQUIRY */
-            if (pAhciPort->fATAPI)
-            {
-                rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIVendorId", pAhciPort->szInquiryVendorId, sizeof(pAhciPort->szInquiryVendorId),
-                                          "VBOX");
-                if (RT_FAILURE(rc))
-                {
-                    if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-                        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                        N_("PIIX3 configuration error: \"ATAPIVendorId\" is longer than 16 bytes"));
-                    return PDMDEV_SET_ERROR(pDevIns, rc,
-                            N_("PIIX3 configuration error: failed to read \"ATAPIVendorId\" as string"));
-                }
-
-                rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIProductId", pAhciPort->szInquiryProductId, sizeof(pAhciPort->szInquiryProductId),
-                                          "CD-ROM");
-                if (RT_FAILURE(rc))
-                {
-                    if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-                        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                        N_("PIIX3 configuration error: \"ATAPIProductId\" is longer than 16 bytes"));
-                    return PDMDEV_SET_ERROR(pDevIns, rc,
-                            N_("PIIX3 configuration error: failed to read \"ATAPIProductId\" as string"));
-                }
-
-                rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIRevision", pAhciPort->szInquiryRevision, sizeof(pAhciPort->szInquiryRevision),
-                                          "1.0");
-                if (RT_FAILURE(rc))
-                {
-                    if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-                        return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                        N_("PIIX3 configuration error: \"ATAPIRevision\" is longer than 4 bytes"));
-                    return PDMDEV_SET_ERROR(pDevIns, rc,
-                            N_("PIIX3 configuration error: failed to read \"ATAPIRevision\" as string"));
-                }
-            }
+                return rc;
 
             /*
              * If the new async interface is available we use a PDMQueue to transmit
