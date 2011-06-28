@@ -8163,9 +8163,6 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
                 }
             }
 
-            if (RT_SUCCESS(rc) && pAhciPort->fATAPI)
-                ahciMediumInserted(pAhciPort);
-
             /*
              * Init vendor product data.
              */
@@ -8182,6 +8179,15 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
                 ASMAtomicOrU32(&pAhciPort->regCMD, AHCI_PORT_CMD_CPS);
                 ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS | AHCI_PORT_IS_PCS);
                 ASMAtomicOrU32(&pAhciPort->regSERR, AHCI_PORT_SERR_X | AHCI_PORT_SERR_N);
+
+                if (pAhciPort->fATAPI)
+                    pAhciPort->regSIG = AHCI_PORT_SIG_ATAPI;
+                else
+                    pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
+                pAhciPort->regSSTS = (0x01 << 8) | /* Interface is active. */
+                                     (0x02 << 4) | /* Generation 2 (3.0GBps) speed. */
+                                     (0x03 << 0);  /* Device detected and communication established. */
+
                 if (   (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
                     || (pAhciPort->regIE & AHCI_PORT_IE_PCE)
                     || (pAhciPort->regIE & AHCI_PORT_IE_PRCE))
