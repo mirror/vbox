@@ -184,76 +184,167 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
      */
     RTR3Init();
 
+    /* Note that all options are given lowercase/camel case/uppercase to
+     * approximate case insensitive matching, which RTGetOpt doesn't offer. */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--embedding",    'e',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "-embedding",     'e',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "/embedding",     'e',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "--unregserver",  'u',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "-unregserver",   'u',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "/unregserver",   'u',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "--regserver",    'r',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "-regserver",     'r',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "/regserver",     'r',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "--reregserver",  'f',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "-reregserver",   'f',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "/reregserver",   'f',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
+        { "--helper",       'H',    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_ICASE },
+        { "-helper",        'H',    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_ICASE },
+        { "/helper",        'H',    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_ICASE },
+        { "--logfile",      'F',    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_ICASE },
+        { "-logfile",       'F',    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_ICASE },
+        { "/logfile",       'F',    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_ICASE },
+        { "--logrotate",    'R',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
+        { "-logrotate",     'R',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
+        { "/logrotate",     'R',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
+        { "--logsize",      'S',    RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_ICASE },
+        { "-logsize",       'S',    RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_ICASE },
+        { "/logsize",       'S',    RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_ICASE },
+        { "--loginterval",  'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
+        { "-loginterval",   'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
+        { "/loginterval",   'I',    RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_ICASE },
+    };
+
+    bool            fRun = true;
+    bool            fRegister = false;
+    bool            fUnregister = false;
+    const char      *pszPipeName = NULL;
+    const char      *pszLogFile = NULL;
+    uint32_t        cHistory = 10;                  // enable log rotation, 10 files
+    uint32_t        uHistoryFileTime = RT_SEC_1DAY; // max 1 day per file
+    uint64_t        uHistoryFileSize = 100 * _1M;   // max 100MB per file
+
+    RTGETOPTSTATE   GetOptState;
+    int vrc = RTGetOptInit(&GetOptState, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
+    AssertRC(vrc);
+
+    RTGETOPTUNION   ValueUnion;
+    while ((vrc = RTGetOpt(&GetOptState, &ValueUnion)))
+    {
+        switch (vrc)
+        {
+            case 'e':
+                /* already handled above */
+                break;
+
+            case 'u':
+                fUnregister = true;
+                fRun = false;
+                break;
+
+            case 'r':
+                fRegister = true;
+                break;
+
+            case 'f':
+                fUnregister = true;
+                fRegister = true;
+                fRun = false;
+                break;
+
+            case 'H':
+                pszPipeName = ValueUnion.psz;
+                if (!pszPipeName)
+                    pszPipeName = "";
+                fRun = false;
+                break;
+
+            case 'F':
+                pszLogFile = ValueUnion.psz;
+                break;
+
+            case 'R':
+                cHistory = ValueUnion.u32;
+                break;
+
+            case 'S':
+                uHistoryFileSize = ValueUnion.u64;
+                break;
+
+            case 'I':
+                uHistoryFileTime = ValueUnion.u32;
+                break;
+
+            case 'h':
+                TCHAR txt[]= L"Options:\n\n"
+                             L"/RegServer:\tregister COM out-of-proc server\n"
+                             L"/UnregServer:\tunregister COM out-of-proc server\n"
+                             L"/ReregServer:\tunregister and register COM server\n"
+                             L"no options:\trun the server";
+                TCHAR title[]=_T("Usage");
+                fRun = false;
+                MessageBox(NULL, txt, title, MB_OK);
+                break;
+
+            case 'V':
+                char *psz = NULL;
+                RTStrAPrintf(&psz, "%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                TCHAR *txt;
+                RTStrToUni(psz, &txt);
+                TCHAR title[]=_T("Version");
+                fRun = false;
+                MessageBox(NULL, txt, title, MB_OK);
+                RTStrFree(psz);
+                RTUniFree(txt);
+                break;
+
+            default:
+                /** @todo this assumes that stderr is visible, which is not
+                 * true for standard Windows applications. */
+                return RTGetOptPrintError(vrc, &ValueUnion);
+        }
+    }
+
+    if (!pszLogFile)
+    {
+        char szLogFile[RTPATH_MAX];
+        vrc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
+        if (RT_SUCCESS(vrc))
+            vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxSVC.log");
+        if (RT_SUCCESS(vrc))
+            pszLogFile = RTStrDup(szLogFile);
+    }
+    /* Only create the log file when running VBoxSVC normally, but not when
+     * registering/unregistering or calling the helper functionality. */
+    if (fRun)
+        VBoxSVCLogRelCreate(pszLogFile, cHistory, uHistoryFileTime, uHistoryFileSize);
+
+    int nRet = 0;
     HRESULT hRes = com::Initialize();
 
     _ASSERTE(SUCCEEDED(hRes));
     _Module.Init(ObjectMap, hInstance, &LIBID_VirtualBox);
     _Module.dwThreadID = GetCurrentThreadId();
 
-    int nRet = 0;
-    BOOL bRun = TRUE;
-    lpszToken = FindOneOf(lpCmdLine, szTokens);
-    while (lpszToken != NULL)
+    if (!fRun)
     {
-        if (WordCmpI(lpszToken, _T("UnregServer")) == 0)
+        if (fUnregister)
         {
             _Module.UpdateRegistryFromResource(IDR_VIRTUALBOX, FALSE);
             nRet = _Module.UnregisterServer(TRUE);
-            bRun = FALSE;
-            break;
         }
-        else if (WordCmpI(lpszToken, _T("RegServer")) == 0)
+        if (fRegister)
         {
             _Module.UpdateRegistryFromResource(IDR_VIRTUALBOX, TRUE);
             nRet = _Module.RegisterServer(TRUE);
-            bRun = FALSE;
-            break;
         }
-        else if (WordCmpI(lpszToken, _T("ReregServer")) == 0)
+        if (!pszPipeName)
         {
-            _Module.UpdateRegistryFromResource(IDR_VIRTUALBOX, FALSE);
-            nRet = _Module.UnregisterServer(TRUE);
-            _Module.UpdateRegistryFromResource(IDR_VIRTUALBOX, TRUE);
-            nRet = _Module.RegisterServer(TRUE);
-            bRun = FALSE;
-            break;
-        }
-        else if (   (WordCmpI(lpszToken, _T("h")) == 0)
-                 || (WordCmpI(lpszToken, _T("?")) == 0))
-        {
-            TCHAR txt[]= L"Options:\n\n"
-                         L"/RegServer:\tregister COM out-of-proc server\n"
-                         L"/UnregServer:\tunregister COM out-of-proc server\n"
-                         L"/ReregServer:\tunregister and register COM server\n"
-                         L"no options:\trun the server";
-            TCHAR title[]=_T("Usage");
-            nRet = -1;
-            bRun = FALSE;
-            MessageBox(NULL, txt, title, MB_OK);
-            break;
-        }
-        else if (WordCmpI (lpszToken, _T("Helper")) == 0)
-        {
-            Log (("SVCMAIN: Processing Helper request (cmdline=\"%ls\")...\n",
-                  lpszToken + 6));
+            Log(("SVCMAIN: Processing Helper request (cmdline=\"%s\")...\n", pszPipeName));
 
-            TCHAR szTokens[] = _T (" \t");
-
-            int vrc = VINF_SUCCESS;
-            Utf8Str pipeName;
-
-            lpszToken = FindOneOf (lpszToken, szTokens);
-            if (lpszToken)
-            {
-                while (*lpszToken != NULL &&
-                       (*lpszToken == ' ' || *lpszToken == '\t'))
-                    ++ lpszToken;
-
-                if (*lpszToken != NULL)
-                    pipeName = Utf8Str(lpszToken);
-            }
-
-            if (pipeName.isEmpty())
+            if (!*pipeName)
                 vrc = VERR_INVALID_PARAMETER;
 
             if (RT_SUCCESS(vrc))
@@ -266,20 +357,12 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
             }
             if (RT_FAILURE(vrc))
             {
-                Utf8Str err = Utf8StrFmt (
-                    "Failed to process Helper request (%Rrc).", vrc);
-                Log (("SVCMAIN: %s\n", err.c_str()));
+                Log(("SVCMAIN: Failed to process Helper request (%Rrc).", vrc));
+                nRet = 1;
             }
-
-            /* don't run the COM server */
-            bRun = FALSE;
-            break;
         }
-
-        lpszToken = FindOneOf(lpszToken, szTokens);
     }
-
-    if (bRun)
+    else
     {
         _Module.StartMonitor();
 #if _WIN32_WINNT >= 0x0400 & defined(_ATL_FREE_THREADED)

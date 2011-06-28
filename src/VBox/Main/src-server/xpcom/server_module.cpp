@@ -48,6 +48,7 @@
 
 #include <VBox/err.h>
 
+#include <iprt/assert.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
