@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -216,7 +216,9 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                  * there is no index.
                  */
                 size_t cchLong = strlen(pOpt->pszLong);
-                if (!strncmp(pszOption, pOpt->pszLong, cchLong))
+                if (   !strncmp(pszOption, pOpt->pszLong, cchLong)
+                    || (   pOpt->fFlags & RTGETOPT_FLAG_ICASE
+                        && !RTStrNICmp(pszOption, pOpt->pszLong, cchLong)))
                 {
                     if (pOpt->fFlags & RTGETOPT_FLAG_INDEX)
                         while (RT_C_IS_DIGIT(pszOption[cchLong]))
@@ -234,7 +236,9 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                  * As above, we also match where there is no index.
                  */
                 size_t cchLong = strlen(pOpt->pszLong);
-                if (!strncmp(pszOption, pOpt->pszLong, cchLong))
+                if (   !strncmp(pszOption, pOpt->pszLong, cchLong)
+                    || (   pOpt->fFlags & RTGETOPT_FLAG_ICASE
+                        && !RTStrNICmp(pszOption, pOpt->pszLong, cchLong)))
                 {
                     while (RT_C_IS_DIGIT(pszOption[cchLong]))
                         cchLong++;
@@ -242,7 +246,9 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                         return pOpt;
                 }
             }
-            else if (!strcmp(pszOption, pOpt->pszLong))
+            else if (   !strcmp(pszOption, pOpt->pszLong)
+                     || (   pOpt->fFlags & RTGETOPT_FLAG_ICASE
+                         && !RTStrICmp(pszOption, pOpt->pszLong)))
                 return pOpt;
         }
         pOpt++;
@@ -250,7 +256,9 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
 
     if (!(fFlags & RTGETOPTINIT_FLAGS_NO_STD_OPTS))
         for (uint32_t i = 0; i < RT_ELEMENTS(g_aStdOptions); i++)
-            if (!strcmp(pszOption, g_aStdOptions[i].pszLong))
+            if (   !strcmp(pszOption, g_aStdOptions[i].pszLong)
+                || (   pOpt->fFlags & RTGETOPT_FLAG_ICASE
+                    && !RTStrICmp(pszOption, g_aStdOptions[i].pszLong)))
                 return &g_aStdOptions[i];
 
     return NULL;
