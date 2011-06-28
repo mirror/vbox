@@ -11952,8 +11952,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         integration) mode.
         <note>
           Calling this method has no effect if <link
-          to="IGuest::getFacilityStatus"/> with facility <link to="AdditionsFacilityType::Seamless"/>
-          does not return <link to="AdditionsFacilityStatus::Active"/>.
+          to="IGuest::getFacilityStatus"/> with facility @c Seamless
+          does not return @c Active.
         </note>
       </desc>
       <param name="enabled" type="boolean" dir="in"/>
@@ -14085,8 +14085,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       </desc>
 
-      <param name="mediumAttachment" type="IMediumAttachment" dir="in"/>
-      <param name="force" type="boolean" dir="in"/>
+      <param name="mediumAttachment" type="IMediumAttachment" dir="in">
+        <desc>The medium attachment which changed.</desc>
+      </param>
+      <param name="force" type="boolean" dir="in">
+        <desc>If the medium change was forced.</desc>
+      </param>
     </method>
 
     <method name="onStorageDeviceChange">
@@ -14103,7 +14107,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       </desc>
 
-      <param name="mediumAttachment" type="IMediumAttachment" dir="in"/>
+      <param name="mediumAttachment" type="IMediumAttachment" dir="in">
+        <desc>The medium attachment which changed.</desc>
+      </param>
       <param name="remove" type="boolean" dir="in">
         <desc>TRUE if the device is removed, FALSE if it was added.</desc>
       </param>
