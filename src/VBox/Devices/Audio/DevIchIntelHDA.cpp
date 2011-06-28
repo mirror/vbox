@@ -53,7 +53,7 @@ extern "C" {
 #endif
 
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
-PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
+PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb);
 static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 
 #define HDA_NREGS 112
@@ -534,7 +534,7 @@ DECLCALLBACK(int)hdaRegReadU8(INTELHDLinkState* pState, uint32_t offset, uint32_
 DECLCALLBACK(int)hdaRegWriteU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 
 static inline void hdaInitTransferDescriptor(PINTELHDLinkState pState, PHDABDLEDESC pBdle, uint8_t u8Strm, PHDASTREAMTRANSFERDESC pStreamDesc);
-static int hdaLookup(INTELHDLinkState* pState, uint32_t u32Offset);
+static int hdaMMIORegLookup(INTELHDLinkState* pState, uint32_t u32Offset);
 static void hdaFetchBdle(INTELHDLinkState *pState, PHDABDLEDESC pBdle, PHDASTREAMTRANSFERDESC pStreamDesc);
 #ifdef LOG_ENABLED
 static void dump_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64BaseDMA);
@@ -732,30 +732,11 @@ static int hdaProcessInterrupt(INTELHDLinkState* pState)
     return VINF_SUCCESS;
 }
 
-static int hdaLookup(INTELHDLinkState* pState, uint32_t u32Offset)
+static int hdaMMIORegLookup(INTELHDLinkState* pState, uint32_t u32Offset)
 {
     int idxMiddle;
     int idxHigh = RT_ELEMENTS(s_ichIntelHDRegMap);
     int idxLow = 0;
-    while (1)
-    {
-            if (idxHigh < idxLow)
-                break;
-            idxMiddle = idxLow + (idxHigh - idxLow)/2;
-            if (u32Offset < s_ichIntelHDRegMap[idxMiddle].offset)
-            {
-                idxHigh = idxMiddle - 1;
-                continue;
-            }
-            if (u32Offset >= s_ichIntelHDRegMap[idxMiddle].offset + s_ichIntelHDRegMap[idxMiddle].size)
-            {
-                idxLow = idxMiddle + 1;
-                continue;
-            }
-            if (u32Offset >= s_ichIntelHDRegMap[idxMiddle].offset
-                && u32Offset < s_ichIntelHDRegMap[idxMiddle].offset + s_ichIntelHDRegMap[idxMiddle].size)
-                return idxMiddle;
-    }
     /* Aliases HDA spec 3.3.45 */
     switch(u32Offset)
     {
@@ -775,6 +756,30 @@ static int hdaLookup(INTELHDLinkState* pState, uint32_t u32Offset)
             return HDA_REG_IND_NAME(SD6LPIB);
         case 0x2164:
             return HDA_REG_IND_NAME(SD7LPIB);
+    }
+    while (1)
+    {
+#ifdef DEBUG_vvl
+            Assert((   idxHigh >= 0
+                    && idxLow >= 0));
+#endif
+            if (   idxHigh < idxLow
+                || idxHigh < 0)
+                break;
+            idxMiddle = idxLow + (idxHigh - idxLow)/2;
+            if (u32Offset < s_ichIntelHDRegMap[idxMiddle].offset)
+            {
+                idxHigh = idxMiddle - 1;
+                continue;
+            }
+            if (u32Offset >= s_ichIntelHDRegMap[idxMiddle].offset + s_ichIntelHDRegMap[idxMiddle].size)
+            {
+                idxLow = idxMiddle + 1;
+                continue;
+            }
+            if (   u32Offset >= s_ichIntelHDRegMap[idxMiddle].offset
+                && u32Offset < s_ichIntelHDRegMap[idxMiddle].offset + s_ichIntelHDRegMap[idxMiddle].size)
+                return idxMiddle;
     }
     return -1;
 }
@@ -1869,38 +1874,54 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 {
     int rc = VINF_SUCCESS;
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    uint32_t  u32Offset = GCPhysAddr - pThis->hda.addrMMReg;
-    int index = hdaLookup(&pThis->hda, u32Offset);
-    if (pThis->hda.fInReset && index != ICH6_HDA_REG_GCTL)
+    uint32_t offReg  = GCPhysAddr - pThis->hda.addrMMReg;
+    int idxReg = hdaMMIORegLookup(&pThis->hda, offReg);
+    if (pThis->hda.fInReset && idxReg != ICH6_HDA_REG_GCTL)
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
 
-    if (   index == -1
-           || cb > 4)
-        LogRel(("hda: Invalid read access @0x%x(of bytes:%d)\n", u32Offset, cb));
+    if (idxReg == -1)
+        LogRel(("hda: Invalid read access @0x%x(of bytes:%d)\n", offReg, cb));
 
-    if (index != -1)
+    if (idxReg != -1)
     {
         /** @todo r=bird: Accesses crossing register boundraries aren't handled
          *        right from what I can tell?  If they are, please explain
          *        what the rules are. */
         uint32_t mask = 0;
-        uint32_t shift = (u32Offset - s_ichIntelHDRegMap[index].offset) % sizeof(uint32_t) * 8;
-        uint32_t v = 0;
+        uint32_t shift = (s_ichIntelHDRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
+        uint32_t u32Value = 0;
         switch(cb)
         {
             case 1: mask = 0x000000ff; break;
             case 2: mask = 0x0000ffff; break;
-            case 3: mask = 0x00ffffff; break;
-            case 4: mask = 0xffffffff; break;
+            case 4:
+            /* 18.2 of ICH6 datasheet defines wideness of the accesses byte, word and double word */
+            case 8:
+                mask = 0xffffffff;
+                cb = 4;
+                break;
         }
+#if 0
+        /* cross register access. Mac guest hit this assert doing assumption 4 byte access to 3 byte registers e.g. {I,O}SDnCTL
+         */
+        //Assert((cb <= s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset)));
+        if (cb > s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset))
+        {
+            int off = cb - (s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset));
+            rc = hdaMMIORead(pDevIns, pvUser, GCPhysAddr + cb - off, (char *)pv + cb - off, off);
+            if (RT_FAILURE(rc))
+                AssertRCReturn (rc, rc);
+        }
+        //Assert(((offReg - s_ichIntelHDRegMap[idxReg].offset) == 0));
+#endif
         mask <<= shift;
-        rc = s_ichIntelHDRegMap[index].pfnRead(&pThis->hda, u32Offset, index, &v);
-        *(uint32_t *)pv = (v & mask) >> shift;
-        Log(("hda: read %s[%x/%x]\n", s_ichIntelHDRegMap[index].abbrev, v, *(uint32_t *)pv));
+        rc = s_ichIntelHDRegMap[idxReg].pfnRead(&pThis->hda, offReg, idxReg, &u32Value);
+        *(uint32_t *)pv |= (u32Value & mask);
+        Log(("hda: read %s[%x/%x]\n", s_ichIntelHDRegMap[idxReg].abbrev, u32Value, *(uint32_t *)pv));
         return rc;
     }
     *(uint32_t *)pv = 0xFF;
-    Log(("hda: hole at %x is accessed for read\n", u32Offset));
+    Log(("hda: hole at %x is accessed for read\n", offReg));
     return rc;
 }
 
@@ -1921,7 +1942,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 {
     PCIINTELHDLinkState    *pThis     = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     uint32_t                offReg    = GCPhysAddr - pThis->hda.addrMMReg;
-    int                     idxReg    = hdaLookup(&pThis->hda, offReg);
+    int                     idxReg    = hdaMMIORegLookup(&pThis->hda, offReg);
     int                     rc        = VINF_SUCCESS;
 
     if (pThis->hda.fInReset && idxReg != ICH6_HDA_REG_GCTL)
@@ -1945,8 +1966,6 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
          * nobody seems to be using it and it just add complexity when reading
          * the code.
          *
-         * PPS. 'v' is not a very good variable name.
-         * PPPS. We don't do 3 byte writes, only 1, 2, 4 and 8.
          */
         uint32_t u32CurValue = pThis->hda.au32Regs[idxReg];
         uint32_t u32NewValue;
@@ -1955,23 +1974,37 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
         {
             case 1:
                 u32NewValue = *(uint8_t const *)pv;
-                mask = 0xffffff00;
+                mask = 0xff;
                 break;
             case 2:
                 u32NewValue = *(uint16_t const *)pv;
-                mask = 0xffff0000;
+                mask = 0xffff;
                 break;
             case 4:
-            case 8: /** @todo r=bird: Add a line about why 8-byte accesses are handled like 4-byte ones. */
+            case 8:
+                /* 18.2 of ICH6 datasheet defines wideness of the accesses byte, word and double word */
                 u32NewValue = *(uint32_t const *)pv;
-                mask = 0;
+                mask = 0xffffffff;
+                cb = 4;
                 break;
             default:
                 AssertFailedReturn(VERR_INTERNAL_ERROR_4); /* shall not happen. */
         }
-        uint32_t shift = (offReg - s_ichIntelHDRegMap[idxReg].offset) % sizeof(uint32_t) * 8;
+        /* cross register access, see corresponding comment in hdaMMIORead */
+#if 0
+        if (cb > s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset))
+        {
+            int off = cb - (s_ichIntelHDRegMap[idxReg].size - (offReg - s_ichIntelHDRegMap[idxReg].offset));
+            rc = hdaMMIOWrite(pDevIns, pvUser, GCPhysAddr + cb - off, (char *)pv + cb - off, off);
+            if (RT_FAILURE(rc))
+                AssertRCReturn (rc, rc);
+        }
+#endif
+        uint32_t shift = (s_ichIntelHDRegMap[idxReg].offset - offReg) % sizeof(uint32_t) * 8;
         mask <<= shift;
-        u32NewValue = ((u32CurValue & mask) | (u32NewValue & ~mask)) >> shift;
+        u32NewValue <<= shift;
+        u32NewValue &= mask;
+        u32NewValue |= (u32CurValue & ~mask);
 
         rc = s_ichIntelHDRegMap[idxReg].pfnWrite(&pThis->hda, offReg, idxReg, u32NewValue);
         Log(("hda: write %s:(%x) %x => %x\n", s_ichIntelHDRegMap[idxReg].abbrev, u32NewValue,
