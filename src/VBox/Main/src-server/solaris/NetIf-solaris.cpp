@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +37,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stropts.h>
-#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <libdevinfo.h>
