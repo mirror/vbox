@@ -52,7 +52,7 @@ public:
     /* Constructor: */
     UINewHDWizard(QWidget *pParent,
                   const QString &strDefaultName = QString(), const QString &strDefaultPath = QString(),
-                  qulonglong uDefaultSize = 0, const CMedium &initialHardDisk = CMedium());
+                  qulonglong uDefaultSize = 0, const CMedium &sourceHardDisk = CMedium());
 
     /* Stuff for wizard type: */
     UINewHDWizardType wizardType() const { return m_wizardType; }
@@ -93,11 +93,18 @@ protected:
 class UINewHDWizardPageWelcome : public UINewHDWizardPage, public Ui::UINewHDWizardPageWelcome
 {
     Q_OBJECT;
+    Q_PROPERTY(CMedium sourceHardDisk READ sourceHardDisk WRITE setSourceHardDisk);
 
 public:
 
     /* Constructor: */
-    UINewHDWizardPageWelcome();
+    UINewHDWizardPageWelcome(const CMedium &sourceHardDisk);
+
+private slots:
+
+    /* Handlers for source disk change: */
+    void sltHandleSourceDiskChange();
+    void sltHandleOpenSourceDiskClick();
 
 private:
 
@@ -106,6 +113,14 @@ private:
 
     /* Prepare page: */
     void initializePage();
+
+    /* Completeness validator: */
+    bool isComplete() const;
+
+    /* Stuff for 'sourceHardDisk' field: */
+    CMedium sourceHardDisk() const { return m_sourceHardDisk; }
+    void setSourceHardDisk(const CMedium &sourceHardDisk) { m_sourceHardDisk = sourceHardDisk; }
+    CMedium m_sourceHardDisk;
 };
 
 /* Format page of the new hard-disk wizard: */
@@ -139,6 +154,9 @@ private:
 
     /* Completeness validator: */
     bool isComplete() const;
+
+    /* Helping stuff: */
+    void processFormat(CMediumFormat mediumFormat);
 
     /* Exclusiveness manager: */
     UIExclusivenessManager *m_pExclusivenessManager;
@@ -279,13 +297,12 @@ private:
 class UINewHDWizardPageSummary : public UINewHDWizardPage, public Ui::UINewHDWizardPageSummary
 {
     Q_OBJECT;
-    Q_PROPERTY(CMedium initialHardDisk READ initialHardDisk WRITE setInitialHardDisk);
     Q_PROPERTY(CMedium hardDisk READ hardDisk WRITE setHardDisk);
 
 public:
 
     /* Constructor: */
-    UINewHDWizardPageSummary(const CMedium &initialHardDisk);
+    UINewHDWizardPageSummary();
 
 protected:
 
@@ -302,11 +319,6 @@ private:
 
     /* Creates hard disk: */
     bool createHardDisk();
-
-    /* Stuff for 'initialHardDisk' field: */
-    CMedium initialHardDisk() const { return m_initialHardDisk; }
-    void setInitialHardDisk(const CMedium &initialHardDisk) { m_initialHardDisk = initialHardDisk; }
-    CMedium m_initialHardDisk;
 
     /* Stuff for 'hardDisk' field: */
     CMedium hardDisk() const { return m_hardDisk; }

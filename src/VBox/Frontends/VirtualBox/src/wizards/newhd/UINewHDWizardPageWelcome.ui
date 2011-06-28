@@ -41,6 +41,31 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="m_pSourceDiskContainer">
+     <property name="title">
+      <string>Source virtual disk</string>
+     </property>
+     <layout class="QHBoxLayout" name="m_pSourceDiskLayout">
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="VBoxMediaComboBox" name="m_pSourceDiskSelector"/>
+      </item>
+      <item>
+       <widget class="QIToolButton" name="m_pOpenSourceDiskButton">
+        <property name="autoRaise">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>Choose a virtual hard disk file...</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <spacer name="m_pSpacer">
      <property name="sizeHint" stdset="0">
       <size>
@@ -54,9 +79,19 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>QIToolButton</class>
+   <extends>QToolButton</extends>
+   <header>QIToolButton.h</header>
+  </customwidget>
+  <customwidget>
    <class>QILabel</class>
    <extends>QLabel</extends>
    <header>QILabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>VBoxMediaComboBox</class>
+   <extends>QComboBox</extends>
+   <header>VBoxMediaComboBox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
