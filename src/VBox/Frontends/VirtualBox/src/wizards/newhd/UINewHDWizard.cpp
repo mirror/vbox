@@ -185,16 +185,17 @@ private:
     QList<bool> m_state;
 };
 
-UINewHDWizard::UINewHDWizard(QWidget *pParent, const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize, const CMedium &initialHardDisk)
+UINewHDWizard::UINewHDWizard(QWidget *pParent, const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize, const CMedium &sourceHardDisk)
     : QIWizard(pParent)
-    , m_wizardType(initialHardDisk.isNull() ? UINewHDWizardType_Creating : UINewHDWizardType_Copying)
+    , m_wizardType(sourceHardDisk.isNull() ? UINewHDWizardType_Creating : UINewHDWizardType_Copying)
 {
     /* Create & add pages: */
-    addPage(new UINewHDWizardPageWelcome);
+    if (wizardType() == UINewHDWizardType_Copying)
+        addPage(new UINewHDWizardPageWelcome(sourceHardDisk));
     addPage(new UINewHDWizardPageFormat);
     addPage(new UINewHDWizardPageVariant);
     addPage(new UINewHDWizardPageOptions(strDefaultName, strDefaultPath, uDefaultSize));
-    addPage(new UINewHDWizardPageSummary(initialHardDisk));
+    addPage(new UINewHDWizardPageSummary);
 
     /* Translate wizard: */
     retranslateUi();
@@ -236,10 +237,50 @@ void UINewHDWizard::retranslateUi()
     }
 }
 
-UINewHDWizardPageWelcome::UINewHDWizardPageWelcome()
+UINewHDWizardPageWelcome::UINewHDWizardPageWelcome(const CMedium &sourceHardDisk)
+    : m_sourceHardDisk(sourceHardDisk)
 {
     /* Decorate page: */
     Ui::UINewHDWizardPageWelcome::setupUi(this);
+
+    /* Register CMedium class: */
+    qRegisterMetaType<CMedium>();
+
+    /* Register 'sourceHardDisk' field: */
+    registerField("sourceHardDisk", this, "sourceHardDisk");
+
+    /* Initialise medium-combo-box: */
+    m_pSourceDiskSelector->setType(VBoxDefs::MediumType_HardDisk);
+    m_pSourceDiskSelector->repopulate();
+
+    /* Setup medium-manager button: */
+    m_pOpenSourceDiskButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png",
+                                                         ":/select_file_dis_16px.png"));
+
+    /* Setup connections: */
+    connect(m_pSourceDiskSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleSourceDiskChange()));
+    connect(m_pOpenSourceDiskButton, SIGNAL(clicked()), this, SLOT(sltHandleOpenSourceDiskClick()));
+}
+
+void UINewHDWizardPageWelcome::sltHandleSourceDiskChange()
+{
+    m_sourceHardDisk = vboxGlobal().findMedium(m_pSourceDiskSelector->id()).medium();
+    emit completeChanged();
+}
+
+void UINewHDWizardPageWelcome::sltHandleOpenSourceDiskClick()
+{
+    /* Get source virtual disk using file-open dialog: */
+    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_HardDisk, this);
+    if (!strMediumId.isNull())
+    {
+        /* Update medium-combo if necessary: */
+        m_pSourceDiskSelector->setCurrentItem(strMediumId);
+        /* Update hard disk source: */
+        sltHandleSourceDiskChange();
+        /* Focus on hard disk combo: */
+        m_pSourceDiskSelector->setFocus();
+    }
 }
 
 void UINewHDWizardPageWelcome::retranslateUi()
@@ -248,29 +289,26 @@ void UINewHDWizardPageWelcome::retranslateUi()
     Ui::UINewHDWizardPageWelcome::retranslateUi(this);
 
     /* Translate 'welcome' page: */
-    switch (wizardType())
-    {
-        case UINewHDWizardType_Creating:
-            setTitle(tr("Welcome to the virtual disk creation wizard"));
-            m_pLabel->setText("This wizard will help you to create a new virtual disk for your virtual machine.");
-            break;
-        case UINewHDWizardType_Copying:
-            setTitle(tr("Welcome to the virtual disk copying wizard"));
-            m_pLabel->setText("This wizard will help you to copy a virtual disk.");
-            break;
-        default:
-            break;
-    }
+    setTitle(UINewHDWizard::tr("Welcome to the virtual disk copying wizard"));
+    m_pLabel->setText("<p>This wizard will help you to copy a virtual disk.</p>");
 
     /* Append page text with common part: */
-    QString strCommonPart = QString("<p>%1</p>").arg(standardHelpText());
-    m_pLabel->setText(m_pLabel->text() + strCommonPart);
+    m_pLabel->setText(m_pLabel->text() + QString("<p>%1</p>").arg(standardHelpText()));
 }
 
 void UINewHDWizardPageWelcome::initializePage()
 {
+    /* Set default item: */
+    m_pSourceDiskSelector->setCurrentItem(m_sourceHardDisk.GetId());
+
     /* Retranslate page: */
     retranslateUi();
+}
+
+bool UINewHDWizardPageWelcome::isComplete() const
+{
+    /* Check what 'sourceHardDisk' field value feats the rules: */
+    return !m_sourceHardDisk.isNull();
 }
 
 UINewHDWizardPageFormat::UINewHDWizardPageFormat()
@@ -292,35 +330,22 @@ UINewHDWizardPageFormat::UINewHDWizardPageFormat()
 
     /* Enumerate supportable formats: */
     CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
-    QVector<CMediumFormat> mediumFormats = systemProperties.GetMediumFormats();
-    for (int iMediumFormatIndex = 0; iMediumFormatIndex < mediumFormats.size(); ++iMediumFormatIndex)
+    const QVector<CMediumFormat> &mediumFormats = systemProperties.GetMediumFormats();
+    /* Search for default format first: */
+    for (int i = 0; i < mediumFormats.size(); ++i)
     {
         /* Get iterated medium format: */
-        CMediumFormat mediumFormat = mediumFormats[iMediumFormatIndex];
-
-        /* Check that medium format supports creation: */
-        ULONG uFormatCapabilities = mediumFormat.GetCapabilities();
-        if (!(uFormatCapabilities & MediumFormatCapabilities_CreateFixed ||
-              uFormatCapabilities & MediumFormatCapabilities_CreateDynamic))
-            continue;
-
-        /* Check that medium format supports creation of hard-disks: */
-        QVector<QString> fileExtensions;
-        QVector<KDeviceType> deviceTypes;
-        mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-        if (!deviceTypes.contains(KDeviceType_HardDisk))
-            continue;
-
-        /* Create corresponding radio-button: */
-        QRadioButton *pFormatButton = new QRadioButton(m_pFormatContainer);
-        m_pExclusivenessManager->addWidget(pFormatButton, QVariant::fromValue(mediumFormat));
+        const CMediumFormat &mediumFormat = mediumFormats[i];
         if (mediumFormat.GetName().toLower() == "vdi")
-        {
-            m_pFormatsLayout->insertWidget(0, pFormatButton);
-            m_pDefaultButton = pFormatButton;
-        }
-        else
-            m_pFormatsLayout->addWidget(pFormatButton);
+            processFormat(mediumFormat);
+    }
+    /* Look for other formats: */
+    for (int i = 0; i < mediumFormats.size(); ++i)
+    {
+        /* Get iterated medium format: */
+        const CMediumFormat &mediumFormat = mediumFormats[i];
+        if (mediumFormat.GetName().toLower() != "vdi")
+            processFormat(mediumFormat);
     }
 }
 
@@ -328,11 +353,11 @@ UINewHDWizardPageFormat::UINewHDWizardPageFormat()
 QString UINewHDWizardPageFormat::fullFormatName(const QString &strBaseFormatName)
 {
     if (strBaseFormatName == "VDI")
-        return tr("&VDI (VirtualBox Disk Image)");
+        return UINewHDWizard::tr("&VDI (VirtualBox Disk Image)");
     else if (strBaseFormatName == "VMDK")
-        return tr("V&MDK (Virtual Machine Disk)");
+        return UINewHDWizard::tr("V&MDK (Virtual Machine Disk)");
     else if (strBaseFormatName == "VHD")
-        return tr("V&HD (Virtual Hard Disk)");
+        return UINewHDWizard::tr("V&HD (Virtual Hard Disk)");
     return strBaseFormatName;
 }
 
@@ -358,9 +383,23 @@ void UINewHDWizardPageFormat::retranslateUi()
     Ui::UINewHDWizardPageFormat::retranslateUi(this);
 
     /* Translate 'format' page: */
-    setTitle(tr("Virtual disk file type"));
-    m_pLabel->setText("Please choose the type of file that you would like to use for the new virtual disk. "
-                      "If you do not need to use it with other virtualization software you can leave this setting unchanged.");
+    switch (wizardType())
+    {
+        case UINewHDWizardType_Creating:
+            setTitle(UINewHDWizard::tr("Welcome to the virtual disk creation wizard"));
+            m_pLabel->setText("<p>This wizard will help you to create a new virtual disk for your virtual machine.</p>");
+            m_pLabel->setText(m_pLabel->text() + QString("<p>%1</p>").arg(standardHelpText()));
+            m_pLabel->setText(m_pLabel->text() + QString("<p>Please choose the type of file that you would like to use for the new virtual disk. "
+                                                         "If you do not need to use it with other virtualization software you can leave this setting unchanged.</p>"));
+            break;
+        case UINewHDWizardType_Copying:
+            setTitle(UINewHDWizard::tr("Virtual disk file type"));
+            m_pLabel->setText("Please choose the type of file that you would like to use for the new virtual disk. "
+                              "If you do not need to use it with other virtualization software you can leave this setting unchanged.");
+            break;
+        default:
+            break;
+    }
 
     /* Translate 'format' buttons: */
     QList<QRadioButton*> formatButtons = findChildren<QRadioButton*>();
@@ -393,6 +432,29 @@ void UINewHDWizardPageFormat::cleanupPage()
 bool UINewHDWizardPageFormat::isComplete() const
 {
     return !m_mediumFormat.isNull();
+}
+
+void UINewHDWizardPageFormat::processFormat(CMediumFormat mediumFormat)
+{
+    /* Check that medium format supports creation: */
+    ULONG uFormatCapabilities = mediumFormat.GetCapabilities();
+    if (!(uFormatCapabilities & MediumFormatCapabilities_CreateFixed ||
+          uFormatCapabilities & MediumFormatCapabilities_CreateDynamic))
+        return;
+
+    /* Check that medium format supports creation of hard-disks: */
+    QVector<QString> fileExtensions;
+    QVector<KDeviceType> deviceTypes;
+    mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+    if (!deviceTypes.contains(KDeviceType_HardDisk))
+        return;
+
+    /* Create corresponding radio-button: */
+    QRadioButton *pFormatButton = new QRadioButton(m_pFormatContainer);
+    m_pExclusivenessManager->addWidget(pFormatButton, QVariant::fromValue(mediumFormat));
+    m_pFormatsLayout->addWidget(pFormatButton);
+    if (mediumFormat.GetName().toLower() == "vdi")
+        m_pDefaultButton = pFormatButton;
 }
 
 UINewHDWizardPageVariant::UINewHDWizardPageVariant()
@@ -454,27 +516,27 @@ void UINewHDWizardPageVariant::retranslateUi()
     Ui::UINewHDWizardPageVariant::retranslateUi(this);
 
     /* Translate 'variant' page: */
-    setTitle(tr("Virtual disk storage details"));
+    setTitle(UINewHDWizard::tr("Virtual disk storage details"));
     m_pLabel->setText("Please choose whether the new virtual disk file should expand as it is used or be created fully expanded.");
 
     /* Translate other text: */
     QString strText = m_pLabel->text();
     CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
     if (mediumFormat.isNull() || (mediumFormat.GetCapabilities() & KMediumFormatCapabilities_CreateDynamic))
-        strText += tr("<p>A <b>dynamically expanding</b> virtual disk file will only use space on your physical hard disk as it fills up, "
-                      "although it will not shrink again automatically when space on it is freed.</p>");
+        strText += UINewHDWizard::tr("<p>A <b>dynamically expanding</b> virtual disk file will only use space on your physical hard disk as it fills up, "
+                                     "although it will not shrink again automatically when space on it is freed.</p>");
     if (mediumFormat.isNull() || (mediumFormat.GetCapabilities() & KMediumFormatCapabilities_CreateFixed))
-        strText += tr("<p>A <b>fixed size</b> virtual disk file may take longer to create on some systems but is often faster to use.</p>");
+        strText += UINewHDWizard::tr("<p>A <b>fixed size</b> virtual disk file may take longer to create on some systems but is often faster to use.</p>");
     if (mediumFormat.isNull() || (mediumFormat.GetCapabilities() & KMediumFormatCapabilities_CreateSplit2G))
-        strText += tr("<p>You can also choose to <b>split</b> the virtual disk into several files of up to two gigabytes each. "
-                      "This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, "
-                      "some of which cannot handle very large files.");
+        strText += UINewHDWizard::tr("<p>You can also choose to <b>split</b> the virtual disk into several files of up to two gigabytes each. "
+                                     "This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, "
+                                     "some of which cannot handle very large files.");
     m_pLabel->setText(strText);
 
     /* Translate buttons: */
-    m_pDynamicalButton->setText(tr("&Dynamically expanding"));
-    m_pFixedButton->setText(tr("&Fixed size"));
-    m_pSplitBox->setText(tr("&Split into files of less than 2GB"));
+    m_pDynamicalButton->setText(UINewHDWizard::tr("&Dynamically expanding"));
+    m_pFixedButton->setText(UINewHDWizard::tr("&Fixed size"));
+    m_pSplitBox->setText(UINewHDWizard::tr("&Split into files of less than 2GB"));
 }
 
 void UINewHDWizardPageVariant::initializePage()
@@ -571,17 +633,17 @@ void UINewHDWizardPageOptions::retranslateUi()
     switch (wizardType())
     {
         case UINewHDWizardType_Creating:
-            setTitle(tr("Virtual disk file location and size"));
-            m_pLabel2->setText(tr("Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk."));
+            setTitle(UINewHDWizard::tr("Virtual disk file location and size"));
+            m_pLabel2->setText(UINewHDWizard::tr("Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk."));
             break;
         case UINewHDWizardType_Copying:
-            setTitle(tr("Virtual disk file location"));
+            setTitle(UINewHDWizard::tr("Virtual disk file location"));
             m_pLabel2->setText(QString());
             break;
         default:
             break;
     }
-    m_pLabel1->setText(tr("Press the <b>Select</b> button to select the location of a file to store the virtual disk data or type a file name in the entry field."));
+    m_pLabel1->setText(UINewHDWizard::tr("Press the <b>Select</b> button to select the location of a file to store the virtual disk data or type a file name in the entry field."));
 }
 
 void UINewHDWizardPageOptions::initializePage()
@@ -593,14 +655,27 @@ void UINewHDWizardPageOptions::initializePage()
     switch (wizardType())
     {
         case UINewHDWizardType_Creating:
+        {
+            /* Visibility: */
             m_pLabel2->setVisible(true);
             m_pSizeCnt->setVisible(true);
             break;
+        }
         case UINewHDWizardType_Copying:
+        {
+            /* Visibility: */
             m_pLabel2->setHidden(true);
             m_pSizeCnt->setHidden(true);
-            m_uMediumSize = field("initialHardDisk").value<CMedium>().GetLogicalSize();
+            /* Update parameters: */
+            const CMedium &sourceHardDisk = field("sourceHardDisk").value<CMedium>();
+            /* Default path: */
+            m_strDefaultPath = QFileInfo(sourceHardDisk.GetLocation()).absolutePath();
+            /* Default name: */
+            m_strMediumName = tr("%1_copy", "copied virtual disk name").arg(QFileInfo(sourceHardDisk.GetLocation()).baseName());
+            /* Initialize size: */
+            m_uMediumSize = sourceHardDisk.GetLogicalSize();
             break;
+        }
         default:
             break;
     }
@@ -692,7 +767,7 @@ void UINewHDWizardPageOptions::sltSelectLocationButtonClicked()
     /* Open corresponding file-dialog: */
     QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
                                                               strBackendsList, this,
-                                                              tr("Select a file for the new hard disk image file"));
+                                                              UINewHDWizard::tr("Select a file for the new hard disk image file"));
 
     /* If there was something really chosen: */
     if (!strChosenFilePath.isEmpty())
@@ -818,13 +893,12 @@ qulonglong UINewHDWizardPageOptions::sliderToSizeMB(int uValue, int iSliderScale
 
 void UINewHDWizardPageOptions::updateSizeToolTip(qulonglong uSize)
 {
-    QString strToolTip = tr("<nobr>%1 (%2 B)</nobr>").arg(vboxGlobal().formatSize(uSize)).arg(uSize);
+    QString strToolTip = UINewHDWizard::tr("<nobr>%1 (%2 B)</nobr>").arg(vboxGlobal().formatSize(uSize)).arg(uSize);
     m_pSizeSlider->setToolTip(strToolTip);
     m_pSizeEditor->setToolTip(strToolTip);
 }
 
-UINewHDWizardPageSummary::UINewHDWizardPageSummary(const CMedium &initialHardDisk)
-    : m_initialHardDisk(initialHardDisk)
+UINewHDWizardPageSummary::UINewHDWizardPageSummary()
 {
     /* Decorate page: */
     Ui::UINewHDWizardPageSummary::setupUi(this);
@@ -832,8 +906,7 @@ UINewHDWizardPageSummary::UINewHDWizardPageSummary(const CMedium &initialHardDis
     /* Register CMedium class: */
     qRegisterMetaType<CMedium>();
 
-    /* Register 'initialHardDisk', 'hardDisk' fields: */
-    registerField("initialHardDisk", this, "initialHardDisk");
+    /* Register 'hardDisk' field: */
     registerField("hardDisk", this, "hardDisk");
 
     /* Disable the background painting of the summary widget: */
@@ -846,21 +919,21 @@ void UINewHDWizardPageSummary::retranslateUi()
     Ui::UINewHDWizardPageSummary::retranslateUi(this);
 
     /* Translate 'options' page: */
-    setTitle(tr("Summary"));
+    setTitle(UINewHDWizard::tr("Summary"));
     switch (wizardType())
     {
         case UINewHDWizardType_Creating:
-            m_pLabel1->setText(tr("You are going to create a new virtual disk with the following parameters:"));
+            m_pLabel1->setText(UINewHDWizard::tr("You are going to create a new virtual disk with the following parameters:"));
             break;
         case UINewHDWizardType_Copying:
-            m_pLabel1->setText(tr("You are going to create a copied virtual disk with the following parameters:"));
+            m_pLabel1->setText(UINewHDWizard::tr("You are going to create a copied virtual disk with the following parameters:"));
             break;
         default:
             break;
     }
-    m_pLabel2->setText(tr("If the above settings are correct, press the <b>%1</b> button. "
-                          "Once you press it the new virtual disk file will be created.")
-                          .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::FinishButton)))));
+    m_pLabel2->setText(UINewHDWizard::tr("If the above settings are correct, press the <b>%1</b> button. "
+                                         "Once you press it the new virtual disk file will be created.")
+                                         .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::FinishButton)))));
 
     /* Compose common summary: */
     QString strSummary;
@@ -869,7 +942,7 @@ void UINewHDWizardPageSummary::retranslateUi()
     qulonglong uVariant = field("mediumVariant").toULongLong();
     QString strMediumPath = field("mediumPath").toString();
     QString sizeFormatted = VBoxGlobal::formatSize(field("mediumSize").toULongLong());
-    QString sizeUnformatted = tr("%1 B").arg(field("mediumSize").toULongLong());
+    QString sizeUnformatted = UINewHDWizard::tr("%1 B").arg(field("mediumSize").toULongLong());
 
     strSummary += QString
     (
@@ -878,10 +951,10 @@ void UINewHDWizardPageSummary::retranslateUi()
         "<tr><td><nobr>%5: </nobr></td><td><nobr>%6</nobr></td></tr>"
         "<tr><td><nobr>%7: </nobr></td><td><nobr>%8 (%9)</nobr></td></tr>"
     )
-    .arg(tr("File type", "summary"), mediumFormat.isNull() ? QString() : VBoxGlobal::removeAccelMark(UINewHDWizardPageFormat::fullFormatName(mediumFormat.GetName())))
-    .arg(tr("Details", "summary"), vboxGlobal().toString((KMediumVariant)uVariant))
-    .arg(tr("Location", "summary"), strMediumPath)
-    .arg(tr("Size", "summary"), sizeFormatted, sizeUnformatted);
+    .arg(UINewHDWizard::tr("File type", "summary"), mediumFormat.isNull() ? QString() : VBoxGlobal::removeAccelMark(UINewHDWizardPageFormat::fullFormatName(mediumFormat.GetName())))
+    .arg(UINewHDWizard::tr("Details", "summary"), vboxGlobal().toString((KMediumVariant)uVariant))
+    .arg(UINewHDWizard::tr("Location", "summary"), strMediumPath)
+    .arg(UINewHDWizard::tr("Size", "summary"), sizeFormatted, sizeUnformatted);
 
     /* Feat summary to 4 lines: */
     setSummaryFieldLinesNumber(m_pSummaryText, 4);
@@ -946,7 +1019,8 @@ bool UINewHDWizardPageSummary::createHardDisk()
         case UINewHDWizardType_Copying:
         {
             /* Copy existing hard disk to the new hard disk: */
-            progress = m_initialHardDisk.CloneTo(hardDisk, uVariant, CMedium() /* parent */);
+            CMedium sourceHardDisk = field("sourceHardDisk").value<CMedium>();
+            progress = sourceHardDisk.CloneTo(hardDisk, uVariant, CMedium() /* parent */);
             break;
         }
         default:
