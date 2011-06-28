@@ -9,6 +9,8 @@
 #include "state/cr_statefuncs.h"
 #include "cr_string.h"
 #include "packspu_proto.h"
+#include "cr_mem.h"
+#include <locale.h>
 
 static GLubyte gpszExtensions[10000];
 #ifdef CR_OPENGL_VERSION_2_0
@@ -115,8 +117,22 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
             else
 #endif
             {
-                float version = GetVersionString();
+                char *oldlocale;
+                float version;
+
+                oldlocale = setlocale(LC_NUMERIC, NULL);
+                oldlocale = crStrdup(oldlocale);
+                setlocale(LC_NUMERIC, "C");
+
+                version = GetVersionString();
                 sprintf((char*)ctx->glVersion, "%.1f Chromium %s", version, CR_VERSION_STRING);
+
+                if (oldlocale)
+                {
+                    setlocale(LC_NUMERIC, oldlocale);
+                    crFree(oldlocale);
+                }
+
                 return ctx->glVersion;
             }
         case GL_VENDOR:
