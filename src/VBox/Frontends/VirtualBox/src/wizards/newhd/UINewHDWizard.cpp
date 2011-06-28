@@ -296,10 +296,10 @@ void UINewHDWizardPageWelcome::retranslateUi()
     m_pLabel->setText(m_pLabel->text() + QString("<p>%1</p>").arg(standardHelpText()));
 
     /* Append page text for source virtual disk part: */
-    m_pLabel->setText(m_pLabel->text() + QString("Please select the virtual hard disk which you would like to "
+    m_pLabel->setText(m_pLabel->text() + QString("Please select the virtual disk which you would like to "
                                                  "copy if it is not already selected. You can either choose one "
                                                  "from the list or use the folder icon beside the list to "
-                                                 "select a virtual hard disk file."));
+                                                 "select a virtual disk file."));
 }
 
 void UINewHDWizardPageWelcome::initializePage()
