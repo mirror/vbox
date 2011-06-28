@@ -282,13 +282,10 @@ int handleStorageAttach(HandlerArg *a)
     try
     {
         bool fRunTime = (st == SessionType_Shared);
+
         if (fRunTime)
         {
-            if (devTypeRequested == DeviceType_HardDisk)
-                throw Utf8Str("Hard disk drives cannot be changed while the VM is running\n");
-            else if (!RTStrICmp(pszMedium, "none"))
-                throw Utf8Str("Drives cannot be removed while the VM is running\n");
-            else if (pszPassThrough)
+            if (pszPassThrough)
                 throw Utf8Str("Drive passthrough state cannot be changed while the VM is running\n");
             else if (pszBandwidthGroup)
                 throw Utf8Str("Bandwidth group cannot be changed while the VM is running\n");
@@ -646,9 +643,6 @@ int handleStorageAttach(HandlerArg *a)
 
                 case DeviceType_HardDisk:
                 {
-                    if (fRunTime)
-                        throw Utf8Str("Hard disk attachments cannot be changed while the VM is running");
-
                     // if there is anything attached at the given location, remove it
                     machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
                     CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl).raw(),
