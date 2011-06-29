@@ -79,9 +79,8 @@ VBoxRemPrimary_INCS            = \
 	fpu \
 	$(VBoxRemPrimary_0_OUTDIR) \
 	$(PATH_ROOT)/src/VBox/VMM/include \
+	tcg/i386 \
 	.
-VBoxRemPrimary_INCS.amd64     += tcg/x86_64
-VBoxRemPrimary_INCS.x86       += tcg/i386
 ifn1of ($(VBoxRemPrimary_DEFS),DEBUG_TMP_LOGGING)
  VBoxRemPrimary_DEFS          += LOG_USE_C99
  VBoxRemPrimary_INCS          <= \
