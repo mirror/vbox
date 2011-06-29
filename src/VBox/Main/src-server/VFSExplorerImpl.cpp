@@ -249,7 +249,7 @@ DECLCALLBACK(int) VFSExplorer::TaskVFSExplorer::taskThread(RTTHREAD /* aThread *
             break;
     }
 
-    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFunc(("rc=%Rhrc\n", rc)); NOREF(rc);
     LogFlowFuncLeave();
 
     return VINF_SUCCESS;
