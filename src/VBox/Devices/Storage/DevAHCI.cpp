@@ -577,8 +577,8 @@ typedef struct AHCI
     /** Status LUN: Media Notifys. */
     R3PTRTYPE(PPDMIMEDIANOTIFY)     pMediaNotify;
 
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment1[2];
+#if HC_ARCH_BITS == 32
+    uint32_t                        Alignment1;
 #endif
 
     /** Base address of the MMIO region. */

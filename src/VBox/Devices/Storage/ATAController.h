@@ -388,7 +388,7 @@ typedef struct AHCIATACONTROLLER
     RTSEMEVENT          SuspendIOSem;
     /** Pointer to Media Notify interface. */
     R3PTRTYPE(PPDMIMEDIANOTIFY) pMediaNotify;
-#if 0 /*HC_ARCH_BITS == 32*/
+#if HC_ARCH_BITS == 32
     uint32_t            Alignment0;
 #endif
 
