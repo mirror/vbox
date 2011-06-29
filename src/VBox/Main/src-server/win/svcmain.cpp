@@ -251,6 +251,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
             case 'r':
                 fRegister = true;
+                fRun = false;
                 break;
 
             case 'f':
