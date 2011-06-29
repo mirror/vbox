@@ -1,7 +1,8 @@
 /* Native implementation of soft float functions */
+#define __C99FEATURES__
 #include <math.h>
 
-#if (defined(_BSD) && !defined(__APPLE__) && !defined(__FreeBSD__)) || defined(HOST_SOLARIS) /* VBox: Added __FreeBSD__ */
+#if (defined(_BSD) && !defined(__APPLE__) && !defined(__FreeBSD__)) || defined(CONFIG_SOLARIS) /* VBox: Added __FreeBSD__ */
 #include <ieeefp.h>
 #define fabsf(f) ((float)fabs(f))
 #else
@@ -54,12 +55,14 @@
 #endif
 
 
+# if !defined(VBOX) || !defined(isnormal) || !defined(isgreater) || !defined(isgreaterequal) || !defined(isless) || !defined(islessequal) || !defined(isunordered)
 #define isnormal(x)             (fpclass(x) >= FP_NZERO)
 #define isgreater(x, y)         ((!unordered(x, y)) && ((x) > (y)))
 #define isgreaterequal(x, y)    ((!unordered(x, y)) && ((x) >= (y)))
 #define isless(x, y)            ((!unordered(x, y)) && ((x) < (y)))
 #define islessequal(x, y)       ((!unordered(x, y)) && ((x) <= (y)))
 #define isunordered(x,y)        unordered(x, y)
+# endif /* !VBOX || missing */
 #endif
 
 #if defined(__sun__) && !defined(CONFIG_NEEDS_LIBSUNMATH)
