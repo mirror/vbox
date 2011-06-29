@@ -4519,6 +4519,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
 struct Machine::DeleteTask
 {
     ComObjPtr<Machine>          pMachine;
+    RTCList< ComPtr<IMedium> >  llMediums;
     std::list<Utf8Str>          llFilesToDelete;
     ComObjPtr<Progress>         pProgress;
     GuidList                    llRegistriesThatNeedSaving;
@@ -4552,20 +4553,15 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
         IMedium *pIMedium(sfaMedia[i]);
         ComObjPtr<Medium> pMedium = static_cast<Medium*>(pIMedium);
         if (pMedium.isNull())
-            return setError(E_INVALIDARG, "The given medium pointer %d is invalid", i);
-        AutoCaller mediumAutoCaller(pMedium);
-        if (FAILED(mediumAutoCaller.rc())) return mediumAutoCaller.rc();
-
-        Utf8Str bstrLocation = pMedium->getLocationFull();
-
-        bool fDoesMediumNeedFileDeletion = pMedium->isMediumFormatFile();
-
-        // close the medium now; if that succeeds, then that means the medium is no longer
-        // in use and we can add it to the list of files to delete
-        rc = pMedium->close(&pTask->llRegistriesThatNeedSaving,
-                            mediumAutoCaller);
-        if (SUCCEEDED(rc) && fDoesMediumNeedFileDeletion)
-            pTask->llFilesToDelete.push_back(bstrLocation);
+            return setError(E_INVALIDARG, "The given medium pointer with index %d is invalid", i);
+        SafeArray<BSTR> ids;
+        rc = pMedium->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(ids));
+        if (FAILED(rc)) return rc;
+        /* At this point the medium should not have any back references
+         * anymore. If it has it is attached to another VM and *must* not
+         * deleted. */
+        if (ids.size() < 1)
+            pTask->llMediums.append(pMedium);
     }
     if (mData->pMachineConfigFile->fileExists())
         pTask->llFilesToDelete.push_back(mData->m_strConfigFileFull);
@@ -4575,7 +4571,7 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
                            static_cast<IMachine*>(this) /* aInitiator */,
                            Bstr(tr("Deleting files")).raw(),
                            true /* fCancellable */,
-                           pTask->llFilesToDelete.size() + 1,   // cOperations
+                           pTask->llFilesToDelete.size() + pTask->llMediums.size() + 1,   // cOperations
                            BstrFmt(tr("Deleting '%s'"), pTask->llFilesToDelete.front().c_str()).raw());
 
     int vrc = RTThreadCreate(NULL,
@@ -4640,96 +4636,148 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    ULONG uLogHistoryCount = 3;
-    ComPtr<ISystemProperties> systemProperties;
-    mParent->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-    if (!systemProperties.isNull())
-        systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
+    HRESULT rc = S_OK;
 
-    // delete the files pushed on the task list by Machine::Delete()
-    // (this includes saved states of the machine and snapshots and
-    // medium storage files from the IMedium list passed in, and the
-    // machine XML file)
-    std::list<Utf8Str>::const_iterator it = task.llFilesToDelete.begin();
-    while (it != task.llFilesToDelete.end())
+    try
     {
-        const Utf8Str &strFile = *it;
-        LogFunc(("Deleting file %s\n", strFile.c_str()));
-        RTFileDelete(strFile.c_str());
+        ULONG uLogHistoryCount = 3;
+        ComPtr<ISystemProperties> systemProperties;
+        rc = mParent->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+        if (FAILED(rc)) throw rc;
 
-        ++it;
-        if (it == task.llFilesToDelete.end())
+        if (!systemProperties.isNull())
         {
-            task.pProgress->SetNextOperation(Bstr(tr("Cleaning up machine directory")).raw(), 1);
-            break;
+            rc = systemProperties->COMGETTER(LogHistoryCount)(&uLogHistoryCount);
+            if (FAILED(rc)) throw rc;
         }
 
-        task.pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), it->c_str()).raw(), 1);
-    }
-
-    /* delete the settings only when the file actually exists */
-    if (mData->pMachineConfigFile->fileExists())
-    {
-        /* Delete any backup or uncommitted XML files. Ignore failures.
-           See the fSafe parameter of xml::XmlFileWriter::write for details. */
-        /** @todo Find a way to avoid referring directly to iprt/xml.h here. */
-        Utf8Str otherXml = Utf8StrFmt("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszTmpSuff);
-        RTFileDelete(otherXml.c_str());
-        otherXml = Utf8StrFmt("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszPrevSuff);
-        RTFileDelete(otherXml.c_str());
-
-        /* delete the Logs folder, nothing important should be left
-         * there (we don't check for errors because the user might have
-         * some private files there that we don't want to delete) */
-        Utf8Str logFolder;
-        getLogFolder(logFolder);
-        Assert(logFolder.length());
-        if (RTDirExists(logFolder.c_str()))
+        MachineState_T oldState = mData->mMachineState;
+        setMachineState(MachineState_SettingUp);
+        alock.release();
+        for (size_t i = 0; i < task.llMediums.size(); ++i)
         {
-            /* Delete all VBox.log[.N] files from the Logs folder
-             * (this must be in sync with the rotation logic in
-             * Console::powerUpThread()). Also, delete the VBox.png[.N]
-             * files that may have been created by the GUI. */
-            Utf8Str log = Utf8StrFmt("%s%cVBox.log",
-                                     logFolder.c_str(), RTPATH_DELIMITER);
-            RTFileDelete(log.c_str());
-            log = Utf8StrFmt("%s%cVBox.png",
-                             logFolder.c_str(), RTPATH_DELIMITER);
-            RTFileDelete(log.c_str());
-            for (int i = uLogHistoryCount; i > 0; i--)
+            ComObjPtr<Medium> pMedium = (Medium*)(IMedium*)task.llMediums.at(i);
             {
-                log = Utf8StrFmt("%s%cVBox.log.%d",
-                                 logFolder.c_str(), RTPATH_DELIMITER, i);
-                RTFileDelete(log.c_str());
-                log = Utf8StrFmt("%s%cVBox.png.%d",
-                                 logFolder.c_str(), RTPATH_DELIMITER, i);
-                RTFileDelete(log.c_str());
+                AutoCaller mac(pMedium);
+                if (FAILED(mac.rc())) throw mac.rc();
+                Utf8Str strLocation = pMedium->getLocationFull();
+                rc = task.pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), strLocation.c_str()).raw(), 1);
+                if (FAILED(rc)) throw rc;
+                LogFunc(("Deleting file %s\n", strLocation.c_str()));
+            }
+            ComPtr<IProgress> pProgress2;
+            rc = pMedium->DeleteStorage(pProgress2.asOutParam());
+            if (FAILED(rc)) throw rc;
+            rc = pProgress2->WaitForCompletion(-1);
+//            rc = task.pProgress->WaitForAsyncProgressCompletion(pProgress2);
+            if (FAILED(rc)) throw rc;
+            /* Check the result of the asynchrony process. */
+            LONG iRc;
+            rc = pProgress2->COMGETTER(ResultCode)(&iRc);
+            if (FAILED(rc)) throw rc;
+            if (FAILED(iRc))
+            {
+                /* If the thread of the progress object has an error, then
+                 * retrieve the error info from there, or it'll be lost. */
+                ProgressErrorInfo info(pProgress2);
+                throw setError(iRc, Utf8Str(info.getText()).c_str());
+            }
+        }
+        setMachineState(oldState);
+        alock.acquire();
+
+        // delete the files pushed on the task list by Machine::Delete()
+        // (this includes saved states of the machine and snapshots and
+        // medium storage files from the IMedium list passed in, and the
+        // machine XML file)
+        std::list<Utf8Str>::const_iterator it = task.llFilesToDelete.begin();
+        while (it != task.llFilesToDelete.end())
+        {
+            const Utf8Str &strFile = *it;
+            LogFunc(("Deleting file %s\n", strFile.c_str()));
+            int vrc = RTFileDelete(strFile.c_str());
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_IPRT_ERROR,
+                               tr("Could not delete file '%s' (%Rrc)"), strFile.c_str(), vrc);
+
+            ++it;
+            if (it == task.llFilesToDelete.end())
+            {
+                rc = task.pProgress->SetNextOperation(Bstr(tr("Cleaning up machine directory")).raw(), 1);
+                if (FAILED(rc)) throw rc;
+                break;
             }
 
-            RTDirRemove(logFolder.c_str());
+            rc = task.pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), it->c_str()).raw(), 1);
+            if (FAILED(rc)) throw rc;
         }
 
-        /* delete the Snapshots folder, nothing important should be left
-         * there (we don't check for errors because the user might have
-         * some private files there that we don't want to delete) */
-        Utf8Str strFullSnapshotFolder;
-        calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);
-        Assert(!strFullSnapshotFolder.isEmpty());
-        if (RTDirExists(strFullSnapshotFolder.c_str()))
-            RTDirRemove(strFullSnapshotFolder.c_str());
+        /* delete the settings only when the file actually exists */
+        if (mData->pMachineConfigFile->fileExists())
+        {
+            /* Delete any backup or uncommitted XML files. Ignore failures.
+               See the fSafe parameter of xml::XmlFileWriter::write for details. */
+            /** @todo Find a way to avoid referring directly to iprt/xml.h here. */
+            Utf8Str otherXml = Utf8StrFmt("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszTmpSuff);
+            RTFileDelete(otherXml.c_str());
+            otherXml = Utf8StrFmt("%s%s", mData->m_strConfigFileFull.c_str(), xml::XmlFileWriter::s_pszPrevSuff);
+            RTFileDelete(otherXml.c_str());
 
-        // delete the directory that contains the settings file, but only
-        // if it matches the VM name
-        Utf8Str settingsDir;
-        if (isInOwnDir(&settingsDir))
-            RTDirRemove(settingsDir.c_str());
+            /* delete the Logs folder, nothing important should be left
+             * there (we don't check for errors because the user might have
+             * some private files there that we don't want to delete) */
+            Utf8Str logFolder;
+            getLogFolder(logFolder);
+            Assert(logFolder.length());
+            if (RTDirExists(logFolder.c_str()))
+            {
+                /* Delete all VBox.log[.N] files from the Logs folder
+                 * (this must be in sync with the rotation logic in
+                 * Console::powerUpThread()). Also, delete the VBox.png[.N]
+                 * files that may have been created by the GUI. */
+                Utf8Str log = Utf8StrFmt("%s%cVBox.log",
+                                         logFolder.c_str(), RTPATH_DELIMITER);
+                RTFileDelete(log.c_str());
+                log = Utf8StrFmt("%s%cVBox.png",
+                                 logFolder.c_str(), RTPATH_DELIMITER);
+                RTFileDelete(log.c_str());
+                for (int i = uLogHistoryCount; i > 0; i--)
+                {
+                    log = Utf8StrFmt("%s%cVBox.log.%d",
+                                     logFolder.c_str(), RTPATH_DELIMITER, i);
+                    RTFileDelete(log.c_str());
+                    log = Utf8StrFmt("%s%cVBox.png.%d",
+                                     logFolder.c_str(), RTPATH_DELIMITER, i);
+                    RTFileDelete(log.c_str());
+                }
+
+                RTDirRemove(logFolder.c_str());
+            }
+
+            /* delete the Snapshots folder, nothing important should be left
+             * there (we don't check for errors because the user might have
+             * some private files there that we don't want to delete) */
+            Utf8Str strFullSnapshotFolder;
+            calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);
+            Assert(!strFullSnapshotFolder.isEmpty());
+            if (RTDirExists(strFullSnapshotFolder.c_str()))
+                RTDirRemove(strFullSnapshotFolder.c_str());
+
+            // delete the directory that contains the settings file, but only
+            // if it matches the VM name
+            Utf8Str settingsDir;
+            if (isInOwnDir(&settingsDir))
+                RTDirRemove(settingsDir.c_str());
+        }
+
+        alock.release();
+
+        rc = mParent->saveRegistries(task.llRegistriesThatNeedSaving);
+        if (FAILED(rc)) throw rc;
     }
+    catch (HRESULT aRC) { rc = aRC; }
 
-    alock.release();
-
-    mParent->saveRegistries(task.llRegistriesThatNeedSaving);
-
-    return S_OK;
+    return rc;
 }
 
 STDMETHODIMP Machine::FindSnapshot(IN_BSTR aNameOrId, ISnapshot **aSnapshot)
@@ -6094,7 +6142,7 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayI
         optList = com::SafeArray<CloneOptions_T>(ComSafeArrayInArg(options)).toList();
 
     AssertReturn(!optList.contains(CloneOptions_Link), E_NOTIMPL);
-    AssertReturn(!(optList.contains(CloneOptions_KeepAllMACs) && optList.contains(CloneOptions_KeepNATMACs)), E_FAIL);
+    AssertReturn(!(optList.contains(CloneOptions_KeepAllMACs) && optList.contains(CloneOptions_KeepNATMACs)), E_INVALIDARG);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
