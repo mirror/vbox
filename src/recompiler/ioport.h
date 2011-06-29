@@ -51,12 +51,12 @@ uint8_t cpu_inb(pio_addr_t addr);
 uint16_t cpu_inw(pio_addr_t addr);
 uint32_t cpu_inl(pio_addr_t addr);
 #else
-void cpu_outb(CPUState *env, pio_addr_t addr, uint8_t val);
-void cpu_outw(CPUState *env, pio_addr_t addr, uint16_t val);
-void cpu_outl(CPUState *env, pio_addr_t addr, uint32_t val);
-uint8_t cpu_inb(CPUState *env, pio_addr_t addr);
-uint16_t cpu_inw(CPUState *env, pio_addr_t addr);
-uint32_t cpu_inl(CPUState *env, pio_addr_t addr);
+void cpu_outb(CPUX86State *env, pio_addr_t addr, uint8_t val);
+void cpu_outw(CPUX86State *env, pio_addr_t addr, uint16_t val);
+void cpu_outl(CPUX86State *env, pio_addr_t addr, uint32_t val);
+uint8_t cpu_inb(CPUX86State *env, pio_addr_t addr);
+uint16_t cpu_inw(CPUX86State *env, pio_addr_t addr);
+uint32_t cpu_inl(CPUX86State *env, pio_addr_t addr);
 #endif
 
 #endif /* IOPORT_H */

@@ -3,11 +3,22 @@
 
 /* CPU interfaces that are target indpendent.  */
 
-#if defined(__arm__) || defined(__sparc__) || defined(__mips__) || defined(__hppa__)
+#if defined(__arm__) || defined(__sparc__) || defined(__mips__) || defined(__hppa__) || defined(__ia64__)
 #define WORDS_ALIGNED
 #endif
 
+#ifdef TARGET_PHYS_ADDR_BITS
+#include "targphys.h"
+#endif
+
+#ifndef NEED_CPU_H
+#include "poison.h"
+#endif
+
 #include "bswap.h"
+#include "qemu-queue.h"
+
+#if !defined(CONFIG_USER_ONLY)
 
 /* address in the RAM (different from a physical address) */
 typedef unsigned long ram_addr_t;
@@ -29,12 +40,16 @@ static inline void cpu_register_physical_memory(target_phys_addr_t start_addr,
 }
 
 ram_addr_t cpu_get_physical_page_desc(target_phys_addr_t addr);
-ram_addr_t qemu_ram_alloc(ram_addr_t);
+#ifndef VBOX
+ram_addr_t qemu_ram_alloc_from_ptr(DeviceState *dev, const char *name,
+                        ram_addr_t size, void *host);
+ram_addr_t qemu_ram_alloc(DeviceState *dev, const char *name, ram_addr_t size);
 void qemu_ram_free(ram_addr_t addr);
 /* This should only be used for ram local to a device.  */
 void *qemu_get_ram_ptr(ram_addr_t addr);
 /* This should not be used by devices.  */
 ram_addr_t qemu_ram_addr_from_host(void *ptr);
+#endif /* !VBOX */
 
 int cpu_register_io_memory(CPUReadMemoryFunc * const *mem_read,
                            CPUWriteMemoryFunc * const *mem_write,
@@ -61,6 +76,35 @@ void cpu_physical_memory_unmap(void *buffer, target_phys_addr_t len,
 void *cpu_register_map_client(void *opaque, void (*callback)(void *opaque));
 void cpu_unregister_map_client(void *cookie);
 
+struct CPUPhysMemoryClient;
+typedef struct CPUPhysMemoryClient CPUPhysMemoryClient;
+struct CPUPhysMemoryClient {
+    void (*set_memory)(struct CPUPhysMemoryClient *client,
+                       target_phys_addr_t start_addr,
+                       ram_addr_t size,
+                       ram_addr_t phys_offset);
+    int (*sync_dirty_bitmap)(struct CPUPhysMemoryClient *client,
+                             target_phys_addr_t start_addr,
+                             target_phys_addr_t end_addr);
+    int (*migration_log)(struct CPUPhysMemoryClient *client,
+                         int enable);
+    QLIST_ENTRY(CPUPhysMemoryClient) list;
+};
+
+void cpu_register_phys_memory_client(CPUPhysMemoryClient *);
+void cpu_unregister_phys_memory_client(CPUPhysMemoryClient *);
+
+/* Coalesced MMIO regions are areas where write operations can be reordered.
+ * This usually implies that write operations are side-effect free.  This allows
+ * batching which can make a major impact on performance when using
+ * virtualization.
+ */
+void qemu_register_coalesced_mmio(target_phys_addr_t addr, ram_addr_t size);
+
+void qemu_unregister_coalesced_mmio(target_phys_addr_t addr, ram_addr_t size);
+
+void qemu_flush_coalesced_mmio_buffer(void);
+
 uint32_t ldub_phys(target_phys_addr_t addr);
 uint32_t lduw_phys(target_phys_addr_t addr);
 uint32_t ldl_phys(target_phys_addr_t addr);
@@ -85,6 +129,7 @@ void cpu_physical_memory_write_rom(target_phys_addr_t addr,
 /* Acts like a ROM when read and like a device when written.  */
 #define IO_MEM_ROMD        (1)
 #define IO_MEM_SUBPAGE     (2)
-#define IO_MEM_SUBWIDTH    (4)
+
+#endif
 
 #endif /* !CPU_COMMON_H */

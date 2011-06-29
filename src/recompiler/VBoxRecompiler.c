@@ -25,6 +25,7 @@
 #include "config.h"
 #include "cpu.h"
 #include "exec-all.h"
+#include "ioport.h"
 
 #include <VBox/vmm/rem.h>
 #include <VBox/vmm/vmapi.h>
@@ -59,7 +60,7 @@ extern void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
 extern void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0);
 extern void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4);
 extern void tlb_flush_page(CPUX86State *env, target_ulong addr);
-extern void tlb_flush(CPUState *env, int flush_global);
+extern void tlb_flush(CPUX86State *env, int flush_global);
 extern void sync_seg(CPUX86State *env1, int seg_reg, int selector);
 extern void sync_ldtr(CPUX86State *env1, int selector);
 
@@ -465,9 +466,8 @@ REMR3DECL(int) REMR3InitFinalize(PVM pVM)
     return rc;
 }
 
-
 /**
- * Initializes phys_ram_dirty and phys_ram_dirty_size.
+ * Initializes ram_list.phys_dirty and ram_list.phys_dirty_size.
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
@@ -478,45 +478,48 @@ static int remR3InitPhysRamSizeAndDirtyMap(PVM pVM, bool fGuarded)
     int      rc = VINF_SUCCESS;
     RTGCPHYS cb;
 
+    AssertLogRelReturn(QLIST_EMPTY(&ram_list.blocks), VERR_INTERNAL_ERROR_2);
+
     cb = pVM->rem.s.GCPhysLastRam + 1;
     AssertLogRelMsgReturn(cb > pVM->rem.s.GCPhysLastRam,
                           ("GCPhysLastRam=%RGp - out of range\n", pVM->rem.s.GCPhysLastRam),
                           VERR_OUT_OF_RANGE);
-    phys_ram_dirty_size = cb >> PAGE_SHIFT;
-    AssertMsg(((RTGCPHYS)phys_ram_dirty_size << PAGE_SHIFT) == cb, ("%RGp\n", cb));
+
+    ram_list.phys_dirty_size = cb >> PAGE_SHIFT;
+    AssertMsg(((RTGCPHYS)ram_list.phys_dirty_size << PAGE_SHIFT) == cb, ("%RGp\n", cb));
 
     if (!fGuarded)
     {
-        phys_ram_dirty = MMR3HeapAlloc(pVM, MM_TAG_REM, phys_ram_dirty_size);
-        AssertLogRelMsgReturn(phys_ram_dirty, ("Failed to allocate %u bytes of dirty page map bytes\n", phys_ram_dirty_size), VERR_NO_MEMORY);
+        ram_list.phys_dirty = MMR3HeapAlloc(pVM, MM_TAG_REM, ram_list.phys_dirty_size);
+        AssertLogRelMsgReturn(ram_list.phys_dirty, ("Failed to allocate %u bytes of dirty page map bytes\n", ram_list.phys_dirty_size), VERR_NO_MEMORY);
     }
     else
     {
         /*
          * Fill it up the nearest 4GB RAM and leave at least _64KB of guard after it.
          */
-        uint32_t cbBitmapAligned = RT_ALIGN_32(phys_ram_dirty_size, PAGE_SIZE);
-        uint32_t cbBitmapFull    = RT_ALIGN_32(phys_ram_dirty_size, (_4G >> PAGE_SHIFT));
+        uint32_t cbBitmapAligned = RT_ALIGN_32(ram_list.phys_dirty_size, PAGE_SIZE);
+        uint32_t cbBitmapFull    = RT_ALIGN_32(ram_list.phys_dirty_size, (_4G >> PAGE_SHIFT));
         if (cbBitmapFull == cbBitmapAligned)
             cbBitmapFull += _4G >> PAGE_SHIFT;
         else if (cbBitmapFull - cbBitmapAligned < _64K)
             cbBitmapFull += _64K;
 
-        phys_ram_dirty = RTMemPageAlloc(cbBitmapFull);
-        AssertLogRelMsgReturn(phys_ram_dirty, ("Failed to allocate %u bytes of dirty page map bytes\n", cbBitmapFull), VERR_NO_MEMORY);
+        ram_list.phys_dirty = RTMemPageAlloc(cbBitmapFull);
+        AssertLogRelMsgReturn(ram_list.phys_dirty, ("Failed to allocate %u bytes of dirty page map bytes\n", cbBitmapFull), VERR_NO_MEMORY);
 
-        rc = RTMemProtect(phys_ram_dirty + cbBitmapAligned, cbBitmapFull - cbBitmapAligned, RTMEM_PROT_NONE);
+        rc = RTMemProtect(ram_list.phys_dirty + cbBitmapAligned, cbBitmapFull - cbBitmapAligned, RTMEM_PROT_NONE);
         if (RT_FAILURE(rc))
         {
-            RTMemPageFree(phys_ram_dirty, cbBitmapFull);
+            RTMemPageFree(ram_list.phys_dirty, cbBitmapFull);
             AssertLogRelRCReturn(rc, rc);
         }
 
-        phys_ram_dirty += cbBitmapAligned - phys_ram_dirty_size;
+        ram_list.phys_dirty += cbBitmapAligned - ram_list.phys_dirty_size;
     }
 
     /* initialize it. */
-    memset(phys_ram_dirty, 0xff, phys_ram_dirty_size);
+    memset(ram_list.phys_dirty, 0xff, ram_list.phys_dirty_size);
     return rc;
 }
 
@@ -1398,7 +1401,7 @@ REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
  *
  * @remark  This function must be kept in perfect sync with the scheduler in EM.cpp!
  */
-bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piException)
+bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piException)
 {
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
     /* !!! THIS MUST BE IN SYNC WITH emR3Reschedule !!! */
@@ -1650,7 +1653,7 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
  * @param   GCPtrInstr  Where to fetch code.
  * @param   pu8Byte     Where to store the byte on success
  */
-bool remR3GetOpcode(CPUState *env, RTGCPTR GCPtrInstr, uint8_t *pu8Byte)
+bool remR3GetOpcode(CPUX86State *env, RTGCPTR GCPtrInstr, uint8_t *pu8Byte)
 {
     int rc = PATMR3QueryOpcode(env->pVM, GCPtrInstr, pu8Byte);
     if (RT_SUCCESS(rc))
@@ -1667,7 +1670,7 @@ bool remR3GetOpcode(CPUState *env, RTGCPTR GCPtrInstr, uint8_t *pu8Byte)
  * @param   env         Pointer to cpu environment.
  * @param   GCPtr       The virtual address which page table/dir entry should be invalidated.
  */
-void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
+void remR3FlushPage(CPUX86State *env, RTGCPTR GCPtr)
 {
     PVM pVM = env->pVM;
     PCPUMCTX pCtx;
@@ -1711,7 +1714,7 @@ void remR3FlushPage(CPUState *env, RTGCPTR GCPtr)
 
 #ifndef REM_PHYS_ADDR_IN_TLB
 /** Wrapper for PGMR3PhysTlbGCPhys2Ptr. */
-void *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable)
+void *remR3TlbGCPhys2Ptr(CPUX86State *env1, target_ulong physAddr, int fWritable)
 {
     void *pv;
     int rc;
@@ -1739,7 +1742,7 @@ void *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable)
  * @param   env             Pointer to the CPU environment.
  * @param   GCPtr           Code page to monitor
  */
-void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
+void remR3ProtectCode(CPUX86State *env, RTGCPTR GCPtr)
 {
 #ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
     Assert(env->pVM->rem.s.fInREM);
@@ -1759,7 +1762,7 @@ void remR3ProtectCode(CPUState *env, RTGCPTR GCPtr)
  * @param   env             Pointer to the CPU environment.
  * @param   GCPtr           Code page to monitor
  */
-void remR3UnprotectCode(CPUState *env, RTGCPTR GCPtr)
+void remR3UnprotectCode(CPUX86State *env, RTGCPTR GCPtr)
 {
     Assert(env->pVM->rem.s.fInREM);
 #ifdef VBOX_REM_PROTECT_PAGES_FROM_SMC
@@ -1780,7 +1783,7 @@ void remR3UnprotectCode(CPUState *env, RTGCPTR GCPtr)
  * @param   env             Pointer to the CPU environment.
  * @param   fGlobal         Set if the flush is global.
  */
-void remR3FlushTLB(CPUState *env, bool fGlobal)
+void remR3FlushTLB(CPUX86State *env, bool fGlobal)
 {
     PVM pVM = env->pVM;
     PCPUMCTX pCtx;
@@ -1824,7 +1827,7 @@ void remR3FlushTLB(CPUState *env, bool fGlobal)
  *
  * @param   env     Pointer to the CPU environment.
  */
-void remR3ChangeCpuMode(CPUState *env)
+void remR3ChangeCpuMode(CPUX86State *env)
 {
     PVM         pVM = env->pVM;
     uint64_t    efer;
@@ -1876,7 +1879,7 @@ void remR3ChangeCpuMode(CPUState *env)
  *
  * @param   env             Pointer to the CPU environment.
  */
-void remR3DmaRun(CPUState *env)
+void remR3DmaRun(CPUX86State *env)
 {
     remR3ProfileStop(STATS_QEMU_RUN_EMULATED_CODE);
     PDMR3DmaRun(env->pVM);
@@ -1889,7 +1892,7 @@ void remR3DmaRun(CPUState *env)
  *
  * @param   env             Pointer to the CPU environment.
  */
-void remR3TimersRun(CPUState *env)
+void remR3TimersRun(CPUX86State *env)
 {
     LogFlow(("remR3TimersRun:\n"));
     LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("remR3TimersRun\n"));
@@ -1910,7 +1913,7 @@ void remR3TimersRun(CPUState *env)
  * @param   uErrorCode      Error code
  * @param   pvNextEIP       Next EIP
  */
-int remR3NotifyTrap(CPUState *env, uint32_t uTrap, uint32_t uErrorCode, RTGCPTR pvNextEIP)
+int remR3NotifyTrap(CPUX86State *env, uint32_t uTrap, uint32_t uErrorCode, RTGCPTR pvNextEIP)
 {
     PVM pVM = env->pVM;
 #ifdef VBOX_WITH_STATISTICS
@@ -1981,7 +1984,7 @@ void remR3TrapClear(PVM pVM)
  *
  * @param   env             Pointer to the CPU environment.
  */
-void remR3RecordCall(CPUState *env)
+void remR3RecordCall(CPUX86State *env)
 {
     CSAMR3RecordCallAddress(env->pVM, env->eip);
 }
@@ -3443,9 +3446,9 @@ REMR3DECL(bool) REMR3IsPageAccessHandled(PVM pVM, RTGCPHYS GCPhys)
  * @param   addr        The virtual address.
  * @param   pTLBEntry   The TLB entry.
  */
-target_ulong remR3PhysGetPhysicalAddressCode(CPUState*          env,
+target_ulong remR3PhysGetPhysicalAddressCode(CPUX86State       *env,
                                              target_ulong       addr,
-                                             CPUTLBEntry*       pTLBEntry,
+                                             CPUTLBEntry       *pTLBEntry,
                                              target_phys_addr_t ioTLBEntry)
 {
     PVM pVM = env->pVM;
@@ -3937,7 +3940,7 @@ static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP
  *                      selector will be inspected.
  * @param   pszPrefix
  */
-bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
+bool remR3DisasInstr(CPUX86State *env, int f32BitCode, char *pszPrefix)
 {
     PVM pVM = env->pVM;
     const bool fLog = LogIsEnabled();
@@ -4391,7 +4394,7 @@ void cpu_set_ferr(CPUX86State *env)
     LogFlow(("cpu_set_ferr: rc=%d\n", rc)); NOREF(rc);
 }
 
-int cpu_get_pic_interrupt(CPUState *env)
+int cpu_get_pic_interrupt(CPUX86State *env)
 {
     uint8_t u8Interrupt;
     int     rc;
@@ -4503,7 +4506,7 @@ int cpu_wrmsr(CPUX86State *env, uint32_t idMsr, uint64_t uValue)
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_REM_IOPORT
 
-void cpu_outb(CPUState *env, pio_addr_t addr, uint8_t val)
+void cpu_outb(CPUX86State *env, pio_addr_t addr, uint8_t val)
 {
     int rc;
 
@@ -4522,7 +4525,7 @@ void cpu_outb(CPUState *env, pio_addr_t addr, uint8_t val)
     remAbort(rc, __FUNCTION__);
 }
 
-void cpu_outw(CPUState *env, pio_addr_t addr, uint16_t val)
+void cpu_outw(CPUX86State *env, pio_addr_t addr, uint16_t val)
 {
     //Log2(("cpu_outw: addr=%#06x val=%#x\n", addr, val));
     int rc = IOMIOPortWrite(env->pVM, (RTIOPORT)addr, val, 2);
@@ -4537,7 +4540,7 @@ void cpu_outw(CPUState *env, pio_addr_t addr, uint16_t val)
     remAbort(rc, __FUNCTION__);
 }
 
-void cpu_outl(CPUState *env, pio_addr_t addr, uint32_t val)
+void cpu_outl(CPUX86State *env, pio_addr_t addr, uint32_t val)
 {
     int rc;
     Log2(("cpu_outl: addr=%#06x val=%#x\n", addr, val));
@@ -4553,7 +4556,7 @@ void cpu_outl(CPUState *env, pio_addr_t addr, uint32_t val)
     remAbort(rc, __FUNCTION__);
 }
 
-uint8_t cpu_inb(CPUState *env, pio_addr_t addr)
+uint8_t cpu_inb(CPUX86State *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
     int rc = IOMIOPortRead(env->pVM, (RTIOPORT)addr, &u32, 1);
@@ -4573,7 +4576,7 @@ uint8_t cpu_inb(CPUState *env, pio_addr_t addr)
     return UINT8_C(0xff);
 }
 
-uint16_t cpu_inw(CPUState *env, pio_addr_t addr)
+uint16_t cpu_inw(CPUX86State *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
     int rc = IOMIOPortRead(env->pVM, (RTIOPORT)addr, &u32, 2);
@@ -4592,7 +4595,7 @@ uint16_t cpu_inw(CPUState *env, pio_addr_t addr)
     return UINT16_C(0xffff);
 }
 
-uint32_t cpu_inl(CPUState *env, pio_addr_t addr)
+uint32_t cpu_inl(CPUX86State *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
     int rc = IOMIOPortRead(env->pVM, (RTIOPORT)addr, &u32, 4);
@@ -4672,7 +4675,7 @@ void hw_error(const char *pszFormat, ...)
  * Interface for the qemu cpu to report unhandled situation
  * raising a fatal VM error.
  */
-void cpu_abort(CPUState *env, const char *pszFormat, ...)
+void cpu_abort(CPUX86State *env, const char *pszFormat, ...)
 {
     va_list va;
     PVM     pVM;
@@ -5413,6 +5416,6 @@ void *memcpy(void *dst, const void *src, size_t size)
 
 #endif
 
-void cpu_smm_update(CPUState *env)
+void cpu_smm_update(CPUX86State *env)
 {
 }

@@ -38,6 +38,11 @@ char *pstrcat(char *buf, int buf_size, const char *s);
 # else
 #  define QEMU_WARN_UNUSED_RESULT
 # endif
+#define QEMU_BUILD_BUG_ON(x) typedef char __build_bug_on__##__LINE__[(x)?-1:1];
+
+#include <stdio.h>
+#include "cpu.h"
+
 
 #else /* !VBOX */
 #ifdef _WIN32
@@ -47,6 +52,19 @@ char *pstrcat(char *buf, int buf_size, const char *s);
 #endif
 
 #define QEMU_NORETURN __attribute__ ((__noreturn__))
+#ifdef CONFIG_GCC_ATTRIBUTE_WARN_UNUSED_RESULT
+#define QEMU_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#else
+#define QEMU_WARN_UNUSED_RESULT
+#endif
+
+#define QEMU_BUILD_BUG_ON(x) typedef char __build_bug_on__##__LINE__[(x)?-1:1];
+
+typedef struct QEMUTimer QEMUTimer;
+typedef struct QEMUFile QEMUFile;
+typedef struct QEMUBH QEMUBH;
+typedef struct DeviceState DeviceState;
+
 
 /* Hack around the mess dyngen-exec.h causes: We need QEMU_NORETURN in files that
    cannot include the following headers without conflicts. This condition has
@@ -57,6 +75,7 @@ char *pstrcat(char *buf, int buf_size, const char *s);
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 #include <strings.h>
 #include <inttypes.h>
@@ -131,8 +150,6 @@ static inline char *realpath(const char *path, char *resolved_path)
 #endif /* !defined(NEED_CPU_H) */
 
 /* bottom halves */
-typedef struct QEMUBH QEMUBH;
-
 typedef void QEMUBHFunc(void *opaque);
 
 void async_context_push(void);
@@ -167,6 +184,7 @@ int qemu_strnlen(const char *s, int max_len);
 time_t mktimegm(struct tm *tm);
 int qemu_fls(int i);
 int qemu_fdatasync(int fd);
+int fcntl_setfl(int fd, int flag);
 
 /* path.c */
 void init_paths(const char *prefix);
@@ -195,16 +213,16 @@ void qemu_free(void *ptr);
 char *qemu_strdup(const char *str);
 char *qemu_strndup(const char *str, size_t size);
 
-void *get_mmap_addr(unsigned long size);
-
-
 void qemu_mutex_lock_iothread(void);
 void qemu_mutex_unlock_iothread(void);
 
 int qemu_open(const char *name, int flags, ...);
+ssize_t qemu_write_full(int fd, const void *buf, size_t count)
+    QEMU_WARN_UNUSED_RESULT;
 void qemu_set_cloexec(int fd);
 
 #ifndef _WIN32
+int qemu_eventfd(int pipefd[2]);
 int qemu_pipe(int pipefd[2]);
 #endif
 
@@ -215,7 +233,7 @@ void QEMU_NORETURN hw_error(const char *fmt, ...)
 
 /* IO callbacks.  */
 typedef void IOReadHandler(void *opaque, const uint8_t *buf, int size);
-typedef int IOCanRWHandler(void *opaque);
+typedef int IOCanReadHandler(void *opaque);
 typedef void IOHandler(void *opaque);
 
 struct ParallelIOArg {
@@ -242,11 +260,9 @@ typedef struct CharDriverState CharDriverState;
 typedef struct MACAddr MACAddr;
 typedef struct VLANState VLANState;
 typedef struct VLANClientState VLANClientState;
-typedef struct QEMUFile QEMUFile;
 typedef struct i2c_bus i2c_bus;
 typedef struct i2c_slave i2c_slave;
 typedef struct SMBusDevice SMBusDevice;
-typedef struct QEMUTimer QEMUTimer;
 typedef struct PCIHostState PCIHostState;
 typedef struct PCIExpressHost PCIExpressHost;
 typedef struct PCIBus PCIBus;
@@ -257,8 +273,13 @@ typedef struct PCMCIACardState PCMCIACardState;
 typedef struct MouseTransformInfo MouseTransformInfo;
 typedef struct uWireSlave uWireSlave;
 typedef struct I2SCodec I2SCodec;
-typedef struct DeviceState DeviceState;
 typedef struct SSIBus SSIBus;
+typedef struct EventNotifier EventNotifier;
+typedef struct VirtIODevice VirtIODevice;
+
+typedef uint64_t pcibus_t;
+
+void cpu_exec_init_all(unsigned long tb_size);
 
 /* CPU save/load.  */
 void cpu_save(QEMUFile *f, void *opaque);
@@ -273,6 +294,14 @@ void qemu_notify_event(void);
 /* Unblock cpu */
 void qemu_cpu_kick(void *env);
 int qemu_cpu_self(void *env);
+
+/* work queue */
+struct qemu_work_item {
+    struct qemu_work_item *next;
+    void (*func)(void *data);
+    void *data;
+    int done;
+};
 
 #ifdef CONFIG_USER_ONLY
 #define qemu_init_vcpu(env) do { } while (0)

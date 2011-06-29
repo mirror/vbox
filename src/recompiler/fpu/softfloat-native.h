@@ -2,7 +2,8 @@
 #define __C99FEATURES__
 #include <math.h>
 
-#if (defined(_BSD) && !defined(__APPLE__) && !defined(__FreeBSD__)) || defined(CONFIG_SOLARIS) /* VBox: Added __FreeBSD__ */
+#if (defined(CONFIG_BSD) && !defined(__APPLE__) && !defined(__GLIBC__) && !defined(__FreeBSD__)) \
+    || defined(CONFIG_SOLARIS) /* VBox: Added __FreeBSD__ */
 #include <ieeefp.h>
 #define fabsf(f) ((float)fabs(f))
 #else
@@ -22,7 +23,7 @@
  */
 #if defined(CONFIG_SOLARIS) && \
            ((CONFIG_SOLARIS_VERSION <= 9 ) || \
-           ((CONFIG_SOLARIS_VERSION >= 10) && (__GNUC__ < 4))) \
+           ((CONFIG_SOLARIS_VERSION == 10) && (__GNUC__ < 4))) \
     || (defined(__OpenBSD__) && (OpenBSD < 200811))
 /*
  * C99 7.12.3 classification macros
@@ -55,14 +56,12 @@
 #endif
 
 
-# if !defined(VBOX) || !defined(isnormal) || !defined(isgreater) || !defined(isgreaterequal) || !defined(isless) || !defined(islessequal) || !defined(isunordered)
 #define isnormal(x)             (fpclass(x) >= FP_NZERO)
 #define isgreater(x, y)         ((!unordered(x, y)) && ((x) > (y)))
 #define isgreaterequal(x, y)    ((!unordered(x, y)) && ((x) >= (y)))
 #define isless(x, y)            ((!unordered(x, y)) && ((x) < (y)))
 #define islessequal(x, y)       ((!unordered(x, y)) && ((x) <= (y)))
 #define isunordered(x,y)        unordered(x, y)
-# endif /* !VBOX || missing */
 #endif
 
 #if defined(__sun__) && !defined(CONFIG_NEEDS_LIBSUNMATH)
@@ -127,13 +126,6 @@ enum {
     float_round_down         = FP_RM,
     float_round_up           = FP_RP,
     float_round_to_zero      = FP_RZ
-};
-#elif defined(__arm__)
-enum {
-    float_round_nearest_even = 0,
-    float_round_down         = 1,
-    float_round_up           = 2,
-    float_round_to_zero      = 3
 };
 #else
 enum {

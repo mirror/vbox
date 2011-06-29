@@ -25,7 +25,7 @@ _syscall2(int, vm86, int, func, struct vm86plus_struct *, v86)
 
 #define COM_BASE_ADDR    0x10100
 
-void usage(void)
+static void usage(void)
 {
     printf("runcom version 0.1 (c) 2003 Fabrice Bellard\n"
            "usage: runcom file.com\n"
@@ -51,7 +51,7 @@ static inline void pushw(struct vm86_regs *r, int val)
 
 void dump_regs(struct vm86_regs *r)
 {
-    fprintf(stderr, 
+    fprintf(stderr,
             "EAX=%08lx EBX=%08lx ECX=%08lx EDX=%08lx\n"
             "ESI=%08lx EDI=%08lx EBP=%08lx ESP=%08lx\n"
             "EIP=%08lx EFL=%08lx\n"
@@ -80,9 +80,9 @@ int main(int argc, char **argv)
     if (argc != 2)
         usage();
     filename = argv[1];
-    
-    vm86_mem = mmap((void *)0x00000000, 0x110000, 
-                    PROT_WRITE | PROT_READ | PROT_EXEC, 
+
+    vm86_mem = mmap((void *)0x00000000, 0x110000,
+                    PROT_WRITE | PROT_READ | PROT_EXEC,
                     MAP_FIXED | MAP_ANON | MAP_PRIVATE, -1, 0);
     if (vm86_mem == MAP_FAILED) {
         perror("mmap");
@@ -147,7 +147,7 @@ int main(int argc, char **argv)
         case VM86_INTx:
             {
                 int int_num, ah;
-                
+
                 int_num = VM86_ARG(ret);
                 if (int_num != 0x21)
                     goto unknown_int;
