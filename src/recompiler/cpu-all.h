@@ -1051,7 +1051,7 @@ typedef struct RAMList {
      * We have memory ranges (the high PC-BIOS mapping) which causes some pages
      * to fall outside the dirty map. */
     RTGCPHYS phys_dirty_size;
-#if 0
+#if 1
 # define VBOX_RAMLIST_DIRTY_BOUNDS_CHECK_RET(addr,rv) \
     do { \
         if (RT_UNLIKELY( ((addr) >> TARGET_PAGE_BITS) >= ram_list.phys_dirty_size)) { \
