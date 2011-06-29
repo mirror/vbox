@@ -364,7 +364,7 @@ static int vmmR3InitLoggers(PVM pVM)
                 return rc;
             pVCpu->vmm.s.pR0LoggerR3->pVM        = pVM->pVMR0;
             //pVCpu->vmm.s.pR0LoggerR3->fCreated = false;
-            pVCpu->vmm.s.pR0LoggerR3->cbLogger   = cbLogger;
+            pVCpu->vmm.s.pR0LoggerR3->cbLogger   = (uint32_t)cbLogger;
             pVCpu->vmm.s.pR0LoggerR0 = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pR0LoggerR3);
         }
 # endif
