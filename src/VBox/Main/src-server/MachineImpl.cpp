@@ -1462,6 +1462,26 @@ STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled)(BOOL enabled)
     return rc;
 }
 
+STDMETHODIMP Machine::COMGETTER(EmulatedUSBCardReaderEnabled)(BOOL *enabled)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP Machine::COMSETTER(EmulatedUSBCardReaderEnabled)(BOOL enabled)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP Machine::COMGETTER(EmulatedUSBWebcameraEnabled)(BOOL *enabled)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP Machine::COMSETTER(EmulatedUSBWebcameraEnabled)(BOOL enabled)
+{
+    return E_NOTIMPL;
+}
+
 STDMETHODIMP Machine::COMGETTER(HpetEnabled)(BOOL *enabled)
 {
     CheckComArgOutPointerValid(enabled);

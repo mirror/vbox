@@ -3563,7 +3563,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="54fd9a53-7c1b-4005-9247-9cf703edd4da"
+    uuid="5eaa9319-62fc-4b0a-843c-0cb1940f8a91"
     wsmap="managed"
     >
     <desc>
@@ -3873,6 +3873,9 @@
     <attribute name="VRDEServer" type="IVRDEServer" readonly="yes">
       <desc>VirtualBox Remote Desktop Extension (VRDE) server object.</desc>
     </attribute>
+
+    <attribute name="emulatedUSBWebcameraEnabled" type="boolean" default="false"/>
+    <attribute name="emulatedUSBCardReaderEnabled" type="boolean" default="false"/>
 
     <attribute name="mediumAttachments" type="IMediumAttachment" readonly="yes" safearray="yes">
       <desc>Array of media attached to this machine.</desc>
