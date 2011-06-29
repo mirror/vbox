@@ -46,9 +46,6 @@
       <string>Virtual disk to copy</string>
      </property>
      <layout class="QHBoxLayout" name="m_pSourceDiskLayout">
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
       <item>
        <widget class="VBoxMediaComboBox" name="m_pSourceDiskSelector"/>
       </item>

@@ -189,6 +189,9 @@ UINewHDWizard::UINewHDWizard(QWidget *pParent, const QString &strDefaultName, co
     : QIWizard(pParent)
     , m_wizardType(sourceHardDisk.isNull() ? UINewHDWizardType_Creating : UINewHDWizardType_Copying)
 {
+    /* Hide window icon: */
+    setWindowIcon(QIcon());
+
     /* Create & add pages: */
     if (wizardType() == UINewHDWizardType_Copying)
         addPage(new UINewHDWizardPageWelcome(sourceHardDisk));
