@@ -463,7 +463,8 @@ static void tcg_out_modrm_sib_offset(TCGContext *s, int opc, int r, int rm,
             /* Try for a rip-relative addressing mode.  This has replaced
                the 32-bit-mode absolute addressing encoding.  */
 #ifdef VBOX
-            tcg_target_long pc = (tcg_target_long)s->code_ptr + tcg_calc_opc_len(s, opc, r, 0, 0) + 5;
+            tcg_target_long pc = (tcg_target_long)s->code_ptr 
+                               + tcg_calc_opc_len(s, opc, r, 0, 0) + 1 + 4;
 #else
             tcg_target_long pc = (tcg_target_long)s->code_ptr + 5 + ~rm;
 #endif
@@ -992,7 +993,8 @@ static void tcg_out_branch(TCGContext *s, int call, tcg_target_long dest)
 {
 #ifdef VBOX
     tcg_target_long disp = dest - (tcg_target_long)s->code_ptr 
-                         - tcg_calc_opc_len(s, call ? OPC_CALL_Jz : OPC_JMP_long, 0, 0, 0);
+                         - tcg_calc_opc_len(s, call ? OPC_CALL_Jz : OPC_JMP_long, 0, 0, 0)
+                         - 4;
 #else
     tcg_target_long disp = dest - (tcg_target_long)s->code_ptr - 5;
 #endif
