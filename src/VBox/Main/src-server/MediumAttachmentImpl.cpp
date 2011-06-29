@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,12 +61,15 @@ struct BackupableMediumAttachmentData
 struct MediumAttachment::Data
 {
     Data()
-        : pMachine(NULL)
+        : pMachine(NULL),
+          fIsEjected(false)
     { }
 
     /** Reference to Machine object, for checking mutable state. */
     Machine * const pMachine;
     /* later: const ComObjPtr<MediumAttachment> mPeer; */
+
+    bool                fIsEjected;
 
     Backupable<BackupableMediumAttachmentData> bd;
 };
@@ -278,6 +281,23 @@ STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
     return S_OK;
 }
 
+STDMETHODIMP MediumAttachment::COMGETTER(IsEjected)(BOOL *aEjected)
+{
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aEjected);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aEjected = m->fIsEjected;
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
 STDMETHODIMP MediumAttachment::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwGroup)
 {
     LogFlowThisFuncEnter();
@@ -405,6 +425,7 @@ void MediumAttachment::updateMedium(const ComObjPtr<Medium> &aMedium)
     m->bd.backup();
     m->bd->pMedium = aMedium;
     m->bd->fImplicit = false;
+    m->fIsEjected = false;
 }
 
 /** Must be called from under this object's write lock. */
@@ -414,6 +435,14 @@ void MediumAttachment::updatePassthrough(bool aPassthrough)
 
     m->bd.backup();
     m->bd->fPassthrough = aPassthrough;
+}
+
+/** Must be called from under this object's write lock. */
+void MediumAttachment::updateEjected()
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    m->fIsEjected = true;
 }
 
 void MediumAttachment::updateBandwidthGroup(const Utf8Str &aBandwidthGroup)
