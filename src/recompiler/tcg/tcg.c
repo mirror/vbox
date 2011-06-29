@@ -77,9 +77,6 @@
 # if defined(TARGET_X86_64) && (TCG_TARGET_REG_BITS == 32)
 #  undef USE_LIVENESS_ANALYSIS
 # endif
-///* With 0.12.5 the liveness analysis does not work well even when targeting
-//   32-bit guest cpus.  Just disable it wholesale to be on the safe side.  */
-//#undef USE_LIVENESS_ANALYSIS
 #endif /* VBOX */
 
 static void patch_reloc(uint8_t *code_ptr, int type,
@@ -1988,9 +1985,6 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
             break;
         case INDEX_op_debug_insn_start:
             /* debug instruction */
-//#ifdef VBOX /* HACK ALERT: GROSS HACK to work around registister allocation bugs in v0.12.5 */
-//            save_globals(s, s->reserved_regs);
-//#endif
             break;
         case INDEX_op_nop:
         case INDEX_op_nop1:
