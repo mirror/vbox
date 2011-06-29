@@ -9571,7 +9571,7 @@
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="aa4b4840-934f-454d-9a28-23e8f4235edf"
+    uuid="8d48f68f-807a-4e4e-9449-827fe9ea8498"
     wsmap="struct"
     >
     <desc>
@@ -9782,6 +9782,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="passthrough" type="boolean" readonly="yes">
       <desc>Pass I/O requests through to a device on the host.</desc>
+    </attribute>
+
+    <attribute name="isEjected" type="boolean" readonly="yes">
+      <desc>Signals that the removable medium has been ejected. This is not
+        necessarily equivalent to having a @c null medium association.</desc>
     </attribute>
 
     <attribute name="bandwidthGroup" type="IBandwidthGroup" readonly="yes">

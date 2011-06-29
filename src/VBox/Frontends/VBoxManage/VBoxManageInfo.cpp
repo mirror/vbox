@@ -772,17 +772,24 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         {
             for (ULONG k = 0; k < cDevices; ++ k)
             {
+                ComPtr<IMediumAttachment> mediumAttach;
+                machine->GetMediumAttachment(storageCtlName.raw(),
+                                             i, k,
+                                             mediumAttach.asOutParam());
+                BOOL fIsEjected = FALSE;
+                DeviceType_T devType = DeviceType_Null;
+                if (mediumAttach)
+                {
+                    mediumAttach->COMGETTER(IsEjected)(&fIsEjected);
+                    mediumAttach->COMGETTER(Type)(&devType);
+                }
                 rc = machine->GetMedium(storageCtlName.raw(), i, k,
                                         medium.asOutParam());
                 if (SUCCEEDED(rc) && medium)
                 {
-                    BOOL fPassthrough;
-                    ComPtr<IMediumAttachment> mediumAttach;
+                    BOOL fPassthrough = FALSE;
 
-                    rc = machine->GetMediumAttachment(storageCtlName.raw(),
-                                                      i, k,
-                                                      mediumAttach.asOutParam());
-                    if (SUCCEEDED(rc) && mediumAttach)
+                    if (mediumAttach)
                         mediumAttach->COMGETTER(Passthrough)(&fPassthrough);
 
                     medium->COMGETTER(Location)(filePath.asOutParam());
@@ -797,6 +804,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         if (fPassthrough)
                             RTPrintf("\"%lS-dvdpassthrough\"=\"%s\"\n", storageCtlName.raw(),
                                      fPassthrough ? "on" : "off");
+                        if (devType == DeviceType_DVD)
+                            RTPrintf("\"%lS-IsEjected\"=\"%s\"\n", storageCtlName.raw(),
+                                     fIsEjected ? "on" : "off");
                     }
                     else
                     {
@@ -805,15 +815,27 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                                  Utf8Str(uuid).c_str());
                         if (fPassthrough)
                             RTPrintf(" (passthrough enabled)");
+                        if (fIsEjected)
+                            RTPrintf(" (ejected)");
                         RTPrintf("\n");
                     }
                 }
                 else if (SUCCEEDED(rc))
                 {
                     if (details == VMINFO_MACHINEREADABLE)
+                    {
                         RTPrintf("\"%lS-%d-%d\"=\"emptydrive\"\n", storageCtlName.raw(), i, k);
+                        if (devType == DeviceType_DVD)
+                            RTPrintf("\"%lS-IsEjected\"=\"%s\"\n", storageCtlName.raw(),
+                                     fIsEjected ? "on" : "off");
+                    }
                     else
-                        RTPrintf("%lS (%d, %d): Empty\n", storageCtlName.raw(), i, k);
+                    {
+                        RTPrintf("%lS (%d, %d): Empty", storageCtlName.raw(), i, k);
+                        if (fIsEjected)
+                            RTPrintf(" (ejected)");
+                        RTPrintf("\n");
+                    }
                 }
                 else
                 {

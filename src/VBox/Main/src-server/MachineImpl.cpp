@@ -11690,6 +11690,7 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
             oldmedium->removeBackReference(mData->mUuid);
 
         pAttach->updateMedium(NULL);
+        pAttach->updateEjected();
 
         pAttach.queryInterfaceTo(aNewAttachment);
     }
