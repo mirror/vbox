@@ -11639,6 +11639,70 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
 #endif
 }
 
+STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
+                                         IMediumAttachment **aNewAttachment)
+{
+    CheckComArgNotNull(aAttachment);
+    CheckComArgOutPointerValid(aNewAttachment);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Need to query the details first, as the IMediumAttachment reference
+     * might be to the original settings, which we are going to change. */
+    Bstr ctrlName;
+    HRESULT rc = aAttachment->COMGETTER(Controller)(ctrlName.asOutParam());
+    AssertComRC(rc);
+    LONG lDev;
+    rc = aAttachment->COMGETTER(Device)(&lDev);
+    AssertComRC(rc);
+    LONG lPort;
+    rc = aAttachment->COMGETTER(Port)(&lPort);
+    AssertComRC(rc);
+
+    // request the host lock first, since might be calling Host methods for getting host drives;
+    // next, protect the media tree all the while we're in here, as well as our member variables
+    AutoMultiWriteLock3 multiLock(mParent->host()->lockHandle(),
+                                  this->lockHandle(),
+                                  &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    ComObjPtr<MediumAttachment> pAttach = static_cast<MediumAttachment *>(aAttachment);
+
+    /* Remember previously mounted medium. The medium before taking the
+     * backup is not necessarily the same thing. */
+    ComObjPtr<Medium> oldmedium;
+    oldmedium = pAttach->getMedium();
+
+    setModified(IsModified_Storage);
+    mMediaData.backup();
+
+    GuidList llRegistriesThatNeedSaving;
+
+    {
+        // The backup operation makes the pAttach reference point to the
+        // old settings. Re-get the correct reference.
+        pAttach = findAttachment(mMediaData->mAttachments,
+                                 ctrlName.raw(),
+                                 lPort,
+                                 lDev);
+        AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
+        if (!oldmedium.isNull())
+            oldmedium->removeBackReference(mData->mUuid);
+
+        pAttach->updateMedium(NULL);
+
+        pAttach.queryInterfaceTo(aNewAttachment);
+    }
+
+    setModified(IsModified_Storage);
+
+    multiLock.release();
+
+    mParent->saveRegistries(llRegistriesThatNeedSaving);
+
+    return rc;
+}
+
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 

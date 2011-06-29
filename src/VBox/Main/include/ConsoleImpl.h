@@ -455,6 +455,7 @@ public:
 
     typedef std::map<Utf8Str, ComObjPtr<SharedFolder> > SharedFolderMap;
     typedef std::map<Utf8Str, SharedFolderData> SharedFolderDataMap;
+    typedef std::map<Utf8Str, ComPtr<IMediumAttachment> > MediumAttachmentMap;
 
 private:
 
@@ -549,6 +550,10 @@ private:
                                                    bool fUseHostIOCache,
                                                    IMediumAttachment *aMediumAtt,
                                                    bool fForce);
+    void attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
+                            uint64_t uFirst, uint64_t uLast,
+                            Console::MediumAttachmentMap *pmapMediumAttachments,
+                            const char *pcszDevice, unsigned uInstance);
 
     int configNetwork(const char *pszDevice, unsigned uInstance, unsigned uLun,
                       INetworkAdapter *aNetworkAdapter, PCFGMNODE pCfg,
@@ -623,6 +628,7 @@ private:
 
     static DECLCALLBACK(void *) drvStatus_QueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(void)   drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface, unsigned iLUN);
+    static DECLCALLBACK(int)    drvStatus_MediumEjected(PPDMIMEDIANOTIFY pInterface, unsigned iLUN);
     static DECLCALLBACK(void)   drvStatus_Destruct(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(int)    drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
 
@@ -734,7 +740,7 @@ private:
     enum
     {
         iLedFloppy  = 0,
-        cLedFloppy  = 1,
+        cLedFloppy  = 2,
         iLedIde     = iLedFloppy + cLedFloppy,
         cLedIde     = 4,
         iLedSata    = iLedIde + cLedIde,
@@ -750,6 +756,9 @@ private:
     PPDMLED      mapNetworkLeds[SchemaDefs::NetworkAdapterCount];
     PPDMLED      mapSharedFolderLed;
     PPDMLED      mapUSBLed[2];
+
+    MediumAttachmentMap mapMediumAttachments;
+
 /* Note: FreeBSD needs this whether netflt is used or not. */
 #if ((defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)) || defined(RT_OS_FREEBSD))
     Utf8Str      maTAPDeviceName[8];
