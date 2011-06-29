@@ -2399,8 +2399,8 @@ void tlb_set_page(CPUState *env, target_ulong vaddr,
         pd = p->phys_offset;
     }
 #if defined(DEBUG_TLB)
-    printf("tlb_set_page: vaddr=" TARGET_FMT_lx " paddr=0x%08x prot=%x idx=%d smmu=%d pd=0x%08lx\n",
-           vaddr, (int)paddr, prot, mmu_idx, is_softmmu, pd);
+    printf("tlb_set_page: vaddr=" TARGET_FMT_lx " paddr=0x%08x prot=%x idx=%d size=" TARGET_FMT_lx " pd=0x%08lx\n",
+           vaddr, (int)paddr, prot, mmu_idx, size, pd);
 #endif
 
     address = vaddr;
