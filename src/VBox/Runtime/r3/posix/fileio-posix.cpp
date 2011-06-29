@@ -392,7 +392,7 @@ RTFILE rtFileGetStandard(RTHANDLESTD enmStdHandle)
     int rc = fstat(fd, &st);
     if (rc == -1)
         return NIL_RTFILE;
-    return (RTFILE)fd;
+    return (RTFILE)(intptr_t)fd;
 }
 
 
