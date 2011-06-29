@@ -26,16 +26,17 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-#define CPU_NO_GLOBAL_REGS
 #include "exec.h"
 #include "exec-all.h"
 #include "host-utils.h"
+#include "ioport.h"
 
 #ifdef VBOX
 # include "qemu-common.h"
 # include <math.h>
 # include "tcg.h"
 #endif /* VBOX */
+
 //#define DEBUG_PCALL
 
 
@@ -369,8 +370,7 @@ static void tss_load_seg(int seg_reg, int selector)
         if (seg_reg == R_SS || seg_reg == R_CS)
             raise_exception_err(EXCP0A_TSS, selector & 0xfffc);
 #ifdef VBOX
-# if 0
-        /** @todo: now we ignore loading 0 selectors, need to check what is correct once */
+# if 0  /** @todo now we ignore loading 0 selectors, need to check what is correct once */
         cpu_x86_load_seg_cache(env, seg_reg, selector,
                                0, 0, 0);
 # endif
@@ -1759,6 +1759,11 @@ void raise_exception(int exception_index)
     raise_interrupt(exception_index, 0, 0, 0);
 }
 
+void raise_exception_env(int exception_index, CPUState *nenv)
+{
+    env = nenv;
+    raise_exception(exception_index);
+}
 /* SMM support */
 
 #if defined(CONFIG_USER_ONLY)
@@ -3444,7 +3449,11 @@ target_ulong helper_read_crN(int reg)
         break;
     case 8:
         if (!(env->hflags2 & HF2_VINTR_MASK)) {
+#ifndef VBOX
+            val = cpu_get_apic_tpr(env->apic_state);
+#else  /* VBOX */
             val = cpu_get_apic_tpr(env);
+#endif /* VBOX */
         } else {
             val = env->v_tpr;
         }
@@ -3468,7 +3477,11 @@ void helper_write_crN(int reg, target_ulong t0)
         break;
     case 8:
         if (!(env->hflags2 & HF2_VINTR_MASK)) {
+#ifndef VBOX
+            cpu_set_apic_tpr(env->apic_state, t0);
+#else  /* VBOX */
             cpu_set_apic_tpr(env, t0);
+#endif /* VBOX */
         }
         env->v_tpr = t0 & 0x0f;
         break;
@@ -3533,18 +3546,11 @@ void helper_rdtsc(void)
 
 void helper_rdtscp(void)
 {
-#ifndef VBOX
     helper_rdtsc();
+#ifndef VBOX
     ECX = (uint32_t)(env->tsc_aux);
-#else
+#else  /* VBOX */
     uint64_t val;
-    if ((env->cr[4] & CR4_TSD_MASK) && ((env->hflags & HF_CPL_MASK) != 0)) {
-        raise_exception(EXCP0D_GPF);
-    }
-
-    val = cpu_get_tsc(env);
-    EAX = (uint32_t)(val);
-    EDX = (uint32_t)(val >> 32);
     if (cpu_rdmsr(env, MSR_K8_TSC_AUX, &val) == 0)
         ECX = (uint32_t)(val);
     else
@@ -3602,7 +3608,7 @@ void helper_wrmsr(void)
         break;
     case MSR_IA32_APICBASE:
 # ifndef VBOX /* The CPUMSetGuestMsr call below does this now. */
-        cpu_set_apic_base(env, val);
+        cpu_set_apic_base(env->apic_state, val);
 # endif
         break;
     case MSR_EFER:
@@ -3748,7 +3754,11 @@ void helper_rdmsr(void)
         val = env->sysenter_eip;
         break;
     case MSR_IA32_APICBASE:
+#ifndef VBOX
+        val = cpu_get_apic_base(env->apic_state);
+#else  /* VBOX */
         val = cpu_get_apic_base(env);
+#endif /* VBOX */
         break;
     case MSR_EFER:
         val = env->efer;
@@ -6642,6 +6652,7 @@ void helper_vmexit(uint32_t exit_code, uint64_t exit_info_1)
              ldl_phys(env->vm_vmcb + offsetof(struct vmcb, control.event_inj)));
     stl_phys(env->vm_vmcb + offsetof(struct vmcb, control.exit_int_info_err),
              ldl_phys(env->vm_vmcb + offsetof(struct vmcb, control.event_inj_err)));
+    stl_phys(env->vm_vmcb + offsetof(struct vmcb, control.event_inj), 0);
 
     env->hflags2 &= ~HF2_GIF_MASK;
     /* FIXME: Resets the current ASID register to zero (host ASID). */

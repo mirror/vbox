@@ -26,7 +26,6 @@ extern int loglevel;
 #define qemu_loglevel_mask(b) ((loglevel & (b)) != 0)
 
 
-
 /* Logging functions: */
 
 /* main logging function

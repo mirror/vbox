@@ -12,8 +12,6 @@ void set_float_rounding_mode(int val STATUS_PARAM)
 #if (defined(CONFIG_BSD) && !defined(__APPLE__) && !defined(__GLIBC__)) || \
     (defined(CONFIG_SOLARIS) && (CONFIG_SOLARIS_VERSION < 10 || CONFIG_SOLARIS_VERSION == 11)) /* VBOX adds sol 11 */
     fpsetround(val);
-#elif defined(__arm__)
-    /* nothing to do */
 #else
     fesetround(val);
 #endif
@@ -35,8 +33,7 @@ void set_floatx80_rounding_precision(int val STATUS_PARAM)
 #define sqrtf(f)		((float)sqrt(f))
 #define remainderf(fa, fb)	((float)remainder(fa, fb))
 #define rintf(f)		((float)rint(f))
-/* Some defines which only apply to *BSD */
-# if defined(VBOX) && defined(HOST_BSD)
+# if defined(VBOX) && defined(HOST_BSD) /* Some defines which only apply to *BSD */
 #  define lrintl(f)            ((int32_t)rint(f))
 #  define llrintl(f)           ((int64_t)rint(f))
 #  define rintl(d)             ((int32_t)rint(d))
@@ -373,25 +370,7 @@ float64 float64_trunc_to_int( float64 a STATUS_PARAM )
 
 float64 float64_round_to_int( float64 a STATUS_PARAM )
 {
-#if defined(__arm__)
-    switch(STATUS(float_rounding_mode)) {
-    default:
-    case float_round_nearest_even:
-        asm("rndd %0, %1" : "=f" (a) : "f"(a));
-        break;
-    case float_round_down:
-        asm("rnddm %0, %1" : "=f" (a) : "f"(a));
-        break;
-    case float_round_up:
-        asm("rnddp %0, %1" : "=f" (a) : "f"(a));
-        break;
-    case float_round_to_zero:
-        asm("rnddz %0, %1" : "=f" (a) : "f"(a));
-        break;
-    }
-#else
     return rint(a);
-#endif
 }
 
 float64 float64_rem( float64 a, float64 b STATUS_PARAM)

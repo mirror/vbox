@@ -205,13 +205,21 @@ static inline void cpu_to_be32wu(uint32_t *p, uint32_t v)
 
 #ifdef HOST_WORDS_BIGENDIAN
 #define cpu_to_32wu cpu_to_be32wu
+#define leul_to_cpu(v) glue(glue(le,HOST_LONG_BITS),_to_cpu)(v)
 #else
 #define cpu_to_32wu cpu_to_le32wu
+#define leul_to_cpu(v) (v)
 #endif
 
 #undef le_bswap
 #undef be_bswap
 #undef le_bswaps
 #undef be_bswaps
+
+/* len must be one of 1, 2, 4 */
+static inline uint32_t qemu_bswap_len(uint32_t value, int len)
+{
+    return bswap32(value) >> (32 - 8 * len);
+}
 
 #endif /* BSWAP_H */

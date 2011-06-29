@@ -119,7 +119,8 @@ typedef int64_t  Elf64_Sxword;
  */
 #define EM_S390_OLD     0xA390
 
-#define EM_XILINX_MICROBLAZE    0xBAAB
+#define EM_MICROBLAZE      189
+#define EM_MICROBLAZE_OLD  0xBAAB
 
 /* This is the info that is needed to parse the dynamic section of the file */
 #define DT_NULL		0
@@ -243,6 +244,8 @@ typedef struct {
 #define R_386_GOTOFF	9
 #define R_386_GOTPC	10
 #define R_386_NUM	11
+/* Not a dynamic reloc, so not included in R_386_NUM.  Used in TCG.  */
+#define R_386_PC8	23
 
 #define R_MIPS_NONE		0
 #define R_MIPS_16		1

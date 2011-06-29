@@ -83,6 +83,7 @@ void do_interrupt_user(int intno, int is_int, int error_code,
                        target_ulong next_eip);
 void QEMU_NORETURN raise_exception_err(int exception_index, int error_code);
 void QEMU_NORETURN raise_exception(int exception_index);
+void QEMU_NORETURN raise_exception_env(int exception_index, CPUState *nenv);
 void do_smm_enter(void);
 
 /* n must be a constant to be efficient */
@@ -300,62 +301,6 @@ static inline void load_eflags(int eflags, int update_mask)
         (eflags & update_mask) | 0x2;
 }
 
-static inline void env_to_regs(void)
-{
-#ifdef reg_EAX
-    EAX = env->regs[R_EAX];
-#endif
-#ifdef reg_ECX
-    ECX = env->regs[R_ECX];
-#endif
-#ifdef reg_EDX
-    EDX = env->regs[R_EDX];
-#endif
-#ifdef reg_EBX
-    EBX = env->regs[R_EBX];
-#endif
-#ifdef reg_ESP
-    ESP = env->regs[R_ESP];
-#endif
-#ifdef reg_EBP
-    EBP = env->regs[R_EBP];
-#endif
-#ifdef reg_ESI
-    ESI = env->regs[R_ESI];
-#endif
-#ifdef reg_EDI
-    EDI = env->regs[R_EDI];
-#endif
-}
-
-static inline void regs_to_env(void)
-{
-#ifdef reg_EAX
-    env->regs[R_EAX] = EAX;
-#endif
-#ifdef reg_ECX
-    env->regs[R_ECX] = ECX;
-#endif
-#ifdef reg_EDX
-    env->regs[R_EDX] = EDX;
-#endif
-#ifdef reg_EBX
-    env->regs[R_EBX] = EBX;
-#endif
-#ifdef reg_ESP
-    env->regs[R_ESP] = ESP;
-#endif
-#ifdef reg_EBP
-    env->regs[R_EBP] = EBP;
-#endif
-#ifdef reg_ESI
-    env->regs[R_ESI] = ESI;
-#endif
-#ifdef reg_EDI
-    env->regs[R_EDI] = EDI;
-#endif
-}
-
 static inline int cpu_has_work(CPUState *env)
 {
     int work;
@@ -392,3 +337,9 @@ static inline void cpu_load_efer(CPUState *env, uint64_t val)
     if (env->efer & MSR_EFER_SVME)
         env->hflags |= HF_SVME_MASK;
 }
+
+static inline void cpu_pc_from_tb(CPUState *env, TranslationBlock *tb)
+{
+    env->eip = tb->pc - tb->cs_base;
+}
+
