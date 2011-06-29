@@ -240,6 +240,14 @@
         </para>
       </listitem>
 
+      <listitem>
+        <para>VirtualBox may ship a copy of Qt which is governed by the license in
+          <xref linkend="licLGPL" xrefstyle="template: %n" />
+        and</para>
+
+        <para>Copyright (C) 2010, 2011 Nokia Corporation and/or its subsidiary(-ies).</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
