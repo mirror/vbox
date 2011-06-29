@@ -2920,7 +2920,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="8e723ab0-812c-5662-dd8e-7ebc89637acf"
+    uuid="31de448d-ef5e-4f79-9206-a8e830cbf9ea"
     internal="yes"
     wsmap="suppress"
     >
@@ -3354,6 +3354,24 @@
         This method is intended to be used with teleportation so that it is
         possible to teleport between processes on the same machine.
       </desc>
+    </method>
+
+    <method name="ejectMedium">
+      <desc>
+        Tells VBoxSVC that the guest has ejected the medium associated with
+        the medium attachment.
+      </desc>
+      <param name="attachment" type="IMediumAttachment" dir="in">
+        <desc>
+          The medium attachment where the eject happened.
+        </desc>
+      </param>
+      <param name="newAttachment" type="IMediumAttachment" dir="return">
+        <desc>
+          A new reference to the medium attachment, as the config change can
+          result in the creation of a new instance.
+        </desc>
+      </param>
     </method>
   </interface>
 

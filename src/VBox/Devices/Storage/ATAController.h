@@ -386,6 +386,8 @@ typedef struct AHCIATACONTROLLER
     RTSEMMUTEX          AsyncIORequestMutex;
     /** The event semaphore the thread is waiting on during suspended I/O. */
     RTSEMEVENT          SuspendIOSem;
+    /** Pointer to Media Notify interface. */
+    R3PTRTYPE(PPDMIMEDIANOTIFY) pMediaNotify;
 #if 0 /*HC_ARCH_BITS == 32*/
     uint32_t            Alignment0;
 #endif
@@ -428,6 +430,7 @@ RT_C_DECLS_END
  * @returns VBox status code.
  * @param   pDevIns Pointer to the device instance which creates a controller.
  * @param   pCtl    Pointer to the unitialized ATA controller structure.
+ * @param   pMediaNotify   Pointer to PDM interface for media eject.
  * @param   iLUNMaster     Port number of the master device.
  * @param   pDrvBaseMaster Pointer to the base driver interface which acts as the master.
  * @param   pLedMaster     Pointer to LED state for master device.
@@ -456,6 +459,7 @@ RT_C_DECLS_END
  * @param   szName         Name of the controller (Used to initialize the critical section).
  */
 int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
+                      PPDMIMEDIANOTIFY pMediaNotify,
                       unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster, PPDMLED pLedMaster,
                       PSTAMCOUNTER pStatBytesReadMaster, PSTAMCOUNTER pStatBytesWrittenMaster,
                       const char *pszSerialNumberMaster, const char *pszFirmwareRevisionMaster,

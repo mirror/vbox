@@ -572,6 +572,30 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
 }
 #endif
 
+
+void Console::attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
+                                 uint64_t uFirst, uint64_t uLast,
+                                 Console::MediumAttachmentMap *pmapMediumAttachments,
+                                 const char *pcszDevice, unsigned uInstance)
+{
+    PCFGMNODE pLunL0, pCfg;
+    InsertConfigNode(pCtlInst,  "LUN#999", &pLunL0);
+    InsertConfigString(pLunL0,  "Driver",               "MainStatus");
+    InsertConfigNode(pLunL0,    "Config", &pCfg);
+    InsertConfigInteger(pCfg,   "papLeds", (uintptr_t)papLeds);
+    if (pmapMediumAttachments)
+    {
+        InsertConfigInteger(pCfg,   "pmapMediumAttachments", (uintptr_t)pmapMediumAttachments);
+        InsertConfigInteger(pCfg,   "pConsole", (uintptr_t)this);
+        AssertPtr(pcszDevice);
+        Utf8Str deviceInstance = Utf8StrFmt("%s/%u", pcszDevice, uInstance);
+        InsertConfigString(pCfg,    "DeviceInstance", deviceInstance.c_str());
+    }
+    InsertConfigInteger(pCfg,   "First",    uFirst);
+    InsertConfigInteger(pCfg,   "Last",     uLast);
+}
+
+
 /**
  *  Construct the VM configuration tree (CFGM).
  *
@@ -1481,13 +1505,8 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
                     /* Attach the status driver */
-                    InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",               "MainStatus");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapStorageLeds[iLedScsi]);
-                    InsertConfigInteger(pCfg,  "First",    0);
                     Assert(cLedScsi >= 16);
-                    InsertConfigInteger(pCfg,  "Last",     15);
+                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedScsi], 0, 15, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedScsi];
                     break;
                 }
@@ -1499,13 +1518,8 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
                     /* Attach the status driver */
-                    InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",               "MainStatus");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapStorageLeds[iLedScsi]);
-                    InsertConfigInteger(pCfg,  "First",    0);
                     Assert(cLedScsi >= 16);
-                    InsertConfigInteger(pCfg,  "Last",     15);
+                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedScsi], 0, 15, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedScsi];
                     break;
                 }
@@ -1543,13 +1557,8 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                     }
 
                     /* Attach the status driver */
-                    InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",               "MainStatus");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
                     AssertRelease(cPorts <= cLedSata);
-                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapStorageLeds[iLedSata]);
-                    InsertConfigInteger(pCfg,  "First",    0);
-                    InsertConfigInteger(pCfg,  "Last",     cPorts - 1);
+                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedSata], 0, cPorts - 1, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedSata];
                     break;
                 }
@@ -1563,15 +1572,9 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                      */
                     hrc = BusMgr->assignPciDevice("piix3ide", pCtlInst);                               H();
                     InsertConfigString(pCfg,   "Type", controllerString(enmCtrlType));
-
                     /* Attach the status driver */
-                    InsertConfigNode(pCtlInst,    "LUN#999", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",               "MainStatus");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapStorageLeds[iLedIde]);
-                    InsertConfigInteger(pCfg,  "First",    0);
                     Assert(cLedIde >= 4);
-                    InsertConfigInteger(pCfg,  "Last",     3);
+                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedIde], 0, 3, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedIde];
 
                     /* IDE flavors */
@@ -1593,13 +1596,8 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "IOBase",    0x3f0);
 
                     /* Attach the status driver */
-                    InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",               "MainStatus");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapStorageLeds[iLedFloppy]);
-                    InsertConfigInteger(pCfg,  "First",    0);
-                    Assert(cLedFloppy >= 1);
-                    InsertConfigInteger(pCfg,  "Last",     0);
+                    Assert(cLedFloppy >= 2);
+                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedFloppy], 0, 1, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedFloppy];
                     break;
                 }
@@ -1612,13 +1610,8 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
                     /* Attach the status driver */
-                    InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",               "MainStatus");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapStorageLeds[iLedSas]);
-                    InsertConfigInteger(pCfg,  "First",    0);
                     Assert(cLedSas >= 8);
-                    InsertConfigInteger(pCfg,  "Last",     7);
+                    attachStatusDriver(pCtlInst, &mapStorageLeds[iLedSas], 0, 7, &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedSas];
                     break;
                 }
@@ -1639,6 +1632,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 
             for (size_t j = 0; j < atts.size(); ++j)
             {
+                IMediumAttachment *pMediumAtt = atts[j];
                 rc = configMediumAttachment(pCtlInst,
                                             pszCtrlDev,
                                             ulInstance,
@@ -1648,7 +1642,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                                             false /* fSetupMerge */,
                                             0 /* uMergeSource */,
                                             0 /* uMergeTarget */,
-                                            atts[j],
+                                            pMediumAtt,
                                             mMachineState,
                                             NULL /* phrc */,
                                             false /* fAttachDetach */,
@@ -1843,10 +1837,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             /*
              * Attach the status driver.
              */
-            InsertConfigNode(pInst,    "LUN#999", &pLunL0);
-            InsertConfigString(pLunL0, "Driver",               "MainStatus");
-            InsertConfigNode(pLunL0,   "Config", &pCfg);
-            InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapNetworkLeds[ulInstance]);
+            attachStatusDriver(pInst, &mapNetworkLeds[ulInstance], 0, 0, NULL, NULL, 0);
 
             /*
              * Configure the network card now
@@ -2014,12 +2005,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
         /*
          * Attach the status driver.
          */
-        InsertConfigNode(pInst,    "LUN#999", &pLunL0);
-        InsertConfigString(pLunL0, "Driver",               "MainStatus");
-        InsertConfigNode(pLunL0,   "Config", &pCfg);
-        InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapSharedFolderLed);
-        InsertConfigInteger(pCfg,  "First",    0);
-        InsertConfigInteger(pCfg,  "Last",     0);
+        attachStatusDriver(pInst, &mapSharedFolderLed, 0, 0, NULL, NULL, 0);
 
         /*
          * Audio Sniffer Device
@@ -2187,12 +2173,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 /*
                  * Attach the status driver.
                  */
-                InsertConfigNode(pInst,    "LUN#999", &pLunL0);
-                InsertConfigString(pLunL0, "Driver",               "MainStatus");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapUSBLed[0]);
-                InsertConfigInteger(pCfg,  "First",    0);
-                InsertConfigInteger(pCfg,  "Last",     0);
+                attachStatusDriver(pInst, &mapUSBLed[0], 0, 0, NULL, NULL, 0);
 
 #ifdef VBOX_WITH_EHCI
                 BOOL fEhciEnabled;
@@ -2225,12 +2206,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                         /*
                          * Attach the status driver.
                          */
-                        InsertConfigNode(pInst,    "LUN#999", &pLunL0);
-                        InsertConfigString(pLunL0, "Driver",               "MainStatus");
-                        InsertConfigNode(pLunL0,   "Config", &pCfg);
-                        InsertConfigInteger(pCfg,  "papLeds", (uintptr_t)&mapUSBLed[1]);
-                        InsertConfigInteger(pCfg,  "First",    0);
-                        InsertConfigInteger(pCfg,  "Last",     0);
+                        attachStatusDriver(pInst, &mapUSBLed[1], 0, 0, NULL, NULL, 0);
                     }
 # ifdef VBOX_WITH_EXTPACK
                     else
@@ -2904,6 +2880,9 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
 
         InsertConfigNode(pCtlInst, Utf8StrFmt("LUN#%u", uLUN).c_str(), &pLunL0);
 
+        Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
+        mapMediumAttachments[devicePath] = pMediumAtt;
+
         /* SCSI has a another driver between device and block. */
         if (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS)
         {
@@ -3112,17 +3091,17 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         }
 
         rc = configMedium(pLunL0,
-                        !!fPassthrough,
-                        lType,
-                        fUseHostIOCache,
-                        fBuiltinIoCache,
-                        fSetupMerge,
-                        uMergeSource,
-                        uMergeTarget,
-                        strBwGroup.isEmpty() ? NULL : Utf8Str(strBwGroup).c_str(),
-                        pMedium,
-                        aMachineState,
-                        phrc);
+                          !!fPassthrough,
+                          lType,
+                          fUseHostIOCache,
+                          fBuiltinIoCache,
+                          fSetupMerge,
+                          uMergeSource,
+                          uMergeTarget,
+                          strBwGroup.isEmpty() ? NULL : Utf8Str(strBwGroup).c_str(),
+                          pMedium,
+                          aMachineState,
+                          phrc);
         if (RT_FAILURE(rc))
             return rc;
 

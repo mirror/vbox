@@ -574,6 +574,8 @@ typedef struct AHCI
     PDMILEDPORTS                    ILeds;
     /** Status LUN: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
+    /** Status LUN: Media Notifys. */
+    R3PTRTYPE(PPDMIMEDIANOTIFY)     pMediaNotify;
 
 #if HC_ARCH_BITS == 64
     uint32_t                        Alignment1[2];
@@ -4382,17 +4384,24 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
                     case 1: /* 01 - Start motor */
                         break;
                     case 2: /* 10 - Eject media */
+                    {
                         /* This must be done from EMT. */
-                        {
-                            PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
-                            PPDMDEVINS pDevIns = pAhci->CTX_SUFF(pDevIns);
+                        PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
+                        PPDMDEVINS pDevIns = pAhci->CTX_SUFF(pDevIns);
 
-                            rc2 = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
-                                                  (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 3,
-                                                  pAhciPort->pDrvMount, false/*=fForce*/, true/*=fEject*/);
-                            Assert(RT_SUCCESS(rc2) || (rc2 == VERR_PDM_MEDIA_LOCKED) || (rc2 = VERR_PDM_MEDIA_NOT_MOUNTED));
+                        rc2 = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
+                                              (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 3,
+                                              pAhciPort->pDrvMount, false/*=fForce*/, true/*=fEject*/);
+                        Assert(RT_SUCCESS(rc2) || (rc2 == VERR_PDM_MEDIA_LOCKED) || (rc2 = VERR_PDM_MEDIA_NOT_MOUNTED));
+                        if (RT_SUCCESS(rc) && pAhci->pMediaNotify)
+                        {
+                            rc2 = VMR3ReqCallNoWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
+                                                    (PFNRT)pAhci->pMediaNotify->pfnEjected, 2,
+                                                    pAhci->pMediaNotify, pAhciPort->iLUN);
+                            AssertRC(rc);
                         }
                         break;
+                    }
                     case 3: /* 11 - Load media */
                         /** @todo rc = s->pDrvMount->pfnLoadMedia(s->pDrvMount) */
                         break;
@@ -8606,7 +8615,10 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
+    {
         pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+        pThis->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
+    }
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
@@ -8658,7 +8670,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
             char szName[24];
             RTStrPrintf(szName, sizeof(szName), "EmulatedATA%d", i);
-            rc = ataControllerInit(pDevIns, pCtl,
+            rc = ataControllerInit(pDevIns, pCtl, pThis->pMediaNotify,
                                    iPortMaster, pThis->ahciPort[iPortMaster].pDrvBase,
                                    &pThis->ahciPort[iPortMaster].Led,
                                    &pThis->ahciPort[iPortMaster].StatBytesRead,

@@ -2401,8 +2401,8 @@ static void atapiParseCmdVirtualATAPI(AHCIATADevState *s)
                     case 1: /* 01 - Start motor */
                         break;
                     case 2: /* 10 - Eject media */
+                    {
                         /* This must be done from EMT. */
-                        {
                         PAHCIATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
                         PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
 
@@ -2411,13 +2411,20 @@ static void atapiParseCmdVirtualATAPI(AHCIATADevState *s)
                                              (PFNRT)s->pDrvMount->pfnUnmount, 3, s->pDrvMount,
                                              false /*=fForce*/, true /*=fEeject*/);
                         Assert(RT_SUCCESS(rc) || (rc == VERR_PDM_MEDIA_LOCKED) || (rc = VERR_PDM_MEDIA_NOT_MOUNTED));
+                        if (RT_SUCCESS(rc) && pCtl->pMediaNotify)
+                        {
+                            rc = VMR3ReqCallNoWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
+                                                   (PFNRT)pCtl->pMediaNotify->pfnEjected, 2,
+                                                   pCtl->pMediaNotify, s->iLUN);
+                            AssertRC(rc);
+                        }
                         {
                             STAM_PROFILE_START(&pCtl->StatLockWait, a);
                             PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
                             STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
                         }
-                        }
                         break;
+                    }
                     case 3: /* 11 - Load media */
                         /** @todo rc = s->pDrvMount->pfnLoadMedia(s->pDrvMount) */
                         break;
@@ -5566,6 +5573,7 @@ int ataControllerLoadExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM)
 }
 
 int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
+                      PPDMIMEDIANOTIFY pMediaNotify,
                       unsigned iLUNMaster, PPDMIBASE pDrvBaseMaster, PPDMLED pLedMaster,
                       PSTAMCOUNTER pStatBytesReadMaster, PSTAMCOUNTER pStatBytesWrittenMaster,
                       const char *pszSerialNumberMaster, const char *pszFirmwareRevisionMaster,
@@ -5587,6 +5595,7 @@ int ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
     pCtl->pDevInsR3 = pDevIns;
     pCtl->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pCtl->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pCtl->pMediaNotify = pMediaNotify;
     pCtl->AsyncIOSem = NIL_RTSEMEVENT;
     pCtl->SuspendIOSem = NIL_RTSEMEVENT;
     pCtl->AsyncIORequestMutex = NIL_RTSEMMUTEX;

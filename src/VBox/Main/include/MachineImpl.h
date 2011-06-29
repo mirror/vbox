@@ -985,6 +985,8 @@ public:
                                   LONG64 aTimestamp, IN_BSTR aFlags);
     STDMETHOD(LockMedia)()   { return lockMedia(); }
     STDMETHOD(UnlockMedia)() { unlockMedia(); return S_OK; }
+    STDMETHOD(EjectMedium)(IMediumAttachment *aAttachment,
+                           IMediumAttachment **aNewAttachment);
 
     // public methods only for internal purposes
 

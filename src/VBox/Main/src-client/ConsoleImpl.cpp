@@ -3662,7 +3662,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
 /**
  * Attach a new storage device to the VM.
  *
- * @param aMediumAttachment The medium attachmentwhich is added.
+ * @param aMediumAttachment The medium attachment which is added.
  * @param pVM               Safe VM handle.
  *
  * @note Locks this object for writing.
@@ -3907,7 +3907,7 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
 /**
  * Attach a new storage device to the VM.
  *
- * @param aMediumAttachment The medium attachmentwhich is added.
+ * @param aMediumAttachment The medium attachment which is added.
  * @param pVM               Safe VM handle.
  *
  * @note Locks this object for writing.
@@ -4112,11 +4112,15 @@ DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
     pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
     if (pLunL0)
     {
-            rc = PDMR3DeviceDetach(pVM, pcszDevice, uInstance, uLUN, 0);
-            if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                rc = VINF_SUCCESS;
-            AssertRCReturn(rc, rc);
-            CFGMR3RemoveNode(pLunL0);
+        rc = PDMR3DeviceDetach(pVM, pcszDevice, uInstance, uLUN, 0);
+        if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
+            rc = VINF_SUCCESS;
+        AssertRCReturn(rc, rc);
+        CFGMR3RemoveNode(pLunL0);
+
+        Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
+        pConsole->mapMediumAttachments.erase(devicePath);
+
     }
     else
         AssertFailedReturn(VERR_INTERNAL_ERROR);
@@ -9465,6 +9469,17 @@ typedef struct DRVMAINSTATUS
     /** The unit number corresponding to the last entry in the LED array.
      * (The size of the LED array is iLastLUN - iFirstLUN + 1.) */
     RTUINT              iLastLUN;
+    /** Pointer to the driver instance. */
+    PPDMDRVINS          pDrvIns;
+    /** The Media Notify interface. */
+    PDMIMEDIANOTIFY     IMediaNotify;
+    /** Map for translating PDM storage controller/LUN information to
+     * IMediumAttachment references. */
+    Console::MediumAttachmentMap *pmapMediumAttachments;
+    /** Device name+instance for mapping */
+    char                *pszDeviceInstance;
+    /** Pointer to the Console object, for driver triggered activities. */
+    Console             *pConsole;
 } DRVMAINSTATUS, *PDRVMAINSTATUS;
 
 
@@ -9479,7 +9494,7 @@ typedef struct DRVMAINSTATUS
  */
 DECLCALLBACK(void) Console::drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface, unsigned iLUN)
 {
-    PDRVMAINSTATUS pData = (PDRVMAINSTATUS)(void *)pInterface;
+    PDRVMAINSTATUS pData = (PDRVMAINSTATUS)((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINSTATUS, ILedConnectors));
     if (iLUN >= pData->iFirstLUN && iLUN <= pData->iLastLUN)
     {
         PPDMLED pLed;
@@ -9493,6 +9508,50 @@ DECLCALLBACK(void) Console::drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface,
 
 
 /**
+ * Notification about a medium eject.
+ *
+ * @returns VBox status.
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   uLUN            The unit number.
+ */
+DECLCALLBACK(int) Console::drvStatus_MediumEjected(PPDMIMEDIANOTIFY pInterface, unsigned uLUN)
+{
+    PDRVMAINSTATUS pData = (PDRVMAINSTATUS)((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINSTATUS, IMediaNotify));
+    PPDMDRVINS pDrvIns = pData->pDrvIns;
+    LogFunc(("uLUN=%d\n", uLUN));
+    if (pData->pmapMediumAttachments)
+    {
+        AutoWriteLock alock(pData->pConsole COMMA_LOCKVAL_SRC_POS);
+
+        ComPtr<IMediumAttachment> pMediumAtt;
+        Utf8Str devicePath = Utf8StrFmt("%s/LUN#%u", pData->pszDeviceInstance, uLUN);
+        Console::MediumAttachmentMap::const_iterator end = pData->pmapMediumAttachments->end();
+        Console::MediumAttachmentMap::const_iterator it = pData->pmapMediumAttachments->find(devicePath);
+        if (it != end)
+            pMediumAtt = it->second;
+        Assert(!pMediumAtt.isNull());
+        if (!pMediumAtt.isNull())
+        {
+            alock.release();
+
+            ComPtr<IMediumAttachment> pNewMediumAtt;
+            HRESULT rc = pData->pConsole->mControl->EjectMedium(pMediumAtt, pNewMediumAtt.asOutParam());
+            if (SUCCEEDED(rc))
+                fireMediumChangedEvent(pData->pConsole->mEventSource, pNewMediumAtt);
+
+            alock.acquire();
+            if (pNewMediumAtt != pMediumAtt)
+            {
+                pData->pmapMediumAttachments->erase(devicePath);
+                pData->pmapMediumAttachments->insert(std::make_pair(devicePath, pNewMediumAtt));
+            }
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 DECLCALLBACK(void *)  Console::drvStatus_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
@@ -9501,6 +9560,7 @@ DECLCALLBACK(void *)  Console::drvStatus_QueryInterface(PPDMIBASE pInterface, co
     PDRVMAINSTATUS pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDCONNECTORS, &pThis->ILedConnectors);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIANOTIFY, &pThis->IMediaNotify);
     return NULL;
 }
 
@@ -9540,7 +9600,7 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "papLeds\0First\0Last\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "papLeds\0pmapMediumAttachments\0DeviceInstance\0pConsole\0First\0Last\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -9551,6 +9611,9 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
      */
     pDrvIns->IBase.pfnQueryInterface        = Console::drvStatus_QueryInterface;
     pData->ILedConnectors.pfnUnitChanged    = Console::drvStatus_UnitChanged;
+    pData->IMediaNotify.pfnEjected          = Console::drvStatus_MediumEjected;
+    pData->pDrvIns                          = pDrvIns;
+    pData->pszDeviceInstance                = NULL;
 
     /*
      * Read config.
@@ -9560,6 +9623,28 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"papLeds\" value! rc=%Rrc\n", rc));
         return rc;
+    }
+
+    rc = CFGMR3QueryPtrDef(pCfg, "pmapMediumAttachments", (void **)&pData->pmapMediumAttachments, NULL);
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Configuration error: Failed to query the \"pmapMediumAttachments\" value! rc=%Rrc\n", rc));
+        return rc;
+    }
+    if (pData->pmapMediumAttachments)
+    {
+        rc = CFGMR3QueryStringAlloc(pCfg, "DeviceInstance", &pData->pszDeviceInstance);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Configuration error: Failed to query the \"DeviceInstance\" value! rc=%Rrc\n", rc));
+            return rc;
+        }
+        rc = CFGMR3QueryPtr(pCfg, "pConsole", (void **)&pData->pConsole);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Configuration error: Failed to query the \"pConsole\" value! rc=%Rrc\n", rc));
+            return rc;
+        }
     }
 
     rc = CFGMR3QueryU32(pCfg, "First", &pData->iFirstLUN);
