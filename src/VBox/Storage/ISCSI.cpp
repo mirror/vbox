@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -584,7 +584,7 @@ typedef struct ISCSIIMAGE
 
     /** Pointer to the target hostname. */
     char                *pszHostname;
-    /** Pointer to the target hostname. */
+    /** Port to use on the target host. */
     uint32_t            uPort;
     /** Socket handle of the TCP connection. */
     VDSOCKET            Socket;
@@ -910,7 +910,25 @@ static int iscsiTransportConnect(PISCSIIMAGE pImage)
         if (!pImage->pszInitiatorName)
             return VERR_NO_MEMORY;
     }
+    LogRel(("iSCSI: connect from initiator %s with source port %u\n", pImage->pszInitiatorName, pImage->ISID & 65535));
     return VINF_SUCCESS;
+}
+
+
+static int iscsiTransportClose(PISCSIIMAGE pImage)
+{
+    int rc;
+
+    LogFlowFunc(("(%s:%d)\n", pImage->pszHostname, pImage->uPort));
+    if (iscsiIsClientConnected(pImage))
+    {
+        LogRel(("iSCSI: disconnect from initiator %s with source port %u\n", pImage->pszInitiatorName, pImage->ISID & 65535));
+        rc = pImage->pInterfaceNetCallbacks->pfnClientClose(pImage->Socket);
+    }
+    else
+        rc = VINF_SUCCESS;
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 
@@ -957,7 +975,7 @@ static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned
             if (cbActuallyRead == 0)
             {
                 /* The other end has closed the connection. */
-                pImage->pInterfaceNetCallbacks->pfnClientClose(pImage->Socket);
+                iscsiTransportClose(pImage);
                 pImage->state = ISCSISTATE_FREE;
                 rc = VERR_NET_CONNECTION_RESET;
                 break;
@@ -1115,10 +1133,7 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
     uint16_t uPort;
 
     /* Clean up previous connection data. */
-    if (iscsiIsClientConnected(pImage))
-    {
-        pImage->pInterfaceNetCallbacks->pfnClientClose(pImage->Socket);
-    }
+    iscsiTransportClose(pImage);
     if (pImage->pszHostname)
     {
         RTMemFree(pImage->pszHostname);
@@ -1206,22 +1221,6 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
         pImage->uPort = 0;
     }
 
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-
-static int iscsiTransportClose(PISCSIIMAGE pImage)
-{
-    int rc;
-
-    LogFlowFunc(("(%s:%d)\n", pImage->pszHostname, pImage->uPort));
-    if (iscsiIsClientConnected(pImage))
-    {
-        rc = pImage->pInterfaceNetCallbacks->pfnClientClose(pImage->Socket);
-    }
-    else
-        rc = VINF_SUCCESS;
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
