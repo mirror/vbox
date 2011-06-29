@@ -309,12 +309,14 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     CPUMGetGuestCpuId(pVCpu,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
     CPUMGetGuestCpuId(pVCpu, 0x80000001, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext3_features, &pVM->rem.s.Env.cpuid_ext2_features);
 
+    cpu_reset(&pVM->rem.s.Env);
+
     /* allocate code buffer for single instruction emulation. */
     pVM->rem.s.Env.cbCodeBuffer = 4096;
     pVM->rem.s.Env.pvCodeBuffer = RTMemExecAlloc(pVM->rem.s.Env.cbCodeBuffer);
     AssertMsgReturn(pVM->rem.s.Env.pvCodeBuffer, ("Failed to allocate code buffer!\n"), VERR_NO_MEMORY);
 
-    /* finally, set the cpu_single_env global. */
+    /* Finally, set the cpu_single_env global. */
     cpu_single_env = &pVM->rem.s.Env;
 
     /* Nothing is pending by default */
@@ -415,10 +417,8 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 
 #ifdef DEBUG_ALL_LOGGING
     loglevel = ~0;
-# ifdef DEBUG_TMP_LOGGING
-    logfile = fopen("/tmp/vbox-qemu.log", "w");
-# endif
 #endif
+//loglevel = CPU_LOG_EXEC | CPU_LOG_INT | CPU_LOG_PCALL | CPU_LOG_TB_CPU; /// DONT COMMIT ME
 
     /*
      * Init the handler notification lists.
@@ -998,7 +998,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
                 {
                     CPUBreakpoint  *pBP;
                     RTGCPTR         GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
-                    TAILQ_FOREACH(pBP, &pVM->rem.s.Env.breakpoints, entry)
+                    QTAILQ_FOREACH(pBP, &pVM->rem.s.Env.breakpoints, entry)
                         if (pBP->pc == GCPtrPC)
                             break;
                     rc = pBP ? VINF_EM_DBG_BREAKPOINT : VINF_EM_DBG_STEPPED;
@@ -1181,7 +1181,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
                 {
                     CPUBreakpoint  *pBP;
                     RTGCPTR         GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
-                    TAILQ_FOREACH(pBP, &pVM->rem.s.Env.breakpoints, entry)
+                    QTAILQ_FOREACH(pBP, &pVM->rem.s.Env.breakpoints, entry)
                         if (pBP->pc == GCPtrPC)
                             break;
                     rc = pBP ? VINF_EM_DBG_BREAKPOINT : VINF_EM_DBG_STEPPED;
@@ -1339,7 +1339,7 @@ REMR3DECL(int) REMR3Run(PVM pVM, PVMCPU pVCpu)
             {
                 CPUBreakpoint  *pBP;
                 RTGCPTR         GCPtrPC = pVM->rem.s.Env.eip + pVM->rem.s.Env.segs[R_CS].base;
-                TAILQ_FOREACH(pBP, &pVM->rem.s.Env.breakpoints, entry)
+                QTAILQ_FOREACH(pBP, &pVM->rem.s.Env.breakpoints, entry)
                     if (pBP->pc == GCPtrPC)
                         break;
                 rc = pBP ? VINF_EM_DBG_BREAKPOINT : VINF_EM_DBG_STEPPED;
@@ -1530,13 +1530,13 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         return false;
     }
 
-    if (!TAILQ_EMPTY(&env->breakpoints))
+    if (!QTAILQ_EMPTY(&env->breakpoints))
     {
         //Log2(("raw mode refused: Breakpoints\n"));
         return false;
     }
 
-    if (!TAILQ_EMPTY(&env->watchpoints))
+    if (!QTAILQ_EMPTY(&env->watchpoints))
     {
         //Log2(("raw mode refused: Watchpoints\n"));
         return false;
@@ -4001,12 +4001,7 @@ bool remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix)
  */
 void disas(FILE *phFile, void *pvCode, unsigned long cb)
 {
-#ifdef DEBUG_TMP_LOGGING
-# define DISAS_PRINTF(x...) fprintf(phFile, x)
-#else
-# define DISAS_PRINTF(x...) RTLogPrintf(x)
     if (LogIs2Enabled())
-#endif
     {
         unsigned        off = 0;
         char            szOutput[256];
@@ -4019,15 +4014,15 @@ void disas(FILE *phFile, void *pvCode, unsigned long cb)
         Cpu.mode = CPUMODE_64BIT;
 #endif
 
-        DISAS_PRINTF("Recompiled Code: %p %#lx (%ld) bytes\n", pvCode, cb, cb);
+        RTLogPrintf("Recompiled Code: %p %#lx (%ld) bytes\n", pvCode, cb, cb);
         while (off < cb)
         {
             uint32_t cbInstr;
             if (RT_SUCCESS(DISInstr(&Cpu, (uintptr_t)pvCode + off, 0, &cbInstr, szOutput)))
-                DISAS_PRINTF("%s", szOutput);
+                RTLogPrintf("%s", szOutput);
             else
             {
-                DISAS_PRINTF("disas error\n");
+                RTLogPrintf("disas error\n");
                 cbInstr = 1;
 #ifdef RT_ARCH_AMD64 /** @todo remove when DISInstr starts supporting 64-bit code. */
                 break;
@@ -4036,8 +4031,6 @@ void disas(FILE *phFile, void *pvCode, unsigned long cb)
             off += cbInstr;
         }
     }
-
-#undef  DISAS_PRINTF
 }
 
 
@@ -4051,12 +4044,7 @@ void disas(FILE *phFile, void *pvCode, unsigned long cb)
  */
 void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
 {
-#ifdef DEBUG_TMP_LOGGING
-# define DISAS_PRINTF(x...) fprintf(phFile, x)
-#else
-# define DISAS_PRINTF(x...) RTLogPrintf(x)
     if (LogIs2Enabled())
-#endif
     {
         PVM         pVM = cpu_single_env->pVM;
         PVMCPU      pVCpu = cpu_single_env->pVCpu;
@@ -4073,7 +4061,7 @@ void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
         /*
          * Do the disassembling.
          */
-        DISAS_PRINTF("Guest Code: PC=%llx %llx bytes fFlags=%d\n", (uint64_t)uCode, (uint64_t)cb, fFlags);
+        RTLogPrintf("Guest Code: PC=%llx %llx bytes fFlags=%d\n", (uint64_t)uCode, (uint64_t)cb, fFlags);
         cs = cpu_single_env->segs[R_CS].selector;
         eip = uCode - cpu_single_env->segs[R_CS].base;
         for (;;)
@@ -4088,10 +4076,10 @@ void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
                                         szBuf, sizeof(szBuf),
                                         &cbInstr);
             if (RT_SUCCESS(rc))
-                DISAS_PRINTF("%llx %s\n", (uint64_t)uCode, szBuf);
+                RTLogPrintf("%llx %s\n", (uint64_t)uCode, szBuf);
             else
             {
-                DISAS_PRINTF("%llx %04x:%llx: %s\n", (uint64_t)uCode, cs, (uint64_t)eip, szBuf);
+                RTLogPrintf("%llx %04x:%llx: %s\n", (uint64_t)uCode, cs, (uint64_t)eip, szBuf);
                 cbInstr = 1;
             }
 
@@ -4103,7 +4091,6 @@ void target_disas(FILE *phFile, target_ulong uCode, target_ulong cb, int fFlags)
             eip += cbInstr;
         }
     }
-#undef DISAS_PRINTF
 }
 
 

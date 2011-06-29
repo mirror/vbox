@@ -22,6 +22,7 @@
 #define kvm_update_guest_debug(a, b)    AssertFailed()
 #define kvm_set_phys_mem(a, b, c)       AssertFailed()
 #define kvm_arch_get_registers(a)       AssertFailed()
+#define cpu_synchronize_state(a)        do { } while (0)
 
 #endif
 

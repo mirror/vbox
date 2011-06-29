@@ -44,7 +44,7 @@
  * WORDS_ALIGNED : if defined, the host cpu can only make word aligned
  * memory accesses.
  *
- * WORDS_BIGENDIAN : if defined, the host cpu is big endian and
+ * HOST_WORDS_BIGENDIAN : if defined, the host cpu is big endian and
  * otherwise little endian.
  *
  * (TARGET_WORDS_ALIGNED : same for target cpu (not supported yet))
@@ -54,7 +54,7 @@
 
 #include "softfloat.h"
 
-#if defined(WORDS_BIGENDIAN) != defined(TARGET_WORDS_BIGENDIAN)
+#if defined(HOST_WORDS_BIGENDIAN) != defined(TARGET_WORDS_BIGENDIAN)
 #define BSWAP_NEEDED
 #endif
 
@@ -140,7 +140,7 @@ typedef union {
    endian ! */
 typedef union {
     float64 d;
-#if defined(WORDS_BIGENDIAN) \
+#if defined(HOST_WORDS_BIGENDIAN) \
     || (defined(__arm__) && !defined(__VFP_FP__) && !defined(CONFIG_SOFTFLOAT))
     struct {
         uint32_t upper;
@@ -158,7 +158,7 @@ typedef union {
 #ifdef TARGET_SPARC
 typedef union {
     float128 q;
-#if defined(WORDS_BIGENDIAN) \
+#if defined(HOST_WORDS_BIGENDIAN) \
     || (defined(__arm__) && !defined(__VFP_FP__) && !defined(CONFIG_SOFTFLOAT))
     struct {
         uint32_t upmost;
@@ -239,9 +239,9 @@ void        remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val);
 void        remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val);
 void        remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val);
 
-#ifndef REM_PHYS_ADDR_IN_TLB
+# ifndef REM_PHYS_ADDR_IN_TLB
 void       *remR3TlbGCPhys2Ptr(CPUState *env1, target_ulong physAddr, int fWritable);
-#endif
+# endif
 
 #endif /* VBOX */
 
@@ -307,7 +307,7 @@ DECLINLINE(uint64_t) ldq_le_p(const void *ptr)
     return remR3PhysReadU64((uintptr_t)ptr);
 }
 
-#undef VBOX_CHECK_ADDR
+# undef VBOX_CHECK_ADDR
 
 /* float access */
 
@@ -367,7 +367,7 @@ static inline void stb_p(void *ptr, int v)
 /* NOTE: on arm, putting 2 in /proc/sys/debug/alignment so that the
    kernel handles unaligned load/stores may give better results, but
    it is a system wide setting : bad */
-#if defined(WORDS_BIGENDIAN) || defined(WORDS_ALIGNED)
+#if defined(HOST_WORDS_BIGENDIAN) || defined(WORDS_ALIGNED)
 
 /* conservative code for little endian unaligned accesses */
 static inline int lduw_le_p(const void *ptr)
@@ -545,7 +545,7 @@ static inline void stfq_le_p(void *ptr, float64 v)
 #endif
 #endif /* !VBOX */
 
-#if !defined(WORDS_BIGENDIAN) || defined(WORDS_ALIGNED)
+#if !defined(HOST_WORDS_BIGENDIAN) || defined(WORDS_ALIGNED)
 
 static inline int lduw_be_p(const void *ptr)
 {
@@ -771,8 +771,13 @@ static inline void stfq_be_p(void *ptr, float64 v)
 /* On some host systems the guest address space is reserved on the host.
  * This allows the guest address space to be offset to a convenient location.
  */
-//#define GUEST_BASE 0x20000000
-#define GUEST_BASE 0
+#if defined(CONFIG_USE_GUEST_BASE)
+extern unsigned long guest_base;
+extern int have_guest_base;
+#define GUEST_BASE guest_base
+#else
+#define GUEST_BASE 0ul
+#endif
 
 /* All direct uses of g2h and h2g need to go away for usermode softmmu.  */
 #define g2h(x) ((void *)((unsigned long)(x) + GUEST_BASE))
@@ -1041,7 +1046,6 @@ int cpu_memory_rw_debug(CPUState *env, target_ulong addr,
 
 #define VGA_DIRTY_FLAG       0x01
 #define CODE_DIRTY_FLAG      0x02
-#define KQEMU_DIRTY_FLAG     0x04
 #define MIGRATION_DIRTY_FLAG 0x08
 
 /* read dirty bit (return 0 or 1) */
@@ -1210,24 +1214,34 @@ static inline int64_t cpu_get_real_ticks (void)
 #endif
 }
 
-#elif defined(__mips__)
+#elif defined(__mips__) && \
+      ((defined(__mips_isa_rev) && __mips_isa_rev >= 2) || defined(__linux__))
+/*
+ * binutils wants to use rdhwr only on mips32r2
+ * but as linux kernel emulate it, it's fine
+ * to use it.
+ *
+ */
+#define MIPS_RDHWR(rd, value) {                 \
+    __asm__ __volatile__ (                      \
+                          ".set   push\n\t"     \
+                          ".set mips32r2\n\t"   \
+                          "rdhwr  %0, "rd"\n\t" \
+                          ".set   pop"          \
+                          : "=r" (value));      \
+}
 
 static inline int64_t cpu_get_real_ticks(void)
 {
-#if __mips_isa_rev >= 2
+/* On kernels >= 2.6.25 rdhwr <reg>, $2 and $3 are emulated */
     uint32_t count;
     static uint32_t cyc_per_count = 0;
 
     if (!cyc_per_count)
-        __asm__ __volatile__("rdhwr %0, $3" : "=r" (cyc_per_count));
+        MIPS_RDHWR("$3", cyc_per_count);
 
-    __asm__ __volatile__("rdhwr %1, $2" : "=r" (count));
+    MIPS_RDHWR("$2", count);
     return (int64_t)(count * cyc_per_count);
-#else
-    /* FIXME */
-    static int64_t ticks = 0;
-    return ticks++;
-#endif
 }
 
 #else
@@ -1248,14 +1262,9 @@ static inline int64_t profile_getclock(void)
     return cpu_get_real_ticks();
 }
 
-extern int64_t kqemu_time, kqemu_time_start;
 extern int64_t qemu_time, qemu_time_start;
 extern int64_t tlb_flush_time;
-extern int64_t kqemu_exec_count;
 extern int64_t dev_time;
-extern int64_t kqemu_ret_int_count;
-extern int64_t kqemu_ret_excp_count;
-extern int64_t kqemu_ret_intr_count;
 #endif
 
 void cpu_inject_x86_mce(CPUState *cenv, int bank, uint64_t status,

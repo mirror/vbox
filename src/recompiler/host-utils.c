@@ -23,7 +23,12 @@
  * THE SOFTWARE.
  */
 
-#include "exec.h"
+#include <stdlib.h>
+#ifndef VBOX
+#include <stdint.h>
+#else
+# include <iprt/types.h>
+#endif
 #include "host-utils.h"
 
 //#define DEBUG_MULDIV

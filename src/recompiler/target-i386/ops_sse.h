@@ -812,6 +812,50 @@ void helper_rcpss(XMMReg *d, XMMReg *s)
     d->XMM_S(0) = approx_rcp(s->XMM_S(0));
 }
 
+static inline uint64_t helper_extrq(uint64_t src, int shift, int len)
+{
+    uint64_t mask;
+
+    if (len == 0) {
+        mask = ~0LL;
+    } else {
+        mask = (1ULL << len) - 1;
+    }
+    return (src >> shift) & mask;
+}
+
+void helper_extrq_r(XMMReg *d, XMMReg *s)
+{
+    d->XMM_Q(0) = helper_extrq(d->XMM_Q(0), s->XMM_B(1), s->XMM_B(0));
+}
+
+void helper_extrq_i(XMMReg *d, int index, int length)
+{
+    d->XMM_Q(0) = helper_extrq(d->XMM_Q(0), index, length);
+}
+
+static inline uint64_t helper_insertq(uint64_t src, int shift, int len)
+{
+    uint64_t mask;
+
+    if (len == 0) {
+        mask = ~0ULL;
+    } else {
+        mask = (1ULL << len) - 1;
+    }
+    return (src & ~(mask << shift)) | ((src & mask) << shift);
+}
+
+void helper_insertq_r(XMMReg *d, XMMReg *s)
+{
+    d->XMM_Q(0) = helper_insertq(s->XMM_Q(0), s->XMM_B(9), s->XMM_B(8));
+}
+
+void helper_insertq_i(XMMReg *d, int index, int length)
+{
+    d->XMM_Q(0) = helper_insertq(d->XMM_Q(0), index, length);
+}
+
 void helper_haddps(XMMReg *d, XMMReg *s)
 {
     XMMReg r;
@@ -905,7 +949,7 @@ SSE_HELPER_CMP(cmpnlt, FPU_CMPNLT)
 SSE_HELPER_CMP(cmpnle, FPU_CMPNLE)
 SSE_HELPER_CMP(cmpord, FPU_CMPORD)
 
-const int comis_eflags[4] = {CC_C, CC_Z, 0, CC_Z | CC_P | CC_C};
+static const int comis_eflags[4] = {CC_C, CC_Z, 0, CC_Z | CC_P | CC_C};
 
 void helper_ucomiss(Reg *d, Reg *s)
 {

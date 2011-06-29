@@ -37,7 +37,7 @@
 #  define HAVE_BYTESWAP_H 1
 # endif
 #endif
-#define QEMU_VERSION "0.8.1"
+#define QEMU_VERSION "0.12.5"
 #define CONFIG_UNAME_RELEASE ""
 #define CONFIG_QEMU_SHAREDIR "."
 
