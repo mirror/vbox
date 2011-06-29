@@ -143,6 +143,31 @@ static inline void svm_check_intercept(uint32_t type)
 #define floatx_compare_quiet float64_compare_quiet
 #endif
 
+#ifdef VBOX
+# ifdef IPRT_NO_CRT
+#  undef  sin  
+#  undef  cos  
+#  undef  sqrt 
+#  undef  pow  
+#  undef  log  
+#  undef  tan  
+#  undef  atan2
+#  undef  floor
+#  undef  ceil 
+#  undef  ldexp
+#  define sin   sinl  
+#  define cos   cosl  
+#  define sqrt  sqrtl 
+#  define pow   powl  
+#  define log   logl  
+#  define tan   tanl  
+#  define atan2 atan2l
+#  define floor floorl
+#  define ceil  ceill 
+#  define ldexp ldexpl
+# endif
+#endif
+
 #define RC_MASK         0xc00
 #define RC_NEAR		0x000
 #define RC_DOWN		0x400
