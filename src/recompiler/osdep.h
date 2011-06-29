@@ -19,21 +19,15 @@
                                 RTStrPrintfV((pszBuf), (cbBuf), (pszFormat), (args))
 #define qemu_vprintf(pszFormat, args) \
                                 RTLogPrintfV((pszFormat), (args))
-#define qemu_printf             RTLogPrintf
+
+/**@todo the following macros belongs elsewhere */
 #define qemu_malloc(cb)         RTMemAlloc(cb)
 #define qemu_mallocz(cb)        RTMemAllocZ(cb)
 #define qemu_realloc(ptr, cb)   RTMemRealloc(ptr, cb)
-
 #define qemu_free(pv)           RTMemFree(pv)
 #define qemu_strdup(psz)        RTStrDup(psz)
 
-#define qemu_vmalloc(cb)        RTMemPageAlloc(cb)
-#define qemu_vfree(pv)          RTMemPageFree(pv, missing_size_parameter)
-
-#ifndef NULL
-# define NULL 0
-#endif
-
+/* Misc wrappers */
 #define fflush(file)            RTLogFlush(NULL)
 #define printf(...)             LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
 /* If DEBUG_TMP_LOGGING - goes to QEMU log file */
@@ -41,29 +35,17 @@
 # define fprintf(logfile, ...)  LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
 #endif
 
-#define assert(cond) Assert(cond)
+#define assert(cond)            Assert(cond)
 
 #else /* !VBOX */
 
 #include <stdarg.h>
+#include <stddef.h>
 
-#define VBOX_ONLY(x)
-
+#define VBOX_ONLY(x)             /* nike */
 #define qemu_snprintf snprintf   /* bird */
 #define qemu_vsnprintf vsnprintf /* bird */
 #define qemu_vprintf vprintf     /* bird */
-
-#define qemu_printf printf
-
-void *qemu_malloc(size_t size);
-void *qemu_mallocz(size_t size);
-void qemu_free(void *ptr);
-char *qemu_strdup(const char *str);
-
-void *qemu_vmalloc(size_t size);
-void qemu_vfree(void *ptr);
-
-void *get_mmap_addr(unsigned long size);
 
 #endif /* !VBOX */
 
@@ -94,7 +76,7 @@ void *get_mmap_addr(unsigned long size);
 #define unlikely(x)   __builtin_expect(!!(x), 0)
 #endif
 
-#ifndef offsetof
+#ifdef CONFIG_NEED_OFFSETOF
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *) 0)->MEMBER)
 #endif
 #ifndef container_of
@@ -102,6 +84,19 @@ void *get_mmap_addr(unsigned long size);
         const typeof(((type *) 0)->member) *__mptr = (ptr);     \
         (type *) ((char *) __mptr - offsetof(type, member));})
 #endif
+
+/* Convert from a base type to a parent type, with compile time checking.  */
+#ifdef __GNUC__
+#define DO_UPCAST(type, field, dev) ( __extension__ ( { \
+    char __attribute__((unused)) offset_must_be_zero[ \
+        -offsetof(type, field)]; \
+    container_of(dev, type, field);}))
+#else
+#define DO_UPCAST(type, field, dev) container_of(dev, type, field)
+#endif
+
+#define typeof_field(type, field) typeof(((type *)0)->field)
+#define type_check(t1,t2) ((t1*)0 - (t2*)0)
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -115,12 +110,9 @@ void *get_mmap_addr(unsigned long size);
 #endif
 
 #ifndef always_inline
-#if (__GNUC__ < 3) || defined(__APPLE__)
-#define always_inline inline
-#else
-#define always_inline __attribute__ (( always_inline )) __inline__
+#if !((__GNUC__ < 3) || defined(__APPLE__))
 #ifdef __OPTIMIZE__
-#define inline always_inline
+#define inline __attribute__ (( always_inline )) __inline__
 #endif
 #endif
 #else
@@ -135,7 +127,9 @@ void *get_mmap_addr(unsigned long size);
 
 #ifndef VBOX
 #define qemu_printf printf
-#endif
+#else  /*VBOX*/
+#define qemu_printf RTLogPrintf
+#endif /*VBOX*/
 
 #if defined (__GNUC__) && defined (__GNUC_MINOR__)
 # define QEMU_GNUC_PREREQ(maj, min) \
@@ -164,7 +158,9 @@ typedef struct timeval qemu_timeval;
 #define qemu_gettimeofday(tp) gettimeofday(tp, NULL);
 #endif /* !_WIN32 */
 #else  /* VBOX */
-# define qemu_memalign(alignment, size)  ( (alignment) <= PAGE_SIZE ? RTMemPageAlloc((size)) : NULL )
+# define qemu_memalign(alignment, size) ( (alignment) <= PAGE_SIZE ? RTMemPageAlloc((size)) : NULL )
+# define qemu_vfree(pv)                 RTMemPageFree(pv, missing_size_parameter)
+# define qemu_vmalloc(cb)               RTMemPageAlloc(cb)
 #endif /* VBOX */
 
 #endif

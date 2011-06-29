@@ -346,6 +346,7 @@
 #define MSR_FSBASE                      0xc0000100
 #define MSR_GSBASE                      0xc0000101
 #define MSR_KERNELGSBASE                0xc0000102
+#define MSR_TSC_AUX                     0xc0000103
 
 #define MSR_VM_HSAVE_PA                 0xc0010117
 
@@ -556,7 +557,7 @@ typedef union {
     uint64_t q;
 } MMXReg;
 
-#ifdef WORDS_BIGENDIAN
+#ifdef HOST_WORDS_BIGENDIAN
 #define XMM_B(n) _b[15 - (n)]
 #define XMM_W(n) _w[7 - (n)]
 #define XMM_L(n) _l[3 - (n)]
@@ -583,10 +584,27 @@ typedef union {
 #endif
 #define MMX_Q(n) q
 
-#ifdef TARGET_X86_64
-#define CPU_NB_REGS 16
+typedef union {
+#ifdef USE_X86LDOUBLE
+    CPU86_LDouble d __attribute__((aligned(16)));
 #else
-#define CPU_NB_REGS 8
+    CPU86_LDouble d;
+#endif
+    MMXReg mmx;
+} FPReg;
+
+typedef struct {
+    uint64_t base;
+    uint64_t mask;
+} MTRRVar;
+
+#define CPU_NB_REGS64 16
+#define CPU_NB_REGS32 8
+
+#ifdef TARGET_X86_64
+#define CPU_NB_REGS CPU_NB_REGS64
+#else
+#define CPU_NB_REGS CPU_NB_REGS32
 #endif
 
 #define NB_MMU_MODES 2
@@ -616,21 +634,14 @@ typedef struct CPUX86State {
     SegmentCache idt; /* only base and limit are used */
 
     target_ulong cr[5]; /* NOTE: cr1 is unused */
-    uint64_t a20_mask;
+    int32_t a20_mask;
 
     /* FPU state */
     unsigned int fpstt; /* top of stack index */
-    unsigned int fpus;
-    unsigned int fpuc;
+    uint16_t fpus;
+    uint16_t fpuc;
     uint8_t fptags[8];   /* 0 = valid, 1 = empty */
-    union {
-#ifdef USE_X86LDOUBLE
-        CPU86_LDouble d __attribute__((aligned(16)));
-#else
-        CPU86_LDouble d;
-#endif
-        MMXReg mmx;
-    } fpregs[8];
+    FPReg fpregs[8];
 
     /* emulator internal variables */
     float_status fp_status;
@@ -677,6 +688,8 @@ typedef struct CPUX86State {
     target_ulong fmask;
     target_ulong kernelgsbase;
 #endif
+    uint64_t system_time_msr;
+    uint64_t wall_clock_msr;
 
     uint64_t tsc;
 
@@ -732,19 +745,17 @@ typedef struct CPUX86State {
     /* MTRRs */
     uint64_t mtrr_fixed[11];
     uint64_t mtrr_deftype;
-    struct {
-        uint64_t base;
-        uint64_t mask;
-    } mtrr_var[8];
-
-#ifdef CONFIG_KQEMU
-    int kqemu_enabled;
-    int last_io_time;
-#endif
+    MTRRVar mtrr_var[8];
 
     /* For KVM */
-    uint64_t interrupt_bitmap[256 / 64];
     uint32_t mp_state;
+    int32_t exception_injected;
+    int32_t interrupt_injected;
+    uint8_t soft_interrupt;
+    uint8_t nmi_injected;
+    uint8_t nmi_pending;
+    uint8_t has_error_code;
+    uint32_t sipi_vector;
 
     /* in order to simplify APIC support, we leave this pointer to the
        user */
@@ -753,7 +764,14 @@ typedef struct CPUX86State {
     uint64 mcg_cap;
     uint64 mcg_status;
     uint64 mcg_ctl;
-    uint64 *mce_banks;
+    uint64 mce_banks[MCE_BANKS_DEF*4];
+
+    uint64_t tsc_aux;
+
+    /* vmstate */
+    uint16_t fpus_vmstate;
+    uint16_t fptag_vmstate;
+    uint16_t fpregs_format_vmstate;
 #else  /* VBOX */
 
 /* see 641 line to consult current alignments for darwin 32-bit host. */
@@ -955,6 +973,10 @@ static inline void cpu_x86_load_seg_cache(CPUX86State *env,
     }
 }
 
+int cpu_x86_get_descr_debug(CPUX86State *env, unsigned int selector,
+                            target_ulong *base, unsigned int *limit,
+                            unsigned int *flags);
+
 /* wrapper, just in case memory mappings must be changed */
 static inline void cpu_x86_set_cpl(CPUX86State *s, int cpl)
 {
@@ -986,6 +1008,7 @@ int cpu_x86_signal_handler(int host_signum, void *pinfo,
 /* helper.c */
 int cpu_x86_handle_mmu_fault(CPUX86State *env, target_ulong addr,
                              int is_write, int mmu_idx, int is_softmmu);
+#define cpu_handle_mmu_fault cpu_x86_handle_mmu_fault
 void cpu_x86_set_a20(CPUX86State *env, int a20_state);
 void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                    uint32_t *eax, uint32_t *ebx,
@@ -998,12 +1021,12 @@ static inline int hw_breakpoint_enabled(unsigned long dr7, int index)
 
 static inline int hw_breakpoint_type(unsigned long dr7, int index)
 {
-    return (dr7 >> (DR7_TYPE_SHIFT + (index * 2))) & 3;
+    return (dr7 >> (DR7_TYPE_SHIFT + (index * 4))) & 3;
 }
 
 static inline int hw_breakpoint_len(unsigned long dr7, int index)
 {
-    int len = ((dr7 >> (DR7_LEN_SHIFT + (index * 2))) & 3);
+    int len = ((dr7 >> (DR7_LEN_SHIFT + (index * 4))) & 3);
     return (len == 2) ? 8 : len + 1;
 }
 
@@ -1031,15 +1054,6 @@ uint64_t cpu_get_tsc(CPUX86State *env);
 /* used to debug */
 #define X86_DUMP_FPU  0x0001 /* dump FPU state too */
 #define X86_DUMP_CCOP 0x0002 /* dump qemu flag cache */
-
-#ifdef CONFIG_KQEMU
-static inline int cpu_get_time_fast(void)
-{
-    int low, high;
-    asm volatile("rdtsc" : "=a" (low), "=d" (high));
-    return low;
-}
-#endif
 
 #ifdef VBOX
 int  cpu_rdmsr(CPUX86State *env, uint32_t idMsr, uint64_t *puValue);
@@ -1069,7 +1083,7 @@ void save_raw_fp_state(CPUX86State *env, uint8_t *ptr);
 #define cpu_signal_handler cpu_x86_signal_handler
 #define cpu_list x86_cpu_list
 
-#define CPU_SAVE_VERSION 10
+#define CPU_SAVE_VERSION 11
 
 /* MMU modes definitions */
 #define MMU_MODE0_SUFFIX _kernel

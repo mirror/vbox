@@ -19,10 +19,6 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.amd64)
- include $(PATH_SUB_CURRENT)/Makefile-old.kmk
-else  # new stuff
-
 #
 # Globals
 #
@@ -62,16 +58,15 @@ else
 endif # win
 VBoxRemPrimary_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H NEED_CPU_H
 #VBoxRemPrimary_DEFS           += REM_PHYS_ADDR_IN_TLB
-#VBoxRemPrimary_DEFS           += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
-#VBoxRemPrimary_DEFS           += DEBUG_TMP_LOGGING # log qemu parts to "/tmp/vbox-qemu.log" - does not work with VBoxREM2.
+#VBoxRemPrimary_DEFS           += DEBUG_ALL_LOGGING DEBUG_DISAS DEBUG_PCALL CONFIG_DEBUG_EXEC DEBUG_FLUSH DEBUG_IOPORT DEBUG_SIGNAL DEBUG_TLB_CHECK DEBUG_TB_INVALIDATE DEBUG_TLB  # Enables huge amounts of debug logging.
 ifdef IEM_VERIFICATION_MODE
  VBoxRemPrimary_DEFS          += IEM_VERIFICATION_MODE
 endif
 VBoxRemPrimary_DEFS.linux      = _GNU_SOURCE
 ifdef VBOX_SOLARIS_10
- VBoxRemPrimary_DEFS.solaris   = HOST_SOLARIS=10
+ VBoxRemPrimary_DEFS.solaris   = CONFIG_SOLARIS_VERSION=10
 else
- VBoxRemPrimary_DEFS.solaris   = HOST_SOLARIS=11
+ VBoxRemPrimary_DEFS.solaris   = CONFIG_SOLARIS_VERSION=11
 endif
 VBoxRemPrimary_DEFS.freebsd   += _BSD
 VBoxRemPrimary_DEFS.amd64     += __x86_64__
@@ -100,9 +95,9 @@ VBoxRemPrimary_SOURCES         = \
 	translate-all.c \
 	host-utils.c \
 	cutils.c \
+	tcg-runtime.c \
 	tcg/tcg.c \
 	tcg/tcg-dyngen.c \
-	tcg/tcg-runtime.c \
 	fpu/softfloat-native.c \
 	target-i386/op_helper.c \
 	target-i386/helper.c \
@@ -272,6 +267,5 @@ testmath_DEFS           = MATHTEST_STANDALONE
 testmath_SOURCES        = Sun/testmath.c
 
 
-endif # new stuff
 include $(KBUILD_PATH)/subfooter.kmk
 
