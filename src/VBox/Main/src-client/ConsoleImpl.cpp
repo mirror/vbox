@@ -9532,18 +9532,27 @@ DECLCALLBACK(int) Console::drvStatus_MediumEjected(PPDMIMEDIANOTIFY pInterface, 
         Assert(!pMediumAtt.isNull());
         if (!pMediumAtt.isNull())
         {
-            alock.release();
-
-            ComPtr<IMediumAttachment> pNewMediumAtt;
-            HRESULT rc = pData->pConsole->mControl->EjectMedium(pMediumAtt, pNewMediumAtt.asOutParam());
-            if (SUCCEEDED(rc))
-                fireMediumChangedEvent(pData->pConsole->mEventSource, pNewMediumAtt);
-
-            alock.acquire();
-            if (pNewMediumAtt != pMediumAtt)
+            IMedium *pMedium;
+            HRESULT rc = pMediumAtt->COMGETTER(Medium)(&pMedium);
+            AssertComRC(rc);
+            BOOL fHostDrive = FALSE;
+            rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
+            AssertComRC(rc);
+            if (!fHostDrive)
             {
-                pData->pmapMediumAttachments->erase(devicePath);
-                pData->pmapMediumAttachments->insert(std::make_pair(devicePath, pNewMediumAtt));
+                alock.release();
+
+                ComPtr<IMediumAttachment> pNewMediumAtt;
+                rc = pData->pConsole->mControl->EjectMedium(pMediumAtt, pNewMediumAtt.asOutParam());
+                if (SUCCEEDED(rc))
+                    fireMediumChangedEvent(pData->pConsole->mEventSource, pNewMediumAtt);
+
+                alock.acquire();
+                if (pNewMediumAtt != pMediumAtt)
+                {
+                    pData->pmapMediumAttachments->erase(devicePath);
+                    pData->pmapMediumAttachments->insert(std::make_pair(devicePath, pNewMediumAtt));
+                }
             }
         }
     }
