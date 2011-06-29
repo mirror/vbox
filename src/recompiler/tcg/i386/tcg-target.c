@@ -363,6 +363,30 @@ static const uint8_t tcg_cond_to_jcc[10] = {
     [TCG_COND_GTU] = JCC_JA,
 };
 
+#if defined(VBOX)
+/* Calc the size of the tcg_out_opc() result. */
+static inline unsigned char tcg_calc_opc_len(TCGContext *s, int opc, int r, int rm, int x)
+{
+    unsigned char len = 1;
+# if TCG_TARGET_REG_BITS == 64
+    unsigned rex;
+    rex = 0;
+    rex |= (opc & P_REXW) >> 8;		/* REX.W */
+    rex |= (r & 8) >> 1;		/* REX.R */
+    rex |= (x & 8) >> 2;		/* REX.X */
+    rex |= (rm & 8) >> 3;		/* REX.B */
+    rex |= opc & (r >= 4 ? P_REXB_R : 0);
+    rex |= opc & (rm >= 4 ? P_REXB_RM : 0);
+    if (rex)            len++;
+    if (opc & P_ADDR32) len++;
+# endif
+    if (opc & P_DATA16) len++;
+    if (opc & P_EXT)    len++;
+
+    return len;
+}
+#endif
+
 #if TCG_TARGET_REG_BITS == 64
 static void tcg_out_opc(TCGContext *s, int opc, int r, int rm, int x)
 {
@@ -438,12 +462,19 @@ static void tcg_out_modrm_sib_offset(TCGContext *s, int opc, int r, int rm,
         if (TCG_TARGET_REG_BITS == 64) {
             /* Try for a rip-relative addressing mode.  This has replaced
                the 32-bit-mode absolute addressing encoding.  */
+#ifdef VBOX
+            tcg_target_long pc = (tcg_target_long)s->code_ptr + tcg_calc_opc_len(s, opc, r, 0, 0) + 5;
+#else
             tcg_target_long pc = (tcg_target_long)s->code_ptr + 5 + ~rm;
+#endif
             tcg_target_long disp = offset - pc;
             if (disp == (int32_t)disp) {
                 tcg_out_opc(s, opc, r, 0, 0);
                 tcg_out8(s, (LOWREGMASK(r) << 3) | 5);
                 tcg_out32(s, disp);
+#ifdef VBOX
+                Assert(pc == (tcg_target_long)s->code_ptr);
+#endif
                 return;
             }
 
@@ -959,7 +990,12 @@ static void tcg_out_setcond2(TCGContext *s, const TCGArg *args,
 
 static void tcg_out_branch(TCGContext *s, int call, tcg_target_long dest)
 {
+#ifdef VBOX
+    tcg_target_long disp = dest - (tcg_target_long)s->code_ptr 
+                         - tcg_calc_opc_len(s, call ? OPC_CALL_Jz : OPC_JMP_long, 0, 0, 0);
+#else
     tcg_target_long disp = dest - (tcg_target_long)s->code_ptr - 5;
+#endif
 
     if (disp == (int32_t)disp) {
         tcg_out_opc(s, call ? OPC_CALL_Jz : OPC_JMP_long, 0, 0, 0);
