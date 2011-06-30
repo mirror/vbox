@@ -219,7 +219,9 @@ static const DBGCCMD    g_aCmds[] =
 };
 #endif
 
-/** Prologue code, must be in lower 4G to simplify jumps to/from generated code. */
+/** Prologue code, must be in lower 4G to simplify jumps to/from generated code.
+ * @todo huh??? That cannot be the case on the mac... So, this 
+ *       point is probably not valid any longer. */
 uint8_t *code_gen_prologue;
 
 
@@ -2111,19 +2113,26 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 #endif
 
     /*
-     * Replay invlpg?
+     * Replay invlpg?  Only if we're not flushing the TLB.
      */
+    fFlags = CPUMR3RemEnter(pVCpu, &uCpl);
+    LogFlow(("CPUMR3RemEnter %x %x\n", fFlags, uCpl));
     if (pVM->rem.s.cInvalidatedPages)
     {
-        RTUINT i;
-
-        pVM->rem.s.fIgnoreInvlPg = true;
-        for (i = 0; i < pVM->rem.s.cInvalidatedPages; i++)
+        if (!(fFlags & CPUM_CHANGED_GLOBAL_TLB_FLUSH))
         {
-            Log2(("REMR3State: invlpg %RGv\n", pVM->rem.s.aGCPtrInvalidatedPages[i]));
-            tlb_flush_page(&pVM->rem.s.Env, pVM->rem.s.aGCPtrInvalidatedPages[i]);
+            RTUINT i;
+
+            pVM->rem.s.fIgnoreCR3Load = true;
+            pVM->rem.s.fIgnoreInvlPg  = true;
+            for (i = 0; i < pVM->rem.s.cInvalidatedPages; i++)
+            {
+                Log2(("REMR3State: invlpg %RGv\n", pVM->rem.s.aGCPtrInvalidatedPages[i]));
+                tlb_flush_page(&pVM->rem.s.Env, pVM->rem.s.aGCPtrInvalidatedPages[i]);
+            }
+            pVM->rem.s.fIgnoreInvlPg  = false;
+            pVM->rem.s.fIgnoreCR3Load = false;
         }
-        pVM->rem.s.fIgnoreInvlPg = false;
         pVM->rem.s.cInvalidatedPages = 0;
     }
 
@@ -2150,8 +2159,6 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
     /*
      * Registers which are rarely changed and require special handling / order when changed.
      */
-    fFlags = CPUMR3RemEnter(pVCpu, &uCpl);
-    LogFlow(("CPUMR3RemEnter %x %x\n", fFlags, uCpl));
     if (fFlags & (  CPUM_CHANGED_GLOBAL_TLB_FLUSH
                   | CPUM_CHANGED_CR4
                   | CPUM_CHANGED_CR0
