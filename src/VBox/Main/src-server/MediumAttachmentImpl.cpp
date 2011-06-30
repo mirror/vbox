@@ -39,6 +39,7 @@ struct BackupableMediumAttachmentData
           lDevice(0),
           type(DeviceType_Null),
           fPassthrough(false),
+          fTempEject(false),
           fImplicit(false)
     { }
 
@@ -55,6 +56,7 @@ struct BackupableMediumAttachmentData
     const LONG          lDevice;
     const DeviceType_T  type;
     bool                fPassthrough;
+    bool                fTempEject;
     bool                fImplicit;
 };
 
@@ -111,11 +113,13 @@ HRESULT MediumAttachment::init(Machine *aParent,
                                LONG aPort,
                                LONG aDevice,
                                DeviceType_T aType,
+                               bool aImplicit,
                                bool aPassthrough,
+                               bool aTempEject,
                                const Utf8Str &strBandwidthGroup)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aPassthrough=%d\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aPassthrough));
+    LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aImplicit=%d aPassthrough=%d aTempEject=%d\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aImplicit, aPassthrough, aTempEject));
 
     if (aType == DeviceType_HardDisk)
         AssertReturn(aMedium, E_INVALIDARG);
@@ -137,9 +141,8 @@ HRESULT MediumAttachment::init(Machine *aParent,
     unconst(m->bd->type)    = aType;
 
     m->bd->fPassthrough = aPassthrough;
-    /* Newly created attachments never have an implicitly created medium
-     * associated with them. Implicit diff image creation happens later. */
-    m->bd->fImplicit = false;
+    m->bd->fTempEject = aTempEject;
+    m->bd->fImplicit = aImplicit;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -281,6 +284,23 @@ STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
     return S_OK;
 }
 
+STDMETHODIMP MediumAttachment::COMGETTER(TemporaryEject)(BOOL *aTemporaryEject)
+{
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aTemporaryEject);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aTemporaryEject = m->bd->fTempEject;
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
 STDMETHODIMP MediumAttachment::COMGETTER(IsEjected)(BOOL *aEjected)
 {
     LogFlowThisFuncEnter();
@@ -402,6 +422,12 @@ bool MediumAttachment::getPassthrough() const
     return m->bd->fPassthrough;
 }
 
+bool MediumAttachment::getTempEject() const
+{
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
+    return m->bd->fTempEject;
+}
+
 const Utf8Str& MediumAttachment::getBandwidthGroup() const
 {
     return m->bd->strBandwidthGroup;
@@ -435,6 +461,15 @@ void MediumAttachment::updatePassthrough(bool aPassthrough)
 
     m->bd.backup();
     m->bd->fPassthrough = aPassthrough;
+}
+
+/** Must be called from under this object's write lock. */
+void MediumAttachment::updateTempEject(bool aTempEject)
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    m->bd.backup();
+    m->bd->fTempEject = aTempEject;
 }
 
 /** Must be called from under this object's write lock. */

@@ -46,7 +46,9 @@ public:
                  LONG aPort,
                  LONG aDevice,
                  DeviceType_T aType,
+                 bool fImplicit,
                  bool fPassthrough,
+                 bool fTempEject,
                  const Utf8Str &strBandwidthGroup);
     void uninit();
 
@@ -60,6 +62,7 @@ public:
     STDMETHOD(COMGETTER(Device))(LONG *aDevice);
     STDMETHOD(COMGETTER(Type))(DeviceType_T *aType);
     STDMETHOD(COMGETTER(Passthrough))(BOOL *aPassthrough);
+    STDMETHOD(COMGETTER(TemporaryEject))(BOOL *aTemporaryEject);
     STDMETHOD(COMGETTER(IsEjected))(BOOL *aIsEjected);
     STDMETHOD(COMGETTER(BandwidthGroup))(IBandwidthGroup **aBwGroup);
 
@@ -78,6 +81,7 @@ public:
     LONG getDevice() const;
     DeviceType_T getType() const;
     bool getPassthrough() const;
+    bool getTempEject() const;
     const Utf8Str& getBandwidthGroup() const;
 
     bool matches(CBSTR aControllerName, LONG aPort, LONG aDevice);
@@ -87,6 +91,9 @@ public:
 
     /** Must be called from under this object's write lock. */
     void updatePassthrough(bool aPassthrough);
+
+    /** Must be called from under this object's write lock. */
+    void updateTempEject(bool aTempEject);
 
     /** Must be called from under this object's write lock. */
     void updateEjected();
