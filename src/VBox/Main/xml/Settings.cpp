@@ -1690,6 +1690,7 @@ bool AttachedDevice::operator==(const AttachedDevice &a) const
     return (    (this == &a)
              || (    (deviceType                == a.deviceType)
                   && (fPassThrough              == a.fPassThrough)
+                  && (fTempEject                == a.fTempEject)
                   && (lPort                     == a.lPort)
                   && (lDevice                   == a.lDevice)
                   && (uuid                      == a.uuid)
@@ -2990,6 +2991,7 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
                 {
                     att.deviceType = DeviceType_DVD;
                     pelmAttached->getAttributeValue("passthrough", att.fPassThrough);
+                    pelmAttached->getAttributeValue("tempeject", att.fTempEject);
                 }
                 else if (strTemp == "Floppy")
                     att.deviceType = DeviceType_Floppy;
@@ -3061,6 +3063,7 @@ void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHar
             att.lPort = 1;
             att.lDevice = 0;
             pelmHwChild->getAttributeValue("passthrough", att.fPassThrough);
+            pelmHwChild->getAttributeValue("tempeject", att.fTempEject);
 
             const xml::ElementNode *pDriveChild;
             Utf8Str strTmp;
@@ -3684,6 +3687,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                         ++cDVDs;
 
                         pelmDVD->setAttribute("passthrough", att.fPassThrough);
+                        if (att.fTempEject)
+                            pelmDVD->setAttribute("tempeject", att.fTempEject);
                         if (!att.uuid.isEmpty())
                             pelmDVD->createChild("Image")->setAttribute("uuid", att.uuid.toStringCurly());
                         else if (att.strHostDriveSrc.length())
@@ -4228,6 +4233,8 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
                 case DeviceType_DVD:
                     pcszType = "DVD";
                     pelmDevice->setAttribute("passthrough", att.fPassThrough);
+                    if (att.fTempEject)
+                        pelmDevice->setAttribute("tempeject", att.fTempEject);
                 break;
 
                 case DeviceType_Floppy:

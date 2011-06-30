@@ -51,6 +51,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--medium",           'm', RTGETOPT_REQ_STRING },
     { "--mtype",            'M', RTGETOPT_REQ_STRING },
     { "--passthrough",      'h', RTGETOPT_REQ_STRING },
+    { "--tempeject",        'e', RTGETOPT_REQ_STRING },
     { "--bandwidthgroup",   'b', RTGETOPT_REQ_STRING },
     { "--forceunmount",     'f', RTGETOPT_REQ_NOTHING },
     { "--comment",          'C', RTGETOPT_REQ_STRING },
@@ -83,6 +84,7 @@ int handleStorageAttach(HandlerArg *a)
     DeviceType_T devTypeRequested = DeviceType_Null;
     const char *pszMedium = NULL;
     const char *pszPassThrough = NULL;
+    const char *pszTempEject = NULL;
     const char *pszBandwidthGroup = NULL;
     Bstr bstrNewUuid;
     Bstr bstrNewParentUuid;
@@ -161,6 +163,15 @@ int handleStorageAttach(HandlerArg *a)
             {
                 if (ValueUnion.psz)
                     pszPassThrough = ValueUnion.psz;
+                else
+                    rc = E_FAIL;
+                break;
+            }
+
+            case 'e':   // tempeject <on|off>
+            {
+                if (ValueUnion.psz)
+                    pszTempEject = ValueUnion.psz;
                 else
                     rc = E_FAIL;
                 break;
@@ -676,6 +687,32 @@ int handleStorageAttach(HandlerArg *a)
                 }
                 else
                     throw Utf8StrFmt("Invalid --passthrough argument '%s'", pszPassThrough);
+            }
+            else
+                throw Utf8StrFmt("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
+        }
+
+        if (   pszTempEject
+            && (SUCCEEDED(rc)))
+        {
+            ComPtr<IMediumAttachment> mattach;
+            CHECK_ERROR(machine, GetMediumAttachment(Bstr(pszCtl).raw(), port,
+                                                     device, mattach.asOutParam()));
+
+            if (SUCCEEDED(rc))
+            {
+                if (!RTStrICmp(pszTempEject, "on"))
+                {
+                    CHECK_ERROR(machine, TemporaryEjectDevice(Bstr(pszCtl).raw(),
+                                                              port, device, TRUE));
+                }
+                else if (!RTStrICmp(pszTempEject, "off"))
+                {
+                    CHECK_ERROR(machine, TemporaryEjectDevice(Bstr(pszCtl).raw(),
+                                                              port, device, FALSE));
+                }
+                else
+                    throw Utf8StrFmt("Invalid --tempeject argument '%s'", pszTempEject);
             }
             else
                 throw Utf8StrFmt("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);

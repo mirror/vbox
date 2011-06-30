@@ -805,6 +805,7 @@ struct AttachedDevice
     AttachedDevice()
         : deviceType(DeviceType_Null),
           fPassThrough(false),
+          fTempEject(false),
           lPort(0),
           lDevice(0)
     {}
@@ -815,6 +816,10 @@ struct AttachedDevice
 
     // DVDs can be in pass-through mode:
     bool                fPassThrough;
+
+    // Whether guest-triggered eject of DVDs will keep the medium in the
+    // VM config or not:
+    bool                fTempEject;
 
     int32_t             lPort;
     int32_t             lDevice;

@@ -3801,6 +3801,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                           aDevice,
                           aType,
                           fIndirect,
+                          false /* fPassthrough */,
+                          false /* fTempEject */,
                           Utf8Str::Empty);
     if (FAILED(rc)) return rc;
 
@@ -3954,6 +3956,46 @@ STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControlle
                         tr("Setting passthrough rejected as the device attached to device slot %d on port %d of controller '%ls' is not a DVD"),
                         aDevice, aControllerPort, aControllerName);
     pAttach->updatePassthrough(!!aPassthrough);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::TemporaryEjectDevice(IN_BSTR aControllerName, LONG aControllerPort,
+                                           LONG aDevice, BOOL aTemporaryEject)
+{
+    CheckComArgStrNotEmptyOrNull(aControllerName);
+
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld aTemporaryEject=%d\n",
+                     aControllerName, aControllerPort, aDevice, aTemporaryEject));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    MediumAttachment *pAttach = findAttachment(mMediaData->mAttachments,
+                                               aControllerName,
+                                               aControllerPort,
+                                               aDevice);
+    if (!pAttach)
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
+                        aDevice, aControllerPort, aControllerName);
+
+
+    setModified(IsModified_Storage);
+    mMediaData.backup();
+
+    AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
+
+    if (pAttach->getType() != DeviceType_DVD)
+        return setError(E_INVALIDARG,
+                        tr("Setting passthrough rejected as the device attached to device slot %d on port %d of controller '%ls' is not a DVD"),
+                        aDevice, aControllerPort, aControllerName);
+    pAttach->updateTempEject(!!aTemporaryEject);
 
     return S_OK;
 }
@@ -8052,7 +8094,9 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.lPort,
                                dev.lDevice,
                                dev.deviceType,
+                               false,
                                dev.fPassThrough,
+                               dev.fTempEject,
                                pBwGroup.isNull() ? Utf8Str::Empty : pBwGroup->getName());
         if (FAILED(rc)) break;
 
@@ -8999,6 +9043,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
             else
                 dev.uuid = pMedium->getId();
             dev.fPassThrough = pAttach->getPassthrough();
+            dev.fTempEject = pAttach->getTempEject();
         }
 
         dev.strBwGroup = pAttach->getBandwidthGroup();
@@ -9320,6 +9365,8 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                   pAtt->getDevice(),
                                   DeviceType_HardDisk,
                                   true /* aImplicit */,
+                                  false /* aPassthrough */,
+                                  false /* aTempEject */,
                                   pAtt->getBandwidthGroup());
             if (FAILED(rc)) throw rc;
 
@@ -11652,18 +11699,6 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* Need to query the details first, as the IMediumAttachment reference
-     * might be to the original settings, which we are going to change. */
-    Bstr ctrlName;
-    HRESULT rc = aAttachment->COMGETTER(Controller)(ctrlName.asOutParam());
-    AssertComRC(rc);
-    LONG lDev;
-    rc = aAttachment->COMGETTER(Device)(&lDev);
-    AssertComRC(rc);
-    LONG lPort;
-    rc = aAttachment->COMGETTER(Port)(&lPort);
-    AssertComRC(rc);
-
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
     AutoMultiWriteLock3 multiLock(mParent->host()->lockHandle(),
@@ -11672,40 +11707,66 @@ STDMETHODIMP SessionMachine::EjectMedium(IMediumAttachment *aAttachment,
 
     ComObjPtr<MediumAttachment> pAttach = static_cast<MediumAttachment *>(aAttachment);
 
-    /* Remember previously mounted medium. The medium before taking the
-     * backup is not necessarily the same thing. */
-    ComObjPtr<Medium> oldmedium;
-    oldmedium = pAttach->getMedium();
-
-    setModified(IsModified_Storage);
-    mMediaData.backup();
-
-    GuidList llRegistriesThatNeedSaving;
-
+    Bstr ctrlName;
+    LONG lPort;
+    LONG lDevice;
+    bool fTempEject;
     {
+        AutoCaller autoAttachCaller(this);
+        if (FAILED(autoAttachCaller.rc())) return autoAttachCaller.rc();
+
+        AutoReadLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
+
+        /* Need to query the details first, as the IMediumAttachment reference
+         * might be to the original settings, which we are going to change. */
+        ctrlName = pAttach->getControllerName();
+        lPort = pAttach->getPort();
+        lDevice = pAttach->getDevice();
+        fTempEject = pAttach->getTempEject();
+    }
+
+    if (!fTempEject)
+    {
+        /* Remember previously mounted medium. The medium before taking the
+         * backup is not necessarily the same thing. */
+        ComObjPtr<Medium> oldmedium;
+        oldmedium = pAttach->getMedium();
+
+        setModified(IsModified_Storage);
+        mMediaData.backup();
+
         // The backup operation makes the pAttach reference point to the
         // old settings. Re-get the correct reference.
         pAttach = findAttachment(mMediaData->mAttachments,
                                  ctrlName.raw(),
                                  lPort,
-                                 lDev);
-        AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
-        if (!oldmedium.isNull())
-            oldmedium->removeBackReference(mData->mUuid);
+                                 lDevice);
 
-        pAttach->updateMedium(NULL);
-        pAttach->updateEjected();
+        {
+            AutoCaller autoAttachCaller(this);
+            if (FAILED(autoAttachCaller.rc())) return autoAttachCaller.rc();
 
-        pAttach.queryInterfaceTo(aNewAttachment);
+            AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
+            if (!oldmedium.isNull())
+                oldmedium->removeBackReference(mData->mUuid);
+
+            pAttach->updateMedium(NULL);
+            pAttach->updateEjected();
+        }
+
+        setModified(IsModified_Storage);
+    }
+    else
+    {
+        {
+            AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
+            pAttach->updateEjected();
+        }
     }
 
-    setModified(IsModified_Storage);
+    pAttach.queryInterfaceTo(aNewAttachment);
 
-    multiLock.release();
-
-    mParent->saveRegistries(llRegistriesThatNeedSaving);
-
-    return rc;
+    return S_OK;
 }
 
 // public methods only for internal purposes

@@ -4642,6 +4642,42 @@
       </param>
     </method>
 
+    <method name="temporaryEjectDevice">
+      <desc>
+        Sets the behavior for guest-triggered medium eject. In some situations
+        it is desirable that such ejects update the VM configuration, and in
+        others the eject should keep the VM configuration. The device must
+        already exist; see <link to="IMachine::attachDevice"/> for how to
+        attach a new device.
+
+        The @a controllerPort and @a device parameters specify the device slot and
+        have have the same meaning as with <link to="IMachine::attachDevice" />.
+
+        <result name="E_INVALIDARG">
+          SATA device, SATA port, IDE port or IDE slot out of range.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Attempt to modify an unregistered virtual machine.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Invalid machine state.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the storage controller.</desc>
+      </param>
+      <param name="controllerPort" type="long" dir="in">
+        <desc>Storage controller port.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+        <desc>Device slot in the given port.</desc>
+      </param>
+      <param name="temporaryEject" type="boolean" dir="in">
+        <desc>New value for the eject behavior.</desc>
+      </param>
+    </method>
+
     <method name="setBandwidthGroupForDevice">
       <desc>
         Sets the bandwidth group of an existing storage device.
@@ -9571,7 +9607,7 @@
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="8d48f68f-807a-4e4e-9449-827fe9ea8498"
+    uuid="b5dfbb8c-7498-48c3-bf10-78fc60f064e1"
     wsmap="struct"
     >
     <desc>
@@ -9782,6 +9818,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="passthrough" type="boolean" readonly="yes">
       <desc>Pass I/O requests through to a device on the host.</desc>
+    </attribute>
+
+    <attribute name="temporaryEject" type="boolean" readonly="yes">
+      <desc>Whether guest-triggered eject results in unmounting the medium.</desc>
     </attribute>
 
     <attribute name="isEjected" type="boolean" readonly="yes">

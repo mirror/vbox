@@ -465,6 +465,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--setuuid <uuid>]\n"
                      "                            [--setparentuuid <uuid>]\n"
                      "                            [--passthrough on|off]\n"
+                     "                            [--tempeject on|off]\n"
                      "                            [--bandwidthgroup <name>]\n"
                      "                            [--forceunmount]\n"
                      "                            [--server <name>|<ip>]\n"

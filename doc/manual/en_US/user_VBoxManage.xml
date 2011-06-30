@@ -1509,6 +1509,7 @@ Virtual system 0:
                             [--setuuid &lt;uuid&gt;]
                             [--setparentuuid &lt;uuid&gt;]
                             [--passthrough on|off]
+                            [--tempeject on|off]
                             [--bandwidthgroup name|none]
                             [--forceunmount]
                             [--server &lt;name&gt;|&lt;ip&gt;]
@@ -1669,6 +1670,17 @@ Virtual system 0:
             <para>For a virtual DVD drive only, you can enable DVD writing
             support (currently experimental; see <xref
             linkend="storage-cds" />).</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>tempeject</glossterm>
+
+          <glossdef>
+            <para>For a virtual DVD drive only, you can configure the behavior
+            for guest-triggered medium eject. If this is set to "on", the eject
+            has only temporary effects. If the VM is powered off and restarted
+            the originally configured medium will be still in the drive.</para>
           </glossdef>
         </glossentry>
 
