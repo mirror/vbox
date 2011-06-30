@@ -21,6 +21,10 @@
       </listitem>
 
       <listitem>
+        <para>VMM: raised the memory limit for 64-bit hosts to 1TB</para>
+      </listitem>
+
+      <listitem>
         <para>Windows guests: Experimental WDDM graphics driver</para>
       </listitem>
 
@@ -42,11 +46,11 @@
     <itemizedlist>
 
       <listitem>
-        <para>VMM: raised the memory limit for 64-bit hosts to 1TB</para>
+        <para>VMM: more SMP timer fixes</para>
       </listitem>
 
       <listitem>
-        <para>VMM: more SMP timer fixes</para>
+        <para>VMM: many small fixes</para>
       </listitem>
 
       <listitem>
@@ -69,6 +73,10 @@
       </listitem>
 
       <listitem>
+        <para>GUI: added proxy settings (bug #2870)</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: changed syntax of the <emphasis>guestcontrol</emphasis>
           command group, fixed various bugs</para>
       </listitem>
@@ -84,7 +92,16 @@
       </listitem>
 
       <listitem>
+        <para>Storage: virtual CD/DVD images will be detached if the guest
+          ejects the medium</para>
+      </listitem>
+
+      <listitem>
         <para>USB: many fixes for the Windows USB host driver</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: reduced memory footprint</para>
       </listitem>
 
       <listitem>
