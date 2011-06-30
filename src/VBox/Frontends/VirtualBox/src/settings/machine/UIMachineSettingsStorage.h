@@ -355,11 +355,13 @@ public:
     QString attMediumId() const;
     bool attIsHostDrive() const;
     bool attIsPassthrough() const;
+    bool attIsTempEject() const;
 
     void setAttSlot (const StorageSlot &aAttSlot);
     void setAttDevice (KDeviceType aAttDeviceType);
     void setAttMediumId (const QString &aAttMediumId);
     void setAttIsPassthrough (bool aPassthrough);
+    void setAttIsTempEject (bool aTempEject);
 
     QString attSize() const;
     QString attLogicalSize() const;
@@ -390,6 +392,7 @@ private:
     bool mAttIsShowDiffs;
     bool mAttIsHostDrive;
     bool mAttIsPassthrough;
+    bool mAttIsTempEject;
 
     QString mAttName;
     QString mAttTip;
@@ -443,6 +446,7 @@ public:
         R_AttIsShowDiffs,
         R_AttIsHostDrive,
         R_AttIsPassthrough,
+        R_AttIsTempEject,
         R_AttSize,
         R_AttLogicalSize,
         R_AttLocation,
@@ -556,7 +560,8 @@ struct UIDataSettingsMachineStorageAttachment
         , m_iAttachmentPort(-1)
         , m_iAttachmentDevice(-1)
         , m_strAttachmentMediumId(QString())
-        , m_fAttachmentPassthrough(false) {}
+        , m_fAttachmentPassthrough(false)
+        , m_fAttachmentTempEject(false) {}
     /* Functions: */
     bool equal(const UIDataSettingsMachineStorageAttachment &other) const
     {
@@ -564,7 +569,8 @@ struct UIDataSettingsMachineStorageAttachment
                (m_iAttachmentPort == other.m_iAttachmentPort) &&
                (m_iAttachmentDevice == other.m_iAttachmentDevice) &&
                (m_strAttachmentMediumId == other.m_strAttachmentMediumId) &&
-               (m_fAttachmentPassthrough == other.m_fAttachmentPassthrough);
+               (m_fAttachmentPassthrough == other.m_fAttachmentPassthrough) &&
+               (m_fAttachmentTempEject == other.m_fAttachmentTempEject);
     }
     /* Operators: */
     bool operator==(const UIDataSettingsMachineStorageAttachment &other) const { return equal(other); }
@@ -575,6 +581,7 @@ struct UIDataSettingsMachineStorageAttachment
     LONG m_iAttachmentDevice;
     QString m_strAttachmentMediumId;
     bool m_fAttachmentPassthrough;
+    bool m_fAttachmentTempEject;
 };
 typedef UISettingsCache<UIDataSettingsMachineStorageAttachment> UICacheSettingsMachineStorageAttachment;
 
