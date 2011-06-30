@@ -550,6 +550,7 @@ AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
     , mAttDeviceType (aDeviceType)
     , mAttIsHostDrive (false)
     , mAttIsPassthrough (false)
+    , mAttIsTempEject (false)
 {
     /* Check for proper parent type */
     AssertMsg (mParent->rtti() == AbstractItem::Type_ControllerItem, ("Incorrect parent type!\n"));
@@ -603,6 +604,11 @@ bool AttachmentItem::attIsPassthrough() const
     return mAttIsPassthrough;
 }
 
+bool AttachmentItem::attIsTempEject() const
+{
+    return mAttIsTempEject;
+}
+
 void AttachmentItem::setAttSlot (const StorageSlot &aAttSlot)
 {
     mAttSlot = aAttSlot;
@@ -623,6 +629,11 @@ void AttachmentItem::setAttMediumId (const QString &aAttMediumId)
 void AttachmentItem::setAttIsPassthrough (bool aIsAttPassthrough)
 {
     mAttIsPassthrough = aIsAttPassthrough;
+}
+
+void AttachmentItem::setAttIsTempEject (bool aIsAttTempEject)
+{
+    mAttIsTempEject = aIsAttTempEject;
 }
 
 QString AttachmentItem::attSize() const
@@ -1077,6 +1088,13 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                     return static_cast <AttachmentItem*> (item)->attIsPassthrough();
             return false;
         }
+        case R_AttIsTempEject:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_AttachmentItem)
+                    return static_cast <AttachmentItem*> (item)->attIsTempEject();
+            return false;
+        }
         case R_AttSize:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1281,6 +1299,17 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                 {
                     static_cast <AttachmentItem*> (item)->setAttIsPassthrough (aValue.toBool());
+                    emit dataChanged (aIndex, aIndex);
+                    return true;
+                }
+            return false;
+        }
+        case R_AttIsTempEject:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_AttachmentItem)
+                {
+                    static_cast <AttachmentItem*> (item)->setAttIsTempEject (aValue.toBool());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1770,6 +1799,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     connect (mTbOpen, SIGNAL (clicked (bool)), mTbOpen, SLOT (showMenu()));
     connect (pOpenMediumMenu, SIGNAL (aboutToShow()), this, SLOT (sltPrepareOpenMediumMenu()));
     connect (mCbPassthrough, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
+    connect (mCbTempEject, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
 
     /* Applying language settings */
     retranslateUi();
@@ -1833,6 +1863,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                     storageAttachmentData.m_iAttachmentPort = attachment.GetPort();
                     storageAttachmentData.m_iAttachmentDevice = attachment.GetDevice();
                     storageAttachmentData.m_fAttachmentPassthrough = attachment.GetPassthrough();
+                    storageAttachmentData.m_fAttachmentTempEject = attachment.GetTemporaryEject();
                     CMedium comMedium(attachment.GetMedium());
                     VBoxMedium vboxMedium;
                     vboxGlobal().findMedium(comMedium, vboxMedium);
@@ -1892,6 +1923,7 @@ void UIMachineSettingsStorage::getFromCache()
                                               attachmentData.m_iAttachmentDevice);
             mStorageModel->setData(attachmentIndex, QVariant::fromValue(attachmentStorageSlot), StorageModel::R_AttSlot);
             mStorageModel->setData(attachmentIndex, attachmentData.m_fAttachmentPassthrough, StorageModel::R_AttIsPassthrough);
+            mStorageModel->setData(attachmentIndex, attachmentData.m_fAttachmentTempEject, StorageModel::R_AttIsTempEject);
         }
     }
     /* Set the first controller as current if present */
@@ -1943,6 +1975,7 @@ void UIMachineSettingsStorage::putToCache()
             attachmentData.m_iAttachmentPort = attachmentSlot.port;
             attachmentData.m_iAttachmentDevice = attachmentSlot.device;
             attachmentData.m_fAttachmentPassthrough = mStorageModel->data(attachmentIndex, StorageModel::R_AttIsPassthrough).toBool();
+            attachmentData.m_fAttachmentTempEject = mStorageModel->data(attachmentIndex, StorageModel::R_AttIsTempEject).toBool();
             attachmentData.m_strAttachmentMediumId = mStorageModel->data(attachmentIndex, StorageModel::R_AttMediumId).toString();
 
             /* Recache storage attachment data: */
@@ -2379,6 +2412,10 @@ void UIMachineSettingsStorage::getInformation()
                 mCbPassthrough->setVisible (device == KDeviceType_DVD && isHostDrive);
                 mCbPassthrough->setChecked (isHostDrive && mStorageModel->data (index, StorageModel::R_AttIsPassthrough).toBool());
 
+                /* Getting TempEject state */
+                mCbTempEject->setVisible (device == KDeviceType_DVD && !isHostDrive);
+                mCbTempEject->setChecked (!isHostDrive && mStorageModel->data (index, StorageModel::R_AttIsTempEject).toBool());
+
                 /* Update optional widgets visibility */
                 updateAdditionalObjects (device);
 
@@ -2446,6 +2483,11 @@ void UIMachineSettingsStorage::setInformation()
             {
                 if (mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool())
                     mStorageModel->setData (index, mCbPassthrough->isChecked(), StorageModel::R_AttIsPassthrough);
+            }
+            else if (sdr == mCbTempEject)
+            {
+                if (!mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool())
+                    mStorageModel->setData (index, mCbTempEject->isChecked(), StorageModel::R_AttIsTempEject);
             }
             break;
         }
@@ -3353,6 +3395,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
         KDeviceType attachmentDeviceType = attachmentData.m_attachmentType;
         QString strAttachmentMediumId = attachmentData.m_strAttachmentMediumId;
         bool fAttachmentPassthrough = attachmentData.m_fAttachmentPassthrough;
+        bool fAttachmentTempEject = attachmentData.m_fAttachmentTempEject;
         /* Get GUI medium object: */
         VBoxMedium vboxMedium = vboxGlobal().findMedium(strAttachmentMediumId);
         /* Get COM medium object: */
@@ -3375,6 +3418,12 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
                     m_machine.PassthroughDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentPassthrough);
                     /* Check that machine is OK: */
                     fSuccess = m_machine.isOk();
+                    if (fSuccess)
+                    {
+                        m_machine.TemporaryEjectDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentTempEject);
+                        /* Check that machine is OK: */
+                        fSuccess = m_machine.isOk();
+                    }
                 }
             }
             else
@@ -3410,6 +3459,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
         int iAttachmentDevice = attachmentData.m_iAttachmentDevice;
         QString strAttachmentMediumId = attachmentData.m_strAttachmentMediumId;
         bool fAttachmentPassthrough = attachmentData.m_fAttachmentPassthrough;
+        bool fAttachmentTempEject = attachmentData.m_fAttachmentTempEject;
         KDeviceType attachmentDeviceType = attachmentData.m_attachmentType;
 
         /* Check that storage attachment exists: */
@@ -3433,6 +3483,15 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
                     if (attachmentDeviceType == KDeviceType_DVD)
                     {
                         m_machine.PassthroughDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentPassthrough);
+                        /* Check that machine is OK: */
+                        fSuccess = m_machine.isOk();
+                    }
+                }
+                if (fSuccess)
+                {
+                    if (attachmentDeviceType == KDeviceType_DVD)
+                    {
+                        m_machine.TemporaryEjectDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentTempEject);
                         /* Check that machine is OK: */
                         fSuccess = m_machine.isOk();
                     }
@@ -3510,6 +3569,7 @@ void UIMachineSettingsStorage::polishPage()
     mCbSlot->setEnabled(isMachineOffline());
     mTbOpen->setEnabled(isMachineOffline() || (isMachineOnline() && device != KDeviceType_HardDisk));
     mCbPassthrough->setEnabled(isMachineOffline());
+    mCbTempEject->setEnabled(isMachineInValidMode());
     mLsInformation->setEnabled(isMachineInValidMode());
     mLbHDFormat->setEnabled(isMachineInValidMode());
     mLbHDFormatValue->setEnabled(isMachineInValidMode());

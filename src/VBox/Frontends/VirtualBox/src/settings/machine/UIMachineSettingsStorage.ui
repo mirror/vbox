@@ -322,6 +322,22 @@
           </property>
          </widget>
         </item>
+        <item row="2" column="2" >
+         <widget class="QCheckBox" name="mCbTempEject" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="whatsThis" >
+           <string>When checked, it suppresses unmounting the medium when the guest OS ejects it.</string>
+          </property>
+          <property name="text" >
+           <string>&amp;Live CD/DVD</string>
+          </property>
+         </widget>
+        </item>
         <item row="3" column="0" colspan="3" >
          <widget class="QILabelSeparator" native="1" name="mLsInformation" >
           <property name="text" >
