@@ -101,6 +101,14 @@
       </listitem>
 
       <listitem>
+        <para>Floppy: several bugs have been fixed</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: disk-related structures are now checksummed correctly</para>
+      </listitem>
+
+      <listitem>
         <para>USB: many fixes for the Windows USB host driver</para>
       </listitem>
 
