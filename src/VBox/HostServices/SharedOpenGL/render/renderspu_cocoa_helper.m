@@ -1550,10 +1550,18 @@ while(0);
 
     if (cRects > 0)
     {
+#ifdef DEBUG_poetzsch
+        int i =0;
+        for (i = 0; i < cRects; ++i)
+            DEBUG_MSG_1(("OVIW(%p): setVisibleRegions: %d - %d %d %d %d\n", (void*)self, i, paRects[i * 4], paRects[i * 4 + 1], paRects[i * 4 + 2], paRects[i * 4 + 3]));
+#endif
+
         m_paClipRects = (GLint*)RTMemAlloc(sizeof(GLint) * 4 * cRects);
         m_cClipRects = cRects;
         memcpy(m_paClipRects, paRects, sizeof(GLint) * 4 * cRects);
     }
+    else
+        [self tryDraw];
 }
 
 - (NSView*)dockTileScreen
