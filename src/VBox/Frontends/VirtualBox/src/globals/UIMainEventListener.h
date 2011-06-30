@@ -74,6 +74,7 @@ signals:
     void sigRuntimeError(bool fFatal, QString strId, QString strMessage);
     void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
     void sigShowWindow(LONG64 &winId); /* use Qt::DirectConnection */
+    void sigCPUExecutionCapChange();
 };
 
 /* Wrap the IListener interface around our implementation class. */

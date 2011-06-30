@@ -30,6 +30,7 @@
 UIMachineSettingsSystem::UIMachineSettingsSystem()
     : mValidator(0)
     , mMinGuestCPU(0), mMaxGuestCPU(0)
+    , mMinGuestCPUExecCap(0), mMedGuestCPUExecCap(0), mMaxGuestCPUExecCap(0)
     , m_fOHCIEnabled(false)
 {
     /* Apply UI decorations */
@@ -40,6 +41,9 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     uint hostCPUs = vboxGlobal().virtualBox().GetHost().GetProcessorCount();
     mMinGuestCPU = properties.GetMinGuestCPUCount();
     mMaxGuestCPU = RT_MIN (2 * hostCPUs, properties.GetMaxGuestCPUCount());
+    mMinGuestCPUExecCap = 1;
+    mMedGuestCPUExecCap = 40;
+    mMaxGuestCPUExecCap = 100;
 
     /* Populate possible boot items list.
      * Currently, it seems, we are supporting only 4 possible boot device types:
@@ -83,6 +87,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     /* Setup validators */
     mLeMemory->setValidator (new QIntValidator (mSlMemory->minRAM(), mSlMemory->maxRAM(), this));
     mLeCPU->setValidator (new QIntValidator (mMinGuestCPU, mMaxGuestCPU, this));
+    mLeCPUExecCap->setValidator(new QIntValidator(mMinGuestCPUExecCap, mMaxGuestCPUExecCap, this));
 
     /* Setup connections */
     connect (mSlMemory, SIGNAL (valueChanged (int)),
@@ -101,6 +106,9 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
              this, SLOT (valueChangedCPU (int)));
     connect (mLeCPU, SIGNAL (textChanged (const QString&)),
              this, SLOT (textChangedCPU (const QString&)));
+
+    connect(mSlCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltValueChangedCPUExecCap(int)));
+    connect(mLeCPUExecCap, SIGNAL(textChanged(const QString&)), this, SLOT(sltTextChangedCPUExecCap(const QString&)));
 
     /* Setup iconsets */
     mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png",
@@ -129,9 +137,24 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     mSlCPU->setOptimalHint (1, hostCPUs);
     mSlCPU->setWarningHint (hostCPUs, mMaxGuestCPU);
     /* Limit min/max. size of QLineEdit */
-    mLeCPU->setFixedWidthByText (QString().fill ('8', 3));
+    mLeCPU->setFixedWidthByText(QString().fill('8', 4));
     /* Ensure mLeMemory value and validation is updated */
     valueChangedCPU (mSlCPU->value());
+
+    /* Setup cpu cap slider: */
+    mSlCPUExecCap->setPageStep(10);
+    mSlCPUExecCap->setSingleStep(1);
+    mSlCPUExecCap->setTickInterval(10);
+    /* Setup the scale so that ticks are at page step boundaries: */
+    mSlCPUExecCap->setMinimum(mMinGuestCPUExecCap);
+    mSlCPUExecCap->setMaximum(mMaxGuestCPUExecCap);
+    mSlCPUExecCap->setWarningHint(mMinGuestCPUExecCap, mMedGuestCPUExecCap);
+    mSlCPUExecCap->setOptimalHint(mMedGuestCPUExecCap, mMaxGuestCPUExecCap);
+    /* Limit min/max. size of QLineEdit: */
+    mLeCPUExecCap->setFixedWidthByText(QString().fill('8', 4));
+    /* Ensure mLeMemory value and validation is updated: */
+    sltValueChangedCPUExecCap(mSlCPUExecCap->value());
+
     /* Populate chipset combo: */
     mCbChipset->insertItem(0, vboxGlobal().toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
     mCbChipset->insertItem(1, vboxGlobal().toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
@@ -214,6 +237,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     systemData.m_fNestedPagingEnabled = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
     systemData.m_iRAMSize = m_machine.GetMemorySize();
     systemData.m_cCPUCount = systemData.m_fPFHwVirtExSupported ? m_machine.GetCPUCount() : 1;
+    systemData.m_cCPUExecCap = m_machine.GetCPUExecutionCap();
     systemData.m_chipsetType = m_machine.GetChipsetType();
 
     /* Cache system data: */
@@ -251,6 +275,7 @@ void UIMachineSettingsSystem::getFromCache()
     mCbNestedPaging->setChecked(systemData.m_fNestedPagingEnabled);
     mSlMemory->setValue(systemData.m_iRAMSize);
     mSlCPU->setValue(systemData.m_cCPUCount);
+    mSlCPUExecCap->setValue(systemData.m_cCPUExecCap);
     int iChipsetPositionPos = mCbChipset->findData(systemData.m_chipsetType);
     mCbChipset->setCurrentIndex(iChipsetPositionPos == -1 ? 0 : iChipsetPositionPos);
 
@@ -289,6 +314,7 @@ void UIMachineSettingsSystem::putToCache()
     systemData.m_fNestedPagingEnabled = mCbNestedPaging->isChecked();
     systemData.m_iRAMSize = mSlMemory->value();
     systemData.m_cCPUCount = mSlCPU->value();
+    systemData.m_cCPUExecCap = mSlCPUExecCap->value();
     systemData.m_chipsetType = (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt();
 
     /* Cache system data: */
@@ -337,6 +363,11 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
             /* Acceleration tab: */
             m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, systemData.m_fHwVirtExEnabled);
             m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, systemData.m_fNestedPagingEnabled);
+        }
+        if (isMachineInValidMode())
+        {
+            /* Processor tab: */
+            m_machine.SetCPUExecutionCap(systemData.m_cCPUExecCap);
         }
     }
 
@@ -421,6 +452,14 @@ bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle
         return true;
     }
 
+    /* CPU execution cap is low: */
+    if (mSlCPUExecCap->value() < (int)mMedGuestCPUExecCap)
+    {
+        aWarning = tr("you have set CPU execution cap to low value, which may "
+                      "distort audio and have other side effects.");
+        return true;
+    }
+
     /* Chipset type & IO-APIC test */
     if ((KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt() == KChipsetType_ICH9 && !mCbApic->isChecked())
     {
@@ -463,7 +502,9 @@ void UIMachineSettingsSystem::setOrderAfter (QWidget *aWidget)
     /* Processor tab-order */
     setTabOrder (mCbUseAbsHID, mSlCPU);
     setTabOrder (mSlCPU, mLeCPU);
-    setTabOrder (mLeCPU, mCbPae);
+    setTabOrder(mLeCPU, mSlCPUExecCap);
+    setTabOrder(mSlCPUExecCap, mLeCPUExecCap);
+    setTabOrder(mLeCPUExecCap, mCbPae);
 
     /* Acceleration tab-order */
     setTabOrder (mCbPae, mCbVirt);
@@ -487,6 +528,10 @@ void UIMachineSettingsSystem::retranslateUi()
     /* Retranslate the cpu slider legend */
     mLbCPUMin->setText (tr ("<qt>%1&nbsp;CPU</qt>", "%1 is 1 for now").arg (mMinGuestCPU));
     mLbCPUMax->setText (tr ("<qt>%1&nbsp;CPUs</qt>", "%1 is host cpu count * 2 for now").arg (mMaxGuestCPU));
+
+    /* Retranslate the cpu cap slider legend: */
+    mLbCPUExecCapMin->setText(tr("<qt>%1%</qt>", "Min CPU execution cap in %").arg(mMinGuestCPUExecCap));
+    mLbCPUExecCapMax->setText(tr("<qt>%1%</qt>", "Max CPU execution cap in %").arg(mMaxGuestCPUExecCap));
 }
 
 void UIMachineSettingsSystem::valueChangedRAM (int aVal)
@@ -530,6 +575,16 @@ void UIMachineSettingsSystem::valueChangedCPU (int aVal)
 void UIMachineSettingsSystem::textChangedCPU (const QString &aText)
 {
     mSlCPU->setValue (aText.toInt());
+}
+
+void UIMachineSettingsSystem::sltValueChangedCPUExecCap(int iValue)
+{
+    mLeCPUExecCap->setText(QString().setNum(iValue));
+}
+
+void UIMachineSettingsSystem::sltTextChangedCPUExecCap(const QString &strText)
+{
+    mSlCPUExecCap->setValue(strText.toInt());
 }
 
 bool UIMachineSettingsSystem::eventFilter (QObject *aObject, QEvent *aEvent)
@@ -601,6 +656,11 @@ void UIMachineSettingsSystem::polishPage()
     mLbCPUMax->setEnabled(isMachineOffline());
     mSlCPU->setEnabled(isMachineOffline() && systemData.m_fPFHwVirtExSupported);
     mLeCPU->setEnabled(isMachineOffline() && systemData.m_fPFHwVirtExSupported);
+    mLbCPUExecCap->setEnabled(isMachineInValidMode());
+    mLbCPUExecCapMin->setEnabled(isMachineInValidMode());
+    mLbCPUExecCapMax->setEnabled(isMachineInValidMode());
+    mSlCPUExecCap->setEnabled(isMachineInValidMode());
+    mLeCPUExecCap->setEnabled(isMachineInValidMode());
     mLbProcessorExtended->setEnabled(isMachineOffline());
     mCbPae->setEnabled(isMachineOffline() && systemData.m_fPFPAESupported);
     /* Acceleration tab: */

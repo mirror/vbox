@@ -56,7 +56,8 @@ struct UIDataSettingsMachineSystem
         , m_fHwVirtExEnabled(false)
         , m_fNestedPagingEnabled(false)
         , m_iRAMSize(-1)
-        , m_cCPUCount(-1) {}
+        , m_cCPUCount(-1)
+        , m_cCPUExecCap(-1) {}
     /* Functions: */
     bool equal(const UIDataSettingsMachineSystem &other) const
     {
@@ -72,7 +73,8 @@ struct UIDataSettingsMachineSystem
                (m_fHwVirtExEnabled == other.m_fHwVirtExEnabled) &&
                (m_fNestedPagingEnabled == other.m_fNestedPagingEnabled) &&
                (m_iRAMSize == other.m_iRAMSize) &&
-               (m_cCPUCount == other.m_cCPUCount);
+               (m_cCPUCount == other.m_cCPUCount) &&
+               (m_cCPUExecCap == other.m_cCPUExecCap);
     }
     /* Operators: */
     bool operator==(const UIDataSettingsMachineSystem &other) const { return equal(other); }
@@ -91,6 +93,7 @@ struct UIDataSettingsMachineSystem
     bool m_fNestedPagingEnabled;
     int m_iRAMSize;
     int m_cCPUCount;
+    int m_cCPUExecCap;
 };
 typedef UISettingsCache<UIDataSettingsMachineSystem> UICacheSettingsMachineSystem;
 
@@ -148,6 +151,8 @@ private slots:
 
     void valueChangedCPU (int aVal);
     void textChangedCPU (const QString &aText);
+    void sltValueChangedCPUExecCap(int iValue);
+    void sltTextChangedCPUExecCap(const QString &strText);
 
 private:
 
@@ -161,6 +166,9 @@ private:
 
     uint mMinGuestCPU;
     uint mMaxGuestCPU;
+    uint mMinGuestCPUExecCap;
+    uint mMedGuestCPUExecCap;
+    uint mMaxGuestCPUExecCap;
 
     QList<KDeviceType> m_possibleBootItems;
 

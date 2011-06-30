@@ -136,6 +136,9 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
             Qt::QueuedConnection);
 #endif /* Q_WS_MAC */
 
+    connect(gConsoleEvents, SIGNAL(sigCPUExecutionCapChange()),
+            this, SIGNAL(sigCPUExecutionCapChange()));
+
     /* Prepare main menu: */
     prepareMenuPool();
 

@@ -157,6 +157,11 @@ void UIMachineWindowNormal::sltSharedFolderChange()
     updateAppearanceOf(UIVisualElement_SharedFolderStuff);
 }
 
+void UIMachineWindowNormal::sltCPUExecutionCapChange()
+{
+    updateAppearanceOf(UIVisualElement_VirtualizationStuff);
+}
+
 void UIMachineWindowNormal::sltTryClose()
 {
     UIMachineWindow::sltTryClose();
@@ -371,6 +376,11 @@ void UIMachineWindowNormal::prepareConsoleConnections()
     /* Shared folder change updater: */
     connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
             this, SLOT(sltSharedFolderChange()));
+
+    /* CPU execution cap change updater: */
+    connect(machineLogic()->uisession(), SIGNAL(sigCPUExecutionCapChange()),
+            this, SLOT(sltCPUExecutionCapChange()));
+
 }
 
 void UIMachineWindowNormal::prepareMenu()

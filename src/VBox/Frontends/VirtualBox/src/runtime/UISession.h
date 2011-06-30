@@ -175,6 +175,7 @@ signals:
 #ifdef RT_OS_DARWIN
     void sigShowWindows();
 #endif /* RT_OS_DARWIN */
+    void sigCPUExecutionCapChange();
 
     /* Session signals: */
     void sigMachineStarted();

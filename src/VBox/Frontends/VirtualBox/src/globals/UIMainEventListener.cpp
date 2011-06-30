@@ -190,7 +190,6 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         }
         case KVBoxEventType_OnSharedFolderChanged:
         {
-            CSharedFolderChangedEvent es(pEvent);
             emit sigSharedFolderChange();
             break;
         }
@@ -218,6 +217,11 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             LONG64 winId;
             emit sigShowWindow(winId);
             es.SetWinId(winId);
+            break;
+        }
+        case KVBoxEventType_OnCPUExecutionCapChanged:
+        {
+            emit sigCPUExecutionCapChange();
             break;
         }
         default: break;
