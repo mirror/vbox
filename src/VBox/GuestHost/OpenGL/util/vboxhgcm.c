@@ -1833,7 +1833,7 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
     {
         void *pvBuf;
         pBuf = _crVBoxHGSMIBufAlloc(pClient, len);
-        CRASSERT(pBuf);
+
         if (!pBuf)
         {
             /* fallback */
