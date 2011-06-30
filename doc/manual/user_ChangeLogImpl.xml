@@ -50,6 +50,10 @@
       </listitem>
 
       <listitem>
+        <para>VMM: fixed sporadic recompiler crashes with SMP guests</para>
+      </listitem>
+
+      <listitem>
         <para>VMM: many small fixes</para>
       </listitem>
 
@@ -107,6 +111,10 @@
       <listitem>
         <para>Serial: announce the serial devices in the ACPI tables to make
           Windows guests find the virtual hardware (bug #7411)</para>
+      </listitem>
+
+      <listitem>
+        <para>3D support: fixed GL_VERSION string for different locales (bug #8916)</para>
       </listitem>
 
       <listitem>
