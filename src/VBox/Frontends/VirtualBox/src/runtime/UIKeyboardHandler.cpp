@@ -190,9 +190,11 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
             case UIVisualStateType_Fullscreen:
             case UIVisualStateType_Seamless:
             {
-                /* Keyboard grabbing can fail temporarily because some keyboard shortcut is still grabbed by window manager. */
-                if (XGrabKeyboard(QX11Info::display(), m_windows[m_iKeyboardCaptureViewIndex]->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime))
-                    m_fIsKeyboardCaptured = false;
+                /* Keyboard grabbing can fail because of some keyboard shortcut is still grabbed by window manager.
+                 * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
+                 * and after we will just ignore that issue: */
+                int cTriesLeft = 50;
+                while (cTriesLeft && XGrabKeyboard(QX11Info::display(), m_windows[m_iKeyboardCaptureViewIndex]->machineWindow()->winId(), False, GrabModeAsync, GrabModeAsync, CurrentTime)) { --cTriesLeft; }
                 break;
             }
             /* Should we try to grab keyboard in default case? I think - NO. */
@@ -209,8 +211,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 #endif
 
         /* Notify all the listeners: */
-        if (m_fIsKeyboardCaptured)
-            emit keyboardStateChanged(keyboardState());
+        emit keyboardStateChanged(keyboardState());
     }
 }
 
@@ -481,15 +482,27 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
          * See public ticket #3894: Apparently this makes problems with newer versions of Qt
          * and this hack is probably not necessary anymore. So disable it for Qt >= 4.5.0. */
         case XFocusOut:
+        case XFocusIn:
         {
             if (isSessionRunning())
             {
                 if (VBoxGlobal::qtRTVersion() < ((4 << 16) | (5 << 8) | 0))
                 {
-                    /* Release keyboard: */
-                    releaseKeyboard();
-                    /* And all pressed keys including host-one: */
-                    releaseAllPressedKeys(true);
+                    if (pEvent->type == XFocusIn)
+                    {
+                        /* Capture keyboard by chosen view number: */
+                        captureKeyboard(uScreenId);
+                        /* Reset the single-time disable capture flag: */
+                        if (isAutoCaptureDisabled())
+                            setAutoCaptureDisabled(false);
+                    }
+                    else
+                    {
+                        /* Release keyboard: */
+                        releaseKeyboard();
+                        /* And all pressed keys including host-one: */
+                        releaseAllPressedKeys(true);
+                    }
                 }
             }
             fResult = false;
@@ -586,6 +599,30 @@ void UIKeyboardHandler::sltMachineStateChanged()
             releaseKeyboard();
             /* And all pressed keys except the host-one : */
             releaseAllPressedKeys(false /* release host-key? */);
+            break;
+        }
+        case KMachineState_Running:
+        {
+            /* Capture the keyboard by the first focused view: */
+            QList<ulong> theListOfViewIds = m_views.keys();
+            for (int i = 0; i < theListOfViewIds.size(); ++i)
+            {
+                if (viewHasFocus(theListOfViewIds[i]))
+                {
+                    /* Capture keyboard: */
+#ifdef Q_WS_WIN
+                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
+                        GetAncestor(m_views[theListOfViewIds[i]]->winId(), GA_ROOT) == GetForegroundWindow())
+#else /* Q_WS_WIN */
+                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
+#endif /* !Q_WS_WIN */
+                        captureKeyboard(theListOfViewIds[i]);
+                    /* Reset the single-time disable capture flag: */
+                    if (isAutoCaptureDisabled())
+                        setAutoCaptureDisabled(false);
+                    break;
+                }
+            }
             break;
         }
         default:
@@ -788,6 +825,22 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
         /* Handle view events: */
         switch (pEvent->type())
         {
+            case QEvent::FocusIn:
+                if (isSessionRunning())
+                {
+                    /* Capture keyboard: */
+#ifdef Q_WS_WIN
+                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally() &&
+                        GetAncestor(pWatchedView->winId(), GA_ROOT) == GetForegroundWindow())
+#else /* Q_WS_WIN */
+                    if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
+#endif /* !Q_WS_WIN */
+                        captureKeyboard(uScreenId);
+                    /* Reset the single-time disable capture flag: */
+                    if (isAutoCaptureDisabled())
+                        setAutoCaptureDisabled(false);
+                }
+                break;
             case QEvent::FocusOut:
                 /* Release keyboard: */
                 if (isSessionRunning())
@@ -1087,7 +1140,7 @@ bool UIKeyboardHandler::keyEventCADHandled(uint8_t uScan)
 
 /**
  * Handle a non-special (C-A-D, pause, print) key press or release
- * @returns true if handling should stop here (spurious event), false otherwise
+ * @returns true if handling should stop here, false otherwise
  */
 bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags, LONG *pCodes, uint *puCodesCount)
 {
@@ -1136,24 +1189,6 @@ bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags
     else if (!allHostComboKeys.contains(iKey))
         return true;
     return false;
-}
-
-/** Capture the keyboard if a non-modifier key was pressed. */
-void UIKeyboardHandler::keyEventHandleCapturing(uint8_t uScan, int fFlags,
-                                                ulong uScreenId)
-{
-    if (   (fFlags & KeyPressed)
-        && uScan != 0x1d /* ctrl */ && uScan != 0x2a /* left shift */
-        && uScan != 0x36 /* right shift */ && uScan != 0x38 /* alt */
-        && uScan != 0x5b /* left win */ && uScan != 0x5c /* right win */)
-    {
-        /* Capture keyboard by chosen view number: */
-        if (!isAutoCaptureDisabled() && autoCaptureSetGlobally())
-            captureKeyboard(uScreenId);
-        /* Reset the single-time disable capture flag: */
-        if (isAutoCaptureDisabled())
-            setAutoCaptureDisabled(false);
-    }
 }
 
 /**
@@ -1357,9 +1392,6 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
             if (keyEventHandleNormal(iKey, uScan, fFlags, pCodes, &uCodesCount))
                 return true;
     }
-
-    /* This must come before host key handling */
-    keyEventHandleCapturing(uScan, fFlags, uScreenId);
 
     /* Process the host-combo funtionality: */
     if (fFlags & KeyPressed)

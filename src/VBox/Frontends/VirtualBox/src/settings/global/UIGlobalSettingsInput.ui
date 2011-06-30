@@ -81,7 +81,7 @@
    <item row="1" column="2" colspan="2">
     <widget class="QCheckBox" name="m_pEnableAutoGrabCheckbox">
      <property name="whatsThis">
-      <string>When checked, the keyboard will be captured automatically when you start typing into the virtual machine, preventing the host system from reacting to key combinations such as Alt-Tab.  When the keyboard is not captured the virtual machine may not see certain key combinations.</string>
+      <string>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
      </property>
      <property name="text">
       <string>&amp;Auto Capture Keyboard</string>
