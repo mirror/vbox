@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -74,9 +74,11 @@ int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */
     {
         VMProcessStats vmStats;
         int rc = getRawProcessStats(*it, &vmStats.cpuUser, &vmStats.cpuKernel, &vmStats.pagesUsed);
-        if (RT_FAILURE(rc))
-            return rc;
-        mProcessStats[*it] = vmStats;
+        /* On failure, do NOT stop. Just skip the entry. Having the stats for
+         * one (probably broken) process frozen/zero is a minor issue compared
+         * to not updating many process stats and the host cpu stats. */
+        if (RT_SUCCESS(rc))
+            mProcessStats[*it] = vmStats;
     }
     if (hints.isHostCpuLoadCollected() || mProcessStats.size())
     {
