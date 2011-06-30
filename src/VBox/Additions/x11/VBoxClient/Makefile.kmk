@@ -93,14 +93,6 @@ $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstSeamlessX11-auto) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
-   PROGRAMS += tstVector
-   tstVector_TEMPLATE = VBOXR3TSTEXE
-   tstVector_SOURCES = \
-           testcase/tstVector.cpp
-   tstVector_INCS = .
-   tstVector_LIBS = \
-           $(LIB_RUNTIME)
-
    #
    # Additional testcase designed to be run manually, which initiates and starts the Linux
    # guest client part of the seamless additions in the host, faking seamless events from

@@ -20,7 +20,6 @@
 
 #include <iprt/err.h>
 #include <iprt/assert.h>
-#include <iprt/vector.h>
 #include <VBox/log.h>
 
 #include "seamless-guest.h"
@@ -29,6 +28,8 @@
 #include <X11/Xmu/WinUtil.h>
 
 #include <limits.h>
+
+#include "vector.h"
 
 #ifdef TESTCASE
 #undef DefaultRootWindow
