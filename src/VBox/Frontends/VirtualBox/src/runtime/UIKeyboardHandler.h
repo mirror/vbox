@@ -125,7 +125,6 @@ protected:
 
     bool keyEventCADHandled(uint8_t uScan);
     bool keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags, LONG *pCodes, uint *puCodesCount);
-    void keyEventHandleCapturing(uint8_t uScan, int fFlags, ulong uScreenId);
     bool keyEventHostComboHandled(int iKey, wchar_t *pUniKey, bool isHostComboStateChanged, bool *pfResult);
     void keyEventHandleHostComboRelease(ulong uScreenId);
     void keyEventReleaseHostComboKeys(CKeyboard keyboard);
