@@ -1464,21 +1464,25 @@ STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled)(BOOL enabled)
 
 STDMETHODIMP Machine::COMGETTER(EmulatedUSBCardReaderEnabled)(BOOL *enabled)
 {
+    NOREF(enabled);
     return E_NOTIMPL;
 }
 
 STDMETHODIMP Machine::COMSETTER(EmulatedUSBCardReaderEnabled)(BOOL enabled)
 {
+    NOREF(enabled);
     return E_NOTIMPL;
 }
 
 STDMETHODIMP Machine::COMGETTER(EmulatedUSBWebcameraEnabled)(BOOL *enabled)
 {
+    NOREF(enabled);
     return E_NOTIMPL;
 }
 
 STDMETHODIMP Machine::COMSETTER(EmulatedUSBWebcameraEnabled)(BOOL enabled)
 {
+    NOREF(enabled);
     return E_NOTIMPL;
 }
 
