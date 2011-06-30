@@ -20,6 +20,7 @@
 
 #include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/vector.h>
 #include <VBox/log.h>
 
 #include "seamless-guest.h"
@@ -28,8 +29,6 @@
 #include <X11/Xmu/WinUtil.h>
 
 #include <limits.h>
-
-#include "vector.h"
 
 #ifdef TESTCASE
 #undef DefaultRootWindow
@@ -183,7 +182,6 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
     LogRelFlowFunc(("\n"));
     XWindowAttributes winAttrib;
     bool fAddWin = true;
-    char *pszWinName = NULL;
     Window hClient = XmuClientWindow(mDisplay, hWin);
 
     if (isVirtualRoot(hClient))
@@ -260,7 +258,7 @@ bool VBoxGuestSeamlessX11::isVirtualRoot(Window hWin)
     }
     if (windowTypeRaw)
         XFree(windowTypeRaw);
-    LogRelFlowFunc(("returning %s\n", rc ? "true" : "false"));
+    LogRelFlowFunc(("returning %RTbool\n", rc));
     return rc;
 }
 
@@ -307,16 +305,32 @@ void VBoxGuestSeamlessX11::nextEvent(void)
     switch (event.type)
     {
     case ConfigureNotify:
+        {
+            XConfigureEvent *pConf = &event.xconfigure;
+            LogRelFlowFunc(("configure event, window=%lu, x=%i, y=%i, w=%i, h=%i, send_event=%RTbool\n",
+                           (unsigned long) pConf->window, (int) pConf->x,
+                           (int) pConf->y, (int) pConf->width,
+                           (int) pConf->height, pConf->send_event));
+        }
         doConfigureEvent(event.xconfigure.window);
         break;
     case MapNotify:
+        LogRelFlowFunc(("map event, window=%lu, send_event=%RTbool\n",
+                       (unsigned long) event.xmap.window,
+                       event.xmap.send_event));
         doMapEvent(event.xmap.window);
         break;
     case VBoxShapeNotify:  /* This is defined wrong in my X11 header files! */
+        LogRelFlowFunc(("shape event, window=%lu, send_event=%RTbool\n",
+                       (unsigned long) event.xany.window,
+                       event.xany.send_event));
     /* the window member in xany is in the same place as in the shape event */
         doShapeEvent(event.xany.window);
         break;
     case UnmapNotify:
+        LogRelFlowFunc(("unmap event, window=%lu, send_event=%RTbool\n",
+                       (unsigned long) event.xunmap.window,
+                       event.xunmap.send_event));
         doUnmapEvent(event.xunmap.window);
         break;
     default:
@@ -332,7 +346,6 @@ void VBoxGuestSeamlessX11::nextEvent(void)
  */
 void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
 {
-    LogRelFlowFunc(("\n"));
     VBoxGuestWinInfo *pInfo = mGuestWindows.find(hWin);
     if (pInfo)
     {
@@ -360,7 +373,6 @@ void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
         }
         mChanged = true;
     }
-    LogRelFlowFunc(("returning\n"));
 }
 
 /**
@@ -529,6 +541,6 @@ bool VBoxGuestSeamlessX11::interruptEvent(void)
         XFlush(mDisplay);
         rc = true;
     }
-    LogRelFlowFunc(("returning %s\n", rc ? "true" : "false"));
+    LogRelFlowFunc(("returning %RTbool\n", rc));
     return rc;
 }
