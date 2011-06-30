@@ -475,10 +475,8 @@ STDMETHODIMP VRDEServer::GetVRDEProperty (IN_BSTR aKey, BSTR *aValue)
     Utf8Str strKey(key);
     settings::StringsMap::const_iterator it = mData->mProperties.find(strKey);
     if (it != mData->mProperties.end())
-    {
         value = it->second; // source is a Utf8Str
-        value.cloneTo(aValue);
-    }
+    value.cloneTo(aValue);
 
     return S_OK;
 }
