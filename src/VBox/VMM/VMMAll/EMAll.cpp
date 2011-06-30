@@ -3135,6 +3135,9 @@ VMMDECL(void) EMRemUnlock(PVM pVM)
  */
 VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
 {
+    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
+        return true;   /* early init */
+
     return PDMCritSectIsOwner(&pVM->em.s.CritSectREM);
 }
 
@@ -3144,8 +3147,11 @@ VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
  * @returns VBox status code
  * @param   pVM         The VM to operate on.
  */
-VMMDECL(int) EMTryEnterRemLock(PVM pVM)
+VMMDECL(int) EMRemTryLock(PVM pVM)
 {
+    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
+        return VINF_SUCCESS; /* early init */
+
     return PDMCritSectTryEnter(&pVM->em.s.CritSectREM);
 }
 

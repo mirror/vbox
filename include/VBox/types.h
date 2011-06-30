@@ -1053,6 +1053,13 @@ typedef enum CPUMMODE
     CPUMMODE_LONG
 } CPUMMODE;
 
+
+/** Pointer to the disassembler CPU state. */
+typedef struct DISCPUSTATE *PDISCPUSTATE;
+/** Pointer to a const disassembler CPU state. */
+typedef struct DISCPUSTATE const *PCDISCPUSTATE;
+
+
 /** @} */
 
 #endif

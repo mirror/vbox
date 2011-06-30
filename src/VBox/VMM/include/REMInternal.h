@@ -237,7 +237,6 @@ void    remR3CSAMCheckEIP(CPUState *env, RTGCPTR GCPtrCode);
 bool    remR3GetOpcode(CPUState *env, RTGCPTR GCPtrInstr, uint8_t *pu8Byte);
 bool    remR3DisasInstr(CPUState *env, int f32BitCode, char *pszPrefix);
 void    remR3FlushPage(CPUState *env, RTGCPTR GCPtr);
-void    remR3SetPage(CPUState *env, CPUTLBEntry *pRead,  CPUTLBEntry *pWrite, int prot, int is_user);
 void    remR3FlushTLB(CPUState *env, bool fGlobal);
 void    remR3ProtectCode(CPUState *env, RTGCPTR GCPtr);
 void    remR3ChangeCpuMode(CPUState *env);

@@ -46,7 +46,7 @@ VMMDECL(void) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
      * Try take the REM lock and push the address onto the array.
      */
     if (   pVM->rem.s.cInvalidatedPages < RT_ELEMENTS(pVM->rem.s.aGCPtrInvalidatedPages)
-        && EMTryEnterRemLock(pVM) == VINF_SUCCESS)
+        && EMRemTryLock(pVM) == VINF_SUCCESS)
     {
         uint32_t iPage = pVM->rem.s.cInvalidatedPages;
         if (iPage < RT_ELEMENTS(pVM->rem.s.aGCPtrInvalidatedPages))

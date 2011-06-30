@@ -678,7 +678,8 @@ static inline void check_io(int addr, int size)
 /* Keep in sync with gen_check_external_event() */
 void helper_check_external_event()
 {
-    if (    (env->interrupt_request & (  CPU_INTERRUPT_EXTERNAL_EXIT
+    if (    (env->interrupt_request & (  CPU_INTERRUPT_EXTERNAL_FLUSH_TLB
+                                       | CPU_INTERRUPT_EXTERNAL_EXIT
                                        | CPU_INTERRUPT_EXTERNAL_TIMER
                                        | CPU_INTERRUPT_EXTERNAL_DMA))
         ||  (   (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_HARD)
@@ -1475,6 +1476,12 @@ void helper_external_event(void)
         ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request,
                         ~CPU_INTERRUPT_EXTERNAL_TIMER);
         remR3TimersRun(env);
+    }
+    if (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_FLUSH_TLB)
+    {
+        ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request,
+                        ~CPU_INTERRUPT_EXTERNAL_HARD);
+        cpu_interrupt(env, CPU_INTERRUPT_HARD);
     }
 }
 
@@ -5835,13 +5842,16 @@ int emulate_single_instr(CPUX86State *env1)
         /*
          * Exit once we detect an external interrupt and interrupts are enabled
          */
-        if (   (env->interrupt_request & (CPU_INTERRUPT_EXTERNAL_EXIT|CPU_INTERRUPT_EXTERNAL_TIMER))
+        if (   (env->interrupt_request & (CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER))
             || (   (env->eflags & IF_MASK)
                 && !(env->hflags & HF_INHIBIT_IRQ_MASK)
                 && (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_HARD) )
            )
         {
             break;
+        }
+        if (env->interrupt_request & CPU_INTERRUPT_EXTERNAL_FLUSH_TLB) {
+            tlb_flush(env, true);
         }
     }
     env->current_tb = current;

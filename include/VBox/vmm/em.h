@@ -28,7 +28,6 @@
 
 #include <VBox/types.h>
 #include <VBox/vmm/trpm.h>
-#include <VBox/dis.h>
 
 
 RT_C_DECLS_BEGIN
@@ -188,7 +187,7 @@ VMMDECL(uint32_t)   EMEmulateLockXAdd(void *pvParam1, void *pvParam2, size_t cbO
 VMMDECL(void)       EMRemUnlock(PVM pVM);
 VMMDECL(void)       EMRemLock(PVM pVM);
 VMMDECL(bool)       EMRemIsLockOwner(PVM pVM);
-VMMDECL(int)        EMTryEnterRemLock(PVM pVM);
+VMMDECL(int)        EMRemTryLock(PVM pVM);
 /** @} */
 
 #ifdef IN_RING3

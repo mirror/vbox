@@ -33,6 +33,7 @@
 #ifdef VBOX
 # include <VBox/vmm/tm.h>
 # include <VBox/vmm/pgm.h> /* PGM_DYNAMIC_RAM_ALLOC */
+# include <VBox/vmm/em.h>  /* EMRemIsLockOwner */
 # ifndef LOG_GROUP
 #  define LOG_GROUP LOG_GROUP_REM
 # endif

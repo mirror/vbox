@@ -2107,6 +2107,11 @@ void tlb_flush(CPUState *env, int flush_global)
 {
     int i;
 
+#ifdef VBOX
+    Assert(EMRemIsLockOwner(env->pVM));
+    ASMAtomicAndS32((int32_t volatile *)&env->interrupt_request, ~CPU_INTERRUPT_EXTERNAL_FLUSH_TLB);
+#endif
+
 #if defined(DEBUG_TLB)
     printf("tlb_flush:\n");
 #endif
@@ -2150,6 +2155,7 @@ void tlb_flush_page(CPUState *env, target_ulong addr)
     int i;
     int mmu_idx;
 
+    Assert(EMRemIsLockOwner(env->pVM));
 #if defined(DEBUG_TLB)
     printf("tlb_flush_page: " TARGET_FMT_lx "\n", addr);
 #endif
@@ -2922,10 +2928,21 @@ void cpu_register_physical_memory_offset(target_phys_addr_t start_addr,
 
     /* since each CPU stores ram addresses in its TLB cache, we must
        reset the modified entries */
+#ifndef VBOX
     /* XXX: slow ! */
     for(env = first_cpu; env != NULL; env = env->next_cpu) {
         tlb_flush(env, 1);
     }
+#else
+    /* We have one thread per CPU, so, one of the other EMTs might be executing
+       code right now and flushing the TLB may crash it. */
+    env = first_cpu;
+    if (EMRemIsLockOwner(env->pVM))
+        tlb_flush(env, 1);
+    else
+        ASMAtomicOrS32((int32_t volatile *)&env->interrupt_request,
+                       CPU_INTERRUPT_EXTERNAL_FLUSH_TLB);
+#endif
 }
 
 /* XXX: temporary until new memory mapping API */

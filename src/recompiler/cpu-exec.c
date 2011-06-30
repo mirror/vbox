@@ -416,6 +416,11 @@ int cpu_exec(CPUState *env1)
 #endif
 #if defined(TARGET_I386)
 # ifdef VBOX
+                    /* Memory registration may post a tlb flush request, process it ASAP. */
+                    if (interrupt_request & (CPU_INTERRUPT_EXTERNAL_FLUSH_TLB)) {
+                        tlb_flush(env, true); /* (clears the flush flag) */
+                    }
+
                     /* Single instruction exec request, we execute it and return (one way or the other).
                        The caller will always reschedule after doing this operation! */
                     if (interrupt_request & CPU_INTERRUPT_SINGLE_INSTR)
