@@ -310,7 +310,9 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     CPUMGetGuestCpuId(pVCpu,          1, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext_features, &pVM->rem.s.Env.cpuid_features);
     CPUMGetGuestCpuId(pVCpu, 0x80000001, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext3_features, &pVM->rem.s.Env.cpuid_ext2_features);
 
+    EMRemLock(pVM);
     cpu_reset(&pVM->rem.s.Env);
+    EMRemUnlock(pVM);
 
     /* allocate code buffer for single instruction emulation. */
     pVM->rem.s.Env.cbCodeBuffer = 4096;
@@ -606,6 +608,8 @@ REMR3DECL(int) REMR3Term(PVM pVM)
  */
 REMR3DECL(void) REMR3Reset(PVM pVM)
 {
+    EMRemLock(pVM); /* Only pro forma, we're in a rendezvous. */
+
     /*
      * Reset the REM cpu.
      */
@@ -621,6 +625,8 @@ REMR3DECL(void) REMR3Reset(PVM pVM)
 
     /* Flush the TBs the next time we execute code here. */
     pVM->rem.s.fFlushTBs = true;
+
+    EMRemUnlock(pVM);
 }
 
 
@@ -763,11 +769,6 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     CPUMGetGuestCpuId(pVCpu, 0x80000001, &u32Dummy, &u32Dummy, &u32Dummy, &pVM->rem.s.Env.cpuid_ext2_features);
 
     /*
-     * Sync the Load Flush the TLB
-     */
-    tlb_flush(&pRem->Env, 1);
-
-    /*
      * Stop ignoring ignorable notifications.
      */
     ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
@@ -813,7 +814,7 @@ REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
      * pending interrupts and suchlike.
      */
     interrupt_request = pVM->rem.s.Env.interrupt_request;
-    Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER  | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
+    Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER  | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_FLUSH_TLB | CPU_INTERRUPT_EXTERNAL_TIMER)));
     pVM->rem.s.Env.interrupt_request = 0;
     cpu_single_step(&pVM->rem.s.Env, 1);
 
@@ -953,7 +954,7 @@ REMR3DECL(int) REMR3EmulateInstruction(PVM pVM, PVMCPU pVCpu)
     if (RT_SUCCESS(rc))
     {
         int interrupt_request = pVM->rem.s.Env.interrupt_request;
-        Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_TIMER)));
+        Assert(!(interrupt_request & ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER | CPU_INTERRUPT_EXTERNAL_HARD | CPU_INTERRUPT_EXTERNAL_EXIT | CPU_INTERRUPT_EXTERNAL_FLUSH_TLB | CPU_INTERRUPT_EXTERNAL_TIMER)));
 #ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
         cpu_single_step(&pVM->rem.s.Env, 0);
 #endif
@@ -1676,6 +1677,8 @@ void remR3FlushPage(CPUX86State *env, RTGCPTR GCPtr)
     PCPUMCTX pCtx;
     int rc;
 
+    Assert(EMRemIsLockOwner(env->pVM));
+
     /*
      * When we're replaying invlpg instructions or restoring a saved
      * state we disable this path.
@@ -1785,8 +1788,9 @@ void remR3UnprotectCode(CPUX86State *env, RTGCPTR GCPtr)
  */
 void remR3FlushTLB(CPUX86State *env, bool fGlobal)
 {
-    PVM pVM = env->pVM;
+    PVM      pVM = env->pVM;
     PCPUMCTX pCtx;
+    Assert(EMRemIsLockOwner(pVM));
 
     /*
      * When we're replaying invlpg instructions or restoring a saved

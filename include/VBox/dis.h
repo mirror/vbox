@@ -31,7 +31,7 @@
 #include <VBox/disopcode.h>
 
 #if defined(__L4ENV__)
-#include <setjmp.h>
+# include <setjmp.h>
 #endif
 
 RT_C_DECLS_BEGIN
@@ -367,7 +367,7 @@ typedef enum
 /**
  * Operand Parameter.
  */
-typedef struct _OP_PARAMETER
+typedef struct OP_PARAMETER
 {
     /** @todo switch param and parval and move disp64 and flags up here with the other 64-bit vars to get more natural alignment and save space. */
     int             param;
@@ -415,26 +415,20 @@ typedef OP_PARAMETER *POP_PARAMETER;
 typedef const OP_PARAMETER *PCOP_PARAMETER;
 
 
-struct _OPCODE;
 /** Pointer to opcode. */
-typedef struct _OPCODE *POPCODE;
+typedef struct OPCODE *POPCODE;
 /** Pointer to const opcode. */
-typedef const struct _OPCODE *PCOPCODE;
+typedef const struct OPCODE *PCOPCODE;
 
 typedef DECLCALLBACK(int) FN_DIS_READBYTES(RTUINTPTR pSrc, uint8_t *pDest, unsigned size, void *pvUserdata);
 typedef FN_DIS_READBYTES *PFN_DIS_READBYTES;
-
-/* forward decl */
-struct _DISCPUSTATE;
-/** Pointer to the disassembler CPU state. */
-typedef struct _DISCPUSTATE *PDISCPUSTATE;
 
 /** Parser callback.
  * @remark no DECLCALLBACK() here because it's considered to be internal (really, I'm too lazy to update all the functions). */
 typedef unsigned FNDISPARSE(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 typedef FNDISPARSE *PFNDISPARSE;
 
-typedef struct _DISCPUSTATE
+typedef struct DISCPUSTATE
 {
     /* Global setting */
     DISCPUMODE      mode;
@@ -512,16 +506,13 @@ typedef struct _DISCPUSTATE
 #endif /* __L4ENV__ */
 } DISCPUSTATE;
 
-/** Pointer to a const disassembler CPU state. */
-typedef DISCPUSTATE const *PCDISCPUSTATE;
-
 /** The storage padding sufficient to hold the largest DISCPUSTATE in all
  * contexts (R3, R0 and RC). Used various places in the VMM internals.   */
 #define DISCPUSTATE_PADDING_SIZE    (HC_ARCH_BITS == 64 ? 0x1a0 : 0x180)
 
 /** Opcode. */
 #pragma pack(4)
-typedef struct _OPCODE
+typedef struct OPCODE
 {
 #ifndef DIS_CORE_ONLY
     const char  *pszOpcode;

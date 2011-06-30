@@ -944,11 +944,13 @@ extern CPUState *cpu_single_env;
 
 #ifdef VBOX
 /** Executes a single instruction. cpu_exec() will normally return EXCP_SINGLE_INSTR. */
-# define CPU_INTERRUPT_SINGLE_INSTR             0x02000000
+# define CPU_INTERRUPT_SINGLE_INSTR             0x01000000
 /** Executing a CPU_INTERRUPT_SINGLE_INSTR request, quit the cpu_loop. (for exceptions and suchlike) */
-# define CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT   0x04000000
+# define CPU_INTERRUPT_SINGLE_INSTR_IN_FLIGHT   0x02000000
 /** VM execution was interrupted by VMR3Reset, VMR3Suspend or VMR3PowerOff. */
-# define CPU_INTERRUPT_RC                       0x08000000
+# define CPU_INTERRUPT_RC                       0x04000000
+/** Exit current TB to process an external request. */
+# define CPU_INTERRUPT_EXTERNAL_FLUSH_TLB       0x08000000
 /** Exit current TB to process an external request. */
 # define CPU_INTERRUPT_EXTERNAL_EXIT            0x10000000
 /** Exit current TB to process an external interrupt request. */
