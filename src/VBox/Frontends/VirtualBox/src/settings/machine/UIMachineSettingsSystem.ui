@@ -564,7 +564,7 @@
          <item>
           <widget class="QIAdvancedSlider" name="mSlCPUExecCap">
            <property name="whatsThis">
-            <string>Controls the CPU execution cap of each virtual CPU. It defines how much cycles each virtual CPU can use as a percent of host's CPU. 100% = unlimited.</string>
+            <string>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%.</string>
            </property>
            <property name="maximum">
             <number>4096</number>
@@ -637,7 +637,7 @@
           </sizepolicy>
          </property>
          <property name="whatsThis">
-          <string>Controls the CPU execution cap of each virtual CPU. It defines how much cycles each virtual CPU can use as a percent of host's CPU. 100% = unlimited.</string>
+          <string>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%.</string>
          </property>
         </widget>
        </item>
