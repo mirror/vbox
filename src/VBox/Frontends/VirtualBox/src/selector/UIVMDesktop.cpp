@@ -595,6 +595,16 @@ void UIDetailsPagePrivate::sltUpdateSystem()
                                              tr("<nobr>%1</nobr>", "details report"))
                     .arg(cCPU);
 
+#ifdef VBOX_WITH_FULL_DETAILS_REPORT
+            /* CPU Execution Cap
+             * is NOT such important attribute to be reflected in details page... */
+            int iCPUExecCap = m_machine.GetCPUExecutionCap();
+            if (iCPUExecCap < 100)
+                item += sSectionItemTpl2.arg(tr("CPU Execution Cap", "details report"),
+                                             tr("<nobr>%1%</nobr>", "details report"))
+                    .arg(iCPUExecCap);
+#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
+
             /* Boot order */
             QStringList bootOrder;
             for (ulong i = 1; i <= m_vbox.GetSystemProperties().GetMaxBootPosition(); ++i)

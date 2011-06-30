@@ -538,6 +538,110 @@
         </widget>
        </item>
        <item row="2" column="0">
+        <widget class="QLabel" name="mLbCPUExecCap">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>&amp;CPU Execution Cap:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy">
+          <cstring>mLeCPUExecCap</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" rowspan="2">
+        <layout class="QVBoxLayout" name="mLtCPUExecCapSlider">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QIAdvancedSlider" name="mSlCPUExecCap">
+           <property name="whatsThis">
+            <string>Controls the CPU execution cap of each virtual CPU. It defines how much cycles each virtual CPU can use as a percent of host's CPU. 100% = unlimited.</string>
+           </property>
+           <property name="maximum">
+            <number>4096</number>
+           </property>
+           <property name="singleStep">
+            <number>200</number>
+           </property>
+           <property name="value">
+            <number>512</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="tickPosition">
+            <enum>QSlider::TicksBelow</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="mLtCPUExecCapLegend">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="mLbCPUExecCapMin">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="mSpHor5">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="mLbCPUExecCapMax">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item row="2" column="2">
+        <widget class="QILineEdit" name="mLeCPUExecCap">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="whatsThis">
+          <string>Controls the CPU execution cap of each virtual CPU. It defines how much cycles each virtual CPU can use as a percent of host's CPU. 100% = unlimited.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
         <widget class="QLabel" name="mLbProcessorExtended">
          <property name="text">
           <string>Extended Features:</string>
@@ -547,7 +651,7 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1" colspan="2">
+       <item row="4" column="1" colspan="2">
         <widget class="QCheckBox" name="mCbPae">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -563,7 +667,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0" colspan="3">
+       <item row="5" column="0" colspan="3">
         <spacer name="mSpVer3">
          <property name="orientation">
           <enum>Qt::Vertical</enum>

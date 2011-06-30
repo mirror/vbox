@@ -78,7 +78,8 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
         << KVBoxEventType_OnSharedFolderChanged
         << KVBoxEventType_OnRuntimeError
         << KVBoxEventType_OnCanShowWindow
-        << KVBoxEventType_OnShowWindow;
+        << KVBoxEventType_OnShowWindow
+        << KVBoxEventType_OnCPUExecutionCapChanged;
 
     const CConsole &console = m_pSession->session().GetConsole();
     console.GetEventSource().RegisterListener(m_mainEventListener, events, TRUE);
@@ -143,6 +144,10 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
     connect(pListener->getWrapped(), SIGNAL(sigShowWindow(LONG64&)),
             this, SLOT(sltShowWindow(LONG64&)),
             Qt::DirectConnection);
+
+    connect(pListener->getWrapped(), SIGNAL(sigCPUExecutionCapChange()),
+            this, SIGNAL(sigCPUExecutionCapChange()),
+            Qt::QueuedConnection);
 }
 
 UIConsoleEventHandler::~UIConsoleEventHandler()

@@ -49,6 +49,7 @@ signals:
 #ifdef RT_OS_DARWIN
     void sigShowWindow();
 #endif /* RT_OS_DARWIN */
+    void sigCPUExecutionCapChange();
 
 private slots:
     void sltCanShowWindow(bool &fVeto, QString &strReason);
