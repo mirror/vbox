@@ -287,7 +287,7 @@ const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
       ChipsetType_ICH9, AudioControllerType_HDA  },
     { "Other",   "Other",             SchemaDefs_OSTypeId_DOS,             "DOS",
       VBOXOSTYPE_DOS,             VBOXOSHINT_NONE,
-        32,   4,  512 * _1M, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
+        32,   4,  500 * _1M, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_SB16  },
     { "Other",   "Other",             SchemaDefs_OSTypeId_Netware,         "Netware",
       VBOXOSTYPE_Netware,         VBOXOSHINT_HWVIRTEX,
