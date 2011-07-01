@@ -909,6 +909,7 @@ typedef struct VBOXVIDEOCM_ALLOC_REF
         PRKSEMAPHORE pSynchSemaphore;
     };
     VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
+    volatile uint32_t cRefs;
     MDL Mdl;
 } VBOXVIDEOCM_ALLOC_REF, *PVBOXVIDEOCM_ALLOC_REF;
 
@@ -1005,12 +1006,14 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
                     (PVOID*)&pSynchEvent,
                     NULL);
             Assert(Status == STATUS_SUCCESS);
+            Assert(pSynchEvent);
             break;
         case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
             Status = ObReferenceObjectByHandle((HANDLE)pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExSemaphoreObjectType, UserMode,
                     (PVOID*)&pSynchSemaphore,
                     NULL);
             Assert(Status == STATUS_SUCCESS);
+            Assert(pSynchSemaphore);
             break;
         case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
             pSynchEvent = NULL;
@@ -1031,6 +1034,7 @@ NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDE
         PVBOXVIDEOCM_ALLOC_REF pAllocRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmMemAllocZero(sizeof (*pAllocRef) + sizeof (PFN_NUMBER) * ADDRESS_AND_SIZE_TO_SPAN_PAGES(BaseVa, cbLength));
         if (pAllocRef)
         {
+            pAllocRef->cRefs = 1;
             MmInitializeMdl(&pAllocRef->Mdl, BaseVa, cbLength);
             __try
             {
@@ -1104,6 +1108,9 @@ NTSTATUS vboxVideoAMgrCtxAllocUnmap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDIS
     ExReleaseFastMutex(&pContext->Mutex);
     if (pAllocRef)
     {
+        /* wait for the dereference, i.e. for all commands involving this allocation to complete */
+        vboxWddmCounterU32Wait(&pAllocRef->cRefs, 1);
+
         MmUnlockPages(&pAllocRef->Mdl);
         *ppAlloc = pAllocRef->pAlloc;
         if (pAllocRef->pSynchEvent)
@@ -1125,13 +1132,16 @@ static PVBOXVIDEOCM_ALLOC_REF vboxVideoAMgrCtxAllocRefAcquire(PVBOXVIDEOCM_ALLOC
 {
     ExAcquireFastMutex(&pContext->Mutex);
     PVBOXVIDEOCM_ALLOC_REF pAllocRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmHTableGet(&pContext->AllocTable, hSesionHandle);
+    ASMAtomicIncU32(&pAllocRef->cRefs);
     ExReleaseFastMutex(&pContext->Mutex);
     return pAllocRef;
 }
 
-static VOID vboxVideoCmCtxAllocRefRelease(PVBOXVIDEOCM_ALLOC_REF pRef)
+static VOID vboxVideoAMgrCtxAllocRefRelease(PVBOXVIDEOCM_ALLOC_REF pRef)
 {
-
+    uint32_t cRefs = ASMAtomicDecU32(&pRef->cRefs);
+    Assert(cRefs < UINT32_MAX/2);
+    Assert(cRefs >= 1); /* we do not do cleanup-on-zero here, instead we wait for the cRefs to reach 1 in vboxVideoAMgrCtxAllocUnmap before unmapping */
 }
 
 
@@ -1210,7 +1220,7 @@ static DECLCALLBACK(VOID) vboxVideoAMgrAllocSubmitCompletion(PVBOXMP_DEVEXT pDev
             }
         }
 
-        vboxVideoCmCtxAllocRefRelease(pRef);
+        vboxVideoAMgrCtxAllocRefRelease(pRef);
     }
 
     vboxVdmaCBufDrFree(&pDevExt->u.primary.Vdma, pDr);
@@ -1242,6 +1252,9 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
             PVBOXVIDEOCM_ALLOC_REF pRef = vboxVideoAMgrCtxAllocRefAcquire(pContext, pBufInfo->hAlloc);
             if (pRef)
             {
+#ifdef DEBUG_misha
+                Assert(pRef->cRefs == 2);
+#endif
                 pBufCmd->offBuffer = pRef->pAlloc->offData + pBufInfo->Info.offData;
                 pBufCmd->cbBuffer = pBufInfo->Info.cbData;
                 pBufCmd->u32GuesData = pBufInfo->Info.fSubFlags.bDoNotSignalCompletion;
@@ -1249,7 +1262,14 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
             }
             else
             {
-                Assert(0);
+                WARN(("vboxVideoAMgrCtxAllocRefAcquire failed for hAlloc(0x%x)\n", pBufInfo->hAlloc));
+                /* release all previously acquired aloc references */
+                for (UINT j = 0; j < i; ++j)
+                {
+                    VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmdJ = &pBody->aBuffers[j];
+                    PVBOXVIDEOCM_ALLOC_REF pRefJ = (PVBOXVIDEOCM_ALLOC_REF)pBufCmdJ;
+                    vboxVideoAMgrCtxAllocRefRelease(pRefJ);
+                }
                 Status = STATUS_INVALID_PARAMETER;
                 break;
             }
@@ -1262,10 +1282,20 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
             /* mark command as submitted & invisible for the dx runtime since dx did not originate it */
             vboxVdmaDdiCmdSubmittedNotDx(pDdiCmd);
             int rc = vboxVdmaCBufDrSubmit(pDevExt, &pDevExt->u.primary.Vdma, pDr);
-            Assert(rc == VINF_SUCCESS);
             if (RT_SUCCESS(rc))
             {
                 return STATUS_SUCCESS;
+            }
+
+            WARN(("vboxVdmaCBufDrSubmit failed with rc (%d)\n", rc));
+
+            /* failure branch */
+            /* release all previously acquired aloc references */
+            for (UINT i = 0; i < cBuffers; ++i)
+            {
+                VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[i];
+                PVBOXVIDEOCM_ALLOC_REF pRef = (PVBOXVIDEOCM_ALLOC_REF)pBufCmd;
+                vboxVideoAMgrCtxAllocRefRelease(pRef);
             }
         }
 
@@ -1379,11 +1409,22 @@ NTSTATUS vboxVideoAMgrCtxDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pCtx)
     return Status;
 }
 
+
+VOID vboxWddmSleep(uint32_t u32Val)
+{
+    LARGE_INTEGER Interval;
+    Interval.QuadPart = -(int64_t) 2 /* ms */ * 10000;
+
+    KeDelayExecutionThread(KernelMode, FALSE, &Interval);
+}
+
 VOID vboxWddmCounterU32Wait(uint32_t volatile * pu32, uint32_t u32Val)
 {
     LARGE_INTEGER Interval;
     Interval.QuadPart = -(int64_t) 2 /* ms */ * 10000;
     uint32_t u32CurVal;
+
+    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
 
     while ((u32CurVal = ASMAtomicReadU32(pu32)) != u32Val)
     {

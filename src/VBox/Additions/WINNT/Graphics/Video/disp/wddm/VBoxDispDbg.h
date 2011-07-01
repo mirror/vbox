@@ -103,10 +103,11 @@ void vboxVDbgVEHandlerUnregister();
     } while (0)
 
 #ifdef VBOXWDDMDISP_DEBUG
-extern bool g_bVBoxVDbgFDumpSetTexture;
-extern bool g_bVBoxVDbgFDumpDrawPrim;
-extern bool g_bVBoxVDbgFDumpTexBlt;
-extern bool g_bVBoxVDbgFDumpBlt;
+extern DWORD g_VBoxVDbgFDumpSetTexture;
+extern DWORD g_VBoxVDbgFDumpDrawPrim;
+extern DWORD g_VBoxVDbgFDumpTexBlt;
+extern DWORD g_VBoxVDbgFDumpBlt;
+extern DWORD g_VBoxVDbgFDumpRtSynch;
 
 void vboxDispLogDrvF(char * szString, ...);
 void vboxDispLogDrv(char * szString);
@@ -130,28 +131,28 @@ void vboxVDbgDoPrintAlloc(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc
 VOID vboxVDbgDoDumpRtData(char * pPrefix, IDirect3DDevice9 *pDevice, char * pSuffix);
 
 #define VBOXVDBG_DUMP_DRAWPRIM_ENTER(_pDevice) do { \
-        if (g_bVBoxVDbgFDumpDrawPrim) \
+        if (g_VBoxVDbgFDumpDrawPrim) \
         { \
             vboxVDbgDoDumpRt("==>"__FUNCTION__": RenderTarget Dump\n", (_pDevice), "\n"); \
         }\
     } while (0)
 
 #define VBOXVDBG_DUMP_DRAWPRIM_LEAVE(_pDevice) do { \
-        if (g_bVBoxVDbgFDumpDrawPrim) \
+        if (g_VBoxVDbgFDumpDrawPrim) \
         { \
             vboxVDbgDoDumpRt("<=="__FUNCTION__": RenderTarget Dump\n", (_pDevice), "\n"); \
         }\
     } while (0)
 
 #define VBOXVDBG_DUMP_SETTEXTURE(_pRc) do { \
-        if (g_bVBoxVDbgFDumpSetTexture) \
+        if (g_VBoxVDbgFDumpSetTexture) \
         { \
             vboxVDbgDoDumpRcRectByRc("== "__FUNCTION__": Texture Dump\n", _pRc, NULL, "\n"); \
         } \
     } while (0)
 
 #define VBOXVDBG_DUMP_TEXBLT_ENTER(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint) do { \
-        if (g_bVBoxVDbgFDumpTexBlt) \
+        if (g_VBoxVDbgFDumpTexBlt) \
         { \
             RECT _DstRect; \
             vboxWddmRectMoved(&_DstRect, (_pSrcRect), (_pDstPoint)->x, (_pDstPoint)->y); \
@@ -161,7 +162,7 @@ VOID vboxVDbgDoDumpRtData(char * pPrefix, IDirect3DDevice9 *pDevice, char * pSuf
     } while (0)
 
 #define VBOXVDBG_DUMP_TEXBLT_LEAVE(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint) do { \
-        if (g_bVBoxVDbgFDumpTexBlt) \
+        if (g_VBoxVDbgFDumpTexBlt) \
         { \
             RECT _DstRect; \
             vboxWddmRectMoved(&_DstRect, (_pSrcRect), (_pDstPoint)->x, (_pDstPoint)->y); \
@@ -171,7 +172,7 @@ VOID vboxVDbgDoDumpRtData(char * pPrefix, IDirect3DDevice9 *pDevice, char * pSuf
     } while (0)
 
 #define VBOXVDBG_DUMP_BLT_ENTER(_pSrcSurf, _pSrcRect, _pDstSurf, _pDstRect) do { \
-        if (g_bVBoxVDbgFDumpBlt) \
+        if (g_VBoxVDbgFDumpBlt) \
         { \
             vboxVDbgDoDumpSurfRect("==>"__FUNCTION__" Src:\n", (_pSrcSurf), (_pSrcRect), "\n", true); \
             vboxVDbgDoDumpSurfRect("==>"__FUNCTION__" Dst:\n", (_pDstSurf), (_pDstRect), "\n", true); \
@@ -179,10 +180,17 @@ VOID vboxVDbgDoDumpRtData(char * pPrefix, IDirect3DDevice9 *pDevice, char * pSuf
     } while (0)
 
 #define VBOXVDBG_DUMP_BLT_LEAVE(_pSrcSurf, _pSrcRect, _pDstSurf, _pDstRect) do { \
-        if (g_bVBoxVDbgFDumpBlt) \
+        if (g_VBoxVDbgFDumpBlt) \
         { \
             vboxVDbgDoDumpSurfRect("<=="__FUNCTION__" Src:\n", (_pSrcSurf), (_pSrcRect), "\n", true); \
             vboxVDbgDoDumpSurfRect("<=="__FUNCTION__" Dst:\n", (_pDstSurf), (_pDstRect), "\n", true); \
+        } \
+    } while (0)
+
+#define VBOXVDBG_DUMP_SYNC_RT(_pBbSurf) do { \
+        if (g_VBoxVDbgFDumpRtSynch) \
+        { \
+            vboxVDbgDoDumpSurfRect("== "__FUNCTION__" Bb:\n", (_pBbSurf), NULL, "\n", true); \
         } \
     } while (0)
 #else
@@ -193,6 +201,7 @@ VOID vboxVDbgDoDumpRtData(char * pPrefix, IDirect3DDevice9 *pDevice, char * pSuf
 #define VBOXVDBG_DUMP_TEXBLT_LEAVE(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint) do { } while (0)
 #define VBOXVDBG_DUMP_BLT_ENTER(_pSrcSurf, _pSrcRect, _pDstSurf, _pDstRect) do { } while (0)
 #define VBOXVDBG_DUMP_BLT_LEAVE(_pSrcSurf, _pSrcRect, _pDstSurf, _pDstRect) do { } while (0)
+#define VBOXVDBG_DUMP_SYNC_RT(_pBbSurf) do { } while (0)
 #endif
 
 

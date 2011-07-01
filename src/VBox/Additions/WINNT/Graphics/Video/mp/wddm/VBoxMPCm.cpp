@@ -222,7 +222,7 @@ void vboxVideoCmSessionCtxAdd(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX pC
 
 }
 
-static void vboxVideoCmSessionDestroy(PVBOXVIDEOCM_SESSION pSession)
+static void vboxVideoCmSessionDestroyLocked(PVBOXVIDEOCM_SESSION pSession)
 {
     /* signal event so that user-space client can figure out the context is destroyed
      * in case the context destroyal is caused by Graphics device reset or miniport driver update */
@@ -237,7 +237,7 @@ static void vboxVideoCmSessionDestroy(PVBOXVIDEOCM_SESSION pSession)
 /**
  * @return true iff the given session is destroyed
  */
-bool vboxVideoCmSessionCtxRemove(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX pContext)
+bool vboxVideoCmSessionCtxRemoveLocked(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX pContext)
 {
     bool bDestroy;
     LIST_ENTRY RemainedList;
@@ -286,14 +286,14 @@ bool vboxVideoCmSessionCtxRemove(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX
 
     if (bDestroy)
     {
-        vboxVideoCmSessionDestroy(pSession);
+        vboxVideoCmSessionDestroyLocked(pSession);
     }
 
     return bDestroy;
 }
 
 /* the session gets destroyed once the last context is removed from it */
-NTSTATUS vboxVideoCmSessionCreate(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_SESSION *ppSession, PKEVENT pUmEvent, PVBOXVIDEOCM_CTX pContext)
+NTSTATUS vboxVideoCmSessionCreateLocked(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_SESSION *ppSession, PKEVENT pUmEvent, PVBOXVIDEOCM_CTX pContext)
 {
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
     PVBOXVIDEOCM_SESSION pSession = (PVBOXVIDEOCM_SESSION)vboxWddmMemAllocZero(sizeof (VBOXVIDEOCM_SESSION));
@@ -354,7 +354,7 @@ NTSTATUS vboxVideoCmCtxAdd(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_CTX pContext, HAN
 
             if (!bFound)
             {
-                Status = vboxVideoCmSessionCreate(pMgr, &pSession, pUmEvent, pContext);
+                Status = vboxVideoCmSessionCreateLocked(pMgr, &pSession, pUmEvent, pContext);
                 Assert(Status == STATUS_SUCCESS);
             }
             else
@@ -389,7 +389,7 @@ NTSTATUS vboxVideoCmCtxRemove(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_CTX pContext)
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
-        vboxVideoCmSessionCtxRemove(pSession, pContext);
+        vboxVideoCmSessionCtxRemoveLocked(pSession, pContext);
         LONG tstL = KeSetEvent(&pMgr->SynchEvent, 0, FALSE);
         Assert(!tstL);
     }
@@ -473,7 +473,8 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
             }
             else
             {
-                pSession->bEventNeeded = false;
+                Assert(cbRemainingFirstCmd);
+                Assert(cbRemainingCmds);
                 break;
             }
         }
@@ -507,5 +508,95 @@ VOID vboxVideoCmLock(PVBOXVIDEOCM_CTX pContext)
 VOID vboxVideoCmUnlock(PVBOXVIDEOCM_CTX pContext)
 {
     ExReleaseFastMutex(&pContext->pSession->Mutex);
+}
+
+static BOOLEAN vboxVideoCmHasUncompletedCmdsLocked(PVBOXVIDEOCM_MGR pMgr)
+{
+    PVBOXVIDEOCM_SESSION pSession = NULL;
+    for (PLIST_ENTRY pEntry = pMgr->SessionList.Flink; pEntry != &pMgr->SessionList; pEntry = pEntry->Flink)
+    {
+        pSession = VBOXCMENTRY_2_SESSION(pEntry);
+        ExAcquireFastMutex(&pSession->Mutex);
+        if (pSession->bEventNeeded)
+        {
+            /* commands still being processed */
+            ExReleaseFastMutex(&pSession->Mutex);
+            return TRUE;
+        }
+        ExReleaseFastMutex(&pSession->Mutex);
+    }
+    return FALSE;
+}
+
+/* waits for all outstanding commands to completed by client
+ * assumptions here are:
+ * 1. no new commands are submitted while we are waiting
+ * 2. it is assumed that a client completes all previously received commands
+ *    once it queries for the new set of commands */
+NTSTATUS vboxVideoCmWaitCompletedCmds(PVBOXVIDEOCM_MGR pMgr, uint32_t msTimeout)
+{
+    LARGE_INTEGER Timeout;
+    PLARGE_INTEGER pTimeout;
+    uint32_t cIters;
+
+    if (msTimeout != RT_INDEFINITE_WAIT)
+    {
+        uint32_t msIter = 2;
+        cIters = msTimeout/msIter;
+        if (!cIters)
+        {
+            msIter = msTimeout;
+            cIters = 1;
+        }
+        Timeout.QuadPart = -(int64_t) msIter /* ms */ * 10000;
+        pTimeout = &Timeout;
+    }
+    else
+    {
+        pTimeout = NULL;
+        cIters = 1;
+    }
+
+    Assert(cIters);
+    do
+    {
+        NTSTATUS Status = KeWaitForSingleObject(&pMgr->SynchEvent, Executive, KernelMode,
+                    FALSE, /* BOOLEAN Alertable */
+                    pTimeout /* PLARGE_INTEGER Timeout */
+        );
+        if (Status == STATUS_TIMEOUT)
+        {
+            --cIters;
+        }
+        else
+        {
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("KeWaitForSingleObject failed with Status (0x%x)", Status));
+                return Status;
+            }
+
+            /* succeeded */
+            if (!vboxVideoCmHasUncompletedCmdsLocked(pMgr))
+            {
+                LONG tstL = KeSetEvent(&pMgr->SynchEvent, 0, FALSE);
+                Assert(!tstL);
+                return STATUS_SUCCESS;
+            }
+
+            LONG tstL = KeSetEvent(&pMgr->SynchEvent, 0, FALSE);
+            Assert(!tstL);
+        }
+
+        if (!cIters)
+            break;
+
+        KeDelayExecutionThread(KernelMode, FALSE, pTimeout);
+        --cIters;
+        if (!cIters)
+            break;
+    } while (0);
+
+    return STATUS_TIMEOUT;
 }
 
