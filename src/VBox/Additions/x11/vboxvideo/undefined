@@ -67,6 +67,7 @@ lchown
 lseek
 lseek64
 malloc
+nanosleep
 memalign
 memchr
 memcmp

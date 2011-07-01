@@ -567,6 +567,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/symlink-win.cpp \
 	r3/win/rtFileNativeSetAttributes-win.cpp \
 	r3/win/thread-win.cpp \
+	r3/win/thread2-win.cpp \
 	r3/win/time-win.cpp \
 	r3/win/timer-win.cpp \
 	r3/win/tls-win.cpp \
@@ -634,6 +635,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/semrw-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
+	r3/posix/thread2-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
 	r3/posix/tls-posix.cpp \
@@ -785,6 +787,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/semmutex-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
+	r3/posix/thread2-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp
@@ -848,6 +851,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/semrw-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
+	r3/posix/thread2-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
@@ -905,6 +909,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/semrw-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
+	r3/posix/thread2-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
@@ -1075,7 +1080,7 @@ RuntimeGuestR3Mini_INST                     := $(INST_ADDITIONS_LIB)
 RuntimeGuestR3Mini_SDKS.win                 := $(RuntimeR3_SDKS.win)
 RuntimeGuestR3Mini_DEFS                     := \
 	$(filter-out RTCRITSECT_STRICT RT_NO_GIP RT_WITH_ICONV_CACHE, $(RuntimeR3_DEFS)) \
-	RT_MINI IN_RT_STATIC
+	RT_MINI IN_RT_STATIC RTMEM_NO_WRAP_TO_EF_APIS
 RuntimeGuestR3Mini_DEFS.$(KBUILD_TARGET)    := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 RuntimeGuestR3Mini_DEFS.$(KBUILD_HOST)      := $(RuntimeR3_DEFS.$(KBUILD_HOST))
 RuntimeGuestR3Mini_INCS                     := $(RuntimeR3_INCS)
@@ -1158,6 +1163,7 @@ RuntimeGuestR3Mini_SOURCES.freebsd = \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/utf8-posix.cpp \
+	r3/posix/thread2-posix.cpp \
 	common/err/errmsgxpcom.cpp
 RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1169,6 +1175,7 @@ RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/utf8-posix.cpp \
+	r3/posix/thread2-posix.cpp \
 	common/err/errmsgxpcom.cpp
 RuntimeGuestR3Mini_SOURCES.solaris = \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1180,12 +1187,14 @@ RuntimeGuestR3Mini_SOURCES.solaris = \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/utf8-posix.cpp \
+	r3/posix/thread2-posix.cpp \
 	common/err/errmsgxpcom.cpp
 RuntimeGuestR3Mini_SOURCES.win = \
 	r3/win/alloc-win.cpp \
 	r3/win/fileio-win.cpp \
 	r3/win/path-win.cpp \
 	r3/win/utf8-win.cpp \
+	r3/win/thread2-win.cpp \
 	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp
 
