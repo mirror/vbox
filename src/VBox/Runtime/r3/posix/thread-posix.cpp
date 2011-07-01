@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,9 +52,6 @@
 #include <iprt/log.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-# include <iprt/asm-amd64-x86.h>
-#endif
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include "internal/thread.h"
@@ -311,75 +308,6 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
     PRTTHREADINT pThread = (PRTTHREADINT)pthread_getspecific(g_SelfKey);
     /** @todo import alien threads? */
     return pThread;
-}
-
-
-RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
-{
-    return (RTNATIVETHREAD)pthread_self();
-}
-
-
-RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
-{
-    LogFlow(("RTThreadSleep: cMillies=%d\n", cMillies));
-    if (!cMillies)
-    {
-        /* pthread_yield() isn't part of SuS, thus this fun. */
-#ifdef RT_OS_DARWIN
-        pthread_yield_np();
-#elif defined(RT_OS_FREEBSD) /* void pthread_yield */
-        pthread_yield();
-#elif defined(RT_OS_SOLARIS)
-        sched_yield();
-#else
-        if (!pthread_yield())
-#endif
-        {
-            LogFlow(("RTThreadSleep: returning %Rrc (cMillies=%d)\n", VINF_SUCCESS, cMillies));
-            return VINF_SUCCESS;
-        }
-    }
-    else
-    {
-        struct timespec ts;
-        struct timespec tsrem = {0,0};
-
-        ts.tv_nsec = (cMillies % 1000) * 1000000;
-        ts.tv_sec  = cMillies / 1000;
-        if (!nanosleep(&ts, &tsrem))
-        {
-            LogFlow(("RTThreadSleep: returning %Rrc (cMillies=%d)\n", VINF_SUCCESS, cMillies));
-            return VINF_SUCCESS;
-        }
-    }
-
-    int rc = RTErrConvertFromErrno(errno);
-    LogFlow(("RTThreadSleep: returning %Rrc (cMillies=%d)\n", rc, cMillies));
-    return rc;
-}
-
-
-RTDECL(bool) RTThreadYield(void)
-{
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    uint64_t u64TS = ASMReadTSC();
-#endif
-#ifdef RT_OS_DARWIN
-    pthread_yield_np();
-#elif defined(RT_OS_SOLARIS)
-    sched_yield();
-#else
-    pthread_yield();
-#endif
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    u64TS = ASMReadTSC() - u64TS;
-    bool fRc = u64TS > 1500;
-    LogFlow(("RTThreadYield: returning %d (%llu ticks)\n", fRc, u64TS));
-#else
-    bool fRc = true; /* PORTME: Add heuristics for determining whether the cpus was yielded. */
-#endif
-    return fRc;
 }
 
 

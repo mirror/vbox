@@ -239,32 +239,6 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 }
 
 
-RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
-{
-    return (RTNATIVETHREAD)GetCurrentThreadId();
-}
-
-
-RTR3DECL(int)   RTThreadSleep(RTMSINTERVAL cMillies)
-{
-    LogFlow(("RTThreadSleep: cMillies=%d\n", cMillies));
-    Sleep(cMillies);
-    LogFlow(("RTThreadSleep: returning %Rrc (cMillies=%d)\n", VINF_SUCCESS, cMillies));
-    return VINF_SUCCESS;
-}
-
-
-RTR3DECL(bool) RTThreadYield(void)
-{
-    uint64_t u64TS = ASMReadTSC();
-    Sleep(0);
-    u64TS = ASMReadTSC() - u64TS;
-    bool fRc = u64TS > 1500;
-    LogFlow(("RTThreadYield: returning %d (%llu ticks)\n", fRc, u64TS));
-    return fRc;
-}
-
-
 #if 0 /* noone is using this ... */
 /**
  * Returns the processor number the current thread was running on during this call
