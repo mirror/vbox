@@ -1950,7 +1950,8 @@ static void vga_get_resolution(VGAState *s, int *pwidth, int *pheight)
 #ifdef CONFIG_BOCHS_VBE
     if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED) {
         width = s->vbe_regs[VBE_DISPI_INDEX_XRES];
-        height = s->vbe_regs[VBE_DISPI_INDEX_YRES];
+        height = RT_MIN(s->vbe_regs[VBE_DISPI_INDEX_YRES],
+                        s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT]);
     } else
 #endif
     {
