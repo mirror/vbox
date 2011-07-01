@@ -112,7 +112,7 @@ ip_input(PNATState pData, struct mbuf *m)
 
     LogFlow(("ip_input: m = %lx\n", (long)m));
     ip = mtod(m, struct ip *);
-    Log2(("ip_dst=%R[IP4](len:%d) m_len = %d\n", &ip->ip_dst, RT_N2H_U16(ip->ip_len), m->m_len));
+    Log2(("ip_dst=%R[naipv4](len:%d) m_len = %d\n", &ip->ip_dst, RT_N2H_U16(ip->ip_len), m->m_len));
 
     ipstat.ips_total++;
     {
@@ -237,7 +237,7 @@ ip_input(PNATState pData, struct mbuf *m)
     goto no_free_m;
 
 bad_free_m:
-    Log2(("NAT: IP datagram to %R[IP4] with size(%d) claimed as bad\n",
+    Log2(("NAT: IP datagram to %R[naipv4] with size(%d) claimed as bad\n",
         &ip->ip_dst, ip->ip_len));
     m_freem(pData, m);
 no_free_m:
