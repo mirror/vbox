@@ -34,8 +34,6 @@
 void dump_packet(void *, int);
 #endif
 
-#define IP4_ADDR_PRINTF_DECOMP(ip) ((ip) >> 24), ((ip) >> 16) & 0xff, ((ip) >> 8) & 0xff, (ip) & 0xff
-#define IP4_ADDR_PRINTF_FORMAT "%u.%u.%u.%u"
 /*
  * Dump a packet in the same format as tcpdump -x
  */
@@ -227,21 +225,6 @@ sockstats(PNATState pData)
 #endif
 
 static DECLCALLBACK(size_t)
-print_ipv4_address(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
-                   const char *pszType, void const *pvValue,
-                   int cchWidth, int cchPrecision, unsigned fFlags,
-                   void *pvUser)
-{
-    uint32_t ip;
-
-    AssertReturn(strcmp(pszType, "IP4") == 0, 0);
-
-    ip = RT_N2H_U32(*(uint32_t*)pvValue);
-    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, IP4_ADDR_PRINTF_FORMAT,
-           IP4_ADDR_PRINTF_DECOMP(ip));
-}
-
-static DECLCALLBACK(size_t)
 print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
              const char *pszType, void const *pvValue,
              int cchWidth, int cchPrecision, unsigned fFlags,
@@ -272,11 +255,11 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     in_addr = (struct sockaddr_in *)&addr;
     ip = RT_N2H_U32(so->so_faddr.s_addr);
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %d:(proto:%u) "
-            "state=%04x ip=" IP4_ADDR_PRINTF_FORMAT ":%d "
-            "name=" IP4_ADDR_PRINTF_FORMAT ":%d",
-            so->s, so->so_type, so->so_state, IP4_ADDR_PRINTF_DECOMP(ip),
+            "state=%04x ip=%RTnaipv4 :%d "
+            "name=%RTnaipv4:%d",
+            so->s, so->so_type, so->so_state, ip,
             RT_N2H_U16(so->so_fport),
-            IP4_ADDR_PRINTF_DECOMP(RT_N2H_U32(in_addr->sin_addr.s_addr)),
+            in_addr->sin_addr.s_addr,
             RT_N2H_U16(in_addr->sin_port));
 }
 
@@ -371,12 +354,6 @@ debug_init()
 
     if (!g_fFormatRegistered)
     {
-        /** @todo r=frank: XXX Move this to IPRT using RTNETADDRIPV4.
-         * Use the specifier %RTnaipv4 (tip: takes an "uint32_t" instead of an
-         * address).
-         */
-        rc = RTStrFormatTypeRegister("IP4", print_ipv4_address, NULL);
-        AssertRC(rc);
 
         rc = RTStrFormatTypeRegister("natsock", print_socket, NULL);
         AssertRC(rc);
