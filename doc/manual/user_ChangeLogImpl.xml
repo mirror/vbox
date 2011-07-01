@@ -21,6 +21,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI: keep the aspect ratio in scale mode (Windows and OSX hosts only;
+          bug #7822)</para>
+      </listitem>
+
+      <listitem>
         <para>VMM: raised the memory limit for 64-bit hosts to 1TB</para>
       </listitem>
 

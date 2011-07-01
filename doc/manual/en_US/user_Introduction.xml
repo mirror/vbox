@@ -1097,6 +1097,10 @@
             in the VM window. To leave scale mode, press the host key + C
             again.</para>
 
+            <para>The aspect ratio of the guest screen is preserved when
+            resizing the window. To ignore the aspect ratio, press Shift
+            during the resize operation.</para>
+
             <para>Please see <xref linkend="KnownIssues" /> for additional
             remarks.</para>
           </listitem>

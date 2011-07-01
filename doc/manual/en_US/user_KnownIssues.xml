@@ -107,6 +107,11 @@
     </listitem>
 
     <listitem>
+      <para>Preserving the aspect ratio in scale mode works only on Windows
+        hosts and on Mac OS X hosts.</para>
+    </listitem>
+
+    <listitem>
       <para>On <emphasis role="bold">Mac OS X hosts,</emphasis> the following
       features are not yet implemented: </para>
 
