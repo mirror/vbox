@@ -98,6 +98,8 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
     struct socket *so = tp->t_socket;
     int flags;
     STAM_PROFILE_START(&pData->StatTCP_reassamble, tcp_reassamble);
+    LogFlowFuncEnter();
+    LogFlowFunc(("pData:%p, tp:%p, th:%p, tlenp:%p, m:%p\n", pData, tp, th, tlenp, m));
 
     /*
      * XXX: tcp_reass() is rather inefficient with its data structures
@@ -110,7 +112,10 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
      * force pre-ESTABLISHED data up to user socket.
      */
     if (th == NULL)
+    {
+        LogFlowFunc(("%d -> present\n", __LINE__));
         goto present;
+    }
 
     /*
      * Limit the number of segments in the reassembly queue to prevent
@@ -128,6 +133,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
         m_freem(pData, m);
         *tlenp = 0;
         STAM_PROFILE_STOP(&pData->StatTCP_reassamble, tcp_reassamble);
+        LogFlowFuncLeave();
         return (0);
     }
 
@@ -142,6 +148,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
         m_freem(pData, m);
         *tlenp = 0;
         STAM_PROFILE_STOP(&pData->StatTCP_reassamble, tcp_reassamble);
+        LogFlowFuncLeave();
         return (0);
     }
     tp->t_segqlen++;
@@ -183,6 +190,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
                  * This is needed after the 3-WHS
                  * completes.
                  */
+                LogFlowFunc(("%d -> present\n", __LINE__));
                 goto present;   /* ??? */
             }
             m_adj(m, i);
@@ -325,12 +333,14 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
             /* mbuf should be cleared in sofree called from tcp_close */
             tcp_close(pData, tp);
             STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
+            LogFlowFuncLeave();
             return;
         }
 
         tiwin = ti->ti_win;
         tiflags = ti->ti_flags;
 
+        LogFlowFunc(("%d -> cont_conn\n", __LINE__));
         goto cont_conn;
     }
 
@@ -374,6 +384,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     if (cksum(m, len))
     {
         tcpstat.tcps_rcvbadsum++;
+        LogFlowFunc(("%d -> drop\n", __LINE__));
         goto drop;
     }
 
@@ -386,6 +397,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
         || off > tlen)
     {
         tcpstat.tcps_rcvbadoff++;
+        LogFlowFunc(("%d -> drop\n", __LINE__));
         goto drop;
     }
     tlen -= off;
@@ -436,6 +448,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
      * Locate pcb for segment.
      */
 findso:
+    LogFlowFunc(("findso: %R[natsock]\n", so));
     if (so != NULL && so != &tcb)
         SOCKET_UNLOCK(so);
     QSOCKET_LOCK(tcb);
@@ -499,13 +512,20 @@ findso:
     if (so == 0)
     {
         if ((tiflags & (TH_SYN|TH_FIN|TH_RST|TH_URG|TH_ACK)) != TH_SYN)
+        {
+            LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
             goto dropwithreset;
+        }
 
         if ((so = socreate()) == NULL)
+        {
+            LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
             goto dropwithreset;
+        }
         if (tcp_attach(pData, so) < 0)
         {
             RTMemFree(so); /* Not sofree (if it failed, it's not insqued) */
+            LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
             goto dropwithreset;
         }
         SOCKET_LOCK(so);
@@ -538,6 +558,7 @@ findso:
      */
     if (so->so_state & SS_ISFCONNECTING)
     {
+        LogFlowFunc(("%d -> drop\n", __LINE__));
         goto drop;
     }
 
@@ -545,9 +566,13 @@ findso:
 
     /* XXX Should never fail */
     if (tp == 0)
+    {
+        LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
         goto dropwithreset;
+    }
     if (tp->t_state == TCPS_CLOSED)
     {
+        LogFlowFunc(("%d -> drop\n", __LINE__));
         goto drop;
     }
 
@@ -755,11 +780,20 @@ findso:
         case TCPS_LISTEN:
         {
             if (tiflags & TH_RST)
+            {
+                LogFlowFunc(("%d -> drop\n", __LINE__));
                 goto drop;
+            }
             if (tiflags & TH_ACK)
+            {
+                LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
                 goto dropwithreset;
+            }
             if ((tiflags & TH_SYN) == 0)
+            {
+                LogFlowFunc(("%d -> drop\n", __LINE__));
                 goto drop;
+            }
 
             /*
              * This has way too many gotos...
@@ -808,18 +842,22 @@ findso:
             }
             SOCKET_UNLOCK(so);
             STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
+            LogFlowFuncLeave();
             return;
 
 cont_conn:
             /* m==NULL
              * Check if the connect succeeded
              */
+            LogFlowFunc(("cont_conn:\n"));
             if (so->so_state & SS_NOFDREF)
             {
                 tp = tcp_close(pData, tp);
+                LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
                 goto dropwithreset;
             }
 cont_input:
+            LogFlowFunc(("cont_input:\n"));
             tcp_template(tp);
 
             if (optp)
@@ -837,6 +875,7 @@ cont_input:
             tp->t_state = TCPS_SYN_RECEIVED;
             tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
             tcpstat.tcps_accepts++;
+            LogFlowFunc(("%d -> trimthenstep6\n", __LINE__));
             goto trimthenstep6;
         } /* case TCPS_LISTEN */
 
@@ -856,17 +895,22 @@ cont_input:
             if (   (tiflags & TH_ACK)
                 && (   SEQ_LEQ(ti->ti_ack, tp->iss)
                     || SEQ_GT(ti->ti_ack, tp->snd_max)))
+            {
+                LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
                 goto dropwithreset;
+            }
 
             if (tiflags & TH_RST)
             {
                 if (tiflags & TH_ACK)
                     tp = tcp_drop(pData, tp, 0); /* XXX Check t_softerror! */
+                LogFlowFunc(("%d -> drop\n", __LINE__));
                 goto drop;
             }
 
             if ((tiflags & TH_SYN) == 0)
             {
+                LogFlowFunc(("%d -> drop\n", __LINE__));
                 goto drop;
             }
             if (tiflags & TH_ACK)
@@ -907,6 +951,7 @@ cont_input:
                 tp->t_state = TCPS_SYN_RECEIVED;
 
 trimthenstep6:
+            LogFlowFunc(("trimthenstep6:\n"));
             /*
              * Advance ti->ti_seq to correspond to first data byte.
              * If data, trim to stay within window,
@@ -924,7 +969,7 @@ trimthenstep6:
             }
             tp->snd_wl1 = ti->ti_seq - 1;
             tp->rcv_up = ti->ti_seq;
-            Log2(("hit6\n"));
+            LogFlowFunc(("%d -> step6\n", __LINE__));
             goto step6;
     } /* switch tp->t_state */
     /*
@@ -1030,6 +1075,7 @@ trimthenstep6:
     {
         tp = tcp_close(pData, tp);
         tcpstat.tcps_rcvafterclose++;
+        LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
         goto dropwithreset;
     }
 
@@ -1057,6 +1103,7 @@ trimthenstep6:
                 iss = tp->rcv_nxt + TCP_ISSINCR;
                 tp = tcp_close(pData, tp);
                 SOCKET_UNLOCK(tp->t_socket);
+                LogFlowFunc(("%d -> findso\n", __LINE__));
                 goto findso;
             }
             /*
@@ -1072,7 +1119,10 @@ trimthenstep6:
                 tcpstat.tcps_rcvwinprobe++;
             }
             else
+            {
+                LogFlowFunc(("%d -> dropafterack\n", __LINE__));
                 goto dropafterack;
+            }
         }
         else
             tcpstat.tcps_rcvbyteafterwin += todrop;
@@ -1110,6 +1160,7 @@ trimthenstep6:
         {
             case TCPS_SYN_RECEIVED:
 /*              so->so_error = ECONNREFUSED; */
+                LogFlowFunc(("%d -> close\n", __LINE__));
                 goto close;
 
             case TCPS_ESTABLISHED:
@@ -1118,16 +1169,19 @@ trimthenstep6:
             case TCPS_CLOSE_WAIT:
 /*              so->so_error = ECONNRESET; */
 close:
-                tp->t_state = TCPS_CLOSED;
-                tcpstat.tcps_drops++;
-                tp = tcp_close(pData, tp);
-                goto drop;
+            LogFlowFunc(("close:\n"));
+            tp->t_state = TCPS_CLOSED;
+            tcpstat.tcps_drops++;
+            tp = tcp_close(pData, tp);
+            LogFlowFunc(("%d -> drop\n", __LINE__));
+            goto drop;
 
             case TCPS_CLOSING:
             case TCPS_LAST_ACK:
             case TCPS_TIME_WAIT:
-                tp = tcp_close(pData, tp);
-                goto drop;
+            tp = tcp_close(pData, tp);
+            LogFlowFunc(("%d -> drop\n", __LINE__));
+            goto drop;
         }
 
     /*
@@ -1137,6 +1191,7 @@ close:
     if (tiflags & TH_SYN)
     {
         tp = tcp_drop(pData, tp, 0);
+        LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
         goto dropwithreset;
     }
 
@@ -1145,6 +1200,7 @@ close:
      */
     if ((tiflags & TH_ACK) == 0)
     {
+        LogFlowFunc(("%d -> drop\n", __LINE__));
         goto drop;
     }
 
@@ -1186,6 +1242,7 @@ close:
             (void) tcp_reass(pData, tp, (struct tcphdr *)0, (int *)0, (struct mbuf *)0);
             tp->snd_wl1 = ti->ti_seq - 1;
             /* Avoid ack processing; snd_una==ti_ack  =>  dup ack */
+            LogFlowFunc(("%d -> synrx_to_est\n", __LINE__));
             goto synrx_to_est;
             /* fall into ... */
 
@@ -1253,12 +1310,14 @@ close:
                             tp->t_maxseg * tp->t_dupacks;
                         if (SEQ_GT(onxt, tp->snd_nxt))
                             tp->snd_nxt = onxt;
+                        LogFlowFunc(("%d -> drop\n", __LINE__));
                         goto drop;
                     }
                     else if (tp->t_dupacks > tcprexmtthresh)
                     {
                         tp->snd_cwnd += tp->t_maxseg;
                         (void) tcp_output(pData, tp);
+                        LogFlowFunc(("%d -> drop\n", __LINE__));
                         goto drop;
                     }
                 }
@@ -1267,6 +1326,7 @@ close:
                 break;
             }
 synrx_to_est:
+            LogFlowFunc(("%d -> synrx_to_est:\n"));
             /*
              * If the congestion window was inflated to account
              * for the other side's cached packets, retract it.
@@ -1278,6 +1338,7 @@ synrx_to_est:
             if (SEQ_GT(ti->ti_ack, tp->snd_max))
             {
                 tcpstat.tcps_rcvacktoomuch++;
+                LogFlowFunc(("%d -> dropafterack\n", __LINE__));
                 goto dropafterack;
             }
             acked = ti->ti_ack - tp->snd_una;
@@ -1413,6 +1474,7 @@ synrx_to_est:
                     if (ourfinisacked)
                     {
                         tp = tcp_close(pData, tp);
+                        LogFlowFunc(("%d -> drop\n", __LINE__));
                         goto drop;
                     }
                     break;
@@ -1424,11 +1486,13 @@ synrx_to_est:
                  */
                 case TCPS_TIME_WAIT:
                     tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
+                    LogFlowFunc(("%d -> dropafterack\n", __LINE__));
                     goto dropafterack;
             }
     } /* switch(tp->t_state) */
 
 step6:
+    LogFlowFunc(("step6:\n"));
     /*
      * Update window information.
      * Don't look at window if no ACK: TAC's send garbage on first SYN.
@@ -1471,6 +1535,7 @@ step6:
         {
             ti->ti_urp = 0;
             tiflags &= ~TH_URG;
+            LogFlowFunc(("%d -> dodata\n", __LINE__));
             goto dodata;
         }
 #endif
@@ -1505,6 +1570,7 @@ step6:
         if (SEQ_GT(tp->rcv_nxt, tp->rcv_up))
             tp->rcv_up = tp->rcv_nxt;
 dodata:
+    LogFlowFunc(("dodata:\n"));
 
     /*
      * If this is a small packet, then ACK now - with Nagel
@@ -1634,24 +1700,30 @@ dodata:
 
     SOCKET_UNLOCK(so);
     STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
+    LogFlowFuncLeave();
     return;
 
 dropafterack:
-    Log2(("drop after ack\n"));
+    LogFlowFunc(("dropafterack:\n"));
     /*
      * Generate an ACK dropping incoming segment if it occupies
      * sequence space, where the ACK reflects our state.
      */
     if (tiflags & TH_RST)
+    {
+        LogFlowFunc(("%d -> drop\n", __LINE__));
         goto drop;
+    }
     m_freem(pData, m);
     tp->t_flags |= TF_ACKNOW;
     (void) tcp_output(pData, tp);
     SOCKET_UNLOCK(so);
     STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
+    LogFlowFuncLeave();
     return;
 
 dropwithreset:
+    LogFlowFunc(("dropwithreset:\n"));
     /* reuses m if m!=NULL, m_free() unnecessary */
     if (tiflags & TH_ACK)
         tcp_respond(pData, tp, ti, m, (tcp_seq)0, ti->ti_ack, TH_RST);
@@ -1666,9 +1738,11 @@ dropwithreset:
     if (so != &tcb)
         SOCKET_UNLOCK(so);
     STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
+    LogFlowFuncLeave();
     return;
 
 drop:
+    LogFlowFunc(("drop:\n"));
     /*
      * Drop space held by incoming segment and return.
      */
@@ -1682,6 +1756,7 @@ drop:
 #endif
 
     STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
+    LogFlowFuncLeave();
     return;
 }
 
