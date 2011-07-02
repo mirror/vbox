@@ -1759,8 +1759,7 @@ static BOOLEAN vboxVdmaDdiCmdCompletedCb(PVOID Context)
 
     if (bNeedDpc)
     {
-        BOOLEAN bRc = pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
-        Assert(bRc);
+        pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
     }
 
     return bNeedDpc;
@@ -1828,9 +1827,9 @@ static BOOLEAN vboxVdmaDdiCmdFenceCompleteCb(PVOID Context)
     vboxVdmaDdiCmdNotifyCompletedIrq(pDevExt, pdc->u32NodeOrdinal, pdc->u32FenceId, DXGK_INTERRUPT_DMA_COMPLETED);
 
     pDevExt->bNotifyDxDpc = TRUE;
-    BOOLEAN bDpcQueued = pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+    pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 
-    return bDpcQueued;
+    return TRUE;
 }
 
 static NTSTATUS vboxVdmaDdiCmdFenceNotifyComplete(PVBOXMP_DEVEXT pDevExt, uint32_t u32NodeOrdinal, uint32_t u32FenceId)

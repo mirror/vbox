@@ -1254,7 +1254,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
         if (bOur)
         {
             VBoxHGSMIClearIrq(&VBoxCommonFromDeviceExt(pDevExt)->hostCtx);
-#ifdef DEBUG_misha
+#if 0 //def DEBUG_misha
             /* this is not entirely correct since host may concurrently complete some commands and raise a new IRQ while we are here,
              * still this allows to check that the host flags are correctly cleared after the ISR */
             Assert(VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags);
@@ -1265,7 +1265,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
 
         if (bNeedDpc)
         {
-            BOOLEAN bDpcQueued = pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+            pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
         }
     }
 
