@@ -1735,7 +1735,8 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         rc = vhdFileReadSync(pImage, uOffset, pvBuf, cbBuf, NULL);
     }
 
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        || rc == VERR_VD_BLOCK_FREE)
     {
         if (pcbActuallyRead)
             *pcbActuallyRead = cbBuf;
