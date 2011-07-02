@@ -3868,7 +3868,7 @@ quint64 VBoxGlobal::requiredVideoMemory(const QString &strGuestOSTypeId, int cMo
     {
        /* Windows guests need offscreen VRAM too for graphics acceleration features: */
 #ifdef VBOX_WITH_CRHGSMI
-       if (strGuestOSTypeId == "WindowsVista" || strGuestOSTypeId == "Windows7")
+       if (isWddmCompatibleOsType(strGuestOSTypeId))
        {
            /* wddm mode, there are two surfaces for each screen: shadow & primary */
            needMBytes *= 3;
@@ -4437,6 +4437,12 @@ quint64 VBoxGlobal::required3DWddmOffscreenVideoMemory(const QString &strGuestOS
     quint64 cbSize = VBoxGlobal::requiredVideoMemory(strGuestOSTypeId, 1); /* why not cMonitors? */
     cbSize += 64 * _1M;
     return cbSize;
+}
+
+/* static */
+bool VBoxGlobal::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
+{
+    return strGuestOSTypeId.startsWith("WindowsVista") || strGuestOSTypeId.startsWith("Windows7") || strGuestOSTypeId.startsWith("Windows2008");
 }
 #endif /* VBOX_WITH_CRHGSMI */
 
