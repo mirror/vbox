@@ -716,6 +716,7 @@ public:
 #endif
 
 #ifdef VBOX_WITH_CRHGSMI
+    static bool isWddmCompatibleOsType(const QString &strGuestOSTypeId);
     static quint64 required3DWddmOffscreenVideoMemory(const QString &strGuestOSTypeId, int cMonitors = 1);
 #endif /* VBOX_WITH_CRHGSMI */
 

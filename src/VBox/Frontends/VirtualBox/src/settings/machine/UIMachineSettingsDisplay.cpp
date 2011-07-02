@@ -140,7 +140,7 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType guestOSType)
 #ifdef VBOX_WITH_CRHGSMI
     /* Check if WDDM mode supported by the guest OS type: */
     QString strguestOSTypeId = m_guestOSType.GetId();
-    m_fWddmModeSupported = strguestOSTypeId == "WindowsVista" || strguestOSTypeId == "Windows7";
+    m_fWddmModeSupported = VBoxGlobal::isWddmCompatibleOsType(strguestOSTypeId);
 #endif /* VBOX_WITH_CRHGSMI */
 
     /* Recheck video RAM requirement: */
