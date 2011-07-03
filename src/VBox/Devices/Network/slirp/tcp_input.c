@@ -548,7 +548,7 @@ findso:
         so->so_iptos = ((struct ip *)ti)->ip_tos;
 
         tp = sototcpcb(so);
-        tp->t_state = TCPS_LISTEN;
+        TCP_STATE_SWITCH_TO(tp, TCPS_LISTEN);
     }
 
     /*
@@ -838,7 +838,7 @@ findso:
                 so->so_m = m;
                 so->so_ti = ti;
                 tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
-                tp->t_state = TCPS_SYN_RECEIVED;
+                TCP_STATE_SWITCH_TO(tp, TCPS_SYN_RECEIVED);
             }
             SOCKET_UNLOCK(so);
             STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
@@ -872,7 +872,7 @@ cont_input:
             tcp_sendseqinit(tp);
             tcp_rcvseqinit(tp);
             tp->t_flags |= TF_ACKNOW;
-            tp->t_state = TCPS_SYN_RECEIVED;
+            TCP_STATE_SWITCH_TO(tp, TCPS_SYN_RECEIVED);
             tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
             tcpstat.tcps_accepts++;
             LogFlowFunc(("%d -> trimthenstep6\n", __LINE__));
@@ -928,7 +928,7 @@ cont_input:
             {
                 tcpstat.tcps_connects++;
                 soisfconnected(so);
-                tp->t_state = TCPS_ESTABLISHED;
+                TCP_STATE_SWITCH_TO(tp, TCPS_ESTABLISHED);
 
                 /* Do window scaling on this connection? */
 #if 0
@@ -948,7 +948,7 @@ cont_input:
                     tcp_xmit_timer(pData, tp, tp->t_rtt);
             }
             else
-                tp->t_state = TCPS_SYN_RECEIVED;
+                TCP_STATE_SWITCH_TO(tp, TCPS_SYN_RECEIVED);
 
 trimthenstep6:
             LogFlowFunc(("trimthenstep6:\n"));
@@ -1170,7 +1170,7 @@ trimthenstep6:
 /*              so->so_error = ECONNRESET; */
 close:
             LogFlowFunc(("close:\n"));
-            tp->t_state = TCPS_CLOSED;
+            TCP_STATE_SWITCH_TO(tp, TCPS_CLOSED);
             tcpstat.tcps_drops++;
             tp = tcp_close(pData, tp);
             LogFlowFunc(("%d -> drop\n", __LINE__));
@@ -1219,7 +1219,7 @@ close:
                 || SEQ_GT(ti->ti_ack, tp->snd_max))
                 goto dropwithreset;
             tcpstat.tcps_connects++;
-            tp->t_state = TCPS_ESTABLISHED;
+            TCP_STATE_SWITCH_TO(tp, TCPS_ESTABLISHED);
             /*
              * The sent SYN is ack'ed with our sequence number +1
              * The first data byte already in the buffer will get
@@ -1444,7 +1444,7 @@ synrx_to_est:
                             soisfdisconnected(so);
                             tp->t_timer[TCPT_2MSL] = tcp_maxidle;
                         }
-                        tp->t_state = TCPS_FIN_WAIT_2;
+                        TCP_STATE_SWITCH_TO(tp, TCPS_FIN_WAIT_2);
                     }
                     break;
 
@@ -1457,7 +1457,7 @@ synrx_to_est:
                 case TCPS_CLOSING:
                     if (ourfinisacked)
                     {
-                        tp->t_state = TCPS_TIME_WAIT;
+                        TCP_STATE_SWITCH_TO(tp, TCPS_TIME_WAIT);
                         tcp_canceltimers(tp);
                         tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
                         soisfdisconnected(so);
@@ -1660,7 +1660,7 @@ dodata:
              */
             case TCPS_SYN_RECEIVED:
             case TCPS_ESTABLISHED:
-                tp->t_state = TCPS_CLOSE_WAIT;
+                TCP_STATE_SWITCH_TO(tp, TCPS_CLOSE_WAIT);
                 break;
 
             /*
@@ -1668,7 +1668,7 @@ dodata:
              * enter the CLOSING state.
              */
             case TCPS_FIN_WAIT_1:
-                tp->t_state = TCPS_CLOSING;
+                TCP_STATE_SWITCH_TO(tp, TCPS_CLOSING);
                 break;
 
             /*
@@ -1677,7 +1677,7 @@ dodata:
              * standard timers.
              */
             case TCPS_FIN_WAIT_2:
-                tp->t_state = TCPS_TIME_WAIT;
+                TCP_STATE_SWITCH_TO(tp, TCPS_TIME_WAIT);
                 tcp_canceltimers(tp);
                 tp->t_timer[TCPT_2MSL] = 2 * TCPTV_MSL;
                 soisfdisconnected(so);

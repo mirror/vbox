@@ -224,7 +224,7 @@ tcp_newtcpcb(PNATState pData, struct socket *so)
 
     tp->snd_cwnd = TCP_MAXWIN << TCP_MAX_WINSHIFT;
     tp->snd_ssthresh = TCP_MAXWIN << TCP_MAX_WINSHIFT;
-    tp->t_state = TCPS_CLOSED;
+    TCP_STATE_SWITCH_TO(tp, TCPS_CLOSED);
 
     so->so_tcpcb = tp;
 
@@ -247,7 +247,7 @@ struct tcpcb *tcp_drop(PNATState pData, struct tcpcb *tp, int err)
 
     if (TCPS_HAVERCVDSYN(tp->t_state))
     {
-        tp->t_state = TCPS_CLOSED;
+        TCP_STATE_SWITCH_TO(tp, TCPS_CLOSED);
         (void) tcp_output(pData, tp);
         tcpstat.tcps_drops++;
     }
@@ -359,17 +359,17 @@ tcp_sockclosed(PNATState pData, struct tcpcb *tp)
         case TCPS_CLOSED:
         case TCPS_LISTEN:
         case TCPS_SYN_SENT:
-            tp->t_state = TCPS_CLOSED;
+            TCP_STATE_SWITCH_TO(tp, TCPS_CLOSED);
             tp = tcp_close(pData, tp);
             break;
 
         case TCPS_SYN_RECEIVED:
         case TCPS_ESTABLISHED:
-            tp->t_state = TCPS_FIN_WAIT_1;
+            TCP_STATE_SWITCH_TO(tp, TCPS_FIN_WAIT_1);
             break;
 
         case TCPS_CLOSE_WAIT:
-            tp->t_state = TCPS_LAST_ACK;
+            TCP_STATE_SWITCH_TO(tp, TCPS_LAST_ACK);
             break;
     }
 /*  soisfdisconnecting(tp->t_socket); */
@@ -583,7 +583,7 @@ tcp_connect(PNATState pData, struct socket *inso)
 /*  soisconnecting(so); */ /* NOFDREF used instead */
     tcpstat.tcps_connattempt++;
 
-    tp->t_state = TCPS_SYN_SENT;
+    TCP_STATE_SWITCH_TO(tp, TCPS_SYN_SENT);
     tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
     tp->iss = tcp_iss;
     tcp_iss += TCP_ISSINCR/2;
