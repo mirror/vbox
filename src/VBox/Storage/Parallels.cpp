@@ -649,7 +649,8 @@ static int parallelsRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         }
     }
 
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        || rc == VERR_VD_BLOCK_FREE)
     {
         if (pcbActuallyRead)
             *pcbActuallyRead = cbBuf;
