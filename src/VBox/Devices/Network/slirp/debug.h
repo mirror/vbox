@@ -39,4 +39,15 @@ void icmpstats (PNATState);
 void mbufstats (PNATState);
 void sockstats (PNATState);
 
+#ifdef LOG_ENABLED
+# define TCP_STATE_SWITCH_TO(tp, new_tcp_state)                                                                     \
+do {                                                                                                                \
+    Log2(("%R[tcpcb793] switch to %R[tcpstate] -> %R[tcpstate]\n", (tp), (tp), (tp->t_state) ,(new_tcp_state)));    \
+    if ((tp)->t_socket)                                                                                             \
+        Log2(("%R[tcpcb793] %R[natsock]\n", (tp), (tp)->t_socket));                                                 \
+    (tp)->t_state = (new_tcp_state);                                                                                \
+} while(0)
+#else
+# define TCP_STATE_SWITCH_TO(tp, new_tcp_state) (tp)->t_state = (new_tcp_state)
+#endif
 #endif

@@ -34,6 +34,25 @@
 void dump_packet(void *, int);
 #endif
 
+#ifndef STRINGIFY
+# define STRINGIFY(x) #x
+#endif
+
+static char *g_apszTcpStates[TCP_NSTATES] =
+{
+    STRINGIFY(TCPS_CLOSED),
+    STRINGIFY(TCPS_LISTEN),
+    STRINGIFY(TCPS_SYN_SENT),
+    STRINGIFY(TCPS_SYN_RECEIVED),
+    STRINGIFY(TCPS_ESTABLISHED),
+    STRINGIFY(TCPS_CLOSE_WAIT),
+    STRINGIFY(TCPS_FIN_WAIT_1),
+    STRINGIFY(TCPS_CLOSING),
+    STRINGIFY(TCPS_LAST_ACK),
+    STRINGIFY(TCPS_FIN_WAIT_2),
+    STRINGIFY(TCPS_TIME_WAIT)
+};
+
 /*
  * Dump a packet in the same format as tcpdump -x
  */
@@ -297,6 +316,23 @@ printTcpSegmentRfc793(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     return cb;
 }
 
+/*
+ * Prints TCP state
+ */
+static DECLCALLBACK(size_t)
+printTcpState(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                 const char *pszType, void const *pvValue,
+                 int cchWidth, int cchPrecision, unsigned fFlags,
+                 void *pvUser)
+{
+    size_t cb = 0;
+    const int idxTcpState = (int)pvValue;
+    char *pszTcpStateName = (idxTcpState >= 0 && idxTcpState < TCP_NSTATES) ? g_apszTcpStates[idxTcpState] : "TCPS_INVALIDE_STATE";
+    AssertReturn(RTStrCmp(pszType, "tcpstate") == 0, 0);
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s", pszTcpStateName);
+    return cb;
+}
+
 static DECLCALLBACK(size_t)
 print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                     const char *pszType, void const *pvValue,
@@ -363,6 +399,8 @@ debug_init()
         rc = RTStrFormatTypeRegister("tcpcb793", printTcpcbRfc793, NULL);
         AssertRC(rc);
         rc = RTStrFormatTypeRegister("tcpseg793", printTcpSegmentRfc793, NULL);
+        AssertRC(rc);
+        rc = RTStrFormatTypeRegister("tcpstate", printTcpState, NULL);
         AssertRC(rc);
         g_fFormatRegistered = 1;
     }
