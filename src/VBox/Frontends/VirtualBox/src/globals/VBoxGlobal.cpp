@@ -1649,7 +1649,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                      + QString (sSectionItemTpl2).arg (tr ("Processor(s)", "details report"),
                                                        tr ("<nobr>%1</nobr>", "details report"))
                        .arg (aMachine.GetCPUCount())
-                     + QString (sSectionItemTpl2).arg (tr ("CPU Execution Cap", "details report"),
+                     + QString (sSectionItemTpl2).arg (tr ("Execution Cap", "details report"),
                                                        tr ("<nobr>%1%</nobr>", "details report"))
                        .arg (aMachine.GetCPUExecutionCap())
                      + QString (sSectionItemTpl2).arg (tr ("Boot Order", "details report"), bootOrder)

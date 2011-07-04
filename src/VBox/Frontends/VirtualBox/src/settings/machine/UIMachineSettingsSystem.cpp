@@ -455,8 +455,8 @@ bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle
     /* CPU execution cap is low: */
     if (mSlCPUExecCap->value() < (int)mMedGuestCPUExecCap)
     {
-        aWarning = tr("you have set CPU execution cap to low value, which may "
-                      "distort audio and have other side effects.");
+        aWarning = tr("you have set the processor execution cap to a low value. "
+                      "This can make the machine feel slow to respond.");
         return true;
     }
 
