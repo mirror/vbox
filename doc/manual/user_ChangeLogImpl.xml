@@ -107,7 +107,7 @@
 
       <listitem>
         <para>Storage: fixed possible data corruption under certain circumstances
-          whith VHD and Parallels images</para>
+          whith VHD and Parallels images (bug #9150)</para>
       </listitem>
 
       <listitem>
