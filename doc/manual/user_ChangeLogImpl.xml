@@ -150,6 +150,15 @@
       </listitem>
 
       <listitem>
+        <para>Windows hosts (64-bit only): enabled removing of all mediums when
+          removing a VM</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts (64-bit only): enabled live snapshot deletion</para>
+      </listitem>
+
+      <listitem>
         <para>Guest Additions: improved driver installation on Windows guests</para>
       </listitem>
 
