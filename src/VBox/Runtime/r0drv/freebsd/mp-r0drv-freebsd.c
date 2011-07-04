@@ -163,8 +163,10 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     /* Will panic if no rendezvousing cpus, so check up front. */
     if (RTMpGetOnlineCount() > 1)
     {
-#if  __FreeBSD_version >= 700000
-        cpumask_t   Mask = ~(cpumask_t)curcpu;
+#if __FreeBSD_version >= 900000
+        cpuset_t    Mask;
+#elif  __FreeBSD_version >= 700000
+        cpumask_t   Mask;
 #endif
         RTMPARGS    Args;
 
@@ -174,6 +176,12 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
         Args.idCpu = RTMpCpuId();
         Args.cHits = 0;
 #if __FreeBSD_version >= 700000
+# if __FreeBSD_version >= 900000
+    Mask = all_cpus;
+    CPU_CLR(curcpu, &Mask);
+# else
+    Mask = ~(cpumask_t)curcpu;
+# endif
         smp_rendezvous_cpus(Mask, NULL, rtmpOnOthersFreeBSDWrapper, smp_no_rendevous_barrier, &Args);
 #else
         smp_rendezvous(NULL, rtmpOnOthersFreeBSDWrapper, NULL, &Args);
@@ -203,8 +211,10 @@ static void rtmpOnSpecificFreeBSDWrapper(void *pvArg)
 
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
-#if  __FreeBSD_version >= 700000
-    cpumask_t   Mask = 1 << idCpu;
+#if __FreeBSD_version >= 900000
+    cpuset_t    Mask;
+#elif  __FreeBSD_version >= 700000
+    cpumask_t   Mask;
 #endif
     RTMPARGS    Args;
 
@@ -218,7 +228,11 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     Args.idCpu = idCpu;
     Args.cHits = 0;
 #if __FreeBSD_version >= 700000
+# if __FreeBSD_version >= 900000
+    CPU_SETOF(idCpu, &Mask);
+# else
     Mask = (cpumask_t)1 << idCpu;
+# endif
     smp_rendezvous_cpus(Mask, NULL, rtmpOnSpecificFreeBSDWrapper, smp_no_rendevous_barrier, &Args);
 #else
     smp_rendezvous(NULL, rtmpOnSpecificFreeBSDWrapper, NULL, &Args);
@@ -242,13 +256,21 @@ static void rtmpFreeBSDPokeCallback(void *pvArg)
 
 RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
+#if __FreeBSD_version >= 900000
+    cpuset_t    Mask;
+#elif  __FreeBSD_version >= 700000
     cpumask_t   Mask;
+#endif
 
     /* Will panic if no rendezvousing cpus, so make sure the cpu is online. */
     if (!RTMpIsCpuOnline(idCpu))
         return VERR_CPU_NOT_FOUND;
 
+# if __FreeBSD_version >= 900000
+    CPU_SETOF(idCpu, &Mask);
+# else
     Mask = (cpumask_t)1 << idCpu;
+# endif
     smp_rendezvous_cpus(Mask, NULL, rtmpFreeBSDPokeCallback, smp_no_rendevous_barrier, NULL);
 
     return VINF_SUCCESS;
