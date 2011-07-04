@@ -900,6 +900,44 @@ static uint32_t calc_line_width(uint16_t bpp, uint32_t pitch)
     return width;
 }
 
+static void recaltulate_data(VGAState *s, bool fVirtHeightOnly)
+{
+    uint16_t cBPP        = s->vbe_regs[VBE_DISPI_INDEX_BPP];
+    uint16_t cVirtWidth  = s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH];
+    uint16_t cX          = s->vbe_regs[VBE_DISPI_INDEX_XRES];
+    if (!cBPP || !cX)
+        return;  /* Not enough data has been set yet. */
+    uint32_t cbLinePitch = calc_line_pitch(cBPP, cVirtWidth);
+    if (!cbLinePitch)
+        cbLinePitch      = calc_line_pitch(cBPP, cX);
+    Assert(cbLinePitch != 0);
+    uint32_t cVirtHeight = s->vram_size / cbLinePitch;
+    if (!fVirtHeightOnly)
+    {
+        uint16_t offX        = s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET];
+        uint16_t offY        = s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET];
+        uint32_t offStart    = cbLinePitch * offY;
+        if (cBPP == 4)
+            offStart += offX >> 1;
+        else
+            offStart += offX * ((cBPP + 7) >> 3);
+        offStart >>= 2;
+        s->vbe_line_offset = RT_MIN(cbLinePitch, s->vram_size);
+        s->vbe_start_addr  = RT_MIN(offStart, s->vram_size);
+    }
+
+    /* The VBE_DISPI_INDEX_VIRT_HEIGHT is used to prevent setting resolution bigger than VRAM permits
+     * it is used instead of VBE_DISPI_INDEX_YRES *only* in case
+     * s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] < s->vbe_regs[VBE_DISPI_INDEX_YRES]
+     * We can not simply do s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = cVirtHeight since
+     * the cVirtHeight we calculated can exceed the 16bit value range
+     * instead we'll check if it's bigger than s->vbe_regs[VBE_DISPI_INDEX_YRES], and if yes,
+     * assign the s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] with a dummy UINT16_MAX value
+     * that is always bigger than s->vbe_regs[VBE_DISPI_INDEX_YRES]
+     * to just ensure the s->vbe_regs[VBE_DISPI_INDEX_YRES] is always used */
+    s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = (cVirtHeight >= (uint32_t)s->vbe_regs[VBE_DISPI_INDEX_YRES]) ? UINT16_MAX : (uint16_t)cVirtHeight;
+}
+
 static void vbe_ioport_write_index(void *opaque, uint32_t addr, uint32_t val)
 {
     VGAState *s = (VGAState*)opaque;
@@ -1114,37 +1152,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
         }
         if (fRecalculate)
         {
-            uint16_t cBPP        = s->vbe_regs[VBE_DISPI_INDEX_BPP];
-            uint16_t cVirtWidth  = s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH];
-            uint16_t cX          = s->vbe_regs[VBE_DISPI_INDEX_XRES];
-            uint16_t offX        = s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET];
-            uint16_t offY        = s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET];
-            if (!cBPP || !cX)
-                return VINF_SUCCESS;  /* Not enough data has been set yet. */
-            uint32_t cbLinePitch = calc_line_pitch(cBPP, cVirtWidth);
-            if (!cbLinePitch)
-                cbLinePitch      = calc_line_pitch(cBPP, cX);
-            Assert(cbLinePitch != 0);
-            uint32_t cVirtHeight = s->vram_size / cbLinePitch;
-            uint32_t offStart    = cbLinePitch * offY;
-            if (cBPP == 4)
-                offStart += offX >> 1;
-            else
-                offStart += offX * ((cBPP + 7) >> 3);
-            offStart >>= 2;
-            s->vbe_line_offset = RT_MIN(cbLinePitch, s->vram_size);
-            s->vbe_start_addr  = RT_MIN(offStart, s->vram_size);
-
-            /* The VBE_DISPI_INDEX_VIRT_HEIGHT is used to prevent setting resolution bigger than VRAM permits
-             * it is used instead of VBE_DISPI_INDEX_YRES *only* in case
-             * s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] < s->vbe_regs[VBE_DISPI_INDEX_YRES]
-             * We can not simply do s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = cVirtHeight since
-             * the cVirtHeight we calculated can exceed the 16bit value range
-             * instead we'll check if it's bigger than s->vbe_regs[VBE_DISPI_INDEX_YRES], and if yes,
-             * assign the s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] with a dummy UINT16_MAX value
-             * that is always bigger than s->vbe_regs[VBE_DISPI_INDEX_YRES]
-             * to just ensure the s->vbe_regs[VBE_DISPI_INDEX_YRES] is always used */
-            s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = (cVirtHeight >= (uint32_t)s->vbe_regs[VBE_DISPI_INDEX_YRES]) ? UINT16_MAX : (uint16_t)cVirtHeight;
+            recaltulate_data(s, false);
         }
     }
     return VINF_SUCCESS;
@@ -2439,6 +2447,8 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     qemu_get_be16s(f, &s->vbe_index);
     for(i = 0; i < VBE_DISPI_INDEX_NB_SAVED; i++)
         qemu_get_be16s(f, &s->vbe_regs[i]);
+    if (version_id <= VGA_SAVEDSTATE_VERSION_INV_VHEIGHT)
+        recaltulate_data(s, false); /* <- re-calculate the s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] since it might be invalid */
     qemu_get_be32s(f, &s->vbe_start_addr);
     qemu_get_be32s(f, &s->vbe_line_offset);
     if (version_id < 2)
