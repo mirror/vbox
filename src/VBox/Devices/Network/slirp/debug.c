@@ -337,6 +337,23 @@ printTcpState(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     return cb;
 }
 
+/*
+ * Prints sbuf state
+ */
+static DECLCALLBACK(size_t)
+printSbuf(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                 const char *pszType, void const *pvValue,
+                 int cchWidth, int cchPrecision, unsigned fFlags,
+                 void *pvUser)
+{
+    size_t cb = 0;
+    const struct sbuf *sb = (struct sbuf *)pvValue;
+    AssertReturn(RTStrCmp(pszType, "sbuf") == 0, 0);
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[sbuf:%p cc:%d, datalen:%d, wprt:%p, rptr:%p data:%p]",
+                      sb, sb->sb_cc, sb->sb_datalen, sb->sb_wptr, sb->sb_rptr, sb->sb_data);
+    return cb;
+}
+
 static DECLCALLBACK(size_t)
 print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                     const char *pszType, void const *pvValue,
@@ -405,6 +422,8 @@ debug_init()
         rc = RTStrFormatTypeRegister("tcpseg793", printTcpSegmentRfc793, NULL);
         AssertRC(rc);
         rc = RTStrFormatTypeRegister("tcpstate", printTcpState, NULL);
+        AssertRC(rc);
+        rc = RTStrFormatTypeRegister("sbuf", printSbuf, NULL);
         AssertRC(rc);
         g_fFormatRegistered = 1;
     }
