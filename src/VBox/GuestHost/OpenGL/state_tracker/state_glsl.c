@@ -641,6 +641,8 @@ DECLEXPORT(GLint) STATE_APIENTRY crStateGetUniformSize(GLenum type)
         case GL_SAMPLER_CUBE:
         case GL_SAMPLER_1D_SHADOW:
         case GL_SAMPLER_2D_SHADOW:
+        case GL_SAMPLER_2D_RECT_ARB:
+        case GL_SAMPLER_2D_RECT_SHADOW_ARB:
             size = 1;
             break;
 #ifdef CR_OPENGL_VERSION_2_1
