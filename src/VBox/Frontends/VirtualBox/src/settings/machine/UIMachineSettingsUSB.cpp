@@ -468,7 +468,7 @@ bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTi
     /* USB 2.0 Extension Pack presence test: */
     QString strExtPackName = "Oracle VM VirtualBox Extension Pack";
     CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(strExtPackName);
-    if (mCbUSB2->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
+    if (mGbUSB->isChecked() && mCbUSB2->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
     {
         strWarningText = tr("USB 2.0 is currently enabled for this virtual machine. "
                             "However this requires the <b>%1</b> to be installed. "
@@ -532,7 +532,8 @@ void UIMachineSettingsUSB::retranslateUi()
 void UIMachineSettingsUSB::usbAdapterToggled(bool fEnabled)
 {
     /* Enable/disable USB children: */
-    mUSBChild->setEnabled(fEnabled);
+    mUSBChild->setEnabled(isMachineInValidMode() && fEnabled);
+    mCbUSB2->setEnabled(isMachineOffline() && fEnabled);
     if (fEnabled)
     {
         /* If there is no chosen item but there is something to choose => choose it: */
