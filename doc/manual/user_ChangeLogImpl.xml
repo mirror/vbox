@@ -145,6 +145,11 @@
       </listitem>
 
       <listitem>
+        <para>Sources: fixed USB 2.0 support using extension packs for non-official
+          builds</para>
+      </listitem>
+
+      <listitem>
         <para>Windows hosts: fixed copy'n'paste in the GUI and for the VM
           window (bug #4491)</para>
       </listitem>
