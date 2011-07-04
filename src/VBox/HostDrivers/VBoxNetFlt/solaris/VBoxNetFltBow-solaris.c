@@ -61,15 +61,15 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The module name. */
-#define DEVICE_NAME                     "vboxflt"
+#define DEVICE_NAME                     "vboxbow"
 /** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV                 "VirtualBox NetBow"
 /** The dynamically created VNIC name (hardcoded in NetIf-solaris.cpp).
  *  @todo move this define into a common header. */
-#define VBOXFLT_VNIC_NAME               "vboxvnic"
+#define VBOXBOW_VNIC_NAME               "vboxvnic"
 /** The VirtualBox VNIC template name (hardcoded in NetIf-solaris.cpp).
  *   *  @todo move this define into a common header. */
-#define VBOXFLT_VNIC_TEMPLATE_NAME      "vboxvnic_template"
+#define VBOXBOW_VNIC_TEMPLATE_NAME      "vboxvnic_template"
 /** Debugging switch for using symbols in kmdb */
 # define LOCAL                          static
 /** VBOXNETFLTVNIC::u32Magic */
@@ -381,17 +381,8 @@ LOCAL int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
     {
         case DDI_ATTACH:
         {
-            int instance = ddi_get_instance(pDip);
-            int rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0, "none", "none", 0666);
-            if (rc == DDI_SUCCESS)
-            {
-                g_pVBoxNetFltSolarisDip = pDip;
-                ddi_report_dev(pDip);
-                return DDI_SUCCESS;
-            }
-            else
-                LogRel((DEVICE_NAME ":VBoxNetFltSolarisAttach failed to create minor node. rc=%d\n", rc));
-            return DDI_FAILURE;
+            g_pVBoxNetFltSolarisDip = pDip;
+            return DDI_SUCCESS;
         }
 
         case DDI_RESUME:
@@ -423,7 +414,6 @@ LOCAL int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
     {
         case DDI_DETACH:
         {
-            ddi_remove_minor_node(pDip, NULL);
             return DDI_SUCCESS;
         }
 
@@ -1074,7 +1064,7 @@ LOCAL int vboxNetFltSolarisCreateVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC *ppV
     if (RT_UNLIKELY(!pVNIC))
         return VERR_NO_MEMORY;
 
-    RTStrPrintf(pVNIC->szName, sizeof(pVNIC->szName), "%s%RU64", VBOXFLT_VNIC_NAME, pThis->u.s.uInstance);
+    RTStrPrintf(pVNIC->szName, sizeof(pVNIC->szName), "%s%RU64", VBOXBOW_VNIC_NAME, pThis->u.s.uInstance);
 
     /*
      * Set a random MAC address for now. It will be changed to the VM interface's
@@ -1296,7 +1286,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
         else
         {
             pThis->u.s.fIsVNIC = true;
-            if (RTStrNCmp(pThis->szName, VBOXFLT_VNIC_TEMPLATE_NAME, sizeof(VBOXFLT_VNIC_TEMPLATE_NAME) - 1) == 0)
+            if (RTStrNCmp(pThis->szName, VBOXBOW_VNIC_TEMPLATE_NAME, sizeof(VBOXBOW_VNIC_TEMPLATE_NAME) - 1) == 0)
             {
                 LogFlow((DEVICE_NAME ":vboxNetFltOsInitInstance pThis=%p VNIC template '%s' detected.\n", pThis, pThis->szName));
                 pThis->u.s.fIsVNICTemplate = true;
