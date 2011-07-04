@@ -62,7 +62,7 @@ BOOL APIENTRY DllMain(HANDLE hModule,
 
 static void LogString(MSIHANDLE hInstall, LPCSTR szString, ...)
 {
-    PMSIHANDLE newHandle = ::MsiCreateRecord(2);
+    PMSIHANDLE newHandle = MsiCreateRecord(2);
 
     char szBuffer[1024] = {0};
     va_list pArgList;
@@ -81,7 +81,7 @@ static void LogString(MSIHANDLE hInstall, LPCSTR szString, ...)
 
 static void LogStringW(MSIHANDLE hInstall, LPCWSTR szString, ...)
 {
-    PMSIHANDLE newHandle = ::MsiCreateRecord(2);
+    PMSIHANDLE newHandle = MsiCreateRecord(2);
 
     TCHAR szBuffer[1024] = {0};
     va_list pArgList;
@@ -110,61 +110,63 @@ UINT __stdcall CheckSerial(MSIHANDLE hModule)
     return ERROR_SUCCESS;
 }
 
-DWORD Exec(MSIHANDLE hModule, TCHAR* szAppName, TCHAR* szCmdLine, TCHAR* szWorkDir, DWORD* dwExitCode)
+DWORD Exec(MSIHANDLE hModule,
+           const TCHAR *pszAppName, TCHAR *pszCmdLine, const TCHAR *pszWorkDir,
+           DWORD *pdwExitCode)
 {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
     DWORD rc = ERROR_SUCCESS;
 
-    ::ZeroMemory(&si, sizeof(si));
+    ZeroMemory(&si, sizeof(si));
     si.dwFlags = STARTF_USESHOWWINDOW;
 #ifdef UNICODE
     si.dwFlags |= CREATE_UNICODE_ENVIRONMENT;
 #endif
     si.wShowWindow = SW_HIDE; /* For debugging: SW_SHOW; */
     si.cb = sizeof(si);
-    ::ZeroMemory(&pi, sizeof(pi));
+    ZeroMemory(&pi, sizeof(pi));
 
     LogStringW(hModule, TEXT("Executing command line: %s %s (Working Dir: %s)"),
-               szAppName, szCmdLine, szWorkDir == NULL ? L"Current" : szWorkDir);
+               pszAppName, pszCmdLine, pszWorkDir == NULL ? L"Current" : pszWorkDir);
 
-    ::SetLastError(0);
-    if (!::CreateProcess(szAppName,    /* Module name. */
-                         szCmdLine,    /* Command line. */
-                         NULL,         /* Process handle not inheritable. */
-                         NULL,         /* Thread handle not inheritable. */
-                         FALSE,        /* Set handle inheritance to FALSE .*/
-                         0,            /* No creation flags. */
-                         NULL,         /* Use parent's environment block. */
-                         szWorkDir,    /* Use parent's starting directory. */
-                         &si,          /* Pointer to STARTUPINFO structure. */
-                         &pi))         /* Pointer to PROCESS_INFORMATION structure. */
+    SetLastError(0);
+    if (!CreateProcess(pszAppName,    /* Module name. */
+                       pszCmdLine,    /* Command line. */
+                       NULL,         /* Process handle not inheritable. */
+                       NULL,         /* Thread handle not inheritable. */
+                       FALSE,        /* Set handle inheritance to FALSE .*/
+                       0,            /* No creation flags. */
+                       NULL,         /* Use parent's environment block. */
+                       pszWorkDir,    /* Use parent's starting directory. */
+                       &si,          /* Pointer to STARTUPINFO structure. */
+                       &pi))         /* Pointer to PROCESS_INFORMATION structure. */
     {
-        rc = ::GetLastError();
+        rc = GetLastError();
         LogStringW(hModule, TEXT("Executing command line: CreateProcess() failed! Error: %ld"), rc);
         return rc;
     }
 
     /* Wait until child process exits. */
-    if (WAIT_FAILED == ::WaitForSingleObject(pi.hProcess, 30 * 1000 /* Wait 30 secs max. */))
+    if (WAIT_FAILED == WaitForSingleObject(pi.hProcess, 30 * 1000 /* Wait 30 secs max. */))
     {
-        rc = ::GetLastError();
+        rc = GetLastError();
         LogStringW(hModule, TEXT("Executing command line: WaitForSingleObject() failed! Error: %ld"), rc);
     }
     else
     {
-        if (0 == ::GetExitCodeProcess(pi.hProcess, dwExitCode))
+        if (!GetExitCodeProcess(pi.hProcess, pdwExitCode))
         {
-            rc = ::GetLastError();
+            rc = GetLastError();
             LogStringW(hModule, TEXT("Executing command line: GetExitCodeProcess() failed! Error: %ld"), rc);
         }
     }
 
     /* Close process and thread handles. */
-    ::CloseHandle(pi.hProcess);
-    ::CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
 
-    LogStringW(hModule, TEXT("Executing command returned: %ld (exit code %ld)"), rc, *dwExitCode);
+    LogStringW(hModule, TEXT("Executing command returned: %ld (exit code %ld)"), rc, *pdwExitCode);
     return rc;
 }
 
@@ -174,7 +176,7 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
 
     HKEY hkPythonCore = NULL;
     BOOL bFound = FALSE;
-    LONG rc = ::RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Python\\PythonCore", 0, KEY_READ, &hkPythonCore);
+    LONG rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Python\\PythonCore", 0, KEY_READ, &hkPythonCore);
     if (rc != ERROR_SUCCESS)
     {
         LogStringW(hModule, TEXT("InstallPythonAPI: Python seems not to be installed."));
@@ -190,7 +192,7 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
         DWORD dwLen = sizeof (szPath);
         DWORD dwKeyType = REG_SZ;
 
-        rc = ::RegEnumKeyEx(hkPythonCore, i, szRoot, &dwLen, NULL, NULL, NULL, NULL);
+        rc = RegEnumKeyEx(hkPythonCore, i, szRoot, &dwLen, NULL, NULL, NULL, NULL);
         if (rc != ERROR_SUCCESS || dwLen <= 0)
             break;
 
@@ -198,69 +200,82 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
         dwLen = sizeof(szVal);
 
         HKEY hkPythonInstPath = NULL;
-        rc = ::RegOpenKeyEx(hkPythonCore, szPath, 0, KEY_READ,  &hkPythonInstPath);
+        rc = RegOpenKeyEx(hkPythonCore, szPath, 0, KEY_READ,  &hkPythonInstPath);
         if (rc != ERROR_SUCCESS)
             continue;
 
-        rc = ::RegQueryValueEx(hkPythonInstPath, L"", NULL, &dwKeyType, (LPBYTE)szVal, &dwLen);
+        rc = RegQueryValueEx(hkPythonInstPath, L"", NULL, &dwKeyType, (LPBYTE)szVal, &dwLen);
         if (rc == ERROR_SUCCESS)
             LogStringW(hModule, TEXT("InstallPythonAPI: Path \"%s\" detected."), szVal);
 
-        ::RegCloseKey(hkPythonInstPath);
+        RegCloseKey(hkPythonInstPath);
     }
-    ::RegCloseKey(hkPythonCore);
+    RegCloseKey(hkPythonCore);
 
     /* Python path found? */
     TCHAR szExec[MAX_PATH] = { 0 };
     TCHAR szCmdLine[MAX_PATH] = { 0 };
     DWORD dwExitCode = 0;
-    if (::_tcslen(szVal) > 0)
+    if (_tcslen(szVal) > 0)
     {
         /* Cool, check for installed Win32 extensions. */
         LogStringW(hModule, TEXT("InstallPythonAPI: Python installed. Checking for Win32 extensions ..."));
         _stprintf_s(szExec, sizeof(szExec) / sizeof(TCHAR), L"%s\\python.exe", szVal);
         _stprintf_s(szCmdLine, sizeof(szCmdLine) / sizeof(TCHAR), L"%s\\python.exe -c \"import win32api\"", szVal);
 
-        if (   (0 == Exec(hModule, szExec, szCmdLine, NULL, &dwExitCode))
-            && (0 == dwExitCode))
+        DWORD dwRetExec = Exec(hModule, szExec, szCmdLine, NULL, &dwExitCode);
+        if (   (ERROR_SUCCESS == dwRetExec)
+            && (            0 == dwExitCode))
         {
             /* Did we get the correct error level (=0)? */
             LogStringW(hModule, TEXT("InstallPythonAPI: Win32 extensions installed."));
             bFound = TRUE;
         }
-        else LogStringW(hModule, TEXT("InstallPythonAPI: Win32 extensions not found."));
+        else
+            LogStringW(hModule, TEXT("InstallPythonAPI: Win32 extensions not found."));
     }
 
     BOOL bInstalled = FALSE;
     if (bFound) /* Is Python and all required stuff installed? */
     {
         /* Get the VBoxAPI setup string. */
-        TCHAR szVBoxAPISetupPath[MAX_PATH] = {0};
-        VBoxGetProperty(hModule, L"INSTALLDIR", szVBoxAPISetupPath, sizeof(szVBoxAPISetupPath));
-
-        /* Set final path. */
-        _stprintf_s(szPath, sizeof(szPath) / sizeof(TCHAR), L"%s\\sdk\\install", szVBoxAPISetupPath);
-
-        /* Install our API module. */
-        _stprintf_s(szCmdLine, sizeof(szCmdLine) / sizeof(TCHAR), L"%s\\python.exe vboxapisetup.py install", szVal);
-
-        /* Set required environment variables. */
-        if (!SetEnvironmentVariable(L"VBOX_INSTALL_PATH", szVBoxAPISetupPath))
+        TCHAR szPathTargetDir[MAX_PATH] = {0};
+        VBoxGetProperty(hModule, L"CustomActionData", szPathTargetDir, sizeof(szPathTargetDir));
+        if (_tcslen(szPathTargetDir))
         {
-            LogStringW(hModule, TEXT("InstallPythonAPI: Could set environment variable VBOX_INSTALL_PATH!"));
-        }
-        else
-        {
-            if (   (0 == Exec(hModule, szExec, szCmdLine, szPath, &dwExitCode))
-                && (0 == dwExitCode))
+
+            /* Set final path. */
+            _stprintf_s(szPath, sizeof(szPath) / sizeof(TCHAR), L"%s\\sdk\\install", szPathTargetDir);
+
+            /* Install our API module. */
+            _stprintf_s(szCmdLine, sizeof(szCmdLine) / sizeof(TCHAR), L"%s\\python.exe vboxapisetup.py install", szVal);
+
+            /* Set required environment variables. */
+            if (!SetEnvironmentVariable(L"VBOX_INSTALL_PATH", szPathTargetDir))
             {
-                /* All done! */
-                LogStringW(hModule, TEXT("InstallPythonAPI: VBoxAPI for Python successfully installed."));
-                bInstalled = TRUE;
+                LogStringW(hModule, TEXT("InstallPythonAPI: Could set environment variable VBOX_INSTALL_PATH!"));
             }
             else
-                LogStringW(hModule, TEXT("InstallPythonAPI: Error while installing VBox API: %ld"), dwExitCode);
+            {
+                DWORD dwRetExec = Exec(hModule, szExec, szCmdLine, szPath, &dwExitCode);
+                if (   (ERROR_SUCCESS == dwRetExec)
+                    && (            0 == dwExitCode))
+                {
+                    /* All done! */
+                    LogStringW(hModule, TEXT("InstallPythonAPI: VBoxAPI for Python successfully installed."));
+                    bInstalled = TRUE;
+                }
+                else
+                {
+                    if (dwRetExec)
+                        LogStringW(hModule, TEXT("InstallPythonAPI: Error while executing installation of VBox API: %ld"), dwRetExec);
+                    else
+                        LogStringW(hModule, TEXT("InstallPythonAPI: Python reported an error while installing VBox API: %ld"), dwExitCode);
+                }
+            }
         }
+        else
+            LogStringW(hModule, TEXT("InstallPythonAPI: Unable to retrieve VBox installation path!"));
     }
 
     VBoxSetProperty(hModule, L"PYTHON_INSTALLED", bInstalled ? L"1" : L"0");
@@ -408,7 +423,7 @@ UINT __stdcall UninstallBranding(MSIHANDLE hModule)
     TCHAR szPathTargetDir[_MAX_PATH];
     TCHAR szPathDest[_MAX_PATH];
 
-    rc = VBoxGetProperty(hModule, L"INSTALLDIR", szPathTargetDir, sizeof(szPathTargetDir));
+    rc = VBoxGetProperty(hModule, L"CustomActionData", szPathTargetDir, sizeof(szPathTargetDir));
     if (rc == ERROR_SUCCESS)
     {
         /** @todo Check trailing slash after %s. */
@@ -440,7 +455,7 @@ UINT __stdcall InstallBranding(MSIHANDLE hModule)
     rc = VBoxGetProperty(hModule, L"SOURCEDIR", szPathMSI, sizeof(szPathMSI));
     if (rc == ERROR_SUCCESS)
     {
-        rc = VBoxGetProperty(hModule, L"INSTALLDIR", szPathTargetDir, sizeof(szPathTargetDir));
+        rc = VBoxGetProperty(hModule, L"CustomActionData", szPathTargetDir, sizeof(szPathTargetDir));
         if (rc == ERROR_SUCCESS)
         {
             /** @todo Check for trailing slash after %s. */

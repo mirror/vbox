@@ -161,16 +161,22 @@
 
         <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />
         <CustomAction Id="ca_CheckSerial" BinaryKey="VBoxInstallHelper" DllEntry="CheckSerial" Impersonate="no"/>
-        <CustomAction Id="ca_InstallPythonAPI" BinaryKey="VBoxInstallHelper" DllEntry="InstallPythonAPI" Execute="deferred" Impersonate="no"/>
-        <CustomAction Id="ca_InstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="InstallBranding" Execute="deferred" Impersonate="no"/>
-        <CustomAction Id="ca_UninstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="UninstallBranding" Execute="deferred" Impersonate="no"/>
+
+        <CustomAction Id="ca_InstallPythonAPI" BinaryKey="VBoxInstallHelper" DllEntry="InstallPythonAPI" Execute="deferred" Return="check" Impersonate="no"/>
+        <CustomAction Id="ca_InstallPythonAPIArgs" Property="ca_InstallPythonAPI" Value="[INSTALLDIR]" Execute="immediate"/>
+
+        <CustomAction Id="ca_InstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="InstallBranding" Execute="deferred" Return="check" Impersonate="no"/>
+        <CustomAction Id="ca_InstallBrandingArgs" Property="ca_InstallBranding" Value="[INSTALLDIR]" Execute="immediate"/>
+
+        <CustomAction Id="ca_UninstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="UninstallBranding" Execute="deferred" Return="check" Impersonate="no"/>
+        <CustomAction Id="ca_UninstallBrandingArgs" Property="ca_UninstallBranding" Value="[INSTALLDIR]" Execute="immediate"/>
 
         <CustomAction Id="ca_UninstallTAPInstances" BinaryKey="VBoxInstallHelper"
                       DllEntry="UninstallTAPInstances" Execute="deferred" Return="check" Impersonate="no"/>
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-        <CustomAction Id="ca_CreateHostOnlyInterfaceArgs" Property="ca_CreateHostOnlyInterface" Value="[INSTALLDIR]" Execute="immediate"/>
         <CustomAction Id="ca_CreateHostOnlyInterface"  BinaryKey="VBoxInstallHelper"  DllEntry="CreateHostOnlyInterface" Execute="deferred" Return="check" Impersonate="no"/>
+        <CustomAction Id="ca_CreateHostOnlyInterfaceArgs" Property="ca_CreateHostOnlyInterface" Value="[INSTALLDIR]" Execute="immediate"/>
 
         <CustomAction Id="ca_RemoveHostOnlyInterfaces" BinaryKey="VBoxInstallHelper"  DllEntry="RemoveHostOnlyInterfaces" Execute="deferred" Return="check" Impersonate="no"/>
 
@@ -723,7 +729,7 @@
 <?endif?>
 
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-            <Feature Id="ft_VBoxPython" Title="VirtualBox Python Support" Level="1"
+            <Feature Id="ft_VBoxPython" Title="VirtualBox Python 2.x Support" Level="1"
                     Description="!(loc.VB_Python)"
                     ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
                 <ComponentRef Id="cp_VBoxPythonBinding" />
@@ -761,8 +767,13 @@
             <Custom Action="ca_UninstallNetFltArgs" Before="ca_UninstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
             <Custom Action="ca_UninstallNetFlt" After="InstallInitialize" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
 <?endif?>
+            <Custom Action="ca_InstallPythonAPIArgs" Before="ca_InstallPythonAPI" ><![CDATA[&ft_VBoxPython=3]]></Custom>
             <Custom Action="ca_InstallPythonAPI" Before="InstallFinalize" ><![CDATA[&ft_VBoxPython=3]]></Custom>
+
+            <Custom Action="ca_InstallBrandingArgs" Before="ca_InstallBranding" ><![CDATA[NOT REMOVE]]></Custom>
             <Custom Action="ca_InstallBranding" Before="InstallFinalize" ><![CDATA[NOT REMOVE]]></Custom>
+
+            <Custom Action="ca_UninstallBrandingArgs" Before="ca_UninstallBranding" ><![CDATA[REMOVE]]></Custom>
             <Custom Action="ca_UninstallBranding" Before="InstallFinalize" ><![CDATA[REMOVE]]></Custom>
 
         </InstallExecuteSequence>
