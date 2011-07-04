@@ -1125,7 +1125,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             if (!cbLinePitch)
                 cbLinePitch      = calc_line_pitch(cBPP, cX);
             Assert(cbLinePitch != 0);
-            uint16_t cVirtHeight = s->vram_size / cbLinePitch;
+            uint32_t cVirtHeight = s->vram_size / cbLinePitch;
             uint32_t offStart    = cbLinePitch * offY;
             if (cBPP == 4)
                 offStart += offX >> 1;
@@ -1134,7 +1134,17 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             offStart >>= 2;
             s->vbe_line_offset = RT_MIN(cbLinePitch, s->vram_size);
             s->vbe_start_addr  = RT_MIN(offStart, s->vram_size);
-            s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = cVirtHeight;
+
+            /* The VBE_DISPI_INDEX_VIRT_HEIGHT is used to prevent setting resolution bigger than VRAM permits
+             * it is used instead of VBE_DISPI_INDEX_YRES *only* in case
+             * s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] < s->vbe_regs[VBE_DISPI_INDEX_YRES]
+             * We can not simply do s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = cVirtHeight since
+             * the cVirtHeight we calculated can exceed the 16bit value range
+             * instead we'll check if it's bigger than s->vbe_regs[VBE_DISPI_INDEX_YRES], and if yes,
+             * assign the s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] with a dummy UINT16_MAX value
+             * that is always bigger than s->vbe_regs[VBE_DISPI_INDEX_YRES]
+             * to just ensure the s->vbe_regs[VBE_DISPI_INDEX_YRES] is always used */
+            s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT] = (cVirtHeight >= (uint32_t)s->vbe_regs[VBE_DISPI_INDEX_YRES]) ? UINT16_MAX : (uint16_t)cVirtHeight;
         }
     }
     return VINF_SUCCESS;
