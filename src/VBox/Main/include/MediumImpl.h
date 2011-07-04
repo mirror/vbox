@@ -192,6 +192,7 @@ public:
     const Guid* getFirstMachineBackrefId() const;
     const Guid* getAnyMachineBackref() const;
     const Guid* getFirstMachineBackrefSnapshotId() const;
+    size_t getMachineBackRefCount() const;
 
 #ifdef DEBUG
     void dumpBackRefs();

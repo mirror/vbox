@@ -3464,6 +3464,11 @@ const Guid* Medium::getFirstMachineBackrefSnapshotId() const
     return &ref.llSnapshotIds.front();
 }
 
+size_t Medium::getMachineBackRefCount() const
+{
+    return m->backRefs.size();
+}
+
 #ifdef DEBUG
 /**
  * Debugging helper that gets called after VirtualBox initialization that writes all
