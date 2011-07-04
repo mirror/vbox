@@ -152,6 +152,7 @@ soread(PNATState pData, struct socket *so)
     QSOCKET_UNLOCK(tcb);
 
     LogFlow(("soread: so = %R[natsock]\n", so));
+    Log2(("%s: so = %R[natsock] so->so_snd = %R[sbuf]\n", __PRETTY_FUNCTION__, so, sb));
 
     /*
      * No need to check if there's enough room to read.
@@ -219,6 +220,7 @@ soread(PNATState pData, struct socket *so)
     nn = recv(so->s, iov[0].iov_base, iov[0].iov_len, (so->so_tcpcb->t_force? MSG_OOB:0));
 #endif
     Log2(("%s: read(1) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
+    Log2(("%s: so = %R[natsock] so->so_snd = %R[sbuf]\n", __PRETTY_FUNCTION__, so, sb));
     if (nn <= 0)
     {
         /*
@@ -304,8 +306,12 @@ soread(PNATState pData, struct socket *so)
     /* Update fields */
     sb->sb_cc += nn;
     sb->sb_wptr += nn;
+    Log2(("%s: update so_snd (readed nn = %d) %R[sbuf]\n", __PRETTY_FUNCTION__, nn, so, sb));
     if (sb->sb_wptr >= (sb->sb_data + sb->sb_datalen))
+    {
         sb->sb_wptr -= sb->sb_datalen;
+        Log2(("%s: alter sb_wptr  so_snd = %R[sbuf]\n", __PRETTY_FUNCTION__, nn, so, sb));
+    }
     STAM_PROFILE_STOP(&pData->StatIOread, a);
     SOCKET_UNLOCK(so);
     return nn;
@@ -505,7 +511,8 @@ sowrite(PNATState pData, struct socket *so)
     STAM_COUNTER_RESET(&pData->StatIOWrite_no_w);
     STAM_COUNTER_RESET(&pData->StatIOWrite_rest);
     STAM_COUNTER_RESET(&pData->StatIOWrite_rest_bytes);
-    LogFlow(("sowrite: so = %lx\n", (long)so));
+    LogFlowFunc(("so = %R[natsock]\n", so));
+    Log2(("%s: so = %R[natsock] so->so_rcv = %R[sbuf]\n", __PRETTY_FUNCTION__, so, sb));
     QSOCKET_LOCK(tcb);
     SOCKET_LOCK(so);
     QSOCKET_UNLOCK(tcb);
@@ -618,8 +625,12 @@ sowrite(PNATState pData, struct socket *so)
     /* Update sbuf */
     sb->sb_cc -= nn;
     sb->sb_rptr += nn;
+    Log2(("%s: update so_rcv (written nn = %d) %R[sbuf]\n", __PRETTY_FUNCTION__, sb, nn));
     if (sb->sb_rptr >= (sb->sb_data + sb->sb_datalen))
+    {
         sb->sb_rptr -= sb->sb_datalen;
+        Log2(("%s: alter sb_rptr of so_rcv %R[sbuf]\n", __PRETTY_FUNCTION__, sb));
+    }
 
     /*
      * If in DRAIN mode, and there's no more data, set
