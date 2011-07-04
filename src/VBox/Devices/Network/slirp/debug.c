@@ -330,7 +330,7 @@ printTcpState(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                  void *pvUser)
 {
     size_t cb = 0;
-    const int idxTcpState = (int)pvValue;
+    const int idxTcpState = (int)(uintptr_t)pvValue;
     char *pszTcpStateName = (idxTcpState >= 0 && idxTcpState < TCP_NSTATES) ? g_apszTcpStates[idxTcpState] : "TCPS_INVALIDE_STATE";
     AssertReturn(RTStrCmp(pszType, "tcpstate") == 0, 0);
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s", pszTcpStateName);
