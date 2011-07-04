@@ -455,6 +455,28 @@ load_module()
     fi
 }
 
+load_vboxflt()
+{
+    if test -f "$DIR_CONF/vboxflt.conf"; then
+        add_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
+        load_module "drv/$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
+    else
+        # For custom pkgs that optionally ship this module, let's not fail but just warn
+        warnprint "$DESC_VBOXFLT installation requested but not shipped in this package."
+    fi
+}
+
+load_vboxbow()
+{
+    if test -f "$DIR_CONF/vboxbow.conf"; then
+        add_driver "$MOD_VBOXBOW" "$DESC_VBOXBOW" "$FATALOP"
+        load_module "drv/$MOD_VBOXBOW" "$DESC_VBOXBOW" "$FATALOP"
+    else
+        # For custom pkgs that optionally ship this module, let's not fail but just warn
+        warnprint "$DESC_VBOXBOW installation requested but not shipped in this package."
+    fi
+}
+
 # install_drivers()
 # !! failure is always fatal
 install_drivers()
@@ -496,18 +518,26 @@ install_drivers()
         load_module "drv/$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
     fi
 
-    # If "/etc/vboxinst_vboxflt" exists or if host is Solaris 10 or S11 versions < snv_159 then load vboxflt driver.
-    if test -f /etc/vboxinst_vboxflt || test "$HOST_OS_MAJORVERSION" = "5.10" || test "$HOST_OS_MINORVERSION" -lt 159 || test ! -f "$DIR_CONF/vboxbow.conf"; then
-        # Load VBoxNetFlt
-        if test -f "$DIR_CONF/vboxflt.conf"; then
-            add_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
-            load_module "drv/$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
-        fi
+    # If both vboxinst_vboxbow and vboxinst_vboxflt exist, bail.
+    if test -f "$PKG_INSTALL_ROOT/etc/vboxinst_vboxflt" && test -f "$PKG_INSTALL_ROOT/etc/vboxinst_vboxbow"; then
+        errorprint "Force-install files '$PKG_INSTALL_ROOT/etc/vboxinst_vboxflt' and '$PKG_INSTALL_ROOT/etc/vboxinst_vboxbow' both exist."
+        errorprint "Cannot load $DESC_VBOXFLT and $DESC_VBOXBOW drivers at the same time."
+        return 1
+    fi
+
+    # If the force-install files exists, install blindly
+    if test -f "$PKG_INSTALL_ROOT/etc/vboxinst_vboxflt"; then
+        load_vboxflt
+    elif test -f "$PKG_INSTALL_ROOT/etc/vboxinst_vboxbow"; then
+        infoprint "here"
+        load_vboxbow
     else
-        # Load VBoxNetBow
-        if test -f "$DIR_CONF/vboxbow.conf"; then
-            add_driver "$MOD_VBOXBOW" "$DESC_VBOXBOW" "$FATALOP"
-            load_module "drv/$MOD_VBOXBOW" "$DESC_VBOXBOW" "$FATALOP"
+        # If host is S10 or S11 (< snv_159) or vboxbow isn't shipped, then load vboxflt
+        if test "$HOST_OS_MAJORVERSION" = "5.10" || test "$HOST_OS_MINORVERSION" -lt 159 || test ! -f "$DIR_CONF/vboxbow.conf"; then
+            load_vboxflt
+        else
+            # For S11 snv_159+ load vboxbow
+            load_vboxbow
         fi
     fi
 
