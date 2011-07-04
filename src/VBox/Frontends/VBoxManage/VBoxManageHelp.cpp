@@ -705,7 +705,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_EXTPACK)
     {
         RTStrmPrintf(pStrm,
-                     "VBoxManage extpack          install <tarball> |\n"
+                     "VBoxManage extpack          install [--replace] <tarball> |\n"
                      "                            uninstall [--force] <name> |\n"
                      "                            cleanup\n"
                      "\n");

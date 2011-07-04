@@ -3202,7 +3202,11 @@ Value: 2006.01.01</screen>
     linkend="intro-installing" />.<itemizedlist>
         <listitem>
           <para>To add a new extension pack, use <computeroutput>VBoxManage
-          extpack install &lt;tarball&gt;</computeroutput>.</para>
+          extpack install &lt;tarball&gt;</computeroutput>. This command
+          will fail if an older version of the same extension pack is already
+          installed. The optional <computeroutput>--replace</computeroutput>
+          parameter can be used to uninstall the old package before the new
+          package is installed.</para>
         </listitem>
 
         <listitem>
