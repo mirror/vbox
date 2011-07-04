@@ -62,7 +62,7 @@
 #ifdef VBOX_WITH_USB
 # undef LOG_GROUP
 # include "../USB/DevOHCI.cpp"
-# ifdef VBOX_WITH_EHCI
+# ifdef VBOX_WITH_EHCI_IMPL
 #  include "../USB/DevEHCI.cpp"
 # endif
 #endif
@@ -928,7 +928,7 @@ int main()
     GEN_CHECK_OFF(OHCI, StatDroppedUrbs);
     GEN_CHECK_OFF(OHCI, StatTimer);
 # endif
-# ifdef VBOX_WITH_EHCI
+# ifdef VBOX_WITH_EHCI_IMPL
     /* USB/DevEHCI.cpp */
     GEN_CHECK_SIZE(EHCIHUBPORT);
     GEN_CHECK_OFF(EHCIHUBPORT, fReg);
@@ -1005,7 +1005,7 @@ int main()
     GEN_CHECK_OFF(EHCI, pEOFTimerNoSyncRC);
     GEN_CHECK_OFF(EHCI, pEOFTimerNoSyncR3);
     GEN_CHECK_OFF(EHCI, pEOFTimerNoSyncR0);
-# endif /* VBOX_WITH_EHCI */
+# endif /* VBOX_WITH_EHCI_IMPL */
 #endif /* VBOX_WITH_USB */
 
     /* VMMDev/VBoxDev.cpp */
