@@ -370,6 +370,15 @@ void PACKSPU_APIENTRY packspu_GetPixelMapusv( GLenum map, GLushort * values )
     }
 }
 
+void PACKSPU_APIENTRY packspu_ChromiumParameteriCR(GLenum target, GLint value)
+{
+    if (GL_SHARE_CONTEXT_RESOURCES_CR==target)
+    {
+        crStateShareContext(value);
+    }
+    crPackChromiumParameteriCR(target, value);
+}
+
 #ifdef CHROMIUM_THREADSAFE
 void PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(void)
 {
