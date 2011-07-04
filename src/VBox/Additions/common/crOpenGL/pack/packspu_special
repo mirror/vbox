@@ -106,3 +106,4 @@ VBoxPackGetInjectID
 VBoxPackSetInjectID
 VBoxPackAttachThread
 VBoxPackDetachThread
+ChromiumParameteriCR

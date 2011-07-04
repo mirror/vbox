@@ -1153,7 +1153,11 @@ HRESULT WINAPI IWineD3DBaseSurfaceImpl_Blt(IWineD3DSurface *iface, const RECT *D
 
     if (Src == This)
     {
-        IWineD3DSurface_LockRect(iface, &dlock, NULL, 0);
+        ret = IWineD3DSurface_LockRect(iface, &dlock, NULL, 0);
+        if (FAILED(ret))
+        {
+            goto error;
+        }
         slock = dlock;
         sEntry = This->resource.format_desc;
         dEntry = sEntry;
@@ -1172,17 +1176,27 @@ HRESULT WINAPI IWineD3DBaseSurfaceImpl_Blt(IWineD3DSurface *iface, const RECT *D
                     goto release;
                 }
             }
-            IWineD3DSurface_LockRect((IWineD3DSurface *) Src, &slock, NULL, WINED3DLOCK_READONLY);
+            ret = IWineD3DSurface_LockRect((IWineD3DSurface *) Src, &slock, NULL, WINED3DLOCK_READONLY);
+            if (FAILED(ret))
+            {
+                goto error;
+            }
             sEntry = Src->resource.format_desc;
         }
         else
         {
             sEntry = dEntry;
         }
+
         if (DestRect)
-            IWineD3DSurface_LockRect(iface, &dlock, &xdst, 0);
+            ret = IWineD3DSurface_LockRect(iface, &dlock, &xdst, 0);
         else
-            IWineD3DSurface_LockRect(iface, &dlock, NULL, 0);
+            ret = IWineD3DSurface_LockRect(iface, &dlock, NULL, 0);
+
+        if (FAILED(ret))
+        {
+            goto error;
+        }
     }
 
     if (!DDBltFx || !(DDBltFx->dwDDFX)) Flags &= ~WINEDDBLT_DDFX;
@@ -1884,6 +1898,12 @@ HRESULT WINAPI IWineD3DBaseSurfaceImpl_LockRect(IWineD3DSurface *iface, WINED3DL
 
     TRACE("(%p) : rect@%p flags(%08x), output lockedRect@%p, memory@%p\n",
           This, pRect, Flags, pLockedRect, This->resource.allocatedMemory);
+
+    if (!This->resource.allocatedMemory)
+    {
+        ERR("Can't LockRect, This->resource.allocatedMemory is NULL\n");
+        return WINED3DERR_NOTAVAILABLE;
+    }
 
     pLockedRect->Pitch = IWineD3DSurface_GetPitch(iface);
 
