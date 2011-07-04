@@ -546,7 +546,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>&amp;CPU Execution Cap:</string>
+          <string>&amp;Execution Cap:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -564,7 +564,7 @@
          <item>
           <widget class="QIAdvancedSlider" name="mSlCPUExecCap">
            <property name="whatsThis">
-            <string>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%.</string>
+            <string>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</string>
            </property>
            <property name="maximum">
             <number>4096</number>
@@ -637,7 +637,7 @@
           </sizepolicy>
          </property>
          <property name="whatsThis">
-          <string>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%.</string>
+          <string>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</string>
          </property>
         </widget>
        </item>
