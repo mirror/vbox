@@ -33,7 +33,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 VBoxAboutDlg::VBoxAboutDlg(QWidget *pParent, const QString &strVersion)
-    : QIWithRetranslateUI2<QIDialog>(pParent, Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint)
+    : QIWithRetranslateUI2<QIDialog>(pParent, Qt::CustomizeWindowHint | Qt::WindowTitleHint)
     , m_strVersion(strVersion)
 {
     /* Delete dialog on close: */
