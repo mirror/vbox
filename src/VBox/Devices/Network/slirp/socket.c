@@ -151,7 +151,7 @@ soread(PNATState pData, struct socket *so)
     SOCKET_LOCK(so);
     QSOCKET_UNLOCK(tcb);
 
-    LogFlow(("soread: so = %lx\n", (long)so));
+    LogFlow(("soread: so = %R[natsock]\n", so));
 
     /*
      * No need to check if there's enough room to read.
@@ -215,10 +215,10 @@ soread(PNATState pData, struct socket *so)
 
 #ifdef HAVE_READV
     nn = readv(so->s, (struct iovec *)iov, n);
-    Log2((" ... read nn = %d bytes\n", nn));
 #else
     nn = recv(so->s, iov[0].iov_base, iov[0].iov_len, (so->so_tcpcb->t_force? MSG_OOB:0));
 #endif
+    Log2(("%s: read(1) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
     if (nn <= 0)
     {
         /*
@@ -232,7 +232,7 @@ soread(PNATState pData, struct socket *so)
         unsigned long pending = 0;
         status = ioctlsocket(so->s, FIONREAD, &pending);
         if (status < 0)
-            Log(("NAT:error in WSAIoctl: %d\n", errno));
+            Log(("NAT:%s: error in WSAIoctl: %d\n", __PRETTY_FUNCTION__, errno));
         if (nn == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);
@@ -251,8 +251,8 @@ soread(PNATState pData, struct socket *so)
         else
         {
             /* nn == 0 means peer has performed an orderly shutdown */
-            Log2((" --- soread() disconnected, nn = %d, errno = %d (%s)\n",
-                  nn, errno, strerror(errno)));
+            Log2(("%s: disconnected, nn = %d, errno = %d (%s)\n",
+                  __PRETTY_FUNCTION__, nn, errno, strerror(errno)));
             sofcantrcvmore(so);
             tcp_sockclosed(pData, sototcpcb(so));
             SOCKET_UNLOCK(so);
@@ -298,7 +298,7 @@ soread(PNATState pData, struct socket *so)
         );
     }
 
-    Log2((" ... read nn = %d bytes\n", nn));
+    Log2(("%s: read(2) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
 #endif
 
     /* Update fields */
@@ -571,10 +571,10 @@ sowrite(PNATState pData, struct socket *so)
     /* Check if there's urgent data to send, and if so, send it */
 #ifdef HAVE_READV
     nn = writev(so->s, (const struct iovec *)iov, n);
-    Log2(("  ... wrote nn = %d bytes\n", nn));
 #else
     nn = send(so->s, iov[0].iov_base, iov[0].iov_len, 0);
 #endif
+    Log2(("%s: wrote(1) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
     /* This should never happen, but people tell me it does *shrug* */
     if (   nn < 0
         && (   errno == EAGAIN
@@ -588,8 +588,8 @@ sowrite(PNATState pData, struct socket *so)
 
     if (nn < 0 || (nn == 0 && iov[0].iov_len > 0))
     {
-        Log2((" --- sowrite disconnected, so->so_state = %x, errno = %d\n",
-              so->so_state, errno));
+        Log2(("%s: disconnected, so->so_state = %x, errno = %d\n",
+              __PRETTY_FUNCTION__, so->so_state, errno));
         sofcantsendmore(so);
         tcp_sockclosed(pData, sototcpcb(so));
         SOCKET_UNLOCK(so);
@@ -612,7 +612,7 @@ sowrite(PNATState pData, struct socket *so)
             }
         });
     }
-    Log2(("  ... wrote nn = %d bytes\n", nn));
+    Log2(("%s: wrote(2) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
 #endif
 
     /* Update sbuf */
