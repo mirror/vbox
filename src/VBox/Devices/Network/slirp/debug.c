@@ -298,8 +298,8 @@ printTcpcbRfc793(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     size_t cb = 0;
     const struct tcpcb *tp = (const struct tcpcb *)pvValue;
     AssertReturn(RTStrCmp(pszType, "tcpcb793") == 0 && tp, 0);
-    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "TCB793[ SND(UNA: %x, NXT: %x, UP: %x, WND: %x, WL1:%x, WL2:%x, ISS:%x), ",
-                      tp->snd_una, tp->snd_nxt, tp->snd_up, tp->snd_wnd, tp->snd_wl1, tp->snd_wl2, tp->iss);
+    cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "TCB793[ state:%R[tcpstate] SND(UNA: %x, NXT: %x, UP: %x, WND: %x, WL1:%x, WL2:%x, ISS:%x), ",
+                      tp->t_state, tp->snd_una, tp->snd_nxt, tp->snd_up, tp->snd_wnd, tp->snd_wl1, tp->snd_wl2, tp->iss);
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "RCV(WND: %x, NXT: %x, UP: %x, IRS:%x)]", tp->rcv_wnd, tp->rcv_nxt, tp->rcv_up, tp->irs);
     return cb;
 }
