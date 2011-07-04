@@ -272,12 +272,16 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     }
 
     in_addr = (struct sockaddr_in *)&addr;
-    ip = RT_N2H_U32(so->so_faddr.s_addr);
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %d:(proto:%u) "
-            "state=%04x ip=%RTnaipv4 :%d "
+            "state=%04x "
+            "f_(addr:port)=%RTnaipv4:%d "
+            "l_(addr:port)=%RTnaipv4:%d "
             "name=%RTnaipv4:%d",
-            so->s, so->so_type, so->so_state, ip,
+            so->s, so->so_type, so->so_state,
+            so->so_faddr.s_addr,
             RT_N2H_U16(so->so_fport),
+            so->so_laddr.s_addr,
+            RT_N2H_U16(so->so_lport),
             in_addr->sin_addr.s_addr,
             RT_N2H_U16(in_addr->sin_port));
 }
