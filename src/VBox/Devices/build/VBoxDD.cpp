@@ -132,7 +132,7 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 #endif
-#ifdef VBOX_WITH_EHCI
+#ifdef VBOX_WITH_EHCI_IMPL
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceEHCI);
     if (RT_FAILURE(rc))
         return rc;
