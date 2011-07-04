@@ -903,7 +903,9 @@ void STATE_APIENTRY crStateBindTexture(GLenum target, GLuint texture)
         /* Target isn't set so set it now.*/
         tobj->target = target;
     }
-    else if (tobj->target != target)
+    else if ((tobj->target != target) 
+             && !((target==GL_TEXTURE_RECTANGLE_NV && tobj->target==GL_TEXTURE_2D)
+                  ||(target==GL_TEXTURE_2D && tobj->target==GL_TEXTURE_RECTANGLE_NV)))
     {
         crWarning( "You called glBindTexture with a target of 0x%x, but the texture you wanted was target 0x%x [1D: %x 2D: %x 3D: %x cube: %x]", (int) target, (int) tobj->target, GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_CUBE_MAP );
         crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "Attempt to bind a texture of different dimensions");
