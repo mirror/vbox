@@ -746,21 +746,21 @@ Statistics update:  disabled
 
           <listitem>
             <para><computeroutput>--nicgenericdrv&lt;1-N&gt;
-            &lt;backend driver&gt;</computeroutput>: If generic networking has been 
+            &lt;backend driver&gt;</computeroutput>: If generic networking has been
             enabled for a virtual network card (see the
             <computeroutput>--nic</computeroutput> option above; otherwise
             this setting has no effect), this mode allows you to access
             rarely used networking sub-modes, such as VDE network or UDP Tunnel.
             </para>
           </listitem>
-          
+
           <listitem>
-            <para><computeroutput>--nicproperty&lt;1-N&gt; 
+            <para><computeroutput>--nicproperty&lt;1-N&gt;
             &lt;paramname&gt;="paramvalue"</computeroutput>:
             This option, in combination with "nicgenericdrv" allows you to
             pass parameters to rarely-used network backends.</para><para>
             Those parameters are backend engine-specific, and are different
-            between UDP Tunnel and the VDE backend drivers. For example, 
+            between UDP Tunnel and the VDE backend drivers. For example,
             please see <xref linkend="network_udp_tunnel" />.
             </para>
           </listitem>
@@ -1339,7 +1339,7 @@ Virtual system 0:
         virtual machines using internal networking
         (<computeroutput>intnet</computeroutput>) or host-only networking
         (<computeroutput>hostonly</computeroutput>) or access to rarely used
-        sub-modes 
+        sub-modes
         (<computeroutput>generic</computeroutput>). These options correspond
         to the modes which are described in detail in <xref
         linkend="networkingmodes" />.</para>
@@ -2455,13 +2455,13 @@ Value: 2006.01.01</screen>
           runnable on the guest. This command only works while a VM is up and
           running and has the following syntax:</para>
 
-          <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; exec[ute]
-            &lt;path to program&gt;
+          <screen>VBoxManage guestcontrol exec[ute] &lt;vmname&gt;|&lt;uuid&gt;
+            --image &lt;path to program&gt;
             --username &lt;name&gt; --password &lt;password&gt;
-            [--arguments "&lt;arguments&gt;"]
             [--environment "&lt;NAME&gt;=&lt;VALUE&gt; [&lt;NAME&gt;=&lt;VALUE&gt;]"]
             [--flags &lt;flags&gt;] [--timeout &lt;msec&gt;]
-            [--verbose] [--wait-for exit,stdout,stderr||]</screen>
+            [--verbose] [--wait-exit] [--wait-stdout] [--wait-stderr]
+            -- [[&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</screen>
 
           <para>where the parameters mean: <glosslist>
               <glossentry>
@@ -2473,7 +2473,7 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm>path to program</glossterm>
+                <glossterm>--image "&lt;path to program&gt;"</glossterm>
 
                 <glossdef>
                   <para>Absolute path and process name of process to execute
@@ -2569,34 +2569,34 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm>--wait-for &lt;action&gt;</glossterm>
+                <glossterm>--wait-exit</glossterm>
 
                 <glossdef>
-                  <para>Tells VBoxManage to wait for a certain action to
-                  happen and react to it. The following actions are available:
-                  <glosslist>
-                      <glossentry>
-                        <glossterm>exit</glossterm>
-
-                        <glossdef>
-                          <para>Waits until the process ends and outputs its
-                          exit code along with the exit reason/flags.</para>
-                        </glossdef>
-                      </glossentry>
-
-                      <glossentry>
-                        <glossterm>stdout or stderr</glossterm>
-
-                        <glossdef>
-                          <para>Waits until the process ends and outputs its
-                          exit code along with the exit reason/flags. After
-                          that VBoxManage retrieves the output collected from
-                          the guest process's stdout and stderr.</para>
-                        </glossdef>
-                      </glossentry>
-                    </glosslist></para>
+                  <para>Waits until the process ends and outputs its
+                  exit code along with the exit reason/flags.</para>
                 </glossdef>
               </glossentry>
+
+              <glossentry>
+                <glossterm>--wait-stdout</glossterm>
+
+                <glossdef>
+                  <para>Waits until the process ends and outputs its
+                  exit code along with the exit reason/flags. While waiting
+                  VBoxManage retrieves the process output collected from stdout.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--wait-stderr</glossterm>
+
+                <glossdef>
+                  <para>Waits until the process ends and outputs its
+                  exit code along with the exit reason/flags. While waiting
+                  VBoxManage retrieves the process output collected from stderr.</para>
+                </glossdef>
+              </glossentry>
+
             </glosslist></para>
 
           <para><note>
@@ -2720,7 +2720,7 @@ Value: 2006.01.01</screen>
           copying files from the host to the guest (only with installed Guest
           Additions 4.0 and later).</para>
 
-          <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; createdir[ectory]|mkdir|md 
+          <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; createdir[ectory]|mkdir|md
             &lt;directory to create on guest&gt;
             [--username "&lt;name&gt;"] [--password "&lt;password&gt;"]
             [--parents] [--mode &lt;mode&gt;] [--verbose]</screen>

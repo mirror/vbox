@@ -185,10 +185,10 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            [--dos2unix]\n"
                  "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
                  "                            [--timeout <msec>] [--unix2dos] [--verbose]\n"
-                 "                            [--wait-exit] [--wait-stdout] [--wait-stdout]\n"
+                 "                            [--wait-exit] [--wait-stdout] [--wait-stderr]\n"
                  //"                          [--output-format=<dos>|<unix>]\n"
                  "                            [--output-type=<binary>|<text>]\n"
-                 "                            [-- [<argument1>] ... [<argumentN>]\n"
+                 "                            [-- [<argument1>] ... [<argumentN>]]\n"
                  /** @todo Add a "--" parameter (has to be last parameter) to directly execute
                   *        stuff, e.g. "VBoxManage guestcontrol execute <VMName> --username <> ... -- /bin/rm -Rf /foo". */
                  "\n"
