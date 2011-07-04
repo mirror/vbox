@@ -96,7 +96,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 
     LogFlow(("udp_input: m = %lx, iphlen = %d\n", (long)m, iphlen));
     ip = mtod(m, struct ip *);
-    Log2(("%R[naipv4] iphlen = %d\n", &ip->ip_dst, iphlen));
+    Log2(("%RTnaipv4 iphlen = %d\n", ip->ip_dst, iphlen));
 
     udpstat.udps_ipackets++;
 
@@ -295,8 +295,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         m->m_len += iphlen;
         m->m_data -= iphlen;
         *ip = save_ip;
-        Log2(("NAT: UDP tx errno = %d (%s) on sent to %R[naipv4]\n",
-              errno, strerror(errno), &ip->ip_dst));
+        Log2(("NAT: UDP tx errno = %d (%s) on sent to %RTnaipv4\n",
+              errno, strerror(errno), ip->ip_dst));
         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
         so->so_m = NULL;
         return;
@@ -313,7 +313,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     return;
 
 bad_free_mbuf:
-    Log2(("NAT: UDP(id: %hd) datagram to %R[naipv4] with size(%d) claimed as bad\n",
+    Log2(("NAT: UDP(id: %hd) datagram to %RTnaipv4 with size(%d) claimed as bad\n",
         ip->ip_id, &ip->ip_dst, ip->ip_len));
 
 done_free_mbuf:
@@ -517,7 +517,7 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
 
     if (bind(so->s,(struct sockaddr *)&addr, addrlen) < 0)
     {
-        LogRel(("NAT: bind to %R[naipv4] has been failed\n", &addr.sin_addr));
+        LogRel(("NAT: bind to %RTnaipv4 has been failed\n", addr.sin_addr));
         udp_detach(pData, so);
         return NULL;
     }

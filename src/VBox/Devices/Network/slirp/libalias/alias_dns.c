@@ -78,9 +78,9 @@ fingerprint(struct libalias *la, struct ip *pip, struct alias_data *ah)
     if (!ah->dport || !ah->sport || !ah->lnk)
         return -1;
 
-    Log(("NAT:%s: ah(dport: %hd, sport: %hd) oaddr:%R[naipv4] aaddr:%R[naipv4]\n",
+    Log(("NAT:%s: ah(dport: %hd, sport: %hd) oaddr:%RTnaipv4 aaddr:%RTnaipv4\n",
         __FUNCTION__, ntohs(*ah->dport), ntohs(*ah->sport),
-        &ah->oaddr, &ah->aaddr));
+        ah->oaddr, ah->aaddr));
 
     if (   (ntohs(*ah->dport) == DNS_CONTROL_PORT_NUMBER
         || ntohs(*ah->sport) == DNS_CONTROL_PORT_NUMBER)
