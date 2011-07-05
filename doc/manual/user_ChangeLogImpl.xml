@@ -114,6 +114,10 @@
         <para>Floppy: several bugs have been fixed</para>
       </listitem>
 
+      <listtitem>
+        <para>Floppy: make it possible to unmount a host floppy disk (bug #6651)</para>
+      </listitem>
+
       <listitem>
         <para>BIOS: disk-related structures are now checksummed correctly</para>
       </listitem>
