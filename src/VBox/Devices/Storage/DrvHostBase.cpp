@@ -465,8 +465,39 @@ static DECLCALLBACK(int) drvHostBaseMount(PPDMIMOUNT pInterface, const char *psz
 /** @copydoc PDMIMOUNT::pfnUnmount */
 static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
 {
-     LogFlow(("drvHostBaseUnmount: returns VERR_NOT_SUPPORTED\n"));
-     return VERR_NOT_SUPPORTED;
+    /* While we're not mountable (see drvHostBaseMount), we're unmountable. */
+    PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
+    RTCritSectEnter(&pThis->CritSect);
+
+    /*
+     * Validate state.
+     */
+    int rc = VINF_SUCCESS;
+    if (!pThis->fLocked || fForce)
+    {
+        /* Unlock drive if necessary. */
+        if (pThis->fLocked)
+        {
+            if (pThis->pfnDoLock)
+                rc = pThis->pfnDoLock(pThis, false);
+            if (RT_SUCCESS(rc))
+                pThis->fLocked = false;
+        }
+
+        /*
+         * Media is no longer present.
+         */
+        DRVHostBaseMediaNotPresent(pThis);
+    }
+    else
+    {
+        Log(("drvHostiBaseUnmount: Locked\n"));
+        rc = VERR_PDM_MEDIA_LOCKED;
+    }
+
+    RTCritSectLeave(&pThis->CritSect);
+    LogFlow(("drvHostBaseUnmount: returns %Rrc\n", rc));
+    return rc;
 }
 
 
