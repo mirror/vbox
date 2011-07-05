@@ -9651,43 +9651,6 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
 }
 
 /**
- * Search for medias which are not attached to any machine, but in the chain to
- * an attached disk. Mediums are only consided if they are:
- * - have only one child
- * - no refereneces to any machines
- * - are of normal medium type
- *
- * This is done recursive and the recursing is stopped if a medium has more the
- * one child or there is no parent anymore.
- *
- * Used in detachAllMedia.
- *
- * @param pMedium   Medium to investigate.
- * @param llMedia   Caller's list to add a corrosponding media to.
- * @return
- */
-HRESULT Machine::searchAndAddImplicitParents(ComObjPtr<Medium> pMedium, MediaList &llMedia) const
-{
-    if (!pMedium.isNull())
-    {
-        AutoCaller mac(pMedium);
-        if (FAILED(mac.rc())) return mac.rc();
-        AutoReadLock lock(pMedium COMMA_LOCKVAL_SRC_POS);
-        MediaList childs = pMedium->getChildren();
-        if (childs.size() == 1)
-        {
-            if (   pMedium->getMachineBackRefCount() == 0
-                && pMedium->getType() == MediumType_Normal
-                && find(llMedia.begin(), llMedia.end(), pMedium) == llMedia.end())
-                llMedia.push_back(pMedium);
-            /* Recurse */
-            return searchAndAddImplicitParents(pMedium->getParent(), llMedia);
-        }
-    }
-    return S_OK;
-}
-
-/**
  * Goes thru all media of the given list and
  *
  * 1) calls detachDevice() on each of them for this machine and
@@ -9733,6 +9696,9 @@ HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
 
         if (!pMedium.isNull())
         {
+            AutoCaller mac(pMedium);
+            if (FAILED(mac.rc())) return mac.rc();
+            AutoReadLock lock(pMedium COMMA_LOCKVAL_SRC_POS);
             DeviceType_T devType = pMedium->getDeviceType();
             if (    (    cleanupMode == CleanupMode_DetachAllReturnHardDisksOnly
                       && devType == DeviceType_HardDisk)
@@ -9740,11 +9706,30 @@ HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
                )
             {
                 llMedia.push_back(pMedium);
-                /* not enabled yet
-                rc = searchAndAddImplicitParents(pMedium->getParent(), llMedia);
-                if (FAILED(rc))
-                    return rc;
-                */
+                ComObjPtr<Medium> pParent = pMedium->getParent();
+                /*
+                 * Search for medias which are not attached to any machine, but
+                 * in the chain to an attached disk. Mediums are only consided
+                 * if they are:
+                 * - have only one child
+                 * - no references to any machines
+                 * - are of normal medium type
+                 */
+                while (!pParent.isNull())
+                {
+                    AutoCaller mac1(pParent);
+                    if (FAILED(mac1.rc())) return mac1.rc();
+                    AutoReadLock lock1(pParent COMMA_LOCKVAL_SRC_POS);
+                    if (pParent->getChildren().size() == 1)
+                    {
+                        if (   pParent->getMachineBackRefCount() == 0
+                            && pParent->getType() == MediumType_Normal
+                            && find(llMedia.begin(), llMedia.end(), pParent) == llMedia.end())
+                            llMedia.push_back(pParent);
+                    }else
+                        break;
+                    pParent = pParent->getParent();
+                }
             }
         }
 
