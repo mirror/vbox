@@ -777,9 +777,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                                              i, k,
                                              mediumAttach.asOutParam());
                 BOOL fIsEjected = FALSE;
+                BOOL fTempEject = FALSE;
                 DeviceType_T devType = DeviceType_Null;
                 if (mediumAttach)
                 {
+                    mediumAttach->COMGETTER(TemporaryEject)(&fTempEject);
                     mediumAttach->COMGETTER(IsEjected)(&fIsEjected);
                     mediumAttach->COMGETTER(Type)(&devType);
                 }
@@ -805,8 +807,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                             RTPrintf("\"%lS-dvdpassthrough\"=\"%s\"\n", storageCtlName.raw(),
                                      fPassthrough ? "on" : "off");
                         if (devType == DeviceType_DVD)
+                        {
+                            RTPrintf("\"%lS-tempeject\"=\"%s\"\n", storageCtlName.raw(),
+                                     fTempEject ? "on" : "off");
                             RTPrintf("\"%lS-IsEjected\"=\"%s\"\n", storageCtlName.raw(),
                                      fIsEjected ? "on" : "off");
+                        }
                     }
                     else
                     {
@@ -815,6 +821,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                                  Utf8Str(uuid).c_str());
                         if (fPassthrough)
                             RTPrintf(" (passthrough enabled)");
+                        if (fTempEject)
+                            RTPrintf(" (temp eject)");
                         if (fIsEjected)
                             RTPrintf(" (ejected)");
                         RTPrintf("\n");
@@ -832,6 +840,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     else
                     {
                         RTPrintf("%lS (%d, %d): Empty", storageCtlName.raw(), i, k);
+                        if (fTempEject)
+                            RTPrintf(" (temp eject)");
                         if (fIsEjected)
                             RTPrintf(" (ejected)");
                         RTPrintf("\n");
