@@ -393,8 +393,8 @@ sfnode_make_stale(sfnode_t *node)
 static uint64_t
 sfnode_cur_time_usec(void)
 {
-	timestruc_t now = hrestime;
-	return (now.tv_sec * 1000000L + now.tv_nsec / 1000L);
+	clock_t now = drv_hztousec(ddi_get_lbolt());
+	return now;
 }
 
 static int
