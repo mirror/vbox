@@ -165,8 +165,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_VDE
   VBoxDD_DEFS           += VBOX_WITH_VDE
  endif
- ifdef VBOX_WITH_PCI_PASSTHROUGH
-  VBoxDD_DEFS           += VBOX_WITH_PCI_PASSTHROUGH
+ if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  VBoxDD_DEFS           += VBOX_WITH_PCI_PASSTHROUGH_IMPL
  endif
 
  VBoxDD_LIBS             = \
@@ -269,8 +269,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  DevicesR3_DEFS         += \
  	VBOX_HGCM_HOST_CODE \
  	VBOX_WITH_HGCM \
- 	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
-	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,)
+ 	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,)
 
  DevicesR3_DEFS.linux   += _GNU_SOURCE
  DevicesR3_DEFS.l4      += _GNU_SOURCE
@@ -286,7 +285,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
-	$(if $(VBOX_WITH_PCI_PASSTHROUGH),Bus/DevPciRaw.cpp,) \
  	Graphics/DevVGA.cpp \
  	Storage/DevATA.cpp \
  	PC/DevPit-i8254.cpp \
@@ -453,6 +451,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    DevicesR3_SOURCES    += \
  	USB/DevEHCI.cpp
   endif
+ endif
+ if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  DevicesR3_DEFS        += VBOX_WITH_PCI_PASSTHROUGH_IMPL
+  DevicesR3_SOURCES     += \
+	Bus/DevPciRaw.cpp
+
  endif
 
  ifdef VBOX_WITH_DTRACE_R3
@@ -654,7 +658,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/DevPciIch9.cpp \
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
-	$(if $(VBOX_WITH_PCI_PASSTHROUGH),Bus/DevPciRaw.cpp,) \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
  	PC/DevACPI.cpp \
@@ -713,6 +716,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDDR0_SOURCES     += \
  	USB/DevEHCI.cpp
   endif
+ endif
+
+ if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  VBoxDDR0_SOURCES      += 
+	Bus/DevPciRaw.cpp
  endif
 
  ifdef VBOX_WITH_AHCI
@@ -1137,10 +1145,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # Ring-0 Services (library, linked into VMMR0.r0)
  #
  ServicesR0_TEMPLATE  = VBoxR0
- ServicesR0_DEFS      = IN_INTNET_R0 IN_RT_R0 $(if $(VBOX_WITH_PCI_PASSTHROUGH),IN_PCIRAW_R0,)
+ ServicesR0_DEFS      = IN_INTNET_R0 IN_RT_R0 $(if $(VBOX_WITH_PCI_PASSTHROUGH_IMPL),IN_PCIRAW_R0,)
  ServicesR0_SOURCES   = \
  	Network/SrvIntNetR0.cpp \
-        $(if $(VBOX_WITH_PCI_PASSTHROUGH),Bus/SrvPciRawR0.cpp,)
+        $(if $(VBOX_WITH_PCI_PASSTHROUGH_IMPL),Bus/SrvPciRawR0.cpp,)
  Network/SrvIntNetR0.cpp_CXXFLAGS := $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
 
  #
@@ -1206,6 +1214,20 @@ ifdef VBOX_WITH_EXTPACK_PUEL
    VBoxEhciRC_TEMPLATE = VBoxRcExtPackPuel
    VBoxEhciRC_SOURCES  = USB/DevEHCI.cpp
   endif
+ endif
+
+ if defined(VBOX_WITH_PCI_PASSTHROUGH)
+  DLLS += VBoxPciRawR3
+  VBoxPciRawR3_TEMPLATE = VBoxR3ExtPackPuel
+  VBoxPciRawR3_SOURCES  = Bus/DevPciRaw.cpp
+
+  DLLS += VBoxPciRawDrv
+  VBoxPciRawDrv_TEMPLATE = VBoxR3ExtPackPuel
+  VBoxPciRawDrv_SOURCES = Bus/DrvPciRaw.cpp
+
+  SYSMODS += VBoxPciRawR0
+  VBoxPciRawR0_TEMPLATE = VBoxR0ExtPackPuel
+  VBoxPciRawR0_SOURCES  = Bus/DevPciRaw.cpp
  endif
 
  #

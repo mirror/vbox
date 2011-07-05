@@ -179,7 +179,7 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
         return rc;
 #endif
 
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
+#ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePciRaw);
     if (RT_FAILURE(rc))
         return rc;
@@ -229,11 +229,9 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRawImage);
     if (RT_FAILURE(rc))
         return rc;
-#ifndef RT_OS_L4
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNAT);
     if (RT_FAILURE(rc))
         return rc;
-#endif
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostInterface);
     if (RT_FAILURE(rc))
@@ -274,7 +272,6 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
 #endif
 
-#if !defined(RT_OS_L4)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNamedPipe);
     if (RT_FAILURE(rc))
         return rc;
@@ -284,7 +281,6 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvChar);
     if (RT_FAILURE(rc))
         return rc;
-#endif
 
 #if defined(RT_OS_LINUX)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostParallel);
@@ -314,6 +310,12 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
 #ifdef VBOX_WITH_DRV_DISK_INTEGRITY
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvDiskIntegrity);
     if (RT_FAILURE(rc))
+        return rc;
+#endif
+
+#ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvPciRaw);
+    if (RT_FAILURED(rc))
         return rc;
 #endif
 
