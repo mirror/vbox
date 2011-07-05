@@ -83,7 +83,7 @@ extern const PDMDEVREG g_DeviceLsiLogicSAS;
 #ifdef VBOX_WITH_EFI
 extern const PDMDEVREG g_DeviceEFI;
 #endif
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
+#ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
 extern const PDMDEVREG g_DevicePciRaw;
 #endif
 

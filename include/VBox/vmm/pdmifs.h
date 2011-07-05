@@ -2887,14 +2887,36 @@ typedef struct PDMIDISPLAYVBVACALLBACKS
      *                   s/pfnVHWACommandCompleteAsynch/pfnVHWACommandCompleteAsync/;
      *               fi
      */
-    DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsynch, (PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd));
+    DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsynch, (PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                                             PVBOXVHWACMD pCmd));
 
-    DECLR3CALLBACKMEMBER(int, pfnCrHgsmiCommandCompleteAsync, (PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc));
+    DECLR3CALLBACKMEMBER(int, pfnCrHgsmiCommandCompleteAsync, (PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                                               PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc));
 
-    DECLR3CALLBACKMEMBER(int, pfnCrHgsmiControlCompleteAsync, (PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCmd, int rc));
+    DECLR3CALLBACKMEMBER(int, pfnCrHgsmiControlCompleteAsync, (PPDMIDISPLAYVBVACALLBACKS pInterface,
+                                                               PVBOXVDMACMD_CHROMIUM_CTL pCmd, int rc));
 } PDMIDISPLAYVBVACALLBACKS;
 /** PDMIDISPLAYVBVACALLBACKS  */
-#define PDMIDISPLAYVBVACALLBACKS_IID     "b78b81d2-c821-4e66-96ff-dbafa76343a5"
+#define PDMIDISPLAYVBVACALLBACKS_IID            "b78b81d2-c821-4e66-96ff-dbafa76343a5"
+
+/** Pointer to a PCI raw connector interface. */
+typedef struct PDMIPCIRAWCONNECTOR *PPDMIPCIRAWCONNECTOR;
+/**
+ * PCI raw connector interface (up).
+ */
+typedef struct PDMIPCIRAWCONNECTOR
+{
+
+    /**
+     *
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDeviceConstructComplete, (PPDMIPCIRAWCONNECTOR pInterface, const char *pcszName,
+                                                           uint32_t uHostPciAddress, uint32_t uGuestPciAddress,
+                                                           int rc));
+
+} PDMIPCIRAWCONNECTOR;
+/** PDMIPCIRAWCONNECTOR interface ID. */
+#define PDMIPCIRAWCONNECTOR_IID                 "14aa9c6c-8869-4782-9dfc-910071a6aebf"
 
 /** @} */
 

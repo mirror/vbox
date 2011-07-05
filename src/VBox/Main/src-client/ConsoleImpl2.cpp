@@ -509,7 +509,7 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
 
     if (assignments.size() > 0)
     {
-        InsertConfigNode(pDevices,     "pciraw",  &pPciDevs);
+        InsertConfigNode(pDevices, "pciraw",  &pPciDevs);
 
         PCFGMNODE pRoot = CFGMR3GetParent(pDevices); Assert(pRoot);
 
@@ -563,7 +563,7 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
         /* the Main driver */
         PciRawDev* pMainDev = new PciRawDev(pConsole);
         InsertConfigNode(pInst,        "LUN#0",   &pLunL0);
-        InsertConfigString(pLunL0,     "Driver",  "PciRawMain");
+        InsertConfigString(pLunL0,     "Driver",  "pciraw");
         InsertConfigNode(pLunL0,       "Config" , &pCfg);
         InsertConfigInteger(pCfg,      "Object", (uintptr_t)pMainDev);
     }
