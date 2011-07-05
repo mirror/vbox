@@ -1065,23 +1065,8 @@ void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /*
 QStringList UIMachineSettingsNetworkPage::otherInternalNetworkList()
 {
     /* Load total internal network list of all VMs: */
-    QStringList otherInternalNetworks;
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    ulong uCount = qMin((ULONG) 4, vbox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
-    const CMachineVector &machines = vbox.GetMachines();
-    for (int i = 0; i < machines.size(); ++i)
-    {
-        const CMachine &machine = machines[i];
-        if (machine.GetAccessible())
-        {
-            for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
-            {
-                QString strName = machine.GetNetworkAdapter(uSlot).GetInternalNetwork();
-                if (!strName.isEmpty() && !otherInternalNetworks.contains(strName))
-                    otherInternalNetworks << strName;
-            }
-        }
-    }
+    QStringList otherInternalNetworks(QList<QString>::fromVector(vbox.GetInternalNetworks()));
     return otherInternalNetworks;
 }
 
@@ -1089,23 +1074,8 @@ QStringList UIMachineSettingsNetworkPage::otherInternalNetworkList()
 QStringList UIMachineSettingsNetworkPage::otherGenericDriverList()
 {
     /* Load total generic driver list of all VMs: */
-    QStringList otherGenericDrivers;
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    ulong uCount = qMin((ULONG) 4, vbox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
-    const CMachineVector &machines = vbox.GetMachines();
-    for (int i = 0; i < machines.size(); ++i)
-    {
-        const CMachine &machine = machines[i];
-        if (machine.GetAccessible())
-        {
-            for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
-            {
-                QString strName = machine.GetNetworkAdapter(uSlot).GetGenericDriver();
-                if (!strName.isEmpty() && !otherGenericDrivers.contains(strName))
-                    otherGenericDrivers << strName;
-            }
-        }
-    }
+    QStringList otherGenericDrivers(QList<QString>::fromVector(vbox.GetGenericNetworkDrivers()));
     return otherGenericDrivers;
 }
 

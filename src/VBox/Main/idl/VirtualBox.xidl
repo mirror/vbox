@@ -1391,7 +1391,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="d627bf11-2758-46be-9a4d-7d9ef794c247"
+    uuid="c28be65f-1a8f-43b4-81f1-eb60cb516e66"
     wsmap="managed"
     >
     <desc>
@@ -1549,6 +1549,18 @@
       </desc>
     </attribute>
 
+
+    <attribute name="internalNetworks" type="wstring" safearray="yes" readonly="yes">
+      <desc>
+        Names of all internal networks.
+      </desc>
+    </attribute>
+
+    <attribute name="genericNetworkDrivers" type="wstring" safearray="yes" readonly="yes">
+      <desc>
+        Names of all generic network drivers.
+      </desc>
+    </attribute>
 
     <method name="composeMachineFilename">
       <desc>
