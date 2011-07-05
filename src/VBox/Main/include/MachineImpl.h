@@ -826,7 +826,6 @@ protected:
                          Snapshot *pSnapshot,
                          GuidList *pllRegistriesThatNeedSaving);
 
-    HRESULT searchAndAddImplicitParents(ComObjPtr<Medium> p, MediaList &llMedia) const;
     HRESULT detachAllMedia(AutoWriteLock &writeLock,
                            Snapshot *pSnapshot,
                            CleanupMode_T cleanupMode,
