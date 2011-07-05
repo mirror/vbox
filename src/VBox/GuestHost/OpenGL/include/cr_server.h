@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-#define SHCROGL_SSM_VERSION 27
+#define SHCROGL_SSM_VERSION 28
 
 #define CR_MAX_WINDOWS 100
 #define CR_MAX_CLIENTS 64
