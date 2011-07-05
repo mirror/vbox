@@ -811,7 +811,8 @@ postinstall()
 
             # plumb and configure vboxnet0 for non-remote installs
             if test "$REMOTEINST" -eq 0; then
-                $BIN_IFCONFIG vboxnet0 plumb up
+                $BIN_IFCONFIG vboxnet0 plumb
+                $BIN_IFCONFIG vboxnet0 up
                 if test "$?" -eq 0; then
                     $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
 
