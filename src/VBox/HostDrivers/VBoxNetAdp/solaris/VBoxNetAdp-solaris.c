@@ -207,6 +207,7 @@ static int vboxNetAdpSolarisSend(gld_mac_info_t *pMacInfo, mblk_t *pMsg);
 static int vboxNetAdpSolarisStub(gld_mac_info_t *pMacInfo);
 static int vboxNetAdpSolarisSetPromisc(gld_mac_info_t *pMacInfo, int fPromisc);
 static int vboxNetAdpSolarisSetMulticast(gld_mac_info_t *pMacInfo, unsigned char *pMulticastAddr, int fMulticast);
+static int vboxNetAdpSolarisGetStats(gld_mac_info_t *pMacInfo, struct gld_stats *pStats);
 
 
 /**
@@ -305,13 +306,13 @@ static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                     pMacInfo->gldm_set_promiscuous = vboxNetAdpSolarisSetPromisc;
                     pMacInfo->gldm_send = vboxNetAdpSolarisSend;
                     pMacInfo->gldm_intr = NULL;
-                    pMacInfo->gldm_get_stats = NULL;
+                    pMacInfo->gldm_get_stats = vboxNetAdpSolarisGetStats;
                     pMacInfo->gldm_ioctl = NULL;
                     pMacInfo->gldm_ident = DEVICE_NAME;
                     pMacInfo->gldm_type = DL_ETHER;
                     pMacInfo->gldm_minpkt = 0;
                     pMacInfo->gldm_maxpkt = VBOXNETADP_MTU;
-
+                    pMacInfo->gldm_capabilities = GLD_CAP_LINKSTATE;
                     AssertCompile(sizeof(RTMAC) == ETHERADDRL);
 
                     pMacInfo->gldm_addrlen = ETHERADDRL;
@@ -340,6 +341,7 @@ static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                         if (rc == DDI_SUCCESS)
                         {
                             ddi_report_dev(pDip);
+                            gld_linkstate(pMacInfo, GLD_LINKSTATE_UP);
                             return DDI_SUCCESS;
                         }
                         else
@@ -398,6 +400,7 @@ static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
                 vboxnetadp_state_t *pState = (vboxnetadp_state_t *)pMacInfo->gldm_private;
                 if (pState)
                 {
+                    gld_linkstate(pMacInfo, GLD_LINKSTATE_DOWN);
                     int rc = gld_unregister(pMacInfo);
                     if (rc == DDI_SUCCESS)
                     {
@@ -486,5 +489,57 @@ static int vboxNetAdpSolarisSetPromisc(gld_mac_info_t *pMacInfo, int fPromisc)
 {
     /* Host requesting promiscuous intnet connection... */
     return GLD_SUCCESS;
+}
+
+
+static int vboxNetAdpSolarisGetStats(gld_mac_info_t *pMacInfo, struct gld_stats *pStats)
+{
+    /*
+     * For now fake up stats. Stats like duplex and speed are better set as they
+     * are used in utilities like dladm. Link state capabilities are critical
+     * as they are used by ipadm while trying to restore persistent interface configs.
+     */
+    vboxnetadp_state_t *pState = (vboxnetadp_state_t *)pMacInfo->gldm_private;
+    if (pState)
+    {
+        pStats->glds_speed                = 1000000000ULL;     /* Bits/sec. */
+        pStats->glds_media                = GLDM_UNKNOWN;      /* Media/Connector Type */
+        pStats->glds_intr                 = 0;                 /* Interrupt count */
+        pStats->glds_norcvbuf             = 0;                 /* Recv. discards */
+        pStats->glds_errxmt               = 0;                 /* Xmit errors */
+        pStats->glds_errrcv               = 0;                 /* Recv. errors */
+        pStats->glds_missed               = 0;                 /* Pkt Drops on Recv. */
+        pStats->glds_underflow            = 0;                 /* Buffer underflows */
+        pStats->glds_overflow             = 0;                 /* Buffer overflows */
+
+        /* Ether */
+        pStats->glds_frame                = 0;                 /* Align errors */
+        pStats->glds_crc                  = 0;                 /* CRC errors */
+        pStats->glds_duplex               = GLD_DUPLEX_FULL;   /* Link duplex state */
+        pStats->glds_nocarrier            = 0;                 /* Carrier sense errors */
+        pStats->glds_collisions           = 0;                 /* Xmit Collisions */
+        pStats->glds_excoll               = 0;                 /* Frame discard due to excess collisions */
+        pStats->glds_xmtlatecoll          = 0;                 /* Late collisions */
+        pStats->glds_defer                = 0;                 /* Deferred Xmits */
+        pStats->glds_dot3_first_coll      = 0;                 /* Single collision frames */
+        pStats->glds_dot3_multi_coll      = 0;                 /* Multiple collision frames */
+        pStats->glds_dot3_sqe_error       = 0;                 /* SQE errors */
+        pStats->glds_dot3_mac_xmt_error   = 0;                 /* MAC Xmit errors */
+        pStats->glds_dot3_mac_rcv_error   = 0;                 /* Mac Recv. errors */
+        pStats->glds_dot3_frame_too_long  = 0;                 /* Frame too long errors */
+        pStats->glds_short                = 0;                 /* Runt frames */
+
+        pStats->glds_noxmtbuf             = 0;		           /* Xmit Buf errors */
+        pStats->glds_xmtretry             = 0;                 /* Xmit retries */
+        pStats->glds_multixmt             = 0;                 /* Multicast Xmits */
+        pStats->glds_multircv             = 0;                 /* Multicast Recvs. */
+        pStats->glds_brdcstxmt            = 0;                 /* Broadcast Xmits*/
+        pStats->glds_brdcstrcv            = 0;                 /* Broadcast Recvs. */
+
+        return GLD_SUCCESS;
+    }
+    else
+        LogRel((DEVICE_NAME ":vboxNetAdpSolarisGetStats failed to get internal state.\n"));
+    return GLD_FAILURE;
 }
 
