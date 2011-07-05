@@ -529,7 +529,7 @@ static int vboxNetAdpSolarisGetStats(gld_mac_info_t *pMacInfo, struct gld_stats 
         pStats->glds_dot3_frame_too_long  = 0;                 /* Frame too long errors */
         pStats->glds_short                = 0;                 /* Runt frames */
 
-        pStats->glds_noxmtbuf             = 0;		           /* Xmit Buf errors */
+        pStats->glds_noxmtbuf             = 0;                 /* Xmit Buf errors */
         pStats->glds_xmtretry             = 0;                 /* Xmit retries */
         pStats->glds_multixmt             = 0;                 /* Multicast Xmits */
         pStats->glds_multircv             = 0;                 /* Multicast Recvs. */
