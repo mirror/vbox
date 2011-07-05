@@ -1124,6 +1124,138 @@ VirtualBox::COMGETTER(ExtensionPackManager)(IExtPackManager **aExtPackManager)
     return hrc;
 }
 
+STDMETHODIMP VirtualBox::COMGETTER(InternalNetworks)(ComSafeArrayOut(BSTR, aInternalNetworks))
+{
+    if (ComSafeArrayOutIsNull(aInternalNetworks))
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    std::list<Bstr> allInternalNetworks;
+
+    /* get copy of all machine references, to avoid holding the list lock */
+    MachinesOList::MyList allMachines;
+    {
+        AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+        allMachines = m->allMachines.getList();
+    }
+    for (MachinesOList::MyList::const_iterator it = allMachines.begin();
+         it != allMachines.end();
+         ++it)
+    {
+        const ComObjPtr<Machine> &pMachine = *it;
+        AutoCaller autoMachineCaller(pMachine);
+        if (FAILED(autoMachineCaller.rc()))
+            continue;
+        AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
+
+        if (pMachine->isAccessible())
+        {
+            ULONG cNetworkAdapters = 0;
+            HRESULT rc = m->pSystemProperties->GetMaxNetworkAdapters(pMachine->getChipsetType(), &cNetworkAdapters);
+            if (FAILED(rc))
+                continue;
+            cNetworkAdapters = RT_MIN(4, cNetworkAdapters);
+            for (ULONG i = 0; i < cNetworkAdapters; i++)
+            {
+                ComPtr<INetworkAdapter> pNet;
+                rc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
+                if (FAILED(rc) || pNet.isNull())
+                    continue;
+                Bstr strInternalNetwork;
+                rc = pNet->COMGETTER(InternalNetwork)(strInternalNetwork.asOutParam());
+                if (FAILED(rc) || strInternalNetwork.isEmpty())
+                    continue;
+
+                allInternalNetworks.push_back(strInternalNetwork);
+            }
+        }
+    }
+
+    /* throw out any duplicates */
+    allInternalNetworks.sort();
+    allInternalNetworks.unique();
+    com::SafeArray<BSTR> internalNetworks(allInternalNetworks.size());
+    size_t i = 0;
+    for (std::list<Bstr>::const_iterator it = allInternalNetworks.begin();
+         it != allInternalNetworks.end();
+         ++it, i++)
+    {
+        const Bstr &tmp = *it;
+        tmp.cloneTo(&internalNetworks[i]);
+    }
+    internalNetworks.detachTo(ComSafeArrayOutArg(aInternalNetworks));
+
+    return S_OK;
+}
+
+STDMETHODIMP VirtualBox::COMGETTER(GenericNetworkDrivers)(ComSafeArrayOut(BSTR, aGenericNetworkDrivers))
+{
+    if (ComSafeArrayOutIsNull(aGenericNetworkDrivers))
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    std::list<Bstr> allGenericNetworkDrivers;
+
+    /* get copy of all machine references, to avoid holding the list lock */
+    MachinesOList::MyList allMachines;
+    {
+        AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+        allMachines = m->allMachines.getList();
+    }
+    for (MachinesOList::MyList::const_iterator it = allMachines.begin();
+         it != allMachines.end();
+         ++it)
+    {
+        const ComObjPtr<Machine> &pMachine = *it;
+        AutoCaller autoMachineCaller(pMachine);
+        if (FAILED(autoMachineCaller.rc()))
+            continue;
+        AutoReadLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
+
+        if (pMachine->isAccessible())
+        {
+            ULONG cNetworkAdapters = 0;
+            HRESULT rc = m->pSystemProperties->GetMaxNetworkAdapters(pMachine->getChipsetType(), &cNetworkAdapters);
+            if (FAILED(rc))
+                continue;
+            cNetworkAdapters = RT_MIN(4, cNetworkAdapters);
+            for (ULONG i = 0; i < cNetworkAdapters; i++)
+            {
+                ComPtr<INetworkAdapter> pNet;
+                rc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
+                if (FAILED(rc) || pNet.isNull())
+                    continue;
+                Bstr strGenericNetworkDriver;
+                rc = pNet->COMGETTER(GenericDriver)(strGenericNetworkDriver.asOutParam());
+                if (FAILED(rc) || strGenericNetworkDriver.isEmpty())
+                    continue;
+
+                allGenericNetworkDrivers.push_back(strGenericNetworkDriver);
+            }
+        }
+    }
+
+    /* throw out any duplicates */
+    allGenericNetworkDrivers.sort();
+    allGenericNetworkDrivers.unique();
+    com::SafeArray<BSTR> genericNetworks(allGenericNetworkDrivers.size());
+    size_t i = 0;
+    for (std::list<Bstr>::const_iterator it = allGenericNetworkDrivers.begin();
+         it != allGenericNetworkDrivers.end();
+         ++it, i++)
+    {
+        const Bstr &tmp = *it;
+        tmp.cloneTo(&genericNetworks[i]);
+    }
+    genericNetworks.detachTo(ComSafeArrayOutArg(aGenericNetworkDrivers));
+
+    return S_OK;
+}
+
 STDMETHODIMP
 VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
                                  IN_BSTR        aVersion,

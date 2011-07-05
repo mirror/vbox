@@ -119,6 +119,8 @@ public:
     STDMETHOD(COMGETTER(DHCPServers))           (ComSafeArrayOut(IDHCPServer *, aDHCPServers));
     STDMETHOD(COMGETTER(EventSource))           (IEventSource ** aEventSource);
     STDMETHOD(COMGETTER(ExtensionPackManager))  (IExtPackManager **aExtPackManager);
+    STDMETHOD(COMGETTER(InternalNetworks))      (ComSafeArrayOut(BSTR, aInternalNetworks));
+    STDMETHOD(COMGETTER(GenericNetworkDrivers)) (ComSafeArrayOut(BSTR, aGenericNetworkDrivers));
 
     /* IVirtualBox methods */
     STDMETHOD(ComposeMachineFilename) (IN_BSTR aName, IN_BSTR aBaseFolder, BSTR *aFilename);
