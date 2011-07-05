@@ -642,7 +642,7 @@ remove_drivers()
     fi
 
     # remove netmask configuration
-    nmaskfile=$PKG_INSTALL_ROOT/etc/netmasks
+    nmaskfile=$PKG_INSTALL_ROOT/etc/inet/netmasks
     nmaskbackupfile=$nmaskfile.vbox
     if test -f "$nmaskfile"; then
         sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
@@ -816,8 +816,17 @@ postinstall()
                 if test "$?" -eq 0; then
                     $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
 
+                    # /etc/netmasks is a symlink, older installers replaced this with
+                    # a copy of the actual file, repair that behaviour here.
+                    recreatelink=0
+                    if test -h $PKG_INSTALL_ROOT/etc/netmasks; then
+                        nmaskfile=$PKG_INSTALL_ROOT/etc/inet/netmasks
+                    else
+                        nmaskfile=$PKG_INSTALL_ROOT/etc/netmasks
+                        recreatelink=1
+                    fi
+
                     # add the netmask to stay persistent across host reboots
-                    nmaskfile=$PKG_INSTALL_ROOT/etc/netmasks
                     nmaskbackupfile=$nmaskfile.vbox
                     if test -f $nmaskfile; then
                         sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
@@ -831,6 +840,12 @@ postinstall()
                         done
                         echo "#VirtualBox_SectionEnd" >> $nmaskbackupfile
                         mv -f $nmaskbackupfile $nmaskfile
+
+                        # Recreate /etc/netmasks as a link if necessary
+                        if test $recreatelink -eq 1; then
+                            cp -f $PKG_INSTALL_ROOT/etc/netmasks $PKG_INSTALL_ROOT/etc/inet/netmasks
+                            ln -sf ./inet/netmasks $PKG_INSTALL_ROOT/etc/netmasks
+                        fi
                     fi
                 else
                     # Should this be fatal?
