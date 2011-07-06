@@ -2656,7 +2656,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                                     pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
                                 /* else: NIL_RTHCPHYS nothing */
 
-                                paPages[iPage].idPage = NIL_GMM_PAGEID;
+                                paPages[iPage].idPage       = NIL_GMM_PAGEID;
                                 paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
                             }
                             else
@@ -2721,13 +2721,41 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                         break;
                     }
                 }
-            }
+            } /* for each page to update */
 
-            /*
-             * Join paths with GMMR0AllocatePages for the allocation.
-             * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
-             */
-            rc = gmmR0AllocatePagesNew(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
+            if (RT_SUCCESS(rc))
+            {
+#if 0  /* This appears to spell trouble... weird. */
+                for (iPage = 0; iPage < cPagesToAlloc; iPage++)
+                {
+                    Assert(paPages[iPage].HCPhysGCPhys  == NIL_RTHCPHYS);
+                    Assert(paPages[iPage].idPage        == NIL_GMM_PAGEID);
+                    Assert(paPages[iPage].idSharedPage  == NIL_GMM_PAGEID);
+                }
+#endif
+
+                /*
+                 * Join paths with GMMR0AllocatePages for the allocation.
+                 * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
+                 */
+#if 0  /* Trying to reproduce out of memory issue... */
+                if (!cPagesToUpdate)
+#endif
+                    rc = gmmR0AllocatePagesNew(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
+#if 0  /* Trying to reproduce out of memory issue... */
+                else
+                {
+                    for (iPage = 0; iPage < cPagesToAlloc; iPage++)
+                    {
+                        paPages[iPage].HCPhysGCPhys  = NIL_RTHCPHYS;
+                        paPages[iPage].idPage        = NIL_GMM_PAGEID;
+                        paPages[iPage].idSharedPage  = NIL_GMM_PAGEID;
+                    }
+
+                    rc = VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
+                }
+#endif
+            }
         }
         else
             rc = VERR_WRONG_ORDER;
