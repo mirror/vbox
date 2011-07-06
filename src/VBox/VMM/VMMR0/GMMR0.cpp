@@ -2542,6 +2542,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
             }
             else
                 AssertMsgFailed(("idPage=%#x\n", idPage));
+
             paPages[iPage].idPage       = NIL_GMM_PAGEID;
             paPages[iPage].idSharedPage = NIL_GMM_PAGEID;
             paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
@@ -2728,7 +2729,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
 
             if (RT_SUCCESS(rc))
             {
-#if 0  /* This appears to spell trouble... weird. */
+#if defined(VBOX_STRICT) && 0 /** @todo re-test this later. Appeared to be a PGM init bug. */
                 for (iPage = 0; iPage < cPagesToAlloc; iPage++)
                 {
                     Assert(paPages[iPage].HCPhysGCPhys  == NIL_RTHCPHYS);
@@ -2741,23 +2742,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                  * Join paths with GMMR0AllocatePages for the allocation.
                  * Note! gmmR0AllocateMoreChunks may leave the protection of the mutex!
                  */
-#if 0  /* Trying to reproduce out of memory issue... */
-                if (!cPagesToUpdate)
-#endif
-                    rc = gmmR0AllocatePagesNew(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
-#if 0  /* Trying to reproduce out of memory issue... */
-                else
-                {
-                    for (iPage = 0; iPage < cPagesToAlloc; iPage++)
-                    {
-                        paPages[iPage].HCPhysGCPhys  = NIL_RTHCPHYS;
-                        paPages[iPage].idPage        = NIL_GMM_PAGEID;
-                        paPages[iPage].idSharedPage  = NIL_GMM_PAGEID;
-                    }
-
-                    rc = VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
-                }
-#endif
+                rc = gmmR0AllocatePagesNew(pGMM, pGVM, cPagesToAlloc, paPages, GMMACCOUNT_BASE);
             }
         }
         else
