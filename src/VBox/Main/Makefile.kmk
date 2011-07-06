@@ -643,7 +643,7 @@ VBoxC_SOURCES = \
 	src-client/AdditionsFacilityImpl.cpp \
 	src-client/AudioSnifferInterface.cpp \
 	src-client/BusAssignmentManager.cpp \
-	$(if $(VBOX_WITH_PCI_PASSTHROUGH),src-client/PciRawDevImpl.cpp,) \
+	$(if $(VBOX_WITH_PCI_PASSTHROUGH_IMPL),src-client/PciRawDevImpl.cpp,) \
 	src-client/ConsoleImpl.cpp \
 	src-client/ConsoleImpl2.cpp \
 	src-client/ConsoleImplTeleporter.cpp \
