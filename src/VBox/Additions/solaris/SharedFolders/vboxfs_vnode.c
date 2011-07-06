@@ -67,6 +67,7 @@
  */
 
 #include <VBox/log.h>
+#include <iprt/asm.h>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -81,6 +82,7 @@
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 #include <sys/vfs.h>
+#include <sys/vmsystm.h>
 #if !defined(VBOX_VFS_SOLARIS_10U6)
 #include <sys/vfs_opreg.h>
 #endif
@@ -1452,6 +1454,160 @@ done:
 }
 
 
+#if 0
+/*ARGSUSED*/
+static int
+sffs_getpage(
+	vnode_t		*dvp,
+	offset_t	off,
+	size_t		len,
+	uint_t 		*protp,
+	page_t 		*pagelist[],
+	size_t		pagelistsize,
+	struct seg	*segp,
+	caddr_t 	addr,
+	enum seg_rw	segaccess,
+	cred_t		*credp
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct
+#endif
+	)
+{
+}
+
+
+/*ARGSUSED*/
+static int
+sffs_putpage(
+	vnode_t		*dvp,
+	offset_t	off,
+	size_t		len,
+	int			flags,
+	cred_t		*credp
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct
+#endif
+	)
+{
+}
+
+
+/*ARGSUSED*/
+static int
+sffs_map(
+	vnode_t		*dvp,
+	offset_t	off,
+	struct as 	*asp,
+	caddr_t		*addrp,
+	size_t		len,
+	uchar_t		prot,
+	uchar_t		maxprot,
+	uint_t		flags,
+	cred_t 		*credp
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct
+#endif
+	)
+{
+	/*
+	 * Invocation: mmap()-smmap_common()->VOP_MAP()->sffs_map(). Once the segment driver
+	 * creates the new segment in segvn_create(), it'll invoke down the line VOP_ADDMAP()->sffs_addmap()
+	 */
+	int error;
+	if ((prot & PROT_WRITE))
+		return (ENOTSUP);
+
+	if (off < 0 || len > MAXOFFSET_T - off)
+		return (ENXIO);
+
+	if (dvp->v_type != VREG)
+		return (ENODEV);
+
+	if (dvp->v_flag & VNOMAP)
+		return (ENOSYS);
+
+	mutex_enter(&sffs_lock);
+	as_rangelock(asp);
+
+	error = choose_addr(asp, addrp, len, off, ADDR_VACALIGN, flags);
+	if (!error)
+	{
+		segvn_crargs_t vnodeargs;
+		memset(&vnodeargs, 0, sizeof(vnodeargs));
+		vnodeargs.vp = dvp;
+		vnodeargs.cred = credp;
+		vnodeargs.offset = off;
+		vnodeargs.type = flags & MAP_TYPE;
+		vnodeargs.prot = prot;
+		vnodeargs.maxprot = maxprot;
+		vnodeargs.flags = flags & ~MAP_TYPE;
+		vnodeargs.amp = NULL;		/* anon. mapping */
+		vnodeargs.szc = 0;			/* preferred page size code */
+		vnodeargs.lgrp_mem_policy_flags = 0;
+
+		error = as_map(asp, *addrp, len, segvn_create, &vnodeargs);
+	}
+
+	as_rangeunlock(asp);
+	mutex_exit(&sffs_lock);
+
+	return (error);
+}
+
+
+/*ARGSUSED*/
+static int
+sffs_addmap(
+	vnode_t		*dvp,
+	offset_t	off,
+	struct as	*asp,
+	caddr_t		addr,
+	size_t		len,
+	uchar_t		prot,
+	uchar_t		maxprot,
+	uint_t		flags,
+	cred_t		*credp
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct
+#endif
+	)
+{
+	sfnode_t *node = VN2SFN(dvp);
+	uint64_t npages = btopr(len);
+
+	ASSERT(node);
+	ASMAtomicAddU64(&node->sf_mapcnt, npages);
+	return (0);
+}
+
+
+/*ARGSUSED*/
+static int
+sffs_delmap(
+	vnode_t		*dvp,
+	offset_t	off,
+	struct as	*asp,
+	caddr_t		addr,
+	size_t		len,
+	uint_t		prot,
+	uint_t		maxprot,
+	uint_t		flags,
+	cred_t		*credp
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	, caller_context_t *ct
+#endif
+	)
+{
+	sfnode_t *node = VN2SFN(dvp);
+	uint64_t npages = btopr(len);
+
+	ASSERT(node->sf_mapcnt >= npages);
+	ASMAtomicSubU64(&node->sf_mapcnt, npages);
+	return (0);
+}
+#endif
+
+
 /*ARGSUSED*/
 static int
 sffs_remove(
@@ -1758,6 +1914,15 @@ const fs_operation_def_t sffs_ops_template[] = {
 	VOPNAME_SETATTR,	sffs_setattr,
 	VOPNAME_SPACE,		sffs_space,
 	VOPNAME_WRITE,		sffs_write,
+
+# if 0
+	VOPNAME_MAP,		sffs_map,
+	VOPNAME_ADDMAP,		sffs_addmap,
+	VOPNAME_DELMAP,		sffs_delmap,
+	VOPNAME_GETPAGE,	sffs_getpage,
+	VOPNAME_PUTPAGE,	sffs_putpage,
+# endif
+
 	NULL,			NULL
 #else
 	VOPNAME_ACCESS,		{ .vop_access = sffs_access },
@@ -1780,6 +1945,15 @@ const fs_operation_def_t sffs_ops_template[] = {
 	VOPNAME_SETATTR,	{ .vop_setattr = sffs_setattr },
 	VOPNAME_SPACE,		{ .vop_space = sffs_space },
 	VOPNAME_WRITE,		{ .vop_write = sffs_write },
+
+#if 0
+	VOPNAME_MAP,		{ .vop_map = sffs_map },
+	VOPNAME_ADDMAP,		{ .vop_addmap = sffs_addmap },
+	VOPNAME_DELMAP,		{ .vop_delmap = sffs_delmap },
+	VOPNAME_GETPAGE,	{ .vop_getpage = sffs_getpage },
+	VOPNAME_PUTPAGE,	{ .vop_putpage = sffs_putpage },
+# endif
+
 	NULL,			NULL
 #endif
 };
@@ -1873,6 +2047,8 @@ sffs_purge(struct sffs_data *sffs)
 	return (0);
 }
 
+#if 0
+/* Debug helper functions */
 static void
 sfnode_print(sfnode_t *node)
 {
@@ -1891,8 +2067,8 @@ sfnode_print(sfnode_t *node)
 	Log(("%s\n", node->sf_is_stale ? " STALE" : ""));
 }
 
-void
-sfnode_list()
+static void
+sfnode_list(void)
 {
 	sfnode_t *n;
 	for (n = avl_first(&sfnodes); n != NULL; n = AVL_NEXT(&sfnodes, n))
@@ -1901,4 +2077,5 @@ sfnode_list()
 	    n = AVL_NEXT(&stale_sfnodes, n))
 		sfnode_print(n);
 }
+#endif
 
