@@ -2161,9 +2161,9 @@ VMMR3_INT_DECL(int) PGMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
             if (pVM->pgm.s.fPciPassthrough)
             {
-                AssertLogRelReturn(pVM->pgm.s.fRamPreAlloc, VERR_INVALID_PARAMETER);
-                AssertLogRelReturn(HWACCMIsEnabled(pVM), VERR_INVALID_PARAMETER);
-                AssertLogRelReturn(HWACCMIsNestedPagingActive(pVM), VERR_INVALID_PARAMETER);
+                AssertLogRelReturn(pVM->pgm.s.fRamPreAlloc, VERR_PCI_PASSTHROUGH_NO_RAM_PREALLOC);
+                AssertLogRelReturn(HWACCMIsEnabled(pVM), VERR_PCI_PASSTHROUGH_NO_HWACCM);
+                AssertLogRelReturn(HWACCMIsNestedPagingActive(pVM), VERR_PCI_PASSTHROUGH_NO_NESTED_PAGING);
 
                 /*
                  * Report assignments to the IOMMU (hope that's good enough for now).
