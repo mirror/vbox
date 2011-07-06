@@ -60,9 +60,9 @@ $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf: $(PATH_SUB_CURRENT)/VBoxMouse.inf
 	$(call MSG_GENERATE,VBoxMouse-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
-$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat: $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf $$(TARGET_VBoxMouse)
+$(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.cat: $(PATH_TARGET)/VBoxMouseCat.dir/VBoxMouse.inf $$(VBoxMouse_1_TARGET)
 	$(call MSG_TOOL,Inf2Cat,VBoxMouse-inf,$@,$<)
-	$(INSTALL) -m 644 $(TARGET_VBoxMouse) $(@D)
+	$(INSTALL) -m 644 $(VBoxMouse_1_TARGET) $(@D)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 endif # signing
 
