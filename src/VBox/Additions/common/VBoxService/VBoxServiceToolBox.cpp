@@ -643,7 +643,6 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir, uint32_t uFlags)
             && (uFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE))
         {
             /* Process all sub-directories. */
-            PVBOXSERVICETOOLBOXDIRENTRY pNodeIt;
             RTListForEach(&dirList, pNodeIt, VBOXSERVICETOOLBOXDIRENTRY, Node)
             {
                 RTFMODE fMode = pNodeIt->dirEntry.Info.Attr.fMode;
