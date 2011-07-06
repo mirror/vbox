@@ -877,7 +877,7 @@ postinstall()
 
                         # Recreate /etc/netmasks as a link if necessary
                         if test $recreatelink -eq 1; then
-                            rm -f "$PKG_INSTALL_ROOT/etc/netmasks"
+                            cp -f "$PKG_INSTALL_ROOT/etc/netmasks" "$PKG_INSTALL_ROOT/etc/inet/netmasks"
                             ln -sf ./inet/netmasks "$PKG_INSTALL_ROOT/etc/netmasks"
                         elif test $recreatelink -eq 2; then
                             warnprint "/etc/netmasks is a symlink (to /etc/inet/netmasks) that older"
