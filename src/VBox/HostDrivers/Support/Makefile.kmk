@@ -219,7 +219,7 @@ VBoxDrv-inf_SOURCES += \
 	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys \
 	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
 
-$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(TARGET_VBoxDrv) | $$(dir $$@)
+$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(VBoxDrv_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: \
@@ -377,7 +377,7 @@ VBoxDrv_SOURCES       = \
 	os2/SUPDrvA-os2.asm \
 	os2/SUPDrv-os2.def
 VBoxDrv_LIBS          = \
-	$(TARGET_VBoxDrvLib) \
+	$(VBoxDrvLib_1_TARGET) \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
 	$(VBOX_GCC_LIBGCC) \
 	end

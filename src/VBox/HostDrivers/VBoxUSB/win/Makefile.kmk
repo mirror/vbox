@@ -52,7 +52,7 @@ VBoxUSB_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
-	$(TARGET_usbd)
+	$(usbd_1_TARGET)
 
 #
 # VBoxUSBMon
@@ -84,7 +84,7 @@ VBoxUSBMon_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
-	$(TARGET_usbd)
+	$(usbd_1_TARGET)
 
 #
 # USBInstall
@@ -100,7 +100,7 @@ USBInstall_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
 	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
-	$(TARGET_VBoxDrvCfg)
+	$(VBoxDrvCfg_1_TARGET)
 
 
 #
@@ -117,7 +117,7 @@ USBUninstall_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
 	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
-    $(TARGET_VBoxDrvCfg)
+    $(VBoxDrvCfg_1_TARGET)
 
 #
 # USBTest
@@ -133,7 +133,7 @@ USBTest_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
 	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
-	$(TARGET_VBoxDrvCfg)
+	$(VBoxDrvCfg_1_TARGET)
 
 #
 # Install the INF files.
@@ -163,7 +163,7 @@ install-infs_SOURCES += \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat \
 	$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys
 
-$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys: $$(TARGET_VBoxUSB) | $$(dir $$@)
+$(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.sys: $$(VBoxUSB_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat: \
@@ -172,7 +172,7 @@ $(PATH_TARGET)/VBoxUSBCat.dir/VBoxUSB.cat: \
 	$(call MSG_TOOL,Inf2Cat,VBoxUSB-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 
-$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys: $$(TARGET_VBoxUSBMon) | $$(dir $$@)
+$(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.sys: $$(VBoxUSBMon_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
 $(PATH_TARGET)/VBoxUSBMonCat.dir/VBoxUSBMon.cat: \
