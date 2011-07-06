@@ -1737,6 +1737,20 @@
 #define VERR_EXTPACK_VBOX_VERSION_MISMATCH          (-6001)
 /** @} */
 
+/** @name PCI Passtrhough Status Codes
+ * @{
+ */
+/** RamPreAlloc not set.
+ * RAM pre-allocation is currently a requirement for PCI passthrough. */
+#define VERR_PCI_PASSTHROUGH_NO_RAM_PREALLOC       (-7000)
+/** VT-x/AMD-V not active.
+ * PCI passthrough currently works only if VT-x/AMD-V is active. */
+#define VERR_PCI_PASSTHROUGH_NO_HWACCM             (-7001)
+/** Nested paging not active.
+ * PCI passthrough currently works only if nested paging is active. */
+#define VERR_PCI_PASSTHROUGH_NO_NESTED_PAGING      (-7002)
+/** @} */
+
 /* SED-END */
 
 /** @} */

@@ -461,7 +461,7 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
                                    Console*              pConsole)
 {
     HRESULT hrc = S_OK;
-    PCFGMNODE pInst, pCfg, pLunL0;
+    PCFGMNODE pInst, pCfg, pLunL0, pLunL1;
 
     SafeIfaceArray<IPciDeviceAttachment> assignments;
     ComPtr<IMachine> aMachine =  pConsole->machine();
@@ -560,11 +560,15 @@ static HRESULT attachRawPciDevices(BusAssignmentManager* BusMgr,
         InsertConfigInteger(pCfg,      "GuestPCIDeviceNo",   GuestPciAddress.miDevice);
         InsertConfigInteger(pCfg,      "GuestPCIFunctionNo", GuestPciAddress.miFn);
 
-        /* the Main driver */
-        PciRawDev* pMainDev = new PciRawDev(pConsole);
+        /* the driver */
         InsertConfigNode(pInst,        "LUN#0",   &pLunL0);
-        InsertConfigString(pLunL0,     "Driver",  "pciraw");
-        InsertConfigNode(pLunL0,       "Config" , &pCfg);
+        InsertConfigString(pLunL0,     "Driver", "pciraw");
+        InsertConfigNode(pLunL0,       "AttachedDriver", &pLunL1);
+
+        /* the Main driver */
+        InsertConfigString(pLunL1,     "Driver", "MainPciRaw");
+        InsertConfigNode(pLunL1,       "Config", &pCfg);
+        PciRawDev* pMainDev = new PciRawDev(pConsole);
         InsertConfigInteger(pCfg,      "Object", (uintptr_t)pMainDev);
     }
 

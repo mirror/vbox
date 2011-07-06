@@ -343,6 +343,14 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
                                   "pack' which must be downloaded and installed separately");
                     break;
 
+                case VERR_PCI_PASSTHROUGH_NO_HWACCM:
+                    pszError = N_("PCI passthrough requires VT-x/AMD-V");
+                    break;
+
+                case VERR_PCI_PASSTHROUGH_NO_NESTED_PAGING:
+                    pszError = N_("PCI passthrough requires nested paging");
+                    break;
+
                 default:
                     if (VMR3GetErrorCountU(pUVM) == 0)
                         pszError = RTErrGetFull(rc);
