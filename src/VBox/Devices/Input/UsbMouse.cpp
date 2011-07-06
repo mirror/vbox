@@ -152,6 +152,9 @@ typedef struct USBHID
     /** Is this an absolute pointing device (tablet)? Relative (mouse) otherwise. */
     bool                isAbsolute;
 
+    /** Tablet coordinate shift factor for old and broken operating systems. */
+    uint8_t             u8CoordShift;
+
     /**
      * Mouse port - LUN#0.
      *
@@ -802,8 +805,8 @@ static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint3
         USBHIDT_REPORT  report;
 
         report.btn = pThis->PtrDelta.btn;
-        report.cx  = u32X / 2;
-        report.cy  = u32Y / 2;
+        report.cx  = u32X >> pThis->u8CoordShift;
+        report.cy  = u32Y >> pThis->u8CoordShift;
         report.dz  = clamp_i8(pThis->PtrDelta.dZ);
 
         cbCopy = sizeof(report);
@@ -1283,7 +1286,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    rc = CFGMR3ValidateConfig(pCfg, "/", "Absolute", "Config", "UsbHid", iInstance);
+    rc = CFGMR3ValidateConfig(pCfg, "/", "Absolute|CoordShift", "Config", "UsbHid", iInstance);
     if (RT_FAILURE(rc))
         return rc;
     rc = CFGMR3QueryBoolDef(pCfg, "Absolute", &pThis->isAbsolute, false);
@@ -1304,6 +1307,10 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     pThis->Lun0.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pDrvBase, PDMIMOUSECONNECTOR);
     if (!pThis->Lun0.pDrv)
         return PDMUsbHlpVMSetError(pUsbIns, VERR_PDM_MISSING_INTERFACE, RT_SRC_POS, N_("HID failed to query mouse interface"));
+
+    rc = CFGMR3QueryU8Def(pCfg, "CoordShift", &pThis->u8CoordShift, 1);
+    if (RT_FAILURE(rc))
+        return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to query shift factor"));
 
     return VINF_SUCCESS;
 }
