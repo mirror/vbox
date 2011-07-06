@@ -2542,6 +2542,9 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
             }
             else
                 AssertMsgFailed(("idPage=%#x\n", idPage));
+            paPages[iPage].idPage       = NIL_GMM_PAGEID;
+            paPages[iPage].idSharedPage = NIL_GMM_PAGEID;
+            paPages[iPage].HCPhysGCPhys = NIL_RTHCPHYS;
         }
 
         /* Free empty chunks. */
