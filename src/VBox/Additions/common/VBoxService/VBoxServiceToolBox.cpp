@@ -400,6 +400,164 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
 }
 
 /**
+ * Prints information (based on given flags) of a file system object (file/directory/...)
+ * to stdout.
+ *
+ * @return  IPRT status code.
+ * @param   pszName                     Object name.
+ * @param   cbName                      Size of object name.
+ * @param   uFlags                      Output / handling flags.
+ * @param   pObjInfo                    Pointer to object information.
+ */
+static int VBoxServiceToolboxLsPrintFsInfo(const char *pszName, uint16_t cbName, uint32_t uFlags,
+                                           PRTFSOBJINFO pObjInfo)
+{
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(cbName, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
+
+    RTFMODE fMode = pObjInfo->Attr.fMode;
+    char cFileType;
+    switch (fMode & RTFS_TYPE_MASK)
+    {
+        case RTFS_TYPE_FIFO:        cFileType = 'f'; break;
+        case RTFS_TYPE_DEV_CHAR:    cFileType = 'c'; break;
+        case RTFS_TYPE_DIRECTORY:   cFileType = 'd'; break;
+        case RTFS_TYPE_DEV_BLOCK:   cFileType = 'b'; break;
+        case RTFS_TYPE_FILE:        cFileType = '-'; break;
+        case RTFS_TYPE_SYMLINK:     cFileType = 'l'; break;
+        case RTFS_TYPE_SOCKET:      cFileType = 's'; break;
+        case RTFS_TYPE_WHITEOUT:    cFileType = 'w'; break;
+        default:
+            cFileType = '?';
+            break;
+    }
+    /** @todo sticy bits++ */
+
+    if (!(uFlags & VBOXSERVICETOOLBOXLSFLAG_LONG))
+    {
+        if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
+        {
+            /** @todo Skip node_id if not present/available! */
+            RTPrintf("ftype=%c%cnode_id=%RU64%cname_len=%RU16%cname=%s%c",
+                     cFileType, 0, (uint64_t)pObjInfo->Attr.u.Unix.INodeId, 0,
+                     cbName, 0, pszName, 0);
+        }
+        else
+            RTPrintf("%c %#18llx %3d %s\n", (uint64_t)pObjInfo->Attr.u.Unix.INodeId,
+                     cFileType, cbName, pszName);
+
+        if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE) /* End of data block. */
+            RTPrintf("%c%c", 0, 0);
+    }
+    else
+    {
+        if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
+        {
+            RTPrintf("ftype=%c%c", cFileType, 0);
+            RTPrintf("owner_mask=%c%c%c%c",
+                     fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
+                     fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
+                     fMode & RTFS_UNIX_IXUSR ? 'x' : '-', 0);
+            RTPrintf("group_mask=%c%c%c%c",
+                     fMode & RTFS_UNIX_IRGRP ? 'r' : '-',
+                     fMode & RTFS_UNIX_IWGRP ? 'w' : '-',
+                     fMode & RTFS_UNIX_IXGRP ? 'x' : '-', 0);
+            RTPrintf("other_mask=%c%c%c%c",
+                     fMode & RTFS_UNIX_IROTH ? 'r' : '-',
+                     fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
+                     fMode & RTFS_UNIX_IXOTH ? 'x' : '-', 0);
+            RTPrintf("dos_mask=%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+                     fMode & RTFS_DOS_READONLY          ? 'R' : '-',
+                     fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
+                     fMode & RTFS_DOS_SYSTEM            ? 'S' : '-',
+                     fMode & RTFS_DOS_DIRECTORY         ? 'D' : '-',
+                     fMode & RTFS_DOS_ARCHIVED          ? 'A' : '-',
+                     fMode & RTFS_DOS_NT_DEVICE         ? 'd' : '-',
+                     fMode & RTFS_DOS_NT_NORMAL         ? 'N' : '-',
+                     fMode & RTFS_DOS_NT_TEMPORARY      ? 'T' : '-',
+                     fMode & RTFS_DOS_NT_SPARSE_FILE    ? 'P' : '-',
+                     fMode & RTFS_DOS_NT_REPARSE_POINT  ? 'J' : '-',
+                     fMode & RTFS_DOS_NT_COMPRESSED     ? 'C' : '-',
+                     fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
+                     fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
+                     fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-', 0);
+
+            char szTimeBirth[256];
+            RTTimeSpecToString(&pObjInfo->BirthTime, szTimeBirth, sizeof(szTimeBirth));
+            char szTimeChange[256];
+            RTTimeSpecToString(&pObjInfo->ChangeTime, szTimeChange, sizeof(szTimeChange));
+            char szTimeModification[256];
+            RTTimeSpecToString(&pObjInfo->ModificationTime, szTimeModification, sizeof(szTimeModification));
+            char szTimeAccess[256];
+            RTTimeSpecToString(&pObjInfo->AccessTime, szTimeAccess, sizeof(szTimeAccess));
+
+            RTPrintf("hlinks=%RU32%cuid=%RU32%cgid=%RU32%cst_size=%RI64%calloc=%RI64%c"
+                     "st_birthtime=%s%cst_ctime=%s%cst_mtime=%s%cst_atime=%s%c",
+                     pObjInfo->Attr.u.Unix.cHardlinks, 0,
+                     pObjInfo->Attr.u.Unix.uid, 0,
+                     pObjInfo->Attr.u.Unix.gid, 0,
+                     pObjInfo->cbObject, 0,
+                     pObjInfo->cbAllocated, 0,
+                     szTimeBirth, 0,
+                     szTimeChange, 0,
+                     szTimeModification, 0,
+                     szTimeAccess, 0);
+            RTPrintf("cname_len=%RU16%cname=%s%c",
+                     cbName, 0, pszName, 0);
+
+            /* End of data block. */
+            RTPrintf("%c%c", 0, 0);
+        }
+        else
+        {
+            RTPrintf("%c", cFileType);
+            RTPrintf("%c%c%c",
+                     fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
+                     fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
+                     fMode & RTFS_UNIX_IXUSR ? 'x' : '-');
+            RTPrintf("%c%c%c",
+                     fMode & RTFS_UNIX_IRGRP ? 'r' : '-',
+                     fMode & RTFS_UNIX_IWGRP ? 'w' : '-',
+                     fMode & RTFS_UNIX_IXGRP ? 'x' : '-');
+            RTPrintf("%c%c%c",
+                     fMode & RTFS_UNIX_IROTH ? 'r' : '-',
+                     fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
+                     fMode & RTFS_UNIX_IXOTH ? 'x' : '-');
+            RTPrintf(" %c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+                     fMode & RTFS_DOS_READONLY          ? 'R' : '-',
+                     fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
+                     fMode & RTFS_DOS_SYSTEM            ? 'S' : '-',
+                     fMode & RTFS_DOS_DIRECTORY         ? 'D' : '-',
+                     fMode & RTFS_DOS_ARCHIVED          ? 'A' : '-',
+                     fMode & RTFS_DOS_NT_DEVICE         ? 'd' : '-',
+                     fMode & RTFS_DOS_NT_NORMAL         ? 'N' : '-',
+                     fMode & RTFS_DOS_NT_TEMPORARY      ? 'T' : '-',
+                     fMode & RTFS_DOS_NT_SPARSE_FILE    ? 'P' : '-',
+                     fMode & RTFS_DOS_NT_REPARSE_POINT  ? 'J' : '-',
+                     fMode & RTFS_DOS_NT_COMPRESSED     ? 'C' : '-',
+                     fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
+                     fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
+                     fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-');
+            RTPrintf(" %d %4d %4d %10lld %10lld %#llx %#llx %#llx %#llx",
+                     pObjInfo->Attr.u.Unix.cHardlinks,
+                     pObjInfo->Attr.u.Unix.uid,
+                     pObjInfo->Attr.u.Unix.gid,
+                     pObjInfo->cbObject,
+                     pObjInfo->cbAllocated,
+                     pObjInfo->BirthTime,
+                     pObjInfo->ChangeTime,
+                     pObjInfo->ModificationTime,
+                     pObjInfo->AccessTime);
+            RTPrintf(" %2d %s\n", cbName, pszName);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Helper routine for ls tool doing the actual parsing and output of
  * a specified directory.
  *
@@ -407,7 +565,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
  * @param   pszDir                  Directory (path) to ouptut.
  * @param   uFlags                  Flags of type VBOXSERVICETOOLBOXLSFLAG.
  */
-static int VBoxServiceToolboxLsOutput(const char *pszDir, uint32_t uFlags)
+static int VBoxServiceToolboxLsHandleDir(const char *pszDir, uint32_t uFlags)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_PARAMETER);
 
@@ -473,144 +631,11 @@ static int VBoxServiceToolboxLsOutput(const char *pszDir, uint32_t uFlags)
         PVBOXSERVICETOOLBOXDIRENTRY pNodeIt;
         RTListForEach(&dirList, pNodeIt, VBOXSERVICETOOLBOXDIRENTRY, Node)
         {
-            RTFMODE fMode = pNodeIt->dirEntry.Info.Attr.fMode;
-            char cFileType;
-            switch (fMode & RTFS_TYPE_MASK)
-            {
-                case RTFS_TYPE_FIFO:        cFileType = 'f'; break;
-                case RTFS_TYPE_DEV_CHAR:    cFileType = 'c'; break;
-                case RTFS_TYPE_DIRECTORY:   cFileType = 'd'; break;
-                case RTFS_TYPE_DEV_BLOCK:   cFileType = 'b'; break;
-                case RTFS_TYPE_FILE:        cFileType = '-'; break;
-                case RTFS_TYPE_SYMLINK:     cFileType = 'l'; break;
-                case RTFS_TYPE_SOCKET:      cFileType = 's'; break;
-                case RTFS_TYPE_WHITEOUT:    cFileType = 'w'; break;
-                default:
-                    cFileType = '?';
-                    break;
-            }
-            /** @todo sticy bits++ */
-
-            if (!(uFlags & VBOXSERVICETOOLBOXLSFLAG_LONG))
-            {
-                if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
-                {
-                    /** @todo Skip node_id if not present/available! */
-                    RTPrintf("ftype=%c%cnode_id=%RU64%cname_len=%RU16%cname=%s%c",
-                             cFileType, 0, (uint64_t)pNodeIt->dirEntry.Info.Attr.u.Unix.INodeId, 0,
-                             pNodeIt->dirEntry.cbName, 0, pNodeIt->dirEntry.szName, 0);
-                }
-                else
-                    RTPrintf("%c %#18llx %3d %s\n", (uint64_t)pNodeIt->dirEntry.Info.Attr.u.Unix.INodeId,
-                             cFileType, pNodeIt->dirEntry.cbName, pNodeIt->dirEntry.szName);
-
-                if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE) /* End of data block. */
-                    RTPrintf("%c%c", 0, 0);
-            }
-            else
-            {
-                if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
-                {
-                    RTPrintf("ftype=%c%c", cFileType, 0);
-                    RTPrintf("owner_mask=%c%c%c%c",
-                             fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
-                             fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
-                             fMode & RTFS_UNIX_IXUSR ? 'x' : '-', 0);
-                    RTPrintf("group_mask=%c%c%c%c",
-                             fMode & RTFS_UNIX_IRGRP ? 'r' : '-',
-                             fMode & RTFS_UNIX_IWGRP ? 'w' : '-',
-                             fMode & RTFS_UNIX_IXGRP ? 'x' : '-', 0);
-                    RTPrintf("other_mask=%c%c%c%c",
-                             fMode & RTFS_UNIX_IROTH ? 'r' : '-',
-                             fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
-                             fMode & RTFS_UNIX_IXOTH ? 'x' : '-', 0);
-                    RTPrintf("dos_mask=%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
-                             fMode & RTFS_DOS_READONLY          ? 'R' : '-',
-                             fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
-                             fMode & RTFS_DOS_SYSTEM            ? 'S' : '-',
-                             fMode & RTFS_DOS_DIRECTORY         ? 'D' : '-',
-                             fMode & RTFS_DOS_ARCHIVED          ? 'A' : '-',
-                             fMode & RTFS_DOS_NT_DEVICE         ? 'd' : '-',
-                             fMode & RTFS_DOS_NT_NORMAL         ? 'N' : '-',
-                             fMode & RTFS_DOS_NT_TEMPORARY      ? 'T' : '-',
-                             fMode & RTFS_DOS_NT_SPARSE_FILE    ? 'P' : '-',
-                             fMode & RTFS_DOS_NT_REPARSE_POINT  ? 'J' : '-',
-                             fMode & RTFS_DOS_NT_COMPRESSED     ? 'C' : '-',
-                             fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
-                             fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
-                             fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-', 0);
-
-                    char szTimeBirth[256];
-                    RTTimeSpecToString(&pNodeIt->dirEntry.Info.BirthTime, szTimeBirth, sizeof(szTimeBirth));
-                    char szTimeChange[256];
-                    RTTimeSpecToString(&pNodeIt->dirEntry.Info.ChangeTime, szTimeChange, sizeof(szTimeChange));
-                    char szTimeModification[256];
-                    RTTimeSpecToString(&pNodeIt->dirEntry.Info.ModificationTime, szTimeModification, sizeof(szTimeModification));
-                    char szTimeAccess[256];
-                    RTTimeSpecToString(&pNodeIt->dirEntry.Info.AccessTime, szTimeAccess, sizeof(szTimeAccess));
-
-                    RTPrintf("hlinks=%RU32%cuid=%RU32%cgid=%RU32%cst_size=%RI64%calloc=%RI64%c"
-                             "st_birthtime=%s%cst_ctime=%s%cst_mtime=%s%cst_atime=%s%c",
-                             pNodeIt->dirEntry.Info.Attr.u.Unix.cHardlinks, 0,
-                             pNodeIt->dirEntry.Info.Attr.u.Unix.uid, 0,
-                             pNodeIt->dirEntry.Info.Attr.u.Unix.gid, 0,
-                             pNodeIt->dirEntry.Info.cbObject, 0,
-                             pNodeIt->dirEntry.Info.cbAllocated, 0,
-                             szTimeBirth, 0,
-                             szTimeChange, 0,
-                             szTimeModification, 0,
-                             szTimeAccess, 0);
-                    RTPrintf("cname_len=%RU16%cname=%s%c",
-                             pNodeIt->dirEntry.cbName, 0, pNodeIt->dirEntry.szName, 0);
-
-                    /* End of data block. */
-                    RTPrintf("%c%c", 0, 0);
-                }
-                else
-                {
-                    RTPrintf("%c", cFileType);
-                    RTPrintf("%c%c%c",
-                             fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
-                             fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
-                             fMode & RTFS_UNIX_IXUSR ? 'x' : '-');
-                    RTPrintf("%c%c%c",
-                             fMode & RTFS_UNIX_IRGRP ? 'r' : '-',
-                             fMode & RTFS_UNIX_IWGRP ? 'w' : '-',
-                             fMode & RTFS_UNIX_IXGRP ? 'x' : '-');
-                    RTPrintf("%c%c%c",
-                             fMode & RTFS_UNIX_IROTH ? 'r' : '-',
-                             fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
-                             fMode & RTFS_UNIX_IXOTH ? 'x' : '-');
-                    RTPrintf(" %c%c%c%c%c%c%c%c%c%c%c%c%c%c",
-                             fMode & RTFS_DOS_READONLY          ? 'R' : '-',
-                             fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
-                             fMode & RTFS_DOS_SYSTEM            ? 'S' : '-',
-                             fMode & RTFS_DOS_DIRECTORY         ? 'D' : '-',
-                             fMode & RTFS_DOS_ARCHIVED          ? 'A' : '-',
-                             fMode & RTFS_DOS_NT_DEVICE         ? 'd' : '-',
-                             fMode & RTFS_DOS_NT_NORMAL         ? 'N' : '-',
-                             fMode & RTFS_DOS_NT_TEMPORARY      ? 'T' : '-',
-                             fMode & RTFS_DOS_NT_SPARSE_FILE    ? 'P' : '-',
-                             fMode & RTFS_DOS_NT_REPARSE_POINT  ? 'J' : '-',
-                             fMode & RTFS_DOS_NT_COMPRESSED     ? 'C' : '-',
-                             fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
-                             fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
-                             fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-');
-                    RTPrintf(" %d %4d %4d %10lld %10lld %#llx %#llx %#llx %#llx",
-                             pNodeIt->dirEntry.Info.Attr.u.Unix.cHardlinks,
-                             pNodeIt->dirEntry.Info.Attr.u.Unix.uid,
-                             pNodeIt->dirEntry.Info.Attr.u.Unix.gid,
-                             pNodeIt->dirEntry.Info.cbObject,
-                             pNodeIt->dirEntry.Info.cbAllocated,
-                             pNodeIt->dirEntry.Info.BirthTime,
-                             pNodeIt->dirEntry.Info.ChangeTime,
-                             pNodeIt->dirEntry.Info.ModificationTime,
-                             pNodeIt->dirEntry.Info.AccessTime);
-                    RTPrintf(" %2d %s\n", pNodeIt->dirEntry.cbName, pNodeIt->dirEntry.szName);
-                }
-            }
+            rc = VBoxServiceToolboxLsPrintFsInfo(pNodeIt->dirEntry.szName, pNodeIt->dirEntry.cbName,
+                                                 uFlags,
+                                                 &pNodeIt->dirEntry.Info);
             if (RT_FAILURE(rc))
-                    break;
+                break;
         }
 
         /* If everything went fine we do the second run (if needed) ... */
@@ -642,7 +667,7 @@ static int VBoxServiceToolboxLsOutput(const char *pszDir, uint32_t uFlags)
                             rc = RTPathJoin(szPath, sizeof(szPath),
                                             pszDir, pNodeIt->dirEntry.szName);
                             if (RT_SUCCESS(rc))
-                                rc = VBoxServiceToolboxLsOutput(szPath, uFlags);
+                                rc = VBoxServiceToolboxLsHandleDir(szPath, uFlags);
                         }
                         break;
 
@@ -780,9 +805,32 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
         {
-            rc = VBoxServiceToolboxLsOutput(pNodeIt->pszName, fFlags);
+            if (RTFileExists(pNodeIt->pszName))
+            {
+                RTFILE file;
+                rc = RTFileOpen(&file, pNodeIt->pszName, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ);
+                if (RT_SUCCESS(rc))
+                {
+                    RTFSOBJINFO objInfo;
+                    rc = RTFileQueryInfo(file, &objInfo, RTFSOBJATTRADD_UNIX);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = VBoxServiceToolboxLsPrintFsInfo(pNodeIt->pszName, strlen(pNodeIt->pszName),
+                                                             fFlags, &objInfo);
+                    }
+                    else
+                        RTMsgError("ls: Unable to query information for '%s', rc=%Rrc\n",
+                                   pNodeIt->pszName, rc);
+                    RTFileClose(file);
+                }
+                else
+                    RTMsgError("ls: Failed opening '%s', rc=%Rrc\n",
+                               pNodeIt->pszName, rc);
+            }
+            else
+                rc = VBoxServiceToolboxLsHandleDir(pNodeIt->pszName, fFlags);
             if (RT_FAILURE(rc))
-                RTMsgError("ls: Failed while enumerating directory '%s', rc=%Rrc\n",
+                RTMsgError("ls: Failed while enumerating '%s', rc=%Rrc\n",
                            pNodeIt->pszName, rc);
         }
 
