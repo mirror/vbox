@@ -655,6 +655,7 @@
 # define RTLogFlags                                     RT_MANGLER(RTLogFlags)
 # define RTLogFlush                                     RT_MANGLER(RTLogFlush)
 # define RTLogFlushRC                                   RT_MANGLER(RTLogFlushRC)
+# define RTLogFlushR0                                   RT_MANGLER(RTLogFlushR0)
 # define RTLogFlushToLogger                             RT_MANGLER(RTLogFlushToLogger)
 # define RTLogFormatV                                   RT_MANGLER(RTLogFormatV)
 # define RTLogGetDefaultInstance                        RT_MANGLER(RTLogGetDefaultInstance)

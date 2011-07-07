@@ -1576,6 +1576,16 @@ RTDECL(void) RTLogFlushRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC);
 RTDECL(void) RTLogFlushToLogger(PRTLOGGER pSrcLogger, PRTLOGGER pDstLogger);
 
 /**
+ * Flushes a R0 logger instance to a R3 logger.
+ *
+ * @returns iprt status code.
+ * @param   pLogger      The R3 logger instance to flush pLoggerR0 to. If NULL
+ *                       the default logger is used.
+ * @param   pLoggerR0    The R0 logger instance to flush.
+ */
+RTDECL(void) RTLogFlushR0(PRTLOGGER pLogger, PRTLOGGER pLoggerR0);
+
+/**
  * Sets the custom prefix callback.
  *
  * @returns IPRT status code.
