@@ -3547,7 +3547,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
                 }
                 if (fSuccess)
                 {
-                    if (attachmentDeviceType == KDeviceType_DVD)
+                    if (attachmentDeviceType == KDeviceType_HardDisk)
                     {
                         m_machine.NonRotationalDevice(strControllerName, iAttachmentPort, iAttachmentDevice, fAttachmentNonRotational);
                         /* Check that machine is OK: */
