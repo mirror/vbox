@@ -1062,12 +1062,17 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
                 /** @todo Do some more work (query size etc.) here later.
                  *        Not needed for now. */
             }
+            else if (RTDirExists(pNodeIt->pszName))
+            {
+                /** @todo Do some more work (query size etc.) here later.
+                 *        Not needed for now. */
+            }
             else
             {
                 RTMsgError("stat: Cannot stat for '%s': No such file or directory\n",
                            pNodeIt->pszName);
                 rc = VERR_FILE_NOT_FOUND;
-                /* Do not break here -- process every file in the list
+                /* Do not break here -- process every element in the list
                  * and keep failing rc. */
             }
         }
