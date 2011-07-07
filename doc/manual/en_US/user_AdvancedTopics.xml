@@ -540,48 +540,50 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
   <sect1 id="pcipassthrough">
     <title>PCI passthrough</title>
 
-    <para>When running on Linux hosts, with recent enough kernel (at least version
+    <para>When running on Linux hosts, with a recent enough kernel (at least version
       <computeroutput>2.6.31</computeroutput>) experimental host PCI devices
       passthrough is available.<footnote>
         <para>Experimental support for PCI passthrough was introduced with VirtualBox
         4.1.</para>
-      </footnote> Essentially this feature allows to use physical PCI devices
-      on host directly by the guest, even if host doesn't have drivers for this
-      particular device. Both regular PCI and some PCI Express cards are
+    </footnote> Essentially this feature allows to directly use physical PCI
+      devices on the host by the guest even if host doesn't have drivers for this
+      particular device. Both, regular PCI and some PCI Express cards, are
       supported. AGP and certain PCI Express cards are not supported at the
-      moment, if they rely on GART (Graphics Address Remapping Table) unit
-      programming for texture management, as it does rather nontrivial
+      moment if they rely on GART (Graphics Address Remapping Table) unit
+      programming for texture management as it does rather nontrivial
       operations with pages remapping interfering with IOMMU.
       This limitation may be lifted in future releases.</para>
 
     <para>To be fully functional, PCI passthrough support in VirtualBox depends upon
-    IOMMU hardware unit, which is not yet too widely available. To be exact,
-    if device uses bus mastering (i.e. performs DMA to the OS memory on its own), then
-    IOMMU hardware is needed (otherwise such DMA transactions may override wrong physical memory address,
-    as device DMA engine is programmed using device-specific protocol to perform memory transactions).
-    IOMMU functions as translation unit, mapping physical memory access requests from the device,
-    using knowledge of guest physical address to host physical addresses translation rules.</para>
+      an IOMMU hardware unit which is not yet too widely available. If the device uses
+      bus mastering (i.e. it performs DMA to the OS memory on its
+      own), then an IOMMU is required, otherwise such DMA transactions may write to
+      the wrong physical memory address as the device DMA engine is programmed using
+      a device-specific protocol to perform memory transactions. The IOMMU functions
+      as translation unit mapping physical memory access requests from the device
+      using knowledge of the guest physical address to host physical addresses translation
+      rules.</para>
 
     <para>Intel's solution for IOMMU is marketed as "Intel Virtualization Technology for
       Directed I/O" (VT-d), and AMD's one is called AMD-Vi. So please check if your
       motherboard datasheet has appropriate technology.
-      Even if your hardware doesn't have IOMMU, certain PCI cards may work
-      (such as serial PCI adapters), but guest will show warning on boot, and
-      VM execution will terminate, if guest driver will attempt to enable card
+      Even if your hardware doesn't have a IOMMU, certain PCI cards may work
+      (such as serial PCI adapters), but the guest will show a warning on boot and
+      the VM execution will terminate if the guest driver will attempt to enable card
       bus mastering.</para>
 
     <para>
-      It's not uncommon, that BIOS/OS disables IOMMU by default, so before any attempt to use it,
-      please make sure that
+      It is very common that the BIOS or the host OS disables the IOMMU by default.
+      So before any attempt to use it please make sure that
       <orderedlist>
         <listitem>
-            Your motherboard has IOMMU unit.
+            Your motherboard has an IOMMU unit.
         </listitem>
         <listitem>
-            Your CPU supports IOMMU.
+            Your CPU supports the IOMMU.
         </listitem>
         <listitem>
-            IOMMU is enabled in the BIOS.
+            The IOMMU is enabled in the BIOS.
         </listitem>
         <listitem>
             Your Linux kernel was compiled with IOMMU support (including DMA remapping, see
@@ -590,15 +592,17 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
             as well.
         </listitem>
         <listitem>
-            Your Linux kernel recognizes and uses IOMMU unit (<computeroutput>intel_iommu=on</computeroutput>
-            boot option could be needed). Search for DMAR and PCI-DMA in kernel boot log.
+          Your Linux kernel recognizes and uses the IOMMU unit
+          (<computeroutput>intel_iommu=on</computeroutput>
+           boot option could be needed). Search for DMAR and PCI-DMA in kernel boot log.
         </listitem>
       </orderedlist>
     </para>
 
-    <para>Once you made sure that host kernel supports IOMMU, next step is to select
-      PCI card, and attach it to the guest. To figure out list of available PCI devices,
-      use  <computeroutput>lspci</computeroutput> command. Output will look like this
+    <para>Once you made sure that the host kernel supports the IOMMU, the next step is
+      to select the PCI card and attach it to the guest. To figure out the list of
+      available PCI devices, use the <computeroutput>lspci</computeroutput> command.
+      The output will look like this
       <screen>
         01:00.0 VGA compatible controller: ATI Technologies Inc Cedar PRO [Radeon HD 5450]
         01:00.1 Audio device: ATI Technologies Inc Manhattan HDMI Audio [Mobility Radeon HD 5000 Series]
@@ -607,34 +611,35 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
         03:00.1 IDE interface: JMicron Technology Corp. JMB362/JMB363 Serial ATA Controller (rev 03)
         06:00.0 VGA compatible controller: nVidia Corporation G86 [GeForce 8500 GT] (rev a1)
       </screen>
-      First column here is a PCI address (in format <computeroutput>bus:device.function</computeroutput>).
-      This address could be used to identify device for further operations.
-      For example, to attach PCI network controller on system listed above,
-      to second PCI bus in the guest, as device 5, function 0, use the following command:
-      <screen>VBoxManage modifyvm "VM name" --attachpci 02:00.0@01:05.0</screen>
+      The first column is a PCI address (in format <computeroutput>bus:device.function</computeroutput>).
+      This address could be used to identify the device for further operations.
+      For example, to attach a PCI network controller on the system listed above
+      to the second PCI bus in the guest, as device 5, function 0, use the following command:
+      <screen>VBoxManage modifyvm "VM name" --pciattach 02:00.0@01:05.0</screen>
       To detach same device, use
-      <screen>VBoxManage modifyvm "VM name" --detachpci 02:00.0</screen>
-      Please note, that both host and guest could freely assign different PCI address to
-      card attached during runtime, so those addresses only apply to address of card at
-      the moment of attachment (host), and during BIOS PCI init (guest).
+      <screen>VBoxManage modifyvm "VM name" --pcidetach 02:00.0</screen>
+      Please note that both host and guest could freely assign a different PCI address to
+      the card attached during runtime, so those addresses only apply to the address of
+      the card at the moment of attachment (host), and during BIOS PCI init (guest).
     </para>
 
-    <para>If virtual machine has PCI device attached, certain limitations apply.
+    <para>If the virtual machine has a PCI device attached, certain limitations apply:
       <orderedlist>
          <listitem>
-          Only PCI cards with non-shared interrupts (such as using MSI on host) can be
+          Only PCI cards with non-shared interrupts (such as using MSI on host) are
           supported at the moment.
         </listitem>
         <listitem>
-          No guest state can be reliably saved/restored (as PCI card internal state could
-          not be retrieved).
+          No guest state can be reliably saved/restored (as the internal state of the PCI
+          card could not be retrieved).
         </listitem>
         <listitem>
           Teleportation (live migration) doesn't work (for the same reason).
         </listitem>
         <listitem>
-          No lazy physical memory allocation, host preallocates whole RAM on startup
-          (as we cannot catch physical hardware access to physical memory).
+          No lazy physical memory allocation. The host will preallocate the whole RAM
+          required for the VM on startup (as we cannot catch physical hardware accesses
+          to the physical memory).
         </listitem>
       </orderedlist>
     </para>
