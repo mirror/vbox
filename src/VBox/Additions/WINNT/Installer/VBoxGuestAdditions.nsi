@@ -803,11 +803,11 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
   !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d8.dll" "$g_strSystemDir\dllcache\d3d8.dll" "$TEMP"
   !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d9.dll" "$g_strSystemDir\dllcache\d3d9.dll" "$TEMP"
 
-  ; Save original DLLs ...
+  ; Save original DLLs (only if msd3d*.dll does not exist) ...
   SetOutPath $g_strSystemDir
   IfFileExists "$g_strSystemDir\msd3d8.dll" +1
     CopyFiles /SILENT "$g_strSystemDir\d3d8.dll" "$g_strSystemDir\msd3d8.dll"
-  IfFileExists "$g_strSystemDir\msd3d8.dll" +1
+  IfFileExists "$g_strSystemDir\msd3d9.dll" +1
     CopyFiles /SILENT "$g_strSystemDir\d3d9.dll" "$g_strSystemDir\msd3d9.dll"
 
   Push "$g_strSystemDir\d3d8.dll"
@@ -856,7 +856,7 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
     !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "$TEMP"
     !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "$TEMP"
 
-    ; Save original DLLs ...
+    ; Save original DLLs (only if msd3d*.dll does not exist) ...
     SetOutPath $SYSDIR
     IfFileExists "$SYSDIR\dllcache\msd3d8.dll" +1
       CopyFiles /SILENT "$SYSDIR\d3d8.dll" "$SYSDIR\msd3d8.dll"
