@@ -579,6 +579,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
          */
         if (g_cVerbosity >= 5)
         {
+            VBoxServiceVerbose(5, "StdOut of process (PID %u):\n", pData->uPID);
+
             uint8_t szBuf[_64K];
             uint32_t cbOffset = 0;
             uint32_t cbRead, cbLeft;
@@ -586,11 +588,13 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                                                         cbOffset, &cbRead, &cbLeft))
                    && cbRead)
             {
-                VBoxServiceVerbose(5, "[%u]: %s\n", pData->uPID, szBuf);
+                RTStrmWrite(g_pStdOut, szBuf, cbRead);
                 cbOffset += cbRead;
                 if (!cbLeft)
                     break;
             }
+
+            VBoxServiceVerbose(5, "\n");
         }
     }
     else
