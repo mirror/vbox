@@ -83,6 +83,8 @@
 #include <sys/sunddi.h>
 #include <sys/vfs.h>
 #include <sys/vmsystm.h>
+#include <vm/seg_kpm.h>
+#include <vm/pvn.h>
 #if !defined(VBOX_VFS_SOLARIS_10U6)
 #include <sys/vfs_opreg.h>
 #endif
@@ -1455,6 +1457,106 @@ done:
 
 
 #if 0
+static caddr_t
+sffs_page_map(
+	page_t *ppage,
+	enum seg_rw segaccess)
+{
+	/* Use seg_kpm driver if possible (64-bit) */
+	if (kpm_enable)
+		return (hat_kpm_mapin(ppage, NULL));
+	ASSERT(segaccess == S_READ || segaccess == S_WRITE);
+	return (ppmapin(ppage, PROT_READ | ((segaccess == S_WRITE) ? PROT_WRITE : 0), (caddr_t)-1));
+}
+
+
+static void
+sffs_page_unmap(
+	page_t *ppage,
+	caddr_t addr)
+{
+	if (kpm_enable)
+		hat_kpm_mapout(ppage, NULL, addr);
+	else
+		ppmapout(addr);
+}
+
+
+/*
+ * Called when there's no page in the cache. This will create new page(s) and read
+ * the file data into it.
+ */
+static int
+sffs_readpages(
+	vnode_t		*dvp,
+	offset_t	off,
+	page_t		*pagelist[],
+	size_t		pagelistsize,
+	struct seg  *segp,
+	caddr_t		addr,
+	enum seg_rw	segaccess)
+{
+	ASSERT(MUTEX_HELD(&sffs_lock));
+
+	int error = 0;
+	u_offset_t io_off, total;
+	size_t io_len;
+	page_t *ppages;
+	page_t *pcur;
+
+	sfnode_t *node = VN2SFN(dvp);
+	ASSERT(node);
+	ASSERT(node->sf_file);
+
+	if (pagelistsize == PAGESIZE)
+	{
+		io_off = off;
+		io_len = PAGESIZE;
+
+		ppages = page_create_va(dvp, io_off, io_len, PG_WAIT | PG_EXCL, segp, addr);
+	}
+	else
+		ppages = pvn_read_kluster(dvp, off, segp, addr, &io_off, &io_len, off, pagelistsize, 0);
+
+	/* If page already exists return success */
+	if (!ppages)
+	{
+		*pagelist = NULL;
+		return (0);
+	}
+
+	/*
+	 * Map & read page-by-page.
+	 */
+	total = io_off + io_len;
+	pcur = ppages;
+	while (io_off < total)
+	{
+		ASSERT3U(io_off, ==, pcur->p_offset);
+
+		caddr_t virtaddr = sffs_page_map(pcur, segaccess);
+		uint32_t bytes = PAGESIZE;
+		error = sfprov_read(node->sf_file, virtaddr, io_off, &bytes);
+		sffs_page_unmap(pcur, virtaddr);
+		if (error != 0 || bytes < PAGESIZE)
+		{
+			/* Get rid of all kluster pages read & bail.  */
+			pvn_read_done(ppages,  B_ERROR);
+			return (error);
+		}
+		pcur = pcur->p_next;
+		io_off += PAGESIZE;
+	}
+
+	/*
+	 * Fill in the pagelist from kluster at the requested offset.
+	 */
+	pvn_plist_init(ppages, pagelist, pagelistsize, off, io_len, segaccess);
+	ASSERT(pagelist == NULL || (*pagelist)->p_offset == off);
+	return (0);
+}
+
+
 /*ARGSUSED*/
 static int
 sffs_getpage(
@@ -1473,6 +1575,78 @@ sffs_getpage(
 #endif
 	)
 {
+	int error = 0;
+	page_t **pageliststart = pagelist;
+
+	if (segaccess == S_WRITE)
+		return (ENOSYS);	/* Will this ever happen? */
+
+	if (protp)
+		*protp = PROT_ALL;
+
+	/* We don't really support async ops, pretend success. */
+	if (pagelist == NULL)
+		return (0);
+
+	if (len > pagelistsize)
+		len = pagelistsize;
+	else
+		len = P2ROUNDUP(len, PAGESIZE);
+	ASSERT(pagelistsize >= len);
+
+	mutex_enter(&sffs_lock);
+
+	while (len > 0)
+	{
+		/*
+		 * Look for pages in the requested offset range, or create them if we can't find any.
+		 */
+		if ((*pagelist = page_lookup(dvp, off, SE_SHARED)) != NULL)
+			*(pagelist + 1) = NULL;
+		else if ((error = sffs_readpages(dvp, off, pagelist, pagelistsize, segp, addr, segaccess)) != 0)
+		{
+			while (pagelist > pageliststart)
+				page_unlock(*--pagelist);
+
+			*pagelist = NULL;
+			mutex_exit(&sffs_lock);
+			return (error);
+		}
+
+		while (*pagelist)
+		{
+			ASSERT3U((*pagelist)->p_offset, ==, off);
+			off += PAGESIZE;
+			addr += PAGESIZE;
+			if (len > 0)
+			{
+				ASSERT3U(len, >=, PAGESIZE);
+				len -= PAGESIZE;
+			}
+
+			ASSERT3U(pagelistsize,  >=, PAGESIZE);
+			pagelistsize -= PAGESIZE;
+			pagelist++;
+		}
+
+		/*
+		 * Fill the page list array with any pages left in the cache.
+		 */
+		while (pagelistsize > 0)
+		{
+			if ((*pagelist++ = page_lookup_nowait(dvp, off, SE_SHARED)) != NULL)
+			{
+				off += PAGESIZE;
+				pagelistsize -= PAGESIZE;
+			}
+			else
+				break;
+		}
+	}
+
+	*pagelist = NULL;
+	mutex_exit(&sffs_lock);
+	return (error);
 }
 
 
@@ -1489,6 +1663,11 @@ sffs_putpage(
 #endif
 	)
 {
+	/*
+	 * We don't support PROT_WRITE mmaps. For normal writes we do not map and IO via
+	 * vop_putpage() either, therefore, afaik this shouldn't ever be called.
+	 */
+	return (ENOSYS);
 }
 
 
@@ -1510,10 +1689,13 @@ sffs_map(
 	)
 {
 	/*
-	 * Invocation: mmap()-smmap_common()->VOP_MAP()->sffs_map(). Once the segment driver
-	 * creates the new segment in segvn_create(), it'll invoke down the line VOP_ADDMAP()->sffs_addmap()
+	 * Invocation: mmap()->smmap_common()->VOP_MAP()->sffs_map(). Once the
+	 * segment driver creates the new segment via segvn_create(), it'll
+	 * invoke down the line VOP_ADDMAP()->sffs_addmap()
 	 */
 	int error;
+	sfnode_t *node = VN2SFN(dvp);
+	ASSERT(node);
 	if ((prot & PROT_WRITE))
 		return (ENOTSUP);
 
@@ -1525,6 +1707,9 @@ sffs_map(
 
 	if (dvp->v_flag & VNOMAP)
 		return (ENOSYS);
+
+	if (vn_has_mandatory_locks(dvp, node->sf_stat.sf_mode))
+		return (EAGAIN);
 
 	mutex_enter(&sffs_lock);
 	as_rangelock(asp);
@@ -1575,6 +1760,9 @@ sffs_addmap(
 	sfnode_t *node = VN2SFN(dvp);
 	uint64_t npages = btopr(len);
 
+	if (dvp->v_flag & VNOMAP)
+		return (ENOSYS);
+
 	ASSERT(node);
 	ASMAtomicAddU64(&node->sf_mapcnt, npages);
 	return (0);
@@ -1600,6 +1788,9 @@ sffs_delmap(
 {
 	sfnode_t *node = VN2SFN(dvp);
 	uint64_t npages = btopr(len);
+
+	if (dvp->v_flag & VNOMAP)
+		return (ENOSYS);
 
 	ASSERT(node->sf_mapcnt >= npages);
 	ASMAtomicSubU64(&node->sf_mapcnt, npages);
@@ -1946,7 +2137,7 @@ const fs_operation_def_t sffs_ops_template[] = {
 	VOPNAME_SPACE,		{ .vop_space = sffs_space },
 	VOPNAME_WRITE,		{ .vop_write = sffs_write },
 
-#if 0
+# if 0
 	VOPNAME_MAP,		{ .vop_map = sffs_map },
 	VOPNAME_ADDMAP,		{ .vop_addmap = sffs_addmap },
 	VOPNAME_DELMAP,		{ .vop_delmap = sffs_delmap },
