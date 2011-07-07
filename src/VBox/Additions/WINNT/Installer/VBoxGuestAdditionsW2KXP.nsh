@@ -594,7 +594,7 @@ Function ${un}W2K_Uninstall
   IfFileExists "$g_strSystemDir\dllcache\msd3d8.dll" 0 +2
     Delete /REBOOTOK "$g_strSystemDir\dllcache\d3d8.dll"
     Rename /REBOOTOK "$g_strSystemDir\dllcache\msd3d8.dll" "$g_strSystemDir\dllcache\d3d8.dll"
-  IfFileExists g_strSystemDir\dllcache\msd3d9.dll" 0 +2
+  IfFileExists "$g_strSystemDir\dllcache\msd3d9.dll" 0 +2
     Delete /REBOOTOK "$g_strSystemDir\dllcache\d3d9.dll"
     Rename /REBOOTOK "$g_strSystemDir\dllcache\msd3d9.dll" "$g_strSystemDir\dllcache\d3d9.dll"
   ; Restore original DX DLLs
