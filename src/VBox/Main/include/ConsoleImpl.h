@@ -550,6 +550,8 @@ private:
                                                    bool fUseHostIOCache,
                                                    IMediumAttachment *aMediumAtt,
                                                    bool fForce);
+
+    HRESULT attachRawPciDevices(PVM pVM, BusAssignmentManager *BusMgr, PCFGMNODE pDevices);
     void attachStatusDriver(PCFGMNODE pCtlInst, PPDMLED *papLeds,
                             uint64_t uFirst, uint64_t uLast,
                             Console::MediumAttachmentMap *pmapMediumAttachments,
