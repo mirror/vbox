@@ -191,7 +191,7 @@ int pdmR3DevInit(PVM pVM)
 
         /* Find the device. */
         PPDMDEV pDev = pdmR3DevLookup(pVM, szName);
-        AssertMsgReturn(pDev, ("Configuration error: device '%s' not found!\n", szName), VERR_PDM_DEVICE_NOT_FOUND);
+        AssertLogRelMsgReturn(pDev, ("Configuration error: device '%s' not found!\n", szName), VERR_PDM_DEVICE_NOT_FOUND);
 
         /* Configured priority or use default based on device class? */
         uint32_t u32Order;
