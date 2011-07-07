@@ -3803,6 +3803,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                           fIndirect,
                           false /* fPassthrough */,
                           false /* fTempEject */,
+                          false /* fNonRotational */,
                           Utf8Str::Empty);
     if (FAILED(rc)) return rc;
 
@@ -3993,9 +3994,56 @@ STDMETHODIMP Machine::TemporaryEjectDevice(IN_BSTR aControllerName, LONG aContro
 
     if (pAttach->getType() != DeviceType_DVD)
         return setError(E_INVALIDARG,
-                        tr("Setting passthrough rejected as the device attached to device slot %d on port %d of controller '%ls' is not a DVD"),
+                        tr("Setting temporary eject flag rejected as the device attached to device slot %d on port %d of controller '%ls' is not a DVD"),
                         aDevice, aControllerPort, aControllerName);
     pAttach->updateTempEject(!!aTemporaryEject);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::NonRotationalDevice(IN_BSTR aControllerName, LONG aControllerPort,
+                                          LONG aDevice, BOOL aNonRotational)
+{
+    CheckComArgStrNotEmptyOrNull(aControllerName);
+
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld aNonRotational=%d\n",
+                     aControllerName, aControllerPort, aDevice, aNonRotational));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
+
+    if (Global::IsOnlineOrTransient(mData->mMachineState))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Invalid machine state: %s"),
+                        Global::stringifyMachineState(mData->mMachineState));
+
+    MediumAttachment *pAttach = findAttachment(mMediaData->mAttachments,
+                                               aControllerName,
+                                               aControllerPort,
+                                               aDevice);
+    if (!pAttach)
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
+                        aDevice, aControllerPort, aControllerName);
+
+
+    setModified(IsModified_Storage);
+    mMediaData.backup();
+
+    AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
+
+    if (pAttach->getType() != DeviceType_HardDisk)
+        return setError(E_INVALIDARG,
+                        tr("Setting the non-rotational medium flag rejected as the device attached to device slot %d on port %d of controller '%ls' is not a hard disk"),
+                        aDevice, aControllerPort, aControllerName);
+    pAttach->updateNonRotational(!!aNonRotational);
 
     return S_OK;
 }
@@ -8097,6 +8145,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                false,
                                dev.fPassThrough,
                                dev.fTempEject,
+                               dev.fNonRotational,
                                pBwGroup.isNull() ? Utf8Str::Empty : pBwGroup->getName());
         if (FAILED(rc)) break;
 
@@ -9044,6 +9093,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
                 dev.uuid = pMedium->getId();
             dev.fPassThrough = pAttach->getPassthrough();
             dev.fTempEject = pAttach->getTempEject();
+            dev.fNonRotational = pAttach->getNonRotational();
         }
 
         dev.strBwGroup = pAttach->getBandwidthGroup();
@@ -9367,6 +9417,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                   true /* aImplicit */,
                                   false /* aPassthrough */,
                                   false /* aTempEject */,
+                                  false /* aNonRotational */,
                                   pAtt->getBandwidthGroup());
             if (FAILED(rc)) throw rc;
 

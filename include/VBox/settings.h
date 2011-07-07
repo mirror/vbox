@@ -806,6 +806,7 @@ struct AttachedDevice
         : deviceType(DeviceType_Null),
           fPassThrough(false),
           fTempEject(false),
+          fNonRotational(false),
           lPort(0),
           lDevice(0)
     {}
@@ -820,6 +821,9 @@ struct AttachedDevice
     // Whether guest-triggered eject of DVDs will keep the medium in the
     // VM config or not:
     bool                fTempEject;
+
+    // Whether the medium is non-rotational:
+    bool                fNonRotational;
 
     int32_t             lPort;
     int32_t             lDevice;

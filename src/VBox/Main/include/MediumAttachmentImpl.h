@@ -49,6 +49,7 @@ public:
                  bool fImplicit,
                  bool fPassthrough,
                  bool fTempEject,
+                 bool fNonRotational,
                  const Utf8Str &strBandwidthGroup);
     void uninit();
 
@@ -64,6 +65,7 @@ public:
     STDMETHOD(COMGETTER(Passthrough))(BOOL *aPassthrough);
     STDMETHOD(COMGETTER(TemporaryEject))(BOOL *aTemporaryEject);
     STDMETHOD(COMGETTER(IsEjected))(BOOL *aIsEjected);
+    STDMETHOD(COMGETTER(NonRotational))(BOOL *aNonRotational);
     STDMETHOD(COMGETTER(BandwidthGroup))(IBandwidthGroup **aBwGroup);
 
     // public internal methods
@@ -82,6 +84,7 @@ public:
     DeviceType_T getType() const;
     bool getPassthrough() const;
     bool getTempEject() const;
+    bool getNonRotational() const;
     const Utf8Str& getBandwidthGroup() const;
 
     bool matches(CBSTR aControllerName, LONG aPort, LONG aDevice);
@@ -94,6 +97,9 @@ public:
 
     /** Must be called from under this object's write lock. */
     void updateTempEject(bool aTempEject);
+
+    /** Must be called from under this object's write lock. */
+    void updateNonRotational(bool aNonRotational);
 
     /** Must be called from under this object's write lock. */
     void updateEjected();

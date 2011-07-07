@@ -4690,6 +4690,45 @@
       </param>
     </method>
 
+    <method name="nonRotationalDevice">
+      <desc>
+        Sets a flag in the device information which indicates that the medium
+        is not based on rotational technology, i.e. that the access times are
+        more or less independent of the position on the medium. This may or may
+        not be supported by a particular drive, and is silently ignored in the
+        latter case. At the moment only hard disks (which is a misnomer in this
+        context) accept this setting. Changing the setting while the VM is
+        running is forbidden. The device must already exist; see
+        <link to="IMachine::attachDevice"/> for how to attach a new device.
+
+        The @a controllerPort and @a device parameters specify the device slot and
+        have have the same meaning as with <link to="IMachine::attachDevice" />.
+
+        <result name="E_INVALIDARG">
+          SATA device, SATA port, IDE port or IDE slot out of range.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Attempt to modify an unregistered virtual machine.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Invalid machine state.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the storage controller.</desc>
+      </param>
+      <param name="controllerPort" type="long" dir="in">
+        <desc>Storage controller port.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+        <desc>Device slot in the given port.</desc>
+      </param>
+      <param name="nonRotational" type="boolean" dir="in">
+        <desc>New value for the non-rotational device flag.</desc>
+      </param>
+    </method>
+
     <method name="setBandwidthGroupForDevice">
       <desc>
         Sets the bandwidth group of an existing storage device.
@@ -9839,6 +9878,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="isEjected" type="boolean" readonly="yes">
       <desc>Signals that the removable medium has been ejected. This is not
         necessarily equivalent to having a @c null medium association.</desc>
+    </attribute>
+
+    <attribute name="nonRotational" type="boolean" readonly="yes">
+      <desc>Whether the associated medium is non-rotational.</desc>
     </attribute>
 
     <attribute name="bandwidthGroup" type="IBandwidthGroup" readonly="yes">

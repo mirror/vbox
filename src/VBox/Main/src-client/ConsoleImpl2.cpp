@@ -315,6 +315,8 @@ static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRea
 # pragma optimize("g", off)
 #endif
 
+static const char *const g_apszIDEDrives[4] =
+    { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
 
 class ConfigError : public RTCError
 {
@@ -1570,14 +1572,12 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 
                         for (uint32_t j = 0; j < 4; ++j)
                         {
-                            static const char * const s_apszConfig[4] =
-                            { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
                             static const char * const s_apszBiosConfig[4] =
                             { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
 
                             LONG lPortNumber = -1;
                             hrc = ctrls[i]->GetIDEEmulationPort(j, &lPortNumber);           H();
-                            InsertConfigInteger(pCfg, s_apszConfig[j], lPortNumber);
+                            InsertConfigInteger(pCfg, g_apszIDEDrives[j], lPortNumber);
                             if (pBiosCfg)
                                 InsertConfigInteger(pBiosCfg, s_apszBiosConfig[j], lPortNumber);
                         }
@@ -2860,10 +2860,11 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         hrc = pMediumAtt->COMGETTER(Port)(&lPort);                                          H();
         DeviceType_T lType;
         hrc = pMediumAtt->COMGETTER(Type)(&lType);                                          H();
+        BOOL fNonRotational;
+        hrc = pMediumAtt->COMGETTER(NonRotational)(&fNonRotational);                        H();
 
         unsigned uLUN;
         PCFGMNODE pLunL0 = NULL;
-        PCFGMNODE pCfg = NULL;
         hrc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);                H();
 
         /* First check if the LUN already exists. */
@@ -2911,6 +2912,33 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
 
         InsertConfigNode(pCtlInst, Utf8StrFmt("LUN#%u", uLUN).c_str(), &pLunL0);
 
+        PCFGMNODE pCfg = CFGMR3GetChild(pCtlInst, "Config");
+        if (pCfg)
+        {
+            if (!strcmp(pcszDevice, "piix3ide"))
+            {
+                PCFGMNODE pDrive = CFGMR3GetChild(pCfg, g_apszIDEDrives[uLUN]);
+                if (!pDrive)
+                    InsertConfigNode(pCfg, g_apszIDEDrives[uLUN], &pDrive);
+                PCFGMNODE pNonRot = CFGMR3GetChild(pCtlInst, "NonRotationalMedium");
+                if (pNonRot)
+                    CFGMR3RemoveNode(pNonRot);
+                InsertConfigInteger(pDrive, "NonRotationalMedium", !!fNonRotational);
+            }
+            else if (!strcmp(pcszDevice, "ahci"))
+            {
+                Utf8Str strPort = Utf8StrFmt("Port%u", uLUN);
+                PCFGMNODE pDrive = CFGMR3GetChild(pCfg, strPort.c_str());
+                if (!pDrive)
+                    InsertConfigNode(pCfg, strPort.c_str(), &pDrive);
+                PCFGMNODE pNonRot = CFGMR3GetChild(pCtlInst, "NonRotationalMedium");
+                if (pNonRot)
+                    CFGMR3RemoveNode(pNonRot);
+                InsertConfigInteger(pDrive, "NonRotationalMedium", !!fNonRotational);
+            }
+        }
+        /** @todo add SCSI/SAS support once the SSD support is there */
+
         Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
         mapMediumAttachments[devicePath] = pMediumAtt;
 
@@ -2918,7 +2946,8 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         if (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS)
         {
             InsertConfigString(pLunL0, "Driver", "SCSI");
-            InsertConfigNode(pLunL0, "Config", &pCfg);
+            PCFGMNODE pL1Cfg = NULL;
+            InsertConfigNode(pLunL0, "Config", &pL1Cfg);
 
             InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
         }

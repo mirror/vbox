@@ -35,11 +35,17 @@
 
       <listitem>
         <para>Guest Additions: modules and features now are represented as facilities
-          to have a common interface for frontends.</para>
+          to have a common interface for frontends</para>
       </listitem>
 
       <listitem>
-        <para>New Networking Mode: <emphasis>UDP Tunnel</emphasis>. Allows to
+        <para>Networking: new network attachment mode "Generic Driver", which
+          offers an open plugin architecture for arbitrary and separately
+          distributable virtual network implementations</para>
+      </listitem>
+
+      <listitem>
+        <para>New Networking Mode <emphasis>UDP Tunnel</emphasis>: allows to
         interconnect VMs running on different hosts easily and transparently,
         see <xref linkend="networkingmodes" /></para>
       </listitem>
@@ -86,8 +92,13 @@
       </listitem>
 
       <listitem>
+        <para>GUI: decrease time before showing the VM configuration
+          dialog</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: changed syntax of the <emphasis>guestcontrol</emphasis>
-          command group, fixed various bugs</para>
+          command group, fixed various bugs, removed obsolete options</para>
       </listitem>
 
       <listitem>
@@ -101,13 +112,47 @@
       </listitem>
 
       <listitem>
+        <para>Settings: provide better diagnostics if a single medium is used
+          twice in a VM config</para>
+      </listitem>
+
+      <listitem>
+        <para>Settings: provide better diagnostics for errors in medium
+          create/merge/clone operations, and fix memory leaks in error
+          cases</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: ATA/SATA drives can be marked as non-rotational, i.e.
+          the guest OS will detect them as a SSD if supported, which can
+          improve performance</para>
+      </listitem>
+
+      <listitem>
         <para>Storage: virtual CD/DVD images will be detached if the guest
-          ejects the medium</para>
+          ejects the medium, unless the drive is marked to handle ejects only
+          on a temporary basis</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: the medium UUID can be changed again when attaching
+          a medium for the first time, which allows using images which are
+          exact duplicates including the UUID</para>
       </listitem>
 
       <listitem>
         <para>Storage: fixed possible data corruption under certain circumstances
-          whith VHD and Parallels images (bug #9150)</para>
+          with VHD and Parallels images (bug #9150)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed unnecessary expansion when cloning differential
+          images in VDI format</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed detection code to handle empty files for VDI and
+          VMDK format</para>
       </listitem>
 
       <listitem>
@@ -128,6 +173,11 @@
 
       <listitem>
         <para>NAT: reduced memory footprint</para>
+      </listitem>
+
+      <listitem>
+        <para>Networking: workaround for a bug in wireshark when operating
+          directly on a capture file created by VirtualBox</para>
       </listitem>
 
       <listitem>
@@ -154,6 +204,16 @@
       </listitem>
 
       <listitem>
+        <para>Webservice: fixed timeout handling with HTTP 1.1 keepalive, and
+          be more robust when connections fail</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxSVC: fixed regression when several clients trigger autostart
+          simultaneously</para>
+      </listitem>
+
+      <listitem>
         <para>Windows hosts: fixed copy'n'paste in the GUI and for the VM
           window (bug #4491)</para>
       </listitem>
@@ -174,6 +234,16 @@
        <listitem>
         <para>Guest Additions: fixed high CPU usage while executing guest programs
           from the host</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed incorrect handling of the medium location for media
+          which are not file based (e.g. iSCSI), which resulted in confusing
+          location values in many places</para>
+      </listitem>
+
+      <listitem>
+        <para>JAX-WS client bindings: fixed resource leak</para>
       </listitem>
 
     </itemizedlist>
