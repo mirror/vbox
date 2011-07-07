@@ -1148,7 +1148,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ServicesR0_DEFS      = IN_INTNET_R0 IN_RT_R0 $(if $(VBOX_WITH_PCI_PASSTHROUGH_IMPL),IN_PCIRAW_R0,)
  ServicesR0_SOURCES   = \
  	Network/SrvIntNetR0.cpp \
-        $(if $(VBOX_WITH_PCI_PASSTHROUGH_IMPL),Bus/SrvPciRawR0.cpp,)
+        $(if $(VBOX_WITH_PCI_PASSTHROUGH),Bus/SrvPciRawR0.cpp,)
  Network/SrvIntNetR0.cpp_CXXFLAGS := $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
 
  #
@@ -1228,6 +1228,8 @@ ifdef VBOX_WITH_EXTPACK_PUEL
   SYSMODS += VBoxPciRawR0
   VBoxPciRawR0_TEMPLATE = VBoxR0ExtPackPuel
   VBoxPciRawR0_SOURCES  = Bus/DevPciRaw.cpp
+ 
+  Bus/DevPciRaw.cpp_INCS   = Bus
  endif
 
  #
