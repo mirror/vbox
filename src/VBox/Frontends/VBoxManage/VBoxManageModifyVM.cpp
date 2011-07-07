@@ -301,8 +301,8 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-    { "--attachpci",                MODIFYVM_ATTACH_PCI,                RTGETOPT_REQ_STRING },
-    { "--detachpci",                MODIFYVM_DETACH_PCI,                RTGETOPT_REQ_STRING },
+    { "--pciattach",                MODIFYVM_ATTACH_PCI,                RTGETOPT_REQ_STRING },
+    { "--pcidetach",                MODIFYVM_DETACH_PCI,                RTGETOPT_REQ_STRING },
 #endif
 };
 
@@ -2258,7 +2258,7 @@ int handleModifyVM(HandlerArg *a)
 
                 if (iHostAddr == -1 || iGuestAddr == -1)
                 {
-                    errorArgument("Invalid --attachpci argument '%s' (valid: 'HB:HD.HF@GB:GD.GF' or just 'HB:HD.HF')", ValueUnion.psz);
+                    errorArgument("Invalid --pciattach argument '%s' (valid: 'HB:HD.HF@GB:GD.GF' or just 'HB:HD.HF')", ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 else
@@ -2275,7 +2275,7 @@ int handleModifyVM(HandlerArg *a)
                 iHostAddr = parsePci(ValueUnion.psz);
                 if (iHostAddr == -1)
                 {
-                    errorArgument("Invalid --detachpci argument '%s' (valid: 'HB:HD.HF')", ValueUnion.psz);
+                    errorArgument("Invalid --pcidetach argument '%s' (valid: 'HB:HD.HF')", ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 else
