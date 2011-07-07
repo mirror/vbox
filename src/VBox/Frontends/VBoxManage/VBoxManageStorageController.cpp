@@ -52,6 +52,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--mtype",            'M', RTGETOPT_REQ_STRING },
     { "--passthrough",      'h', RTGETOPT_REQ_STRING },
     { "--tempeject",        'e', RTGETOPT_REQ_STRING },
+    { "--nonrotational",    'n', RTGETOPT_REQ_STRING },
     { "--bandwidthgroup",   'b', RTGETOPT_REQ_STRING },
     { "--forceunmount",     'f', RTGETOPT_REQ_NOTHING },
     { "--comment",          'C', RTGETOPT_REQ_STRING },
@@ -85,6 +86,7 @@ int handleStorageAttach(HandlerArg *a)
     const char *pszMedium = NULL;
     const char *pszPassThrough = NULL;
     const char *pszTempEject = NULL;
+    const char *pszNonRotational = NULL;
     const char *pszBandwidthGroup = NULL;
     Bstr bstrNewUuid;
     Bstr bstrNewParentUuid;
@@ -172,6 +174,15 @@ int handleStorageAttach(HandlerArg *a)
             {
                 if (ValueUnion.psz)
                     pszTempEject = ValueUnion.psz;
+                else
+                    rc = E_FAIL;
+                break;
+            }
+
+            case 'n':   // nonrotational <on|off>
+            {
+                if (ValueUnion.psz)
+                    pszNonRotational = ValueUnion.psz;
                 else
                     rc = E_FAIL;
                 break;
@@ -409,7 +420,7 @@ int handleStorageAttach(HandlerArg *a)
                  */
                 if (ctlType == StorageControllerType_I82078)        // floppy controller
                     devTypeRequested = DeviceType_Floppy;
-                else if (pszMedium)
+                else
                 {
                     /*
                      * for SATA/SCSI/IDE it is hard to tell if it is a harddisk or
@@ -427,19 +438,23 @@ int handleStorageAttach(HandlerArg *a)
                         DeviceType_T deviceType;
                         mediumAttachment->COMGETTER(Type)(&deviceType);
 
-                        ComPtr<IMedium> pExistingMedium;
-                        rc = findMedium(a, pszMedium, deviceType, true /* fSilent */,
-                                        pExistingMedium);
-                        if (SUCCEEDED(rc) && pExistingMedium)
+                        if (pszMedium)
                         {
-                            if (    (deviceType == DeviceType_DVD)
-                                 || (deviceType == DeviceType_HardDisk)
-                               )
-                                devTypeRequested = deviceType;
+                            ComPtr<IMedium> pExistingMedium;
+                            rc = findMedium(a, pszMedium, deviceType, true /* fSilent */,
+                                            pExistingMedium);
+                            if (SUCCEEDED(rc) && pExistingMedium)
+                            {
+                                if (    (deviceType == DeviceType_DVD)
+                                     || (deviceType == DeviceType_HardDisk)
+                                   )
+                                    devTypeRequested = deviceType;
+                            }
                         }
+                        else
+                            devTypeRequested = deviceType;
                     }
                 }
-                /* for all other cases lets ask the user what type of drive it is */
             }
 
             if (devTypeRequested == DeviceType_Null)        // still the initializer value?
@@ -572,18 +587,27 @@ int handleStorageAttach(HandlerArg *a)
             }
             else
             {
-                Bstr bstrMedium(pszMedium);
-                if (bstrMedium.isEmpty())
-                    throw Utf8Str("Missing --medium argument");
-
-                rc = findOrOpenMedium(a, pszMedium, devTypeRequested,
-                                      pMedium2Mount, fSetNewUuid, NULL);
-                if (FAILED(rc) || !pMedium2Mount)
-                    throw Utf8StrFmt("Invalid UUID or filename \"%s\"", pszMedium);
+                if (!pszMedium)
+                {
+                    ComPtr<IMediumAttachment> mediumAttachment;
+                    rc = machine->GetMediumAttachment(Bstr(pszCtl).raw(), port,
+                                                      device,
+                                                      mediumAttachment.asOutParam());
+                    if (FAILED(rc))
+                        throw Utf8Str("Missing --medium argument");
+                }
+                else
+                {
+                    Bstr bstrMedium(pszMedium);
+                    rc = findOrOpenMedium(a, pszMedium, devTypeRequested,
+                                          pMedium2Mount, fSetNewUuid, NULL);
+                    if (FAILED(rc) || !pMedium2Mount)
+                        throw Utf8StrFmt("Invalid UUID or filename \"%s\"", pszMedium);
+                }
             }
 
             // set medium/parent medium UUID, if so desired
-            if (fSetNewUuid || fSetNewParentUuid)
+            if (pMedium2Mount && (fSetNewUuid || fSetNewParentUuid))
             {
                 CHECK_ERROR(pMedium2Mount, SetIDs(fSetNewUuid, bstrNewUuid.raw(),
                                                   fSetNewParentUuid, bstrNewParentUuid.raw()));
@@ -604,26 +628,37 @@ int handleStorageAttach(HandlerArg *a)
                 CHECK_ERROR(pMedium2Mount, COMSETTER(Description)(bstrComment.raw()));
             }
 
-            switch (devTypeRequested)
+            if (pszMedium)
             {
-                case DeviceType_DVD:
-                case DeviceType_Floppy:
+                switch (devTypeRequested)
                 {
-                    if (!fRunTime)
+                    case DeviceType_DVD:
+                    case DeviceType_Floppy:
                     {
-                        ComPtr<IMediumAttachment> mediumAttachment;
-                        // check if there is a dvd/floppy drive at the given location, if not attach one first
-                        rc = machine->GetMediumAttachment(Bstr(pszCtl).raw(),
-                                                          port,
-                                                          device,
-                                                          mediumAttachment.asOutParam());
-                        if (SUCCEEDED(rc))
+                        if (!fRunTime)
                         {
-                            DeviceType_T deviceType;
-                            mediumAttachment->COMGETTER(Type)(&deviceType);
-                            if (deviceType != devTypeRequested)
+                            ComPtr<IMediumAttachment> mediumAttachment;
+                            // check if there is a dvd/floppy drive at the given location, if not attach one first
+                            rc = machine->GetMediumAttachment(Bstr(pszCtl).raw(),
+                                                              port,
+                                                              device,
+                                                              mediumAttachment.asOutParam());
+                            if (SUCCEEDED(rc))
                             {
-                                machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
+                                DeviceType_T deviceType;
+                                mediumAttachment->COMGETTER(Type)(&deviceType);
+                                if (deviceType != devTypeRequested)
+                                {
+                                    machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
+                                    rc = machine->AttachDevice(Bstr(pszCtl).raw(),
+                                                               port,
+                                                               device,
+                                                               devTypeRequested,    // DeviceType_DVD or DeviceType_Floppy
+                                                               NULL);
+                                }
+                            }
+                            else
+                            {
                                 rc = machine->AttachDevice(Bstr(pszCtl).raw(),
                                                            port,
                                                            device,
@@ -631,38 +666,30 @@ int handleStorageAttach(HandlerArg *a)
                                                            NULL);
                             }
                         }
-                        else
+
+                        if (pMedium2Mount)
                         {
-                            rc = machine->AttachDevice(Bstr(pszCtl).raw(),
-                                                       port,
-                                                       device,
-                                                       devTypeRequested,    // DeviceType_DVD or DeviceType_Floppy
-                                                       NULL);
+                            CHECK_ERROR(machine, MountMedium(Bstr(pszCtl).raw(),
+                                                             port,
+                                                             device,
+                                                             pMedium2Mount,
+                                                             fForceUnmount));
                         }
-                    }
+                    } // end DeviceType_DVD or DeviceType_Floppy:
+                    break;
 
-                    if (pMedium2Mount)
+                    case DeviceType_HardDisk:
                     {
-                        CHECK_ERROR(machine, MountMedium(Bstr(pszCtl).raw(),
-                                                         port,
-                                                         device,
-                                                         pMedium2Mount,
-                                                         fForceUnmount));
+                        // if there is anything attached at the given location, remove it
+                        machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
+                        CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl).raw(),
+                                                          port,
+                                                          device,
+                                                          DeviceType_HardDisk,
+                                                          pMedium2Mount));
                     }
-                } // end DeviceType_DVD or DeviceType_Floppy:
-                break;
-
-                case DeviceType_HardDisk:
-                {
-                    // if there is anything attached at the given location, remove it
-                    machine->DetachDevice(Bstr(pszCtl).raw(), port, device);
-                    CHECK_ERROR(machine, AttachDevice(Bstr(pszCtl).raw(),
-                                                      port,
-                                                      device,
-                                                      DeviceType_HardDisk,
-                                                      pMedium2Mount));
+                    break;
                 }
-                break;
             }
         }
 
@@ -713,6 +740,32 @@ int handleStorageAttach(HandlerArg *a)
                 }
                 else
                     throw Utf8StrFmt("Invalid --tempeject argument '%s'", pszTempEject);
+            }
+            else
+                throw Utf8StrFmt("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
+        }
+
+        if (   pszNonRotational
+            && (SUCCEEDED(rc)))
+        {
+            ComPtr<IMediumAttachment> mattach;
+            CHECK_ERROR(machine, GetMediumAttachment(Bstr(pszCtl).raw(), port,
+                                                     device, mattach.asOutParam()));
+
+            if (SUCCEEDED(rc))
+            {
+                if (!RTStrICmp(pszNonRotational, "on"))
+                {
+                    CHECK_ERROR(machine, NonRotationalDevice(Bstr(pszCtl).raw(),
+                                                             port, device, TRUE));
+                }
+                else if (!RTStrICmp(pszNonRotational, "off"))
+                {
+                    CHECK_ERROR(machine, NonRotationalDevice(Bstr(pszCtl).raw(),
+                                                             port, device, FALSE));
+                }
+                else
+                    throw Utf8StrFmt("Invalid --nonrotational argument '%s'", pszNonRotational);
             }
             else
                 throw Utf8StrFmt("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);

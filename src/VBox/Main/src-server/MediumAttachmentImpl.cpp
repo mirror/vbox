@@ -40,6 +40,7 @@ struct BackupableMediumAttachmentData
           type(DeviceType_Null),
           fPassthrough(false),
           fTempEject(false),
+          fNonRotational(false),
           fImplicit(false)
     { }
 
@@ -57,6 +58,7 @@ struct BackupableMediumAttachmentData
     const DeviceType_T  type;
     bool                fPassthrough;
     bool                fTempEject;
+    bool                fNonRotational;
     bool                fImplicit;
 };
 
@@ -116,10 +118,11 @@ HRESULT MediumAttachment::init(Machine *aParent,
                                bool aImplicit,
                                bool aPassthrough,
                                bool aTempEject,
+                               bool aNonRotational,
                                const Utf8Str &strBandwidthGroup)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aImplicit=%d aPassthrough=%d aTempEject=%d\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aImplicit, aPassthrough, aTempEject));
+    LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aImplicit=%d aPassthrough=%d aTempEject=%d aNonRotational=%d strBandwithGroup=%s\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aImplicit, aPassthrough, aTempEject, aNonRotational, strBandwidthGroup.c_str()));
 
     if (aType == DeviceType_HardDisk)
         AssertReturn(aMedium, E_INVALIDARG);
@@ -142,6 +145,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
 
     m->bd->fPassthrough = aPassthrough;
     m->bd->fTempEject = aTempEject;
+    m->bd->fNonRotational = aNonRotational;
     m->bd->fImplicit = aImplicit;
 
     /* Confirm a successful initialization when it's the case */
@@ -318,6 +322,23 @@ STDMETHODIMP MediumAttachment::COMGETTER(IsEjected)(BOOL *aEjected)
     return S_OK;
 }
 
+STDMETHODIMP MediumAttachment::COMGETTER(NonRotational)(BOOL *aNonRotational)
+{
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aNonRotational);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aNonRotational = m->bd->fNonRotational;
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
 STDMETHODIMP MediumAttachment::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwGroup)
 {
     LogFlowThisFuncEnter();
@@ -428,6 +449,12 @@ bool MediumAttachment::getTempEject() const
     return m->bd->fTempEject;
 }
 
+bool MediumAttachment::getNonRotational() const
+{
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
+    return m->bd->fNonRotational;
+}
+
 const Utf8Str& MediumAttachment::getBandwidthGroup() const
 {
     return m->bd->strBandwidthGroup;
@@ -478,6 +505,15 @@ void MediumAttachment::updateEjected()
     Assert(isWriteLockOnCurrentThread());
 
     m->fIsEjected = true;
+}
+
+/** Must be called from under this object's write lock. */
+void MediumAttachment::updateNonRotational(bool aNonRotational)
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    m->bd.backup();
+    m->bd->fNonRotational = aNonRotational;
 }
 
 void MediumAttachment::updateBandwidthGroup(const Utf8Str &aBandwidthGroup)
