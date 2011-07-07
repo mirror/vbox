@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     AssertCompileSizeAlignment(u64, 4);
     AssertCompileSizeAlignment(u64, 8);
 
-    typedef struct STRUCT1
+    typedef struct STRUCT12S
     {
         uint8_t     u8;
         uint8_t     au8[8];
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
     AssertCompileMemberOffset(STRUCT1, au8[8], 9);
 #endif
 
-    typedef union UNION1
+    typedef union UNION1U
     {
         STRUCT1 s1;
         STRUCT2 s2;

@@ -2137,7 +2137,7 @@ AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement 
 
         if (RT_SUCCESS(rc))
         {
-            typedef struct AuthEntryInfo
+            typedef struct AuthEntryInfoStruct
             {
                 const char *pszName;
                 void **ppvAddress;
