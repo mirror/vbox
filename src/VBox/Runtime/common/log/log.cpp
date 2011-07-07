@@ -1059,6 +1059,53 @@ RTDECL(int) RTLogSetCustomPrefixCallbackForR0(PRTLOGGER pLogger, RTR0PTR pLogger
 }
 RT_EXPORT_SYMBOL(RTLogSetCustomPrefixCallbackForR0);
 
+RTDECL(void) RTLogFlushR0(PRTLOGGER pLogger, PRTLOGGER pLoggerR0)
+{
+    /*
+     * Resolve defaults.
+     */
+    if (!pLogger)
+    {
+        pLogger = RTLogDefaultInstance();
+        if (!pLogger)
+        {
+            /* flushing to "/dev/null". */
+            if (pLoggerR0->offScratch)
+                    pLoggerR0->offScratch = 0;
+            return;
+        }
+    }
+
+    /*
+     * Any thing to flush?
+     */
+    if (    pLoggerR0->offScratch
+        ||  pLogger->offScratch)
+    {
+        /*
+         * Acquire logger semaphores.
+         */
+        int rc = rtlogLock(pLogger);
+        if (RT_FAILURE(rc))
+            return;
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Write whatever the GC instance contains to the HC one, and then
+             * flush the HC instance.
+             */
+            if (pLoggerR0->offScratch)
+            {
+                rtLogOutput(pLogger, pLoggerR0->achScratch, pLoggerR0->offScratch);
+                rtLogOutput(pLogger, NULL, 0);
+                pLoggerR0->offScratch = 0;
+            }
+        }
+        rtlogUnlock(pLogger);
+    }
+}
+RT_EXPORT_SYMBOL(RTLogFlushR0);
+
 # endif /* IN_RING3 */
 
 
@@ -1088,7 +1135,7 @@ RTDECL(void) RTLogFlushToLogger(PRTLOGGER pSrcLogger, PRTLOGGER pDstLogger)
                 if (RT_SUCCESS(rc))
                 {
                     pSrcLogger->offScratch = 0;
-                    rtlogLock(pSrcLogger);
+                    rtlogUnlock(pSrcLogger);
                 }
             }
             return;
