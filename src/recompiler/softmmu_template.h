@@ -25,6 +25,7 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #include "qemu-timer.h"
 
 #define DATA_SIZE (1 << SHIFT)
