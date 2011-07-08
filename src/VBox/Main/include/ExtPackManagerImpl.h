@@ -226,6 +226,7 @@ class ATL_NO_VTABLE ExtPackManager :
     int         getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary);
     HRESULT     getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack);
     bool        isExtPackUsable(const char *a_pszExtPack);
+    void        dumpAllToReleaseLog(void);
     /** @}  */
 
 private:
