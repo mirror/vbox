@@ -1693,7 +1693,7 @@ sffs_map(
 	 * segment driver creates the new segment via segvn_create(), it'll
 	 * invoke down the line VOP_ADDMAP()->sffs_addmap()
 	 */
-	int error;
+	int error = 0;
 	sfnode_t *node = VN2SFN(dvp);
 	ASSERT(node);
 	if ((prot & PROT_WRITE))
@@ -1714,28 +1714,43 @@ sffs_map(
 	mutex_enter(&sffs_lock);
 	as_rangelock(asp);
 
-	error = choose_addr(asp, addrp, len, off, ADDR_VACALIGN, flags);
-	if (!error)
+#if defined(VBOX_VFS_SOLARIS_10U6)
+	if ((flags & MAP_FIXED) == 0)
 	{
-		segvn_crargs_t vnodeargs;
-		memset(&vnodeargs, 0, sizeof(vnodeargs));
-		vnodeargs.vp = dvp;
-		vnodeargs.cred = credp;
-		vnodeargs.offset = off;
-		vnodeargs.type = flags & MAP_TYPE;
-		vnodeargs.prot = prot;
-		vnodeargs.maxprot = maxprot;
-		vnodeargs.flags = flags & ~MAP_TYPE;
-		vnodeargs.amp = NULL;		/* anon. mapping */
-		vnodeargs.szc = 0;			/* preferred page size code */
-		vnodeargs.lgrp_mem_policy_flags = 0;
-
-		error = as_map(asp, *addrp, len, segvn_create, &vnodeargs);
+		map_addr(addrp, len, off, 1, flags);
+		if (*addrp == NULL)
+			error = ENOMEM;
 	}
+	else
+		as_unmap(asp, *addrp, len);	/* User specified address, remove any previous mappings */
+#else
+	error = choose_addr(asp, addrp, len, off, ADDR_VACALIGN, flags);
+#endif
+
+	if (error)
+	{
+		as_rangeunlock(asp);
+		mutex_exit(&sffs_lock);
+		return (error);
+	}
+
+	segvn_crargs_t vnodeargs;
+	memset(&vnodeargs, 0, sizeof(vnodeargs));
+	vnodeargs.vp = dvp;
+	vnodeargs.cred = credp;
+	vnodeargs.offset = off;
+	vnodeargs.type = flags & MAP_TYPE;
+	vnodeargs.prot = prot;
+	vnodeargs.maxprot = maxprot;
+	vnodeargs.flags = flags & ~MAP_TYPE;
+	vnodeargs.amp = NULL;		/* anon. mapping */
+	vnodeargs.szc = 0;			/* preferred page size code */
+	vnodeargs.lgrp_mem_policy_flags = 0;
+
+	error = as_map(asp, *addrp, len, segvn_create, &vnodeargs);
 
 	as_rangeunlock(asp);
 	mutex_exit(&sffs_lock);
-
 	return (error);
 }
 
