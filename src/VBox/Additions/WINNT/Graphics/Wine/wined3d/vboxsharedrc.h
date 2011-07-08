@@ -34,19 +34,12 @@
 #define VBOXSHRC_IS_SHARED_OPENED(_o) (!!(VBOXSHRC_GET_SHAREFLAFS(_o) & VBOXSHRC_F_SHARED_OPENED))
 #define VBOXSHRC_IS_INITIALIZED(_o) (!!(VBOXSHRC_GET_SHAREFLAFS(_o) & VBOXSHRC_F_INITIALIZED))
 
-#ifdef DEBUG_misha
-/* just for simplicity */
-#ifdef RT_ARCH_X86
-#define AssertBreakpoint() do { __asm {int 3} } while (0)
+#ifdef VBOX_WINE_WITH_IPRT
+# include <iprt/assert.h>
 #else
-#define AssertBreakpoint() do { /* @todo */ } while (0)
+# define AssertBreakpoint() do { } while (0)
+# define Assert(_expr) do { } while (0)
 #endif
-#define Assert(_expr) do { \
-        if (!(_expr)) AssertBreakpoint(); \
-    } while (0)
-#else
-#define AssertBreakpoint() do { } while (0)
-#define Assert(_expr) do { } while (0)
-#endif
+
 
 #endif /* #ifndef ___vboxsharedrc_h___ */

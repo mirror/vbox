@@ -65,7 +65,7 @@ static CRDLL *aglDll = NULL;
 #define GLLOADER_APIENTRY
 #endif
 
-#if defined(WINDOWS) && (defined(DEBUG_leo) || defined(DEBUG_ll158262))
+#if defined(WINDOWS) && (defined(DEBUG_leo) || defined(DEBUG_ll158262) || defined(DEBUG_misha))
 # define CR_NO_GL_SYSTEM_PATH 1
 #endif
 
