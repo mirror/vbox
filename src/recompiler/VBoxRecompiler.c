@@ -220,7 +220,7 @@ static const DBGCCMD    g_aCmds[] =
 #endif
 
 /** Prologue code, must be in lower 4G to simplify jumps to/from generated code.
- * @todo huh??? That cannot be the case on the mac... So, this 
+ * @todo huh??? That cannot be the case on the mac... So, this
  *       point is probably not valid any longer. */
 uint8_t *code_gen_prologue;
 
@@ -414,6 +414,8 @@ REMR3DECL(int) REMR3Init(PVM pVM)
 
     STAM_REG(pVM, &pVM->rem.s.Env.StatTbFlush,      STAMTYPE_PROFILE,   "/REM/TbFlush",     STAMUNIT_TICKS_PER_CALL, "profiling tb_flush().");
 #endif /* VBOX_WITH_STATISTICS */
+    AssertCompileMemberAlignment(CPUX86State, StatTbFlush, 4);
+    AssertCompileMemberAlignment(CPUX86State, StatTbFlush, 8);
 
     STAM_REL_REG(pVM, &tb_flush_count,              STAMTYPE_U32_RESET, "/REM/TbFlushCount",                STAMUNIT_OCCURENCES, "tb_flush() calls");
     STAM_REL_REG(pVM, &tb_phys_invalidate_count,    STAMTYPE_U32_RESET, "/REM/TbPhysInvldCount",            STAMUNIT_OCCURENCES, "tb_phys_invalidate() calls");
