@@ -31,6 +31,8 @@
 #define VBOXWDDMDISP_MAX_VERTEX_STREAMS 16
 #define VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE 16
 
+#define VBOXWDDMDISP_IS_TEXTURE(_f) ((_f).Texture || (_f).Value == 0)
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
 typedef struct VBOXDISPVHWA_INFO
 {
@@ -188,7 +190,7 @@ typedef struct VBOXWDDMDISP_DEVICE
     VBOXUHGSMI_PRIVATE_D3D Uhgsmi;
 #endif
 
-    CRITICAL_SECTION DirtyAllocListLock;
+    /* no lock is needed for this since we're guaranteed the per-device calls are not reentrant */
     RTLISTNODE DirtyAllocList;
     UINT cRTs;
     struct VBOXWDDMDISP_ALLOCATION * apRTs[1];
@@ -228,7 +230,9 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     IUnknown *pD3DIf;
     IUnknown *pSecondaryOpenedD3DIf;
     VBOXDISP_D3DIFTYPE enmD3DIfType;
+    /* list entry used to add allocation to the dirty alloc list */
     RTLISTNODE DirtyAllocListEntry;
+    BOOLEAN fDirtyWrite;
     HANDLE hSharedHandle;
     VBOXWDDMDISP_LOCKINFO LockInfo;
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- dirty region to notify host about */

@@ -192,13 +192,22 @@ wined3dwddm_SOURCES.x86    = $(NO_SUCH_VARIABLE)
 wined3dwddm_SOURCES.amd64  = $(NO_SUCH_VARIABLE)
 wined3dwddm_SDKS           = WINDDKWLH
 wined3dwddm_SDKS.amd64     = $(NO_SUCH_VARIABLE)
+#VBOX_WINE_WITH_IPRT is used for debugging currently to enable Assert & stuff
+ifdef VBOX_WINE_WITH_IPRT
+wined3dwddm_LIBS          += \
+							$(VBOX_LIB_IPRT_GUEST_R3) \
+							$(VBOX_LIB_VBGL_R3)
+wined3dwddm_DEFS          += VBOX_WINE_WITH_IPRT
+endif
 
 DLLS.amd64 += wined3dwddm-x86
 wined3dwddm-x86_EXTENDS    = wined3dwddm
 wined3dwddm-x86_BLD_TRG_ARCH = x86
-#wined3dwddm-x86_LIBS = \
-	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
-	$(VBOX_LIB_VBGL_R3_X86)
+ifdef VBOX_WINE_WITH_IPRT
+wined3dwddm-x86_LIBS = \
+						$(VBOX_LIB_IPRT_GUEST_R3_X86) \
+						$(VBOX_LIB_VBGL_R3_X86)
+endif
 wined3dwddm-x86_DEFS       = $(wined3dwddm_DEFS) VBOX_WDDM_WOW64
 endif
 
