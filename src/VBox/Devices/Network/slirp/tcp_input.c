@@ -1326,7 +1326,7 @@ close:
                 break;
             }
 synrx_to_est:
-            LogFlowFunc(("%d -> synrx_to_est:\n"));
+            LogFlowFunc(("synrx_to_est:\n"));
             /*
              * If the congestion window was inflated to account
              * for the other side's cached packets, retract it.
