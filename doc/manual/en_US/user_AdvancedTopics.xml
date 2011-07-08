@@ -545,7 +545,14 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
       passthrough is available.<footnote>
         <para>Experimental support for PCI passthrough was introduced with VirtualBox
         4.1.</para>
-    </footnote> Essentially this feature allows to directly use physical PCI
+    </footnote></para>
+    
+    <note><para>The PCI passthrough module is shipped as a VirtualBox extension
+      package, which must be installed separately. See <xref
+      linkend="intro-installing" /> for more information.</para>
+     </note>
+
+     <para>Essentially this feature allows to directly use physical PCI
       devices on the host by the guest even if host doesn't have drivers for this
       particular device. Both, regular PCI and some PCI Express cards, are
       supported. AGP and certain PCI Express cards are not supported at the
@@ -577,24 +584,29 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
       So before any attempt to use it please make sure that
       <orderedlist>
         <listitem>
-            Your motherboard has an IOMMU unit.
+          <para>Your motherboard has an IOMMU unit.</para>
         </listitem>
         <listitem>
-            Your CPU supports the IOMMU.
+          <para>Your CPU supports the IOMMU.</para>
         </listitem>
         <listitem>
-            The IOMMU is enabled in the BIOS.
+          <para>The IOMMU is enabled in the BIOS.</para>
         </listitem>
         <listitem>
-            Your Linux kernel was compiled with IOMMU support (including DMA remapping, see
-            <computeroutput>CONFIG_DMAR</computeroutput> kernel compilation option). The
-            PCI stub driver (<computeroutput>CONFIG_PCI_STUB</computeroutput>) is required
-            as well.
+          <para>The VM must run with VT-x/AMD-V and nested paging enabled.</para>
         </listitem>
         <listitem>
-          Your Linux kernel recognizes and uses the IOMMU unit
+          <para>Your Linux kernel was compiled with IOMMU support (including DMA
+            remapping, see <computeroutput>CONFIG_DMAR</computeroutput> kernel
+            compilation option). The PCI stub driver
+            (<computeroutput>CONFIG_PCI_STUB</computeroutput>) is required
+            as well.</para>
+        </listitem>
+        <listitem>
+          <para>Your Linux kernel recognizes and uses the IOMMU unit
           (<computeroutput>intel_iommu=on</computeroutput>
-           boot option could be needed). Search for DMAR and PCI-DMA in kernel boot log.
+          boot option could be needed). Search for DMAR and PCI-DMA in kernel boot
+          log.</para>
         </listitem>
       </orderedlist>
     </para>
