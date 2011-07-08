@@ -1243,11 +1243,11 @@ QString VBoxGlobal::toString(KMediumVariant mediumVariant) const
     switch (mediumVariant)
     {
         case KMediumVariant_Standard:
-            return tr("Dynamically expanding storage");
+            return tr("Dynamically allocated storage");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed):
             return tr("Fixed size storage");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_VmdkSplit2G):
-            return tr("Dynamically expanding storage split into files of less than 2GB");
+            return tr("Dynamically allocated storage split into files of less than 2GB");
         case (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed | KMediumVariant_VmdkSplit2G):
             return tr("Fixed size storage split into files of less than 2GB");
         default:
