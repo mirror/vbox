@@ -115,6 +115,7 @@ public:
     STDMETHOD(COMGETTER(MediumFormat))(IMediumFormat **aMediumFormat);
     STDMETHOD(COMGETTER(Type))(MediumType_T *aType);
     STDMETHOD(COMSETTER(Type))(MediumType_T aType);
+    STDMETHOD(COMGETTER(AllowedTypes))(ComSafeArrayOut(MediumType_T, aAllowedTypes));
     STDMETHOD(COMGETTER(Parent))(IMedium **aParent);
     STDMETHOD(COMGETTER(Children))(ComSafeArrayOut(IMedium *, aChildren));
     STDMETHOD(COMGETTER(Base))(IMedium **aBase);
