@@ -9892,7 +9892,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="f55ce3ec-b856-4d07-ae33-826072b332c3"
+    uuid="53f9cc0c-e0fd-40a5-a404-a7a5272082cd"
     wsmap="managed"
     >
     <desc>
@@ -10222,6 +10222,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The type of a newly created or opened medium is set to
         <link to="MediumType_Normal"/>, except for DVD and floppy media,
         which have a type of <link to="MediumType_Writethrough"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="allowedTypes" type="MediumType" safearray="yes" readonly="yes">
+      <desc>
+        Returns which medium types can selected for this medium.
+
+        <result name="E_NOTIMPL">
+          This attribute is not implemented at the moment.
+        </result>
       </desc>
     </attribute>
 

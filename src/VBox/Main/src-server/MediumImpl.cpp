@@ -1769,6 +1769,18 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     return rc;
 }
 
+STDMETHODIMP Medium::COMGETTER(AllowedTypes)(ComSafeArrayOut(MediumType_T, aAllowedTypes))
+{
+    CheckComArgOutSafeArrayPointerValid(aAllowedTypes);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ReturnComNotImplemented();
+}
+
 STDMETHODIMP Medium::COMGETTER(Parent)(IMedium **aParent)
 {
     CheckComArgOutPointerValid(aParent);
