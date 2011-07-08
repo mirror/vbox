@@ -156,6 +156,7 @@ public:
                             IProgress **aProgress);
     STDMETHOD(DeleteSnapshot)(IN_BSTR aId, IProgress **aProgress);
     STDMETHOD(DeleteSnapshotAndAllChildren)(IN_BSTR aId, IProgress **aProgress);
+    STDMETHOD(DeleteSnapshotRange)(IN_BSTR aStartId, IN_BSTR aEndId, IProgress **aProgress);
     STDMETHOD(RestoreSnapshot)(ISnapshot *aSnapshot, IProgress **aProgress);
     STDMETHOD(Teleport)(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxDowntime, IProgress **aProgress);
 

@@ -3246,7 +3246,7 @@ STDMETHODIMP Console::DeleteSnapshot(IN_BSTR aId, IProgress **aProgress)
                         Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot(this, aId, FALSE /* fDeleteAllChildren */, &machineState, aProgress);
+    HRESULT rc = mControl->DeleteSnapshot(this, aId, aId, FALSE /* fDeleteAllChildren */, &machineState, aProgress);
     if (FAILED(rc)) return rc;
 
     setMachineStateLocally(machineState);
@@ -3269,7 +3269,31 @@ STDMETHODIMP Console::DeleteSnapshotAndAllChildren(IN_BSTR aId, IProgress **aPro
                         Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot(this, aId, TRUE /* fDeleteAllChildren */, &machineState, aProgress);
+    HRESULT rc = mControl->DeleteSnapshot(this, aId, aId, TRUE /* fDeleteAllChildren */, &machineState, aProgress);
+    if (FAILED(rc)) return rc;
+
+    setMachineStateLocally(machineState);
+    return S_OK;
+}
+
+STDMETHODIMP Console::DeleteSnapshotRange(IN_BSTR aStartId, IN_BSTR aEndId, IProgress **aProgress)
+{
+    CheckComArgExpr(aStartId, Guid(aStartId).isEmpty() == false);
+    CheckComArgExpr(aEndId, Guid(aEndId).isEmpty() == false);
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (Global::IsTransient(mMachineState))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Cannot delete a snapshot of the machine while it is changing the state (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
+
+    MachineState_T machineState = MachineState_Null;
+    HRESULT rc = mControl->DeleteSnapshot(this, aStartId, aEndId, FALSE /* fDeleteAllChildren */, &machineState, aProgress);
     if (FAILED(rc)) return rc;
 
     setMachineStateLocally(machineState);

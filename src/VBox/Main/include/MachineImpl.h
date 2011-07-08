@@ -990,8 +990,8 @@ public:
                                    BOOL fTakingSnapshotOnline,
                                    BSTR *aStateFilePath);
     STDMETHOD(EndTakingSnapshot)(BOOL aSuccess);
-    STDMETHOD(DeleteSnapshot)(IConsole *aInitiator, IN_BSTR aId,
-                              BOOL fDeleteAllChildren,
+    STDMETHOD(DeleteSnapshot)(IConsole *aInitiator, IN_BSTR aStartId,
+                              IN_BSTR aEndID, BOOL fDeleteAllChildren,
                               MachineState_T *aMachineState, IProgress **aProgress);
     STDMETHOD(FinishOnlineMergeMedium)(IMediumAttachment *aMediumAttachment,
                                        IMedium *aSource, IMedium *aTarget,
