@@ -2932,7 +2932,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="31de448d-ef5e-4f79-9206-a8e830cbf9ea"
+    uuid="2087906d-bb92-43a0-8014-4cab009e4888"
     internal="yes"
     wsmap="suppress"
     >
@@ -3223,18 +3223,23 @@
 
     <method name="deleteSnapshot">
       <desc>
-        Gets called by <link to="IConsole::deleteSnapshot"/> and
-        <link to="IConsole::deleteSnapshotAndAllChildren"/>.
+        Gets called by <link to="IConsole::deleteSnapshot"/>,
+        <link to="IConsole::deleteSnapshotAndAllChildren"/> and
+        <link to="IConsole::deleteSnapshotRange"/>.
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Snapshot has more than one child snapshot. Only possible if the
-          delete operation does not delete all children.
+          delete operation does not delete all children or the range does
+          not meet the linearity condition.
         </result>
       </desc>
       <param name="initiator" type="IConsole" dir="in">
         <desc>The console object that initiated this call.</desc>
       </param>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the snapshot to delete.</desc>
+      <param name="startId" type="uuid" mod="string" dir="in">
+        <desc>UUID of the first snapshot to delete.</desc>
+      </param>
+      <param name="endId" type="uuid" mod="string" dir="in">
+        <desc>UUID of the last snapshot to delete.</desc>
       </param>
       <param name="deleteAllChildren" type="boolean" dir="in">
         <desc>Whether all children should be deleted.</desc>
@@ -6243,7 +6248,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="7fcaa74a-5d69-4c83-a357-404a60664e47"
+    uuid="1968b7d3-e3bf-4ceb-99e0-cb7c913317bb"
     wsmap="managed"
     >
     <desc>
@@ -6936,6 +6941,44 @@
       </desc>
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the snapshot to delete, including all its children.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="deleteSnapshotRange">
+      <desc>
+        Starts deleting the specified snapshot range. This is limited to
+        linear snapshot lists, which means there may not be any other child
+        snapshots other than the direct sequence between the start and end
+        snapshot. If the start and end snapshot point to the same snapshot this
+        method is completely equivalent to <link to="#deleteSnapshot"/>. See
+        <link to="ISnapshot" /> for an introduction to snapshots. The
+        conditions and many details are the same as with
+        <link to="#deleteSnapshot"/>.
+
+        This operation is generally faster than deleting snapshots one by one
+        and often also needs less extra disk space before freeing up disk space
+        by deleting the removed disk images corresponding to the snapshot.
+
+        <note>This API method is right now not implemented!</note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          The running virtual machine prevents deleting this snapshot. This
+          happens only in very specific situations, usually snapshots can be
+          deleted without trouble while a VM is running. The error message
+          text explains the reason for the failure.
+        </result>
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
+      </desc>
+      <param name="startId" type="uuid" mod="string" dir="in">
+        <desc>UUID of the first snapshot to delete.</desc>
+      </param>
+      <param name="endId" type="uuid" mod="string" dir="in">
+        <desc>UUID of the last snapshot to delete.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
