@@ -41,7 +41,6 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 static char g_achOptBuf[MAX_MNTOPT_STR] = { '\0', };
-static int g_cbOptBuf = 0;
 static const int g_RetErr = 33;
 static const int g_RetMagic = 2;
 static const int g_RetOK = 0;
@@ -61,12 +60,13 @@ static void Usage(char *pszName)
            "     ro                 mount read only\n"
            "     uid=UID            set the default file owner user id to UID\n"
            "     gid=GID            set the default file owner group id to GID\n"
-           "     stat_ttl=TTL       set the \"time to live\" (in ms) for the stat caches (default %d)\n"
+           "     stat_ttl=TTL       set the \"time to live\" (in ms) for the stat caches (default %d)\n", DEF_STAT_TTL_MS);
+    fprintf(stderr,
            "     fsync              honor fsync calls instead of ignoring them\n"
            "     ttl=TTL            set the \"time to live\" to TID for the dentry\n"
            "     iocharset CHARSET  use the character set CHARSET for i/o operations (default utf8)\n"
-           "     convertcp CHARSET  convert the shared folder name from the character set CHARSET to utf8\n\n", DEF_STAT_TTL_MS);
-    fprintf(stderr, "Less common used options:\n"
+           "     convertcp CHARSET  convert the shared folder name from the character set CHARSET to utf8\n\n"
+           "Less common used options:\n"
            "     noexec,exec,nodev,dev,nosuid,suid\n");
     exit(1);
 }
@@ -128,7 +128,6 @@ int main(int argc, char **argv)
                     fprintf(stderr, "%s: invalid argument: %s\n", pszName, optarg);
                     return g_RetMagic;
                 }
-                g_cbOptBuf = strlen(g_achOptBuf);
                 break;
             }
 
@@ -149,7 +148,7 @@ int main(int argc, char **argv)
     pszSpecial = argv[argc - 2];
     pszMount = argv[argc - 1];
 
-    rc = mount(pszSpecial, pszMount, mntFlags | MS_OPTIONSTR, DEVICE_NAME, NULL, 0, g_achOptBuf, MAX_MNTOPT_STR);
+    rc = mount(pszSpecial, pszMount, mntFlags | MS_OPTIONSTR, DEVICE_NAME, NULL, 0, g_achOptBuf, sizeof(g_achOptBuf));
     if (rc)
     {
         fprintf(stderr, "mount:");
