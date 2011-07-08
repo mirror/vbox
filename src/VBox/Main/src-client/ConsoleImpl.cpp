@@ -6403,44 +6403,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         rc = consoleInitReleaseLog(mMachine);
         if (FAILED(rc))
             throw rc;
-
-#if 0
-        LogRel(("Installed Extension Packs:\n"));
-        com::SafeIfaceArray<IExtPack> extPacks;
-        HRESULT rc2 = mptrExtPackManager->COMGETTER(InstalledExtPacks)(ComSafeArrayAsOutParam(extPacks));
-        if (SUCCEEDED(rc2))
-        {
-            for (size_t i = 0; i < extPacks.size(); i++)
-            {
-                /* Read all the properties. */
-                Bstr    bstrName;
-                rc2 = extPacks[i]->COMGETTER(Name)(bstrName.asOutParam());
-                Bstr    bstrVersion;
-                rc2 = extPacks[i]->COMGETTER(Version)(bstrVersion.asOutParam());
-                ULONG   uRevision = 0;
-                rc2 = extPacks[i]->COMGETTER(Revision)(&uRevision);
-                Bstr    bstrVrdeModule;
-                rc2 = extPacks[i]->COMGETTER(VRDEModule)(bstrVrdeModule.asOutParam());
-                BOOL    fUsable;
-                rc2 = extPacks[i]->COMGETTER(Usable)(&fUsable);
-                Bstr    bstrWhy;
-                rc2 = extPacks[i]->COMGETTER(WhyUnusable)(bstrWhy.asOutParam());
-
-                /* Display them. */
-                if (i)
-                    LogRel(("\n"));
-                LogRel(("  %lS (Version: %lS r%u; VRDE Module: %lS",
-                        bstrName.raw(), bstrVersion.raw(), uRevision, bstrVrdeModule.raw()));
-                if (!fUsable)
-                    LogRel(("; unusable because of '%s'", bstrWhy.raw()));
-                LogRel((")\n"));
-            }
-            if (!extPacks.size())
-                LogRel(("  None inststalled!\n"));
-        }
-        else
-            LogRel(("  Cannot retrieve this information (%Rhrc)!\n", rc2));
-#endif
+        mptrExtPackManager->dumpAllToReleaseLog();
 
 #ifdef RT_OS_SOLARIS
         /* setup host core dumper for the VM */
