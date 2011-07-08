@@ -64,6 +64,8 @@ void UICloneVMWizard::retranslateUi()
 {
     /* Assign wizard title: */
     setWindowTitle(tr("Clone a virtual machine"));
+
+    setButtonText(QWizard::FinishButton, tr("Clone"));
 }
 
 bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode)

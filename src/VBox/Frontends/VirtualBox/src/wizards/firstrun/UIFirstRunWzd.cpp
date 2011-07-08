@@ -97,6 +97,8 @@ void UIFirstRunWzd::retranslateUi()
 {
     /* Wizard title */
     setWindowTitle(tr("First Run Wizard"));
+
+    setButtonText(QWizard::FinishButton, tr("Start"));
 }
 
 UIFirstRunWzdPage1::UIFirstRunWzdPage1()

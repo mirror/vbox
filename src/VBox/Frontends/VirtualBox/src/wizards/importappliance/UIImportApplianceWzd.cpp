@@ -155,6 +155,7 @@ void UIImportApplianceWzd::retranslateUi()
 
     /* Translate 'Restore Defaults' button */
     setButtonText(QWizard::CustomButton1, tr("Restore Defaults"));
+    setButtonText(QWizard::FinishButton, tr("Import"));
 }
 
 void UIImportApplianceWzd::sltCurrentIdChanged(int iId)

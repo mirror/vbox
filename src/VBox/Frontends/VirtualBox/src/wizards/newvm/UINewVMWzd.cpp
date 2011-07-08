@@ -166,6 +166,8 @@ void UINewVMWzd::retranslateUi()
 {
     /* Wizard title */
     setWindowTitle(tr("Create New Virtual Machine"));
+
+    setButtonText(QWizard::FinishButton, tr("Create"));
 }
 
 UINewVMWzdPage1::UINewVMWzdPage1()
