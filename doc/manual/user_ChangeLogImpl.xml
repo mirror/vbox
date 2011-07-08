@@ -30,6 +30,11 @@
       </listitem>
 
       <listitem>
+        <para>Experimental support for PCI passthrough for Linux hosts, see
+          <xref linkend="pcipassthrough"/></para>
+      </listitem>
+
+      <listitem>
         <para>Windows guests: Experimental WDDM graphics driver</para>
       </listitem>
 
@@ -48,6 +53,11 @@
         <para>New Networking Mode <emphasis>UDP Tunnel</emphasis>: allows to
         interconnect VMs running on different hosts easily and transparently,
         see <xref linkend="networkingmodes" /></para>
+      </listitem>
+
+      <listitem>
+        <para>Experimental support for SATA hotplug added. Currently only supported
+          for hard disks and only with VBoxManage.</para>
       </listitem>
       
     </itemizedlist>
@@ -74,17 +84,17 @@
       </listitem>
 
       <listitem>
-        <para>GUI: added <emphasis>View</emphasis> menu</para>
+        <para>GUI: added a <emphasis>View</emphasis> menu</para>
       </listitem>
 
       <listitem>
-        <para>GUI: added setting for the promiscuous mode policy for
+        <para>GUI: added a setting for the promiscuous mode policy for
           internal networks, bridged networks and host-only networks</para>
       </listitem>
 
       <listitem>
         <para>GUI: the VM description is editable during the runtime of
-          a VM</para>
+          a VM (bug #1551)</para>
       </listitem>
 
       <listitem>
@@ -164,7 +174,7 @@
       </listitem>
 
       <listitem>
-        <para>BIOS: disk-related structures are now checksummed correctly</para>
+        <para>BIOS: disk-related structures are now checksummed correctly (bug #8739)</para>
       </listitem>
 
       <listitem>
@@ -191,11 +201,12 @@
 
       <listitem>
         <para>VRDP: support for multimonitor client configurations with MS
-          RDP client</para>
+          RDP clients</para>
       </listitem>
 
       <listitem>
-        <para>3D support: fixed GL_VERSION string for different locales (bug #8916)</para>
+        <para>3D support: fixed <emphasis>GL_VERSION</emphasis> string for
+          different locales (bug #8916)</para>
       </listitem>
 
       <listitem>
@@ -247,7 +258,7 @@
       </listitem>
 
       <listitem>
-        <para>Solaris Additions: fixed automounting of shared folders</para>
+        <para>Solaris Additions: fixed automounting of shared folders (bug #8014)</para>
       </listitem>
 
     </itemizedlist>
