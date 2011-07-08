@@ -233,9 +233,11 @@ void UINewHDWizard::retranslateUi()
     {
         case UINewHDWizardType_Creating:
             setWindowTitle(tr("Create New Virtual Disk"));
+            setButtonText(QWizard::FinishButton, tr("Create"));
             break;
         case UINewHDWizardType_Copying:
             setWindowTitle(tr("Copy Virtual Disk"));
+            setButtonText(QWizard::FinishButton, tr("Copy"));
             break;
         default:
             break;

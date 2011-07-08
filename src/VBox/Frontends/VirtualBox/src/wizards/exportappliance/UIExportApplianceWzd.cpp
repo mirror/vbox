@@ -93,6 +93,7 @@ void UIExportApplianceWzd::retranslateUi()
 
     /* Extra buttons */
     setButtonText(QWizard::CustomButton1, tr("Restore Defaults"));
+    setButtonText(QWizard::FinishButton, tr("Export"));
 }
 
 void UIExportApplianceWzd::sltCurrentIdChanged(int iId)
