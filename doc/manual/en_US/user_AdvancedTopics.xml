@@ -1132,8 +1132,9 @@ VBoxManage modifyvm "VM name" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</scree
       protocols like SSH, FTP and so on. Though some protocols might need a
       more transparent behavior or may depend on the real port number the
       packet was sent from. It is possible to change the NAT mode via the
-      VBoxManage frontend with the following commands: <screen>VBoxManage modifyvm "VM name" --nataliasmode proxyonly</screen>
-      and <screen>VBoxManage modifyvm "Linux Guest" --nataliasmode sameports</screen>
+      VBoxManage frontend with the following commands:
+      <screen>VBoxManage modifyvm "VM name" --nataliasmode1 proxyonly</screen>
+      and <screen>VBoxManage modifyvm "Linux Guest" --nataliasmode1 sameports</screen>
       The first example disables aliasing and switches NAT into transparent
       mode, the second example enforces preserving of port values. These modes
       can be combined if necessary.</para>
