@@ -95,7 +95,7 @@ GetExtensions(void)
 #ifdef WINDOWS
 static bool packspuRunningUnderWine(void)
 {
-    return NULL != GetModuleHandle("wined3d.dll") || NULL != GetModuleHandle("wined3dwddm.dll");
+    return NULL != GetModuleHandle("wined3d.dll") || NULL != GetModuleHandle("wined3dwddm.dll") || NULL != GetModuleHandle("wined3dwddm-x86.dll");
 }
 #endif
 
