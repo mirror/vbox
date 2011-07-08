@@ -199,11 +199,6 @@
       </listitem>
 
       <listitem>
-        <para>Sources: fixed USB 2.0 support using extension packs for non-official
-          builds</para>
-      </listitem>
-
-      <listitem>
         <para>Webservice: fixed timeout handling with HTTP 1.1 keepalive, and
           be more robust when connections fail</para>
       </listitem>
@@ -211,6 +206,21 @@
       <listitem>
         <para>VBoxSVC: fixed regression when several clients trigger autostart
           simultaneously</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed incorrect handling of the medium location for media
+          which are not file based (e.g. iSCSI), which resulted in confusing
+          location values in many places</para>
+      </listitem>
+
+      <listitem>
+        <para>JAX-WS client bindings: fixed resource leak</para>
+      </listitem>
+
+      <listitem>
+        <para>Sources: fixed USB 2.0 support using extension packs for non-official
+          builds</para>
       </listitem>
 
       <listitem>
@@ -237,13 +247,7 @@
       </listitem>
 
       <listitem>
-        <para>Main: fixed incorrect handling of the medium location for media
-          which are not file based (e.g. iSCSI), which resulted in confusing
-          location values in many places</para>
-      </listitem>
-
-      <listitem>
-        <para>JAX-WS client bindings: fixed resource leak</para>
+        <para>Solaris Additions: fixed automounting of shared folders</para>
       </listitem>
 
     </itemizedlist>
