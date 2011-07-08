@@ -2920,9 +2920,9 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 PCFGMNODE pDrive = CFGMR3GetChild(pCfg, g_apszIDEDrives[uLUN]);
                 if (!pDrive)
                     InsertConfigNode(pCfg, g_apszIDEDrives[uLUN], &pDrive);
-                PCFGMNODE pNonRot = CFGMR3GetChild(pCtlInst, "NonRotationalMedium");
-                if (pNonRot)
-                    CFGMR3RemoveNode(pNonRot);
+                /* Don't use the RemoveConfigValue wrapper above, as we don't
+                 * know if the leaf is present or not. */
+                CFGMR3RemoveValue(pDrive,  "NonRotationalMedium");
                 InsertConfigInteger(pDrive, "NonRotationalMedium", !!fNonRotational);
             }
             else if (!strcmp(pcszDevice, "ahci"))
@@ -2931,9 +2931,9 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 PCFGMNODE pDrive = CFGMR3GetChild(pCfg, strPort.c_str());
                 if (!pDrive)
                     InsertConfigNode(pCfg, strPort.c_str(), &pDrive);
-                PCFGMNODE pNonRot = CFGMR3GetChild(pCtlInst, "NonRotationalMedium");
-                if (pNonRot)
-                    CFGMR3RemoveNode(pNonRot);
+                /* Don't use the RemoveConfigValue wrapper above, as we don't
+                 * know if the leaf is present or not. */
+                CFGMR3RemoveValue(pDrive,  "NonRotationalMedium");
                 InsertConfigInteger(pDrive, "NonRotationalMedium", !!fNonRotational);
             }
         }
