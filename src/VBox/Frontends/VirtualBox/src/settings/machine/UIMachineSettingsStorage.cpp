@@ -3583,14 +3583,20 @@ bool UIMachineSettingsStorage::isControllerCouldBeUpdated(const UICacheSettingsM
 bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UICacheSettingsMachineStorageAttachment &attachmentCache) const
 {
     /* IMediumAttachment could be indirectly updated through IMachine
-     * only if attachment device type was NOT changed and is one of the next types:
+     * only if attachment type, device and port were NOT changed and is one of the next types:
      * KDeviceType_Floppy or KDeviceType_DVD.
      * For other cases we will recreate attachment fully: */
     const UIDataSettingsMachineStorageAttachment &initialAttachmentData = attachmentCache.base();
     const UIDataSettingsMachineStorageAttachment &currentAttachmentData = attachmentCache.data();
     KDeviceType initialAttachmentDeviceType = initialAttachmentData.m_attachmentType;
     KDeviceType currentAttachmentDeviceType = currentAttachmentData.m_attachmentType;
+    LONG iInitialAttachmentDevice = initialAttachmentData.m_iAttachmentDevice;
+    LONG iCurrentAttachmentDevice = currentAttachmentData.m_iAttachmentDevice;
+    LONG iInitialAttachmentPort = initialAttachmentData.m_iAttachmentPort;
+    LONG iCurrentAttachmentPort = currentAttachmentData.m_iAttachmentPort;
     return (currentAttachmentDeviceType == initialAttachmentDeviceType) &&
+           (iCurrentAttachmentDevice == iInitialAttachmentDevice) &&
+           (iCurrentAttachmentPort == iInitialAttachmentPort) &&
            (currentAttachmentDeviceType == KDeviceType_Floppy || currentAttachmentDeviceType == KDeviceType_DVD);
 }
 
