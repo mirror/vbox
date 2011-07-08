@@ -1546,7 +1546,8 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           <computeroutput>Disabled</computeroutput> key from
           <computeroutput>true</computeroutput> to
           <computeroutput>false</computeroutput>. To manually start the
-          service use the following command: <screen>launchctl load ~/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</screen>
+          service use the following command:
+          <screen>launchctl load ~/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</screen>
           For additional information on how launchd services could be
           configured see <literal><ulink
           url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.</para>
@@ -1557,27 +1558,36 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
   <sect1 id="vboxballoonctrl">
     <title>Memory Ballooning Service</title>
 
-    <para>Starting with VirtualBox 4.0.8 a new host executable called <computeroutput>VBoxBalloonCtrl</computeroutput> is
-    available to automatically take care of a VM's configured memory balloon (see <xref linkend="guestadd-balloon" />
-    for an introduction to memory ballooning). This is especially useful for server environments where VMs may dynamically
-    require more or less memory during runtime.</para>
+    <para>Starting with VirtualBox 4.0.8 a new host executable called
+      <computeroutput>VBoxBalloonCtrl</computeroutput> is available to
+      automatically take care of a VM's configured memory balloon
+      (see <xref linkend="guestadd-balloon" /> for an introduction to memory
+      ballooning). This is especially useful for server environments where
+      VMs may dynamically require more or less memory during runtime.</para>
 
-    <para>VBoxBalloonCtrl periodically checks a VM's current memory balloon and its free guest RAM and automatically adjusts
-    the current memory balloon by inflating or deflating it accordingly. This handling only applies to running VMs having recent
-    Guest Additions installed.</para>
+    <para>VBoxBalloonCtrl periodically checks a VM's current memory balloon
+      and its free guest RAM and automatically adjusts the current memory
+      balloon by inflating or deflating it accordingly. This handling only
+      applies to running VMs having recent Guest Additions installed.</para>
 
-    <para>To set up VBoxBalloonCtrl and adjust the maximum ballooning size a VM can reach the following parameters will be checked in the following
-    order:
+    <para>To set up VBoxBalloonCtrl and adjust the maximum ballooning size a
+      VM can reach the following parameters will be checked in the following
+      order:
       <itemizedlist>
-        <listitem>specified via VBoxBalloonCtrl command line parameter <computeroutput>--balloon-max</computeroutput></listitem>
-        <listitem>per-VM parameter using <screen>VBoxManage setextradata "VM-Name" VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen></listitem>
-        <listitem>global parameter for all VMs using <screen>VBoxManage setextradata global VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen></listitem>
+        <listitem>specified via VBoxBalloonCtrl command line parameter 
+          <computeroutput>--balloon-max</computeroutput></listitem>
+        <listitem>per-VM parameter using
+          <screen>VBoxManage setextradata "VM-Name" VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen></listitem>
+        <listitem>global parameter for all VMs using
+          <screen>VBoxManage setextradata global VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen></listitem>
       </itemizedlist>
       <note>
-        <para>If no maximum ballooning size is specified by at least one of the parameters above, no ballooning will be performed at all.</para>
+        <para>If no maximum ballooning size is specified by at least one of the
+          parameters above, no ballooning will be performed at all.</para>
       </note>
     </para>
 
-    <para>For more options and parameters check the built-in command line help accessible with <computeroutput>--help</computeroutput>.</para>
+    <para>For more options and parameters check the built-in command line help
+      accessible with <computeroutput>--help</computeroutput>.</para>
   </sect1>
 </chapter>

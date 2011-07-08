@@ -294,7 +294,7 @@
 
     <para>Irrespective of the disk capacity and format, as briefly mentioned
     in <xref linkend="gui-createvm" />, there are two options of how to create
-    a disk image: fixed-size or dynamically expanding.</para>
+    a disk image: fixed-size or dynamically allocated.</para>
 
     <itemizedlist>
       <listitem>
@@ -308,16 +308,16 @@
 
       <listitem>
         <para>For more flexible storage management, use a <emphasis
-        role="bold">dynamically expanding image</emphasis>. This will
+        role="bold">dynamically allocated image</emphasis>. This will
         initially be very small and not occupy any space for unused virtual
-        disk sectors, but the image file will grow every time a disk sector is
-        written to for the first time. While this format takes less space
-        initially, the fact that VirtualBox needs to constantly expand the
-        image file consumes additional computing resources, so until the disk
-        has fully expanded, write operations are slower than with fixed size
-        disks. However, after a dynamic disk has fully expanded, the
-        performance penalty for read and write operations is
-        negligible.</para>
+        disk sectors, but will grow every time a disk sector is written to for
+        the first time, until the drive reaches the maximum capacity chosen
+        when the drive was created. While this format takes less space
+        initially, the fact that VirtualBox needs to expand the image file
+        consumes additional computing resources, so until the disk file size has
+        stabilized, write operations may be slower than with fixed size disks.
+        However, after a time the rate of growth will slow and the average penalty
+        for write operations will be negligible.</para>
       </listitem>
     </itemizedlist>
   </sect1>
@@ -415,7 +415,7 @@
     determine separately how it should be affected by write operations from a
     virtual machine and snapshot operations. This applies to all of the
     aforementioned image formats (VDI, VMDK, VHD or HDD) and irrespective of
-    whether an image is fixed-size or dynamically expanding.</para>
+    whether an image is fixed-size or dynamically allocated.</para>
 
     <para>By default, images are in "normal" mode. To mark an existing image
     with one of the non-standard modes listed below, use
@@ -472,7 +472,7 @@
         concurrently. This makes them suitable for use by cluster filesystems
         between VMs and similar applications which are explicitly prepared to
         access a disk concurrently. Only fixed size images can be used in this
-        way, and dynamically growing images are rejected.<warning>
+        way, and dynamically allocated images are rejected.<warning>
             <para>This is an expert feature, and misuse can lead to data loss
             -- regular filesystems are not prepared to handle simultaneous
             changes by several parties.</para>

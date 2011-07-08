@@ -2045,7 +2045,7 @@ Virtual system 0:
         <listitem>
           <para>With the <computeroutput>--compact</computeroutput> option,
           can be used to compact disk images, i.e. remove blocks that only
-          contains zeroes. This will shrink a dynamically expanding image
+          contains zeroes. This will shrink a dynamically allocated image
           again; it will reduce the <emphasis>physical</emphasis> size of the
           image without affecting the logical size of the virtual disk.
           Compaction works both for base images and for diff images created as
@@ -2062,7 +2062,7 @@ Virtual system 0:
 
           <para>Please note that compacting is currently only available for
           VDI images. A similar effect can be achieved by zeroing out free
-          blocks and then cloning the disk to any other dynamically expanding
+          blocks and then cloning the disk to any other dynamically allocated
           format. You can use this workaround until compacting is also
           supported for disk formats other than VDI.</para>
         </listitem>
@@ -2074,7 +2074,7 @@ Virtual system 0:
           the physical size much.<footnote>
               <para>Image resizing was added with VirtualBox 4.0.</para>
             </footnote> This currently works only for expanding the capacity of
-          VDI and VHD formats, and only for the dynamically expanding variants.
+          VDI and VHD formats, and only for the dynamically allocated variants.
           For example, if you originally created a 10G disk which is now full,
           you can use the <computeroutput>--resize 15360</computeroutput>
           command to add 5 GByte more space to the virtual disk without
