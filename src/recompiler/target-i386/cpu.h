@@ -783,7 +783,7 @@ typedef struct CPUX86State {
 
     /** Alignment padding. */
 # if HC_ARCH_BITS == 64 \
-  || (HC_ARHC_BITS == 32 && !defined(VBOX_ENABLE_VBOXREM64) && !defined(RT_OS_WINDOWS))
+  || (HC_ARCH_BITS == 32 && !defined(VBOX_ENABLE_VBOXREM64) && !defined(RT_OS_WINDOWS))
     uint32_t alignment2[1];
 # endif
 
