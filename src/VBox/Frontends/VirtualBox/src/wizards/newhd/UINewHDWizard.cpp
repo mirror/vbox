@@ -528,13 +528,13 @@ void UINewHDWizardPageVariant::retranslateUi()
 
     /* Translate 'variant' page: */
     setTitle(UINewHDWizard::tr("Virtual disk storage details"));
-    m_pLabel->setText("Please choose whether the new virtual disk file should expand as it is used or be created fully expanded.");
+    m_pLabel->setText("Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.");
 
     /* Translate other text: */
     QString strText = m_pLabel->text();
     CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
     if (mediumFormat.isNull() || (mediumFormat.GetCapabilities() & KMediumFormatCapabilities_CreateDynamic))
-        strText += UINewHDWizard::tr("<p>A <b>dynamically expanding</b> virtual disk file will only use space on your physical hard disk as it fills up, "
+        strText += UINewHDWizard::tr("<p>A <b>dynamically allocated</b> virtual disk file will only use space on your physical hard disk as it fills up, "
                                      "although it will not shrink again automatically when space on it is freed.</p>");
     if (mediumFormat.isNull() || (mediumFormat.GetCapabilities() & KMediumFormatCapabilities_CreateFixed))
         strText += UINewHDWizard::tr("<p>A <b>fixed size</b> virtual disk file may take longer to create on some systems but is often faster to use.</p>");
@@ -545,7 +545,7 @@ void UINewHDWizardPageVariant::retranslateUi()
     m_pLabel->setText(strText);
 
     /* Translate buttons: */
-    m_pDynamicalButton->setText(UINewHDWizard::tr("&Dynamically expanding"));
+    m_pDynamicalButton->setText(UINewHDWizard::tr("&Dynamically allocated"));
     m_pFixedButton->setText(UINewHDWizard::tr("&Fixed size"));
     m_pSplitBox->setText(UINewHDWizard::tr("&Split into files of less than 2GB"));
 }
