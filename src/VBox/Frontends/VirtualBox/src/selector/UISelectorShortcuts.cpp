@@ -33,7 +33,7 @@ UISelectorShortcuts::UISelectorShortcuts()
     m_Shortcuts[NewVMShortcut]               = UIKeySequence("NewVM",               "Ctrl+N");
     m_Shortcuts[AddVMShortcut]               = UIKeySequence("AddVM",               "Ctrl+A");
     m_Shortcuts[SettingsVMShortcut]          = UIKeySequence("SettingsVM",          "Ctrl+S");
-    m_Shortcuts[CloneVMShortcut]             = UIKeySequence("CloneVM",             "Ctrl+C");
+    m_Shortcuts[CloneVMShortcut]             = UIKeySequence("CloneVM",             "Ctrl+O");
     m_Shortcuts[RemoveVMShortcut]            = UIKeySequence("RemoveVM",            "Ctrl+R");
     m_Shortcuts[StartVMShortcut]             = UIKeySequence("StartVM");
     m_Shortcuts[DiscardVMShortcut]           = UIKeySequence("DiscardVM",           "Ctrl+J");

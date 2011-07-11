@@ -1219,7 +1219,7 @@ void VBoxSelectorWnd::retranslateUi()
     mVmConfigAction->setToolTip(mVmConfigAction->text().remove('&').remove('.') +
         (mVmConfigAction->shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(mVmConfigAction->shortcut().toString())));
 
-    mVmCloneAction->setText(tr("&Clone..."));
+    mVmCloneAction->setText(tr("Cl&one..."));
     mVmCloneAction->setShortcut(gSS->keySequence(UISelectorShortcuts::CloneVMShortcut));
     mVmCloneAction->setStatusTip(tr("Clone the selected virtual machine"));
 
