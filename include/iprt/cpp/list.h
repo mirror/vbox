@@ -218,7 +218,8 @@ public:
       , m_cSize(0)
       , m_cCapacity(0)
     {
-        realloc_grow(cCapacity);
+        if (cCapacity > 0)
+            realloc_grow(cCapacity);
     }
 
     /**
@@ -235,7 +236,7 @@ public:
       , m_cSize(0)
       , m_cCapacity(0)
     {
-        realloc_grow(other.m_cSize);
+        realloc_no_elements_clean(other.m_cSize);
         RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
         m_cSize = other.m_cSize;
     }
@@ -371,10 +372,13 @@ public:
     RTCListBase<T, ITYPE, MT> &append(const RTCListBase<T, ITYPE, MT> &other)
     {
         m_guard.enterWrite();
-        if (m_cCapacity - m_cSize < other.m_cSize)
-            realloc_grow(m_cCapacity + (other.m_cSize - (m_cCapacity - m_cSize)));
-        RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, m_cSize, other.m_cSize);
-        m_cSize += other.m_cSize;
+        if (RT_LIKELY(other.m_cSize > 0))
+        {
+            if (m_cCapacity - m_cSize < other.m_cSize)
+                realloc_grow(m_cCapacity + (other.m_cSize - (m_cCapacity - m_cSize)));
+            RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, m_cSize, other.m_cSize);
+            m_cSize += other.m_cSize;
+        }
         m_guard.leaveWrite();
 
         return *this;
@@ -390,17 +394,17 @@ public:
     RTCListBase<T, ITYPE, MT> &operator=(const RTCListBase<T, ITYPE, MT>& other)
     {
         /* Prevent self assignment */
-        if (this == &other)
+        if (RT_UNLIKELY(this == &other))
             return *this;
 
         m_guard.enterWrite();
-        /* Values cleanup */
+        /* Delete all items. */
         RTCListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
-
-        /* Copy */
+        /* Need we to realloc memory. */
         if (other.m_cSize != m_cCapacity)
-            realloc_grow(other.m_cSize);
+            realloc_no_elements_clean(other.m_cSize);
         m_cSize = other.m_cSize;
+        /* Copy new items. */
         RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cSize);
         m_guard.leaveWrite();
 
@@ -430,8 +434,8 @@ public:
     /**
      * Return the first item as constant object.
      *
-     * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than RTCList::size.
+     * @note No boundary checks are done. Make sure there is at least one
+     * element.
      *
      * @return   The first item.
      */
@@ -446,8 +450,8 @@ public:
     /**
      * Return the first item.
      *
-     * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than RTCList::size.
+     * @note No boundary checks are done. Make sure there is at least one
+     * element.
      *
      * @return   The first item.
      */
@@ -462,8 +466,8 @@ public:
     /**
      * Return the last item as constant object.
      *
-     * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than RTCList::size.
+     * @note No boundary checks are done. Make sure there is at least one
+     * element.
      *
      * @return   The last item.
      */
@@ -478,8 +482,8 @@ public:
     /**
      * Return the last item.
      *
-     * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than RTCList::size.
+     * @note No boundary checks are done. Make sure there is at least one
+     * element.
      *
      * @return   The last item.
      */
@@ -552,7 +556,7 @@ public:
     T value(size_t i) const
     {
         m_guard.enterRead();
-        if (i >= m_cSize)
+        if (RT_UNLIKELY(i >= m_cSize))
         {
             m_guard.leaveRead();
             return T();
@@ -573,7 +577,7 @@ public:
     T value(size_t i, const T &defaultVal) const
     {
         m_guard.enterRead();
-        if (i >= m_cSize)
+        if (RT_UNLIKELY(i >= m_cSize))
         {
             m_guard.leaveRead();
             return defaultVal;
@@ -600,8 +604,8 @@ public:
     /**
      * Remove the first item.
      *
-     * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than RTCList::size.
+     * @note No boundary checks are done. Make sure there is at least one
+     * element.
      */
     void removeFirst()
     {
@@ -611,8 +615,8 @@ public:
     /**
      * Remove the last item.
      *
-     * @note No boundary checks are done. Make sure @a i is equal or greater zero
-     *       and smaller than RTCList::size.
+     * @note No boundary checks are done. Make sure there is at least one
+     * element.
      */
     void removeLast()
     {
@@ -668,7 +672,7 @@ public:
         /* Values cleanup */
         RTCListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
         if (m_cSize != DefaultCapacity)
-            realloc_grow(DefaultCapacity);
+            realloc_no_elements_clean(DefaultCapacity);
         m_cSize = 0;
         m_guard.leaveWrite();
     }
@@ -690,6 +694,11 @@ public:
         ITYPE* res = m_pArray;
         m_guard.leaveRead();
         return res;
+    }
+
+    RTCListBase<T, ITYPE, MT> &operator<<(const T &val)
+    {
+        return append(val);
     }
 
     /* Define our own new and delete. */
@@ -715,10 +724,21 @@ protected:
            of the list. */
         if (   cNewSize < m_cSize
             && m_pArray)
-        {
             RTCListHelper<T, ITYPE>::eraseRange(m_pArray, cNewSize, m_cSize - cNewSize);
+        realloc_no_elements_clean(cNewSize);
+    }
+
+    void realloc_no_elements_clean(size_t cNewSize)
+    {
+        /* Same size? */
+        if (cNewSize == m_cCapacity)
+            return;
+
+        /* If we get smaller we have to delete some of the objects at the end
+           of the list. */
+        if (   cNewSize < m_cSize
+            && m_pArray)
             m_cSize -= m_cSize - cNewSize;
-        }
 
         /* If we get zero we delete the array it self. */
         if (   cNewSize == 0
@@ -801,6 +821,9 @@ public:
      */
     RTCList(size_t cCapacity = BASE::DefaultCapacity)
      : BASE(cCapacity) {}
+
+    RTCList(const BASE &other)
+     : BASE(other) {}
 
     /* Define our own new and delete. */
     RTMEMEF_NEW_AND_DELETE_OPERATORS();

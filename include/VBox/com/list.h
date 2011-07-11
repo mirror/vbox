@@ -130,7 +130,7 @@ public:
     RTCList(ComSafeArrayIn(IN_BSTR, other))
     {
         com::SafeArray<IN_BSTR> sfaOther(ComSafeArrayInArg(other));
-        realloc_grow(sfaOther.size());
+        realloc(sfaOther.size());
         m_cSize = sfaOther.size();
         for (size_t i = 0; i < m_cSize; ++i)
             RTCListHelper<T, ITYPE>::set(m_pArray, i, T(sfaOther[i]));
@@ -147,9 +147,8 @@ public:
      * @throws  std::bad_alloc
      */
     RTCList(const com::SafeArray<IN_BSTR> &other)
+     : BASE(other.size())
     {
-        realloc_grow(other.size());
-        m_cSize = other.size();
         for (size_t i = 0; i < m_cSize; ++i)
             RTCListHelper<T, ITYPE>::set(m_pArray, i, T(other[i]));
     }
@@ -167,10 +166,9 @@ public:
         m_guard.enterWrite();
         /* Values cleanup */
         RTCListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cSize);
-
         /* Copy */
         if (other.size() != m_cCapacity)
-            realloc_grow(other.size());
+            realloc_no_elements_clean(other.size());
         m_cSize = other.size();
         for (size_t i = 0; i < other.size(); ++i)
             RTCListHelper<T, ITYPE>::set(m_pArray, i, T(other[i]));
