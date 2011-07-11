@@ -1448,6 +1448,34 @@
     running.</para>
   </sect1>
 
+  <sect1 id="clone">
+    <title>Cloning virtual machines</title>
+
+    <para>To experiment with a VM configuration, test different guest OS levels
+    or to simply backup a VM, VirtualBox can create a full copy of an existing
+    VM.<footnote>Cloning support was introduced with VirtualBox
+    4.1.</footnote></para>
+    
+    <para>A wizard will guide you through the clone process. This wizard can be
+    invoked from the context menu of the Manager's VM list (select "Clone") or
+    the "Snapshots" view of the selected VM. If you start from the former you
+    have the choice to create a exact copy of the current state without any
+    snapshots or with all snapshots included. If you invoke the clone VM wizard
+    from the later place and have selected a specific snapshot you can
+    additional decide if you want to clone that snapshot including all child's,
+    but without any independent snapshots in the tree.</para>
+    
+    <para>The clone operation itself can be a lengthy operation depending on
+    the size and count of the attached disk images. Also keep in mind that
+    every snapshot has differencing disk images attached, which need to be cloned
+    as well.</para>
+
+    <para>The "Clone" menu item is disabled while a machine is running.</para>
+
+    <para>For how to clone a VM at the command line, please see <xref
+    linkend="vboxmanage-clonevm" />.</para>
+  </sect1>
+
   <sect1 id="ovf">
     <title>Importing and exporting virtual machines</title>
 

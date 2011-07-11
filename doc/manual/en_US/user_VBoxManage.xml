@@ -335,7 +335,7 @@ Statistics update:  disabled
 </screen></para>
   </sect1>
 
-  <sect1>
+  <sect1 id="vboxmanage-registervm">
     <title>VBoxManage registervm / unregistervm</title>
 
     <para>The <computeroutput>registervm</computeroutput> command allows you
@@ -1086,6 +1086,69 @@ Statistics update:  disabled
           </listitem>
         </itemizedlist></para>
     </sect2>
+  </sect1>
+
+  <sect1 id="vboxmanage-clonevm">
+    <title>VBoxManage clonevm</title>
+
+    <para>This command creates a full copy of an existing virtual
+    machine.</para>
+
+    <para>The <computeroutput>clonevm</computeroutput> subcommand takes at
+    least the name of the virtual machine which should be cloned. The following
+    additional settings can be used to further configure the clone VM
+    operation:</para>
+
+    <itemizedlist>
+       <listitem>
+           <para><computeroutput>--snapshot &lt;uuid&gt;|&lt;name&gt;</computeroutput>: 
+            Select a specific snapshot where the clone operation should refer
+            to. Default is referring to the current state.</para>
+       </listitem>
+       <listitem>
+           <para><computeroutput>--mode machine|machineandchilds|all</computeroutput>: 
+           Selects the cloning mode of the operation. If
+           <computeroutput>machine</computeroutput> is selected (the default),
+           the current state of the VM without any snapshots is cloned. In the
+           <computeroutput>machineandchilds</computeroutput> mode the snapshot
+           provided by <computeroutput>--snapshot</computeroutput> and all
+           child snapshots are cloned. If <computeroutput>all</computeroutput>
+           is the selected mode all snapshots and the current state are cloned.
+           </para>
+       </listitem>
+       <listitem>
+           <para><computeroutput>--options keepallmacs|keepnatmacs</computeroutput>: 
+           With this option you define how the MAC addresses of every virtual
+           network card should be handled. They can either be reinitialized
+           (the default), leaved unchanged
+           (<computeroutput>keepallmacs</computeroutput>) or leaved unchanged
+           when the network type is NAT (<computeroutput>keepnatmacs</computeroutput>).
+           </para>
+       </listitem>
+       <listitem>
+           <para><computeroutput>--name &lt;name&gt;</computeroutput>: Select a
+           new name for the new virtual machine. Default is "Original Name
+           Clone".</para>
+       </listitem>
+       <listitem>
+           <para><computeroutput>--basefolder &lt;basefolder&gt;</computeroutput>: 
+           Select the folder where the new virtual machine configuration should
+           be saved in.</para>
+       </listitem>
+       <listitem>
+           <para><computeroutput>--uuid &lt;uuid&gt;</computeroutput>: 
+           Select the UUID the new VM should have. This id has to be unique in
+           the VirtualBox instance this clone should be registered. Default is
+           creating a new UUID.</para>
+       </listitem>
+       <listitem>
+           <para><computeroutput>--register</computeroutput>: 
+           Automatically register the new clone in this VirtualBox
+           installation. If you manually want register the new VM later, see
+           <xref linkend="vboxmanage-registervm" /> for instructions how to do
+           so.</para>
+       </listitem>
+    </itemizedlist>
   </sect1>
 
   <sect1 id="vboxmanage-import">
