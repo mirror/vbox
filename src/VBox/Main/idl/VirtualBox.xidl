@@ -1926,11 +1926,11 @@
         a "DVD" device type, this is ignored and read-only mode is always assumed.</desc>
       </param>
       <param name="forceNewUuid" type="boolean" dir="in">
-        <desc>Allows the caller to request a completely new medium UUID for
-        the image which is to be opened. Useful if one intends to open an exact
-        copy of a previously opened image, as this would normally fail due to
-        the duplicate UUID.</desc>
-      </param>
+         <desc>Allows the caller to request a completely new medium UUID for
+           the image which is to be opened. Useful if one intends to open an exact
+           copy of a previously opened image, as this would normally fail due to
+           the duplicate UUID.</desc>
+         </param>
       <param name="medium" type="IMedium" dir="return">
         <desc>Opened medium object.</desc>
       </param>
@@ -2355,6 +2355,25 @@
 
   </interface>
 
+  <enum
+    name="ImportOptions" extends="$unknown"
+    uuid="0a981523-3b20-4004-8ee3-dfd322202ace"
+    >
+
+    <desc>
+    Import options, used with <link to="IAppliance::importMachines" />.
+    </desc>
+
+    <const name="KeepAllMACs"        value="1">
+      <desc>Don't generate new MAC addresses of the attached network adapters.</desc>
+    </const>
+    <const name="KeepNATMACs"        value="2">
+      <desc>Don't generate new MAC addresses of the attached network adapters when they are using NAT.</desc>
+    </const>
+
+  </enum>
+
+
   <!--
   // IAppliance
   /////////////////////////////////////////////////////////////////////////
@@ -2362,7 +2381,7 @@
 
   <interface
     name="IAppliance" extends="$unknown"
-    uuid="7b148032-4124-4f46-b56a-b48ac1273f5a"
+    uuid="3059cf9e-25c7-4f0b-9fa5-3c42e441670b"
     wsmap="managed"
     >
     <desc>
@@ -2557,6 +2576,10 @@
         After the import succeeded, the UUIDs of the IMachine instances created can be
         retrieved from the <link to="#machines" /> array attribute.
       </desc>
+
+      <param name="options" type="ImportOptions" dir="in" safearray="yes">
+        <desc>Options for the importing operation.</desc>
+      </param>
 
       <param name="aProgress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>

@@ -1087,6 +1087,9 @@ VBoxApplianceEditorWgt::VBoxApplianceEditorWgt (QWidget *aParent /* = NULL */)
     mTvSettings->header()->setStretchLastSection (true);
     mTvSettings->header()->setResizeMode (QHeaderView::ResizeToContents);
 
+    /* Hidden by default */
+    mReinitMACsCheckBox->setHidden(true);
+
     /* Applying language settings */
     retranslateUi();
 }

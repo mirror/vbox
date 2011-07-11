@@ -36,6 +36,7 @@
 #include "MediumImpl.h"
 #include "MediumFormatImpl.h"
 #include "SystemPropertiesImpl.h"
+#include "HostImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -664,12 +665,17 @@ STDMETHODIMP Appliance::Interpret()
  * @param aProgress
  * @return
  */
-STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
+STDMETHODIMP Appliance::ImportMachines(ComSafeArrayIn(ImportOptions_T, options), IProgress **aProgress)
 {
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    if (options != NULL)
+        m->optList = com::SafeArray<ImportOptions_T>(ComSafeArrayInArg(options)).toList();
+
+    AssertReturn(!(m->optList.contains(ImportOptions_KeepAllMACs) && m->optList.contains(ImportOptions_KeepNATMACs)), E_INVALIDARG);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2526,14 +2532,21 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
     settings::NetworkAdaptersList &llNetworkAdapters = config.hardwareMachine.llNetworkAdapters;
     /* First disable all network cards, they will be enabled below again. */
     settings::NetworkAdaptersList::iterator it1;
+    bool fKeepAllMACs = m->optList.contains(ImportOptions_KeepAllMACs);
+    bool fKeepNATMACs = m->optList.contains(ImportOptions_KeepNATMACs);
     for (it1 = llNetworkAdapters.begin(); it1 != llNetworkAdapters.end(); ++it1)
+    {
         it1->fEnabled = false;
+        if (!(   fKeepAllMACs
+              || (fKeepNATMACs && it1->mode == NetworkAttachmentType_NAT)))
+            Host::generateMACAddress(it1->strMACAddress);
+    }
     /* Now iterate over all network entries. */
     std::list<VirtualSystemDescriptionEntry*> avsdeNWs = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
     if (avsdeNWs.size() > 0)
     {
         /* Iterate through all network adapter entries and search for the
-         * corrosponding one in the machine config. If one is found, configure
+         * corresponding one in the machine config. If one is found, configure
          * it based on the user settings. */
         list<VirtualSystemDescriptionEntry*>::const_iterator itNW;
         for (itNW = avsdeNWs.begin();

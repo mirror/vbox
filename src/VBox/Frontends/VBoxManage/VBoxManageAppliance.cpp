@@ -76,6 +76,35 @@ static bool findArgValue(Utf8Str &strOut,
     return false;
 }
 
+static int parseImportOptions(const char *psz, com::SafeArray<ImportOptions_T> *options)
+{
+    int rc = VINF_SUCCESS;
+    while (psz && *psz && RT_SUCCESS(rc))
+    {
+        size_t len;
+        const char *pszComma = strchr(psz, ',');
+        if (pszComma)
+            len = pszComma - psz;
+        else
+            len = strlen(psz);
+        if (len > 0)
+        {
+            if (!RTStrNICmp(psz, "KeepAllMACs", len))
+                options->push_back(ImportOptions_KeepAllMACs);
+            else if (!RTStrNICmp(psz, "KeepNATMACs", len))
+                options->push_back(ImportOptions_KeepNATMACs);
+            else
+                rc = VERR_PARSE_ERROR;
+        }
+        if (pszComma)
+            psz += len + 1;
+        else
+            psz += len;
+    }
+
+    return rc;
+}
+
 static const RTGETOPTDEF g_aImportApplianceOptions[] =
 {
     { "--dry-run",              'n', RTGETOPT_REQ_NOTHING },
@@ -111,6 +140,7 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "--controller",           'C', RTGETOPT_REQ_STRING },
 #endif
     { "--disk",                 'D', RTGETOPT_REQ_STRING },
+    { "--options",              'O', RTGETOPT_REQ_STRING },
 };
 
 int handleImportAppliance(HandlerArg *arg)
@@ -119,6 +149,7 @@ int handleImportAppliance(HandlerArg *arg)
 
     Utf8Str strOvfFilename;
     bool fExecute = true;                  // if true, then we actually do the import
+    com::SafeArray<ImportOptions_T> options;
     uint32_t ulCurVsys = (uint32_t)-1;
     uint32_t ulCurUnit = (uint32_t)-1;
     // for each --vsys X command, maintain a map of command line items
@@ -220,6 +251,11 @@ int handleImportAppliance(HandlerArg *arg)
                 if (ulCurUnit == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys][Utf8StrFmt("disk%u", ulCurUnit)] = ValueUnion.psz;
+                break;
+
+            case 'O':   // --options
+                if (RT_FAILURE(parseImportOptions(ValueUnion.psz, &options)))
+                    return errorArgument("Invalid import options '%s'\n", ValueUnion.psz);
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -746,7 +782,7 @@ int handleImportAppliance(HandlerArg *arg)
                 // go!
                 ComPtr<IProgress> progress;
                 CHECK_ERROR_BREAK(pAppliance,
-                                  ImportMachines(progress.asOutParam()));
+                                  ImportMachines(ComSafeArrayAsInParam(options), progress.asOutParam()));
 
                 rc = showProgress(progress);
 
