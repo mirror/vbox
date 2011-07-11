@@ -103,14 +103,28 @@
             </widget>
            </item>
            <item row="0" column="1" >
-            <widget class="QComboBox" name="m_pTypeCombo" >
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout">
+             <item>
+              <widget class="QILabel" name="m_pTypePane">
+               <property name="sizePolicy">
+                <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QIToolButton" name="m_pChangeMediumTypeButton">
+               <property name="autoRaise">
+                <bool>true</bool>
+               </property>
+               <property name="toolTip">
+                <string>Change medium type...</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item row="1" column="0" >
             <widget class="QLabel" name="m_pLocationLabel" >
@@ -397,6 +411,11 @@
    <class>QITabWidget</class>
    <extends>QTabWidget</extends>
    <header>QITabWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QIToolButton</class>
+   <extends>QToolButton</extends>
+   <header>QIToolButton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
