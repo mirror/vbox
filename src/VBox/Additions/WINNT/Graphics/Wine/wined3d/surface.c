@@ -97,7 +97,11 @@ static void surface_cleanup(IWineD3DSurfaceImpl *This)
 
     ENTER_GL();
 
-    if (This->texture_name)
+    if (This->texture_name
+#ifdef VBOX_WITH_WDDM
+            && !VBOXSHRC_IS_SHARED_OPENED(This)
+#endif
+            )
     {
         /* Release the OpenGL texture. */
         TRACE("Deleting texture %u.\n", This->texture_name);
@@ -1406,9 +1410,15 @@ static void WINAPI IWineD3DSurfaceImpl_UnLoad(IWineD3DSurface *iface) {
     IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **) &texture);
     if(!texture) {
         ENTER_GL();
-        glDeleteTextures(1, &This->texture_name);
+#ifdef VBOX_WITH_WDDM
+        if (!VBOXSHRC_IS_SHARED_OPENED(This))
+#endif
+            glDeleteTextures(1, &This->texture_name);
         This->texture_name = 0;
-        glDeleteTextures(1, &This->texture_name_srgb);
+#ifdef VBOX_WITH_WDDM
+        if (!VBOXSHRC_IS_SHARED_OPENED(This))
+#endif
+            glDeleteTextures(1, &This->texture_name_srgb);
         This->texture_name_srgb = 0;
         LEAVE_GL();
     } else {

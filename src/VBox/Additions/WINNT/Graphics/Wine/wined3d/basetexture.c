@@ -111,21 +111,31 @@ void basetexture_unload(IWineD3DBaseTexture *iface)
 {
     IWineD3DTextureImpl *This = (IWineD3DTextureImpl *)iface;
     IWineD3DDeviceImpl *device = This->resource.device;
-    struct wined3d_context *context = NULL;
 
-    if (This->baseTexture.texture_rgb.name || This->baseTexture.texture_srgb.name)
+#ifdef VBOX_WITH_WDDM
+    if (VBOXSHRC_IS_SHARED_OPENED(This))
     {
-        context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+        This->baseTexture.texture_rgb.name = 0;
+        This->baseTexture.texture_srgb.name = 0;
     }
+    else
+#endif
+    {
+        struct wined3d_context *context = NULL;
+        if (This->baseTexture.texture_rgb.name || This->baseTexture.texture_srgb.name)
+        {
+            context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+        }
 
-    if(This->baseTexture.texture_rgb.name) {
-        gltexture_delete(&This->baseTexture.texture_rgb);
-    }
-    if(This->baseTexture.texture_srgb.name) {
-        gltexture_delete(&This->baseTexture.texture_srgb);
-    }
+        if(This->baseTexture.texture_rgb.name) {
+            gltexture_delete(&This->baseTexture.texture_rgb);
+        }
+        if(This->baseTexture.texture_srgb.name) {
+            gltexture_delete(&This->baseTexture.texture_srgb);
+        }
 
-    if (context) context_release(context);
+        if (context) context_release(context);
+    }
 
     This->baseTexture.texture_rgb.dirty = TRUE;
     This->baseTexture.texture_srgb.dirty = TRUE;

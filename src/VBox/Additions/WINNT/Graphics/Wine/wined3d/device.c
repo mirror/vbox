@@ -6267,11 +6267,20 @@ static HRESULT updateSurfaceDesc(IWineD3DSurfaceImpl *surface, const WINED3DPRES
 
     if (surface->texture_name)
     {
-        struct wined3d_context *context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
-        ENTER_GL();
-        glDeleteTextures(1, &surface->texture_name);
-        LEAVE_GL();
-        context_release(context);
+#ifdef VBOX_WITH_WDDM
+# ifdef DEBUG_misha
+        /* shared case needs testing! */
+        Assert(!VBOXSHRC_IS_SHARED(surface));
+# endif
+        if (!VBOXSHRC_IS_SHARED_OPENED(surface))
+#endif
+        {
+            struct wined3d_context *context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+            ENTER_GL();
+            glDeleteTextures(1, &surface->texture_name);
+            LEAVE_GL();
+            context_release(context);
+        }
         surface->texture_name = 0;
         surface->Flags &= ~SFLAG_CLIENT;
     }
