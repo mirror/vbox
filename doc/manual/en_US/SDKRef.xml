@@ -3447,6 +3447,13 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para>The method <xref linkend="IAppliance__importMachines"
+          xreflabel="IAppliance::importMachines()" /> has one more parameter
+          now, which allows to configure the import process in more detail.
+          </para>
+        </listitem>
+
+        <listitem>
           <para>The method <xref linkend="IVirtualBox__openMedium"
           xreflabel="IVirtualBox::openMedium()" /> has one more parameter
           now, which allows resolving duplicate medium UUIDs without the need
