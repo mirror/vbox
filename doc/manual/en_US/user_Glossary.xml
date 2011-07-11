@@ -366,6 +366,17 @@
         multiple CPU cores in one processor.</para>
       </glossdef>
     </glossentry>
+
+    <glossentry>
+      <glossterm>SSD</glossterm>
+
+      <glossdef>
+        <para>Solid-state drive, uses microships for storing data in a computer
+        system. Compared to classical hard-disks they are having no mechanical
+        components like spinning disks.
+        </para>
+      </glossdef>
+    </glossentry>
   </glossdiv>
 
   <glossdiv>
