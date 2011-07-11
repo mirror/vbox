@@ -9,7 +9,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>Support for cloning of VMs (bug #5853)</para>
+        <para>Support for cloning of VMs (bug #5853, see <xref linkend="clone"/>)</para>
       </listitem>
 
       <listitem>
@@ -123,7 +123,7 @@
 
       <listitem>
         <para>Settings: provide better diagnostics if a single medium is used
-          twice in a VM config</para>
+          twice in a VM configuration</para>
       </listitem>
 
       <listitem>
