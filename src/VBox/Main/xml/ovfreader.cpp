@@ -507,7 +507,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                                 i.ullVirtualQuantity,
                                                 UINT16_MAX,
                                                 i.ulLineNumber);
-                    break;
+                        break;
 
                     case ResourceType_Memory:        // 4
                         if (    (i.strAllocationUnits == "MegaBytes")           // found in OVF created by OVF toolkit
@@ -520,7 +520,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                                 m_strPath.c_str(),
                                                 i.strAllocationUnits.c_str(),
                                                 i.ulLineNumber);
-                    break;
+                        break;
 
                     case ResourceType_IDEController:          // 5
                     {
@@ -569,8 +569,8 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         vsys.mapControllers[i.ulInstanceID] = hdc;
                         if (!pPrimaryIDEController)
                             pPrimaryIDEController = &vsys.mapControllers[i.ulInstanceID];
+                        break;
                     }
-                    break;
 
                     case ResourceType_ParallelSCSIHBA:        // 6       SCSI controller
                     {
@@ -588,8 +588,8 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         hdc.strControllerType = i.strResourceSubType;
 
                         vsys.mapControllers[i.ulInstanceID] = hdc;
+                        break;
                     }
-                    break;
 
                     case ResourceType_EthernetAdapter: // 10
                     {
@@ -614,12 +614,12 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         ea.strAdapterType = i.strResourceSubType;
                         ea.strNetworkName = i.strConnection;
                         vsys.llEthernetAdapters.push_back(ea);
+                        break;
                     }
-                    break;
 
                     case ResourceType_FloppyDrive: // 14
                         vsys.fHasFloppyDrive = true;           // we have no additional information
-                    break;
+                        break;
 
                     case ResourceType_CDDrive:       // 15
                         /*  <Item ovf:required="false">
@@ -634,11 +634,11 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             // but then the ovftool dies with "Device backing not supported". So I guess if
                             // VMware can't export ISOs, then we don't need to be able to import them right now.
                         vsys.fHasCdromDrive = true;           // we have no additional information
-                    break;
+                        break;
 
                     case ResourceType_HardDisk: // 17
                         // handled separately in second loop below
-                    break;
+                        break;
 
                     case ResourceType_OtherStorageDevice:        // 20       SATA controller
                     {
@@ -667,8 +667,8 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                                 m_strPath.c_str(),
                                                 ResourceType_OtherStorageDevice,
                                                 i.ulLineNumber);
+                        break;
                     }
-                    break;
 
                     case ResourceType_USBController: // 23
                         /*  <Item ovf:required="false">
@@ -680,7 +680,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                 <rasd:BusNumber>0</rasd:BusNumber>
                             </Item> */
                         vsys.fHasUsbController = true;           // we have no additional information
-                    break;
+                        break;
 
                     case ResourceType_SoundCard: // 35
                         /*  <Item ovf:required="false">
@@ -693,7 +693,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                 <rasd:AddressOnParent>3</rasd:AddressOnParent>
                             </Item> */
                         vsys.strSoundCardType = i.strResourceSubType;
-                    break;
+                        break;
 
                     default:
                     {
@@ -766,9 +766,10 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                                 i.ulLineNumber);
 
                         vsys.mapVirtualDisks[vd.strDiskId] = vd;
+                        break;
                     }
-                    break;
-                    default: break;
+                    default:
+                        break;
                 }
             }
         }

@@ -837,13 +837,13 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             // in that case, downgrade to current version when writing since we can't write future versions...
             pcszVersion = "1.12";
             m->sv = SettingsVersion_v1_12;
-        break;
+            break;
 
         default:
             // silently upgrade if this is less than 1.7 because that's the oldest we can write
             pcszVersion = "1.7";
             m->sv = SettingsVersion_v1_7;
-        break;
+            break;
     }
 
     elm.setAttribute("version", Utf8StrFmt("%s-%s",
@@ -3466,11 +3466,11 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
          switch (hw.firmwareType)
          {
-            case FirmwareType_EFI:      pcszFirmware = "EFI";   break;
-            case FirmwareType_EFI32:    pcszFirmware = "EFI32"; break;
-            case FirmwareType_EFI64:    pcszFirmware = "EFI64"; break;
+            case FirmwareType_EFI:      pcszFirmware = "EFI";     break;
+            case FirmwareType_EFI32:    pcszFirmware = "EFI32";   break;
+            case FirmwareType_EFI64:    pcszFirmware = "EFI64";   break;
             case FirmwareType_EFIDUAL:  pcszFirmware = "EFIDUAL"; break;
-            default:                    pcszFirmware = "None"; break;
+            default:                    pcszFirmware = "None";    break;
          }
          pelmFirmware->setAttribute("type", pcszFirmware);
     }
@@ -3790,22 +3790,22 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     pelmNAT = pelmAdapter->createChild("NAT");
                     if (nic.nat.strNetwork.length())
                         pelmNAT->setAttribute("network", nic.nat.strNetwork);
-                break;
+                    break;
 
                 case NetworkAttachmentType_Bridged:
                     pelmAdapter->createChild("BridgedInterface")->setAttribute("name", nic.strBridgedName);
-                break;
+                    break;
 
                 case NetworkAttachmentType_Internal:
                     pelmAdapter->createChild("InternalNetwork")->setAttribute("name", nic.strInternalNetworkName);
-                break;
+                    break;
 
                 case NetworkAttachmentType_HostOnly:
                     pelmAdapter->createChild("HostOnlyInterface")->setAttribute("name", nic.strHostOnlyName);
-                break;
+                    break;
 
                 default: /*case NetworkAttachmentType_Null:*/
-                break;
+                    break;
             }
         }
         else
@@ -3894,7 +3894,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             /* fall through */
         case AudioControllerType_AC97:
         default:
-            pcszController = "AC97"; break;
+            pcszController = "AC97";
+            break;
     }
     pelmAudio->setAttribute("controller", pcszController);
 
@@ -4089,22 +4090,22 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
                 if ((*rule).u16GuestPort)
                     pelmPF->setAttribute("guestport", (*rule).u16GuestPort);
             }
-        break;
+            break;
 
         case NetworkAttachmentType_Bridged:
             if (fEnabled || !nic.strBridgedName.isEmpty())
                 elmParent.createChild("BridgedInterface")->setAttribute("name", nic.strBridgedName);
-        break;
+            break;
 
         case NetworkAttachmentType_Internal:
             if (fEnabled || !nic.strInternalNetworkName.isEmpty())
                 elmParent.createChild("InternalNetwork")->setAttribute("name", nic.strInternalNetworkName);
-        break;
+            break;
 
         case NetworkAttachmentType_HostOnly:
             if (fEnabled || !nic.strHostOnlyName.isEmpty())
                 elmParent.createChild("HostOnlyInterface")->setAttribute("name", nic.strHostOnlyName);
-        break;
+            break;
 
         case NetworkAttachmentType_Generic:
             if (fEnabled || !nic.strGenericDriver.isEmpty() || nic.genericProperties.size())
@@ -4120,10 +4121,10 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
                     pelmProp->setAttribute("value", it->second);
                 }
             }
-        break;
+            break;
 
         default: /*case NetworkAttachmentType_Null:*/
-        break;
+            break;
     }
 }
 
@@ -4234,18 +4235,18 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
                     pcszType = "HardDisk";
                     if (att.fNonRotational)
                         pelmDevice->setAttribute("nonrotational", att.fNonRotational);
-                break;
+                    break;
 
                 case DeviceType_DVD:
                     pcszType = "DVD";
                     pelmDevice->setAttribute("passthrough", att.fPassThrough);
                     if (att.fTempEject)
                         pelmDevice->setAttribute("tempeject", att.fTempEject);
-                break;
+                    break;
 
                 case DeviceType_Floppy:
                     pcszType = "Floppy";
-                break;
+                    break;
             }
 
             pelmDevice->setAttribute("type", pcszType);
