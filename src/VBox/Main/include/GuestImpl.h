@@ -106,6 +106,7 @@ public:
     STDMETHOD(DirectoryRead)(ULONG aHandle, IGuestDirEntry **aDirEntry);
     // File handling
     STDMETHOD(FileExists)(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists);
+    STDMETHOD(FileQuerySize)(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, LONG64 *aSize);
     // Misc stuff
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,

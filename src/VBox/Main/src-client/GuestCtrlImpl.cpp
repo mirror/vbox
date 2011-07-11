@@ -3109,6 +3109,17 @@ STDMETHODIMP Guest::FileExists(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPasswo
 #endif
 }
 
+STDMETHODIMP Guest::FileQuerySize(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, LONG64 *aSize)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    return VBOX_E_NOT_SUPPORTED;
+#endif
+}
+
 STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
