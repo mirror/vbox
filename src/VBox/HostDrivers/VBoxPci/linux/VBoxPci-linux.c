@@ -145,7 +145,7 @@ static int __init VBoxPciLinuxInit(void)
     if (iommu_found())
         printk(KERN_INFO "vboxpci: IOMMU found\n");
     else
-        printk(KERN_INFO "vboxpci: IOMMU not found (checked)\n");
+        printk(KERN_INFO "vboxpci: IOMMU not found (not registered)\n");
 #else
     printk(KERN_INFO "vboxpci: IOMMU not found (not compiled)\n");
 #endif
@@ -976,7 +976,9 @@ static int vboxPciOsContigMemInfo(PRAWPCIPERVM pVmCtx, RTHCPHYS HostStart, RTGCP
 
 int  vboxPciOsInitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM, PRAWPCIPERVM pVmData)
 {
+#ifdef DEBUG
     printk(KERN_DEBUG "vboxPciOsInitVm: %p\n", pThis);
+#endif
 #ifdef VBOX_WITH_IOMMU
     if (iommu_found())
     {
@@ -997,7 +999,9 @@ int  vboxPciOsInitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM, PRAWPCIPERVM pVmData)
 
 void vboxPciOsDeinitVm(PVBOXRAWPCIDRVVM pThis, PVM pVM)
 {
+#ifdef DEBUG
     printk(KERN_DEBUG "vboxPciOsDeinitVm: %p\n", pThis);
+#endif
 #ifdef VBOX_WITH_IOMMU
     if (pThis->pIommuDomain)
     {
