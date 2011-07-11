@@ -167,7 +167,8 @@ extern DWORD g_VBoxVDbgPid;
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED(_pRc) \
                 ) \
         { \
-            vboxVDbgDoDumpRcRectByRc("== "__FUNCTION__": Texture Dump\n", _pRc, NULL, "\n"); \
+            vboxVDbgPrint(("== "__FUNCTION__": Texture Dump, SharedHandle(0x%p)\n", (_pRc)->aAllocations[0].hSharedHandle)); \
+            vboxVDbgDoDumpRcRectByRc("", _pRc, NULL, "\n"); \
         } \
     } while (0)
 
@@ -203,8 +204,10 @@ extern DWORD g_VBoxVDbgPid;
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED(_pDstRc) \
                 ) \
         { \
-            vboxVDbgDoDumpSurfRect("==>"__FUNCTION__" Src:\n", (_pSrcSurf), (_pSrcRect), "\n", true); \
-            vboxVDbgDoDumpSurfRect("==>"__FUNCTION__" Dst:\n", (_pDstSurf), (_pDstRect), "\n", true); \
+            vboxVDbgPrint(("==>"__FUNCTION__" Src: SharedHandle(0x%p)\n", (_pSrcRc)->aAllocations[0].hSharedHandle)); \
+            vboxVDbgDoDumpSurfRect("", (_pSrcSurf), (_pSrcRect), "\n", true); \
+            vboxVDbgPrint(("==>"__FUNCTION__" Dst: SharedHandle(0x%p)\n", (_pDstRc)->aAllocations[0].hSharedHandle)); \
+            vboxVDbgDoDumpSurfRect("", (_pDstSurf), (_pDstRect), "\n", true); \
         } \
     } while (0)
 
@@ -214,8 +217,10 @@ extern DWORD g_VBoxVDbgPid;
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED(_pDstRc) \
                 ) \
         { \
-            vboxVDbgDoDumpSurfRect("<=="__FUNCTION__" Src:\n", (_pSrcSurf), (_pSrcRect), "\n", true); \
-            vboxVDbgDoDumpSurfRect("<=="__FUNCTION__" Dst:\n", (_pDstSurf), (_pDstRect), "\n", true); \
+            vboxVDbgPrint(("<=="__FUNCTION__" Src: SharedHandle(0x%p)\n", (_pSrcRc)->aAllocations[0].hSharedHandle)); \
+            vboxVDbgDoDumpSurfRect("", (_pSrcSurf), (_pSrcRect), "\n", true); \
+            vboxVDbgPrint(("<=="__FUNCTION__" Dst: SharedHandle(0x%p)\n", (_pDstRc)->aAllocations[0].hSharedHandle)); \
+            vboxVDbgDoDumpSurfRect("", (_pDstSurf), (_pDstRect), "\n", true); \
         } \
     } while (0)
 

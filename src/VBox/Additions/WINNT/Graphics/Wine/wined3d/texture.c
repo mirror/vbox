@@ -621,7 +621,6 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
     if (VBOXSHRC_IS_SHARED(texture))
     {
         Assert(shared_handle);
-        VBOXSHRC_SET_INITIALIZED(texture);
         for (i = 0; i < texture->baseTexture.levels; ++i)
         {
             VBOXSHRC_COPY_SHAREDATA((IWineD3DSurfaceImpl*)texture->surfaces[i], texture);

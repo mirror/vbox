@@ -1840,7 +1840,8 @@ typedef struct IWineD3DResourceClass
     BYTE                   *heapMemory; /* Pointer to the HeapAlloced block of memory */
 #ifdef VBOX_WITH_WDDM
     DWORD                   sharerc_flags; /* shared resource flags */
-    DWORD                   sharerc_handle;
+    DWORD                   sharerc_handle; /* shared resource handle */
+    DWORD                   sharerc_locks; /* lock count */
 #endif
     struct list             privateData;
     struct list             resource_list_entry;
