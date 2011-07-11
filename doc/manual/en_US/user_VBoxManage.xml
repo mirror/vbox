@@ -2455,12 +2455,13 @@ Value: 2006.01.01</screen>
           runnable on the guest. This command only works while a VM is up and
           running and has the following syntax:</para>
 
-          <screen>VBoxManage guestcontrol exec[ute] &lt;vmname&gt;|&lt;uuid&gt;
+          <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; exec[ute]
             --image &lt;path to program&gt;
             --username &lt;name&gt; --password &lt;password&gt;
+            [--dos2unix]
             [--environment "&lt;NAME&gt;=&lt;VALUE&gt; [&lt;NAME&gt;=&lt;VALUE&gt;]"]
-            [--flags &lt;flags&gt;] [--timeout &lt;msec&gt;]
-            [--verbose] [--wait-exit] [--wait-stdout] [--wait-stderr]
+            [--timeout &lt;msec&gt;] [--unix2dos] [--verbose]
+            [--wait-exit] [--wait-stdout] [--wait-stderr]
             -- [[&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</screen>
 
           <para>where the parameters mean: <glosslist>
@@ -2483,16 +2484,30 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm>--arguments "&lt;arguments&gt;"</glossterm>
+                <glossterm>--username &lt;name&gt;</glossterm>
 
                 <glossdef>
-                  <para>One or more arguments to pass to the process being
-                  executed.</para>
+                  <para>Name of the user the process should run under. This
+                  user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
 
-                  <para>Arguments containing spaces must be enclosed in
-                  quotation marks. More than one
-                  <computeroutput>--arguments</computeroutput> at a time can
-                  be specified to keep the command line tidy.</para>
+              <glossentry>
+                <glossterm>--password &lt;password&gt;</glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified with
+                  <computeroutput>--username</computeroutput>. If not given,
+                  an empty password is assumed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--dos2unix</glossterm>
+
+                <glossdef>
+                  Converts output from DOS/Windows guests to UNIX-compatible
+                  line endings (CR + LF -> LF). Not implemented yet.
                 </glossdef>
               </glossentry>
 
@@ -2521,15 +2536,6 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm>--flags &lt;flags&gt;</glossterm>
-
-                <glossdef>
-                  <para>Additional flags to set. This is not used at the
-                  moment.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
                 <glossterm>--timeout &lt;msec&gt;</glossterm>
 
                 <glossdef>
@@ -2542,21 +2548,11 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm>--username &lt;name&gt;</glossterm>
+                <glossterm>--unix2dos</glossterm>
 
                 <glossdef>
-                  <para>Name of the user the process should run under. This
-                  user must exist on the guest OS.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm>--password &lt;password&gt;</glossterm>
-
-                <glossdef>
-                  <para>Password of the user account specified with
-                  <computeroutput>--username</computeroutput>. If not given,
-                  an empty password is assumed.</para>
+                  Converts output from a UNIX/Linux guests to DOS-/Windows-compatible
+                  line endings (LF -> CR + LF). Not implemented yet.
                 </glossdef>
               </glossentry>
 
@@ -2597,15 +2593,26 @@ Value: 2006.01.01</screen>
                 </glossdef>
               </glossentry>
 
+              <glossentry>
+                <glossterm>[-- [&lt;argument1s&gt;] ... [&lt;argumentNs&gt;]]</glossterm>
+
+                <glossdef>
+                  <para>One or more arguments to pass to the process being
+                  executed.</para>
+                  <para>Arguments containing spaces must be enclosed in
+                  quotation marks.</para>
+                </glossdef>
+              </glossentry>
+
             </glosslist></para>
 
           <para><note>
               <para>On Windows there are certain limitations for graphical
               applications; please see <xref linkend="KnownIssues" /> for more
               information.</para>
-            </note> Examples: <screen>VBoxManage --nologo guestcontrol execute "My VM" "/bin/ls" --arguments "-l /usr"
-          --username foo --password bar --wait-for stdout</screen> <screen>VBoxManage --nologo guestcontrol execute "My VM" "c:\\windows\\system32\\ipconfig.exe"
-          --username foo --password bar --wait-for stdout</screen> Note that
+            </note> Examples: <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "/bin/ls"
+          --username foo --password bar --wait-exit --wait-stdout -- -l /usr</screen> <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "c:\\windows\\system32\\ipconfig.exe"
+          --username foo --password bar --wait-exit --wait-stdout</screen> Note that
           the double backslashes in the second example are only required on
           Unix hosts.</para>
         </listitem>
