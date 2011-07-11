@@ -185,6 +185,10 @@ VOID vboxVDbgDoDumpAllocRect(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAll
 
     Assert(pAlloc->hAllocation);
 
+    HANDLE hSharedHandle = pAlloc->hSharedHandle;
+
+    vboxVDbgPrint(("SharedHandle: (0x%p)\n", hSharedHandle));
+
     D3DDDICB_LOCK LockData;
     LockData.hAllocation = pAlloc->hAllocation;
     LockData.PrivateDriverData = 0;
@@ -202,14 +206,17 @@ VOID vboxVDbgDoDumpAllocRect(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAll
     if (hr == S_OK)
     {
         UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
-        vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+        vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>, ( !vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d )\n",
+                LockData.pData, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, pAlloc->SurfDesc.pitch,
                 LockData.pData, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, pAlloc->SurfDesc.pitch));
         if (pRect)
         {
             Assert(pRect->right > pRect->left);
             Assert(pRect->bottom > pRect->top);
             vboxVDbgDoPrintRect("rect: ", pRect, "\n");
-            vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
+            vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>, ( !vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d )\n",
+                    ((uint8_t*)LockData.pData) + (pRect->top * pAlloc->SurfDesc.pitch) + ((pRect->left * bpp) >> 3),
+                    pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, pAlloc->SurfDesc.pitch,
                     ((uint8_t*)LockData.pData) + (pRect->top * pAlloc->SurfDesc.pitch) + ((pRect->left * bpp) >> 3),
                     pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, pAlloc->SurfDesc.pitch));
         }
@@ -262,14 +269,17 @@ VOID vboxVDbgDoDumpSurfRect(const char * pPrefix, IDirect3DSurface9 *pSurf, cons
         if (hr == S_OK)
         {
             UINT bpp = vboxWddmCalcBitsPerPixel((D3DDDIFORMAT)Desc.Format);
-            vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+            vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>, ( !vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d )\n",
+                    Lr.pBits, Desc.Width, Desc.Height, bpp, Lr.Pitch,
                     Lr.pBits, Desc.Width, Desc.Height, bpp, Lr.Pitch));
             if (pRect)
             {
                 Assert(pRect->right > pRect->left);
                 Assert(pRect->bottom > pRect->top);
                 vboxVDbgDoPrintRect("rect: ", pRect, "\n");
-                vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
+                vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>, ( !vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d )\n",
+                        ((uint8_t*)Lr.pBits) + (pRect->top * Lr.Pitch) + ((pRect->left * bpp) >> 3),
+                        pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, Lr.Pitch,
                         ((uint8_t*)Lr.pBits) + (pRect->top * Lr.Pitch) + ((pRect->left * bpp) >> 3),
                         pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, Lr.Pitch));
             }

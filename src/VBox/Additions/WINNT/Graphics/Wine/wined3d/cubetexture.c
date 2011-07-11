@@ -573,7 +573,6 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
     if (VBOXSHRC_IS_SHARED(texture))
     {
         Assert(shared_handle);
-        VBOXSHRC_SET_INITIALIZED(texture);
         for (i = 0; i < texture->baseTexture.levels; ++i)
         {
             for (j = 0; j < 6; ++j)
