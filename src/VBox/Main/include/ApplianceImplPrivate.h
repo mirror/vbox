@@ -72,6 +72,7 @@ struct Appliance::Data
 
     LocationInfo        locInfo;        // location info for the currently processed OVF
     bool                fManifest;      // Create a manifest file on export
+    RTCList<ImportOptions_T> optList;
 
     ovf::OVFReader      *pReader;
 

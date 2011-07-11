@@ -41,6 +41,8 @@ public:
 VBoxImportApplianceWgt::VBoxImportApplianceWgt (QWidget *aParent)
     : VBoxApplianceEditorWgt (aParent)
 {
+    /* Show the MAC check box */
+    mReinitMACsCheckBox->setHidden(false);
 }
 
 bool VBoxImportApplianceWgt::setFile (const QString& aFile)
@@ -133,7 +135,10 @@ bool VBoxImportApplianceWgt::import()
     {
         /* Start the import asynchronously */
         CProgress progress;
-        progress = mAppliance->ImportMachines();
+        QVector<KImportOptions> options;
+        if (!mReinitMACsCheckBox->isChecked())
+            options.append(KImportOptions_KeepAllMACs);
+        progress = mAppliance->ImportMachines(options);
         bool fResult = mAppliance->isOk();
         if (fResult)
         {

@@ -96,7 +96,7 @@ public:
     /* Import methods */
     STDMETHOD(Read)(IN_BSTR path, IProgress **aProgress);
     STDMETHOD(Interpret)(void);
-    STDMETHOD(ImportMachines)(IProgress **aProgress);
+    STDMETHOD(ImportMachines)(ComSafeArrayIn(ImportOptions_T, options), IProgress **aProgress);
     /* Export methods */
     STDMETHOD(CreateVFSExplorer)(IN_BSTR aURI, IVFSExplorer **aExplorer);
     STDMETHOD(Write)(IN_BSTR format, BOOL fManifest, IN_BSTR path, IProgress **aProgress);

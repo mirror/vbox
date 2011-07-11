@@ -344,7 +344,10 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_IMPORTAPPLIANCE)
         RTStrmPrintf(pStrm,
-                     "VBoxManage import           <ovf/ova> [--dry-run|-n] [more options]\n"
+                     "VBoxManage import           <ovf/ova>\n"
+                     "                            [--dry-run|-n]\n"
+                     "                            [--options keepallmacs|keepnatmacs]\n"
+                     "                            [more options]\n"
                      "                            (run with -n to have options displayed\n"
                      "                             for a particular OVF)\n\n");
 

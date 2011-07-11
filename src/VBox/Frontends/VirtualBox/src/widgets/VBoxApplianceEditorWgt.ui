@@ -9,7 +9,7 @@
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
      General Public License (GPL) as published by the Free Software
-     Foundation, in version 2 as it comes in the "COPYING" file of the
+     Foundation, in version 2 as it comes in the &quot;COPYING&quot; file of the
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
@@ -19,8 +19,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>459</width>
-    <height>305</height>
+    <width>548</width>
+    <height>411</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -38,6 +38,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="mReinitMACsCheckBox">
+     <property name="toolTip">
+      <string>When checked a new unique MAC address will assigned to all configured network cards.</string>
+     </property>
+     <property name="text">
+      <string>&amp;Reinitialize the MAC address of all network cards</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QWidget" name="mWarningWidget" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
@@ -46,9 +56,6 @@
       </sizepolicy>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="sizeConstraint">
-       <enum>QLayout::SetDefaultConstraint</enum>
-      </property>
       <property name="margin">
        <number>0</number>
       </property>
