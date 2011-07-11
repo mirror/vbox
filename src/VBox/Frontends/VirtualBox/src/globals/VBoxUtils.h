@@ -127,6 +127,7 @@ class UIProxyManager
 public:
 
     UIProxyManager(const QString &strProxySettings = QString())
+        : m_fProxyEnabled(false), m_fAuthEnabled(false)
     {
         /* Parse settings: */
         if (!strProxySettings.isEmpty())
