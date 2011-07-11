@@ -541,6 +541,11 @@
                 <para>Intel PXE boot ROM with support for the E1000 network
                 card.</para>
               </listitem>
+
+              <listitem>
+                <para>Experimental support for PCI passthrough on Linux hosts;
+                  see <xref linkend="pcipassthrough" />.</para>
+              </listitem>
             </orderedlist></para>
 
           <para>VirtualBox extension packages have a
