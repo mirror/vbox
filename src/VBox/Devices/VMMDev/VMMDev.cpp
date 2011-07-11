@@ -2755,8 +2755,6 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 
     pThis->hypervisorSize = 0;
 
-    pThis->u32HostEventFlags = 0;
-
     /* re-initialize the VMMDev memory */
     if (pThis->pVMMDevRAMR3)
         vmmdevInitRam(pThis);
@@ -2806,10 +2804,12 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /*
      * Clear the event variables.
      *
-     *   Note: The pThis->u32HostEventFlags is not cleared.
-     *         It is designed that way so host events do not
-     *         depend on guest resets.
+     * XXX By design we should NOT clear pThis->u32HostEventFlags because it is designed
+     *     that way so host events do not depend on guest resets. However, the pending
+     *     event flags actually _were_ cleared since ages so we mask out events from
+     *     clearing which we really need to survive the reset. See xtracker 5767.
      */
+    pThis->u32HostEventFlags    &= VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
     pThis->u32GuestFilterMask    = 0;
     pThis->u32NewGuestFilterMask = 0;
     pThis->fNewGuestFilterMask   = 0;
