@@ -8396,9 +8396,9 @@
     <const name="Hidden"                  value="4">
       <desc>Don't show the started process according to the guest OS guidelines.</desc>
     </const>
-    <const name="NoProfile"               value="8"> 
-      <desc>Do not use the user's profile data when exeuting a process.</desc> 
-    </const> 
+    <const name="NoProfile"               value="8">
+      <desc>Do not use the user's profile data when exeuting a process.</desc>
+    </const>
   </enum>
 
   <enum
@@ -8560,7 +8560,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="af2766d9-ebff-455f-b5ce-c6f855b8f584"
+    uuid="ed109b6e-0578-4b17-8ace-52646789f1a0"
     wsmap="managed"
     >
     <desc>
@@ -9089,6 +9089,39 @@
       </param>
     </method>
 
+    <method name="fileQuerySize">
+      <desc>
+        Queries the size of a file, given the path to it.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while looking up information.
+        </result>
+
+      </desc>
+      <param name="file" type="wstring" dir="in">
+        <desc>
+          Full path of file to query file size for.
+        </desc>
+      </param>
+      <param name="userName" type="wstring" dir="in">
+        <desc>
+          User name under which the lookup will be performed; the
+          user has to exist and have the appropriate rights to access / read the
+          desired directory.
+        </desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>
+          Password of the user account specified.
+        </desc>
+      </param>
+      <param name="size" type="long long" dir="return">
+        <desc>
+          Size (in bytes) of file specified.
+        </desc>
+      </param>
+    </method>
+
     <method name="setProcessInput">
       <desc>
         Sends input into a formerly started process.
@@ -9363,10 +9396,10 @@
           sub-operations) and forward all changes from the other progress to
           this progress. This means sub-operation number, description, percent
           and so on.
-          
+
           You have to take care on setting up at least the same count on
           sub-operations in this progress object like there are in the other
-          progress object. 
+          progress object.
 
           If the other progress object supports cancel and this object gets any
           cancel request (when here enabled as well), it will be forwarded to
