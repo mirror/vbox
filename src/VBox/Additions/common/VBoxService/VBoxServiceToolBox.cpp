@@ -43,18 +43,27 @@
 #include "VBoxServiceUtils.h"
 
 
+/** Options indices for "vbox_cat". */
 #define CAT_OPT_NO_CONTENT_INDEXED              1000
-
+/** Options indices for "vbox_ls". */
 #define LS_OPT_MACHINE_READABLE                 1000
-
+/** Options indices for "vbox_stat". */
+#define STAT_OPT_MACHINE_READABLE               1000
+/** Flags for "vbox_ls". */
 typedef enum VBOXSERVICETOOLBOXLSFLAG
 {
-    VBOXSERVICETOOLBOXLSFLAG_NONE =             0,
-    VBOXSERVICETOOLBOXLSFLAG_RECURSIVE =        0x00000001,
-    VBOXSERVICETOOLBOXLSFLAG_LONG =             0x00000002,
-    VBOXSERVICETOOLBOXLSFLAG_PARSEABLE =        0x00000004,
-    VBOXSERVICETOOLBOXLSFLAG_SYMLINKS =         0x00000008
-} VBOXSERVICETOOLBOXLSFLAG;
+    VBOXSERVICETOOLBOXLSFLAG_NONE =             0x0,
+    VBOXSERVICETOOLBOXLSFLAG_RECURSIVE =        0x1,
+    VBOXSERVICETOOLBOXLSFLAG_SYMLINKS =         0x2
+} VBOXSERVICETOOLBOXLSFLAG, *PVBOXSERVICETOOLBOXLSFLAG;
+
+/** Flags for fs object output. */
+typedef enum VBOXSERVICETOOLBOXOUTPUTFLAG
+{
+    VBOXSERVICETOOLBOXOUTPUTFLAG_NONE =         0x0,
+    VBOXSERVICETOOLBOXOUTPUTFLAG_LONG =         0x1,
+    VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE =    0x2
+} VBOXSERVICETOOLBOXOUTPUTFLAG, *PVBOXSERVICETOOLBOXOUTPUTFLAG;
 
 /* Enable the following define to be able to debug/invoke the toolbox
  * commandos directly from command line, e.g. VBoxService vbox_cat [args] */
@@ -131,6 +140,29 @@ static int VBoxServiceToolboxErrorSyntax(const char *pszFormat, ...)
     return VERR_INVALID_PARAMETER;
 }
 
+/**
+ * Prints a parseable stream header which contains the actual tool
+ * which was called/used along with its stream version.
+ *
+ * @param   pszToolName             Name of the tool being used, e.g. "vbt_ls".
+ * @param   uVersion                Stream version name. Handy for distinguishing
+ *                                  different stream versions later.
+ */
+static void VBoxServiceToolboxPrintStrmHeader(const char *pszToolName, uint32_t uVersion)
+{
+    AssertPtrReturnVoid(pszToolName);
+    RTPrintf("hdr_id=%s%chdr_ver=%u%c", pszToolName, 0, uVersion, 0);
+}
+
+/**
+ * Prints a standardized termination sequence indicating that the
+ * parseable stream just ended.
+ *
+ */
+static void VBoxServiceToolboxPrintStrmTermination()
+{
+    RTPrintf("%c%c%c%c", 0, 0, 0, 0);
+}
 
 /**
  * Destroys a path buffer list.
@@ -406,11 +438,12 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
  * @return  IPRT status code.
  * @param   pszName                     Object name.
  * @param   cbName                      Size of object name.
- * @param   uFlags                      Output / handling flags.
+ * @param   uOutputFlags                Output / handling flags of type VBOXSERVICETOOLBOXOUTPUTFLAG.
  * @param   pObjInfo                    Pointer to object information.
  */
-static int VBoxServiceToolboxLsPrintFsInfo(const char *pszName, uint16_t cbName, uint32_t uFlags,
-                                           PRTFSOBJINFO pObjInfo)
+static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
+                                         uint32_t uOutputFlags,
+                                         PRTFSOBJINFO pObjInfo)
 {
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertReturn(cbName, VERR_INVALID_PARAMETER);
@@ -434,9 +467,9 @@ static int VBoxServiceToolboxLsPrintFsInfo(const char *pszName, uint16_t cbName,
     }
     /** @todo sticy bits++ */
 
-    if (!(uFlags & VBOXSERVICETOOLBOXLSFLAG_LONG))
+    if (!(uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_LONG))
     {
-        if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
+        if (uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         {
             /** @todo Skip node_id if not present/available! */
             RTPrintf("ftype=%c%cnode_id=%RU64%cname_len=%RU16%cname=%s%c",
@@ -447,12 +480,12 @@ static int VBoxServiceToolboxLsPrintFsInfo(const char *pszName, uint16_t cbName,
             RTPrintf("%c %#18llx %3d %s\n", (uint64_t)pObjInfo->Attr.u.Unix.INodeId,
                      cFileType, cbName, pszName);
 
-        if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE) /* End of data block. */
+        if (uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* End of data block. */
             RTPrintf("%c%c", 0, 0);
     }
     else
     {
-        if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
+        if (uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         {
             RTPrintf("ftype=%c%c", cFileType, 0);
             RTPrintf("owner_mask=%c%c%c%c",
@@ -564,12 +597,14 @@ static int VBoxServiceToolboxLsPrintFsInfo(const char *pszName, uint16_t cbName,
  * @return  IPRT status code.
  * @param   pszDir                  Directory (path) to ouptut.
  * @param   uFlags                  Flags of type VBOXSERVICETOOLBOXLSFLAG.
+ * @param   uOutputFlags            Flags of type  VBOXSERVICETOOLBOXOUTPUTFLAG.
  */
-static int VBoxServiceToolboxLsHandleDir(const char *pszDir, uint32_t uFlags)
+static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
+                                         uint32_t uFlags, uint32_t uOutputFlags)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_PARAMETER);
 
-    if (uFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
+    if (uFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         RTPrintf("dname=%s%c", pszDir, 0);
     else if (uFlags & VBOXSERVICETOOLBOXLSFLAG_RECURSIVE)
         RTPrintf("%s:\n", pszDir);
@@ -631,9 +666,9 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir, uint32_t uFlags)
         PVBOXSERVICETOOLBOXDIRENTRY pNodeIt;
         RTListForEach(&dirList, pNodeIt, VBOXSERVICETOOLBOXDIRENTRY, Node)
         {
-            rc = VBoxServiceToolboxLsPrintFsInfo(pNodeIt->dirEntry.szName, pNodeIt->dirEntry.cbName,
-                                                 uFlags,
-                                                 &pNodeIt->dirEntry.Info);
+            rc = VBoxServiceToolboxPrintFsInfo(pNodeIt->dirEntry.szName, pNodeIt->dirEntry.cbName,
+                                               uOutputFlags,
+                                               &pNodeIt->dirEntry.Info);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -666,7 +701,8 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir, uint32_t uFlags)
                             rc = RTPathJoin(szPath, sizeof(szPath),
                                             pszDir, pNodeIt->dirEntry.szName);
                             if (RT_SUCCESS(rc))
-                                rc = VBoxServiceToolboxLsHandleDir(szPath, uFlags);
+                                rc = VBoxServiceToolboxLsHandleDir(szPath,
+                                                                   uFlags, uOutputFlags);
                         }
                         break;
 
@@ -724,6 +760,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
     int rc = VINF_SUCCESS;
     bool fVerbose = false;
     uint32_t fFlags = VBOXSERVICETOOLBOXLSFLAG_NONE;
+    uint32_t fOutputFlags = VBOXSERVICETOOLBOXOUTPUTFLAG_NONE;
 
     /* Init file list. */
     RTLISTNODE fileList;
@@ -744,11 +781,11 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                 break;
 
             case 'l': /* Print long format. */
-                fFlags |= VBOXSERVICETOOLBOXLSFLAG_LONG;
+                fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_LONG;
                 break;
 
             case LS_OPT_MACHINE_READABLE:
-                fFlags |= VBOXSERVICETOOLBOXLSFLAG_PARSEABLE;
+                fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE;
                 break;
 
             case 'R': /* Recursive processing. */
@@ -798,8 +835,8 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
         }
 
         /* Print magic/version. */
-        if (fFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE)
-            RTPrintf("hdr_id=vbt_ls%chdr_ver=%u%c", 0, 1 /* Version 1 */, 0);
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
+            VBoxServiceToolboxPrintStrmHeader("vbt_ls", 1 /* Stream version */);
 
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
@@ -814,8 +851,8 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                     rc = RTFileQueryInfo(file, &objInfo, RTFSOBJATTRADD_UNIX);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = VBoxServiceToolboxLsPrintFsInfo(pNodeIt->pszName, strlen(pNodeIt->pszName),
-                                                             fFlags, &objInfo);
+                        rc = VBoxServiceToolboxPrintFsInfo(pNodeIt->pszName, strlen(pNodeIt->pszName),
+                                                           fOutputFlags, &objInfo);
                     }
                     else
                         RTMsgError("ls: Unable to query information for '%s', rc=%Rrc\n",
@@ -827,14 +864,15 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                                pNodeIt->pszName, rc);
             }
             else
-                rc = VBoxServiceToolboxLsHandleDir(pNodeIt->pszName, fFlags);
+                rc = VBoxServiceToolboxLsHandleDir(pNodeIt->pszName,
+                                                   fFlags, fOutputFlags);
             if (RT_FAILURE(rc))
                 RTMsgError("ls: Failed while enumerating '%s', rc=%Rrc\n",
                            pNodeIt->pszName, rc);
         }
 
-        if (fFlags & VBOXSERVICETOOLBOXLSFLAG_PARSEABLE) /* Output termination. */
-            RTPrintf("%c%c%c%c", 0, 0, 0, 0);
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
+            VBoxServiceToolboxPrintStrmTermination();
     }
     else if (fVerbose)
         RTMsgError("ls: Failed with rc=%Rrc\n", rc);
@@ -983,10 +1021,11 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--file-system",     'f', RTGETOPT_REQ_NOTHING },
-        { "--dereference",     'L', RTGETOPT_REQ_NOTHING},
-        { "--terse",           't', RTGETOPT_REQ_NOTHING},
-        { "--verbose",         'v', RTGETOPT_REQ_NOTHING}
+        { "--file-system",     'f',                       RTGETOPT_REQ_NOTHING },
+        { "--dereference",     'L',                       RTGETOPT_REQ_NOTHING },
+        { "--machinereadable", STAT_OPT_MACHINE_READABLE, RTGETOPT_REQ_NOTHING },
+        { "--terse",           't',                       RTGETOPT_REQ_NOTHING },
+        { "--verbose",         'v',                       RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
@@ -1004,6 +1043,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
 
     int rc = VINF_SUCCESS;
     bool fVerbose = false;
+    uint32_t fOutputFlags = VBOXSERVICETOOLBOXOUTPUTFLAG_LONG; /* Use long mode by default. */
 
     /* Init file list. */
     RTLISTNODE fileList;
@@ -1024,6 +1064,10 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
                 RTMsgError("stat: Sorry, option '%s' is not implemented yet!\n",
                            ValueUnion.pDef->pszLong);
                 rc = VERR_INVALID_PARAMETER;
+                break;
+
+            case LS_OPT_MACHINE_READABLE:
+                fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE;
                 break;
 
             case 'v':
@@ -1053,19 +1097,43 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
 
     if (RT_SUCCESS(rc))
     {
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
+            VBoxServiceToolboxPrintStrmHeader("vbt_stat", 1 /* Stream version */);
+
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
         {
             /* Only check for file existence for now. */
+            RTFSOBJINFO objInfo;
+            int rc2 = VINF_SUCCESS; /* Temporary rc to keep original rc. */
             if (RTFileExists(pNodeIt->pszName))
             {
-                /** @todo Do some more work (query size etc.) here later.
-                 *        Not needed for now. */
+                RTFILE file;
+                rc2 = RTFileOpen(&file, pNodeIt->pszName, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ);
+                if (RT_SUCCESS(rc2))
+                {
+                    rc2 = RTFileQueryInfo(file, &objInfo, RTFSOBJATTRADD_UNIX);
+                    if (RT_FAILURE(rc2))
+                        RTMsgError("stat: Unable to query information for '%s', rc=%Rrc\n",
+                                   pNodeIt->pszName, rc2);
+                    RTFileClose(file);
+                }
+                else
+                    RTMsgError("stat: Failed opening '%s', rc=%Rrc\n",
+                               pNodeIt->pszName, rc2);
+
+                if (RT_FAILURE(rc2))
+                    rc = rc2;
             }
             else if (RTDirExists(pNodeIt->pszName))
             {
-                /** @todo Do some more work (query size etc.) here later.
-                 *        Not needed for now. */
+                PRTDIR pDir;
+                rc2 = RTDirOpen(&pDir, pNodeIt->pszName);
+                if (RT_SUCCESS(rc2))
+                {
+                    rc2 = RTDirQueryInfo(pDir, &objInfo, RTFSOBJATTRADD_UNIX);
+                    RTDirClose(pDir);
+                }
             }
             else
             {
@@ -1075,7 +1143,22 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
                 /* Do not break here -- process every element in the list
                  * and keep failing rc. */
             }
+
+            if (RT_SUCCESS(rc2))
+            {
+                rc2 = VBoxServiceToolboxPrintFsInfo(pNodeIt->pszName,
+                                                    strlen(pNodeIt->pszName) /* cbName */,
+                                                    fOutputFlags,
+                                                    &objInfo);
+                if (RT_FAILURE(rc2))
+                    rc = rc2;
+            }
         }
+
+        if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
+            VBoxServiceToolboxPrintStrmTermination();
+
+        /* At this point the overall result (success/failure) should be in rc. */
 
         if (RTListIsEmpty(&fileList))
             RTMsgError("stat: Missing operand\n");
