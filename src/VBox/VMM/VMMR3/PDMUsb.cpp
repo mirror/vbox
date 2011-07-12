@@ -1365,12 +1365,11 @@ static DECLCALLBACK(VMSTATE) pdmR3UsbHlp_VMState(PPDMUSBINS pUsbIns)
     return enmVMState;
 }
 
-
 /** @interface_method_impl{PDMUSBHLP,pfnThreadCreate} */
 static DECLCALLBACK(int) pdmR3UsbHlp_ThreadCreate(PPDMUSBINS pUsbIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADUSB pfnThread,
                                                   PFNPDMTHREADWAKEUPUSB pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
-    PDMDEV_ASSERT_DEVINS(pUsbIns);
+    PDMUSB_ASSERT_USBINS(pUsbIns);
     VM_ASSERT_EMT(pUsbIns->Internal.s.pVM);
     LogFlow(("pdmR3UsbHlp_ThreadCreate: caller='%s'/%d: ppThread=%p pvUser=%p pfnThread=%p pfnWakeup=%p cbStack=%#zx enmType=%d pszName=%p:{%s}\n",
              pUsbIns->pReg->szName, pUsbIns->iInstance, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName, pszName));
