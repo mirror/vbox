@@ -2644,7 +2644,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="c0f8f135-3a1d-417d-afa6-b38b95a91f90"
+    uuid="303c0900-a746-4612-8c67-79003e91f459"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -2672,7 +2672,9 @@
     <const name="NetworkAdapter" value="21" />
     <const name="USBController" value="22" />
     <const name="SoundCard" value="23" />
-
+    <const name="SettingsFile" value="24">
+      <desc>Not used/implemented right now, will be added later in 4.1.x.</desc>
+    </const>
   </enum>
 
   <enum
