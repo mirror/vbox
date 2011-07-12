@@ -378,7 +378,7 @@ $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX
 # do save us from having to update the makefile whenever something new is added
 # to the module source directories.
 #
-VBoxLnxInstArchDeps := \
+VBOX_LNX_INST_ARCH_DEPS := \
 	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/, $(VBOX_LNX_ARCH_FILES)) \
 	$(VBOX_LNX_INST_DEP_ON_MAKEFILE) \
 	$(VBOX_VERSION_STAMP) \
