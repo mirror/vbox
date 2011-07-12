@@ -68,7 +68,7 @@ void UICloneVMWizard::retranslateUi()
     setButtonText(QWizard::FinishButton, tr("Clone"));
 }
 
-bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode)
+bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode, bool fReinitMACs)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
     const QString &strSettingsFile = vbox.ComposeMachineFilename(strName, QString::null);
@@ -81,11 +81,10 @@ bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode)
         return false;
     }
 
-    /* NAT network adapters should keep there MAC address to prevent any
-     * reactivation. For the other modes they should be regenerated to prevent
-     * address conflicts in the network. */
+    /* Add the keep all MACs option to the import settings when requested. */
     QVector<KCloneOptions> options;
-    options.append(KCloneOptions_KeepNATMACs);
+    if (!fReinitMACs)
+        options.append(KCloneOptions_KeepAllMACs);
 
     /* Start cloning. */
     CProgress progress = m_machine.CloneTo(cloneMachine, mode, options);
@@ -123,6 +122,7 @@ UICloneVMWizardPage1::UICloneVMWizardPage1(const QString &strOriName)
     Ui::UICloneVMWizardPage1::setupUi(this);
 
     registerField("cloneName", this, "cloneName");
+    registerField("reinitMACs", this, "reinitMACs");
 
     connect(m_pNameEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltNameEditorTextChanged(const QString &)));
 }
@@ -135,6 +135,11 @@ QString UICloneVMWizardPage1::cloneName() const
 void UICloneVMWizardPage1::setCloneName(const QString &strName)
 {
     m_pNameEditor->setText(strName);
+}
+
+bool UICloneVMWizardPage1::isReinitMACsChecked() const
+{
+    return mReinitMACsCheckBox->isChecked();
 }
 
 void UICloneVMWizardPage1::retranslateUi()
@@ -171,7 +176,7 @@ bool UICloneVMWizardPage1::validatePage()
         /* Start performing long-time operation: */
         startProcessing();
         /* Try to create the clone: */
-        bool fResult = static_cast<UICloneVMWizard*>(wizard())->createClone(cloneName(), KCloneMode_MachineState);
+        bool fResult = static_cast<UICloneVMWizard*>(wizard())->createClone(cloneName(), KCloneMode_MachineState, isReinitMACsChecked());
         /* Finish performing long-time operation: */
         endProcessing();
         /* Return operation result: */
@@ -233,7 +238,8 @@ bool UICloneVMWizardPage2::validatePage()
     startProcessing();
     /* Try to create the clone: */
     QString strName = field("cloneName").toString();
-    bool fResult = static_cast<UICloneVMWizard*>(wizard())->createClone(strName, cloneMode());
+    bool fReinitMACs = field("reinitMACs").toBool();
+    bool fResult = static_cast<UICloneVMWizard*>(wizard())->createClone(strName, cloneMode(), fReinitMACs);
     /* Finish performing long-time operation: */
     endProcessing();
     /* Return operation result: */

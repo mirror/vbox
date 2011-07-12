@@ -37,7 +37,7 @@ public:
     /* Constructor: */
     UICloneVMWizard(QWidget *pParent, CMachine machine, bool fShowChildsOption = true);
 
-    bool createClone(const QString &strName, KCloneMode mode);
+    bool createClone(const QString &strName, KCloneMode mode, bool fReinitMACs);
 
 private:
 
@@ -70,6 +70,7 @@ class UICloneVMWizardPage1 : public UICloneVMWizardPage, public Ui::UICloneVMWiz
 {
     Q_OBJECT;
     Q_PROPERTY(QString cloneName READ cloneName WRITE setCloneName);
+    Q_PROPERTY(bool reinitMACs READ isReinitMACsChecked);
 
 public:
 
@@ -78,6 +79,8 @@ public:
 
     QString cloneName() const;
     void setCloneName(const QString &strName);
+
+    bool isReinitMACsChecked() const;
 
 protected:
 

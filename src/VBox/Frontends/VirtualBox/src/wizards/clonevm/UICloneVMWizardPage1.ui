@@ -54,6 +54,16 @@
     <widget class="QLineEdit" name="m_pNameEditor"/>
    </item>
    <item>
+    <widget class="QCheckBox" name="mReinitMACsCheckBox">
+     <property name="toolTip">
+      <string>When checked a new unique MAC address will assigned to all configured network cards.</string>
+     </property>
+     <property name="text">
+      <string>&amp;Reinitialize the MAC address of all network cards</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
