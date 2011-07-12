@@ -469,7 +469,8 @@ HRESULT Console::attachRawPciDevices(PVM pVM,
     ComPtr<IMachine> aMachine = machine();
 
     hrc = aMachine->COMGETTER(PciDeviceAssignments)(ComSafeArrayAsOutParam(assignments));
-    if (hrc != S_OK)
+    if (   hrc != S_OK
+        || assignments.size() < 1)
         return hrc;
 
     /*
