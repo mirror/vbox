@@ -202,6 +202,7 @@ public:
                                     QWidget *parent = 0);
 
     bool confirmedSettingsReloading(QWidget *pParent);
+    void warnAboutStateChange(QWidget *pParent);
 
     void cannotStartMachine (const CConsole &console);
     void cannotStartMachine (const CProgress &progress);

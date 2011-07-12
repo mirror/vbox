@@ -741,6 +741,20 @@ bool VBoxProblemReporter::confirmedSettingsReloading(QWidget *pParent)
     return rc == QIMessageBox::Yes;
 }
 
+void VBoxProblemReporter::warnAboutStateChange(QWidget *pParent)
+{
+    if (isAlreadyShown("warnAboutStateChange"))
+        return;
+    setShownStatus("warnAboutStateChange");
+
+    message(pParent ? pParent : mainWindowShown(), Warning,
+            tr("The state of the virtual machine you currently edit has changed. "
+               "Only settings which are editable at runtime are saved when you press OK. "
+               "All changes to other settings will be lost."));
+
+    clearShownStatus("warnAboutStateChange");
+}
+
 void VBoxProblemReporter::cannotStartMachine (const CConsole &console)
 {
     /* preserve the current error info before calling the object again */
