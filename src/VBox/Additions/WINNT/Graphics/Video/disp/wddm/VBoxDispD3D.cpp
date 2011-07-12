@@ -1024,9 +1024,10 @@ static HRESULT vboxWddmDalNotifyChange(PVBOXWDDMDISP_DEVICE pDevice)
 
 static BOOLEAN vboxWddmDalCheckAdd(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pAlloc, BOOLEAN fWrite)
 {
-    if (!pAlloc->hSharedHandle) /* only shared resources matter */
+    if (!pAlloc->hSharedHandle /* only shared resources matter */
+            || !fWrite) /* only write op matter */
     {
-        Assert(!pAlloc->DirtyAllocListEntry.pNext);
+        Assert(!pAlloc->DirtyAllocListEntry.pNext || (!fWrite && pAlloc->hSharedHandle && pAlloc->fDirtyWrite));
         return FALSE;
     }
 
@@ -2165,8 +2166,12 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
 #ifdef VBOXDISP_WITH_WINE_BB_WORKAROUND
     if (pSwapchain->cRTs == 1)
     {
+        IDirect3DSurface9 *pD3D9Bb;
+        /* only use direct bb if wine is able to handle quick blits bewteen surfaces in one swapchain,
+         * this is FALSE by now :( */
+# ifdef VBOX_WINE_WITH_FAST_INTERSWAPCHAIN_BLT
         /* here we sync the front-buffer with a backbuffer data*/
-        IDirect3DSurface9 *pD3D9Bb = (IDirect3DSurface9*)vboxWddmSwapchainGetBb(pSwapchain)->pAlloc->pD3DIf;
+        pD3D9Bb = (IDirect3DSurface9*)vboxWddmSwapchainGetBb(pSwapchain)->pAlloc->pD3DIf;
         Assert(pD3D9Bb);
         pD3D9Bb->AddRef();
         /* we use backbuffer as a rt frontbuffer copy, so release the old one and assign the current bb */
@@ -2175,11 +2180,21 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
             pSwapchain->pRenderTargetFbCopy->Release();
         }
         pSwapchain->pRenderTargetFbCopy = pD3D9Bb;
+# else
+        pD3D9Bb = pSwapchain->pRenderTargetFbCopy;
+# endif
         HRESULT tmpHr = pSwapchain->pSwapChainIf->GetFrontBufferData(pD3D9Bb);
         if (SUCCEEDED(tmpHr))
         {
             VBOXVDBG_DUMP_SYNC_RT(pD3D9Bb);
             pSwapchain->bRTFbCopyUpToDate = TRUE;
+# ifndef VBOX_WINE_WITH_FAST_INTERSWAPCHAIN_BLT
+            tmpHr = pDevice->pDevice9If->StretchRect(pD3D9Bb, NULL, (IDirect3DSurface9*)vboxWddmSwapchainGetBb(pSwapchain)->pAlloc->pD3DIf, NULL, D3DTEXF_NONE);
+            if (FAILED(tmpHr))
+            {
+                WARN(("StretchRect failed, hr (0x%x)", tmpHr));
+            }
+# endif
         }
         else
         {
@@ -2404,7 +2419,9 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
         pSwapchain->pSwapChainIf = pNewIf;
 #ifndef VBOXWDDM_WITH_VISIBLE_FB
         pSwapchain->bRTFbCopyUpToDate = FALSE;
-# ifdef VBOXDISP_WITH_WINE_BB_WORKAROUND
+# if defined(VBOXDISP_WITH_WINE_BB_WORKAROUND) && defined(VBOX_WINE_WITH_FAST_INTERSWAPCHAIN_BLT)
+        /* if wine is able to do fast fb->bb blits, we will use backbuffer directly,
+         * this is NOT possible currently */
         if (pSwapchain->cRTs == 1)
         {
             /* we will assign it to wine backbuffer on a swapchain synch */
@@ -2572,6 +2589,7 @@ static HRESULT vboxWddmSwapchainSurfGet(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
             if (FAILED(hr))
             {
                 WARN(("GetFrontBufferData failed, hr (0x%x)", hr));
+                pSurf->Release();
                 return hr;
             }
             pSwapchain->bRTFbCopyUpToDate = TRUE;
@@ -6793,8 +6811,9 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
                     PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[0];
                     HANDLE hSharedHandle = pAllocation->hSharedHandle;
                     Assert(pAllocation->hSharedHandle);
+
 #ifdef DEBUG_misha
-                    vboxVDbgPrintR(("\n\n********\nShared Resource (0x%x), (0n%d) openned\n\n\n", hSharedHandle, hSharedHandle));
+                    vboxVDbgPrint(("\n\n********\nShared Resource (0x%x), (0n%d) openned\n\n\n", hSharedHandle, hSharedHandle));
 #endif
 
                     if (!pRc->RcDesc.fFlags.CubeMap)
