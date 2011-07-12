@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -27,7 +27,8 @@ ifndef VBOX_ONLY_SDK
 	tstAPI \
 	$(if $(VBOX_OSE),,tstOVF) \
 	$(if $(VBOX_WITH_XPCOM),tstVBoxAPILinux,tstVBoxAPIWin) \
-	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,)
+	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
+	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,)
   PROGRAMS.linux += \
 	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
  endif # !VBOX_WITH_TESTCASES
@@ -142,7 +143,11 @@ tstCollector_LDFLAGS.darwin  += -lproc
 tstCollector_LDFLAGS.solaris += -lkstat
 tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 
-
+#
+# tstGuestCtrlParseBuffer
+#
+tstGuestCtrlParseBuffer_TEMPLATE = VBOXR3TSTNPEXE
+tstGuestCtrlParseBuffer_SOURCES = tstGuestCtrlParseBuffer.cpp
 
 #
 # tstUSBProxyLinux
