@@ -204,6 +204,7 @@ public:
     ComObjPtr<Medium> getBase(uint32_t *aLevel = NULL);
 
     bool isReadOnly();
+    void updateId(const Guid &id);
 
     HRESULT saveSettings(settings::Medium &data,
                          const Utf8Str &strHardDiskFolder);
