@@ -59,7 +59,7 @@
         <para>Experimental support for SATA hotplug added. Currently only supported
           for hard disks and only with VBoxManage.</para>
       </listitem>
-      
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
@@ -163,6 +163,11 @@
       <listitem>
         <para>Storage: fixed detection code to handle empty files for VDI and
           VMDK format</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed access to CD/DVD images beyond 4GB when using the SATA
+          controller (bug #8592)</para>
       </listitem>
 
       <listitem>
@@ -417,7 +422,7 @@
         <para>NAT: built-in services use the correct Ethernet addresses in
           Ethernet header and in ARP requests</para>
       </listitem>
-      
+
       <listitem>
         <para>Host-only networking: fixed adapter reference counting</para>
       </listitem>
@@ -475,7 +480,7 @@
       </listitem>
 
       <listitem>
-        <para>Linux Additions: check whether gcc and make are installed before  
+        <para>Linux Additions: check whether gcc and make are installed before
           building kernel modules (bug #8795)</para>
       </listitem>
 
