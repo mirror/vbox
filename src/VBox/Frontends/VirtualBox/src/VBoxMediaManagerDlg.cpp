@@ -626,7 +626,7 @@ void VBoxMediaManagerDlg::retranslateUi()
     mNewAction->setStatusTip (tr ("Create a new virtual hard disk"));
     mAddAction->setStatusTip (tr ("Add an existing medium"));
     mCopyAction->setStatusTip (tr ("Copy an existing medium"));
-    mModifyAction->setStatusTip (tr ("Modify an existing medium attributes"));
+    mModifyAction->setStatusTip (tr ("Modify the attributes of the selected medium"));
     mRemoveAction->setStatusTip (tr ("Remove the selected medium"));
     mReleaseAction->setStatusTip (tr ("Release the selected medium by detaching it from the machines"));
     mRefreshAction->setStatusTip (tr ("Refresh the media list"));
