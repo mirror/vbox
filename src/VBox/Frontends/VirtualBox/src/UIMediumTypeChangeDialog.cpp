@@ -62,7 +62,7 @@ UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QStri
 
     /* Create button-box: */
     m_pButtonBox = new QIDialogButtonBox(this);
-    m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok|QDialogButtonBox::Cancel);
+    m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
     connect(m_pButtonBox->button(QDialogButtonBox::Ok), SIGNAL(clicked()), this, SLOT(sltAccept()));
     connect(m_pButtonBox->button(QDialogButtonBox::Cancel), SIGNAL(clicked()), this, SLOT(sltReject()));
@@ -112,9 +112,11 @@ void UIMediumTypeChangeDialog::retranslateUi()
 
     /* Translate description: */
     m_pLabel->setText(tr("<p>You are about to change the medium type of the virtual disk located in %1.</p>"
-                         "<p>Please choose one of the following medium types and press <b>OK</b> button "
-                         "if you really want to proceed or <b>Cancel</b> button otherwise.</p>")
-                      .arg(m_medium.GetLocation()));
+                         "<p>Please choose one of the following medium types and press <b>%2</b> "
+                         "to proceed or <b>%3</b> otherwise.</p>")
+                      .arg(m_medium.GetLocation())
+                      .arg(VBoxGlobal::removeAccelMark(m_pButtonBox->button(QDialogButtonBox::Ok)->text()))
+                      .arg(VBoxGlobal::removeAccelMark(m_pButtonBox->button(QDialogButtonBox::Cancel)->text())));
 
     /* Translate group-box: */
     m_pGroupBox->setTitle(tr("Choose medium type:"));
