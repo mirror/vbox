@@ -1494,8 +1494,16 @@ void VBoxMediaManagerDlg::processDoubleClick (QTreeWidgetItem * /* aItem */, int
 {
     QTreeWidget *tree = currentTreeWidget();
 
-    if (mDoSelect && selectedItem (tree) && mButtonBox->button (QDialogButtonBox::Ok)->isEnabled())
-        accept();
+    if (mDoSelect)
+    {
+        if (selectedItem (tree) && mButtonBox->button (QDialogButtonBox::Ok)->isEnabled())
+            accept();
+    }
+    else
+    {
+        if (currentTreeWidgetType() == VBoxDefs::MediumType_HardDisk)
+            doModifyMedium();
+    }
 }
 
 void VBoxMediaManagerDlg::showContextMenu (const QPoint &aPos)
