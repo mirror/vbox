@@ -700,6 +700,12 @@ void VBoxSelectorWnd::vmSettings(const QString &strCategoryRef /* = QString::nul
                                  const QString &strControlRef /* = QString::null */,
                                  const QString &strMachineId /* = QString::null */)
 {
+    /* Check that we do NOT handling that already: */
+    if (mVmConfigAction->data().toBool())
+        return;
+    /* Remember that we handling that already: */
+    mVmConfigAction->setData(true);
+
     /* Process href from VM details / description: */
     if (!strCategoryRef.isEmpty() && strCategoryRef[0] != '#')
     {
@@ -731,6 +737,9 @@ void VBoxSelectorWnd::vmSettings(const QString &strCategoryRef /* = QString::nul
     /* Create and execute corresponding VM settings dialog: */
     UISettingsDialogMachine dlg(this, pItem->id(), strCategory, strControl);
     dlg.execute();
+
+    /* Remember that we do NOT handling that already: */
+    mVmConfigAction->setData(false);
 }
 
 void VBoxSelectorWnd::vmClone(const QString &aUuid /* = QString::null */)
