@@ -3642,6 +3642,15 @@ bool Medium::isReadOnly()
 }
 
 /**
+ * Internal method to return the medium's size. Must have caller + locking!
+ * @return
+ */
+void Medium::updateId(const Guid &id)
+{
+    unconst(m->id) = id;
+}
+
+/**
  * Saves medium data by appending a new child node to the given
  * parent XML settings node.
  *

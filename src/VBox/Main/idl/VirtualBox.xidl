@@ -3599,7 +3599,7 @@
 
   <enum
     name="CloneOptions" extends="$unknown"
-    uuid="1be61ee1-c0ea-4942-b733-7496f27d4f28"
+    uuid="22243f8e-96ab-497c-8cf0-f40a566c630b"
     >
 
     <desc>
@@ -3614,6 +3614,9 @@
     </const>
     <const name="KeepNATMACs"        value="3">
       <desc>Don't generate new MAC addresses of the attached network adapters when they are using NAT.</desc>
+    </const>
+    <const name="KeepDiskNames"      value="4">
+      <desc>Don't change the disk names.</desc>
     </const>
 
   </enum>

@@ -308,8 +308,10 @@ static int parseCloneOptions(const char *psz, com::SafeArray<CloneOptions_T> *op
                 options->push_back(CloneOptions_KeepAllMACs);
             else if (!RTStrNICmp(psz, "KeepNATMACs", len))
                 options->push_back(CloneOptions_KeepNATMACs);
+            else if (!RTStrNICmp(psz, "KeepDiskNames", len))
+                options->push_back(CloneOptions_KeepDiskNames);
 //            else if (!RTStrNICmp(psz, "Link", len))
-//                *options.push_back(CloneOptions_Link)
+//                options->push_back(CloneOptions_Link)
             else
                 rc = VERR_PARSE_ERROR;
         }

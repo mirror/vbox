@@ -1117,13 +1117,17 @@ Statistics update:  disabled
            </para>
        </listitem>
        <listitem>
-           <para><computeroutput>--options keepallmacs|keepnatmacs</computeroutput>: 
-           With this option you define how the MAC addresses of every virtual
+           <para><computeroutput>--options keepallmacs|keepnatmacs|keepdisknames</computeroutput>: 
+           Allows additional fine tuning of the clone operation. The first two
+           options allow to define how the MAC addresses of every virtual
            network card should be handled. They can either be reinitialized
            (the default), leaved unchanged
            (<computeroutput>keepallmacs</computeroutput>) or leaved unchanged
-           when the network type is NAT (<computeroutput>keepnatmacs</computeroutput>).
-           </para>
+           when the network type is NAT
+           (<computeroutput>keepnatmacs</computeroutput>). If you add
+           <computeroutput>keepdisknames</computeroutput> all new disk images
+           are called like the original once, otherwise they are
+           renamed.</para>
        </listitem>
        <listitem>
            <para><computeroutput>--name &lt;name&gt;</computeroutput>: Select a

@@ -463,10 +463,6 @@ HRESULT MachineCloneVM::run()
 
     /*
      * Todo:
-     * - Snapshot diffs (can) have the uuid as name. After cloning this isn't
-     *   right anymore. Is it worth to change to the new uuid? Or should the
-     *   cloned disks called exactly as the original one or should all new disks
-     *   get a new name with the new VM name in it.
      * - What about log files?
      */
 
@@ -540,6 +536,9 @@ HRESULT MachineCloneVM::run()
         /* The absolute name of the snapshot folder. */
         strTrgSnapshotFolder = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, trgMCF.machineUserData.strSnapshotFolder.c_str());
 
+        /* Should we rename the disk names. */
+        bool fKeepDiskNames = d->options.contains(CloneOptions_KeepDiskNames);
+
         /* We need to create a map with the already created medias. This is
          * necessary, cause different snapshots could have the same
          * parents/parent chain. If a medium is in this map already, it isn't
@@ -547,6 +546,7 @@ HRESULT MachineCloneVM::run()
         typedef std::map<Utf8Str, ComObjPtr<Medium> > TStrMediumMap;
         typedef std::pair<Utf8Str, ComObjPtr<Medium> > TStrMediumPair;
         TStrMediumMap map;
+        size_t cDisks = 0;
         for (size_t i = 0; i < d->llMedias.size(); ++i)
         {
             const MEDIUMTASKCHAIN &mtc = d->llMedias.at(i);
@@ -595,18 +595,41 @@ HRESULT MachineCloneVM::run()
                         if (FAILED(rc)) throw rc;
                     }
 
+                    /* If the old disk name was in {uuid} format we also want
+                     * the new name in this format, but with the updated id of
+                     * course. For all other disks we rename them with this
+                     * template: "new name-disk1.vdi". */
+                    Guid newId;
+                    newId.create();
+                    Utf8Str strNewName(bstrSrcName);
+                    if (!fKeepDiskNames)
+                    {
+                        strNewName = Utf8StrFmt("%s-disk%d%s", trgMCF.machineUserData.strName.c_str(), ++cDisks, RTPathExt(Utf8Str(bstrSrcName).c_str()));
+                        Utf8Str strSrcTest = Utf8Str(bstrSrcName).stripExt();
+                        if (strSrcTest.startsWith("{") &&
+                            strSrcTest.endsWith("}"))
+                        {
+                            strSrcTest = strSrcTest.substr(1, strSrcTest.length() - 2);
+                            if (isValidGuid(strSrcTest))
+                            {
+                                strNewName = Utf8StrFmt("%s%s", newId.toStringCurly().c_str(), RTPathExt(strNewName.c_str()));
+                                --cDisks;
+                            }
+                        }
+                    }
+
                     /* Check if this medium comes from the snapshot folder, if
                      * so, put it there in the cloned machine as well.
                      * Otherwise it goes to the machine folder. */
-                    Utf8Str strFile = Utf8StrFmt("%s%c%lS", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
                     Bstr bstrSrcPath;
+                    Utf8Str strFile = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
                     rc = pMedium->COMGETTER(Location)(bstrSrcPath.asOutParam());
                     if (FAILED(rc)) throw rc;
                     if (   !bstrSrcPath.isEmpty()
                         &&  RTPathStartsWith(Utf8Str(bstrSrcPath).c_str(), Utf8Str(bstrSrcSnapshotFolder).c_str()))
-                        strFile = Utf8StrFmt("%s%c%lS", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
+                        strFile = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
                     else
-                        strFile = Utf8StrFmt("%s%c%lS", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, bstrSrcName.raw());
+                        strFile = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
 
                     /* Start creating the clone. */
                     ComObjPtr<Medium> pTarget;
@@ -619,6 +642,9 @@ HRESULT MachineCloneVM::run()
                                        Guid::Empty,  /* empty media registry */
                                        NULL          /* llRegistriesThatNeedSaving */);
                     if (FAILED(rc)) throw rc;
+
+                    /* Update the new uuid. */
+                    pTarget->updateId(newId);
 
                     srcLock.release();
                     /* Do the disk cloning. */
