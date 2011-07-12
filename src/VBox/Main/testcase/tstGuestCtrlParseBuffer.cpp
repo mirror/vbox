@@ -19,14 +19,11 @@
 
 #include <map>
 
-#include <VBox/com/string.h>
-
 #include <iprt/string.h>
+#include <iprt/cpp/ministring.h>
 
 #include <iprt/test.h>
 #include <iprt/stream.h>
-
-using namespace com;
 
 /** @todo Use original source of GuestCtrlImpl.cpp! */
 
@@ -34,11 +31,15 @@ typedef struct VBOXGUESTCTRL_BUFFER_VALUE
 {
     char *pszValue;
 } VBOXGUESTCTRL_BUFFER_VALUE, *PVBOXGUESTCTRL_BUFFER_VALUE;
-typedef std::map< Utf8Str, VBOXGUESTCTRL_BUFFER_VALUE > GuestBufferMap;
-typedef std::map< Utf8Str, VBOXGUESTCTRL_BUFFER_VALUE >::iterator GuestBufferMapIter;
-typedef std::map< Utf8Str, VBOXGUESTCTRL_BUFFER_VALUE >::const_iterator GuestBufferMapIterConst;
+typedef std::map< RTCString, VBOXGUESTCTRL_BUFFER_VALUE > GuestBufferMap;
+typedef std::map< RTCString, VBOXGUESTCTRL_BUFFER_VALUE >::iterator GuestBufferMapIter;
+typedef std::map< RTCString, VBOXGUESTCTRL_BUFFER_VALUE >::const_iterator GuestBufferMapIterConst;
 
 char pszUnterm1[] = { 'a', 's', 'd', 'f' };
+
+#ifndef RT_OS_WINDOWS
+# define BYTE uint8_t
+#endif
 
 static struct
 {
@@ -119,7 +120,7 @@ int outputBufferParse(const BYTE *pbData, size_t cbData, uint32_t *puOffset, Gue
             }
             memcpy(pszKey, pszStart, uKeyLen);
 
-            mapBuf[Utf8Str(pszKey)].pszValue = NULL;
+            mapBuf[RTCString(pszKey)].pszValue = NULL;
 
             if (uValLen)
             {
@@ -132,7 +133,7 @@ int outputBufferParse(const BYTE *pbData, size_t cbData, uint32_t *puOffset, Gue
                 }
                 memcpy(pszVal, pszSep + 1, uValLen);
 
-                mapBuf[Utf8Str(pszKey)].pszValue = pszVal;
+                mapBuf[RTCString(pszKey)].pszValue = pszVal;
             }
 
             RTMemFree(pszKey);
