@@ -378,21 +378,20 @@ $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX
 # do save us from having to update the makefile whenever something new is added
 # to the module source directories.
 #
-local arch_deps = \
-		$(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/, $(VBOX_LNX_ARCH_FILES)) \
-		$(VBOX_LNX_INST_DEP_ON_MAKEFILE) \
-		$(VBOX_VERSION_STAMP) \
-		$(wildcard $(PATH_BIN)/src/*) \
-		$(wildcard $(PATH_BIN)/src/*/*) \
-		$(wildcard $(PATH_BIN)/src/*/*/*) \
-		$(wildcard $(PATH_BIN)/src/*/*/*/*)
+VBoxLnxInstArchDeps := \
+	$(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/, $(VBOX_LNX_ARCH_FILES)) \
+	$(VBOX_LNX_INST_DEP_ON_MAKEFILE) \
+	$(VBOX_VERSION_STAMP) \
+	$(wildcard $(PATH_BIN)/src/*) \
+	$(wildcard $(PATH_BIN)/src/*/*) \
+	$(wildcard $(PATH_BIN)/src/*/*/*) \
+	$(wildcard $(PATH_BIN)/src/*/*/*/*)
 
 
 #
 # .tar.bz2 for converting into .run
 #
-$(VBOX_LNX_INST_STAGE_DIR)/VirtualBox.tar.bz2: \
-		$(arch_deps)
+$(VBOX_LNX_INST_STAGE_DIR)/VirtualBox.tar.bz2: $(VBoxLnxInstArchDeps)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
@@ -407,8 +406,7 @@ endif
 #
 # .tar.bz2 for distribution with the files under VirtualBox-<ver>/.
 #
-$(PATH_BIN)/VirtualBox.tar.bz2: \
-		$(arch_deps)
+$(PATH_BIN)/VirtualBox.tar.bz2: $(VBoxLnxInstArchDeps)
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-$(VBOX_VERSION_STRING) $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(LN_SYMLINK) $(VBOX_LNX_INST_OUT_DIR)/archive/ $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-$(VBOX_VERSION_STRING)
