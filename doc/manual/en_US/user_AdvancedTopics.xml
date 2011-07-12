@@ -1362,6 +1362,36 @@ VBoxManage setextradata "VM name"
     </sect2>
   </sect1>
 
+  <sect1 id="vboxbowsolaris11">
+    <title>Installing alternate bridged networking driver on Solaris 11
+    hosts</title>
+
+    <para>Starting with VirtualBox 4.1, VirtualBox ships a new network filter
+    driver that utilizes Solaris 11's Crossbow functionality. By default, this
+    new driver is installed only for Solaris 11 hosts (builds 159 and
+    above).</para>
+
+    <para>To force installation of the STREAMS based network filter driver:
+    Before installing VirtualBox, run as root:</para>
+
+    <screen>touch /etc/vboxinst_vboxflt</screen>
+
+    <para>To force installation of the Crossbow based network filter driver 
+    (will only work for Solaris 11 hosts builds 159 and above): Before
+    installing VirtualBox, run as root:</para>
+
+    <screen>touch /etc/vboxinst_vboxbow</screen>
+
+    <para>If you have already installed VirtualBox and want to check which
+    driver is currently being used, run:</para>
+
+    <screen>modinfo | grep vbox</screen>
+
+    <para>If the output contains "vboxbow", it means VirtualBox is using
+    the Crossbow network filter driver, while "vboxflt" indicates that the
+    older STREAMS driver is being used.</para>
+  </sect1>
+
   <sect1 id="addhostonlysolaris">
     <title>Configuring multiple host-only network interfaces on Solaris
     hosts</title>
