@@ -52,7 +52,7 @@ UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QStri
     /* Create description label: */
     m_pLabel = new QILabel(this);
     m_pLabel->setWordWrap(true);
-    m_pLabel->useSizeHintForWidth(400);
+    m_pLabel->useSizeHintForWidth(450);
     m_pLabel->updateGeometry();
     pMainLayout->addWidget(m_pLabel);
 
@@ -108,10 +108,11 @@ void UIMediumTypeChangeDialog::sltReject()
 void UIMediumTypeChangeDialog::retranslateUi()
 {
     /* Translate window title: */
-    setWindowTitle(tr("Change medium type"));
+    setWindowTitle(tr("Modify medium attributes"));
 
     /* Translate description: */
-    m_pLabel->setText(tr("<p>You are about to change the medium type of the virtual disk located in %1.</p>"
+    m_pLabel->setText(tr("<p>You are about to change the attributes of the virtual disk located in <b>%1</b>.</p>"
+                         "<p><i>Note: For now only the 'medium type' attribute is changeable.</i></p>"
                          "<p>Please choose one of the following medium types and press <b>%2</b> "
                          "to proceed or <b>%3</b> otherwise.</p>")
                       .arg(m_medium.GetLocation())
