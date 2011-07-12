@@ -598,9 +598,18 @@ void VBoxSelectorWnd::fileExportAppliance()
 
 void VBoxSelectorWnd::fileSettings()
 {
+    /* Check that we do NOT handling that already: */
+    if (mFileSettingsAction->data().toBool())
+        return;
+    /* Remember that we handling that already: */
+    mFileSettingsAction->setData(true);
+
     /* Create and execute global settings dialog: */
     UISettingsDialogGlobal dlg(this);
     dlg.execute();
+
+    /* Remember that we do NOT handling that already: */
+    mFileSettingsAction->setData(false);
 }
 
 void VBoxSelectorWnd::fileExit()
