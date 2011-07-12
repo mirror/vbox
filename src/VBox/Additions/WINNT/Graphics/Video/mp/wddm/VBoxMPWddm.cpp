@@ -3420,42 +3420,51 @@ DxgkDdiSetPointerPosition(
     PVBOXWDDM_POINTER_INFO pPointerInfo = &pDevExt->aSources[pSetPointerPosition->VidPnSourceId].PointerInfo;
     PVBOXWDDM_GLOBAL_POINTER_INFO pGlobalPointerInfo = &pDevExt->PointerInfo;
     PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = &pPointerInfo->Attributes.data;
-    BOOLEAN bNotifyVisibility;
+    BOOLEAN fScreenVisState = !!(pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE);
+    BOOLEAN fVisStateChanged = FALSE;
+    BOOLEAN fScreenChanged = pGlobalPointerInfo->iLastReportedScreen != pSetPointerPosition->VidPnSourceId;
+
     if (pSetPointerPosition->Flags.Visible)
     {
-        bNotifyVisibility = (pGlobalPointerInfo->cVisible == 0);
-        if (!(pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE))
+        pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_VISIBLE;
+        if (!fScreenVisState)
         {
+            fVisStateChanged = !!pGlobalPointerInfo->cVisible;
             ++pGlobalPointerInfo->cVisible;
-            pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_VISIBLE;
         }
     }
     else
     {
-        if (!!(pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE))
+        pPointerAttributes->Enable &= ~VBOX_MOUSE_POINTER_VISIBLE;
+        if (fScreenVisState)
         {
             --pGlobalPointerInfo->cVisible;
-            Assert(pGlobalPointerInfo->cVisible < UINT32_MAX/2);
-            pPointerAttributes->Enable &= ~VBOX_MOUSE_POINTER_VISIBLE;
-            bNotifyVisibility = (pGlobalPointerInfo->cVisible == 0);
+            fVisStateChanged = !!pGlobalPointerInfo->cVisible;
         }
     }
 
-    pPointerAttributes->Column = pSetPointerPosition->X;
-    pPointerAttributes->Row = pSetPointerPosition->Y;
+    pGlobalPointerInfo->iLastReportedScreen = pSetPointerPosition->VidPnSourceId;
 
-    if (bNotifyVisibility && VBoxQueryHostWantsAbsolute())
+    if ((fVisStateChanged || fScreenChanged) && VBoxQueryHostWantsAbsolute())
     {
-        // tell the host to use the guest's pointer
-        VIDEO_POINTER_ATTRIBUTES PointerAttributes;
+        if (fScreenChanged)
+        {
+            BOOLEAN bResult = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE);
+            Assert(bResult);
+        }
+        else
+        {
+            // tell the host to use the guest's pointer
+            VIDEO_POINTER_ATTRIBUTES PointerAttributes;
 
-        /* Visible and No Shape means Show the pointer.
-         * It is enough to init only this field.
-         */
-        PointerAttributes.Enable = pSetPointerPosition->Flags.Visible ? VBOX_MOUSE_POINTER_VISIBLE : 0;
+            /* Visible and No Shape means Show the pointer.
+             * It is enough to init only this field.
+             */
+            PointerAttributes.Enable = pSetPointerPosition->Flags.Visible ? VBOX_MOUSE_POINTER_VISIBLE : 0;
 
-        BOOLEAN bResult = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &PointerAttributes, sizeof (PointerAttributes));
-        Assert(bResult);
+            BOOLEAN bResult = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &PointerAttributes, sizeof (PointerAttributes));
+            Assert(bResult);
+        }
     }
 
 //    LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
@@ -3484,6 +3493,7 @@ DxgkDdiSetPointerShape(
          *  need to maintain the pre-allocated HGSMI buffer and convert the data directly to it */
         if (vboxVddmPointerShapeToAttributes(pSetPointerShape, pPointerInfo))
         {
+            pDevExt->PointerInfo.iLastReportedScreen = pSetPointerShape->VidPnSourceId;
             if (VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
                 Status = STATUS_SUCCESS;
             else

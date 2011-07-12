@@ -69,6 +69,7 @@ typedef struct _VBOXWDDM_POINTER_INFO
 
 typedef struct _VBOXWDDM_GLOBAL_POINTER_INFO
 {
+    uint32_t iLastReportedScreen;
     uint32_t cVisible;
 } VBOXWDDM_GLOBAL_POINTER_INFO, *PVBOXWDDM_GLOBAL_POINTER_INFO;
 
