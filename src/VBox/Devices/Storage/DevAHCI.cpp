@@ -4141,13 +4141,13 @@ static int atapiReadSectors(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTas
     switch (cbSector)
     {
         case 2048:
-            pAhciPortTaskState->uOffset = iATAPILBA * cbSector;
+            pAhciPortTaskState->uOffset = (uint64_t)iATAPILBA * cbSector;
             pAhciPortTaskState->cbTransfer = cSectors * cbSector;
             break;
         case 2352:
         {
             pAhciPortTaskState->pfnPostProcess = atapiReadSectors2352PostProcess;
-            pAhciPortTaskState->uOffset = iATAPILBA * 2048;
+            pAhciPortTaskState->uOffset = (uint64_t)iATAPILBA * 2048;
             pAhciPortTaskState->cbTransfer = cSectors * 2048;
             break;
         }
