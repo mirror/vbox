@@ -621,6 +621,14 @@ int handleAdoptState(HandlerArg *a)
                                            machine.asOutParam()));
     if (machine)
     {
+        char szStateFileAbs[RTPATH_MAX] = "";
+        int vrc = RTPathAbs(a->argv[1], szStateFileAbs, sizeof(szStateFileAbs));
+        if (RT_FAILURE(vrc))
+        {
+            RTMsgError("Cannot convert filename \"%s\" to absolute path", a->argv[0]);
+            return 1;
+        }
+
         do
         {
             /* we have to open a session for this task */
@@ -629,7 +637,7 @@ int handleAdoptState(HandlerArg *a)
             {
                 ComPtr<IConsole> console;
                 CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-                CHECK_ERROR_BREAK(console, AdoptSavedState(Bstr(a->argv[1]).raw()));
+                CHECK_ERROR_BREAK(console, AdoptSavedState(Bstr(szStateFileAbs).raw()));
             } while (0);
             CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);
