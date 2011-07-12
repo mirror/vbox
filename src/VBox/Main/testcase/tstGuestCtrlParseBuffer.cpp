@@ -37,7 +37,7 @@ typedef std::map< RTCString, VBOXGUESTCTRL_BUFFER_VALUE >::const_iterator GuestB
 
 char pszUnterm1[] = { 'a', 's', 'd', 'f' };
 
-#ifndef RT_OS_WINDOWS
+#ifndef BYTE
 # define BYTE uint8_t
 #endif
 
