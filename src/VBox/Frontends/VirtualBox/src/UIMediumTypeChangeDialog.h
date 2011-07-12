@@ -19,10 +19,8 @@
 #ifndef __UIMediumTypeChangeDialog_h__
 #define __UIMediumTypeChangeDialog_h__
 
-/* Global includes: */
-#include <QDialog>
-
 /* Local includes: */
+#include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
@@ -34,7 +32,7 @@ class QRadioButton;
 class QIDialogButtonBox;
 
 /* Dialog providing user with possibility to change medium type: */
-class UIMediumTypeChangeDialog : public QIWithRetranslateUI<QDialog>
+class UIMediumTypeChangeDialog : public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 

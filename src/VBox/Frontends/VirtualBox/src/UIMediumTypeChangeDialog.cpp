@@ -32,15 +32,19 @@
 
 /* Constructor: */
 UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumId)
-    : QIWithRetranslateUI<QDialog>(pParent)
+    : QIWithRetranslateUI<QIDialog>(pParent)
 {
+#ifdef Q_WS_MAC
+    setWindowFlags(Qt::Sheet);
+#else /* Q_WS_MAC */
+    /* Enable size-grip: */
+    setSizeGripEnabled(true);
+#endif /* Q_WS_MAC */
+
     /* Search for corresponding medium: */
     m_medium = vboxGlobal().findMedium(strMediumId).medium();
     m_oldMediumType = m_medium.GetType();
     m_newMediumType = m_oldMediumType;
-
-    /* Enable size-grip: */
-    setSizeGripEnabled(true);
 
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -90,14 +94,14 @@ void UIMediumTypeChangeDialog::sltAccept()
         return;
     }
     /* Accept dialog with parent class method: */
-    QIWithRetranslateUI<QDialog>::accept();
+    QIWithRetranslateUI<QIDialog>::accept();
 }
 
 /* Reject finisher: */
 void UIMediumTypeChangeDialog::sltReject()
 {
     /* Reject dialog with parent class method: */
-    QIWithRetranslateUI<QDialog>::reject();
+    QIWithRetranslateUI<QIDialog>::reject();
 }
 
 /* Translation stuff: */
