@@ -65,6 +65,12 @@
           for hard disks and only with VBoxManage.</para>
       </listitem>
 
+      <listitem>
+        <para>Solaris hosts: New Crossbow based bridged networking driver for Solaris 11
+        hosts (build 159 and above).</para>
+      </listitem>
+
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
