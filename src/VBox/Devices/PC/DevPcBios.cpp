@@ -156,7 +156,7 @@ typedef struct DEVPCBIOS
     /** The system BIOS ROM data. */
     uint8_t        *pu8PcBios;
     /** The size of the system BIOS ROM. */
-    uint64_t        cbPcBios;
+    uint32_t        cbPcBios;
     /** The name of the BIOS ROM file. */
     char           *pszPcBiosFile;
     /** The LAN boot ROM data. */
@@ -1164,84 +1164,68 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         pThis->pszPcBiosFile = NULL;
     }
 
-    const uint8_t *pu8PcBiosBinary = NULL;
-    uint64_t cbPcBiosBinary;
-    /*
-     * Determine the system BIOS ROM size, open specified ROM file in the process.
-     */
-    RTFILE FilePcBios = NIL_RTFILE;
-    if (pThis->pszPcBiosFile)
-    {
-        rc = RTFileOpen(&FilePcBios, pThis->pszPcBiosFile,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTFileGetSize(FilePcBios, &pThis->cbPcBios);
-            if (RT_SUCCESS(rc))
-            {
-                /* The following checks should be in sync the AssertReleaseMsg's below. */
-                if (    RT_ALIGN(pThis->cbPcBios, _64K) != pThis->cbPcBios
-                    ||  pThis->cbPcBios > 32 * _64K
-                    ||  pThis->cbPcBios < _64K)
-                    rc = VERR_TOO_MUCH_DATA;
-            }
-        }
-        if (RT_FAILURE(rc))
-        {
-            /*
-             * In case of failure simply fall back to the built-in BIOS ROM.
-             */
-            Log(("pcbiosConstruct: Failed to open system BIOS ROM file '%s', rc=%Rrc!\n", pThis->pszPcBiosFile, rc));
-            RTFileClose(FilePcBios);
-            FilePcBios = NIL_RTFILE;
-            MMR3HeapFree(pThis->pszPcBiosFile);
-            pThis->pszPcBiosFile = NULL;
-        }
-    }
-
-    /*
-     * Attempt to get the system BIOS ROM data from file.
-     */
+    const uint8_t  *pu8PcBiosBinary;
+    uint32_t        cbPcBiosBinary;
     if (pThis->pszPcBiosFile)
     {
         /*
-         * Allocate buffer for the system BIOS ROM data.
+         * Load the BIOS ROM.
          */
-        pThis->pu8PcBios = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pThis->cbPcBios);
-        if (pThis->pu8PcBios)
+        RTFILE hFilePcBios;
+        rc = RTFileOpen(&hFilePcBios, pThis->pszPcBiosFile,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        if (RT_SUCCESS(rc))
         {
-            rc = RTFileRead(FilePcBios, pThis->pu8PcBios, pThis->cbPcBios, NULL);
-            if (RT_FAILURE(rc))
+            /* Figure the size and check restrictions. */
+            uint64_t cbPcBios;
+            rc = RTFileGetSize(hFilePcBios, &cbPcBios);
+            if (RT_SUCCESS(rc))
             {
-                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Rrc\n", pThis->cbPcBios, rc));
-                MMR3HeapFree(pThis->pu8PcBios);
-                pThis->pu8PcBios = NULL;
+                pThis->cbPcBios = (uint32_t)cbPcBios;
+                if (    RT_ALIGN(pThis->cbPcBios, _64K) == pThis->cbPcBios
+                    &&  pThis->cbPcBios == cbPcBios
+                    &&  pThis->cbPcBios <= 32 * _64K
+                    &&  pThis->cbPcBios >= _64K)
+                {
+                    pThis->pu8PcBios = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pThis->cbPcBios);
+                    if (pThis->pu8PcBios)
+                    {
+                        rc = RTFileRead(hFilePcBios, pThis->pu8PcBios, pThis->cbPcBios, NULL);
+                        if (RT_FAILURE(rc))
+                            rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                                     N_("Error reading the BIOS image ('%s)"), pThis->pszPcBiosFile);
+                    }
+                    else
+                        rc = PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
+                                                 N_("Failed to allocate %#x bytes for loading the BIOS image"),
+                                                 pThis->cbPcBios);
+                }
+                else
+                    rc = PDMDevHlpVMSetError(pDevIns, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                                             N_("Invalid system BIOS file size ('%s'): %#llx (%llu)"),
+                                             pThis->pszPcBiosFile, cbPcBios, cbPcBios);
             }
-            rc = VINF_SUCCESS;
+            else
+                rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Failed to query the system BIOS file size ('%s')"),
+                                         pThis->pszPcBiosFile);
+            RTFileClose(hFilePcBios);
         }
         else
-            rc = VERR_NO_MEMORY;
-    }
-    else
-        pThis->pu8PcBios = NULL;
+            rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Failed to open system BIOS file '%s'"), pThis->pszPcBiosFile);
+        if (RT_FAILURE(rc))
+            return rc;
 
-    /* cleanup */
-    if (FilePcBios != NIL_RTFILE)
-        RTFileClose(FilePcBios);
-
-    /* If we were unable to get the data from file for whatever reason, fall
-       back to the built-in ROM image. */
-    uint32_t fFlags = 0;
-    if (pThis->pu8PcBios == NULL)
-    {
-        pu8PcBiosBinary = g_abPcBiosBinary;
-        cbPcBiosBinary  = g_cbPcBiosBinary;
-        fFlags          = PGMPHYS_ROM_FLAGS_PERMANENT_BINARY;
-    }
-    else
-    {
         pu8PcBiosBinary = pThis->pu8PcBios;
         cbPcBiosBinary  = pThis->cbPcBios;
+        LogRel(("Using BIOS ROM '%s' with a size of %#x bytes\n", pThis->pszPcBiosFile, pThis->cbPcBios));
+    }
+    else
+    {
+        /*
+         * Use the embedded BIOS ROM image.
+         */
+        pu8PcBiosBinary = g_abPcBiosBinary;
+        cbPcBiosBinary  = g_cbPcBiosBinary;
     }
 
     /*
@@ -1256,11 +1240,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                      ("cbPcBiosBinary=%#x\n", cbPcBiosBinary));
     cb = RT_MIN(cbPcBiosBinary, 128 * _1K); /* Effectively either 64 or 128K. */
     rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &pu8PcBiosBinary[cbPcBiosBinary - cb], cb,
-                              fFlags, "PC BIOS - 0xfffff");
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "PC BIOS - 0xfffff");
     if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-(int32_t)cbPcBiosBinary, cbPcBiosBinary, pu8PcBiosBinary, cbPcBiosBinary,
-                              fFlags, "PC BIOS - 0xffffffff");
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "PC BIOS - 0xffffffff");
     if (RT_FAILURE(rc))
         return rc;
 
