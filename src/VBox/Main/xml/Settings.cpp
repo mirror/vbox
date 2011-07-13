@@ -327,7 +327,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
             else if (ulMajor > 1)
                 m->sv = SettingsVersion_Future;
 
-            LogRel(("Parsed settings version %d.%d to enum value %d\n", ulMajor, ulMinor, m->sv));
+            Log(("Parsed settings version %d.%d to enum value %d\n", ulMajor, ulMinor, m->sv));
         }
 
         if (m->sv == SettingsVersion_Null)
