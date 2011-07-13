@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxServiceToolBox - Internal (BusyBox-like) toolbox.
+ * VBoxServiceToolbox - Internal (BusyBox-like) toolbox.
  */
 
 /*
@@ -34,7 +34,7 @@
 #include <iprt/stream.h>
 
 #ifndef RT_OS_WINDOWS
-#include <sys/stat.h>
+# include <sys/stat.h> /* need umask */
 #endif
 
 #include <VBox/VBoxGuestLib.h>
@@ -43,6 +43,9 @@
 #include "VBoxServiceUtils.h"
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /** Options indices for "vbox_cat". */
 #define CAT_OPT_NO_CONTENT_INDEXED              1000
 /** Options indices for "vbox_ls". */
@@ -55,7 +58,7 @@ typedef enum VBOXSERVICETOOLBOXLSFLAG
     VBOXSERVICETOOLBOXLSFLAG_NONE =             0x0,
     VBOXSERVICETOOLBOXLSFLAG_RECURSIVE =        0x1,
     VBOXSERVICETOOLBOXLSFLAG_SYMLINKS =         0x2
-} VBOXSERVICETOOLBOXLSFLAG, *PVBOXSERVICETOOLBOXLSFLAG;
+} VBOXSERVICETOOLBOXLSFLAG;
 
 /** Flags for fs object output. */
 typedef enum VBOXSERVICETOOLBOXOUTPUTFLAG
@@ -63,14 +66,12 @@ typedef enum VBOXSERVICETOOLBOXOUTPUTFLAG
     VBOXSERVICETOOLBOXOUTPUTFLAG_NONE =         0x0,
     VBOXSERVICETOOLBOXOUTPUTFLAG_LONG =         0x1,
     VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE =    0x2
-} VBOXSERVICETOOLBOXOUTPUTFLAG, *PVBOXSERVICETOOLBOXOUTPUTFLAG;
+} VBOXSERVICETOOLBOXOUTPUTFLAG;
 
-/* Enable the following define to be able to debug/invoke the toolbox
- * commandos directly from command line, e.g. VBoxService vbox_cat [args] */
-#ifdef DEBUG
-//# define VBOXSERVICE_TOOLBOX_DEBUG
-#endif
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /**
  * An file/directory entry. Used to cache
  * file names/paths for later processing.
@@ -301,13 +302,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
 
     RTGetOptInit(&GetState, argc, argv,
                  s_aOptions, RT_ELEMENTS(s_aOptions),
-                 /* Index of argv to start with. */
-#ifdef VBOXSERVICE_TOOLBOX_DEBUG
-                 2,
-#else
-                 1,
-#endif
-                 0);
+                 1 /*iFirst*/, 0 /*fFlags*/);
 
     int rc = VINF_SUCCESS;
     bool fUsageOK = true;
@@ -450,20 +445,18 @@ static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
     AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
 
     RTFMODE fMode = pObjInfo->Attr.fMode;
-    char cFileType;
+    char chFileType;
     switch (fMode & RTFS_TYPE_MASK)
     {
-        case RTFS_TYPE_FIFO:        cFileType = 'f'; break;
-        case RTFS_TYPE_DEV_CHAR:    cFileType = 'c'; break;
-        case RTFS_TYPE_DIRECTORY:   cFileType = 'd'; break;
-        case RTFS_TYPE_DEV_BLOCK:   cFileType = 'b'; break;
-        case RTFS_TYPE_FILE:        cFileType = '-'; break;
-        case RTFS_TYPE_SYMLINK:     cFileType = 'l'; break;
-        case RTFS_TYPE_SOCKET:      cFileType = 's'; break;
-        case RTFS_TYPE_WHITEOUT:    cFileType = 'w'; break;
-        default:
-            cFileType = '?';
-            break;
+        case RTFS_TYPE_FIFO:        chFileType = 'f'; break;
+        case RTFS_TYPE_DEV_CHAR:    chFileType = 'c'; break;
+        case RTFS_TYPE_DIRECTORY:   chFileType = 'd'; break;
+        case RTFS_TYPE_DEV_BLOCK:   chFileType = 'b'; break;
+        case RTFS_TYPE_FILE:        chFileType = '-'; break;
+        case RTFS_TYPE_SYMLINK:     chFileType = 'l'; break;
+        case RTFS_TYPE_SOCKET:      chFileType = 's'; break;
+        case RTFS_TYPE_WHITEOUT:    chFileType = 'w'; break;
+        default:                    chFileType = '?'; break;
     }
     /** @todo sticy bits++ */
 
@@ -473,12 +466,12 @@ static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
         {
             /** @todo Skip node_id if not present/available! */
             RTPrintf("ftype=%c%cnode_id=%RU64%cname_len=%RU16%cname=%s%c",
-                     cFileType, 0, (uint64_t)pObjInfo->Attr.u.Unix.INodeId, 0,
+                     chFileType, 0, (uint64_t)pObjInfo->Attr.u.Unix.INodeId, 0,
                      cbName, 0, pszName, 0);
         }
         else
-            RTPrintf("%c %#18llx %3d %s\n", (uint64_t)pObjInfo->Attr.u.Unix.INodeId,
-                     cFileType, cbName, pszName);
+            RTPrintf("%c %#18llx %3d %s\n",
+                     chFileType, (uint64_t)pObjInfo->Attr.u.Unix.INodeId, cbName, pszName);
 
         if (uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* End of data block. */
             RTPrintf("%c%c", 0, 0);
@@ -487,7 +480,7 @@ static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
     {
         if (uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
         {
-            RTPrintf("ftype=%c%c", cFileType, 0);
+            RTPrintf("ftype=%c%c", chFileType, 0);
             RTPrintf("owner_mask=%c%c%c%c",
                      fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
                      fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
@@ -544,7 +537,7 @@ static int VBoxServiceToolboxPrintFsInfo(const char *pszName, uint16_t cbName,
         }
         else
         {
-            RTPrintf("%c", cFileType);
+            RTPrintf("%c", chFileType);
             RTPrintf("%c%c%c",
                      fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
                      fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
@@ -749,13 +742,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv,
                  s_aOptions, RT_ELEMENTS(s_aOptions),
-                 /* Index of argv to start with. */
-#ifdef VBOXSERVICE_TOOLBOX_DEBUG
-                 2,
-#else
-                 1,
-#endif
-                 RTGETOPTINIT_FLAGS_OPTS_FIRST);
+                 1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     int rc = VINF_SUCCESS;
     bool fVerbose = false;
@@ -801,16 +788,17 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
-                {
-                    /* Add file(s) to buffer. This enables processing multiple files
-                     * at once.
-                     *
-                     * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
-                     * processing this loop it's safe to immediately exit on syntax errors
-                     * or showing the help text (see above). */
-                    rc = VBoxServiceToolboxPathBufAddPathEntry(&fileList, ValueUnion.psz);
-                    break;
-                }
+                /* Add file(s) to buffer. This enables processing multiple files
+                 * at once.
+                 *
+                 * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
+                 * processing this loop it's safe to immediately exit on syntax errors
+                 * or showing the help text (see above). */
+                rc = VBoxServiceToolboxPathBufAddPathEntry(&fileList, ValueUnion.psz);
+                /** @todo r=bird: Nit: creating a list here is not really
+                 *        necessary since you've got one in argv that's
+                 *        accessible via RTGetOpt. */
+                break;
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -841,6 +829,19 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
         {
+            /** @todo r=bird: Call RTPathQueryInfoEx directly (RTFileExists
+             *        does it under the hood) and skip the RTFileOpen stuff!
+             *        /bin/ls can list full details for files you cannot open.
+             *
+             * Just try the following:
+             * @code
+                      $ echo > testfile
+                      $ chmod 600 testfile
+                      $ sudo chown root:root testfile
+                      $ ls -la testfile
+             * @endcode
+             */
+
             if (RTFileExists(pNodeIt->pszName))
             {
                 RTFILE file;
@@ -903,13 +904,7 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv,
                  s_aOptions, RT_ELEMENTS(s_aOptions),
-                 /* Index of argv to start with. */
-#ifdef VBOXSERVICE_TOOLBOX_DEBUG
-                 2,
-#else
-                 1,
-#endif
-                 RTGETOPTINIT_FLAGS_OPTS_FIRST);
+                 1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     int rc = VINF_SUCCESS;
     bool fMakeParentDirs = false;
@@ -954,16 +949,15 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
-                {
-                    /* Add path(s) to buffer. This enables processing multiple paths
-                     * at once.
-                     *
-                     * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
-                     * processing this loop it's safe to immediately exit on syntax errors
-                     * or showing the help text (see above). */
-                    rc = VBoxServiceToolboxPathBufAddPathEntry(&dirList, ValueUnion.psz);
-                    break;
-                }
+               /* Add path(s) to buffer. This enables processing multiple paths
+                * at once.
+                *
+                * Since the non-options (RTGETOPTINIT_FLAGS_OPTS_FIRST) come last when
+                * processing this loop it's safe to immediately exit on syntax errors
+                * or showing the help text (see above). */
+               rc = VBoxServiceToolboxPathBufAddPathEntry(&dirList, ValueUnion.psz);
+               break;
+
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -984,20 +978,15 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&dirList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
         {
-            rc = fMakeParentDirs ?
-                 RTDirCreateFullPath(pNodeIt->pszName, dirMode)
-                 : RTDirCreate(pNodeIt->pszName, dirMode);
+            rc = fMakeParentDirs
+               ? RTDirCreateFullPath(pNodeIt->pszName, dirMode)
+               : RTDirCreate(pNodeIt->pszName, dirMode);
 
             if (RT_SUCCESS(rc) && fVerbose)
                 RTMsgError("mkdir: Created directory 's', mode %#RTfmode\n", pNodeIt->pszName, dirMode);
             else if (RT_FAILURE(rc)) /** @todo Add a switch with more helpful error texts! */
             {
-                PCRTSTATUSMSG pMsg = RTErrGet(rc);
-                if (pMsg)
-                    RTMsgError("mkdir: Could not create directory '%s': %s\n",
-                               pNodeIt->pszName, pMsg->pszMsgFull);
-                else
-                    RTMsgError("mkdir: Could not create directory '%s', rc=%Rrc\n", pNodeIt->pszName, rc);
+                RTMsgError("mkdir: Could not create directory '%s': %Rra\n", pNodeIt->pszName, rc);
                 break;
             }
         }
@@ -1033,13 +1022,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv,
                  s_aOptions, RT_ELEMENTS(s_aOptions),
-                 /* Index of argv to start with. */
-#ifdef VBOXSERVICE_TOOLBOX_DEBUG
-                 2,
-#else
-                 1,
-#endif
-                 RTGETOPTINIT_FLAGS_OPTS_FIRST);
+                 1 /*iFirst*/, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     int rc = VINF_SUCCESS;
     bool fVerbose = false;
@@ -1103,6 +1086,11 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
         {
+            /** @todo r=bird: Use RTPathQueryInfoEx!  The tool is called
+             *        'stat' because it's just a wrapper for 'stat()',
+             *        right?  Our equvialent to the 'stat()' call is
+             *        RTPathQueryInfoEx().  Same permission issues as above
+             *        with 'ls'. */
             /* Only check for file existence for now. */
             RTFSOBJINFO objInfo;
             int rc2 = VINF_SUCCESS; /* Temporary rc to keep original rc. */
@@ -1182,40 +1170,57 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
  */
 bool VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
 {
-    if (argc > 0) /* Do we have at least a main command? */
+    static struct
     {
-        int iCmdIdx = 0;
-#ifdef VBOXSERVICE_TOOLBOX_DEBUG
-        iCmdIdx = 1;
-#endif
-        if (   !strcmp(argv[iCmdIdx], "cat")
-            || !strcmp(argv[iCmdIdx], "vbox_cat"))
-        {
-            *prcExit = VBoxServiceToolboxCat(argc, argv);
-            return true;
-        }
-
-        if (   !strcmp(argv[iCmdIdx], "ls")
-            || !strcmp(argv[iCmdIdx], "vbox_ls"))
-        {
-            *prcExit = VBoxServiceToolboxLs(argc, argv);
-            return true;
-        }
-
-        if (   !strcmp(argv[iCmdIdx], "mkdir")
-            || !strcmp(argv[iCmdIdx], "vbox_mkdir"))
-        {
-            *prcExit = VBoxServiceToolboxMkDir(argc, argv);
-            return true;
-        }
-
-        if (   !strcmp(argv[iCmdIdx], "stat")
-            || !strcmp(argv[iCmdIdx], "vbox_stat"))
-        {
-            *prcExit = VBoxServiceToolboxStat(argc, argv);
-            return true;
-        }
+        const char *pszName;
+        RTEXITCODE (*pfnHandler)(int argc, char **argv);
     }
+    const s_aTools[] =
+    {
+        { "cat",    VBoxServiceToolboxCat   },
+        { "ls",     VBoxServiceToolboxLs    },
+        { "mkdir",  VBoxServiceToolboxMkDir },
+        { "stat",   VBoxServiceToolboxStat  },
+    };
+
+    /*
+     * Check if the file named in argv[0] is one of the toolbox programs.
+     */
+    AssertReturn(argc > 0, false);
+    const char *pszTool = RTPathFilename(argv[0]);
+    /* Skip optional 'vbox_' prefix. */
+    if (   pszTool[0] == 'v'
+        && pszTool[1] == 'b'
+        && pszTool[2] == 'o'
+        && pszTool[3] == 'x'
+        && pszTool[4] == '_')
+        pszTool += 5;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aTools); i++)
+        if (!strcmp(s_aTools[i].pszName, pszTool))
+        {
+            *prcExit = s_aTools[i].pfnHandler(argc, argv);
+            return true;
+        }
+
+    /*
+     * For debugging and testing purposes we also allow toolbox program access
+     * when the first VBoxService argument is --use-toolbox.
+     */
+    if (argc >= 3 && !strcmp(argv[1], "--use-toolbox"))
+    {
+        pszTool = argv[2];
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aTools); i++)
+            if (!strcmp(s_aTools[i].pszName, pszTool))
+            {
+                *prcExit = s_aTools[i].pfnHandler(argc - 2, argv + 2);
+                return true;
+            }
+
+       *prcExit = RTMsgErrorExit(RTEXITCODE_SYNTAX, "Toolbox program '%s' does not exist", pszTool);
+       return true;
+    }
+
     return false;
 }
 
