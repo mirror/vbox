@@ -2388,7 +2388,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
 
             if (RT_SUCCESS(vrc))
             {
-                LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
+                LogFlowFunc(("Waiting for HGCM callback (timeout=%dms) ...\n", aTimeoutMS));
 
                 /*
                  * Wait for the HGCM low level callback until the process
@@ -2756,7 +2756,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
 
             if (RT_SUCCESS(vrc))
             {
-                LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
+                LogFlowFunc(("Waiting for HGCM callback (timeout=%dms) ...\n", aTimeoutMS));
 
                 /*
                  * Wait for the HGCM low level callback until the process
