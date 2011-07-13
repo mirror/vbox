@@ -793,6 +793,11 @@ void Machine::uninit()
 
     // uninit media from this machine's media registry, if they're still there
     Guid uuidMachine(getId());
+
+    /* XXX This will fail with
+     *   "cannot be closed because it is still attached to 1 virtual machines"
+     * because at this point we did not call uninitDataAndChildObjects() yet
+     * and therefore also removeBackReference() for all these mediums was not called! */
     if (!uuidMachine.isEmpty())     // can be empty if we're called from a failure of Machine::init
         mParent->unregisterMachineMedia(uuidMachine);
 
