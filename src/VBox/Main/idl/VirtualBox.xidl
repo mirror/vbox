@@ -16680,12 +16680,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDataChangedEvent" extends="IMachineEvent"
-    uuid="6AA70A6C-0DCA-4810-8C5C-457B278E3D49"
+    uuid="abe94809-2e88-4436-83d7-50f3e64d0503"
     wsmap="managed" autogen="VBoxEvent" id="OnMachineDataChanged"
     >
     <desc>
       Any of the settings of the given machine has changed.
     </desc>
+
+    <attribute name="temporary" readonly="yes" type="boolean">
+      <desc>@c true if the settings change is temporary. All permanent
+        settings changes will trigger an event, and only temporary settings
+        changes for running VMs will trigger an event. Note: sending events
+        for temporary changes is NOT IMPLEMENTED.</desc>
+    </attribute>
   </interface>
 
   <interface

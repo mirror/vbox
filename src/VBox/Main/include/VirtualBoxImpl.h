@@ -192,7 +192,7 @@ public:
     void updateClientWatcher();
 
     void onMachineStateChange(const Guid &aId, MachineState_T aState);
-    void onMachineDataChange(const Guid &aId);
+    void onMachineDataChange(const Guid &aId, BOOL aTemporary = FALSE);
     BOOL onExtraDataCanChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,
                               Bstr &aError);
     void onExtraDataChange(const Guid &aId, IN_BSTR aKey, IN_BSTR aValue);
