@@ -1846,7 +1846,7 @@ STDMETHODIMP Machine::GetCPUIDLeaf(ULONG aId, ULONG *aValEax, ULONG *aValEbx, UL
         case 0x9:
         case 0xA:
             if (mHWData->mCpuIdStdLeafs[aId].ulId != aId)
-                return setError(E_INVALIDARG, tr("CpuId override leaf %#x is not set"), aId);
+                return E_INVALIDARG;
 
             *aValEax = mHWData->mCpuIdStdLeafs[aId].ulEax;
             *aValEbx = mHWData->mCpuIdStdLeafs[aId].ulEbx;
@@ -1866,7 +1866,7 @@ STDMETHODIMP Machine::GetCPUIDLeaf(ULONG aId, ULONG *aValEax, ULONG *aValEbx, UL
         case 0x80000009:
         case 0x8000000A:
             if (mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulId != aId)
-                return setError(E_INVALIDARG, tr("CpuId override leaf %#x is not set"), aId);
+                return E_INVALIDARG;
 
             *aValEax = mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEax;
             *aValEbx = mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEbx;
