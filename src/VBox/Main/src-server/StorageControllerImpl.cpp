@@ -475,7 +475,7 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
         case StorageBus_SATA:
         {
             /* AHCI SATA supports a maximum of 30 ports. */
-            if ((aPortCount < 1) || (aPortCount > 30))
+            if (aPortCount < 1 || aPortCount > 30)
                 return setError(E_INVALIDARG,
                                 tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
                                 aPortCount, 1, 30);
@@ -691,9 +691,9 @@ STDMETHODIMP StorageController::SetIDEEmulationPort(LONG DevicePosition, LONG aP
         return setError(E_NOTIMPL,
                         tr("Invalid controller type"));
 
-    if ((aPortNumber < 0) || (aPortNumber >= 30))
+    if (aPortNumber < 0 || aPortNumber >= 30)
         return setError(E_INVALIDARG,
-                        tr("Invalid port number: %l (must be in range [%lu, %lu])"),
+                        tr("Invalid port number: %ld (must be in range [%lu, %lu])"),
                         aPortNumber, 0, 29);
 
     switch (DevicePosition)
@@ -763,15 +763,14 @@ HRESULT StorageController::checkPortAndDeviceValid(LONG aControllerPort,
     HRESULT rc = m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->mStorageBus, &devicesPerPort);
     if (FAILED(rc)) return rc;
 
-    if (   (aControllerPort < 0)
-        || (aControllerPort >= (LONG)portCount)
-        || (aDevice < 0)
-        || (aDevice >= (LONG)devicesPerPort)
+    if (   aControllerPort < 0
+        || aControllerPort >= (LONG)portCount
+        || aDevice < 0
+        || aDevice >= (LONG)devicesPerPort
        )
         return setError(E_INVALIDARG,
-                        tr("The port and/or count parameter are out of range [%lu:%lu]"),
-                        portCount,
-                        devicesPerPort);
+                        tr("The port and/or device parameter are out of range: port=%d (must be in range [0, %u]), device=%u (must be in range [0, %u])"),
+                        (int)aControllerPort, (int)portCount-1, (int)aDevice, (int)devicesPerPort-1);
 
     return S_OK;
 }
