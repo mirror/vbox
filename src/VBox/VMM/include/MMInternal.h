@@ -63,10 +63,8 @@ typedef struct MMHEAPSTAT
     /** Pointer to the heap the memory belongs to. */
     struct MMHEAP          *pHeap;
 #ifdef MMR3HEAP_WITH_STATISTICS
-# if HC_ARCH_BITS == 32
-    /** Aligning the statistics on an 8 byte boundary (for uint64_t and STAM). */
-    void                   *pvAlignment;
-# endif
+    /** Number of bytes currently allocated. */
+    size_t                  cbCurAllocated;
     /** Number of allocation. */
     uint64_t                cAllocations;
     /** Number of reallocations. */
@@ -79,12 +77,11 @@ typedef struct MMHEAPSTAT
     uint64_t                cbAllocated;
     /** Number of bytes freed. */
     uint64_t                cbFreed;
-    /** Number of bytes currently allocated. */
-    size_t                  cbCurAllocated;
 #endif
 } MMHEAPSTAT;
 #if defined(MMR3HEAP_WITH_STATISTICS) && defined(IN_RING3)
 AssertCompileMemberAlignment(MMHEAPSTAT, cAllocations, 8);
+AssertCompileSizeAlignment(MMHEAPSTAT, 8);
 #endif
 /** Pointer to heap statistics record. */
 typedef MMHEAPSTAT *PMMHEAPSTAT;

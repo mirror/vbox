@@ -102,59 +102,59 @@ typedef struct PDMBLKLRULIST
 typedef struct PDMBLKCACHEGLOBAL
 {
     /** Pointer to the owning VM instance. */
-    PVM               pVM;
+    PVM                 pVM;
     /** Maximum size of the cache in bytes. */
-    uint32_t          cbMax;
+    uint32_t            cbMax;
     /** Current size of the cache in bytes. */
-    uint32_t          cbCached;
+    uint32_t            cbCached;
     /** Critical section protecting the cache. */
-    RTCRITSECT        CritSect;
+    RTCRITSECT          CritSect;
     /** Maximum number of bytes cached. */
-    uint32_t          cbRecentlyUsedInMax;
+    uint32_t            cbRecentlyUsedInMax;
     /** Maximum number of bytes in the paged out list .*/
-    uint32_t          cbRecentlyUsedOutMax;
+    uint32_t            cbRecentlyUsedOutMax;
     /** Recently used cache entries list */
-    PDMBLKLRULIST     LruRecentlyUsedIn;
+    PDMBLKLRULIST       LruRecentlyUsedIn;
     /** Scorecard cache entry list. */
-    PDMBLKLRULIST     LruRecentlyUsedOut;
+    PDMBLKLRULIST       LruRecentlyUsedOut;
     /** List of frequently used cache entries */
-    PDMBLKLRULIST     LruFrequentlyUsed;
+    PDMBLKLRULIST       LruFrequentlyUsed;
     /** Commit timeout in milli seconds */
-    uint32_t          u32CommitTimeoutMs;
+    uint32_t            u32CommitTimeoutMs;
     /** Number of dirty bytes needed to start a commit of the data to the disk. */
-    uint32_t          cbCommitDirtyThreshold;
+    uint32_t            cbCommitDirtyThreshold;
     /** Current number of dirty bytes in the cache. */
-    volatile uint32_t cbDirty;
+    volatile uint32_t   cbDirty;
+    /** Flag whether the VM was suspended becaus of an I/O error. */
+    volatile bool       fIoErrorVmSuspended;
     /** Flag whether a commit is currently in progress. */
-    volatile bool     fCommitInProgress;
+    volatile bool       fCommitInProgress;
     /** Commit interval timer */
-    PTMTIMERR3        pTimerCommit;
+    PTMTIMERR3          pTimerCommit;
     /** Number of endpoints using the cache. */
-    uint32_t          cRefs;
+    uint32_t            cRefs;
     /** List of all users of this cache. */
-    RTLISTNODE        ListUsers;
+    RTLISTNODE          ListUsers;
 #ifdef VBOX_WITH_STATISTICS
     /** Hit counter. */
-    STAMCOUNTER       cHits;
+    STAMCOUNTER         cHits;
     /** Partial hit counter. */
-    STAMCOUNTER       cPartialHits;
+    STAMCOUNTER         cPartialHits;
     /** Miss counter. */
-    STAMCOUNTER       cMisses;
+    STAMCOUNTER         cMisses;
     /** Bytes read from cache. */
-    STAMCOUNTER       StatRead;
+    STAMCOUNTER         StatRead;
     /** Bytes written to the cache. */
-    STAMCOUNTER       StatWritten;
+    STAMCOUNTER         StatWritten;
     /** Time spend to get an entry in the AVL tree. */
-    STAMPROFILEADV    StatTreeGet;
+    STAMPROFILEADV      StatTreeGet;
     /** Time spend to insert an entry in the AVL tree. */
-    STAMPROFILEADV    StatTreeInsert;
+    STAMPROFILEADV      StatTreeInsert;
     /** Time spend to remove an entry in the AVL tree. */
-    STAMPROFILEADV    StatTreeRemove;
+    STAMPROFILEADV      StatTreeRemove;
     /** Number of times a buffer could be reused. */
-    STAMCOUNTER       StatBuffersReused;
+    STAMCOUNTER         StatBuffersReused;
 #endif
-    /** Flag whether the VM was suspended becaus of an I/O error. */
-    volatile bool     fIoErrorVmSuspended;
 } PDMBLKCACHEGLOBAL;
 #ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(PDMBLKCACHEGLOBAL, cHits, sizeof(uint64_t));
