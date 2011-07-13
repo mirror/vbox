@@ -448,7 +448,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
      * Locate pcb for segment.
      */
 findso:
-    LogFlowFunc(("findso: %R[natsock]\n", so));
+    LogFlowFunc(("(enter) findso: %R[natsock]\n", so));
     if (so != NULL && so != &tcb)
         SOCKET_UNLOCK(so);
     QSOCKET_LOCK(tcb);
@@ -495,6 +495,7 @@ findso:
         SOCKET_LOCK(so);
         QSOCKET_UNLOCK(tcb);
     }
+    LogFlowFunc(("(leave) findso: %R[natsock]\n", so));
 
     /*
      * If the state is CLOSED (i.e., TCB does not exist) then
