@@ -1363,33 +1363,78 @@ VBoxManage setextradata "VM name"
   </sect1>
 
   <sect1 id="vboxbowsolaris11">
-    <title>Installing alternate bridged networking driver on Solaris 11
+    <title>Installing the alternate bridged networking driver on Solaris 11
     hosts</title>
 
     <para>Starting with VirtualBox 4.1, VirtualBox ships a new network filter
     driver that utilizes Solaris 11's Crossbow functionality. By default, this
-    new driver is installed only for Solaris 11 hosts (builds 159 and
-    above).</para>
+    new driver is installed for Solaris 11 hosts (builds 159 and above) that
+    has support for it.</para>
 
-    <para>To force installation of the STREAMS based network filter driver:
-    Before installing VirtualBox, run as root:</para>
+    <para>To force installation of the older STREAMS based network filter
+    driver, execute as root execute the below command before installing the
+    VirtualBox package:</para>
 
     <screen>touch /etc/vboxinst_vboxflt</screen>
 
-    <para>To force installation of the Crossbow based network filter driver 
-    (will only work for Solaris 11 hosts builds 159 and above): Before
-    installing VirtualBox, run as root:</para>
+    <para>To force installation of the Crossbow based network filter
+    driver,execute as root the below command before installing the VirtualBox
+    package:</para>
 
     <screen>touch /etc/vboxinst_vboxbow</screen>
 
-    <para>If you have already installed VirtualBox and want to check which
-    driver is currently being used, run:</para>
+    <para>To check which driver is currently being used by VirtualBox,
+    execute:</para>
 
     <screen>modinfo | grep vbox</screen>
 
-    <para>If the output contains "vboxbow", it means VirtualBox is using
-    the Crossbow network filter driver, while "vboxflt" indicates that the
-    older STREAMS driver is being used.</para>
+    <para>If the output contains "vboxbow", it indicates VirtualBox is using
+    Crossbow network filter driver, while the name "vboxflt" indicates usage
+    of the older STREAMS network filter.</para>
+  </sect1>
+
+  <sect1 id="vboxbowvnictemplates">
+    <title>VirtualBox VNIC templates for VLANs on Solaris 11 hosts</title>
+
+    <para>VirtualBox supports VNIC (Virtual Network Interface) templates for
+    configuring VMs over a VLAN.<footnote>
+        <para>Support for Crossbow based bridged networking was introduced
+        with VirtualBox 4.1 and requires Solaris 11 build 159 or above.</para>
+      </footnote> A VirtualBox VNIC template is a VNIC whose name starts with
+    "vboxvnic_template".</para>
+
+    <para>Here is an example of how to use a VNIC template to configure a VLAN
+    for VMs. Create a VirtualBox VNIC template, by executing as root:</para>
+
+    <screen>dladm create-vnic -t -l nge0 -v 23 vboxvnic_template0
+</screen>
+
+    <para>This will create a temporary VNIC over interface "nge0" with the
+    VLAN ID 23. To create VNIC templates that are persistent across host
+    reboots, skip the <computeroutput>-t</computeroutput> parameter in the
+    above command. You may check the current state of links using:</para>
+
+    <para><screen>$ dladm show-link
+LINK        CLASS     MTU    STATE    BRIDGE     OVER
+nge0        phys      1500   up       --         --
+nge1        phys      1500   down     --         --
+vboxvnic_template0 vnic 1500 up       --         nge0
+
+$ dladm show-vnic
+LINK         OVER         SPEED  MACADDRESS        MACADDRTYPE         VID
+vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23
+</screen></para>
+
+    <para>Once the VNIC template is created, all VMs that need to be part of
+    VLAN 23 over the physical interface "nge0" can use the same VNIC template.
+    This makes managing VMs on VLANs simpler and efficient, as the VLAN
+    details are not stored as part of every VM's configuration but rather
+    picked up via the VNIC template which can be modified any time using
+    <computeroutput>dladm</computeroutput>. Apart from the VLAN ID, VNIC
+    templates can be created with additional properties such as bandwidth
+    limits, CPU fanout etc. Refer to your Solaris network documentation on how
+    to accomplish this. These additional properties, if any, are also applied
+    to VMs which use the VNIC template.</para>
   </sect1>
 
   <sect1 id="addhostonlysolaris">
