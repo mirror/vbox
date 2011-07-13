@@ -3841,7 +3841,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 {
     CheckComArgStrNotEmptyOrNull(aControllerName);
 
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d\n",
                      aControllerName, aControllerPort, aDevice));
 
     AutoCaller autoCaller(this);
@@ -3919,7 +3919,7 @@ STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControlle
 {
     CheckComArgStrNotEmptyOrNull(aControllerName);
 
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld aPassthrough=%d\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aPassthrough=%d\n",
                      aControllerName, aControllerPort, aDevice, aPassthrough));
 
     AutoCaller autoCaller(this);
@@ -3966,7 +3966,7 @@ STDMETHODIMP Machine::TemporaryEjectDevice(IN_BSTR aControllerName, LONG aContro
 {
     CheckComArgStrNotEmptyOrNull(aControllerName);
 
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld aTemporaryEject=%d\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aTemporaryEject=%d\n",
                      aControllerName, aControllerPort, aDevice, aTemporaryEject));
 
     AutoCaller autoCaller(this);
@@ -4006,7 +4006,7 @@ STDMETHODIMP Machine::NonRotationalDevice(IN_BSTR aControllerName, LONG aControl
 {
     CheckComArgStrNotEmptyOrNull(aControllerName);
 
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld aNonRotational=%d\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aNonRotational=%d\n",
                      aControllerName, aControllerPort, aDevice, aNonRotational));
 
     AutoCaller autoCaller(this);
@@ -4053,7 +4053,7 @@ STDMETHODIMP Machine::SetBandwidthGroupForDevice(IN_BSTR aControllerName, LONG a
 {
     CheckComArgStrNotEmptyOrNull(aControllerName);
 
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d\n",
                      aControllerName, aControllerPort, aDevice));
 
     AutoCaller autoCaller(this);
@@ -4119,7 +4119,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                                   BOOL aForce)
 {
     int rc = S_OK;
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld aForce=%d\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aForce=%d\n",
                      aControllerName, aControllerPort, aDevice, aForce));
 
     CheckComArgStrNotEmptyOrNull(aControllerName);
@@ -4237,7 +4237,7 @@ STDMETHODIMP Machine::GetMedium(IN_BSTR aControllerName,
                                 LONG aDevice,
                                 IMedium **aMedium)
 {
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d\n",
                      aControllerName, aControllerPort, aDevice));
 
     CheckComArgStrNotEmptyOrNull(aControllerName);
