@@ -3273,7 +3273,7 @@ FNIEMOP_DEF_1(iemOpCommonLoadSRegAndGreg, uint8_t, iSegReg)
     /* The source cannot be a register. */
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
         return IEMOP_RAISE_INVALID_OPCODE();
-    uint8_t const iGReg = ((bRm >> X86_MODRM_REG_SHIFT) & bRm & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg;
+    uint8_t const iGReg = ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg;
 
     switch (pIemCpu->enmEffOpSize)
     {
@@ -9757,8 +9757,17 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
 
 /** Opcode 0xd4. */
 FNIEMOP_STUB(iemOp_aam_Ib);
+
+
 /** Opcode 0xd5. */
-FNIEMOP_STUB(iemOp_aad_Ib);
+FNIEMOP_DEF(iemOp_aad_Ib)
+{
+    IEMOP_MNEMONIC("aad Ib");
+    uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    IEMOP_HLP_NO_64BIT();
+    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_aad, bImm);
+}
 
 
 /** Opcode 0xd7. */

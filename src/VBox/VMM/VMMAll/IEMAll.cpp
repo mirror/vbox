@@ -5004,11 +5004,11 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  */
 #ifdef DEBUG
 # define IEMOP_MNEMONIC(a_szMnemonic) \
-    Log2(("decode - %04x:%RGv %s%s\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
-          pIemCpu->fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic))
+    Log2(("decode - %04x:%RGv %s%s [#%u]\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
+          pIemCpu->fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, pIemCpu->cInstructions))
 # define IEMOP_MNEMONIC2(a_szMnemonic, a_szOps) \
-    Log2(("decode - %04x:%RGv %s%s %s\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
-          pIemCpu->fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, a_szOps))
+    Log2(("decode - %04x:%RGv %s%s %s [#%u]\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
+          pIemCpu->fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, a_szOps, pIemCpu->cInstructions))
 #else
 # define IEMOP_MNEMONIC(a_szMnemonic) do { } while (0)
 # define IEMOP_MNEMONIC2(a_szMnemonic, a_szOps) do { } while (0)
@@ -5035,7 +5035,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEMOP_HLP_NO_64BIT() \
     do \
     { \
-        if (pIemCpu->fPrefixes & IEM_OP_PRF_LOCK) \
+        if (pIemCpu->enmCpuMode == IEMMODE_64BIT) \
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
@@ -5822,8 +5822,11 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
     /*
      * Execute the instruction in REM.
      */
-    int rc = REMR3EmulateInstruction(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu));
+    PVM pVM = IEMCPU_TO_VM(pIemCpu);
+    EMRemLock(pVM);
+    int rc = REMR3EmulateInstruction(pVM, IEMCPU_TO_VMCPU(pIemCpu));
     AssertRC(rc);
+    EMRemUnlock(pVM);
 
     /*
      * Compare the register states.
