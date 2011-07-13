@@ -471,7 +471,7 @@ bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTi
     if (mGbUSB->isChecked() && mCbUSB2->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
     {
         strWarningText = tr("USB 2.0 is currently enabled for this virtual machine. "
-                            "However this requires the <b>%1</b> to be installed. "
+                            "However, this requires the <b>%1</b> to be installed. "
                             "Please install the Extension Pack from the VirtualBox download site. "
                             "After this you will be able to re-enable USB 2.0. "
                             "It will be disabled in the meantime unless you cancel the current settings changes.")

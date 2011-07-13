@@ -2981,7 +2981,7 @@ void VBoxProblemReporter::sltRemindAboutUnsupportedUSB2(const QString &strExtPac
 
     message(pParent ? pParent : mainMachineWindowShown(), Warning,
             tr("<p>USB 2.0 is currently enabled for this virtual machine. "
-               "However this requires the <b><nobr>%1</nobr></b> to be installed.</p>"
+               "However, this requires the <b><nobr>%1</nobr></b> to be installed.</p>"
                "<p>Please install the Extension Pack from the VirtualBox download site. "
                "After this you will be able to re-enable USB 2.0. "
                "It will be disabled in the meantime unless you cancel the current settings changes.</p>")
