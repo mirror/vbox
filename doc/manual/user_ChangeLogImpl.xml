@@ -113,6 +113,12 @@
       </listitem>
 
       <listitem>
+        <para>VBoxManage: more convenient configuration of storage controller
+          attachments by automatically determining the port or device parameter
+          when a storage controller has only one port or device per port</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: changed syntax of the <emphasis>guestcontrol</emphasis>
           command group, fixed various bugs, removed obsolete options</para>
       </listitem>

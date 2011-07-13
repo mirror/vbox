@@ -1566,7 +1566,7 @@ Virtual system 0:
 
     <screen>VBoxManage storageattach    &lt;uuid|vmname&gt;
                             --storagectl &lt;name&gt;
-                            --port &lt;number&gt;
+                            [--port &lt;number&gt;]
                             [--device &lt;number&gt;]
                             [--type dvddrive|hdd|fdd]
                             [--medium none|emptydrive|
@@ -1581,7 +1581,7 @@ Virtual system 0:
                             [--forceunmount]
                             [--server &lt;name&gt;|&lt;ip&gt;]
                             [--target &lt;target&gt;]
-                            [--port &lt;port&gt;]
+                            [--tport &lt;port&gt;]
                             [--lun &lt;lun&gt;]
                             [--encodedlun &lt;lun&gt;]
                             [--username &lt;username&gt;]
@@ -1617,7 +1617,8 @@ Virtual system 0:
 
           <glossdef>
             <para>The number of the storage controller's port which is to be
-            modified. Mandatory.</para>
+            modified. Mandatory, unless the storage controller has only a
+            single port.</para>
           </glossdef>
         </glossentry>
 
@@ -1626,7 +1627,8 @@ Virtual system 0:
 
           <glossdef>
             <para>The number of the port's device which is to be modified.
-            Optional. Default value is 0.</para>
+            Mandatory, unless the storage controller has only a single device
+            per port.</para>
           </glossdef>
         </glossentry>
 
