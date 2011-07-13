@@ -458,7 +458,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "VBoxManage storageattach    <uuid|vmname>\n"
                      "                            --storagectl <name>\n"
                      "                            --port <number>\n"
-                     "                            --device <number>\n"
+                     "                            [--device <number>]\n"
                      "                            [--type dvddrive|hdd|fdd]\n"
                      "                            [--medium none|emptydrive|\n"
                      "                                      <uuid>|<filename>|host:<drive>|iscsi]\n"

@@ -74,7 +74,7 @@ int handleStorageAttach(HandlerArg *a)
     int c = VERR_INTERNAL_ERROR;        /* initialized to shut up gcc */
     HRESULT rc = S_OK;
     ULONG port   = ~0U;
-    ULONG device = ~0U;
+    ULONG device = 0;                   /* device is optional, default is 0 */
     bool fForceUnmount = false;
     bool fSetMediumType = false;
     bool fSetNewUuid = false;
@@ -287,8 +287,6 @@ int handleStorageAttach(HandlerArg *a)
         return errorSyntax(USAGE_STORAGEATTACH, "Storage controller name not specified");
     if (port == ~0U)
         return errorSyntax(USAGE_STORAGEATTACH, "Port not specified");
-    if (device == ~0U)
-        return errorSyntax(USAGE_STORAGEATTACH, "Device not specified");
 
     /* get the virtualbox system properties */
     CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), 1);
