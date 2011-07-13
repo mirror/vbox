@@ -297,16 +297,16 @@ void UINewHDWizardPageWelcome::retranslateUi()
 
     /* Translate 'welcome' page: */
     setTitle(UINewHDWizard::tr("Welcome to the virtual disk copying wizard"));
-    m_pLabel->setText("<p>This wizard will help you to copy a virtual disk.</p>");
+    m_pLabel->setText(UINewHDWizard::tr("<p>This wizard will help you to copy a virtual disk.</p>"));
 
     /* Append page text with common part: */
     m_pLabel->setText(m_pLabel->text() + QString("<p>%1</p>").arg(standardHelpText()));
 
     /* Append page text for source virtual disk part: */
-    m_pLabel->setText(m_pLabel->text() + QString("Please select the virtual disk which you would like to "
-                                                 "copy if it is not already selected. You can either choose one "
-                                                 "from the list or use the folder icon beside the list to "
-                                                 "select a virtual disk file."));
+    m_pLabel->setText(m_pLabel->text() + UINewHDWizard::tr("Please select the virtual disk which you would like to "
+                                                           "copy if it is not already selected. You can either choose one "
+                                                           "from the list or use the folder icon beside the list to "
+                                                           "select a virtual disk file."));
 }
 
 void UINewHDWizardPageWelcome::initializePage()
@@ -400,15 +400,15 @@ void UINewHDWizardPageFormat::retranslateUi()
     {
         case UINewHDWizardType_Creating:
             setTitle(UINewHDWizard::tr("Welcome to the virtual disk creation wizard"));
-            m_pLabel->setText("<p>This wizard will help you to create a new virtual disk for your virtual machine.</p>");
+            m_pLabel->setText(UINewHDWizard::tr("<p>This wizard will help you to create a new virtual disk for your virtual machine.</p>"));
             m_pLabel->setText(m_pLabel->text() + QString("<p>%1</p>").arg(standardHelpText()));
-            m_pLabel->setText(m_pLabel->text() + QString("<p>Please choose the type of file that you would like to use for the new virtual disk. "
-                                                         "If you do not need to use it with other virtualization software you can leave this setting unchanged.</p>"));
+            m_pLabel->setText(m_pLabel->text() + UINewHDWizard::tr("<p>Please choose the type of file that you would like to use for the new virtual disk. "
+                                                                   "If you do not need to use it with other virtualization software you can leave this setting unchanged.</p>"));
             break;
         case UINewHDWizardType_Copying:
             setTitle(UINewHDWizard::tr("Virtual disk file type"));
-            m_pLabel->setText("Please choose the type of file that you would like to use for the new virtual disk. "
-                              "If you do not need to use it with other virtualization software you can leave this setting unchanged.");
+            m_pLabel->setText(UINewHDWizard::tr("Please choose the type of file that you would like to use for the new virtual disk. "
+                                                "If you do not need to use it with other virtualization software you can leave this setting unchanged."));
             break;
         default:
             break;
@@ -530,7 +530,7 @@ void UINewHDWizardPageVariant::retranslateUi()
 
     /* Translate 'variant' page: */
     setTitle(UINewHDWizard::tr("Virtual disk storage details"));
-    m_pLabel->setText("Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.");
+    m_pLabel->setText(UINewHDWizard::tr("Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated."));
 
     /* Translate other text: */
     QString strText = m_pLabel->text();
@@ -684,7 +684,7 @@ void UINewHDWizardPageOptions::initializePage()
             /* Default path: */
             m_strDefaultPath = QFileInfo(sourceHardDisk.GetLocation()).absolutePath();
             /* Default name: */
-            m_strMediumName = tr("%1_copy", "copied virtual disk name").arg(QFileInfo(sourceHardDisk.GetLocation()).baseName());
+            m_strMediumName = UINewHDWizard::tr("%1_copy", "copied virtual disk name").arg(QFileInfo(sourceHardDisk.GetLocation()).baseName());
             /* Initialize size: */
             m_uMediumSize = sourceHardDisk.GetLogicalSize();
             break;
