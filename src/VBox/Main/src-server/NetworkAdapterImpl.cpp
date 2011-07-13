@@ -454,7 +454,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AttachmentType)(
         /* there must an internal network name */
         if (mData->mInternalNetwork.isEmpty())
         {
-            LogRel(("Internal network name not defined, setting to default \"intnet\"\n"));
+            Log(("Internal network name not defined, setting to default \"intnet\"\n"));
             mData->mInternalNetwork = "intnet";
         }
 
