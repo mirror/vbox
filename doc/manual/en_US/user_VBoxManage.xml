@@ -1567,7 +1567,7 @@ Virtual system 0:
     <screen>VBoxManage storageattach    &lt;uuid|vmname&gt;
                             --storagectl &lt;name&gt;
                             --port &lt;number&gt;
-                            --device &lt;number&gt;
+                            [--device &lt;number&gt;]
                             [--type dvddrive|hdd|fdd]
                             [--medium none|emptydrive|
                                       &lt;uuid&gt;|&lt;filename&gt;|host:&lt;drive&gt;|iscsi]
@@ -1626,7 +1626,7 @@ Virtual system 0:
 
           <glossdef>
             <para>The number of the port's device which is to be modified.
-            Mandatory.</para>
+            Optional. Default value is 0.</para>
           </glossdef>
         </glossentry>
 

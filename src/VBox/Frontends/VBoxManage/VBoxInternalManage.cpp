@@ -1253,7 +1253,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                 }
 
                 /** @todo the clipping below isn't 100% accurate, as it should
-                 * actually clip to the track size. However that's easier said
+                 * actually clip to the track size. However, that's easier said
                  * than done as figuring out the track size is heuristics. In
                  * any case the clipping is adjusted later after sorting, to
                  * prevent overlapping data areas on the resulting image. */
