@@ -594,6 +594,10 @@
         <source>Clone a virtual machine</source>
         <translation>Virtuelle Maschine klonen</translation>
     </message>
+    <message>
+        <source>Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage1</name>
@@ -612,6 +616,14 @@
     <message>
         <source>%1 Clone</source>
         <translation>%1-Klon</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -995,6 +1007,10 @@
         <source>Restore Defaults</source>
         <translation>Standardeinstellungen</translation>
     </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIExportApplianceWzdPage1</name>
@@ -1130,6 +1146,10 @@
         <source>First Run Wizard</source>
         <translation>Startassistent</translation>
     </message>
+    <message>
+        <source>Start</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage1</name>
@@ -1200,37 +1220,6 @@
     <message>
         <source>CD/DVD-ROM Device</source>
         <translation>CD/DVD-ROM-Gerät</translation>
-    </message>
-</context>
-<context>
-    <name>UIGLSettingsDlg</name>
-    <message>
-        <source>General</source>
-        <translation type="obsolete">Allgemein</translation>
-    </message>
-    <message>
-        <source>Input</source>
-        <translation type="obsolete">Eingabe</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation type="obsolete">Update</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation type="obsolete">Sprache</translation>
-    </message>
-    <message>
-        <source>USB</source>
-        <translation type="obsolete">USB</translation>
-    </message>
-    <message>
-        <source>Network</source>
-        <translation type="obsolete">Netzwerk</translation>
-    </message>
-    <message>
-        <source>Extensions</source>
-        <translation type="obsolete">Zusatzpakete</translation>
     </message>
 </context>
 <context>
@@ -1768,23 +1757,23 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation>Umsch Links</translation>
+        <translation type="obsolete">Umsch Links</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation>Umsch Rechts</translation>
+        <translation type="obsolete">Umsch Rechts</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation>Strg Links</translation>
+        <translation type="obsolete">Strg Links</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation>Strg Rechts</translation>
+        <translation type="obsolete">Strg Rechts</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation>Alt Links</translation>
+        <translation type="obsolete">Alt Links</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -1828,6 +1817,10 @@
     <message>
         <source>Restore Defaults</source>
         <translation>Standardeinstellungen</translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3313,7 +3306,7 @@
         <translation>&lt;nobr&gt;Zustand: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
+        <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3424,6 +3417,21 @@
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation>Zeigt die momentan zugeordnete Host-Taste.&lt;br&gt;Wird diese Taste allein gedrückt, schaltet sie den Fangmodus für Tastatur und Maus um. Die Taste führt in Kombination mit anderen Tasten bestimmte Aktionen aus dem Hauptmenü aus.</translation>
+    </message>
+</context>
+<context>
+    <name>UIMediumTypeChangeDialog</name>
+    <message>
+        <source>Modify medium attributes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose medium type:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3602,6 +3610,38 @@
         <comment>summary</comment>
         <translation type="unfinished">Größe</translation>
     </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to copy a virtual disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please select the virtual disk which you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select a virtual disk file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual disk for your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UINewHDWizardPageFormat</name>
@@ -3619,11 +3659,6 @@
     <message>
         <source>&amp;Size</source>
         <translation type="unfinished">&amp;Größe</translation>
-    </message>
-    <message>
-        <source>%1_copy</source>
-        <comment>copied virtual disk name</comment>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3643,16 +3678,6 @@
         <source>Choose a virtual hard disk file...</source>
         <translation type="unfinished">Datei für virtuelle Festplatte auswählen...</translation>
     </message>
-</context>
-<context>
-    <name>UINewHDWzd</name>
-    <message>
-        <source>Create New Virtual Disk</source>
-        <translation type="obsolete">Neue virtuelle Festplatte erstellen</translation>
-    </message>
-</context>
-<context>
-    <name>UINewHDWzdPage1</name>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
         <translation type="obsolete">Erstellen einer virtuellen Festplatte</translation>
@@ -3751,6 +3776,10 @@
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Neue virtuelle Maschine erstellen</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3962,31 +3991,31 @@
     <name>UISettingsDialogGlobal</name>
     <message>
         <source>General</source>
-        <translation>Allgemein</translation>
+        <translation type="unfinished">Allgemein</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation>Eingabe</translation>
+        <translation type="unfinished">Eingabe</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation>Update</translation>
+        <translation type="unfinished">Update</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>Sprache</translation>
+        <translation type="unfinished">Sprache</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="unfinished">USB</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Netzwerk</translation>
+        <translation type="unfinished">Netzwerk</translation>
     </message>
     <message>
         <source>Extensions</source>
-        <translation>Zusatzpakete</translation>
+        <translation type="unfinished">Zusatzpakete</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
@@ -4179,77 +4208,6 @@
     </message>
 </context>
 <context>
-    <name>UIVMSettingsDlg</name>
-    <message>
-        <source>General</source>
-        <translation type="obsolete">Allgemein</translation>
-    </message>
-    <message>
-        <source>System</source>
-        <translation type="obsolete">System</translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation type="obsolete">Anzeige</translation>
-    </message>
-    <message>
-        <source>Storage</source>
-        <translation type="obsolete">Massenspeicher</translation>
-    </message>
-    <message>
-        <source>Audio</source>
-        <translation type="obsolete">Audio</translation>
-    </message>
-    <message>
-        <source>Network</source>
-        <translation type="obsolete">Netzwerk</translation>
-    </message>
-    <message>
-        <source>Ports</source>
-        <translation type="obsolete">Ports</translation>
-    </message>
-    <message>
-        <source>Serial Ports</source>
-        <translation type="obsolete">Serielle Schnittstellen</translation>
-    </message>
-    <message>
-        <source>Parallel Ports</source>
-        <translation type="obsolete">Parallel-Ports</translation>
-    </message>
-    <message>
-        <source>USB</source>
-        <translation type="obsolete">USB</translation>
-    </message>
-    <message>
-        <source>Shared Folders</source>
-        <translation type="obsolete">Gemeinsame Ordner</translation>
-    </message>
-    <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="obsolete">haben Sie ein 64-Bit-Gastbestriebssystem ausgewählt. Da solche Gäste Hardwarevirtualisierung benötigen (VT-x/AMD-V), wird diese VM-Einstellung automatisch aktiviert.</translation>
-    </message>
-    <message>
-        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="obsolete">haben Sie 2D-Video-Beschleunigung aktiviert. Diese Funktion wird momentan nur für Windows-Gäste unterstützt und wird daher deaktiviert.</translation>
-    </message>
-    <message>
-        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="obsolete">haben Sie ein USB HID (Human Interface Device) aktiviert. Dieses benötigt die USB-Emulation. Wenn Sie die Einstellungen bestätigen, wird die USB-Emulation für diese VM aktiviert.</translation>
-    </message>
-    <message>
-        <source>at most one supported</source>
-        <translation type="obsolete">höchstens einer unterstützt</translation>
-    </message>
-    <message>
-        <source>up to %1 supported</source>
-        <translation type="obsolete">bis zu %1 unterstützt</translation>
-    </message>
-    <message>
-        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation type="obsolete">werden momentan mehr Controller benutzt als ein %1-Chipsatz unterstützt. Bitte ändern Sie den Typ des Chipsatzes auf der Seite Systemeinstellungen oder entfernen Sie Controller aus der folgenden Liste: %2.</translation>
-    </message>
-</context>
-<context>
     <name>VBoxAboutDlg</name>
     <message>
         <source>VirtualBox - About</source>
@@ -4369,6 +4327,14 @@
     <message>
         <source>Hard Disk Controller (SAS)</source>
         <translation>Festplatten-Controller SAS</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5608,7 +5574,7 @@
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">CPU-Auslastungsgrenze</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
@@ -5905,6 +5871,18 @@
     </message>
     <message>
         <source>Copy an existing medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6898,10 +6876,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
         <translation>Der USB-Proxy-Dienst konnte nicht gestarted werden. Dieser Dienst ist möglicherweise nicht auf diesem Computer installiert.</translation>
     </message>
@@ -6947,6 +6921,14 @@
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7209,10 +7191,14 @@
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation>&amp;Klonen...</translation>
+        <translation type="obsolete">&amp;Klonen...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7343,7 +7329,7 @@
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Klonen...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>

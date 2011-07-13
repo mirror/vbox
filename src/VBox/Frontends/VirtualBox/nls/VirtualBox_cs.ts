@@ -520,11 +520,96 @@
     </message>
     <message>
         <source>Session I&amp;nformation</source>
-        <translation>&amp;Informace o sezení</translation>
+        <translation type="obsolete">&amp;Informace o sezení</translation>
     </message>
     <message>
         <source>Enable R&amp;emote Display</source>
         <translation>Povolit v&amp;zdálený server</translation>
+    </message>
+    <message>
+        <source>&amp;Settings...</source>
+        <translation type="unfinished">Nas&amp;tavení...</translation>
+    </message>
+    <message>
+        <source>Manage the virtual machine settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session I&amp;nformation...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizard</name>
+    <message>
+        <source>Clone a virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage1</name>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a clone of your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose a name for the new virtual machine:&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the virtual machine clone wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage2</name>
+    <message>
+        <source>Current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Current machine and all child states</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All states</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose which parts of the virtual machine should be cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -691,7 +776,7 @@
     <message>
         <source>VDE network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>VDE síť,  &apos;%1&apos;</translation>
+        <translation type="obsolete">VDE síť,  &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -816,6 +901,26 @@
         <source>Description</source>
         <comment>details report</comment>
         <translation>Popis</translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic driver, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1027,6 +1132,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Hostname:</source>
         <translation type="obsolete">&amp;Název počítače:</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1362,6 +1471,10 @@ p, li { white-space: pre-wrap; }
         <source>Cancel</source>
         <translation type="obsolete">Zrušit</translation>
     </message>
+    <message>
+        <source>Start</source>
+        <translation type="unfinished">Spustit</translation>
+    </message>
 </context>
 <context>
     <name>UIFirstRunWzdPage1</name>
@@ -1432,41 +1545,6 @@ p, li { white-space: pre-wrap; }
         <source>Source</source>
         <comment>summary</comment>
         <translation>Zdroj</translation>
-    </message>
-</context>
-<context>
-    <name>UIGLSettingsDlg</name>
-    <message>
-        <source>General</source>
-        <translation>Obecné</translation>
-    </message>
-    <message>
-        <source>Input</source>
-        <translation>Vstup</translation>
-    </message>
-    <message>
-        <source>Update</source>
-        <translation>Aktualizace</translation>
-    </message>
-    <message>
-        <source>Language</source>
-        <translation>Jazyk</translation>
-    </message>
-    <message>
-        <source>USB</source>
-        <translation>USB</translation>
-    </message>
-    <message>
-        <source>Network</source>
-        <translation>Síť</translation>
-    </message>
-    <message>
-        <source>Extensions</source>
-        <translation>Rozšíření</translation>
-    </message>
-    <message>
-        <source>VirtualBox - %1</source>
-        <translation>VirtualBox - %1</translation>
     </message>
 </context>
 <context>
@@ -1910,6 +1988,57 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIGlobalSettingsProxy</name>
+    <message>
+        <source>When checked, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable proxy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ho&amp;st:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Changes the proxy host.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Changes the proxy port.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked the authentication supplied will be used with the proxy server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Use authentication</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User &amp;name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Changes the user name used for authentication.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pass&amp;word:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Changes the password used for authentication.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
@@ -1979,23 +2108,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation>Levý Shift</translation>
+        <translation type="obsolete">Levý Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation>Pravý Shift</translation>
+        <translation type="obsolete">Pravý Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation>Levý Ctrl</translation>
+        <translation type="obsolete">Levý Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation>Pravý Ctrl</translation>
+        <translation type="obsolete">Pravý Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation>Levý Alt</translation>
+        <translation type="obsolete">Levý Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2099,6 +2228,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Import &gt;</source>
         <translation type="obsolete">&amp;Importovat &gt;</translation>
+    </message>
+    <message>
+        <source>Import</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2244,7 +2377,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>Indikuje stav virtualizačních rozšíření použitých tímto virtuálním počítačem:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Indikuje stav virtualizačních rozšíření použitých tímto virtuálním počítačem:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
@@ -2266,6 +2399,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
         <translation>&lt;hr&gt;Vzdálená plocha serveru poslouchá na portu  %1</translation>
+    </message>
+    <message>
+        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2466,7 +2604,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Pro systém, který používá WDDM ovladač máte povolenu 3D akceleraci. Pro maximální výkon nastavte velikost VRAM pro hosta na minimální hodnotu &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Pro systém, který používá WDDM ovladač máte povolenu 3D akceleraci. Pro maximální výkon nastavte velikost VRAM pro hosta na minimální hodnotu &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="unfinished">máte povolenu 2D akceleraci videa. Protože tato akcelerace je podporována pouze na virtuálních počítačích s Windows, bude tato vlastnost zákázána.</translation>
     </message>
 </context>
 <context>
@@ -2711,6 +2857,10 @@ p, li { white-space: pre-wrap; }
         <source>Show At &amp;Top Of Screen</source>
         <translation>Zobrazit na&amp;hoře na obrazovce</translation>
     </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="unfinished">zvolili jste 64bitový OS pro tento virtuální počítač. Protože je nutná podpora hardwarové virtualizace (VT-x/AMD-V), byla tato volba automaticky nastavena.</translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetwork</name>
@@ -2820,7 +2970,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation>Zvolte název síťového rozhraní pokud je připojení typu &lt;b&gt;Síťový most&lt;/b&gt; nebo &lt;b&gt;Síť pouze s hostitelem&lt;/b&gt; a název vnitřní sítě pokud je typ připojení &lt;b&gt;Vnitřní síť&lt;/b&gt;.</translation>
+        <translation type="obsolete">Zvolte název síťového rozhraní pokud je připojení typu &lt;b&gt;Síťový most&lt;/b&gt; nebo &lt;b&gt;Síť pouze s hostitelem&lt;/b&gt; a název vnitřní sítě pokud je typ připojení &lt;b&gt;Vnitřní síť&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Open extended settings dialog for current attachment type.</source>
@@ -2917,6 +3067,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Port Forwarding</source>
         <translation>&amp;Předávání portů</translation>
+    </message>
+    <message>
+        <source>&amp;Promiscuous Mode:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Properties:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no generic driver is selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the driver to be used with this network card.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3452,7 +3638,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation>Pro &lt;i&gt;%1&lt;/i&gt; nebyl vybrán žádný pevný disk.</translation>
+        <translation type="obsolete">Pro &lt;i&gt;%1&lt;/i&gt; nebyl vybrán žádný pevný disk.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
@@ -3726,6 +3912,52 @@ p, li { white-space: pre-wrap; }
         <source>Choose a virtual floppy disk file...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Live CD/DVD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Solid-state drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Details:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no name specified for controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>controller at position &lt;b&gt;%1&lt;/b&gt; uses the name that is already used by controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>at most one supported</source>
+        <comment>controller</comment>
+        <translation type="unfinished">minimálně jedna podporovaná</translation>
+    </message>
+    <message>
+        <source>up to %1 supported</source>
+        <comment>controllers</comment>
+        <translation type="unfinished">až %1 podporovaných</translation>
+    </message>
+    <message>
+        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
+        <translation type="unfinished">používáte nyní více řadičů než čipová sada %1 podporuje. Změňte prosím typ čipové sady na záložce Nastavení systému nebo zmenšete následující počet řadičů na záložce Nastavení řadiče: %2.</translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>
@@ -3916,6 +4148,32 @@ p, li { white-space: pre-wrap; }
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>přiřadili jste tomuto počítači čipovou sadu ICH9. Ta nebude správně fungovat dokud nebude také povolena volba &apos;IO-APIC&apos;. To se aktivuje automaticky pokud akceptujete nastavení virtuálního počítače pomocí tlačítka OK.</translation>
     </message>
+    <message>
+        <source>&amp;Execution Cap:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished">povolili jste USB HID zařízení. To nebude pracovat pokud nebude také povolena emulace USB. Ta se automaticky aktivuje jakmile akceptujete nastavení virtuálního počítače stisknutím tlačítka OK.</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
+        <comment>Min CPU execution cap in %</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
+        <comment>Max CPU execution cap in %</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsUSB</name>
@@ -4041,7 +4299,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;nobr&gt;Stav: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
+        <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4155,6 +4413,21 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIMediumTypeChangeDialog</name>
+    <message>
+        <source>Modify medium attributes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose medium type:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIMiniProcessWidgetAdditions</name>
     <message>
         <source>Cancel</source>
@@ -4200,7 +4473,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UINewHDWzd</name>
+    <name>UINewHDWizard</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Vytvořit nový virtuální disk</translation>
@@ -4289,7 +4562,7 @@ jako velikost virtuálního pevného disku.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="obsolete">Shrnutí</translation>
+        <translation type="unfinished">Shrnutí</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
@@ -4305,7 +4578,7 @@ jako velikost virtuálního pevného disku.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="obsolete">Vyberte soubor pro nový obraz pevného disku</translation>
+        <translation type="unfinished">Vyberte soubor pro nový obraz pevného disku</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
@@ -4347,12 +4620,12 @@ jako velikost virtuálního pevného disku.&lt;/p&gt;</translation>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="obsolete">Umístění</translation>
+        <translation type="unfinished">Umístění</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="obsolete">Velikost</translation>
+        <translation type="unfinished">Velikost</translation>
     </message>
     <message>
         <source>Bytes</source>
@@ -4411,108 +4684,280 @@ jako velikost virtuálního pevného disku.&lt;/p&gt;</translation>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
         <translation type="obsolete">Pokud jsou výše uvedené údaje v pořádku, stiskněte tlačítko &lt;b&gt;Dokončit&lt;/b&gt;. Po jeho stisknutí bude vytvořen nový obraz pevného disku.</translation>
     </message>
+    <message>
+        <source>%1_copy</source>
+        <comment>copied virtual disk name</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy Virtual Disk</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the virtual disk copying wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to copy a virtual disk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please select the virtual disk which you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select a virtual disk file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;VDI (VirtualBox Disk Image)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>V&amp;MDK (Virtual Machine Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>V&amp;HD (Virtual Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Welcome to the virtual disk creation wizard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will help you to create a new virtual disk for your virtual machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual disk file type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual disk storage details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the virtual disk into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Dynamically allocated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Fixed size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Split into files of less than 2GB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual disk file location and size</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual disk file location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
+        <translation type="unfinished">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>You are going to create a new virtual disk with the following parameters:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are going to create a copied virtual disk with the following parameters:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it the new virtual disk file will be created.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 B</source>
+        <translation type="unfinished">%1 B</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Details</source>
+        <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
-    <name>UINewHDWzdPage1</name>
+    <name>UINewHDWizardPageFormat</name>
+    <message>
+        <source>File type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWizardPageOptions</name>
+    <message>
+        <source>&amp;Location</source>
+        <translation type="unfinished">&amp;Umístění</translation>
+    </message>
+    <message>
+        <source>&amp;Size</source>
+        <translation type="unfinished">V&amp;elikost</translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWizardPageVariant</name>
+    <message>
+        <source>Storage details</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UINewHDWizardPageWelcome</name>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Vítejte v průvodci vytvoření nového virtuálního disku!</translation>
+        <translation type="obsolete">Vítejte v průvodci vytvoření nového virtuálního disku!</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tento průvodce vám pomůže vytvořit nový virtuální disk pro virtuální počítač.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Tento průvodce vám pomůže vytvořit nový virtuální disk pro virtuální počítač.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Virtual disk to copy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual hard disk file...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyberte typ virtuálního pevného disku, který chcete vytvořit.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Dynamicky zvětšující se obraz&lt;/b&gt; na začátku obsadí velmi málo místa na vašem fyzickém disku. Bude se dynamicky zvětšovat (až do dané velikosti) tak, jak bude hostovaný OS zabírat místo na disku&lt;/p&gt;&lt;p&gt;&lt;b&gt;Obraz o pevně dané velikosti&lt;/b&gt; se nezvětšuje. Je uložen v souboru o přibližně stejné velikosti jako velikost virtuálního pevného disku. Vytvoření obrazu o pevné velikosti může trvat déle v závislosti na velikosti vytvářeného disku a rychlosti zápisu fyzického pevného disku.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Vyberte typ virtuálního pevného disku, který chcete vytvořit.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Dynamicky zvětšující se obraz&lt;/b&gt; na začátku obsadí velmi málo místa na vašem fyzickém disku. Bude se dynamicky zvětšovat (až do dané velikosti) tak, jak bude hostovaný OS zabírat místo na disku&lt;/p&gt;&lt;p&gt;&lt;b&gt;Obraz o pevně dané velikosti&lt;/b&gt; se nezvětšuje. Je uložen v souboru o přibližně stejné velikosti jako velikost virtuálního pevného disku. Vytvoření obrazu o pevné velikosti může trvat déle v závislosti na velikosti vytvářeného disku a rychlosti zápisu fyzického pevného disku.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation>Typ uložení</translation>
+        <translation type="obsolete">Typ uložení</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation>&amp;Dynamicky se zvětšující obraz</translation>
+        <translation type="obsolete">&amp;Dynamicky se zvětšující obraz</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation>&amp;Obraz o pevně dané velikosti</translation>
+        <translation type="obsolete">&amp;Obraz o pevně dané velikosti</translation>
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation>Typ obrazu virtuálního disku</translation>
+        <translation type="obsolete">Typ obrazu virtuálního disku</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage3</name>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro výběr umístění a názvu souboru pro uložení obrazu virtuálního disku nebo napište do políčka název souboru.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro výběr umístění a názvu souboru pro uložení obrazu virtuálního disku nebo napište do políčka název souboru.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Location</source>
-        <translation>&amp;Umístění</translation>
+        <translation type="obsolete">&amp;Umístění</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nastavte velikost virtuálního pevného disku v megabajtech. Velikost bude nahlášena hostovanému OS jako maximální velikost pevného disku.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nastavte velikost virtuálního pevného disku v megabajtech. Velikost bude nahlášena hostovanému OS jako maximální velikost pevného disku.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>V&amp;elikost</translation>
+        <translation type="obsolete">V&amp;elikost</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation>Umístění a velikost virtuálního disku</translation>
+        <translation type="obsolete">Umístění a velikost virtuálního disku</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>Vyberte soubor pro nový obraz pevného disku</translation>
+        <translation type="obsolete">Vyberte soubor pro nový obraz pevného disku</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation>Obrazy pevných disků (*.vdi)</translation>
+        <translation type="obsolete">Obrazy pevných disků (*.vdi)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage4</name>
     <message>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>Chystáte se vytvořit nový virtuální pevný disk s následujícími parametry:</translation>
+        <translation type="obsolete">Chystáte se vytvořit nový virtuální pevný disk s následujícími parametry:</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>Shrnutí</translation>
+        <translation type="obsolete">Shrnutí</translation>
     </message>
     <message>
         <source>%1 B</source>
-        <translation>%1 B</translation>
+        <translation type="obsolete">%1 B</translation>
     </message>
     <message>
         <source>Type</source>
         <comment>summary</comment>
-        <translation>Typ</translation>
+        <translation type="obsolete">Typ</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation>Umístění</translation>
+        <translation type="obsolete">Umístění</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation>Velikost</translation>
+        <translation type="obsolete">Velikost</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation>Pokud jsou výše uvedené údaje v pořádku, stiskněte tlačítko &lt;b&gt;%1&lt;/b&gt;. Po stisknutí bude vytvořen nový obraz pevného disku.</translation>
+        <translation type="obsolete">Pokud jsou výše uvedené údaje v pořádku, stiskněte tlačítko &lt;b&gt;%1&lt;/b&gt;. Po stisknutí bude vytvořen nový obraz pevného disku.</translation>
     </message>
 </context>
 <context>
@@ -4730,6 +5175,10 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">&amp;Bootovací pevný disk (primární master)</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5016,6 +5465,120 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
 </context>
 <context>
+    <name>UISettingsDialogGlobal</name>
+    <message>
+        <source>General</source>
+        <translation>Obecné</translation>
+    </message>
+    <message>
+        <source>Input</source>
+        <translation>Vstup</translation>
+    </message>
+    <message>
+        <source>Update</source>
+        <translation>Aktualizace</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>Jazyk</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation>USB</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>Síť</translation>
+    </message>
+    <message>
+        <source>Extensions</source>
+        <translation>Rozšíření</translation>
+    </message>
+    <message>
+        <source>VirtualBox - %1</source>
+        <translation>VirtualBox - %1</translation>
+    </message>
+    <message>
+        <source>Proxy</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UISettingsDialogMachine</name>
+    <message>
+        <source>General</source>
+        <translation>Obecné</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation>Systém</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation>Obrazovka</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation>Úložiště</translation>
+    </message>
+    <message>
+        <source>Audio</source>
+        <translation>Zvuk</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>Síť</translation>
+    </message>
+    <message>
+        <source>Ports</source>
+        <translation>Porty</translation>
+    </message>
+    <message>
+        <source>Serial Ports</source>
+        <translation>Sériové porty</translation>
+    </message>
+    <message>
+        <source>Parallel Ports</source>
+        <translation>Paralelní porty</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <translation>USB</translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <translation>Sdílené složky</translation>
+    </message>
+    <message>
+        <source>%1 - %2</source>
+        <translation>%1 - %2</translation>
+    </message>
+    <message>
+        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
+        <translation type="obsolete">zvolili jste 64bitový OS pro tento virtuální počítač. Protože je nutná podpora hardwarové virtualizace (VT-x/AMD-V), byla tato volba automaticky nastavena.</translation>
+    </message>
+    <message>
+        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
+        <translation type="obsolete">máte povolenu 2D akceleraci videa. Protože tato akcelerace je podporována pouze na virtuálních počítačích s Windows, bude tato vlastnost zákázána.</translation>
+    </message>
+    <message>
+        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="obsolete">povolili jste USB HID zařízení. To nebude pracovat pokud nebude také povolena emulace USB. Ta se automaticky aktivuje jakmile akceptujete nastavení virtuálního počítače stisknutím tlačítka OK.</translation>
+    </message>
+    <message>
+        <source>at most one supported</source>
+        <translation type="obsolete">minimálně jedna podporovaná</translation>
+    </message>
+    <message>
+        <source>up to %1 supported</source>
+        <translation type="obsolete">až %1 podporovaných</translation>
+    </message>
+    <message>
+        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
+        <translation type="obsolete">používáte nyní více řadičů než čipová sada %1 podporuje. Změňte prosím typ čipové sady na záložce Nastavení systému nebo zmenšete následující počet řadičů na záložce Nastavení řadiče: %2.</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -5151,81 +5714,6 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     <message>
         <source>No Preview</source>
         <translation>Bez náhledu</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMSettingsDlg</name>
-    <message>
-        <source>General</source>
-        <translation>Obecné</translation>
-    </message>
-    <message>
-        <source>System</source>
-        <translation>Systém</translation>
-    </message>
-    <message>
-        <source>Display</source>
-        <translation>Obrazovka</translation>
-    </message>
-    <message>
-        <source>Storage</source>
-        <translation>Úložiště</translation>
-    </message>
-    <message>
-        <source>Audio</source>
-        <translation>Zvuk</translation>
-    </message>
-    <message>
-        <source>Network</source>
-        <translation>Síť</translation>
-    </message>
-    <message>
-        <source>Ports</source>
-        <translation>Porty</translation>
-    </message>
-    <message>
-        <source>Serial Ports</source>
-        <translation>Sériové porty</translation>
-    </message>
-    <message>
-        <source>Parallel Ports</source>
-        <translation>Paralelní porty</translation>
-    </message>
-    <message>
-        <source>USB</source>
-        <translation>USB</translation>
-    </message>
-    <message>
-        <source>Shared Folders</source>
-        <translation>Sdílené složky</translation>
-    </message>
-    <message>
-        <source>%1 - %2</source>
-        <translation>%1 - %2</translation>
-    </message>
-    <message>
-        <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>zvolili jste 64bitový OS pro tento virtuální počítač. Protože je nutná podpora hardwarové virtualizace (VT-x/AMD-V), byla tato volba automaticky nastavena.</translation>
-    </message>
-    <message>
-        <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation>máte povolenu 2D akceleraci videa. Protože tato akcelerace je podporována pouze na virtuálních počítačích s Windows, bude tato vlastnost zákázána.</translation>
-    </message>
-    <message>
-        <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>povolili jste USB HID zařízení. To nebude pracovat pokud nebude také povolena emulace USB. Ta se automaticky aktivuje jakmile akceptujete nastavení virtuálního počítače stisknutím tlačítka OK.</translation>
-    </message>
-    <message>
-        <source>at most one supported</source>
-        <translation>minimálně jedna podporovaná</translation>
-    </message>
-    <message>
-        <source>up to %1 supported</source>
-        <translation>až %1 podporovaných</translation>
-    </message>
-    <message>
-        <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation>používáte nyní více řadičů než čipová sada %1 podporuje. Změňte prosím typ čipové sady na záložce Nastavení systému nebo zmenšete následující počet řadičů na záložce Nastavení řadiče: %2.</translation>
     </message>
 </context>
 <context>
@@ -5447,6 +5935,14 @@ Verze %1</translation>
     <message>
         <source>Hard Disk Controller (SAS)</source>
         <translation>Řadič disku SAS</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7463,7 +7959,7 @@ Verze %1</translation>
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation>Karta %1</translation>
+        <translation type="obsolete">Karta %1</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
@@ -7818,7 +8314,7 @@ Verze %1</translation>
     <message>
         <source>VDE network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>VDE síť,  &apos;%1&apos;</translation>
+        <translation type="obsolete">VDE síť,  &apos;%1&apos;</translation>
     </message>
     <message>
         <source>SAS</source>
@@ -7828,7 +8324,7 @@ Verze %1</translation>
     <message>
         <source>VDE Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>VDE adaptér</translation>
+        <translation type="obsolete">VDE adaptér</translation>
     </message>
     <message>
         <source>LsiLogic SAS</source>
@@ -8024,6 +8520,61 @@ Verze %1</translation>
         <source>Multi-attach</source>
         <comment>DiskType</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dynamically allocated storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Dynamically allocated storage split into files of less than 2GB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fixed size storage split into files of less than 2GB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Deny</source>
+        <comment>NetworkAdapterPromiscModePolicyType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow VMs</source>
+        <comment>NetworkAdapterPromiscModePolicyType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Allow All</source>
+        <comment>NetworkAdapterPromiscModePolicyType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <translation type="unfinished">Karta %1</translation>
     </message>
 </context>
 <context>
@@ -8454,15 +9005,15 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>Location</source>
-        <translation>Umístění</translation>
+        <translation type="obsolete">Umístění</translation>
     </message>
     <message>
         <source>Type (Format)</source>
-        <translation>Typ (formát)</translation>
+        <translation type="obsolete">Typ (formát)</translation>
     </message>
     <message>
         <source>Attached to</source>
-        <translation>Připojeno k</translation>
+        <translation type="obsolete">Připojeno k</translation>
     </message>
     <message>
         <source>Checking accessibility</source>
@@ -8544,17 +9095,17 @@ na výchozí jazyk systému.&lt;/qt&gt;
     <message>
         <source>Attached to</source>
         <comment>VMM: Virtual Disk</comment>
-        <translation>Připojen k</translation>
+        <translation type="obsolete">Připojen k</translation>
     </message>
     <message>
         <source>Attached to</source>
         <comment>VMM: CD/DVD Image</comment>
-        <translation>Připojen k</translation>
+        <translation type="obsolete">Připojen k</translation>
     </message>
     <message>
         <source>Attached to</source>
         <comment>VMM: Floppy Image</comment>
-        <translation>Připojen k</translation>
+        <translation type="obsolete">Připojen k</translation>
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
@@ -8571,6 +9122,46 @@ na výchozí jazyk systému.&lt;/qt&gt;
     <message>
         <source>All %1 images (%2)</source>
         <translation>Všechny obrazy -%1 (%2)</translation>
+    </message>
+    <message>
+        <source>Type:</source>
+        <translation type="unfinished">Typ:</translation>
+    </message>
+    <message>
+        <source>Location:</source>
+        <translation type="unfinished">Umístění:</translation>
+    </message>
+    <message>
+        <source>Format:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage details:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attached to:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Copy...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Modify...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy an existing medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Modify the attributes of the selected medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;lose</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8631,7 +9222,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     <name>VBoxNetworkDialog</name>
     <message>
         <source>Network Adapters</source>
-        <translation>Síťové karty</translation>
+        <translation type="obsolete">Síťové karty</translation>
     </message>
 </context>
 <context>
@@ -9379,7 +9970,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation>Nelze použít USB na hostovaném systému i přesto, protože není dostupný USB souborový systém (usbfs) nebo nejsou dostupné služby DBus a hal. Pokud chcete používat USB zařízené v hostovaném systému, musíte to opravit a restartovat VirtualBox.</translation>
+        <translation type="obsolete">Nelze použít USB na hostovaném systému i přesto, protože není dostupný USB souborový systém (usbfs) nebo nejsou dostupné služby DBus a hal. Pokud chcete používat USB zařízené v hostovaném systému, musíte to opravit a restartovat VirtualBox.</translation>
     </message>
     <message>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
@@ -9614,7 +10205,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Opravdu chcete obnovit snímek &lt;b&gt;%1&lt;/b&gt;? Tím přijdete o aktuální stav počítače, který už potom nelze obnovit.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Opravdu chcete obnovit snímek &lt;b&gt;%1&lt;/b&gt;? Tím přijdete o aktuální stav počítače, který už potom nelze obnovit.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Restore</source>
@@ -9906,7 +10497,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation type="obsolete">Omlouváme se, vyskytla se obecná chyba.</translation>
+        <translation type="unfinished">Omlouváme se, vyskytla se obecná chyba.</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9994,15 +10585,71 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -10133,7 +10780,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     <name>VBoxSFDialog</name>
     <message>
         <source>Shared Folders</source>
-        <translation>Sdílené složky</translation>
+        <translation type="obsolete">Sdílené složky</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -10228,11 +10875,11 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>D&amp;iscard</source>
-        <translation>Zruš&amp;it</translation>
+        <translation type="obsolete">Zruš&amp;it</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="obsolete">Zrušit</translation>
+        <translation type="unfinished">Zrušit</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
@@ -10493,6 +11140,18 @@ na výchozí jazyk systému.&lt;/qt&gt;
     <message>
         <source>Show Statusbar</source>
         <translation>Zobrazit stavovou lištu</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10855,6 +11514,14 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     <message>
         <source> (%1 ago)</source>
         <translation> (před %1)</translation>
+    </message>
+    <message>
+        <source>&amp;Clone...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
