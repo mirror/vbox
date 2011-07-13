@@ -282,6 +282,8 @@ typedef struct INTNETIF
     PINTNETDSTTAB volatile  pDstTab;
     /** Pointer to the trunk's per interface data.  Can be NULL. */
     void                   *pvIfData;
+    /** Header buffer for when we're carving GSO frames. */
+    uint8_t                 abGsoHdrs[256];
 } INTNETIF;
 /** Pointer to an internal network interface. */
 typedef INTNETIF *PINTNETIF;
@@ -318,8 +320,6 @@ typedef struct INTNETTRUNKIF
      * This is as bit map where each bit represents the GSO type with the same
      * number. */
     uint32_t                fHostGsoCapabilites;
-    /** Header buffer for when we're carving GSO frames. */
-    uint8_t                 abGsoHdrs[256];
     /** The destination table spinlock, interrupt safe.
      * Protects apTaskDstTabs and apIntDstTabs. */
     RTSPINLOCK              hDstTabSpinlock;
@@ -2664,11 +2664,11 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETIF pIfSen
     {
         uint32_t cbSegPayload;
         uint32_t offSegPayload = PDMNetGsoCarveSegment(&pSG->GsoCtx, (uint8_t *)pSG->aSegs[0].pv, pSG->cbTotal, iSeg, cSegs,
-                                                       pThis->abGsoHdrs, &cbSegPayload);
+                                                       pIfSender->abGsoHdrs, &cbSegPayload);
 
         IntNetSgInitTempSegs(&u.SG, pSG->GsoCtx.cbHdrs + cbSegPayload, 2, 2);
         u.SG.aSegs[0].Phys = NIL_RTHCPHYS;
-        u.SG.aSegs[0].pv   = pThis->abGsoHdrs;
+        u.SG.aSegs[0].pv   = pIfSender->abGsoHdrs;
         u.SG.aSegs[0].cb   = pSG->GsoCtx.cbHdrs;
         u.SG.aSegs[1].Phys = NIL_RTHCPHYS;
         u.SG.aSegs[1].pv   = (uint8_t *)pSG->aSegs[0].pv + offSegPayload;
