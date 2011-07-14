@@ -98,8 +98,7 @@ tcp_reass(PNATState pData, struct tcpcb *tp, struct tcphdr *th, int *tlenp, stru
     struct socket *so = tp->t_socket;
     int flags;
     STAM_PROFILE_START(&pData->StatTCP_reassamble, tcp_reassamble);
-    LogFlowFuncEnter();
-    LogFlowFunc(("pData:%p, tp:%p, th:%p, tlenp:%p, m:%p\n", pData, tp, th, tlenp, m));
+    LogFlowFunc(("ENTER: pData:%p, tp:%R[tcpcb793], th:%p, tlenp:%p, m:%p\n", pData, tp, th, tlenp, m));
 
     /*
      * XXX: tcp_reass() is rather inefficient with its data structures
@@ -1767,7 +1766,7 @@ tcp_dooptions(PNATState pData, struct tcpcb *tp, u_char *cp, int cnt, struct tcp
     u_int16_t mss;
     int opt, optlen;
 
-    LogFlow(("tcp_dooptions: tp = %lx, cnt=%i\n", (long)tp, cnt));
+    LogFlowFunc(("tcp_dooptions: tp = %R[tcpcb793], cnt=%i\n", tp, cnt));
 
     for (; cnt > 0; cnt -= optlen, cp += optlen)
     {
@@ -1878,7 +1877,7 @@ tcp_xmit_timer(PNATState pData, register struct tcpcb *tp, int rtt)
 {
     register short delta;
 
-    LogFlow(("tcp_xmit_timer: tp = %lx rtt = %d\n", (long)tp, rtt));
+    LogFlowFunc(("ENTER: tcp_xmit_timer: tp = %R[tcpcb793] rtt = %d\n", tp, rtt));
 
     tcpstat.tcps_rttupdated++;
     if (tp->t_srtt != 0)
@@ -1968,7 +1967,7 @@ tcp_mss(PNATState pData, register struct tcpcb *tp, u_int offer)
     struct socket *so = tp->t_socket;
     int mss;
 
-    LogFlow(("tcp_mss: tp = %lx, offet = %d\n", (long)tp, offer));
+    LogFlowFunc(("ENTER: tcp_mss: tp = %R[tcpcb793], offer = %d\n", tp, offer));
 
     mss = min(if_mtu, if_mru) - sizeof(struct tcpiphdr);
     if (offer)

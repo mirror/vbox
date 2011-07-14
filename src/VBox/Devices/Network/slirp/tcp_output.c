@@ -101,7 +101,7 @@ tcp_output(PNATState pData, register struct tcpcb *tp)
     int idle, sendalot;
     int size = 0;
 
-    LogFlow(("tcp_output: tp = %lx\n", (long)tp));
+    LogFlow(("ENTER: tcp_output: tp = %R[tcpcb793]\n", tp));
 
     /*
      * Determine length of data that should be transmitted,

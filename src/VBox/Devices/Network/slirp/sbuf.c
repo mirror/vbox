@@ -283,7 +283,7 @@ sbappend (PNATState pData, struct socket *so, struct mbuf *m)
     caddr_t buf = NULL;
 
     STAM_PROFILE_START(&pData->StatIOSBAppend_pf, a);
-    LogFlow(("sbappend: so = %lx, m = %lx, m->m_len = %d\n", (long)so, (long)m, m ? m->m_len : 0));
+    LogFlow(("sbappend: so = %R[natsock], m = %lx, m->m_len = %d\n", so, (long)m, m ? m->m_len : 0));
 
     STAM_COUNTER_INC(&pData->StatIOSBAppend);
     mlen = m_length(m, NULL);
