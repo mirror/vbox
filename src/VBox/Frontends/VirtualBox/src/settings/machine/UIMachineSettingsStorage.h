@@ -310,10 +310,12 @@ public:
     QString ctrName() const;
     KStorageControllerType ctrType() const;
     ControllerTypeList ctrTypes() const;
+    uint portCount();
     bool ctrUseIoCache() const;
 
     void setCtrName (const QString &aCtrName);
     void setCtrType (KStorageControllerType aCtrType);
+    void setPortCount (uint aPortCount);
     void setCtrUseIoCache (bool aUseIoCache);
 
     SlotsList ctrAllSlots() const;
@@ -337,6 +339,7 @@ private:
 
     QString mCtrName;
     AbstractControllerType *mCtrType;
+    uint mPortCount;
     bool mUseIoCache;
     QList <AbstractItem*> mAttachments;
 };
@@ -440,6 +443,7 @@ public:
         R_CtrTypes,
         R_CtrDevices,
         R_CtrBusType,
+        R_CtrPortCount,
         R_CtrIoCache,
 
         R_AttSlot,
@@ -600,6 +604,7 @@ struct UIDataSettingsMachineStorageController
         : m_strControllerName(QString())
         , m_controllerBus(KStorageBus_Null)
         , m_controllerType(KStorageControllerType_Null)
+        , m_uPortCount(0)
         , m_fUseHostIOCache(false) {}
     /* Functions: */
     bool equal(const UIDataSettingsMachineStorageController &other) const
@@ -607,6 +612,7 @@ struct UIDataSettingsMachineStorageController
         return (m_strControllerName == other.m_strControllerName) &&
                (m_controllerBus == other.m_controllerBus) &&
                (m_controllerType == other.m_controllerType) &&
+               (m_uPortCount == other.m_uPortCount) &&
                (m_fUseHostIOCache == other.m_fUseHostIOCache);
     }
     /* Operators: */
@@ -616,6 +622,7 @@ struct UIDataSettingsMachineStorageController
     QString m_strControllerName;
     KStorageBus m_controllerBus;
     KStorageControllerType m_controllerType;
+    uint m_uPortCount;
     bool m_fUseHostIOCache;
 };
 typedef UISettingsCachePool<UIDataSettingsMachineStorageController, UICacheSettingsMachineStorageAttachment> UICacheSettingsMachineStorageController;
