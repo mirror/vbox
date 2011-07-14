@@ -589,6 +589,15 @@ int main()
     CHECKSTR(pszBuf2);
 
     /*
+     * x86 register formatting.
+     */
+    RTTestSub(hTest, "x86 register format types (%RAx86[*])");
+    CHECK42("%'RU64", _1E, "1 152 921 504 606 846 976");
+    CHECK42("%RAx86[cr0]", UINT64_C(0x80000011),    "80000011{PE,ET,PG}");
+    CHECK42("%RAx86[cr4]", UINT64_C(0x80000001),    "80000001{VME,unkn=80000000}");
+    CHECK42("%#RAx86[cr4]", UINT64_C(0x80000001),    "0x80000001{VME,unkn=0x80000000}");
+
+    /*
      * Custom types.
      */
     RTTestSub(hTest, "Custom format types (%R[*])");

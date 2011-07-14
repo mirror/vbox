@@ -1021,7 +1021,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
     do { \
         if ((a_uVal) & (a_fBitMask)) \
         { \
-            if (!cPrinted) \
+            if (!cPrinted++) \
                 cchOutput += pfnOutput(pvArgOutput, "{" a_szName, sizeof(a_szName)); \
             else \
                 cchOutput += pfnOutput(pvArgOutput, "," a_szName, sizeof(a_szName)); \
@@ -1032,7 +1032,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
     do { \
         if ((a_uVal)) \
         { \
-            cchOutput += pfnOutput(pvArgOutput, cPrinted ? "{unkn=" : ",unkn=", 6); \
+            cchOutput += pfnOutput(pvArgOutput, !cPrinted ? "{unkn=" : ",unkn=", 6); \
             cch = RTStrFormatNumber(&szBuf[0], (a_uVal), 16, 8, -1, fFlags); \
             cchOutput += pfnOutput(pvArgOutput, szBuf, cch); \
             cPrinted++; \
