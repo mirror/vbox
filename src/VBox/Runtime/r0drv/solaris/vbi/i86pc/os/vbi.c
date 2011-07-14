@@ -77,7 +77,7 @@ static void (*p_contig_free)(void *, size_t) = contig_free;
  */
 /* Introduced in v9 */
 static int use_kflt = 0;
-static page_t *vbi_page_get_fromlist(uint_t freelist, caddr_t virtAddr);
+static page_t *vbi_page_get_fromlist(uint_t freelist, caddr_t virtAddr, size_t pgsize);
 
 
 /*
@@ -160,6 +160,9 @@ static int off_s11_cpu_runrun   = 216;
 static int off_s11_cpu_kprunrun = 217;
 /* kthread_t */
 static int off_s11_t_preempt    = 42;
+
+/* 64-bit Solaris 11 snv_166+ offsets (CR 7037143) */
+static int off_s11_t_preempt_new = 48;
 #else
 /* 32-bit Solaris 10 offsets */
 /* CPU */
@@ -279,6 +282,24 @@ vbi_init(void)
 		off_cpu_runrun = off_s11_cpu_runrun;
 		off_cpu_kprunrun = off_s11_cpu_kprunrun;
 		off_t_preempt = off_s11_t_preempt;
+
+#ifdef _LP64
+		/* Only 64-bit kernels */
+		long snv_version = 0;
+		if (!strncmp(utsname.version, "snv_", 4))
+		{
+			ddi_strtol(utsname.version + 4, NULL /* endptr */, 0, &snv_version);
+			if (snv_version >= 166)
+			{
+				off_t_preempt = off_s11_t_preempt_new;
+				cmn_err(CE_NOTE,  "here\n");
+			}
+
+			cmn_err(CE_NOTE, "Detected S11 version %ld: Preemption offset=%d\n", snv_version, off_t_preempt);
+		}
+		else
+			cmn_err(CE_NOTE, "WARNING!! Cannot determine version. Assuming pre snv_166. Preemption offset=%ld may be busted!\n", off_t_preempt);
+#endif
 	} else {
 		/* Solaris 10 detected... */
 		vbi_is_nevada = 0;
@@ -1332,11 +1353,11 @@ vbi_pages_alloc(uint64_t *phys, size_t size)
 				for (int64_t i = 0; i < npages; i++, virtAddr += PAGESIZE)
 				{
 					/* get a page from the freelists */
-					page_t *ppage = vbi_page_get_fromlist(1 /* freelist */, virtAddr);
+					page_t *ppage = vbi_page_get_fromlist(1 /* freelist */, virtAddr, PAGESIZE);
 					if (!ppage)
 					{
 						/* try from the cachelists */
-						ppage = vbi_page_get_fromlist(2 /* cachelist */, virtAddr);
+						ppage = vbi_page_get_fromlist(2 /* cachelist */, virtAddr, PAGESIZE);
 						if (!ppage)
 						{
 							/* damn */
@@ -1433,23 +1454,21 @@ vbi_page_to_pa(page_t **pp_pages, pgcnt_t i)
 }
 
 
-
-static page_t *vbi_page_get_fromlist(uint_t freelist, caddr_t virtAddr)
+static page_t *
+vbi_page_get_fromlist(uint_t freelist, caddr_t virtAddr, size_t pgsize)
 {
+	/* pgsize only applies when using the freelist */
 	seg_t kernseg;
 	kernseg.s_as = &kas;
 	page_t *ppage = NULL;
 	if (freelist == 1)
 	{
 		ppage = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
-							PAGESIZE, 0 /* flags */, NULL /* local group */);
-		if (!ppage)
+							pgsize, 0 /* flags */, NULL /* local group */);
+		if (!ppage && use_kflt)
 		{
-			if (use_kflt)
-			{
-				ppage = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
-							PAGESIZE, 0x0200 /* PG_KFLT */, NULL /* local group */);
-			}
+			ppage = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
+						pgsize, 0x0200 /* PG_KFLT */, NULL /* local group */);
 		}
 	}
 	else
@@ -1457,13 +1476,10 @@ static page_t *vbi_page_get_fromlist(uint_t freelist, caddr_t virtAddr)
 		/* cachelist */
 		ppage = page_get_cachelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
 							0 /* flags */, NULL /* local group */);
-		if (!ppage)
+		if (!ppage && use_kflt)
 		{
-			if (use_kflt)
-			{
-				ppage = page_get_cachelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
-							0x0200 /* PG_KFLT */, NULL /* local group */);
-			}
+			ppage = page_get_cachelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
+						0x0200 /* PG_KFLT */, NULL /* local group */);
 		}
 	}
 	return ppage;
@@ -1488,9 +1504,9 @@ vbi_large_page_alloc(uint64_t *pphys, size_t pgsize)
 	 * Reserve available memory for a large page and create it.
 	 */
 	rc = page_resv(npages, KM_NOSLEEP);
-	if (!rc) {
+	if (!rc)
 		return NULL;
-	}
+
 	rc = page_create_wait(npages, 0 /* flags */);
 	if (!rc) {
 		page_unresv(npages);
@@ -1503,16 +1519,12 @@ vbi_large_page_alloc(uint64_t *pphys, size_t pgsize)
 	 */
 	vaddr = NULL;
 	kernseg.s_as = &kas;
-	pproot = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg,
-		vaddr, pgsize, 0x0000 /* flags */, NULL /*lgrp*/);
-	if (!pproot && use_kflt) {
-		pproot = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg,
-			vaddr, pgsize, 0x0200 /* PG_KFLT */, NULL /*lgrp*/);
-		if (!pproot) {
-			page_create_putback(npages);
-			page_unresv(npages);
-			return NULL;
-		}
+	pproot = vbi_page_get_fromlist(1 /* freelist */, vaddr, pgsize);
+	if (!pproot)
+	{
+		page_create_putback(npages);
+		page_unresv(npages);
+		return NULL;
 	}
 	AssertMsg(!(page_pptonum(pproot) & (npages - 1)), ("%p:%lx npages=%lx\n", pproot, page_pptonum(pproot), npages));
 
