@@ -286,7 +286,8 @@ vbi_init(void)
 #ifdef _LP64
 		/* Only 64-bit kernels */
 		long snv_version = 0;
-		if (!strncmp(utsname.version, "snv_", 4))
+		if (  !strncmp(utsname.version, "snv_", 4)
+			&& strlen(utsname.version) > 4)
 		{
 			ddi_strtol(utsname.version + 4, NULL /* endptr */, 0, &snv_version);
 			if (snv_version >= 166)
