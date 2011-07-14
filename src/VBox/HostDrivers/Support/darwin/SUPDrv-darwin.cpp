@@ -814,17 +814,16 @@ static int VBoxDrvDarwinErr2DarwinErr(int rc)
 }
 
 
-/** @todo move this to assembly where a simple "jmp printf" will to the trick. */
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
-    va_list     args;
+    va_list     va;
     char        szMsg[512];
 
-    va_start(args, pszFormat);
-    vsnprintf(szMsg, sizeof(szMsg) - 1, pszFormat, args);
-    va_end(args);
-
+    va_start(va, pszFormat);
+    RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, va);
+    va_end(va);
     szMsg[sizeof(szMsg) - 1] = '\0';
+
     printf("%s", szMsg);
     return 0;
 }

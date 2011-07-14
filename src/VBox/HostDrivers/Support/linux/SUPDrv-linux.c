@@ -781,22 +781,15 @@ static int VBoxDrvLinuxErr2LinuxErr(int rc)
 
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
-#if 1
-    va_list args;
+    va_list va;
     char    szMsg[512];
 
-    va_start(args, pszFormat);
-    vsnprintf(szMsg, sizeof(szMsg) - 1, pszFormat, args);
+    va_start(va, pszFormat);
+    SUPR0Printf(szMsg, sizeof(szMsg) - 1, pszFormat, va);
+    va_end(va);
     szMsg[sizeof(szMsg) - 1] = '\0';
+
     printk("%s", szMsg);
-    va_end(args);
-#else
-    /* forward to printf - needs some more GCC hacking to fix ebp... */
-    __asm__ __volatile__ ("mov %0, %esp\n\t"
-                          "jmp %1\n\t",
-                          :: "r" ((uintptr_t)&pszFormat - 4),
-                             "m" (printk));
-#endif
     return 0;
 }
 
