@@ -217,7 +217,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
         if (!mural)
         {
-            crWarning("CRServer: invalid window %d passed to crServerDispatchMakeCurrent()");
+            crWarning("CRServer: invalid window %d passed to crServerDispatchMakeCurrent()", window);
             return;
         }
 
