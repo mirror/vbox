@@ -828,6 +828,7 @@
 # define RTMsgInfo                                      RT_MANGLER(RTMsgInfo)
 # define RTMsgInfoV                                     RT_MANGLER(RTMsgInfoV)
 # define RTMsgInitFailure                               RT_MANGLER(RTMsgInitFailure)
+# define RTMsgSetProgName                               RT_MANGLER(RTMsgSetProgName)
 # define RTMsgWarning                                   RT_MANGLER(RTMsgWarning)
 # define RTMsgWarningV                                  RT_MANGLER(RTMsgWarningV)
 # define RTNetIPv4AddDataChecksum                       RT_MANGLER(RTNetIPv4AddDataChecksum)

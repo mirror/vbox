@@ -38,6 +38,15 @@ RT_C_DECLS_BEGIN
  */
 
 /**
+ * Sets the program name to use.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat       The program name format string.
+ * @param   ...             Format arguments.
+ */
+RTDECL(int)  RTMsgSetProgName(const char *pszFormat, ...);
+
+/**
  * Print error message to standard error.
  *
  * The message will be prefixed with the file name part of process image name
