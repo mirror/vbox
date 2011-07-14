@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -684,6 +684,15 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CR4_OSXMMEEXCPT                 RT_BIT(10)
 /** Bit 13 - VMXE - VMX mode is enabled. */
 #define X86_CR4_VMXE                        RT_BIT(13)
+/** Bit 14 - SMXE - Safer Mode Extensions Enabled. */
+#define X86_CR4_SMXE                        RT_BIT(14)
+/** Bit 17 - PCIDE - Process-Context Identifiers Enabled. */
+#define X86_CR4_PCIDE                       RT_BIT(17)
+/** Bit 18 - OSXSAVE - Operating System Support for XSAVE and processor
+ * extended states. */
+#define X86_CR4_OSXSAVE                     RT_BIT(18)
+/** Bit 20 - SMEP - Supervisor-mode Execution Prevention enabled. */
+#define X86_CR4_SMEP                        RT_BIT(20)
 /** @} */
 
 
