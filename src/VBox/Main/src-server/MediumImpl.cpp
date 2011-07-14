@@ -1830,7 +1830,7 @@ STDMETHODIMP Medium::COMGETTER(ReadOnly)(BOOL *aReadOnly)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* isRadOnly() will do locking */
+    /* isReadOnly() will do locking */
 
     *aReadOnly = isReadOnly();
 
