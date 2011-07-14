@@ -189,9 +189,9 @@
           </listitem>
 
           <listitem>
-            <para>USB support on Solaris hosts requires kernel version snv_124
-            or higher. Webcams and other isochronous devices are known to have
-            poor performance.</para>
+            <para>USB support on Solaris hosts requires Solaris 11 version
+            snv_124 or higher. Webcams and other isochronous devices are known
+            to have poor performance.</para>
           </listitem>
 
           <listitem>
