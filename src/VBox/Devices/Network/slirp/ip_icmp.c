@@ -185,7 +185,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     fport = ~0;
 
 
-    Log(("%s: processing (proto:%d)\n", __FUNCTION__, ip->ip_p));
+    LogFlowFunc(("ENTER: ip->ip_p:%d\n", ip->ip_p));
     switch (ip->ip_p)
     {
         case IPPROTO_ICMP:
@@ -294,11 +294,16 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
          * better add flag if it should removed from lis
          */
         LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
+        LogFlowFunc(("LEAVE: icm:%p\n", icm));
         return (icm);
     }
     if (found == 1)
+    {
+        LogFlowFunc(("LEAVE: icm:%p\n", icm));
         return icm;
+    }
 
+    LogFlowFunc(("LEAVE: NULL\n"));
     return NULL;
 }
 
@@ -334,7 +339,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 
     /* int code; */
 
-    LogFlow(("icmp_input: m = %lx, m_len = %d\n", (long)m, m ? m->m_len : 0));
+    LogFlowFunc(("ENTER: m = %lx, m_len = %d\n", (long)m, m ? m->m_len : 0));
 
     icmpstat.icps_received++;
 
@@ -676,6 +681,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 
     /* clear source datagramm in positive branch */
     m_freem(pData, msrc);
+    LogFlowFuncLeave();
     return;
 
 end_error_free_m:
@@ -697,6 +703,7 @@ end_error:
             fIcmpErrorReported = true;
         }
     }
+    LogFlowFuncLeave();
 }
 #undef ICMP_MAXDATALEN
 
@@ -711,6 +718,7 @@ icmp_reflect(PNATState pData, struct mbuf *m)
     int hlen = ip->ip_hl << 2;
     int optlen = hlen - sizeof(struct ip);
     register struct icmp *icp;
+    LogFlowFunc(("ENTER: m:%p\n", m));
 
     /*
      * Send an icmp packet back to the ip level,
@@ -729,4 +737,5 @@ icmp_reflect(PNATState pData, struct mbuf *m)
     (void) ip_output(pData, (struct socket *)NULL, m);
 
     icmpstat.icps_reflect++;
+    LogFlowFuncLeave();
 }

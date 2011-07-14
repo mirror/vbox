@@ -65,7 +65,7 @@ tcp_fasttimo(PNATState pData)
     register struct socket *so, *so_next;
     register struct tcpcb *tp;
 
-    LogFlow(("tcp_fasttimo:\n"));
+    LogFlowFuncEnter();
 
     so = tcb.so_next;
     if (so)
@@ -95,7 +95,7 @@ tcp_slowtimo(PNATState pData)
     register struct tcpcb *tp;
     register int i;
 
-    LogFlow(("tcp_slowtimo:\n"));
+    LogFlowFuncEnter();
 
     /*
      * Search through tcb's and update active timers.
@@ -158,7 +158,7 @@ tcp_timers(PNATState pData, register struct tcpcb *tp, int timer)
 {
     register int rexmt;
 
-    LogFlow(("tcp_timers:\n"));
+    LogFlowFunc(("ENTER: tp:%R[tcpcb793], timer:%d\n", tp, timer));
 
     switch (timer)
     {

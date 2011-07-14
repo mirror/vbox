@@ -334,7 +334,7 @@ soread(PNATState pData, struct socket *so)
     SOCKET_LOCK(so);
     QSOCKET_UNLOCK(tcb);
 
-    LogFlow(("soread: so = %lx\n", (long)so));
+    LogFlowFunc(("soread: so = %lx\n", (long)so));
 
     if (len > mss)
         len -= len % mss;
@@ -409,7 +409,7 @@ sorecvoob(PNATState pData, struct socket *so)
     struct tcpcb *tp = sototcpcb(so);
     ssize_t ret;
 
-    LogFlow(("sorecvoob: so = %lx\n", (long)so));
+    LogFlowFunc(("sorecvoob: so = %R[natsock]\n", so));
 
     /*
      * We take a guess at how much urgent data has arrived.
@@ -438,7 +438,7 @@ sosendoob(struct socket *so)
 
     int n, len;
 
-    LogFlow(("sosendoob so = %lx\n", (long)so));
+    LogFlowFunc(("sosendoob so = %R[natsock]\n", so));
 
     if (so->so_urgc > sizeof(buff))
         so->so_urgc = sizeof(buff); /* XXX */
@@ -651,7 +651,7 @@ do_sosend(struct socket *so, int fUrg)
 
     int n, len;
 
-    LogFlow(("sosendoob: so = %lx\n", (long)so));
+    LogFlowFunc(("sosendoob: so = %R[natsock]\n", so));
 
     len = sbuf_len(sb);
 
@@ -706,7 +706,7 @@ sorecvfrom(PNATState pData, struct socket *so)
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(struct sockaddr_in);
 
-    LogFlow(("sorecvfrom: so = %lx\n", (long)so));
+    LogFlowFunc(("sorecvfrom: so = %lx\n", (long)so));
 
     if (so->so_type == IPPROTO_ICMP)
     {
@@ -882,7 +882,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     caddr_t buf = 0;
     int mlen;
 
-    LogFlow(("sosendto: so = %lx, m = %lx\n", (long)so, (long)m));
+    LogFlowFunc(("sosendto: so = %R[natsock], m = %lx\n", so, (long)m));
 
     memset(&addr, 0, sizeof(struct sockaddr));
 #ifdef RT_OS_DARWIN
@@ -976,7 +976,7 @@ solisten(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_in
     int s, opt = 1;
     int status;
 
-    LogFlow(("solisten: port = %d, laddr = %x, lport = %d, flags = %x\n", port, laddr, lport, flags));
+    LogFlowFunc(("solisten: port = %d, laddr = %x, lport = %d, flags = %x\n", port, laddr, lport, flags));
 
     if ((so = socreate()) == NULL)
     {

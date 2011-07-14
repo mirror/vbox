@@ -128,8 +128,8 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
     register int tlen;
     int win = 0;
 
-    LogFlow(("tcp_respond: tp = %lx, ti = %lx, m = %lx, ack = %u, seq = %u, flags = %x\n",
-              (long)tp, (long)ti, (long)m, ack, seq, flags));
+    LogFlowFunc(("ENTER: tp = %R[tcpcb793], ti = %lx, m = %lx, ack = %u, seq = %u, flags = %x\n",
+                 tp, (long)ti, (long)m, ack, seq, flags));
 
     if (tp)
         win = sbspace(&tp->t_socket->so_rcv);
@@ -243,7 +243,7 @@ struct tcpcb *tcp_drop(PNATState pData, struct tcpcb *tp, int err)
         int errno;
 {
 */
-    LogFlow(("tcp_drop: tp = %lx, errno = %d\n", (long)tp, errno));
+    LogFlowFunc(("ENTER: tp = %R[tcpcb793], errno = %d\n", tp, errno));
 
     if (TCPS_HAVERCVDSYN(tp->t_state))
     {
@@ -275,7 +275,7 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
     struct socket *so_next, *so_prev;
 
     struct tseg_qent *te = NULL;
-    LogFlow(("tcp_close: tp = %lx\n", (long)tp));
+    LogFlowFunc(("ENTER: tp = %R[tcpcb793]\n", tp));
     so_next = so_prev = NULL;
     /*XXX: freeing the reassembly queue */
     while (!LIST_EMPTY(&tp->t_segq))
@@ -352,7 +352,7 @@ tcp_quench(i, int errno)
 void
 tcp_sockclosed(PNATState pData, struct tcpcb *tp)
 {
-    LogFlow(("tcp_sockclosed: tp = %lx\n", (long)tp));
+    LogFlowFunc(("ENTER: tp = %R[tcpcb793]\n", tp));
 
     switch (tp->t_state)
     {
@@ -402,7 +402,7 @@ int tcp_fconnect(PNATState pData, struct socket *so)
 {
     int ret = 0;
 
-    LogFlow(("tcp_fconnect: so = %lx\n", (long)so));
+    LogFlowFunc(("ENTER: so = %R[natsock]\n", so));
 
     if ((ret = so->s = socket(AF_INET, SOCK_STREAM, 0)) >= 0)
     {
@@ -471,7 +471,7 @@ tcp_connect(PNATState pData, struct socket *inso)
     socklen_t optlen;
     static int cVerbose = 1;
 
-    LogFlow(("tcp_connect: inso = %lx\n", (long)inso));
+    LogFlowFunc(("ENTER: inso = %R[natsock]\n", inso));
 
     /*
      * If it's an SS_ACCEPTONCE socket, no need to socreate()

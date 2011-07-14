@@ -94,7 +94,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     int ret;
     int ttl;
 
-    LogFlow(("udp_input: m = %lx, iphlen = %d\n", (long)m, iphlen));
+    LogFlowFunc(("ENTER: m = %p, iphlen = %d\n", m, iphlen));
     ip = mtod(m, struct ip *);
     Log2(("%RTnaipv4 iphlen = %d\n", ip->ip_dst, iphlen));
 
@@ -193,6 +193,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         m->m_data += sizeof(struct udpiphdr);
         m->m_len -= sizeof(struct udpiphdr);
         udp_output2(pData, NULL, m, &src, &dst, IPTOS_LOWDELAY);
+        LogFlowFuncLeave();
         return;
     }
     /*
@@ -299,6 +300,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
               errno, strerror(errno), ip->ip_dst));
         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
         so->so_m = NULL;
+        LogFlowFuncLeave();
         return;
     }
 
@@ -310,6 +312,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     m->m_data -= iphlen;
     *ip = save_ip;
     so->so_m = m;         /* ICMP backup */
+    LogFlowFuncLeave();
     return;
 
 bad_free_mbuf:
@@ -322,6 +325,7 @@ done_free_mbuf:
      * buffers here.
      */
     m_freem(pData, m);
+    LogFlowFuncLeave();
     return;
 }
 
@@ -338,8 +342,8 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     int error;
     int mlen = 0;
 
-    LogFlow(("udp_output: so = %lx, m = %lx, saddr = %lx, daddr = %lx\n",
-            (long)so, (long)m, (long)saddr->sin_addr.s_addr, (long)daddr->sin_addr.s_addr));
+    LogFlowFunc(("ENTER: so = %R[natsock], m = %lx, saddr = %lx, daddr = %lx\n",
+                 so, (long)m, (long)saddr->sin_addr.s_addr, (long)daddr->sin_addr.s_addr));
 
     /*
      * Adjust for header
