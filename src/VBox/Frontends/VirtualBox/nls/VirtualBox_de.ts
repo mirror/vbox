@@ -337,7 +337,7 @@
     </message>
     <message>
         <source>Dock Icon</source>
-        <translation></translation>
+        <translation>Dock-Icon</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
@@ -2030,7 +2030,7 @@
     </message>
     <message>
         <source>no host-only network adapter is selected</source>
-        <translation></translation>
+        <translation>haben Sie keinen Host-Only-Netzwerkadapter ausgewählt</translation>
     </message>
     <message>
         <source>Not selected</source>
@@ -2111,7 +2111,7 @@
     </message>
     <message>
         <source>Generic Properties:</source>
-        <translation>Generische Eigenschaften:</translation>
+        <translation>Konfiguration:</translation>
     </message>
     <message>
         <source>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
@@ -2549,7 +2549,7 @@
     </message>
     <message>
         <source>Information</source>
-        <translation>Information</translation>
+        <translation>Informationen</translation>
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
@@ -2589,11 +2589,11 @@
     </message>
     <message>
         <source>Virtual Size:</source>
-        <translation>Virtuelle Größe:</translation>
+        <translation>virtuelle Größe:</translation>
     </message>
     <message>
         <source>Actual Size:</source>
-        <translation>Wirkliche Größe:</translation>
+        <translation>tatsächliche Größe:</translation>
     </message>
     <message>
         <source>Size:</source>
@@ -2601,7 +2601,7 @@
     </message>
     <message>
         <source>Location:</source>
-        <translation>Ort:</translation>
+        <translation>abgespeichert als:</translation>
     </message>
     <message>
         <source>Type (Format):</source>
@@ -2609,7 +2609,7 @@
     </message>
     <message>
         <source>Attached To:</source>
-        <translation>Angeschlossen an:</translation>
+        <translation>angeschlossen an:</translation>
     </message>
     <message>
         <source>Add SAS Controller</source>
@@ -2720,7 +2720,7 @@
         <translation>&amp;SSD-Laufwerk</translation>
     </message>
     <message>
-        <source>Details:</source>
+        <source>wie abgespeichert:</source>
         <translation></translation>
     </message>
     <message>
@@ -3182,7 +3182,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie möchten die Attribute der virtuellen Platte in &lt;b&gt;%1&lt;/b&gt; ändern.&lt;/p&gt;&lt;p&gt;Bitte benutzen Sie einen der folgenden Medientypen und wählen dann &lt;b&gt;%2&lt;/b&gt; um fortzufahren oder &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie möchten die Attribute der virtuellen Festplatte &lt;b&gt;%1&lt;/b&gt; ändern.&lt;/p&gt;&lt;p&gt;Bitte wählen Sie einen der folgenden Medientypen und bestätigen dann mit &lt;b&gt;%2&lt;/b&gt; um fortzufahren oder verwerfen die Änderung mit &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose medium type:</source>
@@ -3351,7 +3351,7 @@
         <translation>Dateityp</translation>
     </message>
     <message>
-        <source>Details</source>
+        <source>wie abgespeichert</source>
         <comment>summary</comment>
         <translation></translation>
     </message>
@@ -5172,17 +5172,17 @@
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>verweigern (deny)</translation>
     </message>
     <message>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation>VMs erlauben</translation>
+        <translation>erlauben für alle VMs</translation>
     </message>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation>Allen erlauben</translation>
+        <translation>erlauben für allen VMs und den Host</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
@@ -5255,7 +5255,7 @@
     <name>VBoxLicenseViewer</name>
     <message>
         <source>VirtualBox License</source>
-        <translation></translation>
+        <translation>VirtualBox-Lizenz</translation>
     </message>
     <message>
         <source>I &amp;Agree</source>
@@ -5356,7 +5356,7 @@
     </message>
     <message>
         <source>Release the selected medium by detaching it from the machines</source>
-        <translation>Hebt die Verbindung des ausgewählten Medium an alle virtuellen Maschinen auf</translation>
+        <translation>Löst die Bindung des ausgewählten Medium an alle virtuellen Maschinen</translation>
     </message>
     <message>
         <source>Refresh the media list</source>
@@ -5457,7 +5457,7 @@
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Art der Abspeicherung:</translation>
     </message>
     <message>
         <source>Attached to:</source>
@@ -5469,7 +5469,7 @@
     </message>
     <message>
         <source>Copy an existing medium</source>
-        <translation>Kopiert ein Medium</translation>
+        <translation>Erstellt eine Kopie des Medium</translation>
     </message>
     <message>
         <source>&amp;Modify...</source>
@@ -6440,7 +6440,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sie möchten zum Sicherungspunkt &lt;b&gt;%1&lt;/b&gt; zurückkehren.&lt;/p&gt;&lt;p&gt;Sie können gleichzeitig durch Auswahl der Checkbox einen Sicherungspunkt für den aktuellen Zustand anlegen, anderenfalls geht der aktuelle Zustand unwiderruflich verloren. Möchten Sie fortfahren?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
@@ -6452,7 +6452,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das Maschinen-Verzeichnis &lt;b&gt;%1&lt;/b&gt; konnte nicht im Verzeichnis &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; erzeugt werden.&lt;/p&gt;&lt;p&gt;Bitte überprüfen Sie, ob das übergeordnete Verzeichnis vorhanden ist und ob Sie geeignete Zugriffsrechte zum Erzeugen des Maschinen-Verzeichnisses haben.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
@@ -6504,7 +6504,7 @@
     </message>
     <message>
         <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Zustand der virtuellen Maschine hat sich in der Zwischenzeit geändert. Durch Bestätigen werden nur die zur Laufzeit änderbaren Einstellungen abgespeichert. Alle anderen Änderungen gehen verloren.</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -6743,7 +6743,7 @@
     </message>
     <message>
         <source>D&amp;iscard Saved State</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verwerfen</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
