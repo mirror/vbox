@@ -1429,7 +1429,7 @@ vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23
     VLAN 23 over the physical interface "nge0" can use the same VNIC template.
     This makes managing VMs on VLANs simpler and efficient, as the VLAN
     details are not stored as part of every VM's configuration but rather
-    picked up via the VNIC template which can be modified any time using
+    picked up via the VNIC template which can be modified anytime using
     <computeroutput>dladm</computeroutput>. Apart from the VLAN ID, VNIC
     templates can be created with additional properties such as bandwidth
     limits, CPU fanout etc. Refer to your Solaris network documentation on how
