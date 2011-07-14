@@ -293,6 +293,8 @@ void UIMachineSettingsNetwork::polishTab()
     m_pMACLabel->setEnabled(m_pParent->isMachineOffline());
     m_pMACEditor->setEnabled(m_pParent->isMachineOffline());
     m_pMACButton->setEnabled(m_pParent->isMachineOffline());
+    m_pGenericPropertiesLabel->setEnabled(m_pParent->isMachineInValidMode());
+    m_pGenericPropertiesTextEdit->setEnabled(m_pParent->isMachineInValidMode());
     m_pPortForwardingButton->setEnabled(m_pParent->isMachineInValidMode() &&
                                         attachmentType() == KNetworkAttachmentType_NAT);
 
