@@ -1583,6 +1583,26 @@
         <source>None</source>
         <translation>Keine</translation>
     </message>
+    <message>
+        <source>Left Shift</source>
+        <translation>Shift Links</translation>
+    </message>
+    <message>
+        <source>Right Shift</source>
+        <translation>Shift Rechts</translation>
+    </message>
+    <message>
+        <source>Left Ctrl</source>
+        <translation>Strg Links</translation>
+    </message>
+    <message>
+        <source>Right Ctrl</source>
+        <translation>Strg Rechts</translation>
+    </message>
+    <message>
+        <source>Left Alt</source>
+        <translation>Alt Links</translation>
+    </message>
 </context>
 <context>
     <name>UIImportApplianceWzd</name>
@@ -2601,7 +2621,7 @@
     </message>
     <message>
         <source>Location:</source>
-        <translation>abgespeichert als:</translation>
+        <translation>abgespeichert wo:</translation>
     </message>
     <message>
         <source>Type (Format):</source>
@@ -2720,10 +2740,6 @@
         <translation>&amp;SSD-Laufwerk</translation>
     </message>
     <message>
-        <source>wie abgespeichert:</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>at most one supported</source>
         <comment>controller</comment>
         <translation>höchstens einer unterstützt</translation>
@@ -2736,6 +2752,10 @@
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
         <translation>werden momentan mehr Controller benutzt als ein %1-Chipsatz unterstützt. Bitte ändern Sie den Typ des Chipsatzes auf der Seite Systemeinstellungen oder entfernen Sie Controller aus der folgenden Liste: %2.</translation>
+    </message>
+    <message>
+        <source>Details:</source>
+        <translation>abgespeichert wie:</translation>
     </message>
 </context>
 <context>
@@ -3351,14 +3371,9 @@
         <translation>Dateityp</translation>
     </message>
     <message>
-        <source>wie abgespeichert</source>
-        <comment>summary</comment>
-        <translation></translation>
-    </message>
-    <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation>Ort</translation>
+        <translation>abgespeichert wo</translation>
     </message>
     <message>
         <source>Size</source>
@@ -3387,7 +3402,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Bitte wählen Sie den Dateityp für die neue virtuelle Festplatte. Falls Sie diese nicht mit andere Virtualisierungssoftware verwenden, können Sie diese Einstellung unverändert lassen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Bitte wählen Sie den Typ der neuen virtuelle Festplatte. Falls Sie diese nicht mit anderer Virtualisierungssoftware verwenden, können Sie diese Einstellung unverändert lassen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
@@ -3396,6 +3411,11 @@
     <message>
         <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
         <translation>Bitte wählen Sie, ob die neue virtuelle Festplatte erst nach und nach zur Laufzeit alloziert werden soll oder ob die Platte jetzt sofort vollständig alloziert werden soll.</translation>
+    </message>
+    <message>
+        <source>Details</source>
+        <comment>summary</comment>
+        <translation>abgespeichert wie</translation>
     </message>
 </context>
 <context>
