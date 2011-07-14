@@ -6259,11 +6259,12 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayI
     if (options != NULL)
         optList = com::SafeArray<CloneOptions_T>(ComSafeArrayInArg(options)).toList();
 
-    AssertReturn(!optList.contains(CloneOptions_Link), E_NOTIMPL);
+    AssertReturn(!optList.contains(CloneOptions_Link) || (isSnapshotMachine() && mode == CloneMode_MachineState), E_INVALIDARG);
     AssertReturn(!(optList.contains(CloneOptions_KeepAllMACs) && optList.contains(CloneOptions_KeepNATMACs)), E_INVALIDARG);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
 
     MachineCloneVM *pWorker = new MachineCloneVM(this, static_cast<Machine*>(pTarget), mode, optList);
 
@@ -9454,9 +9455,9 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
 /**
  * Deletes implicit differencing hard disks created either by
- * #createImplicitDiffs() or by #AttachMedium() and rolls back mMediaData.
+ * #createImplicitDiffs() or by #AttachDevice() and rolls back mMediaData.
  *
- * Note that to delete hard disks created by #AttachMedium() this method is
+ * Note that to delete hard disks created by #AttachDevice() this method is
  * called from #fixupMedia() when the changes are rolled back.
  *
  * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs to receive the registry IDs that need saving
