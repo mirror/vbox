@@ -1378,7 +1378,7 @@ VBoxManage setextradata "VM name"
     <screen>touch /etc/vboxinst_vboxflt</screen>
 
     <para>To force installation of the Crossbow based network filter
-    driver,execute as root the below command before installing the VirtualBox
+    driver, execute as root the below command before installing the VirtualBox
     package:</para>
 
     <screen>touch /etc/vboxinst_vboxbow</screen>
@@ -1389,15 +1389,15 @@ VBoxManage setextradata "VM name"
     <screen>modinfo | grep vbox</screen>
 
     <para>If the output contains "vboxbow", it indicates VirtualBox is using
-    Crossbow network filter driver, while the name "vboxflt" indicates usage
-    of the older STREAMS network filter.</para>
+    the Crossbow network filter driver, while the name "vboxflt" indicates
+    usage of the older STREAMS network filter.</para>
   </sect1>
 
   <sect1 id="vboxbowvnictemplates">
     <title>VirtualBox VNIC templates for VLANs on Solaris 11 hosts</title>
 
     <para>VirtualBox supports VNIC (Virtual Network Interface) templates for
-    configuring VMs over a VLAN.<footnote>
+    configuring VMs over VLANs.<footnote>
         <para>Support for Crossbow based bridged networking was introduced
         with VirtualBox 4.1 and requires Solaris 11 build 159 or above.</para>
       </footnote> A VirtualBox VNIC template is a VNIC whose name starts with
