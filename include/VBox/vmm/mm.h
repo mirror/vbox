@@ -27,7 +27,7 @@
 #define ___VBox_vmm_mm_h
 
 #include <VBox/types.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 #include <VBox/sup.h>
 #include <iprt/stdarg.h>
 

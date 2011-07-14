@@ -20,7 +20,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 
 
 

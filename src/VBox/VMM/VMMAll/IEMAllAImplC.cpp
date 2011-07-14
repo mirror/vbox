@@ -20,7 +20,7 @@
 *******************************************************************************/
 #include "IEMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 
 #if 0
 

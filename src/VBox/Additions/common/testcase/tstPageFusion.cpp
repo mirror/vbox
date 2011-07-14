@@ -26,8 +26,9 @@
 #include <iprt/string.h>
 #include <iprt/initterm.h>
 #include <VBox/VBoxGuestLib.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 #include <stdio.h>
+
 
 /*******************************************************************************
 *   Global Variables                                                           *

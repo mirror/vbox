@@ -20,7 +20,7 @@
 ;   Header Files                                                              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 %include "iprt/asmdefs.mac"
-%include "VBox/x86.mac"
+%include "iprt/x86.mac"
 
 ;; @todo Move this to a header?
 struc TRAPINFO

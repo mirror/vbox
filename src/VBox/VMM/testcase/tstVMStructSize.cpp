@@ -56,7 +56,7 @@
 #include <VBox/vmm/uvm.h>
 #include <VBox/vmm/gvm.h>
 #include <VBox/param.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 
 #include "tstHelp.h"
 #include <stdio.h>

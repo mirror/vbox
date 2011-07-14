@@ -30,7 +30,7 @@
 #include <VBox/sup.h>
 #include <VBox/vmm/vmapi.h>
 #include <VBox/vmm/gmm.h>               /* for PGMMREGISTERSHAREDMODULEREQ */
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 #include <VBox/VMMDev.h>                /* for VMMDEVSHAREDREGIONDESC */
 #include <VBox/param.h>
 

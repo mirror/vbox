@@ -1,7 +1,7 @@
 /** @file
- * X86 (and AMD64) Structures and Definitions (VMM,++).
+ * IPRT - X86 and AMD64 Structures and Definitions.
  *
- * x86.mac is generated from this file by running 'kmk incs' in the root.
+ * @note x86.mac is generated from this file by running 'kmk incs' in the root.
  */
 
 /*
@@ -25,10 +25,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_x86_h
-#define ___VBox_x86_h
+#ifndef ___iprt_x86_h
+#define ___iprt_x86_h
 
-#include <VBox/types.h>
+#include <iprt/types.h>
 #include <iprt/assert.h>
 
 /* Workaround for Solaris sys/regset.h defining CS, DS */
@@ -37,7 +37,8 @@
 # undef DS
 #endif
 
-/** @defgroup grp_x86   x86 Types and Definitions
+/** @defgroup grp_rt_x86   x86 Types and Definitions
+ * @ingroup grp_rt
  * @{
  */
 

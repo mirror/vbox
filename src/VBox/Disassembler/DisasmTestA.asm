@@ -22,7 +22,7 @@
 %include "VBox/vmm/vm.mac"
 %include "VBox/err.mac"
 %include "VBox/vmm/stam.mac"
-%include "VBox/x86.mac"
+%include "iprt/x86.mac"
 
 BITS 32
 

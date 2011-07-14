@@ -38,8 +38,8 @@
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
 # include <iprt/asm.h>
 # include <iprt/asm-amd64-x86.h>
+# include <iprt/x86.h>
 # include <VBox/sup.h>
-# include <VBox/x86.h>
 #endif
 #include "internal/time.h"
 

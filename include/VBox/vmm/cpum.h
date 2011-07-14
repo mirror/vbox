@@ -26,8 +26,8 @@
 #ifndef ___VBox_vmm_cpum_h
 #define ___VBox_vmm_cpum_h
 
-#include <iprt/types.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
+#include <VBox/types.h>
 #include <VBox/vmm/cpumctx.h>
 
 RT_C_DECLS_BEGIN

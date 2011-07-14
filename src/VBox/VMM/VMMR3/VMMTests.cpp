@@ -33,7 +33,6 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/x86.h>
 #include <VBox/vmm/hwaccm.h>
 
 #include <iprt/assert.h>
@@ -41,6 +40,7 @@
 #include <iprt/time.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/x86.h>
 
 
 /**

@@ -23,7 +23,6 @@
 #include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/x86.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/vmm/hwaccm.h>
@@ -34,6 +33,7 @@
 # include <iprt/memobj.h>
 # include <VBox/apic.h>
 #endif
+#include <iprt/x86.h>
 
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI

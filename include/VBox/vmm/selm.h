@@ -27,7 +27,7 @@
 #define ___VBox_vmm_selm_h
 
 #include <VBox/types.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 #include <VBox/dis.h>
 #include <VBox/vmm/dbgfsel.h>
 

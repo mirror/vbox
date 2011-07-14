@@ -344,7 +344,7 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac: \
 		$(DEPTH)/include/VBox/vmm/cpum.mac \
 		$(DEPTH)/include/VBox/vmm/vm.mac \
 		$(DEPTH)/include/VBox/sup.mac \
-		$(DEPTH)/include/VBox/x86.mac \
+		$(DEPTH)/include/iprt/x86.mac \
 		$(VBOX_PATH_VMM_SRC)/include/CPUMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/TRPMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/HWACCMInternal.mac \

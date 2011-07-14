@@ -28,7 +28,7 @@
 
 #include <VBox/types.h>
 #include <VBox/err.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 #include <iprt/assert.h>
 
 /** @defgroup grp_vmx   vmx Types and Definitions

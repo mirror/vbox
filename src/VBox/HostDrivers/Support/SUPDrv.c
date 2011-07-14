@@ -54,13 +54,13 @@
 # include <iprt/rand.h>
 # include <iprt/path.h>
 #endif
+#include <iprt/x86.h>
 
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/vmm/hwacc_svm.h>
 #include <VBox/vmm/hwacc_vmx.h>
-#include <VBox/x86.h>
 
 #ifdef VBOX_WITH_DTRACE
 # include "SUPDrv-dtrace.h"

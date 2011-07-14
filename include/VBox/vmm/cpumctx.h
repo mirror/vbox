@@ -27,7 +27,7 @@
 #define ___VBox_vmm_cpumctx_h
 
 #include <iprt/types.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 
 
 RT_C_DECLS_BEGIN

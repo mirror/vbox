@@ -80,7 +80,7 @@ AssertCompileSize(RTHCPHYS, 8);
 #include "REMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/param.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 #include <iprt/assert.h>
 
 /* we don't use iprt here because we're pretending to be in GC! */

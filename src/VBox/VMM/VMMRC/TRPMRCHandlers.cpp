@@ -38,12 +38,12 @@
 #include <VBox/err.h>
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
-#include <VBox/x86.h>
 #include <VBox/log.h>
 #include <VBox/vmm/tm.h>
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
+#include <iprt/x86.h>
 
 
 /*******************************************************************************
