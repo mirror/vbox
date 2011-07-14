@@ -4255,7 +4255,9 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             PGMMPAGEDESC pPage = &pVM->pgm.s.aHandyPages[iClear];
             void *pv;
             rc = pgmPhysPageMapByPageID(pVM, pPage->idPage, pPage->HCPhysGCPhys, &pv);
-            AssertLogRelMsgBreak(RT_SUCCESS(rc), ("idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc\n", pPage->idPage, pPage->HCPhysGCPhys, rc));
+            AssertLogRelMsgBreak(RT_SUCCESS(rc),
+                                 ("%u/%u: idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc\n",
+                                  iClear, pVM->pgm.s.cHandyPages, pPage->idPage, pPage->HCPhysGCPhys, rc));
             ASMMemZeroPage(pv);
             iClear++;
             Log3(("PGMR3PhysAllocateHandyPages: idPage=%#x HCPhys=%RGp\n", pPage->idPage, pPage->HCPhysGCPhys));
