@@ -1091,7 +1091,7 @@ Statistics update:  disabled
   <sect1 id="vboxmanage-clonevm">
     <title>VBoxManage clonevm</title>
 
-    <para>This command creates a full copy of an existing virtual
+    <para>This command creates a full or linked copy of an existing virtual
     machine.</para>
 
     <para>The <computeroutput>clonevm</computeroutput> subcommand takes at
@@ -1117,12 +1117,14 @@ Statistics update:  disabled
            </para>
        </listitem>
        <listitem>
-           <para><computeroutput>--options keepallmacs|keepnatmacs|keepdisknames</computeroutput>: 
-           Allows additional fine tuning of the clone operation. The first two
+           <para><computeroutput>--options link|keepallmacs|keepnatmacs|keepdisknames</computeroutput>: 
+           Allows additional fine tuning of the clone operation. The first
+           option defines that a linked clone should be created, which is
+           only possible for a machine clone from a snapshot. The next two
            options allow to define how the MAC addresses of every virtual
            network card should be handled. They can either be reinitialized
-           (the default), leaved unchanged
-           (<computeroutput>keepallmacs</computeroutput>) or leaved unchanged
+           (the default), left unchanged
+           (<computeroutput>keepallmacs</computeroutput>) or left unchanged
            when the network type is NAT
            (<computeroutput>keepnatmacs</computeroutput>). If you add
            <computeroutput>keepdisknames</computeroutput> all new disk images

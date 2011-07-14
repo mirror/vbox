@@ -35,20 +35,21 @@ typedef struct
 {
     ComPtr<IMedium>         pMedium;
     ULONG                   uWeight;
-}MEDIUMTASK;
+} MEDIUMTASK;
 
 typedef struct
 {
     RTCList<MEDIUMTASK>     chain;
     bool                    fCreateDiffs;
-}MEDIUMTASKCHAIN;
+    bool                    fAttachLinked;
+} MEDIUMTASKCHAIN;
 
 typedef struct
 {
     Guid                    snapshotUuid;
     Utf8Str                 strSaveStateFile;
     ULONG                   uWeight;
-}SAVESTATETASK;
+} SAVESTATETASK;
 
 // The private class
 /////////////////////////////////////////////////////////////////////////////
@@ -329,6 +330,12 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
             bool fCreateDiffs = false;
             if (machine == d->pOldMachineState)
                 fCreateDiffs = true;
+            /* If we want to create a linked clone just attach the medium
+             * associated with the snapshot. The rest is taken care of by
+             * attach already, so no need to duplicate this. */
+            bool fAttachLinked = false;
+            if (d->options.contains(CloneOptions_Link))
+                fAttachLinked = true;
             SafeIfaceArray<IMediumAttachment> sfaAttachments;
             rc = machine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
             if (FAILED(rc)) throw rc;
@@ -357,7 +364,9 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                  * will not create a full copy of the base/child relationship.) */
                 MEDIUMTASKCHAIN mtc;
                 mtc.fCreateDiffs = fCreateDiffs;
-                while(!pSrcMedium.isNull())
+                mtc.fAttachLinked = fAttachLinked;
+
+                if (d->mode == CloneMode_MachineState)
                 {
                     /* Refresh the state so that the file size get read. */
                     MediumState_T e;
@@ -370,32 +379,71 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                     /* Save the current medium, for later cloning. */
                     MEDIUMTASK mt;
                     mt.pMedium = pSrcMedium;
-                    mt.uWeight = (lSize + _1M - 1) / _1M;
+                    if (fAttachLinked)
+                        mt.uWeight = 0; /* dummy */
+                    else
+                        mt.uWeight = (lSize + _1M - 1) / _1M;
                     mtc.chain.append(mt);
-
-                    /* Query next parent. */
-                    rc = pSrcMedium->COMGETTER(Parent)(pSrcMedium.asOutParam());
-                    if (FAILED(rc)) throw rc;
-                };
-                /* Currently the creation of diff images involves reading at least
-                 * the biggest parent in the previous chain. So even if the new
-                 * diff image is small in size, it could need some time to create
-                 * it. Adding the biggest size in the chain should balance this a
-                 * little bit more, i.e. the weight is the sum of the data which
-                 * needs to be read and written. */
-                uint64_t uMaxSize = 0;
-                for (size_t e = mtc.chain.size(); e > 0; --e)
+                }
+                else
                 {
-                    MEDIUMTASK &mt = mtc.chain.at(e - 1);
-                    mt.uWeight += uMaxSize;
+                    /** @todo r=klaus this puts way too many images in the list
+                     * when cloning a snapshot (sub)tree, which means that more
+                     * images are cloned than necessary. It is just the easiest
+                     * way to get a working VM, as getting the image
+                     * parent/child relationships right for only the bare
+                     * minimum cloning is rather tricky. */
+                    while (!pSrcMedium.isNull())
+                    {
+                        /* Refresh the state so that the file size get read. */
+                        MediumState_T e;
+                        rc = pSrcMedium->RefreshState(&e);
+                        if (FAILED(rc)) throw rc;
+                        LONG64 lSize;
+                        rc = pSrcMedium->COMGETTER(Size)(&lSize);
+                        if (FAILED(rc)) throw rc;
 
-                    /* Calculate progress data */
+                        /* Save the current medium, for later cloning. */
+                        MEDIUMTASK mt;
+                        mt.pMedium = pSrcMedium;
+                        mt.uWeight = (lSize + _1M - 1) / _1M;
+                        mtc.chain.append(mt);
+
+                        /* Query next parent. */
+                        rc = pSrcMedium->COMGETTER(Parent)(pSrcMedium.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                    }
+                }
+
+                if (fAttachLinked)
+                {
+                    /* Implicit diff creation as part of attach is a pretty cheap
+                     * operation, and does only need one operation per attachment. */
                     ++uCount;
-                    uTotalWeight += mt.uWeight;
+                    uTotalWeight += 1;  /* 1MB per attachment */
+                }
+                else
+                {
+                    /* Currently the copying of diff images involves reading at least
+                     * the biggest parent in the previous chain. So even if the new
+                     * diff image is small in size, it could need some time to create
+                     * it. Adding the biggest size in the chain should balance this a
+                     * little bit more, i.e. the weight is the sum of the data which
+                     * needs to be read and written. */
+                    uint64_t uMaxSize = 0;
+                    for (size_t e = mtc.chain.size(); e > 0; --e)
+                    {
+                        MEDIUMTASK &mt = mtc.chain.at(e - 1);
+                        mt.uWeight += uMaxSize;
 
-                    /* Save the max size for better weighting of diff image
-                     * creation. */
-                    uMaxSize = RT_MAX(uMaxSize, mt.uWeight);
+                        /* Calculate progress data */
+                        ++uCount;
+                        uTotalWeight += mt.uWeight;
+
+                        /* Save the max size for better weighting of diff image
+                         * creation. */
+                        uMaxSize = RT_MAX(uMaxSize, mt.uWeight);
+                    }
                 }
                 d->llMedias.append(mtc);
             }
@@ -471,7 +519,7 @@ HRESULT MachineCloneVM::run()
     Utf8Str strTrgMachineFolder = d->pTrgMachine->getSettingsFileFull();
     strTrgMachineFolder.stripFilename();
 
-    RTCList< ComObjPtr<Medium> > newMedias; /* All created images */
+    RTCList<ComObjPtr<Medium> > newMedia;   /* All created images */
     RTCList<Utf8Str> newFiles;              /* All extra created files (save states, ...) */
     try
     {
@@ -498,9 +546,9 @@ HRESULT MachineCloneVM::run()
             /* Remove any hint on snapshots. */
             trgMCF.llFirstSnapshot.clear();
             trgMCF.uuidCurrentSnapshot.clear();
-        }else
-        if (   d->mode == CloneMode_MachineAndChildStates
-            && !sn.uuid.isEmpty())
+        }
+        else if (   d->mode == CloneMode_MachineAndChildStates
+                 && !sn.uuid.isEmpty())
         {
             /* Copy the snapshot data to the current machine. */
             trgMCF.hardwareMachine = sn.hardware;
@@ -568,175 +616,181 @@ HRESULT MachineCloneVM::run()
                 rc = pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                /* Is a clone already there? */
-                TStrMediumMap::iterator it = map.find(Utf8Str(bstrSrcId));
-                if (it != map.end())
-                    pNewParent = it->second;
+                if (mtc.fAttachLinked)
+                {
+                    IMedium *pTmp = pMedium;
+                    ComObjPtr<Medium> pLMedium = static_cast<Medium*>(pTmp);
+                    if (pLMedium.isNull())
+                        throw E_POINTER;
+                    if (pLMedium->isReadOnly())
+                    {
+                        ComObjPtr<Medium> pDiff;
+                        /* create the diff under the snapshot medium */
+                        rc = createDiffHelper(pLMedium, strTrgSnapshotFolder,
+                                              &newMedia, &pDiff);
+                        if (FAILED(rc)) throw rc;
+                        map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pDiff));
+                        /* diff image has to be used... */
+                        pNewParent = pDiff;
+                    }
+                    else
+                    {
+                        /* Attach the medium directly, as its type is not
+                         * subject to diff creation. */
+                        newMedia.append(pLMedium);
+                        map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pLMedium));
+                        pNewParent = pLMedium;
+                    }
+                }
                 else
                 {
-                    ComPtr<IMediumFormat> pSrcFormat;
-                    rc = pMedium->COMGETTER(MediumFormat)(pSrcFormat.asOutParam());
-                    ULONG uSrcCaps = 0;
-                    rc = pSrcFormat->COMGETTER(Capabilities)(&uSrcCaps);
-                    if (FAILED(rc)) throw rc;
-
-                    /* Default format? */
-                    Utf8Str strDefaultFormat;
-                    p->mParent->getDefaultHardDiskFormat(strDefaultFormat);
-                    Bstr bstrSrcFormat(strDefaultFormat);
-                    ULONG srcVar = MediumVariant_Standard;
-                    /* Is the source file based? */
-                    if ((uSrcCaps & MediumFormatCapabilities_File) == MediumFormatCapabilities_File)
-                    {
-                        /* Yes, just use the source format. Otherwise the defaults
-                         * will be used. */
-                        rc = pMedium->COMGETTER(Format)(bstrSrcFormat.asOutParam());
-                        if (FAILED(rc)) throw rc;
-                        rc = pMedium->COMGETTER(Variant)(&srcVar);
-                        if (FAILED(rc)) throw rc;
-                    }
-
-                    Guid newId;
-                    newId.create();
-                    Utf8Str strNewName(bstrSrcName);
-                    if (!fKeepDiskNames)
-                    {
-                        /* If the old disk name was in {uuid} format we also
-                         * want the new name in this format, but with the
-                         * updated id of course. If the old disk was called
-                         * like the VM name, we change it to the new VM name.
-                         * For all other disks we rename them with this
-                         * template: "new name-disk1.vdi". */
-                        Utf8Str strSrcTest = Utf8Str(bstrSrcName).stripExt();
-                        if (strSrcTest == strOldVMName)
-                            strNewName = Utf8StrFmt("%s%s", trgMCF.machineUserData.strName.c_str(), RTPathExt(Utf8Str(bstrSrcName).c_str()));
-                        else
-                        if (strSrcTest.startsWith("{") &&
-                            strSrcTest.endsWith("}"))
-                        {
-                            strSrcTest = strSrcTest.substr(1, strSrcTest.length() - 2);
-                            if (isValidGuid(strSrcTest))
-                                strNewName = Utf8StrFmt("%s%s", newId.toStringCurly().c_str(), RTPathExt(strNewName.c_str()));
-                        }
-                        else
-                            strNewName = Utf8StrFmt("%s-disk%d%s", trgMCF.machineUserData.strName.c_str(), ++cDisks, RTPathExt(Utf8Str(bstrSrcName).c_str()));
-                    }
-
-                    /* Check if this medium comes from the snapshot folder, if
-                     * so, put it there in the cloned machine as well.
-                     * Otherwise it goes to the machine folder. */
-                    Bstr bstrSrcPath;
-                    Utf8Str strFile = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
-                    rc = pMedium->COMGETTER(Location)(bstrSrcPath.asOutParam());
-                    if (FAILED(rc)) throw rc;
-                    if (   !bstrSrcPath.isEmpty()
-                        &&  RTPathStartsWith(Utf8Str(bstrSrcPath).c_str(), Utf8Str(bstrSrcSnapshotFolder).c_str()))
-                        strFile = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
+                    /* Is a clone already there? */
+                    TStrMediumMap::iterator it = map.find(Utf8Str(bstrSrcId));
+                    if (it != map.end())
+                        pNewParent = it->second;
                     else
-                        strFile = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
-
-                    /* Start creating the clone. */
-                    ComObjPtr<Medium> pTarget;
-                    rc = pTarget.createObject();
-                    if (FAILED(rc)) throw rc;
-
-                    rc = pTarget->init(p->mParent,
-                                       Utf8Str(bstrSrcFormat),
-                                       strFile,
-                                       Guid::Empty,  /* empty media registry */
-                                       NULL          /* llRegistriesThatNeedSaving */);
-                    if (FAILED(rc)) throw rc;
-
-                    /* Update the new uuid. */
-                    pTarget->updateId(newId);
-
-                    srcLock.release();
-                    /* Do the disk cloning. */
-                    ComPtr<IProgress> progress2;
-                    rc = pMedium->CloneTo(pTarget,
-                                          srcVar,
-                                          pNewParent,
-                                          progress2.asOutParam());
-                    if (FAILED(rc)) throw rc;
-
-                    /* Wait until the asynchrony process has finished. */
-                    rc = d->pProgress->WaitForAsyncProgressCompletion(progress2);
-                    srcLock.acquire();
-                    if (FAILED(rc)) throw rc;
-
-                    /* Check the result of the asynchrony process. */
-                    LONG iRc;
-                    rc = progress2->COMGETTER(ResultCode)(&iRc);
-                    if (FAILED(rc)) throw rc;
-                    if (FAILED(iRc))
                     {
-                        /* If the thread of the progress object has an error, then
-                         * retrieve the error info from there, or it'll be lost. */
-                        ProgressErrorInfo info(progress2);
-                        throw p->setError(iRc, Utf8Str(info.getText()).c_str());
+                        ComPtr<IMediumFormat> pSrcFormat;
+                        rc = pMedium->COMGETTER(MediumFormat)(pSrcFormat.asOutParam());
+                        ULONG uSrcCaps = 0;
+                        rc = pSrcFormat->COMGETTER(Capabilities)(&uSrcCaps);
+                        if (FAILED(rc)) throw rc;
+
+                        /* Default format? */
+                        Utf8Str strDefaultFormat;
+                        p->mParent->getDefaultHardDiskFormat(strDefaultFormat);
+                        Bstr bstrSrcFormat(strDefaultFormat);
+                        ULONG srcVar = MediumVariant_Standard;
+                        /* Is the source file based? */
+                        if ((uSrcCaps & MediumFormatCapabilities_File) == MediumFormatCapabilities_File)
+                        {
+                            /* Yes, just use the source format. Otherwise the defaults
+                             * will be used. */
+                            rc = pMedium->COMGETTER(Format)(bstrSrcFormat.asOutParam());
+                            if (FAILED(rc)) throw rc;
+                            rc = pMedium->COMGETTER(Variant)(&srcVar);
+                            if (FAILED(rc)) throw rc;
+                        }
+
+                        Guid newId;
+                        newId.create();
+                        Utf8Str strNewName(bstrSrcName);
+                        if (!fKeepDiskNames)
+                        {
+                            /* If the old disk name was in {uuid} format we also
+                             * want the new name in this format, but with the
+                             * updated id of course. If the old disk was called
+                             * like the VM name, we change it to the new VM name.
+                             * For all other disks we rename them with this
+                             * template: "new name-disk1.vdi". */
+                            Utf8Str strSrcTest = Utf8Str(bstrSrcName).stripExt();
+                            if (strSrcTest == strOldVMName)
+                                strNewName = Utf8StrFmt("%s%s", trgMCF.machineUserData.strName.c_str(), RTPathExt(Utf8Str(bstrSrcName).c_str()));
+                            else if (   strSrcTest.startsWith("{")
+                                     && strSrcTest.endsWith("}"))
+                            {
+                                strSrcTest = strSrcTest.substr(1, strSrcTest.length() - 2);
+                                if (isValidGuid(strSrcTest))
+                                    strNewName = Utf8StrFmt("%s%s", newId.toStringCurly().c_str(), RTPathExt(strNewName.c_str()));
+                            }
+                            else
+                                strNewName = Utf8StrFmt("%s-disk%d%s", trgMCF.machineUserData.strName.c_str(), ++cDisks, RTPathExt(Utf8Str(bstrSrcName).c_str()));
+                        }
+
+                        /* Check if this medium comes from the snapshot folder, if
+                         * so, put it there in the cloned machine as well.
+                         * Otherwise it goes to the machine folder. */
+                        Bstr bstrSrcPath;
+                        Utf8Str strFile = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
+                        rc = pMedium->COMGETTER(Location)(bstrSrcPath.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                        if (   !bstrSrcPath.isEmpty()
+                            &&  RTPathStartsWith(Utf8Str(bstrSrcPath).c_str(), Utf8Str(bstrSrcSnapshotFolder).c_str()))
+                            strFile = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
+                        else
+                            strFile = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
+
+                        /* Start creating the clone. */
+                        ComObjPtr<Medium> pTarget;
+                        rc = pTarget.createObject();
+                        if (FAILED(rc)) throw rc;
+
+                        rc = pTarget->init(p->mParent,
+                                           Utf8Str(bstrSrcFormat),
+                                           strFile,
+                                           Guid::Empty,  /* empty media registry */
+                                           NULL          /* llRegistriesThatNeedSaving */);
+                        if (FAILED(rc)) throw rc;
+
+                        /* Update the new uuid. */
+                        pTarget->updateId(newId);
+
+                        srcLock.release();
+                        /* Do the disk cloning. */
+                        ComPtr<IProgress> progress2;
+                        rc = pMedium->CloneTo(pTarget,
+                                              srcVar,
+                                              pNewParent,
+                                              progress2.asOutParam());
+                        if (FAILED(rc)) throw rc;
+
+                        /* Wait until the async process has finished. */
+                        rc = d->pProgress->WaitForAsyncProgressCompletion(progress2);
+                        srcLock.acquire();
+                        if (FAILED(rc)) throw rc;
+
+                        /* Check the result of the async process. */
+                        LONG iRc;
+                        rc = progress2->COMGETTER(ResultCode)(&iRc);
+                        if (FAILED(rc)) throw rc;
+                        if (FAILED(iRc))
+                        {
+                            /* If the thread of the progress object has an error, then
+                             * retrieve the error info from there, or it'll be lost. */
+                            ProgressErrorInfo info(progress2);
+                            throw p->setError(iRc, Utf8Str(info.getText()).c_str());
+                        }
+                        /* Remember created medium. */
+                        newMedia.append(pTarget);
+                        /* Get the medium type from the source and set it to the
+                         * new medium. */
+                        MediumType_T type;
+                        rc = pMedium->COMGETTER(Type)(&type);
+                        if (FAILED(rc)) throw rc;
+                        rc = pTarget->COMSETTER(Type)(type);
+                        if (FAILED(rc)) throw rc;
+                        map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pTarget));
+                        /* register the new harddisk */
+                        {
+                            AutoWriteLock tlock(p->mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+                            rc = p->mParent->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
+                            if (FAILED(rc)) throw rc;
+                        }
+                        /* This medium becomes the parent of the next medium in the
+                         * chain. */
+                        pNewParent = pTarget;
                     }
-                    /* Remember created medias. */
-                    newMedias.append(pTarget);
-                    /* Get the medium type from the source and set it to the
-                     * new medium. */
-                    MediumType_T type;
-                    rc = pMedium->COMGETTER(Type)(&type);
-                    if (FAILED(rc)) throw rc;
-                    rc = pTarget->COMSETTER(Type)(type);
-                    if (FAILED(rc)) throw rc;
-                    map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pTarget));
-                    /* Global register the new harddisk */
-                    {
-                        AutoWriteLock tlock(p->mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-                        rc = p->mParent->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
-                        if (FAILED(rc)) return rc;
-                    }
-                    /* This medium becomes the parent of the next medium in the
-                     * chain. */
-                    pNewParent = pTarget;
                 }
             }
 
             /* Create diffs for the last image chain. */
             if (mtc.fCreateDiffs)
             {
-                Bstr bstrSrcId;
-                rc = pNewParent->COMGETTER(Id)(bstrSrcId.asOutParam());
-                if (FAILED(rc)) throw rc;
-                ComObjPtr<Medium> diff;
-                diff.createObject();
-                rc = diff->init(p->mParent,
-                                pNewParent->getPreferredDiffFormat(),
-                                Utf8StrFmt("%s%c", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER),
-                                Guid::Empty, /* empty media registry */
-                                NULL);       /* pllRegistriesThatNeedSaving */
-                if (FAILED(rc)) throw rc;
-                MediumLockList *pMediumLockList(new MediumLockList());
-                rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
-                                                true /* fMediumLockWrite */,
-                                                pNewParent,
-                                                *pMediumLockList);
-                if (FAILED(rc)) throw rc;
-                rc = pMediumLockList->Lock();
-                if (FAILED(rc)) throw rc;
-                rc = pNewParent->createDiffStorage(diff, MediumVariant_Standard,
-                                                   pMediumLockList,
-                                                   NULL /* aProgress */,
-                                                   true /* aWait */,
-                                                   NULL); // pllRegistriesThatNeedSaving
-                delete pMediumLockList;
-                if (FAILED(rc)) throw rc;
-                /* Remember created medias. */
-                newMedias.append(diff);
-                /* Global register the new harddisk */
+                if (pNewParent->isReadOnly())
                 {
-                    AutoWriteLock tlock(p->mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-                    rc = p->mParent->registerHardDisk(diff, NULL /* pllRegistriesThatNeedSaving */);
-                    if (FAILED(rc)) return rc;
+                    ComObjPtr<Medium> pDiff;
+                    rc = createDiffHelper(pNewParent, strTrgSnapshotFolder,
+                                          &newMedia, &pDiff);
+                    if (FAILED(rc)) throw rc;
+                    /* diff image has to be used... */
+                    pNewParent = pDiff;
                 }
-                /* This medium becomes the parent of the next medium in the
-                 * chain. */
-                pNewParent = diff;
+                else
+                {
+                    /* Attach the medium directly, as its type is not
+                     * subject to diff creation. */
+                    newMedia.append(pNewParent);
+                }
             }
             Bstr bstrSrcId;
             rc = mtc.chain.first().pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
@@ -751,13 +805,13 @@ HRESULT MachineCloneVM::run()
         }
         /* Make sure all disks know of the new machine uuid. We do this last to
          * be able to change the medium type above. */
-        for (size_t i = newMedias.size(); i > 0; --i)
+        for (size_t i = newMedia.size(); i > 0; --i)
         {
-            ComObjPtr<Medium> &pMedium = newMedias.at(i - 1);
+            const ComObjPtr<Medium> &pMedium = newMedia.at(i - 1);
             AutoCaller mac(pMedium);
             if (FAILED(mac.rc())) throw mac.rc();
             AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
-            pMedium->addRegistry(d->pTrgMachine->mData->mUuid, false /* fRecursive */);
+            pMedium->addRegistry(d->options.contains(CloneOptions_Link) ? d->pSrcMachine->mData->mUuid : d->pTrgMachine->mData->mUuid, false /* fRecurse */);
         }
         /* Check if a snapshot folder is necessary and if so doesn't already
          * exists. */
@@ -811,8 +865,17 @@ HRESULT MachineCloneVM::run()
         /* Now save the new configuration to disk. */
         rc = d->pTrgMachine->SaveSettings();
         if (FAILED(rc)) throw rc;
+        trgLock.release();
+        if (d->options.contains(CloneOptions_Link))
+        {
+            srcLock.release();
+            GuidList llRegistrySrc;
+            llRegistrySrc.push_back(d->pSrcMachine->mData->mUuid);
+            rc = p->mParent->saveRegistries(llRegistrySrc);
+            if (FAILED(rc)) throw rc;
+        }
     }
-    catch(HRESULT rc2)
+    catch (HRESULT rc2)
     {
         rc = rc2;
     }
@@ -835,24 +898,13 @@ HRESULT MachineCloneVM::run()
         }
         /* Delete all already created medias. (Reverse, cause there could be
          * parent->child relations.) */
-        for (size_t i = newMedias.size(); i > 0; --i)
+        for (size_t i = newMedia.size(); i > 0; --i)
         {
-            bool fFile = false;
-            Utf8Str strLoc;
-            ComObjPtr<Medium> &pMedium = newMedias.at(i - 1);
-            {
-                AutoCaller mac(pMedium);
-                if (FAILED(mac.rc())) { continue; mrc = mac.rc(); }
-                AutoReadLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
-                fFile = pMedium->isMediumFormatFile();
-                strLoc = pMedium->getLocationFull();
-            }
-            if (fFile)
-            {
-                vrc = RTFileDelete(strLoc.c_str());
-                if (RT_FAILURE(vrc))
-                    mrc = p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not delete file '%s' (%Rrc)"), strLoc.c_str(), vrc);
-            }
+            const ComObjPtr<Medium> &pMedium = newMedia.at(i - 1);
+            mrc = pMedium->deleteStorage(NULL /* aProgress */,
+                                         true /* aWait */,
+                                         NULL /* llRegistriesThatNeedSaving */);
+            pMedium->Close();
         }
         /* Delete the snapshot folder when not empty. */
         if (!strTrgSnapshotFolder.isEmpty())
@@ -862,6 +914,60 @@ HRESULT MachineCloneVM::run()
     }
 
     return mrc;
+}
+
+HRESULT MachineCloneVM::createDiffHelper(const ComObjPtr<Medium> &pParent,
+                                         const Utf8Str &strSnapshotFolder,
+                                         RTCList< ComObjPtr<Medium> > *pNewMedia,
+                                         ComObjPtr<Medium> *ppDiff)
+{
+    DPTR(MachineCloneVM);
+    ComObjPtr<Machine> &p = d->p;
+    HRESULT rc = S_OK;
+
+    try
+    {
+        Bstr bstrSrcId;
+        rc = pParent->COMGETTER(Id)(bstrSrcId.asOutParam());
+        if (FAILED(rc)) throw rc;
+        ComObjPtr<Medium> diff;
+        diff.createObject();
+        rc = diff->init(p->mParent,
+                        pParent->getPreferredDiffFormat(),
+                        Utf8StrFmt("%s%c", strSnapshotFolder.c_str(), RTPATH_DELIMITER),
+                        Guid::Empty, /* empty media registry */
+                        NULL);       /* pllRegistriesThatNeedSaving */
+        if (FAILED(rc)) throw rc;
+        MediumLockList *pMediumLockList(new MediumLockList());
+        rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
+                                        true /* fMediumLockWrite */,
+                                        pParent,
+                                        *pMediumLockList);
+        if (FAILED(rc)) throw rc;
+        rc = pMediumLockList->Lock();
+        if (FAILED(rc)) throw rc;
+        /* this already registers the new diff image */
+        rc = pParent->createDiffStorage(diff, MediumVariant_Standard,
+                                        pMediumLockList,
+                                        NULL /* aProgress */,
+                                        true /* aWait */,
+                                        NULL); // pllRegistriesThatNeedSaving
+        delete pMediumLockList;
+        if (FAILED(rc)) throw rc;
+        /* Remember created medium. */
+        pNewMedia->append(diff);
+        *ppDiff = diff;
+    }
+    catch (HRESULT rc2)
+    {
+        rc = rc2;
+    }
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+    }
+
+    return rc;
 }
 
 void MachineCloneVM::destroy()
