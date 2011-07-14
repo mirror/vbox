@@ -108,6 +108,10 @@
       </listitem>
 
       <listitem>
+        <para>GUI: made the number of SATA ports configurable</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: decrease time before showing the VM configuration
           dialog</para>
       </listitem>
