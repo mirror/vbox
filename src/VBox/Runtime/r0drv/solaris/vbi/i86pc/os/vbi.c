@@ -289,17 +289,22 @@ vbi_init(void)
 		if (  !strncmp(utsname.version, "snv_", 4)
 			&& strlen(utsname.version) > 4)
 		{
-			ddi_strtol(utsname.version + 4, NULL /* endptr */, 0, &snv_version);
-			if (snv_version >= 166)
+			int err = ddi_strtol(utsname.version + 4, NULL /* endptr */, 0, &snv_version);
+			if (!err)
 			{
-				off_t_preempt = off_s11_t_preempt_new;
-				cmn_err(CE_NOTE,  "here\n");
+				if (snv_version >= 166)
+					off_t_preempt = off_s11_t_preempt_new;
+				cmn_err(CE_NOTE, "Detected S11 version %ld: Preemption offset=%d\n", snv_version, off_t_preempt);
 			}
-
-			cmn_err(CE_NOTE, "Detected S11 version %ld: Preemption offset=%d\n", snv_version, off_t_preempt);
+			else
+				snv_version = 0;
 		}
-		else
-			cmn_err(CE_NOTE, "WARNING!! Cannot determine version. Assuming pre snv_166. Preemption offset=%ld may be busted!\n", off_t_preempt);
+
+		if (snv_version == 0)
+		{
+			cmn_err(CE_NOTE, "WARNING(2)!! Cannot determine version. Assuming pre snv_166, name=%s Preemption offset=%ld may be busted!\n",
+				utsname.version, off_t_preempt);
+		}
 #endif
 	} else {
 		/* Solaris 10 detected... */
