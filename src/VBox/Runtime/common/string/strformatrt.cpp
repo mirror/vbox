@@ -1033,7 +1033,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
         if ((a_uVal)) \
         { \
             cchOutput += pfnOutput(pvArgOutput, !cPrinted ? "{unkn=" : ",unkn=", 6); \
-            cch = RTStrFormatNumber(&szBuf[0], (a_uVal), 16, 8, -1, fFlags); \
+            cch = RTStrFormatNumber(&szBuf[0], (a_uVal), 16, 1, -1, fFlags); \
             cchOutput += pfnOutput(pvArgOutput, szBuf, cch); \
             cPrinted++; \
         } \
@@ -1057,7 +1057,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     {
                         uint64_t cr0 = va_arg(*pArgs, uint64_t);
                         fFlags |= RTSTR_F_64BIT;
-                        cch = RTStrFormatNumber(&szBuf[0], cr0, 16, 8, -1, fFlags);
+                        cch = RTStrFormatNumber(&szBuf[0], cr0, 16, 8, -1, fFlags | RTSTR_F_ZEROPAD);
                         cchOutput += pfnOutput(pvArgOutput, szBuf, cch);
                         REG_OUT_BIT(cr0, X86_CR0_PE, "PE");
                         REG_OUT_BIT(cr0, X86_CR0_MP, "MP");
@@ -1076,7 +1076,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     {
                         uint64_t cr4 = va_arg(*pArgs, uint64_t);
                         fFlags |= RTSTR_F_64BIT;
-                        cch = RTStrFormatNumber(&szBuf[0], cr4, 16, 8, -1, fFlags);
+                        cch = RTStrFormatNumber(&szBuf[0], cr4, 16, 8, -1, fFlags | RTSTR_F_ZEROPAD);
                         cchOutput += pfnOutput(pvArgOutput, szBuf, cch);
                         REG_OUT_BIT(cr4, X86_CR4_VME, "VME");
                         REG_OUT_BIT(cr4, X86_CR4_PVI, "PVI");
