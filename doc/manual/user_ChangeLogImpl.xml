@@ -275,6 +275,11 @@
       </listitem>
 
       <listitem>
+        <para>Solaris hosts: fixed preemption issue with Solaris 11 hosts (builds
+          166 and above)<para>
+      </listitem>
+
+      <listitem>
         <para>Guest Additions: improved driver installation on Windows guests</para>
       </listitem>
 
