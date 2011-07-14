@@ -36,6 +36,31 @@
 #include "internal/process.h"
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** The program name we're using. */
+static const char * volatile g_pszProgName = NULL;
+/** Custom program name set via RTMsgSetProgName. */
+static char g_szProgName[128];
+
+
+RTDECL(int)  RTMsgSetProgName(const char *pszFormat, ...)
+{
+    g_pszProgName = &g_szrtProcExePath[g_offrtProcName];
+
+    va_list va;
+    va_start(va, pszFormat);
+    RTStrPrintfV(g_szProgName, sizeof(g_szProgName) - 1, pszFormat, va);
+    va_end(va);
+
+    g_pszProgName = g_szProgName;
+
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTMsgSetProgName);
+
+
 static int rtMsgWorker(PRTSTREAM pDst, const char *pszPrefix, const char *pszFormat, va_list va)
 {
     if (   !*pszFormat
@@ -43,6 +68,10 @@ static int rtMsgWorker(PRTSTREAM pDst, const char *pszPrefix, const char *pszFor
         RTStrmPrintf(pDst, "\n");
     else
     {
+        const char *pszProgName = g_pszProgName;
+        if (!pszProgName)
+            g_pszProgName = pszProgName = &g_szrtProcExePath[g_offrtProcName];
+
         char *pszMsg;
         ssize_t cch = RTStrAPrintfV(&pszMsg, pszFormat, va);
         if (cch >= 0)
@@ -54,7 +83,7 @@ static int rtMsgWorker(PRTSTREAM pDst, const char *pszPrefix, const char *pszFor
                 char *pszEnd = strchr(psz, '\n');
                 if (!pszEnd)
                 {
-                    RTStrmPrintf(pDst, "%s: %s%s\n", &g_szrtProcExePath[g_offrtProcName], pszPrefix, psz);
+                    RTStrmPrintf(pDst, "%s: %s%s\n", pszProgName, pszPrefix, psz);
                     break;
                 }
                 if (pszEnd == psz)
@@ -62,7 +91,7 @@ static int rtMsgWorker(PRTSTREAM pDst, const char *pszPrefix, const char *pszFor
                 else
                 {
                     *pszEnd = '\0';
-                    RTStrmPrintf(pDst, "%s: %s%s\n", &g_szrtProcExePath[g_offrtProcName], pszPrefix, psz);
+                    RTStrmPrintf(pDst, "%s: %s%s\n", pszProgName, pszPrefix, psz);
                 }
                 psz = pszEnd + 1;
             } while (*psz);
@@ -71,7 +100,7 @@ static int rtMsgWorker(PRTSTREAM pDst, const char *pszPrefix, const char *pszFor
         else
         {
             /* Simple fallback for handling out-of-memory conditions. */
-            RTStrmPrintf(pDst, "%s: %s", &g_szrtProcExePath[g_offrtProcName], pszPrefix);
+            RTStrmPrintf(pDst, "%s: %s", pszProgName, pszPrefix);
             RTStrmPrintfV(pDst, pszFormat, va);
             if (!strchr(pszFormat, '\n'))
                 RTStrmPrintf(pDst, "\n");
