@@ -385,6 +385,7 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
     : AbstractItem (aParent)
     , mCtrName (aName)
     , mCtrType (0)
+    , mPortCount (0)
     , mUseIoCache (false)
 {
     /* Check for proper parent type */
@@ -443,6 +444,18 @@ ControllerTypeList ControllerItem::ctrTypes() const
     return mCtrType->ctrTypes();
 }
 
+uint ControllerItem::portCount()
+{
+    /* Recalculate actual port count: */
+    for (int i = 0; i < mAttachments.size(); ++i)
+    {
+        AttachmentItem *pItem = static_cast<AttachmentItem*>(mAttachments[i]);
+        if (mPortCount < (uint)pItem->attSlot().port + 1)
+            mPortCount = (uint)pItem->attSlot().port + 1;
+    }
+    return mPortCount;
+}
+
 bool ControllerItem::ctrUseIoCache() const
 {
     return mUseIoCache;
@@ -456,6 +469,12 @@ void ControllerItem::setCtrName (const QString &aCtrName)
 void ControllerItem::setCtrType (KStorageControllerType aCtrType)
 {
     mCtrType->setCtrType (aCtrType);
+}
+
+void ControllerItem::setPortCount (uint aPortCount)
+{
+    /* Limit maximum port count: */
+    mPortCount = qMin(aPortCount, (uint)vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(ctrBusType()));
 }
 
 void ControllerItem::setCtrUseIoCache (bool aUseIoCache)
@@ -1046,6 +1065,13 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                     result.setValue (static_cast <ControllerItem*> (item)->ctrBusType());
             return result;
         }
+        case R_CtrPortCount:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_ControllerItem)
+                    return static_cast <ControllerItem*> (item)->portCount();
+            return 0;
+        }
         case R_CtrIoCache:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1261,6 +1287,17 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     static_cast <ControllerItem*> (item)->setCtrType (aValue.value <KStorageControllerType>());
+                    emit dataChanged (aIndex, aIndex);
+                    return true;
+                }
+            return false;
+        }
+        case R_CtrPortCount:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_ControllerItem)
+                {
+                    static_cast <ControllerItem*> (item)->setPortCount (aValue.toUInt());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1775,6 +1812,9 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     QMenu *pOpenMediumMenu = new QMenu(this);
     mTbOpen->setMenu(pOpenMediumMenu);
 
+    /* Controller pane initialization: */
+    mSbPortCount->setValue(0);
+
     /* Info Pane initialization */
     mLbHDFormatValue->setFullSizeSelection (true);
     mLbCDFDTypeValue->setFullSizeSelection (true);
@@ -1823,6 +1863,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     connect (mLeName, SIGNAL (textEdited (const QString&)), this, SLOT (setInformation()));
     connect (mCbType, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mCbSlot, SIGNAL (activated (int)), this, SLOT (setInformation()));
+    connect (mSbPortCount, SIGNAL (valueChanged (int)), this, SLOT (setInformation()));
     connect (mCbIoCache, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
     connect (m_pMediumIdHolder, SIGNAL (sigChanged()), this, SLOT (setInformation()));
     connect (mTbOpen, SIGNAL (clicked (bool)), mTbOpen, SLOT (showMenu()));
@@ -1875,6 +1916,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
             storageControllerData.m_strControllerName = controller.GetName();
             storageControllerData.m_controllerBus = controller.GetBus();
             storageControllerData.m_controllerType = controller.GetControllerType();
+            storageControllerData.m_uPortCount = controller.GetPortCount();
             storageControllerData.m_fUseHostIOCache = controller.GetUseHostIOCache();
 
             /* For each attachment: */
@@ -1937,6 +1979,7 @@ void UIMachineSettingsStorage::getFromCache()
                                                                    controllerData.m_controllerBus,
                                                                    controllerData.m_controllerType);
         QUuid controllerId = QUuid(mStorageModel->data(controllerIndex, StorageModel::R_ItemId).toString());
+        mStorageModel->setData(controllerIndex, controllerData.m_uPortCount, StorageModel::R_CtrPortCount);
         mStorageModel->setData(controllerIndex, controllerData.m_fUseHostIOCache, StorageModel::R_CtrIoCache);
 
         /* For each storage attachment: */
@@ -1992,6 +2035,7 @@ void UIMachineSettingsStorage::putToCache()
         controllerData.m_strControllerName = mStorageModel->data(controllerIndex, StorageModel::R_CtrName).toString();
         controllerData.m_controllerBus = mStorageModel->data(controllerIndex, StorageModel::R_CtrBusType).value<KStorageBus>();
         controllerData.m_controllerType = mStorageModel->data(controllerIndex, StorageModel::R_CtrType).value<KStorageControllerType>();
+        controllerData.m_uPortCount = mStorageModel->data(controllerIndex, StorageModel::R_CtrPortCount).toUInt();
         controllerData.m_fUseHostIOCache = mStorageModel->data(controllerIndex, StorageModel::R_CtrIoCache).toBool();
 
         /* For each storage attachment: */
@@ -2386,6 +2430,12 @@ void UIMachineSettingsStorage::getInformation()
                 int ctrPos = mCbType->findText (vboxGlobal().toString (type));
                 mCbType->setCurrentIndex (ctrPos == -1 ? 0 : ctrPos);
 
+                KStorageBus bus = mStorageModel->data (index, StorageModel::R_CtrBusType).value <KStorageBus>();
+                mLbPortCount->setVisible (bus == KStorageBus_SATA);
+                mSbPortCount->setVisible (bus == KStorageBus_SATA);
+                uint uPortCount = mStorageModel->data (index, StorageModel::R_CtrPortCount).toUInt();
+                mSbPortCount->setValue (uPortCount);
+
                 bool isUseIoCache = mStorageModel->data (index, StorageModel::R_CtrIoCache).toBool();
                 mCbIoCache->setChecked(isUseIoCache);
 
@@ -2497,6 +2547,8 @@ void UIMachineSettingsStorage::setInformation()
             else if (sdr == mCbType)
                 mStorageModel->setData (index, QVariant::fromValue (vboxGlobal().toControllerType (mCbType->currentText())),
                                         StorageModel::R_CtrType);
+            else if (sdr == mSbPortCount)
+                mStorageModel->setData (index, mSbPortCount->value(), StorageModel::R_CtrPortCount);
             else if (sdr == mCbIoCache)
                 mStorageModel->setData (index, mCbIoCache->isChecked(), StorageModel::R_CtrIoCache);
             break;
@@ -3244,6 +3296,7 @@ bool UIMachineSettingsStorage::createStorageController(const UICacheSettingsMach
         QString strControllerName = controllerData.m_strControllerName;
         KStorageBus controllerBus = controllerData.m_controllerBus;
         KStorageControllerType controllerType = controllerData.m_controllerType;
+        ULONG uPortCount = controllerData.m_uPortCount;
         bool fUseHostIOCache = controllerData.m_fUseHostIOCache;
 
         /* Check that storage controller doesn't exists: */
@@ -3262,16 +3315,12 @@ bool UIMachineSettingsStorage::createStorageController(const UICacheSettingsMach
                 /* Set storage controller attributes: */
                 controller.SetControllerType(controllerType);
                 controller.SetUseHostIOCache(fUseHostIOCache);
-
-                /* Set port count to max possible initially: */
                 if (controllerData.m_controllerBus == KStorageBus_SATA)
                 {
-                    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-                    controller.SetPortCount(properties.GetMaxPortCountForStorageBus(KStorageBus_SATA));
+                    uPortCount = qMax(uPortCount, controller.GetMinPortCount());
+                    uPortCount = qMin(uPortCount, controller.GetMaxPortCount());
+                    controller.SetPortCount(uPortCount);
                 }
-
-                /* Prepare max used port for SATA controller: */
-                int cMaxUsedPort = -1;
 
                 /* For each storage attachment: */
                 for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
@@ -3282,24 +3331,6 @@ bool UIMachineSettingsStorage::createStorageController(const UICacheSettingsMach
                     /* If storage attachment data was not removed: */
                     if (!attachmentCache.wasRemoved())
                         fSuccess = createStorageAttachment(controllerCache, attachmentCache);
-
-                    /* Check that machine is OK: */
-                    if (fSuccess)
-                    {
-                        /* Get storage attachment data: */
-                        const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
-                        /* Calculate the number of used ports: */
-                        cMaxUsedPort = attachmentData.m_iAttachmentPort > cMaxUsedPort ? attachmentData.m_iAttachmentPort : cMaxUsedPort;
-                    }
-                }
-
-                /* Set max used port for SATA controller: */
-                if (fSuccess && controllerData.m_controllerBus == KStorageBus_SATA)
-                {
-                    ULONG uSataPortsCount = cMaxUsedPort + 1;
-                    uSataPortsCount = qMax(uSataPortsCount, controller.GetMinPortCount());
-                    uSataPortsCount = qMin(uSataPortsCount, controller.GetMaxPortCount());
-                    controller.SetPortCount(uSataPortsCount);
                 }
             }
         }
@@ -3321,6 +3352,7 @@ bool UIMachineSettingsStorage::updateStorageController(const UICacheSettingsMach
         QString strControllerName = controllerData.m_strControllerName;
         KStorageBus controllerBus = controllerData.m_controllerBus;
         KStorageControllerType controllerType = controllerData.m_controllerType;
+        ULONG uPortCount = controllerData.m_uPortCount;
         bool fUseHostIOCache = controllerData.m_fUseHostIOCache;
 
         /* Check that controller exists: */
@@ -3332,16 +3364,12 @@ bool UIMachineSettingsStorage::updateStorageController(const UICacheSettingsMach
             /* Set storage controller attributes: */
             controller.SetControllerType(controllerType);
             controller.SetUseHostIOCache(fUseHostIOCache);
-
-            /* Set port count to max possible initially: */
             if (controllerData.m_controllerBus == KStorageBus_SATA)
             {
-                CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-                controller.SetPortCount(properties.GetMaxPortCountForStorageBus(KStorageBus_SATA));
+                uPortCount = qMax(uPortCount, controller.GetMinPortCount());
+                uPortCount = qMin(uPortCount, controller.GetMaxPortCount());
+                controller.SetPortCount(uPortCount);
             }
-
-            /* Prepare max used port for SATA controller: */
-            int cMaxUsedPort = -1;
 
             /* For each storage attachment: */
             for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
@@ -3356,24 +3384,6 @@ bool UIMachineSettingsStorage::updateStorageController(const UICacheSettingsMach
                 /* Update attachments marked for 'update' (if they can be updated): */
                 if (attachmentCache.wasUpdated() && isAttachmentCouldBeUpdated(attachmentCache))
                     fSuccess = updateStorageAttachment(controllerCache, attachmentCache);
-
-                /* Check that machine is OK: */
-                if (fSuccess && (attachmentCache.wasCreated() || attachmentCache.wasUpdated()))
-                {
-                    /* Get storage attachment data: */
-                    const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.data();
-                    /* Calculate the number of used ports: */
-                    cMaxUsedPort = attachmentData.m_iAttachmentPort > cMaxUsedPort ? attachmentData.m_iAttachmentPort : cMaxUsedPort;
-                }
-            }
-
-            /* Set max used port for SATA controller: */
-            if (fSuccess && controllerBus == KStorageBus_SATA)
-            {
-                ULONG uSataPortsCount = cMaxUsedPort + 1;
-                uSataPortsCount = qMax(uSataPortsCount, controller.GetMinPortCount());
-                uSataPortsCount = qMin(uSataPortsCount, controller.GetMaxPortCount());
-                controller.SetPortCount(uSataPortsCount);
             }
         }
     }
@@ -3626,6 +3636,8 @@ void UIMachineSettingsStorage::polishPage()
     mLeName->setEnabled(isMachineOffline());
     mLbType->setEnabled(isMachineOffline());
     mCbType->setEnabled(isMachineOffline());
+    mLbPortCount->setEnabled(isMachineOffline());
+    mSbPortCount->setEnabled(isMachineOffline());
     mCbIoCache->setEnabled(isMachineOffline());
     /* Attachments pane: */
     mLsAttributes->setEnabled(isMachineInValidMode());

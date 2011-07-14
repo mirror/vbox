@@ -208,7 +208,33 @@
           </property>
          </widget>
         </item>
+        <item row="3" column="1" >
+         <widget class="QLabel" name="mLbPortCount" >
+          <property name="text" >
+           <string>&amp;Port Count:</string>
+          </property>
+          <property name="buddy" >
+           <cstring>mSbPortCount</cstring>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
         <item row="3" column="2" >
+         <widget class="QSpinBox" name="mSbPortCount" >
+          <property name="whatsThis" >
+           <string>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can't be less than the maximum used port number + 1.</string>
+          </property>
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2" >
          <widget class="QCheckBox" name="mCbIoCache" >
           <property name="whatsThis" >
            <string>Allows to use host I/O caching capabilities.</string>
@@ -218,7 +244,7 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="0" colspan="3" >
+        <item row="5" column="0" colspan="3" >
          <spacer name="mSp3" >
           <property name="orientation" >
            <enum>Qt::Vertical</enum>
