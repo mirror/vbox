@@ -44,6 +44,10 @@
 #include <iprt/time.h>
 #include <iprt/net.h>
 #include <iprt/path.h>
+#define STRFORMAT_WITH_X86
+#ifdef STRFORMAT_WITH_X86
+# include <iprt/x86.h>
+#endif
 #include "internal/string.h"
 
 
@@ -67,7 +71,10 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                  int cchWidth, int cchPrecision, unsigned fFlags, char chArgSize)
 {
     const char *pszFormatOrg = *ppszFormat;
-    char ch = *(*ppszFormat)++;
+    char        ch = *(*ppszFormat)++;
+    size_t      cch;
+    char        szBuf[80];
+
     if (ch == 'R')
     {
         ch = *(*ppszFormat)++;
@@ -205,8 +212,6 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     PCRTNETADDR         pNetAddr;
                     PCRTUUID            pUuid;
                 } u;
-                char        szBuf[80];
-                unsigned    cch;
 
                 AssertMsg(!chArgSize, ("Not argument size '%c' for RT types! '%.10s'\n", chArgSize, pszFormatOrg));
 
@@ -645,8 +650,8 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                  */
                                 case 'd':
                                 {
-                                    size_t cch = 0;
                                     int off = 0;
+                                    cch = 0;
 
                                     if (cchWidth <= 0)
                                         cchWidth = 16;
@@ -683,7 +688,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                 {
                                     if (cchPrecision-- > 0)
                                     {
-                                        size_t cch = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%02x", *pu8++);
+                                        cch = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%02x", *pu8++);
                                         for (; cchPrecision > 0; cchPrecision--, pu8++)
                                             cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, " %02x", *pu8);
                                         return cch;
@@ -984,6 +989,124 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                 break;
             }
 #endif /* IN_RING3 */
+
+
+            /*
+             * Groups 6 - CPU Architecture Register Formatters.
+             *            "%RAarch[reg]"
+             */
+            case 'A':
+            {
+                char const * const  pszArch   = *ppszFormat;
+                const char         *pszReg    = pszArch;
+                size_t              cchOutput = 0;
+                int                 cPrinted  = 0;
+                size_t              cchReg;
+
+                /* Parse out the */
+                while ((ch = *pszReg++) && ch != '[')
+                {   /* nothing */   }
+                AssertMsgBreak(ch == '[', ("Malformed IPRT architecture register format type '%.10s'!\n", pszFormatOrg));
+
+                cchReg = 0;
+                while ((ch = pszReg[cchReg]) && ch != ']')
+                    cchReg++;
+                AssertMsgBreak(ch == ']', ("Malformed IPRT architecture register format type '%.10s'!\n", pszFormatOrg));
+
+                *ppszFormat = &pszReg[cchReg + 1];
+
+
+#define REG_EQUALS(a_szReg)  (sizeof(a_szReg) - 1 == cchReg && !strncmp(a_szReg, pszReg, sizeof(a_szReg) - 1))
+#define REG_OUT_BIT(a_uVal, a_fBitMask, a_szName) \
+    do { \
+        if ((a_uVal) & (a_fBitMask)) \
+        { \
+            if (!cPrinted) \
+                cchOutput += pfnOutput(pvArgOutput, "{" a_szName, sizeof(a_szName)); \
+            else \
+                cchOutput += pfnOutput(pvArgOutput, "," a_szName, sizeof(a_szName)); \
+           (a_uVal) &= ~(a_fBitMask); \
+        } \
+    } while (0)
+#define REG_OUT_CLOSE(a_uVal) \
+    do { \
+        if ((a_uVal)) \
+        { \
+            cchOutput += pfnOutput(pvArgOutput, cPrinted ? "{unkn=" : ",unkn=", 6); \
+            cch = RTStrFormatNumber(&szBuf[0], (a_uVal), 16, 8, -1, fFlags); \
+            cchOutput += pfnOutput(pvArgOutput, szBuf, cch); \
+            cPrinted++; \
+        } \
+        if (cPrinted) \
+            cchOutput += pfnOutput(pvArgOutput, "}", 1); \
+    } while (0)
+
+
+                if (0)
+                { /* dummy */ }
+#ifdef STRFORMAT_WITH_X86
+                /*
+                 * X86 & AMD64.
+                 */
+                else if (   pszReg - pszArch == 3 + 1
+                         && pszArch[0] == 'x'
+                         && pszArch[1] == '8'
+                         && pszArch[2] == '6')
+                {
+                    if (REG_EQUALS("cr0"))
+                    {
+                        uint64_t cr0 = va_arg(*pArgs, uint64_t);
+                        fFlags |= RTSTR_F_64BIT;
+                        cch = RTStrFormatNumber(&szBuf[0], cr0, 16, 8, -1, fFlags);
+                        cchOutput += pfnOutput(pvArgOutput, szBuf, cch);
+                        REG_OUT_BIT(cr0, X86_CR0_PE, "PE");
+                        REG_OUT_BIT(cr0, X86_CR0_MP, "MP");
+                        REG_OUT_BIT(cr0, X86_CR0_EM, "EM");
+                        REG_OUT_BIT(cr0, X86_CR0_TS, "DE");
+                        REG_OUT_BIT(cr0, X86_CR0_ET, "ET");
+                        REG_OUT_BIT(cr0, X86_CR0_NE, "NE");
+                        REG_OUT_BIT(cr0, X86_CR0_WP, "WP");
+                        REG_OUT_BIT(cr0, X86_CR0_AM, "AM");
+                        REG_OUT_BIT(cr0, X86_CR0_NW, "NW");
+                        REG_OUT_BIT(cr0, X86_CR0_CD, "CD");
+                        REG_OUT_BIT(cr0, X86_CR0_PG, "PG");
+                        REG_OUT_CLOSE(cr0);
+                    }
+                    else if (REG_EQUALS("cr4"))
+                    {
+                        uint64_t cr4 = va_arg(*pArgs, uint64_t);
+                        fFlags |= RTSTR_F_64BIT;
+                        cch = RTStrFormatNumber(&szBuf[0], cr4, 16, 8, -1, fFlags);
+                        cchOutput += pfnOutput(pvArgOutput, szBuf, cch);
+                        REG_OUT_BIT(cr4, X86_CR4_VME, "VME");
+                        REG_OUT_BIT(cr4, X86_CR4_PVI, "PVI");
+                        REG_OUT_BIT(cr4, X86_CR4_TSD, "TSD");
+                        REG_OUT_BIT(cr4, X86_CR4_DE,  "DE");
+                        REG_OUT_BIT(cr4, X86_CR4_PSE, "PSE");
+                        REG_OUT_BIT(cr4, X86_CR4_PAE, "PAE");
+                        REG_OUT_BIT(cr4, X86_CR4_MCE, "MCE");
+                        REG_OUT_BIT(cr4, X86_CR4_PGE, "PGE");
+                        REG_OUT_BIT(cr4, X86_CR4_PCE, "PCE");
+                        REG_OUT_BIT(cr4, X86_CR4_OSFSXR, "OSFSXR");
+                        REG_OUT_BIT(cr4, X86_CR4_OSXMMEEXCPT, "OSXMMEEXCPT");
+                        REG_OUT_BIT(cr4, X86_CR4_VMXE, "VMXE");
+                        REG_OUT_BIT(cr4, X86_CR4_SMXE, "SMXE");
+                        REG_OUT_BIT(cr4, X86_CR4_PCIDE, "PCIDE");
+                        REG_OUT_BIT(cr4, X86_CR4_OSXSAVE, "OSXSAVE");
+                        REG_OUT_BIT(cr4, X86_CR4_SMEP, "SMPE");
+                        REG_OUT_CLOSE(cr4);
+                    }
+                    else
+                        AssertMsgFailed(("Unknown x86 register specified in '%.10s'!\n", pszFormatOrg));
+                }
+#endif
+                else
+                    AssertMsgFailed(("Unknown architecture specified in '%.10s'!\n", pszFormatOrg));
+#undef REG_OUT_BIT
+#undef REG_OUT_CLOSE
+#undef REG_EQUALS
+                return cchOutput;
+            }
 
             /*
              * Invalid/Unknown. Bitch about it.

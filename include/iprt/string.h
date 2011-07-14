@@ -1613,6 +1613,10 @@ DECLINLINE(char *) RTLatin1PrevCp(const char *psz)
  *      - \%RMes            - Takes a string pointer (const char *) and outputs
  *                            it as an element with the necessary escaping.
  *
+ * Group 6, CPU Architecture Register dumpers:
+ *      - \%RAx86[reg]      - Takes a 64-bit register value if the register is
+ *                            64-bit or smaller.  Check the code wrt which
+ *                            registers are implemented.
  *
  */
 
