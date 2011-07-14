@@ -1101,7 +1101,18 @@ gth_fpu_no:
     ; Would've liked to have these higher up in case of crashes, but
     ; the fpu stuff must be done before we restore cr0.
     mov     rcx, [rdx + r8 + CPUMCPU.Host.cr4]
+    test    rcx, X86_CR4_PCIDE
+    jz      gth_no_pcide
+    mov     rax, [rdx + r8 + CPUMCPU.Host.cr3]
+    and     rax, ~0xfff                 ; clear the PCID in cr3
+    mov     cr3, rax
     mov     cr4, rcx
+    mov     rax, [rdx + r8 + CPUMCPU.Host.cr3]
+    mov     cr3, rax                    ; reload it with the right PCID.
+    jmp     gth_restored_cr4
+gth_no_pcide:
+    mov     cr4, rcx
+gth_restored_cr4:
     mov     rcx, [rdx + r8 + CPUMCPU.Host.cr0]
     mov     cr0, rcx
     ;mov     rcx, [rdx + r8 + CPUMCPU.Host.cr2] ; assumes this is waste of time.
