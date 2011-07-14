@@ -44,11 +44,11 @@
  * Enables the page sharing code.
  * @remarks This must match GMMR0Init; currently we only support page fusion on
  *          all 64-bit hosts except Mac OS X */
-#if (   HC_ARCH_BITS == 64 \
-     && (defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)) ) \
- || defined(DOXYGEN_RUNNING)
-# define VBOX_WITH_PAGE_SHARING
-#endif
+#if (   HC_ARCH_BITS == 64          /* ASM-NOINC */ \
+     && (defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)) ) /* ASM-NOINC */ \
+ || defined(DOXYGEN_RUNNING)        /* ASM-NOINC */
+# define VBOX_WITH_PAGE_SHARING     /* ASM-NOINC */
+#endif                              /* ASM-NOINC */
 
 
 /** @defgroup   grp_vbox_param_mm  Memory Monitor Parameters

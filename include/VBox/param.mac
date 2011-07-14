@@ -6,13 +6,13 @@
 %define MM_HYPER_DYNAMIC_SIZE       (16U * PAGE_SIZE)
 %define MM_RAM_MIN                  0x00400000
 %if HC_ARCH_BITS == 64
- %define MM_RAM_MAX                 0x400000000
+ %define MM_RAM_MAX                 0x20000000000
 %else
- %define MM_RAM_MAX                 0x0E0000000
+ %define MM_RAM_MAX                 0x000E0000000
 %endif
 %define MM_RAM_MIN_IN_MB            4
 %if HC_ARCH_BITS == 64
- %define MM_RAM_MAX_IN_MB           16384
+ %define MM_RAM_MAX_IN_MB           2097152
 %else
  %define MM_RAM_MAX_IN_MB           3584
 %endif

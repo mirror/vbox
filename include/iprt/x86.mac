@@ -3,6 +3,7 @@
 %ifdef RT_OS_SOLARIS
 %endif
 %define X86_EFL_CF          RT_BIT(0)
+%define X86_EFL_1           RT_BIT(1)
 %define X86_EFL_PF          RT_BIT(2)
 %define X86_EFL_AF          RT_BIT(4)
 %define X86_EFL_ZF          RT_BIT(6)
@@ -55,6 +56,7 @@
 %define X86_CPUID_FEATURE_ECX_XSAVE     RT_BIT(26)
 %define X86_CPUID_FEATURE_ECX_OSXSAVE   RT_BIT(27)
 %define X86_CPUID_FEATURE_ECX_AVX       RT_BIT(28)
+%define X86_CPUID_FEATURE_ECX_HVP       RT_BIT(31)
 %define X86_CPUID_FEATURE_EDX_FPU       RT_BIT(0)
 %define X86_CPUID_FEATURE_EDX_VME       RT_BIT(1)
 %define X86_CPUID_FEATURE_EDX_DE        RT_BIT(2)
@@ -175,6 +177,10 @@
 %define X86_CR4_OSFSXR                      RT_BIT(9)
 %define X86_CR4_OSXMMEEXCPT                 RT_BIT(10)
 %define X86_CR4_VMXE                        RT_BIT(13)
+%define X86_CR4_SMXE                        RT_BIT(14)
+%define X86_CR4_PCIDE                       RT_BIT(17)
+%define X86_CR4_OSXSAVE                     RT_BIT(18)
+%define X86_CR4_SMEP                        RT_BIT(20)
 %define X86_DR6_B0                          RT_BIT(0)
 %define X86_DR6_B1                          RT_BIT(1)
 %define X86_DR6_B2                          RT_BIT(2)
@@ -252,7 +258,17 @@
 %define MSR_IA32_PERF_STATUS                0x198
 %define MSR_IA32_PERF_CTL                   0x199
 %define MSR_IA32_THERM_STATUS               0x19c
-%define MSR_IA32_MISC_ENABLE                0x1A0
+%define MSR_IA32_MISC_ENABLE                   0x1A0
+%define MSR_IA32_MISC_ENABLE_FAST_STRINGS      RT_BIT(0)
+%define MSR_IA32_MISC_ENABLE_TCC               RT_BIT(3)
+%define MSR_IA32_MISC_ENABLE_PERF_MON          RT_BIT(7)
+%define MSR_IA32_MISC_ENABLE_BTS_UNAVAIL       RT_BIT(11)
+%define MSR_IA32_MISC_ENABLE_PEBS_UNAVAIL      RT_BIT(12)
+%define MSR_IA32_MISC_ENABLE_SST_ENABLE        RT_BIT(16)
+%define MSR_IA32_MISC_ENABLE_MONITOR           RT_BIT(18)
+%define MSR_IA32_MISC_ENABLE_LIMIT_CPUID       RT_BIT(22)
+%define MSR_IA32_MISC_ENABLE_XTPR_MSG_DISABLE  RT_BIT(23)
+%define MSR_IA32_MISC_ENABLE_XD_DISABLE        RT_BIT(34)
 %define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 %define MSR_IA32_MC0_CTL                    0x400
 %define MSR_IA32_MC0_STATUS                 0x401
@@ -440,6 +456,23 @@
 %define X86_PML4E_NX                        RT_BIT_64(63)
 %define X86_PML4_SHIFT              39
 %define X86_PML4_MASK               0x1ff
+%define X86_FSW_IE          RT_BIT(0)
+%define X86_FSW_DE          RT_BIT(1)
+%define X86_FSW_ZE          RT_BIT(2)
+%define X86_FSW_OE          RT_BIT(3)
+%define X86_FSW_UE          RT_BIT(4)
+%define X86_FSW_PE          RT_BIT(5)
+%define X86_FSW_SF          RT_BIT(6)
+%define X86_FSW_ES          RT_BIT(7)
+%define X86_FSW_C0          RT_BIT(8)
+%define X86_FSW_C1          RT_BIT(9)
+%define X86_FSW_C2          RT_BIT(10)
+%define X86_FSW_TOP_MASK    0x3800
+%define X86_FSW_TOP_SHIFT   11
+%define X86_FSW_TOP_SMASK   0x0007
+%define X86_FSW_TOP_GET(a_uFsw) (((a_uFsw) >> X86_FSW_TOP_SHIFT) & X86_FSW_TOP_SMASK)
+%define X86_FSW_C3          RT_BIT(14)
+%define X86_FSW_B           RT_BIT(15)
 %if HC_ARCH_BITS == 64
 %else
 %endif
@@ -472,6 +505,7 @@
 %define X86_SEL_TYPE_EO_CONF_ACC           (4 | X86_SEL_TYPE_CODE | X86_SEL_TYPE_ACCESSED)
 %define X86_SEL_TYPE_ER_CONF               (6 | X86_SEL_TYPE_CODE)
 %define X86_SEL_TYPE_ER_CONF_ACC           (6 | X86_SEL_TYPE_CODE | X86_SEL_TYPE_ACCESSED)
+%define X86_SEL_TYPE_SYS_TSS_BUSY_MASK      2
 %define X86_SEL_TYPE_SYS_UNDEFINED          0
 %define X86_SEL_TYPE_SYS_286_TSS_AVAIL      1
 %define X86_SEL_TYPE_SYS_LDT                2
@@ -515,4 +549,40 @@
 %define X86_TRAP_PF_US              RT_BIT(2)
 %define X86_TRAP_PF_RSVD            RT_BIT(3)
 %define X86_TRAP_PF_ID              RT_BIT(4)
+%define X86_MODRM_RM_MASK       0x07
+%define X86_MODRM_REG_MASK      0x38
+%define X86_MODRM_REG_SMASK     0x07
+%define X86_MODRM_REG_SHIFT     3
+%define X86_MODRM_MOD_MASK      0xc0
+%define X86_MODRM_MOD_SMASK     0x03
+%define X86_MODRM_MOD_SHIFT     6
+%define X86_SIB_BASE_MASK     0x07
+%define X86_SIB_INDEX_MASK    0x38
+%define X86_SIB_INDEX_SMASK   0x07
+%define X86_SIB_INDEX_SHIFT   3
+%define X86_SIB_SCALE_MASK    0xc0
+%define X86_SIB_SCALE_SMASK   0x03
+%define X86_SIB_SCALE_SHIFT   6
+%define X86_GREG_xAX            0
+%define X86_GREG_xCX            1
+%define X86_GREG_xDX            2
+%define X86_GREG_xBX            3
+%define X86_GREG_xSP            4
+%define X86_GREG_xBP            5
+%define X86_GREG_xSI            6
+%define X86_GREG_xDI            7
+%define X86_GREG_x8             8
+%define X86_GREG_x9             9
+%define X86_GREG_x10            10
+%define X86_GREG_x11            11
+%define X86_GREG_x12            12
+%define X86_GREG_x13            13
+%define X86_GREG_x14            14
+%define X86_GREG_x15            15
+%define X86_SREG_ES             0
+%define X86_SREG_CS             1
+%define X86_SREG_SS             2
+%define X86_SREG_DS             3
+%define X86_SREG_FS             4
+%define X86_SREG_GS             5
 %endif
