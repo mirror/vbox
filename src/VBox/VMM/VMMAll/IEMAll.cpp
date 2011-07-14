@@ -60,9 +60,9 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/x86.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/x86.h>
 
 
 /*******************************************************************************

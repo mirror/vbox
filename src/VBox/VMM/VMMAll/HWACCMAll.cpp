@@ -24,7 +24,6 @@
 #include <VBox/vmm/pgm.h>
 #include "HWACCMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/x86.h>
 #include <VBox/vmm/hwacc_vmx.h>
 #include <VBox/vmm/hwacc_svm.h>
 #include <VBox/err.h>
@@ -33,6 +32,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
+#include <iprt/x86.h>
 
 /**
  * Queues a page for invalidation

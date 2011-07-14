@@ -50,7 +50,6 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/log.h>
-#include <VBox/x86.h>
 
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
@@ -65,6 +64,7 @@
 #include <iprt/string.h>
 #include <iprt/env.h>
 #include <iprt/rand.h>
+#include <iprt/x86.h>
 
 #include "SUPLibInternal.h"
 #include "SUPDrvIOC.h"

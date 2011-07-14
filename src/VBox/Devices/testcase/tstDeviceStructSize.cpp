@@ -21,7 +21,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/types.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 
 
 #define VBOX_WITH_HGCM                  /* grumble */

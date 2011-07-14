@@ -99,6 +99,7 @@ DEFAULT_FILE_NAMES=" \
     src/include/iprt/thread.h \
     src/include/iprt/types.h \
     src/include/iprt/uuid.h \
+    src/include/iprt/x86.h \
     src/include/internal/initterm.h \
     src/include/internal/magics.h \
     src/include/internal/thread.h \

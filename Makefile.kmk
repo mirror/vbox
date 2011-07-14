@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -595,7 +595,6 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/vd.h \
 	$(PATH_ROOT)/include/VBox/types.h \
 	$(PATH_ROOT)/include/VBox/err.h \
-	$(PATH_ROOT)/include/VBox/x86.h \
 	$(PATH_ROOT)/include/VBox/vmm/cpumdis.h \
 	$(PATH_ROOT)/include/VBox/dbggui.h \
 	$(PATH_ROOT)/include/VBox/dis.h \
@@ -1372,8 +1371,8 @@ incs:
 	$(SED) -f include/VBox/err.sed     --output include/VBox/err.mac           include/VBox/err.h
 	$(APPEND) include/VBox/err.mac '%include "iprt/err.mac"'
 	$(SED) -f include/VBox/err.sed     --output include/iprt/err.mac           include/iprt/err.h
+	$(SED) -f include/VBox/various.sed --output include/iprt/x86.mac           include/iprt/x86.h
 	$(SED) -f include/VBox/various.sed --output include/VBox/apic.mac          include/VBox/apic.h
-	$(SED) -f include/VBox/various.sed --output include/VBox/x86.mac           include/VBox/x86.h
 	$(SED) -f include/VBox/various.sed --output include/VBox/param.mac         include/VBox/param.h
 	$(SED) -f include/VBox/various.sed --output include/VBox/VMMDevTesting.mac include/VBox/VMMDevTesting.h
 

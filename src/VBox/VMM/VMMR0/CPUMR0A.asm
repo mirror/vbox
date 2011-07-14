@@ -23,7 +23,7 @@
 %include "VBox/err.mac"
 %include "VBox/vmm/stam.mac"
 %include "CPUMInternal.mac"
-%include "VBox/x86.mac"
+%include "iprt/x86.mac"
 %include "VBox/vmm/cpum.mac"
 
 %ifdef IN_RING3

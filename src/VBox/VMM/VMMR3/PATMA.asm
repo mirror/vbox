@@ -30,7 +30,7 @@
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
-%include "VBox/x86.mac"
+%include "iprt/x86.mac"
 %include "VBox/vmm/vm.mac"
 %include "PATMA.mac"
 

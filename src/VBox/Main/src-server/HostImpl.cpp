@@ -150,11 +150,11 @@ extern bool is3DAccelerationSupported();
 #undef GS
 
 #include <VBox/usb.h>
-#include <VBox/x86.h>
 #include <VBox/vmm/hwacc_svm.h>
 #include <VBox/err.h>
 #include <VBox/settings.h>
 #include <VBox/sup.h>
+#include <iprt/x86.h>
 
 #include "VBox/com/MultiResult.h"
 

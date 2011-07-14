@@ -27,7 +27,7 @@
 #define ___VBox_vmm_cpumdis_h
 
 #include <VBox/vmm/cpum.h>
-#include <VBox/x86.h>
+#include <iprt/x86.h>
 #include <VBox/dis.h>
 
 

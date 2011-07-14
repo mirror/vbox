@@ -30,7 +30,6 @@
 #include <VBox/vmm/tm.h>
 #include "HWACCMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/x86.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -41,6 +40,7 @@
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
 # include <iprt/thread.h>
 #endif
+#include <iprt/x86.h>
 #include "HWVMXR0.h"
 
 /*******************************************************************************

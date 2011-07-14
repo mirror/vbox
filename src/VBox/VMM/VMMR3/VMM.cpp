@@ -102,7 +102,6 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/version.h>
-#include <VBox/x86.h>
 #include <VBox/vmm/hwaccm.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
@@ -113,6 +112,7 @@
 #include <iprt/string.h>
 #include <iprt/stdarg.h>
 #include <iprt/ctype.h>
+#include <iprt/x86.h>
 
 
 

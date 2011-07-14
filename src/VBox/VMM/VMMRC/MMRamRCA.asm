@@ -21,7 +21,7 @@
 %include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
 %include "iprt/err.mac"
-%include "VBox/x86.mac"
+%include "iprt/x86.mac"
 
 
 BEGINCODE

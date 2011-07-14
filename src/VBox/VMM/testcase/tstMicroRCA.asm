@@ -19,7 +19,7 @@
 ;*      Header Files                                                           *
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
-%include "VBox/x86.mac"
+%include "iprt/x86.mac"
 %include "VBox/vmm/cpum.mac"
 %include "VBox/err.mac"
 %include "VBox/vmm/vm.mac"

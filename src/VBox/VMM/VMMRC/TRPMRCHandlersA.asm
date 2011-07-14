@@ -18,7 +18,7 @@
 ;* Header Files                                                                *
 ;*******************************************************************************
 %include "VMMRC.mac"
-%include "VBox/x86.mac"
+%include "iprt/x86.mac"
 %include "VBox/vmm/cpum.mac"
 %include "VBox/vmm/stam.mac"
 %include "VBox/vmm/vm.mac"
