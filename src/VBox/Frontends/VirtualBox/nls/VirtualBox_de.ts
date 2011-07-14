@@ -2757,6 +2757,14 @@
         <source>Details:</source>
         <translation>abgespeichert wie:</translation>
     </message>
+    <message>
+        <source>&amp;Port Count:</source>
+        <translation>&amp;Anzahl Ports:</translation>
+    </message>
+    <message>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
+        <translation>Setzt die Anzahl der Anschlüsse des SATA-Controllers. Dieser Wert kann nicht kleiner sein als der letzte benutzte Port plus 1.</translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>
@@ -5163,7 +5171,7 @@
     <message>
         <source>Null</source>
         <comment>AuthType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>External</source>
