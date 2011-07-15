@@ -126,10 +126,10 @@ void APIENTRY crWindowDestroy( GLint window )
         crHashtableSearch(stub.windowTable, (unsigned int) window);
     if (winInfo && winInfo->type == CHROMIUM && stub.spu)
     {
+        crHashtableLock(stub.windowTable);
+
         stub.spu->dispatch_table.WindowDestroy( winInfo->spuWindow );
-#ifdef CR_NEWWINTRACK
-        crLockMutex(&stub.mutex);
-#endif
+
 #ifdef WINDOWS
         if (winInfo->hVisibleRegion != INVALID_HANDLE_VALUE)
         {
@@ -147,11 +147,10 @@ void APIENTRY crWindowDestroy( GLint window )
         }
 # endif
 #endif
-#ifdef CR_NEWWINTRACK
-        crUnlockMutex(&stub.mutex);
-#endif
         crForcedFlush();
         crHashtableDelete(stub.windowTable, window, crFree);
+
+        crHashtableUnlock(stub.windowTable);
     }
 }
 

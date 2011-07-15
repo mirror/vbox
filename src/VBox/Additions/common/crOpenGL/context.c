@@ -496,8 +496,8 @@ InstantiateNativeContext( WindowInfo *window, ContextInfo *context )
 #ifdef WINDOWS
 
 void
-stubGetWindowGeometry( const WindowInfo *window, int *x, int *y,
-                                             unsigned int *w, unsigned int *h )
+stubGetWindowGeometry(const WindowInfo *window, int *x, int *y,
+                      unsigned int *w, unsigned int *h )
 {
     RECT rect;
 
@@ -1132,6 +1132,9 @@ stubDestroyContext( unsigned long contextId )
     if (!stub.contextTable) {
         return;
     }
+
+    crHashtableLock(stub.contextTable);
+
     context = (ContextInfo *) crHashtableSearch(stub.contextTable, contextId);
 
     CRASSERT(context);
@@ -1166,8 +1169,9 @@ stubDestroyContext( unsigned long contextId )
 
     crMemZero(context, sizeof(ContextInfo));  /* just to be safe */
     crHashtableDelete(stub.contextTable, contextId, crFree);
-}
 
+    crHashtableUnlock(stub.contextTable);
+}
 
 void
 stubSwapBuffers(WindowInfo *window, GLint flags)

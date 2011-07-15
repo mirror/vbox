@@ -35,6 +35,8 @@ DECLEXPORT(GLboolean) crHashtableIsKeyUsed( const CRHashTable *h, GLuint id );
 DECLEXPORT(void) crHashtableWalk( CRHashTable *hash, CRHashtableWalkCallback walkFunc , void *data);
 /*Returns GL_TRUE if given hashtable hold the data, pKey is updated with key value for data in this case*/
 DECLEXPORT(GLboolean) crHashtableGetDataKey(CRHashTable *pHash, void *pData, unsigned long *pKey);
+DECLEXPORT(void) crHashtableLock(CRHashTable *h);
+DECLEXPORT(void) crHashtableUnlock(CRHashTable *h);
 
 #ifdef __cplusplus
 } /* extern "C" */

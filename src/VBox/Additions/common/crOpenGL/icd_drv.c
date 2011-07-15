@@ -94,19 +94,23 @@ PICDTABLE APIENTRY DrvSetContext(HDC hdc, HGLRC hglrc, void *callback)
 {
     ContextInfo *context;
     WindowInfo *window;
+    BOOL ret;
 
     /*crDebug( "DrvSetContext called(0x%x, 0x%x)", hdc, hglrc );*/
     (void) (callback);
 
+    crHashtableLock(stub.windowTable);
+    crHashtableLock(stub.contextTable);
+
     context = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) hglrc);
     window = stubGetWindowInfo(hdc);
 
-    if (stubMakeCurrent( window, context )) {
-        return &icdTable;
-    }
-    else {
-        return NULL;
-    }
+    ret = stubMakeCurrent(window, context);
+
+    crHashtableUnlock(stub.contextTable);
+    crHashtableUnlock(stub.windowTable);
+
+    return ret ? &icdTable:NULL;
 }
 
 BOOL APIENTRY DrvSetPixelFormat(HDC hdc, int iPixelFormat)

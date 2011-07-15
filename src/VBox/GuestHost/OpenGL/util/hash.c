@@ -352,6 +352,19 @@ void crFreeHashtable( CRHashTable *hash, CRHashtableCallback deleteFunc )
     crFree( hash );
 }
 
+void crHashtableLock(CRHashTable *h)
+{
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&h->mutex);
+#endif
+}
+
+void crHashtableUnlock(CRHashTable *h)
+{
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&h->mutex);
+#endif
+}
 
 void crHashtableWalk( CRHashTable *hash, CRHashtableWalkCallback walkFunc , void *dataPtr2)
 {
