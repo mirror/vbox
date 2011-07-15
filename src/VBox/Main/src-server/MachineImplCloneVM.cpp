@@ -595,6 +595,7 @@ HRESULT MachineCloneVM::run()
         typedef std::map<Utf8Str, ComObjPtr<Medium> > TStrMediumMap;
         typedef std::pair<Utf8Str, ComObjPtr<Medium> > TStrMediumPair;
         TStrMediumMap map;
+        GuidList llRegistriesThatNeedSaving;
         size_t cDisks = 0;
         for (size_t i = 0; i < d->llMedias.size(); ++i)
         {
@@ -811,7 +812,22 @@ HRESULT MachineCloneVM::run()
             AutoCaller mac(pMedium);
             if (FAILED(mac.rc())) throw mac.rc();
             AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
-            pMedium->addRegistry(d->options.contains(CloneOptions_Link) ? d->pSrcMachine->mData->mUuid : d->pTrgMachine->mData->mUuid, false /* fRecurse */);
+            Guid uuid = d->pTrgMachine->mData->mUuid;
+            if (d->options.contains(CloneOptions_Link))
+            {
+                ComObjPtr<Medium> pParent = pMedium->getParent();
+                mlock.release();
+                if (!pParent.isNull())
+                {
+                    AutoCaller mac2(pParent);
+                    if (FAILED(mac2.rc())) throw mac2.rc();
+                    AutoReadLock mlock2(pParent COMMA_LOCKVAL_SRC_POS);
+                    if (pParent->getFirstRegistryMachineId(uuid))
+                        VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
+                }
+                mlock.acquire();
+            }
+            pMedium->addRegistry(uuid, false /* fRecurse */);
         }
         /* Check if a snapshot folder is necessary and if so doesn't already
          * exists. */
@@ -866,12 +882,10 @@ HRESULT MachineCloneVM::run()
         rc = d->pTrgMachine->SaveSettings();
         if (FAILED(rc)) throw rc;
         trgLock.release();
-        if (d->options.contains(CloneOptions_Link))
+        if (!llRegistriesThatNeedSaving.empty())
         {
             srcLock.release();
-            GuidList llRegistrySrc;
-            llRegistrySrc.push_back(d->pSrcMachine->mData->mUuid);
-            rc = p->mParent->saveRegistries(llRegistrySrc);
+            rc = p->mParent->saveRegistries(llRegistriesThatNeedSaving);
             if (FAILED(rc)) throw rc;
         }
     }

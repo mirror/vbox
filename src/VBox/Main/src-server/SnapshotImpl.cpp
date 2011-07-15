@@ -1935,7 +1935,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             throw rc;
         // unconditionally add the parent registry. We do similar in SessionMachine::EndTakingSnapshot
         // (mParent->saveSettings())
-        mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, mParent->getGlobalRegistryId());
+        VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, mParent->getGlobalRegistryId());
 
         // let go of the locks while we're deleting image files below
         alock.leave();
@@ -2479,7 +2479,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 releaseSavedStateFile(stateFilePath, aTask.pSnapshot /* pSnapshotToIgnore */);
 
                 // machine will need saving now
-                mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
+                VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
             }
         }
 
@@ -2654,7 +2654,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 it->mpSource->uninit();
 
             // One attachment is merged, must save the settings
-            mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
+            VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
 
             // prevent calling cancelDeleteSnapshotMedium() for this attachment
             it = toDelete.erase(it);
@@ -2673,7 +2673,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             aTask.pSnapshot->beginSnapshotDelete();
             aTask.pSnapshot->uninit();
 
-            mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
+            VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
         }
     }
     catch (HRESULT aRC) { rc = aRC; }

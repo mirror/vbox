@@ -3277,7 +3277,7 @@ HRESULT Medium::addToRegistryIDList(GuidList &llRegistryIDs)
          it != m->llRegistryIDs.end();
          ++it)
     {
-        m->pVirtualBox->addGuidToListUniquely(llRegistryIDs, *it);
+        VirtualBox::addGuidToListUniquely(llRegistryIDs, *it);
     }
 
     return S_OK;
