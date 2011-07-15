@@ -3837,7 +3837,7 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
                     // 2) better registry found: then use that
                     pMedium->addRegistry(*puuidBetter, true /* fRecurse */);
                     // 3) and make sure the registry is saved below
-                    addGuidToListUniquely(llRegistriesThatNeedSaving, *puuidBetter);
+                    VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, *puuidBetter);
                 }
             }
         }
@@ -3859,6 +3859,7 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
  * @param llRegistriesThatNeedSaving
  * @param uuid
  */
+/* static */
 void VirtualBox::addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving,
                                        const Guid &uuid)
 {
