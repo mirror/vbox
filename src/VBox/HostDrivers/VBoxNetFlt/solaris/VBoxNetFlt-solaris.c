@@ -64,6 +64,7 @@
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 #include <sys/sunldi.h>
+#include <sys/ctf_api.h>
 
 // Workaround for very strange define in sys/user.h
 // #define u       (curproc->p_user)       /* user is now part of proc structure */
@@ -404,6 +405,64 @@ VBOXNETFLTSTREAMTYPE volatile g_VBoxNetFltSolarisStreamType = kUndefined;
 static int g_VBoxNetFltSolarisPollInterval = -1;
 #endif
 
+static int s_off_vnode = -1;
+#define VNODE_FOR_FILE_T(filetpointer)         (*(struct vnode **)((char *)(filetpointer) + s_off_vnode))
+
+
+static int
+vboxNetFltSolarisCtfGetMemberOffset(ctf_file_t *pCtfFile, const char *pszStruct, const char *pszMember, int *pOffset)
+{
+	AssertReturn(pCtfFile, VERR_INVALID_PARAMETER);
+	AssertReturn(pszStruct, VERR_INVALID_PARAMETER);
+	AssertReturn(pszMember, VERR_INVALID_PARAMETER);
+	AssertReturn(pOffset, VERR_INVALID_PARAMETER);
+
+	ctf_id_t TypeId = ctf_lookup_by_name(pCtfFile, pszStruct);
+	if (TypeId != CTF_ERR)
+	{
+		ctf_membinfo_t MemberInfo;
+		bzero(&MemberInfo, sizeof(MemberInfo));
+		if (ctf_member_info(pCtfFile, TypeId, pszMember, &MemberInfo) != CTF_ERR)
+		{
+			*pOffset = (MemberInfo.ctm_offset >> 3);
+			LogRel((DEVICE_NAME ":%s::%s at %d\n", pszStruct, pszMember, *pOffset));
+			return VINF_SUCCESS;
+		}
+		else
+			LogRel((DEVICE_NAME ":ctf_member_info failed for struct %s member %s\n", pszStruct, pszMember));
+	}
+	else
+		LogRel((DEVICE_NAME ":ctf_lookup_by_name failed for struct %s\n", pszStruct));
+
+	return VERR_NOT_FOUND;
+}
+
+
+static int
+vboxNetFltSolarisProbeCtf(void)
+{
+    /*
+     * CTF probing for fluid f_vnode member in file_t.
+     */
+    int rc = VERR_INTERNAL_ERROR;
+    modctl_t *pModCtl = mod_hold_by_name("genunix");
+    if (pModCtl)
+    {
+        int err;
+        ctf_file_t *pCtfFile = ctf_modopen(pModCtl->mod_mp, &err);
+        if (pCtfFile)
+            rc = vboxNetFltSolarisCtfGetMemberOffset(pCtfFile, "file_t", "f_vnode", &s_off_vnode);
+        else
+            LogRel((DEVICE_NAME ":ctf_modopen failed. err=%d\n", err));
+
+        mod_release_mod(pModCtl);
+    }
+    else
+        LogRel((DEVICE_NAME ":mod_hold_by_name failed.\n"));
+
+    return rc;
+}
+
 
 /**
  * Kernel entry points
@@ -427,46 +486,52 @@ int _init(void)
     int rc = RTR0Init(0);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Initialize Solaris specific globals here.
-         */
-        g_VBoxNetFltSolarisStreams = NULL;
-        g_VBoxNetFltSolarisInstance = NULL;
-        g_pVBoxNetFltSolarisCred = crdup(kcred);
-        if (RT_LIKELY(g_pVBoxNetFltSolarisCred))
+        rc = vboxNetFltSolarisProbeCtf();
+        if (RT_SUCCESS(rc))
         {
-            rc = RTSemFastMutexCreate(&g_VBoxNetFltSolarisMtx);
-            if (RT_SUCCESS(rc))
+            /*
+             * Initialize Solaris specific globals here.
+             */
+            g_VBoxNetFltSolarisStreams = NULL;
+            g_VBoxNetFltSolarisInstance = NULL;
+            g_pVBoxNetFltSolarisCred = crdup(kcred);
+            if (RT_LIKELY(g_pVBoxNetFltSolarisCred))
             {
-                /*
-                 * Initialize the globals and connect to the support driver.
-                 *
-                 * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
-                 * for establishing the connect to the support driver.
-                 */
-                memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
-                rc = vboxNetFltInitGlobalsAndIdc(&g_VBoxNetFltSolarisGlobals);
+                rc = RTSemFastMutexCreate(&g_VBoxNetFltSolarisMtx);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
-                    if (!rc)
-                        return rc;
+                    /*
+                     * Initialize the globals and connect to the support driver.
+                     *
+                     * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
+                     * for establishing the connect to the support driver.
+                     */
+                    memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
+                    rc = vboxNetFltInitGlobalsAndIdc(&g_VBoxNetFltSolarisGlobals);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
+                        if (!rc)
+                            return rc;
 
-                    LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
-                    vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltSolarisGlobals);
+                        LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
+                        vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltSolarisGlobals);
+                    }
+                    else
+                        LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
+
+                    RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
+                    g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
                 }
-                else
-                    LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
-
-                RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
-                g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
+            }
+            else
+            {
+                LogRel((DEVICE_NAME ":failed to allocate credentials.\n"));
+                rc = VERR_NO_MEMORY;
             }
         }
         else
-        {
-            LogRel((DEVICE_NAME ":failed to allocate credentials.\n"));
-            rc = VERR_NO_MEMORY;
-        }
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisProbeCtf failed. rc=%d\n", rc));
 
         RTR0Term();
     }
@@ -1561,9 +1626,9 @@ static int vboxNetFltSolarisOpenDev(char *pszDev, vnode_t **ppVNode, vnode_t **p
         {
             if (   pUser
                 && pUser->fp
-                && pUser->fp->f_vnode)
+                && VNODE_FOR_FILE_T(pUser->fp))
             {
-                *ppVNode = pUser->fp->f_vnode;
+                *ppVNode = VNODE_FOR_FILE_T(pUser->fp);
                 *ppVNodeHeld = pVNodeHeld;
                 *ppUser = pUser;
                 return VINF_SUCCESS;
@@ -1571,7 +1636,7 @@ static int vboxNetFltSolarisOpenDev(char *pszDev, vnode_t **ppVNode, vnode_t **p
             else
             {
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenDev failed. pUser=%p fp=%p f_vnode=%p\n", pUser, pUser ? pUser->fp : NULL,
-                                    pUser && pUser->fp ? pUser->fp->f_vnode : NULL));
+                                    pUser && pUser->fp ? VNODE_FOR_FILE_T(pUser->fp) : NULL));
             }
 
             if (pUser)
@@ -2186,11 +2251,11 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                         file_t *pArpFile = getf(ArpMuxFd);
                         if (   pIpFile
                             && pArpFile
-                            && pArpFile->f_vnode
-                            && pIpFile->f_vnode)
+                            && VNODE_FOR_FILE_T(pArpFile)
+                            && VNODE_FOR_FILE_T(pIpFile))
                         {
-                            vnode_t *pIp4VNode = pIpFile->f_vnode;
-                            vnode_t *pArpVNode = pArpFile->f_vnode;
+                            vnode_t *pIp4VNode = VNODE_FOR_FILE_T(pIpFile);
+                            vnode_t *pArpVNode = VNODE_FOR_FILE_T(pArpFile);
 
                             /*
                              * Find the position on the host stack for attaching/detaching ourselves.
@@ -2430,9 +2495,9 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                          */
                         file_t *pIpFile = getf(Ip6MuxFd);
                         if (   pIpFile
-                            && pIpFile->f_vnode)
+                            && VNODE_FOR_FILE_T(pIpFile))
                         {
-                            vnode_t *pIp6VNode = pIpFile->f_vnode;
+                            vnode_t *pIp6VNode = VNODE_FOR_FILE_T(pIpFile);
 
                             /*
                              * Find the position on the host stack for attaching/detaching ourselves.
