@@ -412,29 +412,29 @@ static int s_off_vnode = -1;
 static int
 vboxNetFltSolarisCtfGetMemberOffset(ctf_file_t *pCtfFile, const char *pszStruct, const char *pszMember, int *pOffset)
 {
-	AssertReturn(pCtfFile, VERR_INVALID_PARAMETER);
-	AssertReturn(pszStruct, VERR_INVALID_PARAMETER);
-	AssertReturn(pszMember, VERR_INVALID_PARAMETER);
-	AssertReturn(pOffset, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtfFile, VERR_INVALID_PARAMETER);
+    AssertReturn(pszStruct, VERR_INVALID_PARAMETER);
+    AssertReturn(pszMember, VERR_INVALID_PARAMETER);
+    AssertReturn(pOffset, VERR_INVALID_PARAMETER);
 
-	ctf_id_t TypeId = ctf_lookup_by_name(pCtfFile, pszStruct);
-	if (TypeId != CTF_ERR)
-	{
-		ctf_membinfo_t MemberInfo;
-		bzero(&MemberInfo, sizeof(MemberInfo));
-		if (ctf_member_info(pCtfFile, TypeId, pszMember, &MemberInfo) != CTF_ERR)
-		{
-			*pOffset = (MemberInfo.ctm_offset >> 3);
-			LogRel((DEVICE_NAME ":%s::%s at %d\n", pszStruct, pszMember, *pOffset));
-			return VINF_SUCCESS;
-		}
-		else
-			LogRel((DEVICE_NAME ":ctf_member_info failed for struct %s member %s\n", pszStruct, pszMember));
-	}
-	else
-		LogRel((DEVICE_NAME ":ctf_lookup_by_name failed for struct %s\n", pszStruct));
+    ctf_id_t TypeId = ctf_lookup_by_name(pCtfFile, pszStruct);
+    if (TypeId != CTF_ERR)
+    {
+        ctf_membinfo_t MemberInfo;
+        bzero(&MemberInfo, sizeof(MemberInfo));
+        if (ctf_member_info(pCtfFile, TypeId, pszMember, &MemberInfo) != CTF_ERR)
+        {
+            *pOffset = (MemberInfo.ctm_offset >> 3);
+            LogRel((DEVICE_NAME ":%s::%s at %d\n", pszStruct, pszMember, *pOffset));
+            return VINF_SUCCESS;
+        }
+        else
+            LogRel((DEVICE_NAME ":ctf_member_info failed for struct %s member %s\n", pszStruct, pszMember));
+    }
+    else
+        LogRel((DEVICE_NAME ":ctf_lookup_by_name failed for struct %s\n", pszStruct));
 
-	return VERR_NOT_FOUND;
+    return VERR_NOT_FOUND;
 }
 
 
