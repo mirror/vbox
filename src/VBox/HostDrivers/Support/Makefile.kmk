@@ -455,6 +455,7 @@ vboxdrv_SOURCES       = \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
 	SUPDrv.c \
 	SUPDrvSem.c
+vboxdrv_LDFLAGS     += -N misc/ctf
 
 endif # solaris
 
