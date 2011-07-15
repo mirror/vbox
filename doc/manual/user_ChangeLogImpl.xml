@@ -9,7 +9,9 @@
     <itemizedlist>
 
       <listitem>
-        <para>Support for cloning of VMs (bug #5853, see <xref linkend="clone"/>)</para>
+        <para>Support for cloning of VMs (bug #5853, see
+          <xref linkend="clone"/>): full clones can be created through the GUI
+          and VBoxManage, linked clones only through VBoxManage</para>
       </listitem>
 
       <listitem>
@@ -35,12 +37,13 @@
       </listitem>
 
       <listitem>
-        <para>Windows guests: Experimental WDDM graphics driver</para>
+        <para>Windows guests: Experimental WDDM graphics driver, supporting
+          Windows Aero (bug #4607)</para>
       </listitem>
 
       <listitem>
-        <para>Guest Additions: modules and features now are represented as facilities
-          to have a common interface for frontends</para>
+        <para>Guest Additions: status of modules and features can now be
+          queried separately by the frontends</para>
       </listitem>
 
       <listitem>
@@ -56,13 +59,13 @@
       </listitem>
 
       <listitem>
-        <para>Experimental support for SATA hotplug added. Currently only supported
-          for hard disks and only with VBoxManage.</para>
+        <para>Experimental support for SATA hard disk hotplugging available
+          with VBoxManage</para>
       </listitem>
 
       <listitem>
-        <para>Solaris hosts: New Crossbow based bridged networking driver for Solaris 11
-        hosts (build 159 and above).</para>
+        <para>Solaris hosts: New Crossbow based bridged networking driver for
+          Solaris 11 build 159 and above</para>
       </listitem>
 
 
