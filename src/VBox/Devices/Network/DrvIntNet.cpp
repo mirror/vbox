@@ -41,6 +41,9 @@
 #include <iprt/time.h>
 #include <iprt/thread.h>
 #include <iprt/uuid.h>
+#if defined(RT_OS_DARWIN) && defined(IN_RING3)
+# include <iprt/system.h>
+#endif
 
 #include "VBoxDD.h"
 
@@ -1357,7 +1360,8 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
                                   "|TrunkPolicyHost"
                                   "|TrunkPolicyWire"
                                   "|IsService"
-                                  "|IgnoreConnectFailure",
+                                  "|IgnoreConnectFailure"
+                                  "|Workaround1",
                                   "");
 
     /*
@@ -1599,6 +1603,30 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"IgnoreConnectFailure\" value"));
+
+    /** @cfgm{Workaround1, boolean, depends}
+     * Enables host specific workarounds, the default is depends on the whether
+     * we think the host requires it or not.
+     */
+    bool fWorkaround1 = false;
+#ifdef RT_OS_DARWIN
+    if (OpenReq.fFlags & INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE)
+    {
+        char szKrnlVer[256];
+        RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szKrnlVer, sizeof(szKrnlVer));
+        if (strcmp(szKrnlVer, "10.7.0") >= 0)
+        {
+            LogRel(("IntNet#%u: Enables the workaround (ip_tos=0) for the little endian ip header checksum problem\n"));
+            fWorkaround1 = true;
+        }
+    }
+#endif
+    rc = CFGMR3QueryBoolDef(pCfg, "Workaround1", &fWorkaround1, fWorkaround1);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"Workaround1\" value"));
+    if (fWorkaround1)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_WORKAROUND_1;
 
     LogRel(("IntNet#%u: szNetwork={%s} enmTrunkType=%d szTrunk={%s} fFlags=%#x cbRecv=%u cbSend=%u fIgnoreConnectFailure=%RTbool\n",
             pDrvIns->iInstance, OpenReq.szNetwork, OpenReq.enmTrunkType, OpenReq.szTrunk, OpenReq.fFlags,
