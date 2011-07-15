@@ -103,10 +103,13 @@ void PACKSPU_APIENTRY packspu_Finish( void )
     }
 }
 
+#define PACK_FORCED_SYNC
+
 void PACKSPU_APIENTRY packspu_Flush( void )
 {
     GET_THREAD(thread);
     int writeback = 1;
+    int found=0;
 
     if (!thread->bInjectThread)
     {
@@ -125,20 +128,39 @@ void PACKSPU_APIENTRY packspu_Flush( void )
 
         crLockMutex(&_PackMutex);
 
-        /*Make sure we process commands in order they should appear, so flush thread being injected first*/
+        /*Make sure we process commands in order they should appear, so flush other threads first*/
         for (i=0; i<MAX_THREADS; ++i)
         {
             if (pack_spu.thread[i].inUse
                 && (thread != &pack_spu.thread[i]) && pack_spu.thread[i].netServer.conn
-                && (pack_spu.thread[i].netServer.conn->u32ClientID == thread->netServer.conn->u32InjectClientID)
                 && pack_spu.thread[i].packer && pack_spu.thread[i].packer->currentBuffer)
             {
+#ifdef PACK_FORCED_SYNC
+            	CRPackContext *pc = pack_spu.thread[i].packer;
+            	unsigned char *data_ptr;
+
+            	CR_GET_BUFFERED_POINTER( pc, 16 );
+            	WRITE_DATA( 0, GLint, 16 );
+            	WRITE_DATA( 4, GLenum, CR_WRITEBACK_EXTEND_OPCODE );
+            	WRITE_NETWORK_POINTER( 8, (void *) &writeback );
+            	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+            	CR_UNLOCK_PACKER_CONTEXT(pc);
+#endif
                 packspuFlush((void *) &pack_spu.thread[i]);
-                break;
+
+                if (pack_spu.thread[i].netServer.conn->u32ClientID == thread->netServer.conn->u32InjectClientID)
+                {
+                    found=1;
+                }
+
+#ifdef PACK_FORCED_SYNC
+                while (writeback)
+                    crNetRecv();
+#endif
             }
         }
 
-        if (i>=MAX_THREADS)
+        if (!found)
         {
             /*Thread we're supposed to inject commands for has been detached,
               so there's nothing to sync with and we should just pass commands through our own connection.
@@ -146,9 +168,17 @@ void PACKSPU_APIENTRY packspu_Flush( void )
             thread->netServer.conn->u32InjectClientID=0;
         }
 
-        crUnlockMutex(&_PackMutex);
-
+#ifdef PACK_FORCED_SYNC
+        writeback = 1;
+        crPackWriteback(&writeback);
+#endif
         packspuFlush((void *) thread);
+
+#ifdef PACK_FORCED_SYNC
+        while (writeback)
+            crNetRecv();
+#endif
+        crUnlockMutex(&_PackMutex);
     }
 }
 

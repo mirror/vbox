@@ -681,7 +681,11 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXMakeCurrent)( Display *dpy, GLXDrawable drawable,
         }
     }
 
-    if (ctx && drawable) {
+    if (ctx && drawable)
+    {
+        crHashtableLock(stub.windowTable);
+        crHashtableLock(stub.contextTable);
+
         context = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) ctx);
         window = stubGetWindowInfo(dpy, drawable);
 
@@ -691,7 +695,8 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXMakeCurrent)( Display *dpy, GLXDrawable drawable,
             XUNLOCK(dpy);
         }
     }
-    else {
+    else
+    {
         dpy = NULL;
         window = NULL;
         context = NULL;
@@ -701,6 +706,13 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXMakeCurrent)( Display *dpy, GLXDrawable drawable,
     currentDrawable = drawable;
 
     retVal = stubMakeCurrent(window, context);
+
+    if (ctx && drawable)
+    {
+        crHashtableUnlock(stub.contextTable);
+        crHashtableUnlock(stub.windowTable);
+    }
+
     return retVal;
 }
 
