@@ -424,6 +424,8 @@
                               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
 
                         <!-- Misc tools -->
+                        <File Id="file_VBoxImg.exe" Name="vbox-img.exe"
+                              Source="$(env.PATH_OUT)\bin\vbox-img.exe"/>
                         <File Id="file_VBoxNetDHCP.exe" Name="VBoxNetDHCP.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.exe"/>
 <?if $(env.VBOX_WITH_EXTPACK) = "yes" ?>
