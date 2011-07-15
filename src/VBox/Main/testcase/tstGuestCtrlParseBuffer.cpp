@@ -39,8 +39,8 @@ typedef std::map< RTCString, VBOXGUESTCTRL_BUFFER_VALUE > GuestBufferMap;
 typedef std::map< RTCString, VBOXGUESTCTRL_BUFFER_VALUE >::iterator GuestBufferMapIter;
 typedef std::map< RTCString, VBOXGUESTCTRL_BUFFER_VALUE >::const_iterator GuestBufferMapIterConst;
 
-char pszUnterm1[] = { 'a', 's', 'd', 'f' };
-char pszUnterm2[] = { 'f', 'o', 'o', '3', '=', 'b', 'a', 'r', '3' };
+char szUnterm1[] = { 'a', 's', 'd', 'f' };
+char szUnterm2[] = { 'f', 'o', 'o', '3', '=', 'b', 'a', 'r', '3' };
 
 static struct
 {
@@ -62,9 +62,9 @@ static struct
     /* Incomplete buffer (missing \0 termination). */
     { "",                               1,                                                 0, 0,       0, VERR_MORE_DATA },
     { "\0",                             1,                                                 0, 0,       0, VERR_MORE_DATA },
-    { pszUnterm1,                       5,                                                 0, 0,       0, VERR_MORE_DATA },
+    { szUnterm1,                        5,                                                 0, 0,       0, VERR_MORE_DATA },
     { "foo1",                           sizeof("foo1"),                                    0, 0,       0, VERR_MORE_DATA },
-    { pszUnterm2,                       8,                                                 0, 0,       0, VERR_MORE_DATA },
+    { szUnterm2,                        8,                                                 0, 0,       0, VERR_MORE_DATA },
     /* Incomplete buffer (missing components). */
     { "=bar\0",                         sizeof("=bar"),                                    0,  0,                                         0, VERR_MORE_DATA },
     /* Last sequence is incomplete -- new offset should point to it. */
@@ -76,6 +76,22 @@ static struct
     { "foo=bar\0baz=boo",               sizeof("foo=bar\0baz=boo"),                        0,  sizeof("foo=bar\0baz=boo"),                2, VINF_SUCCESS },
     /* Parsing until a different block (two terminations, returning offset to next block). */
     { "off=rab\0\0zab=oob",             sizeof("off=rab\0\0zab=oob"),                      0,  sizeof("zab=oob"),                         1, VERR_MORE_DATA }
+};
+
+static struct
+{
+    const char *pbData;
+    size_t      cbData;
+    /** Number of data blocks retrieved. These are separated by "\0\0". */
+    uint32_t    uNumBlocks;
+    /** Overall result when done parsing. */
+    int         iResult;
+} aTests2[] =
+{
+    { "off=rab\0\0zab=oob",                            sizeof("off=rab\0\0zab=oob"),                      2, VINF_SUCCESS },
+    { "\0\0\0soo=foo\0goo=loo\0\0zab=oob",             sizeof("\0\0\0soo=foo\0goo=loo\0\0zab=oob"),       2, VINF_SUCCESS },
+    { "qoo=uoo\0\0\0\0asdf=\0\0",                      sizeof("qoo=uoo\0\0\0\0asdf=\0\0"),                2, VINF_SUCCESS },
+    { "foo=bar\0\0\0\0\0\0",                           sizeof("foo=bar\0\0\0\0\0\0"),                     1, VINF_SUCCESS }
 };
 
 int outputBufferParse(const BYTE *pbData, size_t cbData, uint32_t *puOffset, GuestBufferMap& mapBuf)
@@ -164,6 +180,20 @@ int outputBufferParse(const BYTE *pbData, size_t cbData, uint32_t *puOffset, Gue
     return rc;
 }
 
+void tstOutputAndDestroyMap(GuestBufferMap &bufMap)
+{
+    for (GuestBufferMapIter it = bufMap.begin(); it != bufMap.end(); it++)
+    {
+        RTTestIPrintf(RTTESTLVL_DEBUG, "\t%s -> %s\n",
+                      it->first.c_str(), it->second.pszValue ? it->second.pszValue : "<undefined>");
+
+        if (it->second.pszValue)
+            RTMemFree(it->second.pszValue);
+    }
+
+    bufMap.clear();
+}
+
 int main()
 {
     RTTEST hTest;
@@ -172,8 +202,12 @@ int main()
         return rc;
     RTTestBanner(hTest);
 
+    RTTestIPrintf(RTTESTLVL_INFO, "Doing basic tests ...\n");
+
     if (sizeof("sizecheck") != 10)
         RTTestFailed(hTest, "Basic size test failed (%u <-> 10)", sizeof("sizecheck"));
+
+    RTTestIPrintf(RTTESTLVL_INFO, "Doing line tests ...\n");
 
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
     {
@@ -214,13 +248,49 @@ int main()
             }
         }
 
-        for (GuestBufferMapIter it = bufMap.begin(); it != bufMap.end(); it++)
-        {
-            RTTestIPrintf(RTTESTLVL_DEBUG, "\t%s -> %s\n",
-                          it->first.c_str(), it->second.pszValue ? it->second.pszValue : "<undefined>");
+        tstOutputAndDestroyMap(bufMap);
+    }
 
-            if (it->second.pszValue)
-                RTMemFree(it->second.pszValue);
+    RTTestIPrintf(RTTESTLVL_INFO, "Doing block tests ...\n");
+
+    for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests2); iTest++)
+    {
+        RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u\n", iTest);
+
+        int iResult;
+
+        GuestBufferMap bufMap;
+        uint32_t uOffset = 0;
+        uint32_t uNumBlocks = 0;
+
+        while (uOffset < aTests2[iTest].cbData)
+        {
+            iResult = outputBufferParse((BYTE*)aTests2[iTest].pbData, aTests2[iTest].cbData,
+                                        &uOffset, bufMap);
+            RTTestIPrintf(RTTESTLVL_DEBUG, "\tReturned with %Rrc\n", iResult);
+            if (   iResult == VINF_SUCCESS
+                || iResult == VERR_MORE_DATA)
+            {
+                if (bufMap.size()) /* Only count block which have some valid data. */
+                    uNumBlocks++;
+
+                tstOutputAndDestroyMap(bufMap);
+
+                RTTestIPrintf(RTTESTLVL_DEBUG, "\tNext offset %u (total: %u)\n",
+                              uOffset, aTests2[iTest].cbData);
+                uOffset++;
+            }
+            else
+                break;
+
+            if (uNumBlocks > 32)
+                break; /* Give up if unreasonable big. */
+        }
+
+        if (uNumBlocks != aTests2[iTest].uNumBlocks)
+        {
+            RTTestFailed(hTest, "\tReturned %u blocks, expected %u\n",
+                         uNumBlocks, aTests2[iTest].uNumBlocks);
         }
     }
 
