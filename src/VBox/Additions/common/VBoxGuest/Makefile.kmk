@@ -51,6 +51,7 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
  VBoxGuest_INCS          = .
  VBoxGuest_INCS.freebsd  = $(PATH_VBoxGuest) $(PATH_INS)/gen-sys-hdrs
  VBoxGuest_INCS.linux    = ../../../Runtime/r0drv/linux
+ VBoxGuest_LDFLAGS.solaris += -N misc/ctf
  ifneq ($(KBUILD_TARGET),os2)
   ifeq ($(KBUILD_TARGET),win)
    VBoxGuest_LDFLAGS.x86 = -Entry:DriverEntry@8
