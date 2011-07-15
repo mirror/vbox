@@ -56,6 +56,7 @@
 #include <sys/modctl.h>
 #include <sys/machparam.h>
 #include <sys/utsname.h>
+#include <sys/ctf_api.h>
 
 #include <iprt/assert.h>
 
@@ -143,43 +144,6 @@ static int vbi_verbose = 0;
 /* Introduced in v8 */
 static int vbi_is_initialized = 0;
 
-/* Introduced in v6 */
-static int vbi_is_nevada = 0;
-
-#ifdef _LP64
-/* 64-bit Solaris 10 offsets */
-/* CPU */
-static int off_s10_cpu_runrun   = 232;
-static int off_s10_cpu_kprunrun = 233;
-/* kthread_t */
-static int off_s10_t_preempt    = 42;
-
-/* 64-bit Solaris 11 (Nevada/OpenSolaris) offsets */
-/* CPU */
-static int off_s11_cpu_runrun   = 216;
-static int off_s11_cpu_kprunrun = 217;
-/* kthread_t */
-static int off_s11_t_preempt    = 42;
-
-/* 64-bit Solaris 11 snv_166+ offsets (CR 7037143) */
-static int off_s11_t_preempt_new = 48;
-#else
-/* 32-bit Solaris 10 offsets */
-/* CPU */
-static int off_s10_cpu_runrun   = 124;
-static int off_s10_cpu_kprunrun = 125;
-/* kthread_t */
-static int off_s10_t_preempt    = 26;
-
-/* 32-bit Solaris 11 (Nevada/OpenSolaris) offsets */
-/* CPU */
-static int off_s11_cpu_runrun   = 112;
-static int off_s11_cpu_kprunrun = 113;
-/* kthread_t */
-static int off_s11_t_preempt    = 26;
-#endif
-
-
 /* Which offsets will be used */
 static int off_cpu_runrun       = -1;
 static int off_cpu_kprunrun     = -1;
@@ -218,6 +182,35 @@ _init(void)
 }
 #endif
 
+static int
+vbi_get_ctf_member_offset(ctf_file_t *ctfp, const char *structname, const char *membername, int *offset)
+{
+	AssertReturn(ctfp, CTF_ERR);
+	AssertReturn(structname, CTF_ERR);
+	AssertReturn(membername, CTF_ERR);
+	AssertReturn(offset, CTF_ERR);
+
+	ctf_id_t typeident = ctf_lookup_by_name(ctfp, structname);
+	if (typeident != CTF_ERR)
+	{
+		ctf_membinfo_t memberinfo;
+		bzero(&memberinfo, sizeof(memberinfo));
+		if (ctf_member_info(ctfp, typeident, membername, &memberinfo) != CTF_ERR)
+		{
+			*offset = (memberinfo.ctm_offset >> 3);
+			cmn_err(CE_NOTE, "%s::%s at %d\n", structname, membername, *offset);
+			return (0);
+		}
+		else
+			cmn_err(CE_NOTE, "ctf_member_info failed for struct %s member %s\n", structname, membername);
+	}
+	else
+		cmn_err(CE_NOTE, "ctf_lookup_by_name failed for struct %s\n", structname);
+
+	return (CTF_ERR);
+}
+
+
 int
 vbi_init(void)
 {
@@ -252,7 +245,7 @@ vbi_init(void)
 		p_contig_free = (void (*)(void *, size_t))
 			kobj_getsymvalue("contig_free", 1);
 		if (p_contig_free == NULL) {
-			cmn_err(CE_NOTE, " contig_free() not found in kernel\n");
+			cmn_err(CE_NOTE, "contig_free() not found in kernel\n");
 			return (EINVAL);
 		}
 	}
@@ -271,68 +264,33 @@ vbi_init(void)
 		}
 	}
 
-
 	/*
-	 * Check if this is S10 or Nevada
+	 * CTF probing for fluid, private members.
 	 */
-	if (!strncmp(utsname.release, "5.11", sizeof("5.11") - 1)) {
-		/* Nevada detected... */
-		vbi_is_nevada = 1;
-
-		off_cpu_runrun = off_s11_cpu_runrun;
-		off_cpu_kprunrun = off_s11_cpu_kprunrun;
-		off_t_preempt = off_s11_t_preempt;
-
-#ifdef _LP64
-		/* Only 64-bit kernels */
-		long snv_version = 0;
-		if (  !strncmp(utsname.version, "snv_", 4)
-			&& strlen(utsname.version) > 4)
+	int err = 0;
+	modctl_t *genunix_modctl = mod_hold_by_name("genunix");
+	if (genunix_modctl)
+	{
+		ctf_file_t *ctfp = ctf_modopen(genunix_modctl->mod_mp, &err);
+		if (ctfp)
 		{
-			int err = ddi_strtol(utsname.version + 4, NULL /* endptr */, 0, &snv_version);
-			if (!err)
-			{
-				if (snv_version >= 166)
-					off_t_preempt = off_s11_t_preempt_new;
-				cmn_err(CE_NOTE, "Detected S11 version %ld: Preemption offset=%d\n", snv_version, off_t_preempt);
-			}
-			else
-				snv_version = 0;
+			do {
+				err = vbi_get_ctf_member_offset(ctfp, "kthread_t", "t_preempt", &off_t_preempt); AssertBreak(!err);
+				err = vbi_get_ctf_member_offset(ctfp, "cpu_t", "cpu_runrun", &off_cpu_runrun); AssertBreak(!err);
+				err = vbi_get_ctf_member_offset(ctfp, "cpu_t", "cpu_kprunrun", &off_cpu_kprunrun); AssertBreak(!err);
+			} while (0);
 		}
 
-		if (snv_version == 0)
-		{
-			cmn_err(CE_NOTE, "WARNING(2)!! Cannot determine version. Assuming pre snv_166, name=%s Preemption offset=%ld may be busted!\n",
-				utsname.version, off_t_preempt);
-		}
-#endif
-	} else {
-		/* Solaris 10 detected... */
-		vbi_is_nevada = 0;
-
-		off_cpu_runrun = off_s10_cpu_runrun;
-		off_cpu_kprunrun = off_s10_cpu_kprunrun;
-		off_t_preempt = off_s10_t_preempt;
+		mod_release_mod(genunix_modctl);
+	}
+	else
+	{
+		cmn_err(CE_NOTE, "failed to open module genunix.\n");
+		err = EINVAL;
 	}
 
-	/*
-	 * Sanity checking...
-	 */
-	/* CPU */
-	char crr = VBI_CPU_RUNRUN;
-	char krr = VBI_CPU_KPRUNRUN;
-	if (   (crr < 0 || crr > 1)
-		|| (krr < 0 || krr > 1)) {
-		cmn_err(CE_NOTE, ":CPU structure sanity check failed! OS version mismatch.\n");
-		return EINVAL;
-	}
-
-	/* Thread */
-	char t_preempt = VBI_T_PREEMPT;
-	if (t_preempt < 0 || t_preempt > 32) {
-		cmn_err(CE_NOTE, ":Thread structure sanity check failed! OS version mismatch.\n");
-		return EINVAL;
-	}
+	if (err)
+		return (EINVAL);
 
 	vbi_is_initialized = 1;
 
