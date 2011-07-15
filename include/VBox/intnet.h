@@ -905,9 +905,15 @@ typedef enum INTNETTRUNKTYPE
 /** Trunk policy: The wire should see all packets. */
 #define INTNET_OPEN_FLAGS_TRUNK_WIRE_PROMISC_MODE               RT_BIT_32(26)
 
+/** Used to enable host specific workarounds.
+ *
+ * On darwin this will clear ip_tos in DHCP packets when
+ * INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE is also set. */
+#define INTNET_OPEN_FLAGS_WORKAROUND_1                          RT_BIT_32(31)
+
 
 /** The mask of valid flags. */
-#define INTNET_OPEN_FLAGS_MASK                                  UINT32_C(0x03ffffff)
+#define INTNET_OPEN_FLAGS_MASK                                  UINT32_C(0x83ffffff)
 /** The mask of all flags use to fix (lock) settings. */
 #define INTNET_OPEN_FLAGS_FIXED_MASK \
     (  INTNET_OPEN_FLAGS_ACCESS_FIXED \
