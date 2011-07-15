@@ -503,4 +503,5 @@ typedef struct _GetNotification
 
 } /* namespace guestProp */
 
-#endif  /* ___VBox_HostService_GuestPropertySvc_h defined */
+#endif  /* !___VBox_HostService_GuestPropertySvc_h */
+
