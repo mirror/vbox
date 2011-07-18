@@ -19,6 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <windows.h>
+#include <commctrl.h>
 #include <lmerr.h>
 #include <msiquery.h>
 #include <objbase.h>
@@ -567,6 +568,13 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                             RTStrFree(pszLog);
                             AssertMsgBreak(uLogLevel == ERROR_SUCCESS, ("Could not set installer logging level!\n"));
                         }
+
+                        /* Initialize the common controls (extended version). This is necessary to
+                         * run the actual .MSI installers with the new fancy visual control
+                         * styles (XP+). Also, an integrated manifest is required. */
+                        INITCOMMONCONTROLSEX ccEx;
+                        ccEx.dwSize = sizeof(INITCOMMONCONTROLSEX);
+                        InitCommonControlsEx(&ccEx); /* Ignore failure. */
 
                         UINT uStatus = ::MsiInstallProductA(pszTempFile, szMSIArgs);
                         if (   (uStatus != ERROR_SUCCESS)
