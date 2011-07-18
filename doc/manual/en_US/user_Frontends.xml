@@ -514,6 +514,68 @@
             this hard-coded private key became public some years ago, RDP5.1
             authentication is also insecure.</para>
           </listitem>
+
+          <listitem>
+            <para>RDP5.2 authentication uses the Enhanced RDP Security, which
+            means that an external security protocol is used to secure the
+            connection. RDP4 and RDP5.1 use Standard RDP Security.
+            VRDP server supports Enhanced RDP Security with TLS protocol and,
+            as a part of TLS handshake, sends the server certificate to the
+            client.</para>
+
+            <para>The <computeroutput>Security/Method</computeroutput> VRDE
+            property sets the desired security method, which is used for a
+            connection. Valid values are:<itemizedlist>
+                <listitem>
+                  <computeroutput>Negotiate</computeroutput> - both Enhanced (TLS)
+                  and Standard RDP Security connections are allowed. The security
+                  method is negotiated with the client. This is the default setting.
+                </listitem>
+
+                <listitem>
+                  <computeroutput>RDP</computeroutput> - only Standard RDP Security
+                  is accepted.
+                </listitem>
+
+                <listitem>
+                  <computeroutput>TLS</computeroutput> - only Enhanced RDP Security
+                  is accepted. The client must support TLS.
+                </listitem>
+            </itemizedlist>
+            For example the following command allows a client to use either Standard
+            or Enhanced RDP Security connection:
+            <screen>vboxmanage modifyvm NAME --vrdeproperty "Security/Method=negotiate"</screen>
+            </para>
+
+            <para>If the <computeroutput>Security/Method</computeroutput> property is
+            set to either <computeroutput>Negotiate</computeroutput> or
+            <computeroutput>TLS</computeroutput>, the TLS protocol will be automatically
+            used by the server, if the client supports TLS. However in order to use TLS
+            the server must possess the Server Certificate, the Server Private Key and the
+            Certificate Authority (CA) Certificate. The following example shows how to
+            generate a server certificate.<orderedlist>
+                <listitem>
+                Create a CA self signed certificate:
+                <screen>openssl req -new -x509 -days 365 -extensions v3_ca -keyout ca_key_private.pem -out ca_cert.pem</screen>
+                </listitem>
+
+                <listitem>
+                Generate a server private key and a request for signing:
+                <screen>openssl genrsa -out server_key_private.pem
+openssl req -new -key server_key_private.pem -out server_req.pem</screen>
+                </listitem>
+
+                <listitem>
+                Generate the server certificate:
+                <screen>openssl x509 -req -days 365 -in server_req.pem -CA ca_cert.pem -CAkey ca_key_private.pem -set_serial 01 -out server_cert.pem</screen>
+                </listitem>
+            </orderedlist>
+            The server must be configured to access the required files:
+            <screen>vboxmanage modifyvm NAME --vrdeproperty "Security/CACertificate=path/ca_cert.pem"</screen>
+            <screen>vboxmanage modifyvm NAME --vrdeproperty "Security/ServerCertificate=path/server_cert.pem"</screen>
+            <screen>vboxmanage modifyvm NAME --vrdeproperty "Security/ServerPrivateKey=path/server_key_private.pem"</screen>
+            </para>
+          </listitem>
         </orderedlist></para>
 
       <para>As the client that connects to the server determines what type
