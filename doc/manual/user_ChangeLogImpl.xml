@@ -38,7 +38,9 @@
 
       <listitem>
         <para>Windows guests: Experimental WDDM graphics driver, supporting
-          Windows Aero (bug #4607)</para>
+          Windows Aero (bug #4607) and providing Direct3D support using a
+          cleaner approach (no need to install the guest drivers in Safe Mode
+          anymore)</para>
       </listitem>
 
       <listitem>
