@@ -27,7 +27,7 @@ License:   GPLv2
 Group:     Applications/System
 Vendor:    Oracle Corporation
 BuildRoot: %BUILDROOT%
-Requires:  initscripts %LIBASOUND%
+Requires:  %INITSCRIPTS% %LIBASOUND%
 
 %if %{?rpm_suse:1}%{!?rpm_suse:0}
 %debug_package
