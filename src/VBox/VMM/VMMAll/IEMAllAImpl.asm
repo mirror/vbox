@@ -27,6 +27,58 @@
 ;   Defined Constants And Macros                                               ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;
+; RET XX / RET wrapper for fastcall.
+;
+%macro RET_FASTCALL 1
+%ifdef RT_ARCH_X86                  
+ %ifdef RT_OS_WINDOWS                                 
+    ret %1
+ %else
+    ret
+ %endif        
+%else
+    ret
+%endif
+%endmacro
+
+;;
+; NAME for fastcall functions.
+;
+;; @todo 'global @fastcall@12' is still broken in yasm and requires dollar 
+;         escaping (or whatever the dollar is good for here).  Thus the ugly
+;         prefix argument.
+;
+%define NAME_FASTCALL(a_Name, a_cbArgs, a_Dollar)   NAME(a_Name)
+%ifdef RT_ARCH_X86
+ %ifdef RT_OS_WINDOWS                                 
+  %undef NAME_FASTCALL
+  %define NAME_FASTCALL(a_Name, a_cbArgs, a_Prefix) a_Prefix %+ a_Name %+ @ %+ a_cbArgs
+ %endif        
+%endif
+
+;;
+; BEGINPROC for fastcall functions.
+;
+; @param        1       The function name (C).
+; @param        2       The argument size on x86.
+;
+%macro BEGINPROC_FASTCALL 2
+ %ifdef ASM_FORMAT_PE
+  export %1=NAME_FASTCALL(%1,%2,$@)
+ %endif
+ %ifdef __NASM__
+  %ifdef ASM_FORMAT_OMF
+   export NAME(%1) NAME_FASTCALL(%1,%2,$@)
+  %endif
+ %endif
+ %ifndef ASM_FORMAT_BIN
+  global NAME_FASTCALL(%1,%2,$@)
+ %endif
+NAME_FASTCALL(%1,%2,@):
+%endmacro
+
+
 ;
 ; We employ some macro assembly here to hid the calling convention differences.
 ;
@@ -105,15 +157,17 @@
  %macro PROLOGUE_1_ARGS 0
         push    edi
  %endmacro
- %macro EPILOGUE_1_ARGS 0
+ %macro EPILOGUE_1_ARGS 1
         pop     edi
+        RET_FASTCALL %1
  %endmacro
 
  %macro PROLOGUE_2_ARGS 0
         push    edi
  %endmacro
- %macro EPILOGUE_2_ARGS 0
+ %macro EPILOGUE_2_ARGS 1
         pop     edi
+        RET_FASTCALL %1
  %endmacro
 
  %macro PROLOGUE_3_ARGS 0
@@ -121,9 +175,10 @@
         mov     ebx, [esp + 4 + 4]
         push    edi
  %endmacro
- %macro EPILOGUE_3_ARGS 0
+ %macro EPILOGUE_3_ARGS 1
         pop     edi
         pop     ebx
+        RET_FASTCALL %1
  %endmacro
 
  %macro PROLOGUE_4_ARGS 0
@@ -133,10 +188,11 @@
         mov     ebx, [esp + 12 + 4 + 0]
         mov     esi, [esp + 12 + 4 + 4]
  %endmacro
- %macro EPILOGUE_4_ARGS 0
+ %macro EPILOGUE_4_ARGS 1
         pop     esi
         pop     edi
         pop     ebx
+        RET_FASTCALL %1
  %endmacro
 
  %define A0         ecx
@@ -167,42 +223,6 @@
  %define T1_32      edi
  %define T1_16      di
 %endif
-
-;;
-; NAME for fastcall functions.
-;
-;; @todo 'global @fastcall@12' is still broken in yasm and requires dollar 
-;         escaping (or whatever the dollar is good for here).  Thus the ugly
-;         prefix argument.
-;
-%define NAME_FASTCALL(a_Name, a_cbArgs, a_Dollar)   NAME(a_Name)
-%ifdef RT_ARCH_X86
- %ifdef RT_OS_WINDOWS                                 
-  %undef NAME_FASTCALL
-  %define NAME_FASTCALL(a_Name, a_cbArgs, a_Prefix) a_Prefix %+ a_Name %+ @ %+ a_cbArgs
- %endif        
-%endif
-
-;;
-; BEGINPROC for fastcall functions.
-;
-; @param        1       The function name (C).
-; @param        2       The argument size on x86.
-;
-%macro BEGINPROC_FASTCALL 2
- %ifdef ASM_FORMAT_PE
-  export %1=NAME_FASTCALL(%1,%2,$@)
- %endif
- %ifdef __NASM__
-  %ifdef ASM_FORMAT_OMF
-   export NAME(%1) NAME_FASTCALL(%1,%2,$@)
-  %endif
- %endif
- %ifndef ASM_FORMAT_BIN
-  global NAME_FASTCALL(%1,%2,$@)
- %endif
-NAME_FASTCALL(%1,%2,@):
-%endmacro
 
 
 ;;
@@ -268,8 +288,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      byte [A0], A1_8
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
@@ -277,8 +296,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      word [A0], A1_16
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
@@ -286,8 +304,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      dword [A0], A1_32
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
@@ -296,8 +313,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      qword [A0], A1
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
@@ -313,8 +329,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_locked, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 byte [A0], A1_8
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u8_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 12
@@ -322,8 +337,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 word [A0], A1_16
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 12
@@ -331,8 +345,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 dword [A0], A1_32
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS  4
 ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
 
   %ifdef RT_ARCH_AMD64
@@ -341,13 +354,12 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 qword [A0], A1
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
   %else ; stub it for now - later, replace with hand coded stuff.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         int3
-        ret
+        ret 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
   %endif ; !RT_ARCH_AMD64
  %endif ; locked
@@ -387,8 +399,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      word [A0], A1_16
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
@@ -396,8 +407,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      dword [A0], A1_32
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
@@ -406,13 +416,12 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      qword [A0], A1
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         int3
-        ret
+        ret 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
   %endif ; !RT_ARCH_AMD64
 
@@ -423,8 +432,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 word [A0], A1_16
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 12
@@ -432,8 +440,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 12
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 dword [A0], A1_32
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
 
   %ifdef RT_ARCH_AMD64
@@ -442,13 +449,12 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 qword [A0], A1
         IEM_SAVE_FLAGS                 A2, %3, %4
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
   %else ; stub it for now - later, replace with hand coded stuff.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         int3
-        ret
+        ret 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
   %endif ; !RT_ARCH_AMD64
  %endif ; locked
@@ -479,8 +485,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         %1      T0_16, A1_16
         mov     [A0], T0_16
         IEM_SAVE_FLAGS                 A2, %2, %3
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
@@ -489,8 +494,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         %1      T0_32, A1_32
         mov     [A0], T0_32
         IEM_SAVE_FLAGS                 A2, %2, %3
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
@@ -500,13 +504,12 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         %1      T0, A1
         mov     [A0], T0
         IEM_SAVE_FLAGS                 A2, %2, %3
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         int3
-        ret
+        ret 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %endif ; !RT_ARCH_AMD64
 %endmacro
@@ -525,8 +528,7 @@ BEGINPROC_FASTCALL iemAImpl_imul_two_u16, 12
         imul    A1_16, word [A0]
         mov     [A0], A1_16
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_imul_two_u16
 
 BEGINPROC_FASTCALL iemAImpl_imul_two_u32, 12
@@ -535,8 +537,7 @@ BEGINPROC_FASTCALL iemAImpl_imul_two_u32, 12
         imul    A1_32, dword [A0]
         mov     [A0], A1_32
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_imul_two_u32
 
 BEGINPROC_FASTCALL iemAImpl_imul_two_u64, 16
@@ -549,8 +550,7 @@ BEGINPROC_FASTCALL iemAImpl_imul_two_u64, 16
 %else
         int3 ;; @todo implement me
 %endif
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 8
 ENDPROC iemAImpl_imul_two_u64
 
 
@@ -566,8 +566,7 @@ BEGINPROC_FASTCALL iemAImpl_xchg_u8, 8
         mov     T0_8, [A1]
         xchg    [A0], T0_8
         mov     [A1], T0_8
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_xchg_u8
 
 BEGINPROC_FASTCALL iemAImpl_xchg_u16, 8
@@ -575,8 +574,7 @@ BEGINPROC_FASTCALL iemAImpl_xchg_u16, 8
         mov     T0_16, [A1]
         xchg    [A0], T0_16
         mov     [A1], T0_16
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_xchg_u16
 
 BEGINPROC_FASTCALL iemAImpl_xchg_u32, 8
@@ -584,8 +582,7 @@ BEGINPROC_FASTCALL iemAImpl_xchg_u32, 8
         mov     T0_32, [A1]
         xchg    [A0], T0_32
         mov     [A1], T0_32
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_xchg_u32
 
 BEGINPROC_FASTCALL iemAImpl_xchg_u64, 8
@@ -594,10 +591,10 @@ BEGINPROC_FASTCALL iemAImpl_xchg_u64, 8
         mov     T0, [A1]
         xchg    [A0], T0
         mov     [A1], T0
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 %else
         int3
+        ret 0
 %endif
 ENDPROC iemAImpl_xchg_u64
 
@@ -617,8 +614,7 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u8, 12
         xadd    [A0], T0_8
         mov     [A1], T0_8
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_xadd_u8
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u16, 12
@@ -628,8 +624,7 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u16, 12
         xadd    [A0], T0_16
         mov     [A1], T0_16
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_xadd_u16
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u32, 12
@@ -639,8 +634,7 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u32, 12
         xadd    [A0], T0_32
         mov     [A1], T0_32
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_xadd_u32
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u64, 12
@@ -651,10 +645,10 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u64, 12
         xadd    [A0], T0
         mov     [A1], T0
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 %else
         int3
+        ret 4
 %endif
 ENDPROC iemAImpl_xadd_u64
 
@@ -665,8 +659,7 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u8_locked, 12
         lock xadd [A0], T0_8
         mov     [A1], T0_8
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_xadd_u8_locked
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u16_locked, 12
@@ -676,8 +669,7 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u16_locked, 12
         lock xadd [A0], T0_16
         mov     [A1], T0_16
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_xadd_u16_locked
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u32_locked, 12
@@ -687,8 +679,7 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u32_locked, 12
         lock xadd [A0], T0_32
         mov     [A1], T0_32
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_xadd_u32_locked
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u64_locked, 12
@@ -699,10 +690,10 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u64_locked, 12
         lock xadd [A0], T0
         mov     [A1], T0
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 %else
         int3
+        ret 4
 %endif
 ENDPROC iemAImpl_xadd_u64_locked
 
@@ -728,8 +719,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 8
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         %1      byte [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_locked, 8
@@ -737,8 +727,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_locked, 8
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         lock %1 byte [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_ %+ %1 %+ _u8_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 8
@@ -746,8 +735,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 8
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         %1      word [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 8
@@ -755,8 +743,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 8
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         lock %1 word [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 8
@@ -764,8 +751,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 8
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         %1      dword [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 8
@@ -773,8 +759,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 8
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         lock %1 dword [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
 
  %ifdef RT_ARCH_AMD64
@@ -783,8 +768,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 8
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         %1      qword [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_ %+ %1 %+ _u64
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 8
@@ -792,18 +776,17 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 8
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         lock %1 qword [A0]
         IEM_SAVE_FLAGS       A1, %2, %3
-        EPILOGUE_2_ARGS
-        ret
+        EPILOGUE_2_ARGS 0
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
  %else
         ; stub them for now.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 8
         int3
-        ret
+        ret 0
 ENDPROC iemAImpl_ %+ %1 %+ _u64
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 8
         int3
-        ret
+        ret 0
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
  %endif
 
@@ -844,8 +827,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         %1      byte [A1], cl
  %endif
         IEM_SAVE_FLAGS       A2, %2, %3
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
@@ -859,8 +841,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         %1      word [A1], cl
  %endif
         IEM_SAVE_FLAGS       A2, %2, %3
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
@@ -874,8 +855,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         %1      dword [A1], cl
  %endif
         IEM_SAVE_FLAGS       A2, %2, %3
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
@@ -890,13 +870,12 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         %1      qword [A1], cl
  %endif
         IEM_SAVE_FLAGS       A2, %2, %3
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         int3
-        ret
+        ret 4
 ENDPROC iemAImpl_ %+ %1 %+ _u64
   %endif ; !RT_ARCH_AMD64
 
@@ -940,8 +919,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         %1      [A2], A1_16, cl
  %endif
         IEM_SAVE_FLAGS       A3, %2, %3
-        EPILOGUE_4_ARGS
-        ret
+        EPILOGUE_4_ARGS 8
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
@@ -956,8 +934,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         %1      [A2], A1_32, cl
  %endif
         IEM_SAVE_FLAGS       A3, %2, %3
-        EPILOGUE_4_ARGS
-        ret
+        EPILOGUE_4_ARGS 8
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
@@ -973,13 +950,12 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         %1      [A2], A1, cl
  %endif
         IEM_SAVE_FLAGS       A3, %2, %3
-        EPILOGUE_4_ARGS
-        ret
+        EPILOGUE_4_ARGS 12
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         int3
-        ret
+        ret 12
 ENDPROC iemAImpl_ %+ %1 %+ _u64
   %endif ; !RT_ARCH_AMD64
 
@@ -1017,9 +993,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         %1      A1_8
         mov     [A0], ax
         IEM_SAVE_FLAGS       A2, %2, %3
-        EPILOGUE_3_ARGS
         xor     eax, eax
-        ret
+        EPILOGUE_3_ARGS 4
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
@@ -1037,9 +1012,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         mov     [T1], dx
  %endif
         IEM_SAVE_FLAGS       A3, %2, %3
-        EPILOGUE_4_ARGS
         xor     eax, eax
-        ret
+        EPILOGUE_4_ARGS 8
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
@@ -1057,9 +1031,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         mov     [T1], edx
  %endif
         IEM_SAVE_FLAGS       A3, %2, %3
-        EPILOGUE_4_ARGS
         xor     eax, eax
-        ret
+        EPILOGUE_4_ARGS 8
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
@@ -1078,14 +1051,13 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         mov     [T1], rdx
  %endif
         IEM_SAVE_FLAGS       A3, %2, %3
-        EPILOGUE_4_ARGS
         xor     eax, eax
-        ret
+        EPILOGUE_4_ARGS 12
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         int3
-        ret
+        ret 12
 ENDPROC iemAImpl_ %+ %1 %+ _u64
   %endif ; !RT_ARCH_AMD64
 
@@ -1131,8 +1103,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         xor     eax, eax
 
 .return:
-        EPILOGUE_3_ARGS
-        ret
+        EPILOGUE_3_ARGS 4
+
 .div_zero:
         mov     eax, -1
         jmp     .return
@@ -1165,8 +1137,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         xor     eax, eax
 
 .return:
-        EPILOGUE_4_ARGS
-        ret
+        EPILOGUE_4_ARGS 8
+        
 .div_zero:
         mov     eax, -1
         jmp     .return
@@ -1200,8 +1172,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         xor     eax, eax
 
 .return:
-        EPILOGUE_4_ARGS
-        ret
+        EPILOGUE_4_ARGS 8
+
 .div_zero:
         mov     eax, -1
         jmp     .return
@@ -1236,8 +1208,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         xor     eax, eax
 
 .return:
-        EPILOGUE_4_ARGS
-        ret
+        EPILOGUE_4_ARGS 12
+        
 .div_zero:
         mov     eax, -1
         jmp     .return
