@@ -31,12 +31,12 @@
 ; RET XX / RET wrapper for fastcall.
 ;
 %macro RET_FASTCALL 1
-%ifdef RT_ARCH_X86                  
- %ifdef RT_OS_WINDOWS                                 
+%ifdef RT_ARCH_X86
+ %ifdef RT_OS_WINDOWS
     ret %1
  %else
     ret
- %endif        
+ %endif
 %else
     ret
 %endif
@@ -45,16 +45,16 @@
 ;;
 ; NAME for fastcall functions.
 ;
-;; @todo 'global @fastcall@12' is still broken in yasm and requires dollar 
+;; @todo 'global @fastcall@12' is still broken in yasm and requires dollar
 ;         escaping (or whatever the dollar is good for here).  Thus the ugly
 ;         prefix argument.
 ;
 %define NAME_FASTCALL(a_Name, a_cbArgs, a_Dollar)   NAME(a_Name)
 %ifdef RT_ARCH_X86
- %ifdef RT_OS_WINDOWS                                 
+ %ifdef RT_OS_WINDOWS
   %undef NAME_FASTCALL
   %define NAME_FASTCALL(a_Name, a_cbArgs, a_Prefix) a_Prefix %+ a_Name %+ @ %+ a_cbArgs
- %endif        
+ %endif
 %endif
 
 ;;
@@ -85,19 +85,26 @@ NAME_FASTCALL(%1,%2,@):
 %ifdef RT_ARCH_AMD64
  %macro PROLOGUE_1_ARGS 0
  %endmacro
- %macro EPILOGUE_1_ARGS 0
+ %macro EPILOGUE_1_ARGS 1
+        ret
  %endmacro
+
  %macro PROLOGUE_2_ARGS 0
  %endmacro
- %macro EPILOGUE_2_ARGS 0
+ %macro EPILOGUE_2_ARGS 1
+        ret
  %endmacro
+
  %macro PROLOGUE_3_ARGS 0
  %endmacro
- %macro EPILOGUE_3_ARGS 0
+ %macro EPILOGUE_3_ARGS 1
+        ret
  %endmacro
+
  %macro PROLOGUE_4_ARGS 0
  %endmacro
- %macro EPILOGUE_4_ARGS 0
+ %macro EPILOGUE_4_ARGS 1
+        ret
  %endmacro
 
  %ifdef ASM_CALL64_GCC
@@ -159,7 +166,7 @@ NAME_FASTCALL(%1,%2,@):
  %endmacro
  %macro EPILOGUE_1_ARGS 1
         pop     edi
-        RET_FASTCALL %1
+        ret     %1
  %endmacro
 
  %macro PROLOGUE_2_ARGS 0
@@ -167,7 +174,7 @@ NAME_FASTCALL(%1,%2,@):
  %endmacro
  %macro EPILOGUE_2_ARGS 1
         pop     edi
-        RET_FASTCALL %1
+        ret     %1
  %endmacro
 
  %macro PROLOGUE_3_ARGS 0
@@ -178,7 +185,7 @@ NAME_FASTCALL(%1,%2,@):
  %macro EPILOGUE_3_ARGS 1
         pop     edi
         pop     ebx
-        RET_FASTCALL %1
+        ret     %1
  %endmacro
 
  %macro PROLOGUE_4_ARGS 0
@@ -192,7 +199,7 @@ NAME_FASTCALL(%1,%2,@):
         pop     esi
         pop     edi
         pop     ebx
-        RET_FASTCALL %1
+        ret     %1
  %endmacro
 
  %define A0         ecx
@@ -1138,7 +1145,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
 
 .return:
         EPILOGUE_4_ARGS 8
-        
+
 .div_zero:
         mov     eax, -1
         jmp     .return
@@ -1209,7 +1216,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
 
 .return:
         EPILOGUE_4_ARGS 12
-        
+
 .div_zero:
         mov     eax, -1
         jmp     .return
