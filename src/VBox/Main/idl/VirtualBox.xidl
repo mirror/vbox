@@ -3591,7 +3591,7 @@
       <desc>Clone the state of the selected machine.</desc>
     </const>
     <const name="MachineAndChildStates"        value="2">
-      <desc>Clone the state of the selected machine and if this machine object has child snapshots the state of this childs.</desc>
+      <desc>Clone the state of the selected machine and its child snapshots if present.</desc>
     </const>
     <const name="AllStates"                    value="3">
       <desc>Clone all states (including all snapshots) of the machine, regardless of the machine object used.</desc>
