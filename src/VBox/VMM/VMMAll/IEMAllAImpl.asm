@@ -175,7 +175,7 @@
 ;         escaping (or whatever the dollar is good for here).  Thus the ugly
 ;         prefix argument.
 ;
-%define NAME_FASTCALL(a_Name, a_cbArgs, a_Dollar)   NAME(a_aName)
+%define NAME_FASTCALL(a_Name, a_cbArgs, a_Dollar)   NAME(a_Name)
 %ifdef RT_ARCH_X86
  %ifdef RT_OS_WINDOWS                                 
   %undef NAME_FASTCALL
