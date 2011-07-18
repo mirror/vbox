@@ -293,6 +293,11 @@
       </listitem>
 
       <listitem>
+        <para>Solaris hosts: better control of USB device access on Solaris 11
+          hosts</para>
+      </listitem>
+
+      <listitem>
         <para>Guest Additions: improved driver installation on Windows guests</para>
       </listitem>
 
