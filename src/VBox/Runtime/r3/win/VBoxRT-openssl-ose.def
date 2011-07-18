@@ -1341,6 +1341,7 @@
     SSL_CTX_use_certificate_file
     SSL_CTX_use_PrivateKey_file
     SSL_free
+    SSL_get_certificate
     SSL_library_init
     SSL_new
     SSL_pending
