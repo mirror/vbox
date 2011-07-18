@@ -33,6 +33,7 @@
 
 typedef struct
 {
+    Utf8Str                 strBaseName;
     ComPtr<IMedium>         pMedium;
     ULONG                   uWeight;
 } MEDIUMTASK;
@@ -366,6 +367,11 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                 mtc.fCreateDiffs = fCreateDiffs;
                 mtc.fAttachLinked = fAttachLinked;
 
+                /* If the current state without any snapshots is cloned, we
+                 * don't need any diff images in the new clone. Add the last
+                 * medium to the list of medias to create only (the clone
+                 * operation of IMedium will create a merged copy
+                 * automatically). */
                 if (d->mode == CloneMode_MachineState)
                 {
                     /* Refresh the state so that the file size get read. */
@@ -376,8 +382,20 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                     rc = pSrcMedium->COMGETTER(Size)(&lSize);
                     if (FAILED(rc)) throw rc;
 
-                    /* Save the current medium, for later cloning. */
+                    ComPtr<IMedium> pBaseMedium;
+                    rc = pSrcMedium->COMGETTER(Base)(pBaseMedium.asOutParam());
+                    if (FAILED(rc)) throw rc;
+
                     MEDIUMTASK mt;
+
+                    Bstr bstrBaseName;
+                    rc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
+                    if (FAILED(rc)) throw rc;
+
+                    /* Save the base name. */
+                    mt.strBaseName = bstrBaseName;
+
+                    /* Save the current medium, for later cloning. */
                     mt.pMedium = pSrcMedium;
                     if (fAttachLinked)
                         mt.uWeight = 0; /* dummy */
@@ -678,13 +696,17 @@ HRESULT MachineCloneVM::run()
                         Utf8Str strNewName(bstrSrcName);
                         if (!fKeepDiskNames)
                         {
+                            Utf8Str strSrcTest = bstrSrcName;
+                            /* Check if we have to use another name. */
+                            if (!mt.strBaseName.isEmpty())
+                                strSrcTest = mt.strBaseName;
+                            strSrcTest.stripExt();
                             /* If the old disk name was in {uuid} format we also
                              * want the new name in this format, but with the
                              * updated id of course. If the old disk was called
                              * like the VM name, we change it to the new VM name.
                              * For all other disks we rename them with this
                              * template: "new name-disk1.vdi". */
-                            Utf8Str strSrcTest = Utf8Str(bstrSrcName).stripExt();
                             if (strSrcTest == strOldVMName)
                                 strNewName = Utf8StrFmt("%s%s", trgMCF.machineUserData.strName.c_str(), RTPathExt(Utf8Str(bstrSrcName).c_str()));
                             else if (   strSrcTest.startsWith("{")
@@ -706,10 +728,9 @@ HRESULT MachineCloneVM::run()
                         rc = pMedium->COMGETTER(Location)(bstrSrcPath.asOutParam());
                         if (FAILED(rc)) throw rc;
                         if (   !bstrSrcPath.isEmpty()
-                            &&  RTPathStartsWith(Utf8Str(bstrSrcPath).c_str(), Utf8Str(bstrSrcSnapshotFolder).c_str()))
+                            &&  RTPathStartsWith(Utf8Str(bstrSrcPath).c_str(), Utf8Str(bstrSrcSnapshotFolder).c_str())
+                            && !(fKeepDiskNames || mt.strBaseName.isEmpty()))
                             strFile = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
-                        else
-                            strFile = Utf8StrFmt("%s%c%s", strTrgMachineFolder.c_str(), RTPATH_DELIMITER, strNewName.c_str());
 
                         /* Start creating the clone. */
                         ComObjPtr<Medium> pTarget;
