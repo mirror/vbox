@@ -285,7 +285,6 @@ typedef struct vboxusb_state_t
     pollhead_t              PollHead;        /* Handle to pollhead for waking polling processes  */
     int                     fPoll;           /* Polling status flag */
     RTPROCESS               Process;         /* The process (id) of the session */
-    bool                    fInstanceOpen;   /* If the process is still holding this instance */
     VBOXUSBREQ_CLIENT_INFO  ClientInfo;      /* Registration data */
     vboxusb_power_t        *pPower;          /* Power Management */
 } vboxusb_state_t;
@@ -480,7 +479,6 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                     pState->cInflightUrbs = 0;
                     pState->fPoll = VBOXUSB_POLL_OFF;
                     pState->Process = NIL_RTPROCESS;
-                    pState->fInstanceOpen = false;
                     pState->pPower = NULL;
 
                     /*
@@ -847,7 +845,7 @@ LOCAL int vboxUSBSolarisSetConsumerCredentials(RTPROCESS Process, int Instance, 
     int rc = VINF_SUCCESS;
     mutex_enter(&pState->Mtx);
 
-    if (pState->fInstanceOpen == false)
+    if (pState->Process == NIL_RTPROCESS)
         pState->Process = Process;
     else
     {
@@ -887,20 +885,18 @@ int VBoxUSBSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
     /*
      * Only one user process can open a device instance at a time.
      */
-    if (pState->fInstanceOpen == true)
-    {
-        LogRel((DEVICE_NAME ":VBoxUSBSolarisOpen a process is already using this device instance.\n"));
-        return EBUSY;
-    }
-
     if (pState->Process != RTProcSelf())
     {
-        LogRel((DEVICE_NAME ":VBoxUSBSolarisOpen invalid process.\n"));
+        if (pState->Process == NIL_RTPROCESS)
+            LogRel((DEVICE_NAME ":VBoxUSBSolarisOpen No prior information about authorized process.\n"));
+        else
+            LogRel((DEVICE_NAME ":VBoxUSBSolarisOpen Process %d is already using this device instance.\n", pState->Process));
+
+        mutex_exit(&pState->Mtx);
         return EPERM;
     }
 
     pState->fPoll = VBOXUSB_POLL_ON;
-    pState->fInstanceOpen = true;
 
     mutex_exit(&pState->Mtx);
 
@@ -926,7 +922,6 @@ int VBoxUSBSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred)
     mutex_enter(&pState->Mtx);
     pState->fPoll = VBOXUSB_POLL_OFF;
     pState->Process = NIL_RTPROCESS;
-    pState->fInstanceOpen = false;
     mutex_exit(&pState->Mtx);
 
     return 0;
