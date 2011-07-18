@@ -285,6 +285,7 @@ typedef struct vboxusb_state_t
     pollhead_t              PollHead;        /* Handle to pollhead for waking polling processes  */
     int                     fPoll;           /* Polling status flag */
     RTPROCESS               Process;         /* The process (id) of the session */
+    bool                    fInstanceOpen;   /* If the process is still holding this instance */
     VBOXUSBREQ_CLIENT_INFO  ClientInfo;      /* Registration data */
     vboxusb_power_t        *pPower;          /* Power Management */
 } vboxusb_state_t;
@@ -350,6 +351,9 @@ LOCAL void vboxUSBSolarisPowerIdle(vboxusb_state_t *pState);
 /** Monitor Hooks */
 int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO pClientInfo);
 int VBoxUSBMonSolarisUnregisterClient(dev_info_t *pClientDip);
+
+/** Callbacks from Monitor */
+LOCAL int vboxUSBSolarisSetConsumerCredentials(RTPROCESS Process, int Instance, void *pvReserved);
 
 
 /*******************************************************************************
@@ -463,7 +467,7 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             if (rc == DDI_SUCCESS)
             {
                 pState = ddi_get_soft_state(g_pVBoxUSBSolarisState, instance);
-                if (pState)
+                if (RT_LIKELY(pState))
                 {
                     pState->pDip = pDip;
                     pState->pDevDesc = NULL;
@@ -476,6 +480,7 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                     pState->cInflightUrbs = 0;
                     pState->fPoll = VBOXUSB_POLL_OFF;
                     pState->Process = NIL_RTPROCESS;
+                    pState->fInstanceOpen = false;
                     pState->pPower = NULL;
 
                     /*
@@ -567,6 +572,7 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                                 pState->pDevDesc->dev_descr->bcdDevice,
                                                                 szDevicePath);
                                                     pState->ClientInfo.Instance = instance;
+                                                    pState->ClientInfo.pfnSetConsumerCredentials = &vboxUSBSolarisSetConsumerCredentials;
                                                     rc = VBoxUSBMonSolarisRegisterClient(pState->pDip, &pState->ClientInfo);
                                                     if (RT_SUCCESS(rc))
                                                     {
@@ -816,6 +822,45 @@ int VBoxUSBSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, 
 }
 
 
+/**
+ * Callback invoked from the Monitor driver when a VM process tries to access
+ * this client instance. This determines which VM process will be allowed to
+ * open and access the USB device.
+ *
+ * @returns  VBox status code.
+ *
+ * @param    Process        The VM process performing the client info. query.
+ * @param    Instance       This client instance (the one set while we register
+ *                          ourselves to the Monitor driver)
+ * @param    pvReserved     Reserved for future, unused.
+ */
+LOCAL int vboxUSBSolarisSetConsumerCredentials(RTPROCESS Process, int Instance, void *pvReserved)
+{
+    LogFlowFunc((DEVICE_NAME ":vboxUSBSolarisSetConsumerCredentials Process=%u Instance=%d\n", Process, Instance));
+    vboxusb_state_t *pState = ddi_get_soft_state(g_pVBoxUSBSolarisState, Instance);
+    if (!pState)
+    {
+        LogRel((DEVICE_NAME ":vboxUSBSolarisSetConsumerCredentials failed to get device state for instance %d\n", Instance));
+        return VERR_INVALID_STATE;
+    }
+
+    int rc = VINF_SUCCESS;
+    mutex_enter(&pState->Mtx);
+
+    if (pState->fInstanceOpen == false)
+        pState->Process = Process;
+    else
+    {
+        LogRel((DEVICE_NAME ":vboxUSBSolarisSetConsumerCredentials failed! Process %u already has client open.\n", pState->Process));
+        rc = VERR_RESOURCE_BUSY;
+    }
+
+    mutex_exit(&pState->Mtx);
+
+    return rc;
+}
+
+
 int VBoxUSBSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 {
     LogFlowFunc((DEVICE_NAME ":VBoxUSBSolarisOpen pDev=%p fFlag=%d fType=%d pCred=%p\n", pDev, fFlag, fType, pCred));
@@ -837,17 +882,27 @@ int VBoxUSBSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
         return ENXIO;
     }
 
+    mutex_enter(&pState->Mtx);
+
     /*
      * Only one user process can open a device instance at a time.
      */
-    if (pState->Process != NIL_RTPROCESS)
+    if (pState->fInstanceOpen == true)
     {
         LogRel((DEVICE_NAME ":VBoxUSBSolarisOpen a process is already using this device instance.\n"));
         return EBUSY;
     }
 
-    pState->Process = RTProcSelf();
+    if (pState->Process != RTProcSelf())
+    {
+        LogRel((DEVICE_NAME ":VBoxUSBSolarisOpen invalid process.\n"));
+        return EPERM;
+    }
+
     pState->fPoll = VBOXUSB_POLL_ON;
+    pState->fInstanceOpen = true;
+
+    mutex_exit(&pState->Mtx);
 
     NOREF(fFlag);
     NOREF(pCred);
@@ -871,6 +926,7 @@ int VBoxUSBSolarisClose(dev_t Dev, int fFlag, int fType, cred_t *pCred)
     mutex_enter(&pState->Mtx);
     pState->fPoll = VBOXUSB_POLL_OFF;
     pState->Process = NIL_RTPROCESS;
+    pState->fInstanceOpen = false;
     mutex_exit(&pState->Mtx);
 
     return 0;
@@ -1569,8 +1625,8 @@ LOCAL int vboxUSBSolarisSendURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
     vboxusb_ep_t *pEp = &pState->aEps[EndPtIndex];
     AssertPtrReturn(pEp, VERR_INVALID_POINTER);
 
-//    LogFlowFunc((DEVICE_NAME ":vboxUSBSolarisSendUrb pState=%p pUrbReq=%p bEndpoint=%#x[%d] enmDir=%#x enmType=%#x cbData=%d pvData=%p\n",
-//            pState, pUrbReq, pUrbReq->bEndpoint, EndPtIndex, pUrbReq->enmDir, pUrbReq->enmType, pUrbReq->cbData, pUrbReq->pvData));
+    /* LogFlowFunc((DEVICE_NAME ":vboxUSBSolarisSendUrb pState=%p pUrbReq=%p bEndpoint=%#x[%d] enmDir=%#x enmType=%#x cbData=%d pvData=%p\n",
+            pState, pUrbReq, pUrbReq->bEndpoint, EndPtIndex, pUrbReq->enmDir, pUrbReq->enmType, pUrbReq->cbData, pUrbReq->pvData)); */
 
     if (RT_UNLIKELY(!pUrbReq->pvData))
     {
