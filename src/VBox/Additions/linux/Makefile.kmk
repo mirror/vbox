@@ -322,7 +322,7 @@ lnx_add_inst-noexec_SOURCES = \
 	selinux-fedora/vbox_accel.pp
 
 INSTALLS += lnx_add_inst-license
-lnx_add_inst-license_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_OUT_DIR))/
+lnx_add_inst-license_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_OUT_DIR))
 lnx_add_inst-license_MODE = a+r,u+w
 lnx_add_inst-license_SOURCES = \
 	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE
@@ -357,7 +357,7 @@ LnxAdd-Nostrip-Bin_SOURCES = \
 # And the init scripts
 #
 INSTALLS += LnxAdd-init-scripts
-LnxAdd-init-scripts_INST    = bin/additions
+LnxAdd-init-scripts_INST    = $(INST_ADDITIONS)
 LnxAdd-init-scripts_MODE    = a+rx,u+w
 LnxAdd-init-scripts_SOURCES = \
 	$(foreach i,$(VBOX_LNX_ADD_INIT), installer/$(i).sh=>$(i))

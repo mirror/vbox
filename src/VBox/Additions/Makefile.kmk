@@ -73,7 +73,7 @@ ifndef VBOX_ONLY_TESTSUITE
 
  ifeq ($(KBUILD_TARGET),linux)
   INSTALLS += LnxAddIso-scripts
-  LnxAddIso-scripts_INST    = bin/additions
+  LnxAddIso-scripts_INST    = $(INST_ADDITIONS)
   LnxAddIso-scripts_MODE    = a+rx,u+w
   LnxAddIso-scripts_SOURCES = \
 	$(LnxAddIso-scripts_0_OUTDIR)/runasroot.sh \
