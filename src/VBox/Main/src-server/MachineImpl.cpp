@@ -7515,6 +7515,9 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
     rc = COMSETTER(SnapshotFolder)(Bstr(config.machineUserData.strSnapshotFolder).raw());
     if (FAILED(rc)) return rc;
 
+    /* Read the extra data items. */
+    mData->pMachineConfigFile->mapExtraDataItems = config.mapExtraDataItems;
+
     /* currentStateModified (optional, default is true) */
     mData->mCurrentStateModified = config.fCurrentStateModified;
 
