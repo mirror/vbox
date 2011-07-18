@@ -14,5 +14,8 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
 #define IDI_VIRTUALBOX 101
+
+#define RT_MANIFEST 24
+#define APP_MANIFEST 1
+

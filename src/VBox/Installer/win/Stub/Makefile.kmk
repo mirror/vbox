@@ -42,12 +42,21 @@ VBoxStub.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 # The icon location is configurable.
 VBoxStub.rc_INCS += $(VBoxStub_0_OUTDIR)
-VBoxStub.rc_DEPS += $(VBoxStub_0_OUTDIR)/VBoxStub-icon.rc
-VBoxStub.rc_CLEAN = $(VBoxStub_0_OUTDIR)/VBoxStub-icon.rc
+VBoxStub.rc_DEPS += \
+	$(VBoxStub_0_OUTDIR)/VBoxStub-icon.rc \
+	$(VBoxStub_0_OUTDIR)/VBoxStub-manifest.rc
+VBoxStub.rc_CLEAN = \
+	$(VBoxStub_0_OUTDIR)/VBoxStub-icon.rc \
+	$(VBoxStub_0_OUTDIR)/VBoxStub-manifest.rc
 
 # Icon include file.
 $$(VBoxStub_0_OUTDIR)/VBoxStub-icon.rc: $(VBOX_WINDOWS_ICON_FILE) $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(APPEND) -t $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+
+# Manifest.
+VBOX_STUB_MANIFEST_FILE := $(PATH_SUB_CURRENT)/VBoxStub.manifest
+$$(VBoxStub_0_OUTDIR)/VBoxStub-manifest.rc: $(VBOX_STUB_MANIFEST_FILE) $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(APPEND) -t $@ 'APP_MANIFEST RT_MANIFEST "$(subst /,\\,$(VBOX_STUB_MANIFEST_FILE))"'
 
 endif # x86 only
 
