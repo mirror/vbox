@@ -41,13 +41,6 @@
 # define LOG_GROUP LOG_GROUP_MAIN
 #endif
 
-/* Ensure log macros are enabled if release logging is requested */
-#if defined (VBOX_MAIN_RELEASE_LOG) && !defined (DEBUG)
-# ifndef LOG_ENABLED
-#  define LOG_ENABLED
-# endif
-#endif
-
 #include <VBox/log.h>
 
 int VBoxSVCLogRelCreate(const char *pszLogFile, uint32_t cHistory,

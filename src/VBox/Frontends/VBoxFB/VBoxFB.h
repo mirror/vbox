@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,9 +18,6 @@
 
 #ifndef __H_VBOXFB
 #define __H_VBOXFB
-
-// release logging
-#define LOG_ENABLED
 
 #include <stdlib.h>
 #include <stdio.h>
