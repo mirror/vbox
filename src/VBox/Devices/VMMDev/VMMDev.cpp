@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-/* #define LOG_ENABLED */
+
 /* Enable dev_vmm Log3 statements to get IRQ-related logging. */
 
 #define LOG_GROUP LOG_GROUP_DEV_VMM
