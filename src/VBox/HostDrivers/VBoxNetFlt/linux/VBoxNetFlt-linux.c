@@ -905,7 +905,10 @@ static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_devic
      */
     if (   !VALID_PTR(pOverride)
         || pOverride->u32Magic != VBOXNETDEVICEOPSOVERRIDE_MAGIC
-        || !VALID_PTR(pOverride->pOrgOps))
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+        || !VALID_PTR(pOverride->pOrgOps)
+# endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29) */
+        )
     {
         printk("vboxNetFltLinuxStartXmitFilter: bad override %p\n", pOverride);
         dev_kfree_skb(pSkb);
