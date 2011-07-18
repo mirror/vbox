@@ -272,10 +272,11 @@
       <computeroutput>vboxdrv</computeroutput> to perform physical memory
       allocation and to gain control of the processor for guest system
       execution. Without this kernel module, you can still use the VirtualBox
-      manager to configure virtual machines, but they will not start. In addition,
-      there are the network kernel modules <computeroutput>vboxnetflt</computeroutput>
-      and <computeroutput>vboxnetadp</computeroutput> which are required for
-      the more advanced networking features of VirtualBox.</para>
+      manager to configure virtual machines, but they will not start. In
+      addition, there are the network kernel modules
+      <computeroutput>vboxnetflt</computeroutput> and
+      <computeroutput>vboxnetadp</computeroutput> which are required for the
+      more advanced networking features of VirtualBox.</para>
 
       <para>The VirtualBox kernel module is automatically installed on your
       system when you install VirtualBox. To maintain it with future kernel
@@ -358,10 +359,10 @@
               <listitem>
                 <para>If you have built your own kernel, you will need to make
                 sure that you also installed all the required header and other
-                files for building external modules to the right locations. The
-                details of how to do this will depend on how you built your
-                kernel, and if you are unsure you should consult the documentation
-                which you followed to do so.</para>
+                files for building external modules to the right locations.
+                The details of how to do this will depend on how you built
+                your kernel, and if you are unsure you should consult the
+                documentation which you followed to do so.</para>
               </listitem>
             </itemizedlist>
           </listitem>
@@ -437,7 +438,8 @@
             <para>It builds the VirtualBox kernel modules
             (<computeroutput>vboxdrv</computeroutput>,
             <computeroutput>vboxnetflt</computeroutput> and
-            <computeroutput>vboxnetadp</computeroutput>) and installs them.</para>
+            <computeroutput>vboxnetadp</computeroutput>) and installs
+            them.</para>
           </listitem>
 
           <listitem>
@@ -453,10 +455,9 @@
 
           <listitem>
             <para>It creates symbolic links in
-            <computeroutput>/usr/bin</computeroutput> to
-            the a shell script (<computeroutput>/opt/VirtualBox/VBox</computeroutput>)
-            which does some sanity checks and
-            dispatches to the actual executables,
+            <computeroutput>/usr/bin</computeroutput> to the a shell script
+            (<computeroutput>/opt/VirtualBox/VBox</computeroutput>) which does
+            some sanity checks and dispatches to the actual executables,
             <computeroutput>VirtualBox</computeroutput>,
             <computeroutput>VBoxSDL</computeroutput>,
             <computeroutput>VBoxVRDP</computeroutput>,
@@ -466,8 +467,8 @@
 
           <listitem>
             <para>It creates
-            <computeroutput>/etc/udev/rules.d/10-vboxdrv.rules</computeroutput>, a
-            description file for udev, if that is present, which makes the
+            <computeroutput>/etc/udev/rules.d/10-vboxdrv.rules</computeroutput>,
+            a description file for udev, if that is present, which makes the
             USB devices accessible to all users in the
             <computeroutput>vboxusers</computeroutput> group.</para>
           </listitem>
@@ -480,7 +481,8 @@
 
         <para>The installer must be executed as root with either
         <computeroutput>install</computeroutput> or
-        <computeroutput>uninstall</computeroutput> as the first parameter.</para>
+        <computeroutput>uninstall</computeroutput> as the first
+        parameter.</para>
 
         <screen>sudo ./VirtualBox.run install</screen>
 
@@ -506,7 +508,7 @@
             <computeroutput>-G</computeroutput> option, e.g. like this:
             <computeroutput>usermod -G group1,group2,vboxusers
             username</computeroutput>.</para>
-         </note></para>
+          </note></para>
       </sect3>
 
       <sect3>
@@ -629,10 +631,10 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
 
         <para>To configure the installation process of our .deb and .rpm
         packages, you can create a response file named
-        <computeroutput>/etc/default/virtualbox</computeroutput>.
-        The automatic generation of the udev rule can be
-        prevented by the following setting: <screen>INSTALL_NO_UDEV=1</screen>
-        The creation of the group vboxusers can be prevented by <screen>INSTALL_NO_GROUP=1</screen>
+        <computeroutput>/etc/default/virtualbox</computeroutput>. The
+        automatic generation of the udev rule can be prevented by the
+        following setting: <screen>INSTALL_NO_UDEV=1</screen> The creation of
+        the group vboxusers can be prevented by <screen>INSTALL_NO_GROUP=1</screen>
         If the line <screen>INSTALL_NO_VBOXDRV=1</screen> is specified, the
         package installer will not try to build the
         <computeroutput>vboxdrv</computeroutput> kernel module if no module
@@ -645,9 +647,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
 
       <para>The Linux installers create the system user group
       <computeroutput>vboxusers</computeroutput> during installation. Any
-      system user who is going to use USB devices from VirtualBox guests
-      must be member of that group.
-      A user can be made member of the group
+      system user who is going to use USB devices from VirtualBox guests must
+      be member of that group. A user can be made member of the group
       <computeroutput>vboxusers</computeroutput> through the GUI user/group
       management or at the command line with</para>
 
@@ -748,6 +749,24 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
       <computeroutput>autoresponse</computeroutput> files from your system.
       VirtualBox would be installed in
       <computeroutput>/opt/VirtualBox</computeroutput>.</para>
+    </sect2>
+
+    <sect2>
+      <title>The vboxuser group</title>
+
+      <para>Starting with VirtualBox 4.1, the installer creates the system
+      user group <computeroutput>vboxuser</computeroutput> during installation
+      for Solaris hosts that support the required USB features for VirtualBox.
+      Any system user who is going to use USB devices from VirtualBox guests
+      must be a member of that group. A user can be made a member of this
+      group through the GUI user/group management or at the command line by
+      executing as root:</para>
+
+      <screen>usermod -G vboxuser username</screen>
+
+      <para>Adding an active user to the group will require that user to log
+      out and back in again. This must be done manually after installing
+      VirtualBox.</para>
     </sect2>
 
     <sect2>
