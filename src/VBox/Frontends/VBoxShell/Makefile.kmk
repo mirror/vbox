@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 INSTALLS += VBoxShell
-VBoxShell_INST = $(INST_SDK)/bindings
+VBoxShell_INST = $(INST_SDK)/bindings/
 VBoxShell_SOURCES = \
 	vboxshell.py=>glue/python/sample/vboxshell.py \
         vboxinfo.vbs=>mscom/vbs/sample/vboxinfo.vbs   \
