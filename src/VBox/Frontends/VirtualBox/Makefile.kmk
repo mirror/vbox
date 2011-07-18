@@ -921,7 +921,7 @@ vmstarter_LDFLAGS += -framework AppKit
 vmstarter_INST = $(INST_BIN)vmstarter
 
 INSTALLS += vmstarter.app
-vmstarter.app_INST = $(VirtualBox.app_INST)Resources/vmstarter.app/Contents
+vmstarter.app_INST = $(VirtualBox.app_INST)Resources/vmstarter.app/Contents/
 vmstarter.app_MODE = 644
 vmstarter.app_SOURCES = \
 	src/platform/darwin/vmstarter-PkgInfo=>PkgInfo \
