@@ -55,6 +55,11 @@
       </listitem>
 
       <listitem>
+        <para>Host-only Networking: fixed host crash in kernels prior to 2.6.29
+        </para>
+      </listitem>
+
+      <listitem>
         <para>New Networking Mode <emphasis>UDP Tunnel</emphasis>: allows to
         interconnect VMs running on different hosts easily and transparently,
         see <xref linkend="networkingmodes" /></para>
