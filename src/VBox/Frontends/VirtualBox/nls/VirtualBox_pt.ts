@@ -3570,6 +3570,14 @@
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
         <translation type="unfinished">está actualmente a usar mais controladores de armazenamento do que o &apos;chipset&apos; %1 suporta. Por favor mude o tipo de &apos;chipset&apos; na página de definições do sistema ou reduza o número de controladores de armazenamento na página de definições de Armazenamento: %2.</translation>
     </message>
+    <message>
+        <source>&amp;Port Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>

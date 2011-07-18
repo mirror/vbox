@@ -3877,6 +3877,14 @@ p, li { white-space: pre-wrap; }
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
         <translation>%1 칩셋이 지원하는 갯수 이상의 저장소 컨트롤러를 사용하고 있습니다. 시스템 설정 페이지에서 칩셋 종류를 바꾸거나 저장소 설정 페이지의 다음 저장소 컨트롤러의 갯수를 줄이십시오: %2.</translation>
     </message>
+    <message>
+        <source>&amp;Port Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>

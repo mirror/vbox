@@ -1987,23 +1987,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation>Леви шифт</translation>
+        <translation type="obsolete">Леви шифт</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation>Десни шифт</translation>
+        <translation type="obsolete">Десни шифт</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation>Леви Ctrl</translation>
+        <translation type="obsolete">Леви Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation>Десни Ctrl</translation>
+        <translation type="obsolete">Десни Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation>Леви Alt</translation>
+        <translation type="obsolete">Леви Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2269,7 +2269,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>Показује статус виртуализације ове машине:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Показује статус виртуализације ове машине:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
@@ -2876,7 +2876,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
-        <translation>одабрати име мређног адаптера за &lt;b&gt;Мостни адаптер&lt;/b&gt; или &lt;b&gt;Само-хост адаптер&lt;/b&gt; и име мреже &lt;b&gt;интерна мрежа&lt;/b&gt;.</translation>
+        <translation type="obsolete">одабрати име мређног адаптера за &lt;b&gt;Мостни адаптер&lt;/b&gt; или &lt;b&gt;Само-хост адаптер&lt;/b&gt; и име мреже &lt;b&gt;интерна мрежа&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>A&amp;dvanced</source>
@@ -3408,7 +3408,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation>Хард диск није одабран за &lt;i&gt;%1&lt;/i&gt;.</translation>
+        <translation type="obsolete">Хард диск није одабран за &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
@@ -3718,6 +3718,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4250,7 +4258,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Summary</source>
-        <translation type="obsolete">Резиме</translation>
+        <translation type="unfinished">Резиме</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
@@ -4262,7 +4270,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="obsolete">Одабрати слику за нову хард диск</translation>
+        <translation type="unfinished">Одабрати слику за нову хард диск</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
@@ -4284,12 +4292,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="obsolete">Смештај</translation>
+        <translation type="unfinished">Смештај</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="obsolete">Величина</translation>
+        <translation type="unfinished">Величина</translation>
     </message>
     <message>
         <source>Bytes</source>
@@ -4517,7 +4525,7 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWizardPageWelcome</name>
     <message>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Добродошли у асистенту креирања новог виртуелног диска!</translation>
+        <translation type="obsolete">Добродошли у асистенту креирања новог виртуелног диска!</translation>
     </message>
     <message>
         <source>Virtual disk to copy</source>
@@ -4532,65 +4540,65 @@ p, li { white-space: pre-wrap; }
     <name>UINewHDWzdPage2</name>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Одабрати тип хард дидка који желите да креирате.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Динамична слика&lt;/b&gt; прво заузима мали простор на ваш хард диск. Повечаваће се динамично (до унете вредности) док гост тражи простор.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Фиксна слика&lt;/b&gt; не повечава се. Стављено је у датотеци од прилике исте величине као виртуелног хард диска.Креација фиксне слике може да потраје у зависности величине слике и перформанса хард диска.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Одабрати тип хард дидка који желите да креирате.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Динамична слика&lt;/b&gt; прво заузима мали простор на ваш хард диск. Повечаваће се динамично (до унете вредности) док гост тражи простор.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Фиксна слика&lt;/b&gt; не повечава се. Стављено је у датотеци од прилике исте величине као виртуелног хард диска.Креација фиксне слике може да потраје у зависности величине слике и перформанса хард диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation>Тип стоваришта</translation>
+        <translation type="obsolete">Тип стоваришта</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation>Динамичан</translation>
+        <translation type="obsolete">Динамичан</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation>Фиксна величина</translation>
+        <translation type="obsolete">Фиксна величина</translation>
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation>Тип хард диска</translation>
+        <translation type="obsolete">Тип хард диска</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage3</name>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Стиснути &lt;b&gt;Одабери&lt;/b&gt; за одабирање смештаја датотеке за сачувавање хард диска или унети име датотеке у поље.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Стиснути &lt;b&gt;Одабери&lt;/b&gt; за одабирање смештаја датотеке за сачувавање хард диска или унети име датотеке у поље.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Location</source>
-        <translation>Смештај</translation>
+        <translation type="obsolete">Смештај</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Одабрати величину виртуелног диска у мегабајтима. Клијент ће видети ту величину као максималну величину хард диска.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Одабрати величину виртуелног диска у мегабајтима. Клијент ће видети ту величину као максималну величину хард диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation>Величина</translation>
+        <translation type="obsolete">Величина</translation>
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation>Смештај и величина виртуелног диска</translation>
+        <translation type="obsolete">Смештај и величина виртуелног диска</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation>Одабрати слику за нову хард диск</translation>
+        <translation type="obsolete">Одабрати слику за нову хард диск</translation>
     </message>
     <message>
         <source>Hard disk images (*.vdi)</source>
-        <translation>Хард диск слике (*.vdi)</translation>
+        <translation type="obsolete">Хард диск слике (*.vdi)</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWzdPage4</name>
     <message>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>Креирате нов диск са овим параметрима:</translation>
+        <translation type="obsolete">Креирате нов диск са овим параметрима:</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation>Резиме</translation>
+        <translation type="obsolete">Резиме</translation>
     </message>
     <message>
         <source>Type</source>
@@ -5059,7 +5067,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Проширења</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
@@ -5260,7 +5268,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Every 10 s</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Сваке 5 с {10 ?}</translation>
     </message>
     <message>
         <source>No Preview</source>
@@ -5427,11 +5435,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Када одабрано, јединствена MAC адреса ће бити постављена за све мрежне каре.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Иницијализација MAC адресе за ве мређне карте</translation>
     </message>
 </context>
 <context>
@@ -6828,7 +6836,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Adapter %1</source>
         <comment>network</comment>
-        <translation>Адаптер %1</translation>
+        <translation type="obsolete">Адаптер %1</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
@@ -7492,7 +7500,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
@@ -7801,11 +7809,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Све %1 слике (%2)</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Тип:</translation>
     </message>
     <message>
         <source>Location:</source>
@@ -8978,6 +8986,8 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
