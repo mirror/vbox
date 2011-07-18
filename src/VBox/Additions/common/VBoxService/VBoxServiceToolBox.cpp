@@ -46,12 +46,27 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+
 /** Options indices for "vbox_cat". */
-#define CAT_OPT_NO_CONTENT_INDEXED              1000
+typedef enum VBOXSERVICETOOLBOXCATOPT
+{
+    VBOXSERVICETOOLBOXCATOPT_NO_CONTENT_INDEXED = 1000
+} VBOXSERVICETOOLBOXCATOPT;
+
 /** Options indices for "vbox_ls". */
-#define LS_OPT_MACHINE_READABLE                 1000
+typedef enum VBOXSERVICETOOLBOXLSOPT
+{
+    VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE = 1000,
+    VBOXSERVICETOOLBOXLSOPT_VERBOSE
+} VBOXSERVICETOOLBOXLSOPT;
+
 /** Options indices for "vbox_stat". */
-#define STAT_OPT_MACHINE_READABLE               1000
+typedef enum VBOXSERVICETOOLBOXSTATOPT
+{
+    VBOXSERVICETOOLBOXSTATOPT_MACHINE_READABLE = 1000
+} VBOXSERVICETOOLBOXSTATOPT;
+
+
 /** Flags for "vbox_ls". */
 typedef enum VBOXSERVICETOOLBOXLSFLAG
 {
@@ -267,19 +282,19 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
     static const RTGETOPTDEF s_aOptions[] =
     {
         /* Sorted by short ops. */
-        { "--show-all",            'a',                         RTGETOPT_REQ_NOTHING },
-        { "--number-nonblank",     'b',                         RTGETOPT_REQ_NOTHING},
-        { NULL,                    'e',                         RTGETOPT_REQ_NOTHING},
-        { NULL,                    'E',                         RTGETOPT_REQ_NOTHING},
-        { "--flags",               'f',                         RTGETOPT_REQ_STRING},
-        { "--no-content-indexed",  CAT_OPT_NO_CONTENT_INDEXED,  RTGETOPT_REQ_NOTHING},
-        { "--number",              'n',                         RTGETOPT_REQ_NOTHING},
-        { "--output",              'o',                         RTGETOPT_REQ_STRING},
-        { "--squeeze-blank",       's',                         RTGETOPT_REQ_NOTHING},
-        { NULL,                    't',                         RTGETOPT_REQ_NOTHING},
-        { "--show-tabs",           'T',                         RTGETOPT_REQ_NOTHING},
-        { NULL,                    'u',                         RTGETOPT_REQ_NOTHING},
-        { "--show-noneprinting",   'v',                         RTGETOPT_REQ_NOTHING}
+        { "--show-all",            'a',                                           RTGETOPT_REQ_NOTHING },
+        { "--number-nonblank",     'b',                                           RTGETOPT_REQ_NOTHING},
+        { NULL,                    'e',                                           RTGETOPT_REQ_NOTHING},
+        { NULL,                    'E',                                           RTGETOPT_REQ_NOTHING},
+        { "--flags",               'f',                                           RTGETOPT_REQ_STRING},
+        { "--no-content-indexed",  VBOXSERVICETOOLBOXCATOPT_NO_CONTENT_INDEXED,   RTGETOPT_REQ_NOTHING},
+        { "--number",              'n',                                           RTGETOPT_REQ_NOTHING},
+        { "--output",              'o',                                           RTGETOPT_REQ_STRING},
+        { "--squeeze-blank",       's',                                           RTGETOPT_REQ_NOTHING},
+        { NULL,                    't',                                           RTGETOPT_REQ_NOTHING},
+        { "--show-tabs",           'T',                                           RTGETOPT_REQ_NOTHING},
+        { NULL,                    'u',                                           RTGETOPT_REQ_NOTHING},
+        { "--show-noneprinting",   'v',                                           RTGETOPT_REQ_NOTHING}
     };
 
     int ch;
@@ -340,7 +355,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
                 VBoxServiceToolboxShowVersion();
                 return RTEXITCODE_SUCCESS;
 
-            case CAT_OPT_NO_CONTENT_INDEXED:
+            case VBOXSERVICETOOLBOXCATOPT_NO_CONTENT_INDEXED:
                 fFlags |= RTFILE_O_NOT_CONTENT_INDEXED;
                 break;
 
@@ -716,11 +731,11 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--machinereadable", LS_OPT_MACHINE_READABLE, RTGETOPT_REQ_NOTHING },
-        { "--dereference",     'L',                     RTGETOPT_REQ_NOTHING },
-        { NULL,                'l',                     RTGETOPT_REQ_NOTHING },
-        { NULL,                'R',                     RTGETOPT_REQ_NOTHING },
-        { "--verbose",         'v',                     RTGETOPT_REQ_NOTHING}
+        { "--machinereadable", VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE,      RTGETOPT_REQ_NOTHING },
+        { "--dereference",     'L',                                           RTGETOPT_REQ_NOTHING },
+        { NULL,                'l',                                           RTGETOPT_REQ_NOTHING },
+        { NULL,                'R',                                           RTGETOPT_REQ_NOTHING },
+        { "--verbose",         VBOXSERVICETOOLBOXLSOPT_VERBOSE,               RTGETOPT_REQ_NOTHING}
     };
 
     int ch;
@@ -757,7 +772,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                 fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_LONG;
                 break;
 
-            case LS_OPT_MACHINE_READABLE:
+            case VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE:
                 fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE;
                 break;
 
@@ -765,7 +780,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                 fFlags |= VBOXSERVICETOOLBOXLSFLAG_RECURSIVE;
                 break;
 
-            case 'v': /** @todo r=bird: "man ls" -> "-v natural sort of (version) numbers within text" */
+            case VBOXSERVICETOOLBOXLSOPT_VERBOSE:
                 fVerbose = true;
                 break;
 
@@ -815,47 +830,36 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
         {
-            /** @todo r=bird: Call RTPathQueryInfoEx directly (RTFileExists
-             *        does it under the hood) and skip the RTFileOpen stuff!
-             *        /bin/ls can list full details for files you cannot open.
-             *
-             * Just try the following:
-             * @code
-                      $ echo > testfile
-                      $ chmod 600 testfile
-                      $ sudo chown root:root testfile
-                      $ ls -la testfile
-             * @endcode
-             */
-
             if (RTFileExists(pNodeIt->pszName))
             {
-                RTFILE file;
-                rc = RTFileOpen(&file, pNodeIt->pszName, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ);
-                if (RT_SUCCESS(rc))
+                RTFSOBJINFO objInfo;
+                int rc2 = RTPathQueryInfoEx(pNodeIt->pszName, &objInfo,
+                                            RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /* @todo Follow link? */);
+                if (RT_FAILURE(rc2))
                 {
-                    RTFSOBJINFO objInfo;
-                    rc = RTFileQueryInfo(file, &objInfo, RTFSOBJATTRADD_UNIX);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = VBoxServiceToolboxPrintFsInfo(pNodeIt->pszName, strlen(pNodeIt->pszName),
-                                                           fOutputFlags, &objInfo);
-                    }
-                    else
-                        RTMsgError("Unable to query information for '%s', rc=%Rrc\n",
-                                   pNodeIt->pszName, rc);
-                    RTFileClose(file);
+                    RTMsgError("Cannot access '%s': No such file or directory\n",
+                               pNodeIt->pszName);
+                    rc = VERR_FILE_NOT_FOUND;
+                    /* Do not break here -- process every element in the list
+                     * and keep failing rc. */
                 }
                 else
-                    RTMsgError("Failed opening '%s', rc=%Rrc\n",
-                               pNodeIt->pszName, rc);
+                {
+                    rc2 = VBoxServiceToolboxPrintFsInfo(pNodeIt->pszName,
+                                                        strlen(pNodeIt->pszName) /* cbName */,
+                                                        fOutputFlags,
+                                                        &objInfo);
+                    if (RT_FAILURE(rc2))
+                        rc = rc2;
+                }
             }
             else
-                rc = VBoxServiceToolboxLsHandleDir(pNodeIt->pszName,
-                                                   fFlags, fOutputFlags);
-            if (RT_FAILURE(rc))
-                RTMsgError("Failed while enumerating '%s', rc=%Rrc\n",
-                           pNodeIt->pszName, rc);
+            {
+                int rc2 = VBoxServiceToolboxLsHandleDir(pNodeIt->pszName,
+                                                        fFlags, fOutputFlags);
+                if (RT_FAILURE(rc2))
+                    rc = rc2;
+            }
         }
 
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
@@ -957,7 +961,7 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "Could not create directory '%s': %Rra\n",
                                           ValueUnion.psz, rc);
                 if (fVerbose)
-                    RTMsgInfo("Created directory 's', mode %#RTfmode\n", ValueUnion.psz, fDirMode);
+                    RTMsgInfo("Created directory '%s', mode %#RTfmode\n", ValueUnion.psz, fDirMode);
                 cDirsCreated++;
                 break;
 
@@ -985,11 +989,11 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--file-system",     'f',                       RTGETOPT_REQ_NOTHING },
-        { "--dereference",     'L',                       RTGETOPT_REQ_NOTHING },
-        { "--machinereadable", STAT_OPT_MACHINE_READABLE, RTGETOPT_REQ_NOTHING },
-        { "--terse",           't',                       RTGETOPT_REQ_NOTHING },
-        { "--verbose",         'v',                       RTGETOPT_REQ_NOTHING }
+        { "--file-system",     'f',                                          RTGETOPT_REQ_NOTHING },
+        { "--dereference",     'L',                                          RTGETOPT_REQ_NOTHING },
+        { "--machinereadable", VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE,     RTGETOPT_REQ_NOTHING },
+        { "--terse",           't',                                          RTGETOPT_REQ_NOTHING },
+        { "--verbose",         'v',                                          RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
@@ -1019,7 +1023,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
                 rc = VERR_INVALID_PARAMETER;
                 break;
 
-            case LS_OPT_MACHINE_READABLE:
+            case VBOXSERVICETOOLBOXLSOPT_MACHINE_READABLE:
                 fOutputFlags |= VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE;
                 break;
 
@@ -1060,44 +1064,10 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
         {
-            /** @todo r=bird: Use RTPathQueryInfoEx!  The tool is called
-             *        'stat' because it's just a wrapper for 'stat()',
-             *        right?  Our equvialent to the 'stat()' call is
-             *        RTPathQueryInfoEx().  Same permission issues as above
-             *        with 'ls'. */
-            /* Only check for file existence for now. */
             RTFSOBJINFO objInfo;
-            int rc2 = VINF_SUCCESS; /* Temporary rc to keep original rc. */
-            if (RTFileExists(pNodeIt->pszName))
-            {
-                RTFILE file;
-                rc2 = RTFileOpen(&file, pNodeIt->pszName, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ);
-                if (RT_SUCCESS(rc2))
-                {
-                    rc2 = RTFileQueryInfo(file, &objInfo, RTFSOBJATTRADD_UNIX);
-                    if (RT_FAILURE(rc2))
-                        RTMsgError("Unable to query information for '%s', rc=%Rrc\n",
-                                   pNodeIt->pszName, rc2);
-                    RTFileClose(file);
-                }
-                else
-                    RTMsgError("Failed opening '%s', rc=%Rrc\n",
-                               pNodeIt->pszName, rc2);
-
-                if (RT_FAILURE(rc2))
-                    rc = rc2;
-            }
-            else if (RTDirExists(pNodeIt->pszName))
-            {
-                PRTDIR pDir;
-                rc2 = RTDirOpen(&pDir, pNodeIt->pszName);
-                if (RT_SUCCESS(rc2))
-                {
-                    rc2 = RTDirQueryInfo(pDir, &objInfo, RTFSOBJATTRADD_UNIX);
-                    RTDirClose(pDir);
-                }
-            }
-            else
+            int rc2 = RTPathQueryInfoEx(pNodeIt->pszName, &objInfo,
+                                        RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /* @todo Follow link? */);
+            if (RT_FAILURE(rc2))
             {
                 RTMsgError("Cannot stat for '%s': No such file or directory\n",
                            pNodeIt->pszName);
@@ -1105,8 +1075,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
                 /* Do not break here -- process every element in the list
                  * and keep failing rc. */
             }
-
-            if (RT_SUCCESS(rc2))
+            else
             {
                 rc2 = VBoxServiceToolboxPrintFsInfo(pNodeIt->pszName,
                                                     strlen(pNodeIt->pszName) /* cbName */,
