@@ -1106,11 +1106,11 @@ Statistics update:  disabled
             to. Default is referring to the current state.</para>
        </listitem>
        <listitem>
-           <para><computeroutput>--mode machine|machineandchilds|all</computeroutput>: 
+           <para><computeroutput>--mode machine|machineandchildren|all</computeroutput>: 
            Selects the cloning mode of the operation. If
            <computeroutput>machine</computeroutput> is selected (the default),
            the current state of the VM without any snapshots is cloned. In the
-           <computeroutput>machineandchilds</computeroutput> mode the snapshot
+           <computeroutput>machineandchildren</computeroutput> mode the snapshot
            provided by <computeroutput>--snapshot</computeroutput> and all
            child snapshots are cloned. If <computeroutput>all</computeroutput>
            is the selected mode all snapshots and the current state are cloned.
