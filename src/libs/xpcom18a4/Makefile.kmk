@@ -239,7 +239,7 @@ NSPRPUB-PRIV-HEADERS_SOURCES = \
 	nsprpub/pr/include/private/pprthred.h \
 	nsprpub/pr/include/private/prpriv.h
 
-STRING-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/string
+STRING-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/string/
 STRING-HEADERS_IFFLAGS = -m 644
 STRING-HEADERS_SOURCES = \
 	xpcom/string/public/nsAString.h \
@@ -273,7 +273,7 @@ STRING-HEADERS_SOURCES = \
 	xpcom/string/public/string-template-def-unichar.h \
 	xpcom/string/public/string-template-undef.h
 
-XPCOM-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/xpcom
+XPCOM-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/xpcom/
 XPCOM-HEADERS_IFFLAGS = -m 644
 XPCOM-HEADERS_SOURCES = \
 	xpcom/base/nsAgg.h \
