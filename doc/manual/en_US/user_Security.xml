@@ -92,7 +92,10 @@
         <listitem>
           <para>When using the VirtualBox extension pack provided by Oracle
           for VRDP remote desktop support, RDP data can optionally be
-          encrypted. See <xref linkend="vrde-crypt" /> for details.</para>
+          encrypted. See <xref linkend="vrde-crypt" /> for details. Only
+          the Enhanced RDP Security method (RDP5.2) with TLS protocol
+          provides a secure connection. Standard RDP Security (RDP4 and
+          RDP5.1) is vulnerable to a man-in-the-middle attack.</para>
         </listitem>
       </itemizedlist></para>
   </sect1>
