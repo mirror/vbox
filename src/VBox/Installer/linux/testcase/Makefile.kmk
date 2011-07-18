@@ -20,7 +20,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 INSTALLS += tstInstallerLinux
 TESTING += tstInstallerLinux
-tstInstallerLinux_INST    = bin/testcase
+tstInstallerLinux_INST    = $(INST_TESTCASE)
 tstInstallerLinux_MODE    = a+rx,u+w
 tstInstallerLinux_SOURCES = $(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh
 tstInstallerLinux_CLEAN   = $(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh

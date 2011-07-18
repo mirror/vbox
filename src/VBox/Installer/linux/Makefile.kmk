@@ -99,7 +99,7 @@ else
 endif
 
 INSTALLS += linux-icons
-linux-icons_INST = bin/icons
+linux-icons_INST = bin/icons/
 linux-icons_MODE = a+r,u+w
 linux-icons_SOURCES = $(VBOX_MIME_ICONS) $(VBOX_DESKTOP_ICONS)
 
