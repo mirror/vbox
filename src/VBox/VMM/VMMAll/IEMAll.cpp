@@ -3534,7 +3534,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
             {
                 pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_READ;
                 pEvtRec->u.RamRead.GCPhys  = GCPhysFirst;
-                pEvtRec->u.RamRead.cb      = cbMem;
+                pEvtRec->u.RamRead.cb      = (uint32_t)cbMem;
                 pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
                 *pIemCpu->ppIemEvtRecNext = pEvtRec;
             }
@@ -5503,7 +5503,7 @@ VMM_INT_DECL(void)   IEMNotifyMMIORead(PVM pVM, RTGCPHYS GCPhys, size_t cbValue)
         return;
     pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_READ;
     pEvtRec->u.RamRead.GCPhys  = GCPhys;
-    pEvtRec->u.RamRead.cb      = cbValue;
+    pEvtRec->u.RamRead.cb      = (uint32_t)cbValue;
     pEvtRec->pNext = *pIemCpu->ppOtherEvtRecNext;
     *pIemCpu->ppOtherEvtRecNext = pEvtRec;
 }
@@ -5523,7 +5523,7 @@ VMM_INT_DECL(void)   IEMNotifyMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Va
         return;
     pEvtRec->enmEvent = IEMVERIFYEVENT_RAM_WRITE;
     pEvtRec->u.RamWrite.GCPhys   = GCPhys;
-    pEvtRec->u.RamWrite.cb       = cbValue;
+    pEvtRec->u.RamWrite.cb       = (uint32_t)cbValue;
     pEvtRec->u.RamWrite.ab[0]    = RT_BYTE1(u32Value);
     pEvtRec->u.RamWrite.ab[1]    = RT_BYTE2(u32Value);
     pEvtRec->u.RamWrite.ab[2]    = RT_BYTE3(u32Value);
@@ -5547,7 +5547,7 @@ VMM_INT_DECL(void)   IEMNotifyIOPortRead(PVM pVM, RTIOPORT Port, size_t cbValue)
         return;
     pEvtRec->enmEvent = IEMVERIFYEVENT_IOPORT_READ;
     pEvtRec->u.IOPortRead.Port    = Port;
-    pEvtRec->u.IOPortRead.cbValue = cbValue;
+    pEvtRec->u.IOPortRead.cbValue = (uint32_t)cbValue;
     pEvtRec->pNext = *pIemCpu->ppOtherEvtRecNext;
     *pIemCpu->ppOtherEvtRecNext = pEvtRec;
 }
@@ -5566,7 +5566,7 @@ VMM_INT_DECL(void)   IEMNotifyIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Va
         return;
     pEvtRec->enmEvent = IEMVERIFYEVENT_IOPORT_WRITE;
     pEvtRec->u.IOPortWrite.Port     = Port;
-    pEvtRec->u.IOPortWrite.cbValue  = cbValue;
+    pEvtRec->u.IOPortWrite.cbValue  = (uint32_t)cbValue;
     pEvtRec->u.IOPortWrite.u32Value = u32Value;
     pEvtRec->pNext = *pIemCpu->ppOtherEvtRecNext;
     *pIemCpu->ppOtherEvtRecNext = pEvtRec;
@@ -5601,7 +5601,7 @@ static VBOXSTRICTRC iemVerifyFakeIOPortRead(PIEMCPU pIemCpu, RTIOPORT Port, uint
     {
         pEvtRec->enmEvent = IEMVERIFYEVENT_IOPORT_READ;
         pEvtRec->u.IOPortRead.Port    = Port;
-        pEvtRec->u.IOPortRead.cbValue = cbValue;
+        pEvtRec->u.IOPortRead.cbValue = (uint32_t)cbValue;
         pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
         *pIemCpu->ppIemEvtRecNext = pEvtRec;
     }
@@ -5627,7 +5627,7 @@ static VBOXSTRICTRC iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port, uin
     {
         pEvtRec->enmEvent = IEMVERIFYEVENT_IOPORT_WRITE;
         pEvtRec->u.IOPortWrite.Port     = Port;
-        pEvtRec->u.IOPortWrite.cbValue  = cbValue;
+        pEvtRec->u.IOPortWrite.cbValue  = (uint32_t)cbValue;
         pEvtRec->u.IOPortWrite.u32Value = u32Value;
         pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
         *pIemCpu->ppIemEvtRecNext = pEvtRec;

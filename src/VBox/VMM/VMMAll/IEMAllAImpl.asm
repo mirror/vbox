@@ -168,6 +168,42 @@
  %define T1_16      di
 %endif
 
+;;
+; NAME for fastcall functions.
+;
+;; @todo 'global @fastcall@12' is still broken in yasm and requires dollar 
+;         escaping (or whatever the dollar is good for here).  Thus the ugly
+;         prefix argument.
+;
+%define NAME_FASTCALL(a_Name, a_cbArgs, a_Dollar)   NAME(a_aName)
+%ifdef RT_ARCH_X86
+ %ifdef RT_OS_WINDOWS                                 
+  %undef NAME_FASTCALL
+  %define NAME_FASTCALL(a_Name, a_cbArgs, a_Prefix) a_Prefix %+ a_Name %+ @ %+ a_cbArgs
+ %endif        
+%endif
+
+;;
+; BEGINPROC for fastcall functions.
+;
+; @param        1       The function name (C).
+; @param        2       The argument size on x86.
+;
+%macro BEGINPROC_FASTCALL 2
+ %ifdef ASM_FORMAT_PE
+  export %1=NAME_FASTCALL(%1,%2,$@)
+ %endif
+ %ifdef __NASM__
+  %ifdef ASM_FORMAT_OMF
+   export NAME(%1) NAME_FASTCALL(%1,%2,$@)
+  %endif
+ %endif
+ %ifndef ASM_FORMAT_BIN
+  global NAME_FASTCALL(%1,%2,$@)
+ %endif
+NAME_FASTCALL(%1,%2,@):
+%endmacro
+
 
 ;;
 ; Load the relevant flags from [%1] if there are undefined flags (%3).
@@ -227,7 +263,7 @@
 ;
 %macro IEMIMPL_BIN_OP 4
 BEGINCODE
-BEGINPROC iemAImpl_ %+ %1 %+ _u8
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      byte [A0], A1_8
@@ -236,7 +272,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u8
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      word [A0], A1_16
@@ -245,7 +281,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      dword [A0], A1_32
@@ -255,7 +291,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      qword [A0], A1
@@ -264,7 +300,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
@@ -272,7 +308,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
 
  %if %2 != 0 ; locked versions requested?
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u8_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_locked, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 byte [A0], A1_8
@@ -281,7 +317,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u8_locked
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u8_locked
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u16_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 word [A0], A1_16
@@ -290,7 +326,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16_locked
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 dword [A0], A1_32
@@ -300,7 +336,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32_locked
 ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
 
   %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 qword [A0], A1
@@ -309,7 +345,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
   %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
@@ -346,7 +382,7 @@ IEMIMPL_BIN_OP test, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86
 ;
 %macro IEMIMPL_BIT_OP 4
 BEGINCODE
-BEGINPROC iemAImpl_ %+ %1 %+ _u16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      word [A0], A1_16
@@ -355,7 +391,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      dword [A0], A1_32
@@ -365,7 +401,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         %1      qword [A0], A1
@@ -374,7 +410,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
@@ -382,7 +418,7 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
 
  %if %2 != 0 ; locked versions requested?
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u16_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 word [A0], A1_16
@@ -391,7 +427,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16_locked
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 dword [A0], A1_32
@@ -401,7 +437,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32_locked
 ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
 
   %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %3, %4
         lock %1 qword [A0], A1
@@ -410,7 +446,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
   %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
@@ -437,7 +473,7 @@ IEMIMPL_BIT_OP btr, 1, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86
 ;
 %macro IEMIMPL_BIT_OP 3
 BEGINCODE
-BEGINPROC iemAImpl_ %+ %1 %+ _u16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
         %1      T0_16, A1_16
@@ -447,7 +483,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
         %1      T0_32, A1_32
@@ -458,7 +494,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS           A2, %2, %3
         %1      T0, A1
@@ -468,7 +504,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
@@ -483,7 +519,7 @@ IEMIMPL_BIT_OP bsr, (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EF
 ; The rDX:rAX variant of imul is handled together with mul further down.
 ;
 BEGINCODE
-BEGINPROC iemAImpl_imul_two_u16
+BEGINPROC_FASTCALL iemAImpl_imul_two_u16, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
         imul    A1_16, word [A0]
@@ -493,7 +529,7 @@ BEGINPROC iemAImpl_imul_two_u16
         ret
 ENDPROC iemAImpl_imul_two_u16
 
-BEGINPROC iemAImpl_imul_two_u32
+BEGINPROC_FASTCALL iemAImpl_imul_two_u32, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
         imul    A1_32, dword [A0]
@@ -503,7 +539,7 @@ BEGINPROC iemAImpl_imul_two_u32
         ret
 ENDPROC iemAImpl_imul_two_u32
 
-BEGINPROC iemAImpl_imul_two_u64
+BEGINPROC_FASTCALL iemAImpl_imul_two_u64, 16
         PROLOGUE_3_ARGS
 %ifdef RT_ARCH_AMD64
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
@@ -525,7 +561,7 @@ ENDPROC iemAImpl_imul_two_u64
 ; then the pointer to the register.  They all return void.
 ;
 BEGINCODE
-BEGINPROC iemAImpl_xchg_u8
+BEGINPROC_FASTCALL iemAImpl_xchg_u8, 8
         PROLOGUE_2_ARGS
         mov     T0_8, [A1]
         xchg    [A0], T0_8
@@ -534,7 +570,7 @@ BEGINPROC iemAImpl_xchg_u8
         ret
 ENDPROC iemAImpl_xchg_u8
 
-BEGINPROC iemAImpl_xchg_u16
+BEGINPROC_FASTCALL iemAImpl_xchg_u16, 8
         PROLOGUE_2_ARGS
         mov     T0_16, [A1]
         xchg    [A0], T0_16
@@ -543,7 +579,7 @@ BEGINPROC iemAImpl_xchg_u16
         ret
 ENDPROC iemAImpl_xchg_u16
 
-BEGINPROC iemAImpl_xchg_u32
+BEGINPROC_FASTCALL iemAImpl_xchg_u32, 8
         PROLOGUE_2_ARGS
         mov     T0_32, [A1]
         xchg    [A0], T0_32
@@ -552,7 +588,7 @@ BEGINPROC iemAImpl_xchg_u32
         ret
 ENDPROC iemAImpl_xchg_u32
 
-BEGINPROC iemAImpl_xchg_u64
+BEGINPROC_FASTCALL iemAImpl_xchg_u64, 8
 %ifdef RT_ARCH_AMD64
         PROLOGUE_2_ARGS
         mov     T0, [A1]
@@ -574,7 +610,7 @@ ENDPROC iemAImpl_xchg_u64
 ; eflags.  They all return void.
 ;
 BEGINCODE
-BEGINPROC iemAImpl_xadd_u8
+BEGINPROC_FASTCALL iemAImpl_xadd_u8, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         mov     T0_8, [A1]
@@ -585,7 +621,7 @@ BEGINPROC iemAImpl_xadd_u8
         ret
 ENDPROC iemAImpl_xadd_u8
 
-BEGINPROC iemAImpl_xadd_u16
+BEGINPROC_FASTCALL iemAImpl_xadd_u16, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         mov     T0_16, [A1]
@@ -596,7 +632,7 @@ BEGINPROC iemAImpl_xadd_u16
         ret
 ENDPROC iemAImpl_xadd_u16
 
-BEGINPROC iemAImpl_xadd_u32
+BEGINPROC_FASTCALL iemAImpl_xadd_u32, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         mov     T0_32, [A1]
@@ -607,7 +643,7 @@ BEGINPROC iemAImpl_xadd_u32
         ret
 ENDPROC iemAImpl_xadd_u32
 
-BEGINPROC iemAImpl_xadd_u64
+BEGINPROC_FASTCALL iemAImpl_xadd_u64, 12
 %ifdef RT_ARCH_AMD64
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
@@ -622,7 +658,7 @@ BEGINPROC iemAImpl_xadd_u64
 %endif
 ENDPROC iemAImpl_xadd_u64
 
-BEGINPROC iemAImpl_xadd_u8_locked
+BEGINPROC_FASTCALL iemAImpl_xadd_u8_locked, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         mov     T0_8, [A1]
@@ -633,7 +669,7 @@ BEGINPROC iemAImpl_xadd_u8_locked
         ret
 ENDPROC iemAImpl_xadd_u8_locked
 
-BEGINPROC iemAImpl_xadd_u16_locked
+BEGINPROC_FASTCALL iemAImpl_xadd_u16_locked, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         mov     T0_16, [A1]
@@ -644,7 +680,7 @@ BEGINPROC iemAImpl_xadd_u16_locked
         ret
 ENDPROC iemAImpl_xadd_u16_locked
 
-BEGINPROC iemAImpl_xadd_u32_locked
+BEGINPROC_FASTCALL iemAImpl_xadd_u32_locked, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         mov     T0_32, [A1]
@@ -655,7 +691,7 @@ BEGINPROC iemAImpl_xadd_u32_locked
         ret
 ENDPROC iemAImpl_xadd_u32_locked
 
-BEGINPROC iemAImpl_xadd_u64_locked
+BEGINPROC_FASTCALL iemAImpl_xadd_u64_locked, 12
 %ifdef RT_ARCH_AMD64
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
@@ -687,7 +723,7 @@ ENDPROC iemAImpl_xadd_u64_locked
 ;
 %macro IEMIMPL_UNARY_OP 3
 BEGINCODE
-BEGINPROC iemAImpl_ %+ %1 %+ _u8
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 8
         PROLOGUE_2_ARGS
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         %1      byte [A0]
@@ -696,7 +732,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u8
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u8_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_locked, 8
         PROLOGUE_2_ARGS
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         lock %1 byte [A0]
@@ -705,7 +741,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u8_locked
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u8_locked
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 8
         PROLOGUE_2_ARGS
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         %1      word [A0]
@@ -714,7 +750,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u16_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_locked, 8
         PROLOGUE_2_ARGS
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         lock %1 word [A0]
@@ -723,7 +759,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16_locked
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16_locked
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 8
         PROLOGUE_2_ARGS
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         %1      dword [A0]
@@ -732,7 +768,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_locked, 8
         PROLOGUE_2_ARGS
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         lock %1 dword [A0]
@@ -742,7 +778,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32_locked
 ENDPROC iemAImpl_ %+ %1 %+ _u32_locked
 
  %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 8
         PROLOGUE_2_ARGS
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         %1      qword [A0]
@@ -751,7 +787,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 8
         PROLOGUE_2_ARGS
         IEM_MAYBE_LOAD_FLAGS A1, %2, %3
         lock %1 qword [A0]
@@ -761,11 +797,11 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
  %else
         ; stub them for now.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 8
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64_locked
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 8
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
@@ -797,7 +833,7 @@ IEMIMPL_UNARY_OP not, 0, 0
 ;
 %macro IEMIMPL_SHIFT_OP 3
 BEGINCODE
-BEGINPROC iemAImpl_ %+ %1 %+ _u8
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
  %ifdef ASM_CALL64_GCC
@@ -812,7 +848,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u8
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
  %ifdef ASM_CALL64_GCC
@@ -827,7 +863,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
  %ifdef ASM_CALL64_GCC
@@ -843,7 +879,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
  %ifdef ASM_CALL64_GCC
@@ -858,7 +894,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
@@ -876,7 +912,7 @@ IEMIMPL_SHIFT_OP sar, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_E
 
 
 ;;
-; Macro for implementing a doulbe precision shift operation.
+; Macro for implementing a double precision shift operation.
 ;
 ; This will generate code for the 16, 32 and 64 bit accesses, except on
 ; 32-bit system where the 64-bit accesses requires hand coding.
@@ -892,7 +928,7 @@ IEMIMPL_SHIFT_OP sar, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_E
 ;
 %macro IEMIMPL_SHIFT_DBL_OP 3
 BEGINCODE
-BEGINPROC iemAImpl_ %+ %1 %+ _u16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
  %ifdef ASM_CALL64_GCC
@@ -908,7 +944,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
  %ifdef ASM_CALL64_GCC
@@ -925,7 +961,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
  %ifdef ASM_CALL64_GCC
@@ -941,7 +977,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
@@ -974,7 +1010,7 @@ IEMIMPL_SHIFT_DBL_OP shrd, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | 
 ;
 %macro IEMIMPL_MUL_OP 3
 BEGINCODE
-BEGINPROC iemAImpl_ %+ %1 %+ _u8
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
         mov     al, [A0]
@@ -986,7 +1022,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u8
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
         mov     ax, [A0]
@@ -1006,7 +1042,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
         mov     eax, [A0]
@@ -1027,7 +1063,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
         mov     rax, [A0]
@@ -1047,7 +1083,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
@@ -1080,7 +1116,7 @@ IEMIMPL_MUL_OP imul, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_E
 ;
 %macro IEMIMPL_DIV_OP 3
 BEGINCODE
-BEGINPROC iemAImpl_ %+ %1 %+ _u8
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         PROLOGUE_3_ARGS
 
         test    A1_8, A1_8
@@ -1102,7 +1138,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u8
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u8
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         PROLOGUE_4_ARGS
 
         test    A1_16, A1_16
@@ -1136,7 +1172,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u16
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
-BEGINPROC iemAImpl_ %+ %1 %+ _u32
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         PROLOGUE_4_ARGS
 
         test    A1_32, A1_32
@@ -1172,7 +1208,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u32
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         PROLOGUE_4_ARGS
 
         test    A1, A1
@@ -1207,7 +1243,7 @@ BEGINPROC iemAImpl_ %+ %1 %+ _u64
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u64
  %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC iemAImpl_ %+ %1 %+ _u64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         int3
         ret
 ENDPROC iemAImpl_ %+ %1 %+ _u64
