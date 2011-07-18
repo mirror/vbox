@@ -40,13 +40,16 @@
     </listitem>
 
     <listitem>
-      <para>For <emphasis role="bold">Direct3D support in Windows
+      <para>For <emphasis role="bold">basic Direct3D support in Windows
       guests</emphasis> to work, the Guest Additions must be installed in
       Windows "safe mode". Press F8 when the Windows guest is booting and
       select "Safe mode", then install the Guest Additions. Otherwise Windows'
       file protection mechanism will interfere with the replacement DLLs
       installed by VirtualBox and keep restoring the original Windows system
-      DLLs.</para>
+      DLLs.
+      <note><para>This does NOT apply to experimental WDDM Direct 3D video driver 
+        available for Vista and Windows 7 guests.</para></note> 
+      </para>
     </listitem>
 
     <listitem>

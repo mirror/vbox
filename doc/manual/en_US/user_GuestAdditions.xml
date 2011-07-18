@@ -229,8 +229,10 @@
         guest.</para>
 
         <note>
-          <para>For Direct 3D acceleration to work in a Windows Guest, you
-          must install the Guest Additions in "Safe Mode"; see <xref
+          <para>For the basic Direct 3D acceleration to work in a Windows Guest, you
+          must install the Guest Additions in "Safe Mode".
+          This does NOT apply to experimental WDDM Direct 3D video driver available for 
+          Vista and Windows 7 guests. see <xref
           linkend="KnownIssues" /> for details.</para>
         </note>
 
@@ -1120,7 +1122,9 @@ $</screen>
           <para>OpenGL support for Windows guests was added with VirtualBox
           2.1; support for Linux and Solaris followed with VirtualBox 2.2.
           With VirtualBox 3.0, Direct3D 8/9 support was added for Windows
-          guests. OpenGL 2.0 is now supported as well.</para>
+          guests. OpenGL 2.0 is now supported as well.
+          With VirtualBox 4.1 Windows Aero theme support is added for 
+          Windows Vista and Windows 7 guests (experimental)</para>
         </footnote></para>
 
       <para>With this feature, if an application inside your virtual machine
@@ -1159,12 +1163,15 @@ $</screen>
 
           <listitem>
             <para>The Guest Additions must be installed.<note>
-                <para>For Direct 3D acceleration to work in a Windows Guest,
+                <para>For the basic Direct 3D acceleration to work in a Windows Guest,
                 VirtualBox needs to replace Windows system files in the
                 virtual machine. As a result, the Guest Additions installation
                 program offers Direct 3D acceleration as an option that must
                 be explicitly enabled. Also, you must install the Guest
-                Additions in "Safe Mode"; see <xref linkend="KnownIssues" />
+                Additions in "Safe Mode".
+                <note><para>This does NOT apply to experimental WDDM Direct 3D video driver 
+                available for Vista and Windows 7 guests.</para></note> 
+                See <xref linkend="KnownIssues" />
                 for details.</para>
               </note></para>
           </listitem>
@@ -1182,6 +1189,31 @@ $</screen>
               </note></para>
           </listitem>
         </orderedlist></para>
+
+      <para>With VirtualBox 4.1 Windows Aero theme support is added for
+      Windows Vista and Windows 7 guests. To enable Aero theme support, 
+      the experimental VirtualBox WDDM video driver must be installed, 
+      which is available with the Guest Additions installation.
+      Since WDDM video driver is still experimental at this time, it is
+      not installed by default and must be <emphasis role="bold">manually
+      selected</emphasis> in the Guest Additions installer by answering "No"
+      int the "Would you like to install basic Direct3D support" dialog 
+      displayed when the Direct 3D feature is selected.
+      <note><para>Unlike current basic Direct 3D support, WDDM video driver
+      installation does NOT require "Safe Mode"</para></note>
+      <note><para>Aero theme is not enabled by default, to enable it<itemizedlist>
+          <listitem>
+            <para>In Windows Vista guest: right-click on the desktop, in the 
+            contect menu select "Personalize", then select "Windows Color and Appearance"
+            in the "Personalization" window, in the "Appearance Settings" dialog select 
+            "Windows Aero" and press "OK"</para></listitem>
+          <listitem>
+            <para>In Windows 7 guest: right-click on the desktop, in the 
+            contect menu select "Personalize" and select any Aero theme
+            in the "Personalization" window</para></listitem>
+          </itemizedlist>
+        </para></note>
+      </para>
 
       <para>Technically, VirtualBox implements this by installing an
       additional hardware 3D driver inside your guest when the Guest Additions
