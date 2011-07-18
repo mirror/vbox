@@ -111,12 +111,12 @@
 
     <listitem>
       <para>Preserving the aspect ratio in scale mode works only on Windows
-        hosts and on Mac OS X hosts.</para>
+      hosts and on Mac OS X hosts.</para>
     </listitem>
 
     <listitem>
       <para>On <emphasis role="bold">Mac OS X hosts,</emphasis> the following
-      features are not yet implemented: </para>
+      features are not yet implemented:</para>
 
       <para><itemizedlist>
           <listitem>
@@ -205,6 +205,15 @@
           <listitem>
             <para>No support for using wireless adapters with bridged
             networking.</para>
+          </listitem>
+
+          <listitem>
+            <para>Crossbow based bridged network on Solaris 11 hosts does not
+            work directly with aggregate links. However, you can manually
+            create a VNIC (using <computeroutput>dladm</computeroutput>) over
+            the aggregate link and use that with a VM. This technical
+            limitation between VirtualBox and Solaris will be addressed in a
+            future release.</para>
           </listitem>
         </itemizedlist></para>
     </listitem>
