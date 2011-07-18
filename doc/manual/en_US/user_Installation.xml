@@ -648,7 +648,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
       <para>The Linux installers create the system user group
       <computeroutput>vboxusers</computeroutput> during installation. Any
       system user who is going to use USB devices from VirtualBox guests must
-      be member of that group. A user can be made member of the group
+      be a member of that group. A user can be made a member of the group
       <computeroutput>vboxusers</computeroutput> through the GUI user/group
       management or at the command line with</para>
 
