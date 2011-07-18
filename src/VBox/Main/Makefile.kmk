@@ -168,7 +168,7 @@ ifdef VBOX_WITH_PYTHON
 VBOX_PYTHON_CONSTANTS = $(PATH_TARGET)/VirtualBox_constants.py
 
 INSTALLS += VBox-python-glue
-VBox-python-glue_INST = $(INST_SDK)installer
+VBox-python-glue_INST = $(INST_SDK)installer/
 VBox-python-glue_SOURCES = glue/vboxapi.py=>vboxapi/__init__.py  \
                            $(VBOX_PYTHON_CONSTANTS)=>vboxapi/VirtualBox_constants.py
 
@@ -923,7 +923,7 @@ endif # VBOX_WITH_JMSCOM
 # Install Java glue sample code.
 #
 INSTALLS += javagluesample
-javagluesample_INST = $(INST_SDK)bindings/glue/java
+javagluesample_INST = $(INST_SDK)bindings/glue/java/
 javagluesample_MODE = a+rx,u+w
 javagluesample_SOURCES = \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/TestVBox.java=>TestVBox.java \
