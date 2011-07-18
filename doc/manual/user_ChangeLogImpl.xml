@@ -284,6 +284,10 @@
       </listitem>
 
       <listitem>
+        <para>Windows hosts: use native controls in the installer (bug #5520)</para>
+      </listitem>
+
+      <listitem>
         <para>Solaris hosts: fixed preemption issue with Solaris 11 hosts (builds
           166 and above)</para>
       </listitem>
