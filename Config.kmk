@@ -551,7 +551,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_NETFLT = 1
  ifeq ($(KBUILD_TARGET),solaris)
  # Disabled until some Nevada version ships the required headers.
- #  VBOX_WITH_NETFLT_CROSSBOW = 1
+   VBOX_WITH_NETFLT_CROSSBOW = 1
  endif
  # Use VBoxNetAdp for host only networking.
  if1of ($(KBUILD_TARGET), darwin freebsd linux solaris) ## @todo this should be set and used on windows too.
