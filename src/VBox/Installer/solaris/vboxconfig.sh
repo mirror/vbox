@@ -561,8 +561,14 @@ install_drivers()
     if test -f "$DIR_CONF/vboxusbmon.conf" && test "$HOST_OS_MAJORVERSION" != "5.10"; then
         # For VirtualBox 3.1 the new USB code requires Nevada > 123
         if test "$HOST_OS_MINORVERSION" -gt 123; then
+            # Add a group "vboxuser" (8-character limit) for USB access.
+            # All users which need host USB-passthrough support will have to be added to this group.
+            groupadd vboxuser >/dev/null 2>&1
+
             add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
             load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
+
+            chown root:vboxuser "/devices/pseudo/vboxusbmon@0:vboxusbmon"
 
             # Add vboxusbmon to devlink.tab
             sed -e '/name=vboxusbmon/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"

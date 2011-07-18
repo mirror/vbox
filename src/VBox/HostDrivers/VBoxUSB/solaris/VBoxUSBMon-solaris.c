@@ -164,13 +164,13 @@ typedef struct
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Global Device handle we only support one instance. */
-static dev_info_t *g_pDip;
+static dev_info_t *g_pDip = NULL;
 /** Global Mutex. */
 static kmutex_t g_VBoxUSBMonSolarisMtx;
 /** Number of userland clients that have kept us open. */
 static uint64_t g_cVBoxUSBMonSolarisClient = 0;
 /** Global list of client drivers registered with us. */
-vboxusbmon_client_t *g_pVBoxUSBMonSolarisClients = 0;
+vboxusbmon_client_t *g_pVBoxUSBMonSolarisClients = NULL;
 /** Opaque pointer to list of soft states. */
 static void *g_pVBoxUSBMonSolarisState;
 
@@ -292,28 +292,23 @@ static int VBoxUSBMonSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
     {
         case DDI_ATTACH:
         {
-            vboxusbmon_state_t *pState = NULL;
-            int instance = ddi_get_instance(pDip);
-            int rc;
-
-            pState = RTMemAllocZ(sizeof(*pState));
-            if (pState)
+            if (RT_UNLIKELY(g_pDip))
             {
-                g_pDip = pDip;
-                rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0,
-                                                            "none", "none", 0666);
-                if (rc == DDI_SUCCESS)
-                {
-                    ddi_set_driver_private(pDip, pState);
-                    ddi_report_dev(pDip);
-                    return rc;
-                }
-                else
-                    LogRel((DEVICE_NAME ":ddi_create_minor_node failed! rc=%d\n", rc));
-                RTMemFree(pState);
+                LogRel((DEVICE_NAME ":VBoxUSBMonSolarisAttach global instance already initialized.\n"));
+                return DDI_FAILURE;
+            }
+
+            g_pDip = pDip;
+            int instance = ddi_get_instance(pDip);
+            int rc = ddi_create_priv_minor_node(pDip, DEVICE_NAME, S_IFCHR, instance, DDI_PSEUDO, 0,
+                                                        "none", "none", 0660);
+            if (rc == DDI_SUCCESS)
+            {
+                ddi_report_dev(pDip);
+                return rc;
             }
             else
-                LogRel((DEVICE_NAME ":RTMemAllocZ failed to allocated %d bytes for pState\n", sizeof(*pState)));
+                LogRel((DEVICE_NAME ":VBoxUSBMonSolarisAttach ddi_create_minor_node failed! rc=%d\n", rc));
             return DDI_FAILURE;
         }
 
@@ -358,16 +353,9 @@ static int VBoxUSBMonSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             }
             mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
-            vboxusbmon_state_t *pState = ddi_get_driver_private(g_pDip);
-            if (pState)
-            {
-                ddi_remove_minor_node(pDip, NULL);
-                RTMemFree(pState);
-                return DDI_SUCCESS;
-            }
-            else
-                LogRel((DEVICE_NAME ":failed to get soft state on detach.\n"));
-            break;
+            ddi_remove_minor_node(pDip, NULL);
+            g_pDip = NULL;
+            return DDI_SUCCESS;
         }
 
         case DDI_SUSPEND:
@@ -852,6 +840,15 @@ static int vboxUSBMonSolarisResetDevice(char *pszDevicePath, bool fReattach)
     return rc;
 }
 
+
+/**
+ * Query client driver information. This also has a side-effect that it informs
+ * the client driver which upcoming VM process should be allowed to open it.
+ *
+ * @returns  VBox status code.
+ * @param    pState         Pointer to the device state.
+ * @param    pClientInfo    Pointer to the client info. object.
+ */
 static int vboxUSBMonSolarisClientInfo(vboxusbmon_state_t *pState, PVBOXUSB_CLIENT_INFO pClientInfo)
 {
     LogFlowFunc((DEVICE_NAME ":vboxUSBMonSolarisClientInfo pState=%p pClientInfo=%p\n", pState, pClientInfo));
@@ -869,10 +866,23 @@ static int vboxUSBMonSolarisClientInfo(vboxusbmon_state_t *pState, PVBOXUSB_CLIE
             pClientInfo->Instance = pCur->Info.Instance;
             RTStrPrintf(pClientInfo->szClientPath, sizeof(pClientInfo->szClientPath), "%s", pCur->Info.szClientPath);
 
+            /*
+             * Inform the client driver that this is the client process that is going to open it. We can predict the future!
+             */
+            int rc;
+            if (pCur->Info.pfnSetConsumerCredentials)
+            {
+                rc = pCur->Info.pfnSetConsumerCredentials(pState->Process, pCur->Info.Instance, NULL /* pvReserved */);
+                if (RT_FAILURE(rc))
+                    LogRel((DEVICE_NAME ":vboxUSBMonSolarisClientInfo pfnSetConsumerCredentials failed. rc=%d\n", rc));
+            }
+            else
+                rc = VERR_INVALID_FUNCTION;
+
             mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
-            LogFlow((DEVICE_NAME ":vboxUSBMonSolarisClientInfo found. %s\n", pClientInfo->szDeviceIdent));
-            return VINF_SUCCESS;
+            LogFlow((DEVICE_NAME ":vboxUSBMonSolarisClientInfo found. %s rc=%d\n", pClientInfo->szDeviceIdent, rc));
+            return rc;
         }
         pPrev = pCur;
         pCur = pCur->pNext;
@@ -899,34 +909,30 @@ int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO
 
     if (RT_LIKELY(g_pDip))
     {
-        vboxusbmon_state_t *pState = ddi_get_driver_private(g_pDip);
-
-        if (RT_LIKELY(pState))
+        vboxusbmon_client_t *pClient = RTMemAllocZ(sizeof(vboxusbmon_client_t));
+        if (RT_LIKELY(pClient))
         {
-            vboxusbmon_client_t *pClient = RTMemAlloc(sizeof(vboxusbmon_client_t));
-            if (RT_LIKELY(pClient))
-            {
-                bcopy(pClientInfo, &pClient->Info, sizeof(pClient->Info));
-                pClient->pDip = pClientDip;
+            pClient->Info.Instance = pClientInfo->Instance;
+            strncpy(pClient->Info.szClientPath, pClientInfo->szClientPath, sizeof(pClient->Info.szClientPath));
+            strncpy(pClient->Info.szDeviceIdent, pClientInfo->szDeviceIdent, sizeof(pClient->Info.szDeviceIdent));
+            pClient->Info.pfnSetConsumerCredentials = pClientInfo->pfnSetConsumerCredentials;
+            pClient->pDip = pClientDip;
 
-                mutex_enter(&g_VBoxUSBMonSolarisMtx);
-                pClient->pNext = g_pVBoxUSBMonSolarisClients;
-                g_pVBoxUSBMonSolarisClients = pClient;
-                mutex_exit(&g_VBoxUSBMonSolarisMtx);
+            mutex_enter(&g_VBoxUSBMonSolarisMtx);
+            pClient->pNext = g_pVBoxUSBMonSolarisClients;
+            g_pVBoxUSBMonSolarisClients = pClient;
+            mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
-                LogFlow((DEVICE_NAME ":VBoxUSBMonSolarisRegisterClient registered. %d %s %s\n",
-                            pClient->Info.Instance, pClient->Info.szClientPath, pClient->Info.szDeviceIdent));
+            LogFlow((DEVICE_NAME ":VBoxUSBMonSolarisRegisterClient registered. %d %s %s\n",
+                        pClient->Info.Instance, pClient->Info.szClientPath, pClient->Info.szDeviceIdent));
 
-                return VINF_SUCCESS;
-            }
-            else
-                return VERR_NO_MEMORY;
+            return VINF_SUCCESS;
         }
         else
-            return VERR_INTERNAL_ERROR;
+            return VERR_NO_MEMORY;
     }
     else
-        return VERR_INTERNAL_ERROR_2;
+        return VERR_INVALID_STATE;
 }
 
 
@@ -940,48 +946,42 @@ int VBoxUSBMonSolarisRegisterClient(dev_info_t *pClientDip, PVBOXUSB_CLIENT_INFO
 int VBoxUSBMonSolarisUnregisterClient(dev_info_t *pClientDip)
 {
     LogFlowFunc((DEVICE_NAME ":VBoxUSBMonSolarisUnregisterClient pClientDip=%p\n", pClientDip));
+    AssertReturn(pClientDip, VERR_INVALID_PARAMETER);
 
     if (RT_LIKELY(g_pDip))
     {
-        vboxusbmon_state_t *pState = ddi_get_driver_private(g_pDip);
+        mutex_enter(&g_VBoxUSBMonSolarisMtx);
 
-        if (RT_LIKELY(pState))
+        vboxusbmon_client_t *pCur = g_pVBoxUSBMonSolarisClients;
+        vboxusbmon_client_t *pPrev = NULL;
+        while (pCur)
         {
-            mutex_enter(&g_VBoxUSBMonSolarisMtx);
-
-            vboxusbmon_client_t *pCur = g_pVBoxUSBMonSolarisClients;
-            vboxusbmon_client_t *pPrev = NULL;
-            while (pCur)
+            if (pCur->pDip == pClientDip)
             {
-                if (pCur->pDip == pClientDip)
-                {
-                    if (pPrev)
-                        pPrev->pNext = pCur->pNext;
-                    else
-                        g_pVBoxUSBMonSolarisClients = pCur->pNext;
+                if (pPrev)
+                    pPrev->pNext = pCur->pNext;
+                else
+                    g_pVBoxUSBMonSolarisClients = pCur->pNext;
 
-                    mutex_exit(&g_VBoxUSBMonSolarisMtx);
+                mutex_exit(&g_VBoxUSBMonSolarisMtx);
 
-                    LogFlow((DEVICE_NAME ":VBoxUSBMonSolarisUnregisterClient unregistered. %d %s %s\n",
-                                pCur->Info.Instance, pCur->Info.szClientPath, pCur->Info.szDeviceIdent));
-                    RTMemFree(pCur);
-                    pCur = NULL;
-                    return VINF_SUCCESS;
-                }
-                pPrev = pCur;
-                pCur = pCur->pNext;
+                LogFlow((DEVICE_NAME ":VBoxUSBMonSolarisUnregisterClient unregistered. %d %s %s\n",
+                            pCur->Info.Instance, pCur->Info.szClientPath, pCur->Info.szDeviceIdent));
+                RTMemFree(pCur);
+                pCur = NULL;
+                return VINF_SUCCESS;
             }
-
-            mutex_exit(&g_VBoxUSBMonSolarisMtx);
-
-            LogRel((DEVICE_NAME ":VBoxUSBMonSolarisUnregisterClient Failed to find registered client %p\n", pClientDip));
-            return VERR_SEARCH_ERROR;
+            pPrev = pCur;
+            pCur = pCur->pNext;
         }
-        else
-            return VERR_INTERNAL_ERROR;
+
+        mutex_exit(&g_VBoxUSBMonSolarisMtx);
+
+        LogRel((DEVICE_NAME ":VBoxUSBMonSolarisUnregisterClient Failed to find registered client %p\n", pClientDip));
+        return VERR_NOT_FOUND;
     }
     else
-        return VERR_INTERNAL_ERROR_2;
+        return VERR_INVALID_STATE;
 }
 
 

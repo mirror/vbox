@@ -160,61 +160,6 @@ PUSBDEVICE USBProxyServiceSolaris::getDevices(void)
     return DevList.pHead;
 }
 
-#if 0
-static int solarisWalkMinor(di_node_t Node, di_minor_t Minor, void *pvArg)
-{
-    char *pszDevFsPath = di_devfs_path(Node);
-    char *pszMinorName = di_minor_name(Minor);
-    PUSBDEVICE pDev = (PUSBDEVICE)pvArg;
-
-    AssertRelease(pDev);
-
-    if (!pszDevFsPath || !pszMinorName)
-        return DI_WALK_CONTINUE;
-
-    RTStrAPrintf(&pDev->pszApId, "/devices%s:%s", pszDevFsPath, pszMinorName);
-    di_devfs_path_free(pszDevFsPath);
-
-    syslog(LOG_ERR, "VBoxUsbApId:%s\n", pDev->pszApId);
-    return DI_WALK_TERMINATE;
-}
-
-static bool solarisGetApId(PUSBDEVICE pDev, char *pszDevicePath, di_node_t RootNode)
-{
-    pDev->pszApId = NULL;
-
-    /* Skip "/devices" prefix if any */
-    char achDevicesDir[] = "/devices/";
-    if (strncmp(pszDevicePath, achDevicesDir, sizeof(achDevicesDir)) == 0)
-        pszDevicePath += sizeof(achDevicesDir);
-
-    char *pszPhysical = RTStrDup(pszDevicePath);
-    char *pszTmp = NULL;
-
-    /* Remove dynamic component "::" if any */
-    if ((pszTmp = strstr(pszPhysical, "::")) != NULL)
-        *pszTmp = '\0';
-
-    /* Remove minor name if any */
-    if ((pszTmp = strrchr(pszPhysical, ':')) != NULL)
-        *pszTmp = '\0';
-
-    /* Walk device tree */
-//    di_node_t RootNode = di_init("/", DINFOCPYALL);
-//    if (RootNode != DI_NODE_NIL)
-//    {
-//        di_node_t MinorNode = di_lookup_node(RootNode, pszPhysical);
-//        if (MinorNode != DI_NODE_NIL)
-        {
-            di_walk_minor(RootNode, NULL, DI_CHECK_ALIAS | DI_CHECK_INTERNAL_PATH, pDev, solarisWalkMinor);
-            return true;
-        }
-//        di_fini(RootNode);
-//    }
-
-    return false;
-}
-#endif
 
 static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
 {
@@ -315,25 +260,6 @@ static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
             else
                 pCur->bPort = 0;
 
-#if 0
-            /*
-             * Obtain the dev_t of the device.
-             */
-            di_minor_t Minor = di_minor_next(Node, DI_MINOR_NIL);
-            AssertBreak(Minor != DI_MINOR_NIL);
-            dev_t DeviceNum = di_minor_devt(Minor);
-
-            int DevInstance = 0;
-            rc = solarisUSBGetInstance(pszDevicePath, &DevInstance);
-
-            char szAddress[PATH_MAX + 128];
-            RTStrPrintf(szAddress, sizeof(szAddress), "/dev/usb/%x.%x|%s", pCur->idVendor, pCur->idProduct, pszDevicePath);
-            /* @todo after binding ugen we need to append the instance number to the address. Not yet sure how we can update PUSBDEVICE at that time. */
-
-            pCur->pszAddress = RTStrDup(szAddress);
-            AssertBreak(pCur->pszAddress);
-#endif
-
             char pathBuf[PATH_MAX];
             RTStrPrintf(pathBuf, sizeof(pathBuf), "%s", pszDevicePath);
             RTPathStripFilename(pathBuf);
@@ -367,20 +293,16 @@ static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
             /* Determine state of the USB device. */
             pCur->enmState = solarisDetermineUSBDeviceState(pCur, Node);
 
-//            fValidDevice = solarisGetApId(pCur, pszDevicePath, Node);
-            fValidDevice = true;
-
             /*
              * Valid device, add it to the list.
              */
-            if (fValidDevice)
-            {
-                pCur->pPrev = pList->pTail;
-                if (pList->pTail)
-                    pList->pTail = pList->pTail->pNext = pCur;
-                else
-                    pList->pTail = pList->pHead = pCur;
-            }
+            fValidDevice = true;
+            pCur->pPrev = pList->pTail;
+            if (pList->pTail)
+                pList->pTail = pList->pTail->pNext = pCur;
+            else
+                pList->pTail = pList->pHead = pCur;
+
             rc = DI_WALK_CONTINUE;
         } while(0);
 
