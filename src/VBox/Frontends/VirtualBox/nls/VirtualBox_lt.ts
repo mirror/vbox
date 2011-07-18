@@ -3196,6 +3196,14 @@
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
         <translation type="unfinished">naudojate daugiau laikmenų valdiklių nei palaiko %1 lustų rinkinys. Todėl arba pakeiskite lustų rinkinio tipą sistemos nuostatose, arba sumažinkite laikmenų valdiklių skaičių laikmenų nuostatose: %2.</translation>
     </message>
+    <message>
+        <source>&amp;Port Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>

@@ -3665,28 +3665,28 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="361"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="362"/>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="368"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="369"/>
         <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="377"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="378"/>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="386"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="387"/>
         <source>Selects the driver to be used with this network card.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="639"/>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="641"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="640"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="642"/>
         <source>Not selected</source>
         <comment>network adapter name</comment>
         <translation>未選択</translation>
@@ -4335,37 +4335,37 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="524"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="543"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;バス:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;タイプ:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="711"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="730"/>
         <source>Host Drive</source>
         <translation>ホスト ドライブ</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="711"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="730"/>
         <source>Image</source>
         <translation>イメージ</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="878"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="897"/>
         <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;項目を展開する/折り畳む&amp;nbsp;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="881"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="900"/>
         <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;ハードディスク&amp;nbsp;の追加&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="884"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="903"/>
         <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;CD/DVD&amp;nbsp;デバイス&amp;nbsp;の追加&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="887"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="906"/>
         <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;フロッピー&amp;nbsp;デバイス&amp;nbsp;の追加&lt;/nobr&gt;</translation>
     </message>
@@ -4374,223 +4374,223 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete"> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2060"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2104"/>
         <source>no name specified for controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2066"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2110"/>
         <source>controller at position &lt;b&gt;%1&lt;/b&gt; uses the name that is already used by controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2083"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2127"/>
         <source>no hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2089"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2133"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
         <translation>&lt;i&gt;%1&lt;/i&gt;が使用するメディアはすでに&lt;i&gt;%2&lt;/i&gt;に割り当てられています。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2108"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2152"/>
         <source>at most one supported</source>
         <comment>controller</comment>
         <translation type="unfinished">1個だけサポート</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2109"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2153"/>
         <source>up to %1 supported</source>
         <comment>controllers</comment>
         <translation type="unfinished">%1個までサポート</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2115"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2159"/>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
         <translation type="unfinished">%1チップセットがサポートするより多くのストレージコントローラを指定しています。 システムページでチップセットの種類を変更するか、ストレージページで次のストレージコントローラの数を減らしてください: %2。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2136"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2180"/>
         <source>Add Controller</source>
         <translation>コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2137"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2181"/>
         <source>Add IDE Controller</source>
         <translation>IDE コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2138"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2182"/>
         <source>Add SATA Controller</source>
         <translation>SATA コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2139"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2183"/>
         <source>Add SCSI Controller</source>
         <translation>SCSI コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2140"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2184"/>
         <source>Add SAS Controller</source>
         <translation>SAS コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2141"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2185"/>
         <source>Add Floppy Controller</source>
         <translation>フロッピー コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2142"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2186"/>
         <source>Remove Controller</source>
         <translation>コントローラを除去</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2143"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2187"/>
         <source>Add Attachment</source>
         <translation>割り当ての追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2144"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2188"/>
         <source>Add Hard Disk</source>
         <translation>ハードディスクを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2145"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2189"/>
         <source>Add CD/DVD Device</source>
         <translation>CD/DVD デバイスを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2146"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2190"/>
         <source>Add Floppy Device</source>
         <translation>フロッピー デバイスを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2147"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2191"/>
         <source>Remove Attachment</source>
         <translation>割り当てを除去</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2149"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2193"/>
         <source>Adds a new controller to the end of the Storage Tree.</source>
         <translation>新しいコントローラをストレージ ツリーの最後に追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2150"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2194"/>
         <source>Removes the controller highlighted in the Storage Tree.</source>
         <translation>ハイライト表示されたストレージ ツリーのコントローラを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2151"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2195"/>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
         <translation>現在選択されているコントローラを親として新たな割り当てをストレージ ツリーに追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2153"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2197"/>
         <source>Removes the attachment highlighted in the Storage Tree.</source>
         <translation>ハイライト表示されたストレージ ツリーの割り当てを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2249"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2293"/>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="906"/>
         <source>IDE Controller</source>
         <translation>IDE コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2254"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2298"/>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="914"/>
         <source>SATA Controller</source>
         <translation>SATA コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2259"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2303"/>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="922"/>
         <source>SCSI Controller</source>
         <translation>SCSI コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2264"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2308"/>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="930"/>
         <source>Floppy Controller</source>
         <translation>フロッピー コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2269"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2313"/>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="938"/>
         <source>SAS Controller</source>
         <translation>SAS コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2413"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2463"/>
         <source>Hard &amp;Disk:</source>
         <translation>ハードディスク(&amp;D):</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2415"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2465"/>
         <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
         <translation>仮想ハードディスクファイルを選択または作成します。仮想マシンはファイルのデータを仮想的なハードディスクの内容と見なします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2417"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2467"/>
         <source>Set up the virtual hard disk</source>
         <translation>仮想ハードディスクの設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2420"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2470"/>
         <source>CD/DVD &amp;Drive:</source>
         <translation>CD/DVDドライブ(&amp;D):</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2422"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2472"/>
         <source>Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
         <translation>仮想CD/DVDディスクを選択するか、物理ドライブを仮想ドライブに割り当てます。仮想マシンはファイルのデータまたは物理的なドライブの内容が仮想ドライブに挿入されていると見なします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2425"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2475"/>
         <source>Set up the virtual CD/DVD drive</source>
         <translation>仮想CD/DVDドライブの設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2428"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2478"/>
         <source>Floppy &amp;Drive:</source>
         <translation>フロッピー ドライブ(&amp;D):</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2430"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2480"/>
         <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
         <translation>仮想フロッピーディスクを選択するか、物理ドライブを仮想ドライブに割り当てます。仮想マシンはファイルのデータまたは物理的なドライブの内容が仮想ドライブに挿入されていると見なします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2433"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2483"/>
         <source>Set up the virtual floppy drive</source>
         <translation>仮想フロッピードライブの設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2558"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2610"/>
         <source>Create a new hard disk...</source>
         <translation>新規仮想ハードディスクの作成...</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2563"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2615"/>
         <source>Choose a virtual hard disk file...</source>
         <translation>仮想ハードディスクファイルの選択...</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2571"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2623"/>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1140"/>
         <source>Choose a virtual CD/DVD disk file...</source>
         <translation>仮想CD/DVDディスクファイルの選択...</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2578"/>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2595"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2630"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2647"/>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1141"/>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1147"/>
         <source>Remove disk from virtual drive</source>
         <translation>仮想ドライブからディスクを除去</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2588"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2640"/>
         <location filename="../src/runtime/UIMachineLogic.cpp" line="1146"/>
         <source>Choose a virtual floppy disk file...</source>
         <translation>仮想フロッピーディスクファイルの選択...</translation>
@@ -4615,7 +4615,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="115"/>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="360"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="386"/>
         <source>Information</source>
         <translation>情報</translation>
     </message>
@@ -4626,7 +4626,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="161"/>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="253"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="279"/>
         <source>Attributes</source>
         <translation>属性</translation>
     </message>
@@ -4652,11 +4652,21 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="214"/>
+        <source>&amp;Port Count:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="227"/>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="240"/>
         <source>Allows to use host I/O caching capabilities.</source>
         <translation>ホストのI/O キャッシュ機能を使用します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="217"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="243"/>
         <source>Use host I/O cache</source>
         <translation>ホストのI/O キャッシュを使う</translation>
     </message>
@@ -4665,7 +4675,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">スロット(&amp;L):</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="287"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="313"/>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
         <translation>この割り当てで使用するストレージ コントローラのスロットを選択します。利用できるスロットはコントローラのタイプと、それを利用する他の割り当てに依存します。</translation>
     </message>
@@ -4686,72 +4696,72 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">差分ディスク(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="318"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="344"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
         <translation>仮想マシン内でホストに接続されたCD/DVDライターを使用可能にするため、ATAPIコマンドを直接ホスト デバイスに送信します。 注：仮想マシン内でオーディオCDの書き込みはサポートされていません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="321"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="347"/>
         <source>&amp;Passthrough</source>
         <translation>パススルー(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="334"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="360"/>
         <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="337"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="363"/>
         <source>&amp;Live CD/DVD</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="350"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="376"/>
         <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="353"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="379"/>
         <source>&amp;Solid-state drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="387"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="413"/>
         <source>Type:</source>
         <translation>タイプ:</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="407"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="433"/>
         <source>Virtual Size:</source>
         <translation>仮想的なサイズ:</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="427"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="453"/>
         <source>Actual Size:</source>
         <translation>実際のサイズ:</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="447"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="473"/>
         <source>Size:</source>
         <translation>サイズ:</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="467"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="493"/>
         <source>Details:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="487"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="513"/>
         <source>Location:</source>
         <translation>場所:</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="367"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="393"/>
         <source>Type (Format):</source>
         <translation>タイプ(形式):</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="507"/>
+        <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="533"/>
         <source>Attached To:</source>
         <translation>割り当て:</translation>
     </message>
