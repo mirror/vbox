@@ -641,7 +641,8 @@ HRESULT MachineCloneVM::run()
                     ComObjPtr<Medium> pLMedium = static_cast<Medium*>(pTmp);
                     if (pLMedium.isNull())
                         throw E_POINTER;
-                    if (pLMedium->isReadOnly())
+                    ComObjPtr<Medium> pBase = pLMedium->getBase();
+                    if (pBase->isReadOnly())
                     {
                         ComObjPtr<Medium> pDiff;
                         /* create the diff under the snapshot medium */
@@ -798,7 +799,14 @@ HRESULT MachineCloneVM::run()
             /* Create diffs for the last image chain. */
             if (mtc.fCreateDiffs)
             {
-                if (pNewParent->isReadOnly())
+                const MEDIUMTASK &mt = mtc.chain.first();
+                ComPtr<IMedium> pMedium = mt.pMedium;
+                IMedium *pTmp = pMedium;
+                ComObjPtr<Medium> pLMedium = static_cast<Medium*>(pTmp);
+                if (pLMedium.isNull())
+                    throw E_POINTER;
+                ComObjPtr<Medium> pBase = pLMedium->getBase();
+                if (pBase->isReadOnly())
                 {
                     ComObjPtr<Medium> pDiff;
                     rc = createDiffHelper(pNewParent, strTrgSnapshotFolder,
