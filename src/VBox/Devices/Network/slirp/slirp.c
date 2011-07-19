@@ -966,7 +966,12 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
          * receive more, and we have room for it XXX /2 ?
          */
         /* @todo: vvl - check which predicat here will be more useful here in rerm of new sbufs. */
-        if (CONN_CANFRCV(so) && (SBUF_LEN(&so->so_snd) < (SBUF_SIZE(&so->so_snd)/2)))
+        if (   CONN_CANFRCV(so)
+            && (SBUF_LEN(&so->so_snd) < (SBUF_SIZE(&so->so_snd)/2))
+#ifdef NAT_CONNECT_EXPERIMENT
+            && !(so->so_state & SS_ISFCONNECTING)
+#endif
+        )
         {
             STAM_COUNTER_INC(&pData->StatTCPHot);
             TCP_ENGAGE_EVENT2(so, readfds, xfds);
@@ -1166,9 +1171,9 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 #ifdef NAT_CONNECT_EXPERIMENT
 # ifdef RT_OS_WINDOWS
             /**
-             * In some cases FD_CONNECT comes with FD_OOB, that confuse tcp processing.
+             * In some cases FD_CLOSE comes with FD_OOB, that confuse tcp processing.
              */
-            && !WIN_CHECK_FD_SET(so, NetworkEvents, connectfds)
+            && !WIN_CHECK_FD_SET(so, NetworkEvents, closefds)
 # endif
 #endif
         )
@@ -1182,8 +1187,16 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
         else if (   CHECK_FD_SET(so, NetworkEvents, readfds)
                  || WIN_CHECK_FD_SET(so, NetworkEvents, acceptds))
         {
+
 #ifdef DEBUG_vvl
             Assert(((so->so_state & SS_ISFCONNECTING) == 0));
+#endif
+#ifdef NAT_CONNECT_EXPERIMENT
+            if (WIN_CHECK_FD_SET(so, NetworkEvents, connectfds))
+            {
+                TCP_ENGAGE_EVENT2(so, readfds, acceptds);
+                goto dont_read_now;
+            }
 #endif
             /*
              * Check for incoming connections
@@ -1199,6 +1212,9 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             /* Output it if we read something */
             if (RT_LIKELY(ret > 0))
                 TCP_OUTPUT(pData, sototcpcb(so));
+#ifdef NAT_CONNECT_EXPERIMENT
+dont_read_now:;
+#endif
         }
 
         /*
@@ -1591,6 +1607,8 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
     uint8_t *mbuf = NULL;
     size_t mlen = 0;
     STAM_PROFILE_START(&pData->StatIF_encap, a);
+    LogFlowFunc(("ENTER: pData:%p, eth_proto:%RX16, m:%p, flags:%d\n",
+                pData, eth_proto, m, flags));
 
     M_ASSERTPKTHDR(m);
     m->m_data -= ETH_HLEN;
@@ -1631,12 +1649,14 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
     }
     mbuf = mtod(m, uint8_t *);
     eh->h_proto = RT_H2N_U16(eth_proto);
+    LogFunc(("eh(dst:%RTmac, src:%RTmac)\n", eh->h_dest, eh->h_source));
     if (flags & ETH_ENCAP_URG)
         slirp_urg_output(pData->pvUser, m, mbuf, mlen);
     else
         slirp_output(pData->pvUser, m, mbuf, mlen);
 done:
     STAM_PROFILE_STOP(&pData->StatIF_encap, a);
+    LogFlowFuncLeave();
 }
 
 /**
