@@ -684,6 +684,11 @@ static void supR3HardenedMainGrabCapabilites(void)
         /* for memory allocation failures just continue */
         seteuid(0);
     }
+
+    if (pPrivEffective)
+        priv_freeset(pPrivEffective);
+    if (pPrivNew)
+        priv_freeset(pPrivNew);
 # endif
 }
 
