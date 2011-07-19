@@ -188,6 +188,8 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 
         memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
+        LogFlowFunc(("ip(ip_src:%RTnaipv4, ip_dst:%RTnaipv4)\n",
+                     ip->ip_src, ip->ip_dst));
         if_encap(pData, ETH_P_IP, m, urg? ETH_ENCAP_URG : 0);
         goto done;
      }
