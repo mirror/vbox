@@ -762,7 +762,7 @@
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation>CPU-Auslastungsgrenze</translation>
+        <translation>&amp;CPU-Begrenzung</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
