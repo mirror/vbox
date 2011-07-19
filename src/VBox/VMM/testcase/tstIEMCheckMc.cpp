@@ -277,6 +277,15 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_SUB_GREG_U32(a_iGReg, a_u32Value)        do { CHK_CONST(uint32_t, a_u32Value); } while (0)
 #define IEM_MC_SUB_GREG_U64(a_iGReg, a_u64Value)        do { CHK_CONST(uint64_t, a_u64Value); } while (0)
 
+#define IEM_MC_AND_GREG_U8(a_iGReg, a_u8Value)          do { CHK_CONST(uint8_t,  a_u8Value);  } while (0)
+#define IEM_MC_AND_GREG_U16(a_iGReg, a_u16Value)        do { CHK_CONST(uint16_t, a_u16Value); } while (0)
+#define IEM_MC_AND_GREG_U32(a_iGReg, a_u32Value)        do { CHK_CONST(uint32_t, a_u32Value); } while (0)
+#define IEM_MC_AND_GREG_U64(a_iGReg, a_u64Value)        do { CHK_CONST(uint64_t, a_u64Value); } while (0)
+#define IEM_MC_OR_GREG_U8(a_iGReg,  a_u8Value)          do { CHK_CONST(uint8_t,  a_u8Value);  } while (0)
+#define IEM_MC_OR_GREG_U16(a_iGReg, a_u16Value)         do { CHK_CONST(uint16_t, a_u16Value); } while (0)
+#define IEM_MC_OR_GREG_U32(a_iGReg, a_u32Value)         do { CHK_CONST(uint32_t, a_u32Value); } while (0)
+#define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Value)         do { CHK_CONST(uint64_t, a_u64Value); } while (0)
+
 #ifdef _MSC_VER
 #define IEM_MC_ADD_GREG_U8_TO_LOCAL(a_u16Value, a_iGReg)   do { (a_u8Value)  += 1; /*CHK_CONST(uint8_t,  a_u8Value); */ } while (0)
 #define IEM_MC_ADD_GREG_U16_TO_LOCAL(a_u16Value, a_iGReg)  do { (a_u16Value) += 1; /*CHK_CONST(uint16_t, a_u16Value);*/ } while (0)

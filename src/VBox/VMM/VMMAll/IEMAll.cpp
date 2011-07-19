@@ -4693,6 +4693,26 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_SHL_LOCAL_S32(a_i32Local, a_cShift)      do { (a_i32Local) <<= (a_cShift);  } while (0)
 #define IEM_MC_SHL_LOCAL_S64(a_i64Local, a_cShift)      do { (a_i64Local) <<= (a_cShift);  } while (0)
 
+#define IEM_MC_AND_GREG_U8(a_iGReg, a_u8Value)          *(uint8_t  *)iemGRegRef(pIemCpu, (a_iGReg)) &= (a_u8Value)
+#define IEM_MC_AND_GREG_U16(a_iGReg, a_u16Value)        *(uint16_t *)iemGRegRef(pIemCpu, (a_iGReg)) &= (a_u16Value)
+#define IEM_MC_AND_GREG_U32(a_iGReg, a_u32Value) \
+    do { \
+        uint32_t *pu32Reg = (uint32_t *)iemGRegRef(pIemCpu, (a_iGReg)); \
+        *pu32Reg &= (a_u32Value); \
+        pu32Reg[1] = 0; /* implicitly clear the high bit. */ \
+    } while (0)
+#define IEM_MC_AND_GREG_U64(a_iGReg, a_u64Value)        *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) &= (a_u64Value)
+
+#define IEM_MC_OR_GREG_U8(a_iGReg, a_u8Value)           *(uint8_t  *)iemGRegRef(pIemCpu, (a_iGReg)) |= (a_u8Value)
+#define IEM_MC_OR_GREG_U16(a_iGReg, a_u16Value)         *(uint16_t *)iemGRegRef(pIemCpu, (a_iGReg)) |= (a_u16Value)
+#define IEM_MC_OR_GREG_U32(a_iGReg, a_u32Value) \
+    do { \
+        uint32_t *pu32Reg = (uint32_t *)iemGRegRef(pIemCpu, (a_iGReg)); \
+        *pu32Reg |= (a_u32Value); \
+        pu32Reg[1] = 0; /* implicitly clear the high bit. */ \
+    } while (0)
+#define IEM_MC_OR_GREG_U64(a_iGReg, a_u64Value)         *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) |= (a_u64Value)
+
 
 #define IEM_MC_SET_EFL_BIT(a_fBit)                      do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u |= (a_fBit); } while (0)
 #define IEM_MC_CLEAR_EFL_BIT(a_fBit)                    do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u &= ~(a_fBit); } while (0)

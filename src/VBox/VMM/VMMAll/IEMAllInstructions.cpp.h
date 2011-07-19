@@ -7686,7 +7686,50 @@ FNIEMOP_DEF(iemOp_xchg_eDI_eAX)
 
 
 /** Opcode 0x98. */
-FNIEMOP_STUB(iemOp_cbw);
+FNIEMOP_DEF(iemOp_cbw)
+{
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    switch (pIemCpu->enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            IEMOP_MNEMONIC("cbw");
+            IEM_MC_BEGIN(0, 1);
+            IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 7) {
+                IEM_MC_OR_GREG_U16(X86_GREG_xAX, UINT16_C(0xff00));
+            } IEM_MC_ELSE() {
+                IEM_MC_AND_GREG_U16(X86_GREG_xAX, UINT16_C(0x00ff));
+            } IEM_MC_ENDIF();
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        case IEMMODE_32BIT:
+            IEMOP_MNEMONIC("cwde");
+            IEM_MC_BEGIN(0, 1);
+            IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 15) {
+                IEM_MC_OR_GREG_U32(X86_GREG_xAX, UINT32_C(0xffff0000));
+            } IEM_MC_ELSE() {
+                IEM_MC_AND_GREG_U32(X86_GREG_xAX, UINT32_C(0x0000ffff));
+            } IEM_MC_ENDIF();
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        case IEMMODE_64BIT:
+            IEMOP_MNEMONIC("cdqe");
+            IEM_MC_BEGIN(0, 1);
+            IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 31) {
+                IEM_MC_OR_GREG_U64(X86_GREG_xAX, UINT64_C(0xffffffff00000000));
+            } IEM_MC_ELSE() {
+                IEM_MC_AND_GREG_U64(X86_GREG_xAX, UINT64_C(0x00000000ffffffff));
+            } IEM_MC_ENDIF();
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+}
 
 
 /** Opcode 0x99. */
@@ -7708,7 +7751,7 @@ FNIEMOP_DEF(iemOp_cwd)
             return VINF_SUCCESS;
 
         case IEMMODE_32BIT:
-            IEMOP_MNEMONIC("cwq");
+            IEMOP_MNEMONIC("cdq");
             IEM_MC_BEGIN(0, 1);
             IEM_MC_IF_GREG_BIT_SET(X86_GREG_xAX, 31) {
                 IEM_MC_STORE_GREG_U32_CONST(X86_GREG_xDX, UINT32_C(0xffffffff));
