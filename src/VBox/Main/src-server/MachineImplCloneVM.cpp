@@ -264,6 +264,11 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
     HRESULT rc;
     try
     {
+        /** @todo r=klaus this code cannot deal with someone crazy specifying
+         * IMachine corresponding to a mutable machine as d->pSrcMachine */
+        if (d->pSrcMachine->isSessionMachine())
+            throw E_FAIL;
+
         /* Handle the special case that someone is requesting a _full_ clone
          * with all snapshots (and the current state), but uses a snapshot
          * machine (and not the current one) as source machine. In this case we
@@ -278,6 +283,58 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
             rc = d->pSrcMachine->getVirtualBox()->FindMachine(bstrSrcMachineId.raw(), newSrcMachine.asOutParam());
             if (FAILED(rc)) throw rc;
             d->pSrcMachine = (Machine*)(IMachine*)newSrcMachine;
+        }
+
+        bool fSubtreeIncludesCurrent = false;
+        ComObjPtr<Machine> pCurrState;
+        if (d->mode == CloneMode_MachineAndChildStates)
+        {
+            if (d->pSrcMachine->isSnapshotMachine())
+            {
+                /* find machine object for current snapshot of current state */
+                Bstr bstrSrcMachineId;
+                rc = d->pSrcMachine->COMGETTER(Id)(bstrSrcMachineId.asOutParam());
+                if (FAILED(rc)) throw rc;
+                ComPtr<IMachine> pCurr;
+                rc = d->pSrcMachine->getVirtualBox()->FindMachine(bstrSrcMachineId.raw(), pCurr.asOutParam());
+                if (FAILED(rc)) throw rc;
+                if (pCurr.isNull())
+                    throw E_FAIL;
+                pCurrState = (Machine *)(IMachine *)pCurr;
+                ComPtr<ISnapshot> pSnapshot;
+                rc = pCurrState->COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam());
+                if (FAILED(rc)) throw rc;
+                if (pSnapshot.isNull())
+                    throw E_FAIL;
+                ComPtr<IMachine> pCurrSnapMachine;
+                rc = pSnapshot->COMGETTER(Machine)(pCurrSnapMachine.asOutParam());
+                if (FAILED(rc)) throw rc;
+                if (pCurrSnapMachine.isNull())
+                    throw E_FAIL;
+
+                /* now check if there is a parent chain which leads to the
+                 * snapshot machine defining the subtree. */
+                while (!pSnapshot.isNull())
+                {
+                    ComPtr<IMachine> pSnapMachine;
+                    rc = pSnapshot->COMGETTER(Machine)(pSnapMachine.asOutParam());
+                    if (FAILED(rc)) throw rc;
+                    if (pSnapMachine.isNull())
+                        throw E_FAIL;
+                    if (pSnapMachine == d->pSrcMachine)
+                    {
+                        fSubtreeIncludesCurrent = true;
+                        break;
+                    }
+                    rc = pSnapshot->COMGETTER(Parent)(pSnapshot.asOutParam());
+                }
+            }
+            else
+            {
+                /* If the subtree is only the Current State simply use the
+                 * 'machine' case for cloning. It is easier to understand. */
+                d->mode = CloneMode_MachineState;
+            }
         }
 
         /* Lock the target machine early (so nobody mess around with it in the meantime). */
@@ -304,8 +361,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
             if (cSnapshots > 0)
             {
                 Utf8Str id;
-                if (    d->mode == CloneMode_MachineAndChildStates
-                    && !d->snapshotId.isEmpty())
+                if (d->mode == CloneMode_MachineAndChildStates)
                     id = d->snapshotId.toString();
                 ComPtr<ISnapshot> pSnapshot;
                 rc = d->pSrcMachine->FindSnapshot(Bstr(id).raw(), pSnapshot.asOutParam());
@@ -314,8 +370,20 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                 if (FAILED(rc)) throw rc;
                 if (d->mode == CloneMode_MachineAndChildStates)
                 {
-                    rc = pSnapshot->COMGETTER(Machine)(d->pOldMachineState.asOutParam());
-                    if (FAILED(rc)) throw rc;
+                    if (fSubtreeIncludesCurrent)
+                    {
+                        /* zap d->snapshotId because there is no need to
+                         * create a new current state. */
+                        d->snapshotId.clear();
+                        if (pCurrState.isNull())
+                            throw E_FAIL;
+                        machineList.append(pCurrState);
+                    }
+                    else
+                    {
+                        rc = pSnapshot->COMGETTER(Machine)(d->pOldMachineState.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                    }
                 }
             }
         }
@@ -796,7 +864,16 @@ HRESULT MachineCloneVM::run()
                 }
             }
 
-            /* Create diffs for the last image chain. */
+            Bstr bstrSrcId;
+            rc = mtc.chain.first().pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
+            if (FAILED(rc)) throw rc;
+            Bstr bstrTrgId;
+            rc = pNewParent->COMGETTER(Id)(bstrTrgId.asOutParam());
+            if (FAILED(rc)) throw rc;
+            /* update snapshot configuration */
+            d->updateSnapshotStorageLists(trgMCF.llFirstSnapshot, bstrSrcId, bstrTrgId);
+
+            /* create new 'Current State' diff for caller defined place */
             if (mtc.fCreateDiffs)
             {
                 const MEDIUMTASK &mt = mtc.chain.first();
@@ -821,17 +898,12 @@ HRESULT MachineCloneVM::run()
                      * subject to diff creation. */
                     newMedia.append(pNewParent);
                 }
+
+                rc = pNewParent->COMGETTER(Id)(bstrTrgId.asOutParam());
+                if (FAILED(rc)) throw rc;
             }
-            Bstr bstrSrcId;
-            rc = mtc.chain.first().pMedium->COMGETTER(Id)(bstrSrcId.asOutParam());
-            if (FAILED(rc)) throw rc;
-            Bstr bstrTrgId;
-            rc = pNewParent->COMGETTER(Id)(bstrTrgId.asOutParam());
-            if (FAILED(rc)) throw rc;
-            /* We have to patch the configuration, so it contains the new
-             * medium uuid instead of the old one. */
+            /* update 'Current State' configuration */
             d->updateStorageLists(trgMCF.storageMachine.llStorageControllers, bstrSrcId, bstrTrgId);
-            d->updateSnapshotStorageLists(trgMCF.llFirstSnapshot, bstrSrcId, bstrTrgId);
         }
         /* Make sure all disks know of the new machine uuid. We do this last to
          * be able to change the medium type above. */
