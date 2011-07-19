@@ -7817,9 +7817,42 @@ FNIEMOP_DEF(iemOp_popf_Fv)
 
 
 /** Opcode 0x9e. */
-FNIEMOP_STUB(iemOp_sahf);
+FNIEMOP_DEF(iemOp_sahf)
+{
+    IEMOP_MNEMONIC("sahf");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    IEMOP_HLP_NO_64BIT();
+    IEM_MC_BEGIN(0, 2);
+    IEM_MC_LOCAL(uint32_t, u32Flags);
+    IEM_MC_LOCAL(uint32_t, EFlags);
+    IEM_MC_FETCH_EFLAGS(EFlags);
+    IEM_MC_FETCH_GREG_U8_ZX_U32(u32Flags, X86_GREG_xSP/*=AH*/);
+    IEM_MC_AND_LOCAL_U32(u32Flags, UINT32_C(0xd7));
+    IEM_MC_AND_LOCAL_U32(EFlags, UINT32_C(0xffffff00));
+    IEM_MC_OR_LOCAL_U32(u32Flags, UINT32_C(0x00000002));
+    IEM_MC_OR_2LOCS_U32(EFlags, u32Flags);
+    IEM_MC_COMMIT_EFLAGS(EFlags);
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x9f. */
-FNIEMOP_STUB(iemOp_lahf);
+FNIEMOP_DEF(iemOp_lahf)
+{
+    IEMOP_MNEMONIC("lahf");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    IEMOP_HLP_NO_64BIT();
+    IEM_MC_BEGIN(0, 1);
+    IEM_MC_LOCAL(uint8_t, u8Flags);
+    IEM_MC_FETCH_EFLAGS_U8(u8Flags);
+    IEM_MC_STORE_GREG_U8(X86_GREG_xSP/*=AH*/, u8Flags);
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Macro used by iemOp_mov_Al_Ob, iemOp_mov_rAX_Ov, iemOp_mov_Ob_AL and
