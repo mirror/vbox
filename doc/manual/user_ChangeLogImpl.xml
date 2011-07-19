@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
+    <title>Version 4.1.2 (2011-xx-xx)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>dummy</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
     <title>Version 4.1.0 (2011-07-19)</title>
 
     <para>This version is a major update. The following major new features
@@ -330,6 +345,64 @@
 
   </sect1>
 
+  <sect1>
+    <title>Version 4.0.12 (2011-07-15)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>Mac OS X hosts: Lion fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris hosts: fixed preemption issue with Solaris 11 hosts (builds
+          166 and above)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: more convenient configuration of storage controller
+          attachments by automatically determining the port or device parameter
+          when a storage controller has only one port or device per port (bug #9188)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed possible data corruption under certain circumstances
+          whith VHD and Parallels images (bug #9150)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: fixed access to CD/DVD images beyond 4GB when using the SATA
+          controller (bug #8592)</para>
+      </listitem>
+
+      <listitem>
+        <para>Floppy: make it possible to unmount a host floppy disk (bug #6651)</para>
+      </listitem>
+
+      <listitem>
+        <para>Networking: fixed the problem with segmentation offloading
+          when several VMs were transmitting at once</para>
+      </listitem>
+
+      <listitem>
+        <para>3D support: fixed <emphasis>GL_VERSION</emphasis> string for
+          different locales (bug #8916)</para>
+      </listitem>
+
+      <listitem>
+        <para>Sources: fixed USB 2.0 support using extension packs for non-official
+          builds</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris Additions: fixed automounting of shared folders (bug #8014)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
   <sect1>
     <title>Version 4.0.10 (2011-06-22)</title>
 
