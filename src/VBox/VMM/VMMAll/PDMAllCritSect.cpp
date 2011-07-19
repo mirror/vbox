@@ -507,7 +507,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
     RTNATIVETHREAD const hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
     if (RT_UNLIKELY(pCritSect->s.Core.NativeThreadOwner != hNativeSelf))
     {
-#if 0
+#if 1
         AssertMsgFailed(("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
                          pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
                          pCritSect->s.Core.cLockers, pCritSect->s.Core.cNestings));
