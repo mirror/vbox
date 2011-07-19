@@ -958,13 +958,13 @@ static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev
     PVBOXNETDEVICEOPSOVERRIDE   pOverride;
     RTSPINLOCKTMP               Tmp = RTSPINLOCKTMP_INITIALIZER;
 
+    /* Cancel override if ethtool_ops is missing (host-only case, #5712) */
+    if (!VALID_PTR(pDev->OVR_OPS))
+        return;
     pOverride = RTMemAlloc(sizeof(*pOverride));
     if (!pOverride)
         return;
     pOverride->pOrgOps              = pDev->OVR_OPS;
-    /* Cancel override if ethtool_ops is missing (host-only case, #5712) */
-    if (!VALID_PTR(pDev->OVR_OPS))
-        return;
     pOverride->Ops                  = *pDev->OVR_OPS;
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
     pOverride->pfnStartXmit         = pDev->hard_start_xmit;
