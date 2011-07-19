@@ -9,7 +9,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
+        <para>VBoxManage: fixed <emphasis>extpack install --replace</emphasis></para>
       </listitem>
 
     </itemizedlist>
