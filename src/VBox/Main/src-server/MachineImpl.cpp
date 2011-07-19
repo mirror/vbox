@@ -1455,7 +1455,7 @@ STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled)(BOOL enabled)
             if (   (cCpusAttached != mHWData->mCPUCount)
                 || (iHighestId >= mHWData->mCPUCount))
                 return setError(E_INVALIDARG,
-                                tr("CPU hotplugging can't be disabled because the maximum number of CPUs is not equal to the amount of CPUs attached\n"));
+                                tr("CPU hotplugging can't be disabled because the maximum number of CPUs is not equal to the amount of CPUs attached"));
 
             setModified(IsModified_MachineData);
             mHWData.backup();
@@ -6254,6 +6254,12 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayI
     CheckComArgNotNull(pTarget);
     CheckComArgOutPointerValid(pProgress);
 
+    /** @todo r=klaus disabled as there are apparently still cases which are
+     * not handled correctly */
+    if (mode == CloneMode_MachineAndChildStates)
+        return setError(VBOX_E_NOT_SUPPORTED,
+                        tr("The clone mode \"Machine and child states\" is not yet supported. Please try again in the next VirtualBox maintenance update"));
+
     /* Convert the options. */
     RTCList<CloneOptions_T> optList;
     if (options != NULL)
@@ -6263,10 +6269,10 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayI
     {
         if (!isSnapshotMachine())
             return setError(E_INVALIDARG,
-                            tr("Linked clone can only be created from a snapshot\n"));
+                            tr("Linked clone can only be created from a snapshot"));
         if (mode != CloneMode_MachineState)
             return setError(E_INVALIDARG,
-                            tr("Linked clone can only be created for a single machine state\n"));
+                            tr("Linked clone can only be created for a single machine state"));
     }
     AssertReturn(!(optList.contains(CloneOptions_KeepAllMACs) && optList.contains(CloneOptions_KeepNATMACs)), E_INVALIDARG);
 
