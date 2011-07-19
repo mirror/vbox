@@ -2944,13 +2944,34 @@ IEM_CIMPL_DEF_1(iemCImpl_aad, uint8_t, bImm)
     uint8_t const  al = (uint8_t)ax + (uint8_t)(ax >> 8) * bImm;
     pCtx->ax = al;
     iemHlpUpdateArithEFlagsU8(pIemCpu, al,
-                              X86_EFL_SF | X86_EFL_SF | X86_EFL_PF,
+                              X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF,
                               X86_EFL_OF | X86_EFL_AF | X86_EFL_CF);
 
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Implements 'AAM'.
+ *
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_aam, uint8_t, bImm)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    uint16_t const ax = pCtx->ax;
+    uint8_t const  al = (uint8_t)ax % bImm;
+    uint8_t const  ah = (uint8_t)ax / bImm;
+    pCtx->ax = (ah << 8) + al;
+    iemHlpUpdateArithEFlagsU8(pIemCpu, al,
+                              X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF,
+                              X86_EFL_OF | X86_EFL_AF | X86_EFL_CF);
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
 
 
 
