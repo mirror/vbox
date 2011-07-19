@@ -877,9 +877,7 @@ HRESULT MachineCloneVM::run()
             if (mtc.fCreateDiffs)
             {
                 const MEDIUMTASK &mt = mtc.chain.first();
-                ComPtr<IMedium> pMedium = mt.pMedium;
-                IMedium *pTmp = pMedium;
-                ComObjPtr<Medium> pLMedium = static_cast<Medium*>(pTmp);
+                ComObjPtr<Medium> pLMedium = static_cast<Medium*>((IMedium*)mt.pMedium);
                 if (pLMedium.isNull())
                     throw E_POINTER;
                 ComObjPtr<Medium> pBase = pLMedium->getBase();
