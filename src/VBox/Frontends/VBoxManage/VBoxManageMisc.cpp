@@ -1034,7 +1034,7 @@ int handleExtPack(HandlerArg *a)
         {
             switch (ch)
             {
-                case 'f':
+                case 'r':
                     fReplace = true;
                     break;
 
