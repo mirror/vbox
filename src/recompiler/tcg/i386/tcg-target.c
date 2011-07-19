@@ -463,7 +463,7 @@ static void tcg_out_modrm_sib_offset(TCGContext *s, int opc, int r, int rm,
             /* Try for a rip-relative addressing mode.  This has replaced
                the 32-bit-mode absolute addressing encoding.  */
 #ifdef VBOX
-            tcg_target_long pc = (tcg_target_long)s->code_ptr 
+            tcg_target_long pc = (tcg_target_long)s->code_ptr
                                + tcg_calc_opc_len(s, opc, r, 0, 0) + 1 + 4;
 #else
             tcg_target_long pc = (tcg_target_long)s->code_ptr + 5 + ~rm;
@@ -992,7 +992,7 @@ static void tcg_out_setcond2(TCGContext *s, const TCGArg *args,
 static void tcg_out_branch(TCGContext *s, int call, tcg_target_long dest)
 {
 #ifdef VBOX
-    tcg_target_long disp = dest - (tcg_target_long)s->code_ptr 
+    tcg_target_long disp = dest - (tcg_target_long)s->code_ptr
                          - tcg_calc_opc_len(s, call ? OPC_CALL_Jz : OPC_JMP_long, 0, 0, 0)
                          - 4;
 #else
@@ -1518,7 +1518,10 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
         *label_ptr[1] = s->code_ptr - label_ptr[1] - 1;
     }
 
-#if !defined(VBOX) || !defined(REM_PHYS_ADDR_IN_TLB)
+# if !defined(VBOX) || !defined(REM_PHYS_ADDR_IN_TLB)
+#  if defined(VBOX) && defined(RT_OS_DARWIN) && ARCH_BITS == 32
+#   define VBOX_16_BYTE_STACK_ALIGN
+#  endif
 
     /* XXX: move that code at the end of the TB */
     if (TCG_TARGET_REG_BITS == 64) {
@@ -1530,6 +1533,9 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
         tcg_out_mov(s, TCG_TYPE_I32, TCG_REG_EDX, data_reg);
         if (opc == 3) {
             tcg_out_mov(s, TCG_TYPE_I32, TCG_REG_ECX, data_reg2);
+#  ifdef VBOX_16_BYTE_STACK_ALIGN
+            tcg_out_subi(s, TCG_REG_ESP, 12);
+#  endif
             tcg_out_pushi(s, mem_index);
             stack_adjust = 4;
         } else {
@@ -1539,6 +1545,9 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
     } else {
         if (opc == 3) {
             tcg_out_mov(s, TCG_TYPE_I32, TCG_REG_EDX, args[addrlo_idx + 1]);
+#  ifdef VBOX_16_BYTE_STACK_ALIGN
+            tcg_out_pushi(s, 0);
+#  endif
             tcg_out_pushi(s, mem_index);
             tcg_out_push(s, data_reg2);
             tcg_out_push(s, data_reg);
@@ -1556,6 +1565,9 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
                 tcg_out_mov(s, TCG_TYPE_I32, TCG_REG_ECX, data_reg);
                 break;
             }
+#  ifdef VBOX_16_BYTE_STACK_ALIGN
+            tcg_out_subi(s, TCG_REG_ESP, 12);
+#  endif
             tcg_out_pushi(s, mem_index);
             stack_adjust = 4;
         }
@@ -1563,17 +1575,23 @@ static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args,
 
     tcg_out_calli(s, (tcg_target_long)qemu_st_helpers[s_bits]);
 
+#  ifdef VBOX_16_BYTE_STACK_ALIGN
+    if (stack_adjust != 0) {
+        tcg_out_addi(s, TCG_REG_ESP, RT_ALIGN(stack_adjust, 16));
+    }
+#  else
     if (stack_adjust == (TCG_TARGET_REG_BITS / 8)) {
         /* Pop and discard.  This is 2 bytes smaller than the add.  */
         tcg_out_pop(s, TCG_REG_ECX);
     } else if (stack_adjust != 0) {
         tcg_out_addi(s, TCG_REG_ESP, stack_adjust);
     }
+#  endif
 
-#else  /* VBOX && REM_PHYS_ADDR_IN_TLB */
-# error Borked
+# else  /* VBOX && REM_PHYS_ADDR_IN_TLB */
+#  error Borked
     tcg_out_vbox_phys_write(s, opc, r0, data_reg, data_reg2);
-#endif /* VBOX && REM_PHYS_ADDR_IN_TLB */
+# endif /* VBOX && REM_PHYS_ADDR_IN_TLB */
 
     /* label2: */
     *label_ptr[2] = s->code_ptr - label_ptr[2] - 1;
