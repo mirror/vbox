@@ -973,7 +973,9 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT pDev
     /*
      * We check the two prereqs after doing this only to allow the compiler to optimize things better.
      */
-    if (RT_LIKELY(pSession->pVM && pDevExt->pfnVMMR0EntryFast))
+    if (RT_LIKELY(   RT_VALID_PTR(pSession) 
+                  && pSession->pVM 
+                  && pDevExt->pfnVMMR0EntryFast))
     {
         switch (uIOCtl)
         {
@@ -1045,6 +1047,12 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
     {
         OSDBGPRINT(("vboxdrv: Bad ioctl request header; cbIn=%#lx cbOut=%#lx fFlags=%#lx\n",
                     (long)pReqHdr->cbIn, (long)pReqHdr->cbOut, (long)pReqHdr->fFlags));
+        VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VINF_SUCCESS);
+        return VERR_INVALID_PARAMETER;
+    }
+    if (RT_UNLIKELY(!RT_VALID_PTR(pSession)))
+    {
+        OSDBGPRINT(("vboxdrv: Invalid pSession valud %p (ioctl=%p)\n", pSession, (void *)uIOCtl));
         VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VINF_SUCCESS);
         return VERR_INVALID_PARAMETER;
     }
