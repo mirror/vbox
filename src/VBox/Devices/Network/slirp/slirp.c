@@ -182,6 +182,8 @@
 # define xfds_win_bit     FD_OOB_BIT
 # define closefds_win     FD_CLOSE
 # define closefds_win_bit FD_CLOSE_BIT
+# define connectfds_win     FD_CONNECT
+# define connectfds_win_bit FD_CONNECT_BIT
 
 # define closefds_win FD_CLOSE
 # define closefds_win_bit FD_CLOSE_BIT
@@ -199,6 +201,12 @@
 
 #define TCP_ENGAGE_EVENT2(so, fdset1, fdset2) \
     DO_ENGAGE_EVENT2((so), fdset1, fdset2, tcp)
+
+#ifdef RT_OS_WINDOWS
+# define WIN_TCP_ENGAGE_EVENT2(so, fdset, fdset2) TCP_ENGAGE_EVENT2(so, fdset1, fdset2)
+#else
+# define WIN_TCP_ENGAGE_EVENT2(so, fdset, fdset2) do{}while(0)
+#endif
 
 #define UDP_ENGAGE_EVENT(so, fdset) \
     DO_ENGAGE_EVENT1((so), fdset, udp)
@@ -932,7 +940,15 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         {
             Log2(("connecting %R[natsock] engaged\n",so));
             STAM_COUNTER_INC(&pData->StatTCPHot);
+#ifndef NAT_CONNECT_EXPERIMENT
             TCP_ENGAGE_EVENT1(so, writefds);
+#else
+# ifdef RT_OS_WINDOWS
+            WIN_TCP_ENGAGE_EVENT2(so, writefds, connectfds);
+# else
+            TCP_ENGAGE_EVENT1(so, writefds);
+# endif
+#endif
         }
 
         /*
@@ -1158,6 +1174,9 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
         else if (   CHECK_FD_SET(so, NetworkEvents, readfds)
                  || WIN_CHECK_FD_SET(so, NetworkEvents, acceptds))
         {
+#ifdef DEBUG_vvl
+            Assert(((so->so_state & SS_ISFCONNECTING) == 0));
+#endif
             /*
              * Check for incoming connections
              */
@@ -1209,7 +1228,11 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
         /*
          * Check sockets for writing
          */
-        if (CHECK_FD_SET(so, NetworkEvents, writefds))
+        if (    CHECK_FD_SET(so, NetworkEvents, writefds)
+#if defined(NAT_CONNECT_EXPERIMENT)
+            ||  WIN_CHECK_FD_SET(so, NetworkEvents, connectfds)
+#endif
+            )
         {
             /*
              * Check for non-blocking, still-connecting sockets
