@@ -254,7 +254,7 @@
 
       <listitem>
         <para>VRDP: support for TLS connections (see
-          <xref linkend="vrde-crypt"/></para>)
+          <xref linkend="vrde-crypt"/>)</para>
       </listitem>
 
       <listitem>
