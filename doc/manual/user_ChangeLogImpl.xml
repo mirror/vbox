@@ -242,6 +242,10 @@
       </listitem>
 
       <listitem>
+        <para>VRDP: fixed a rare screen corruption</para>
+      </listitem>
+
+      <listitem>
         <para>3D support: fixed <emphasis>GL_VERSION</emphasis> string for
           different locales (bug #8916)</para>
       </listitem>
