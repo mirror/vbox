@@ -1163,6 +1163,14 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
              */
             &&  !CHECK_FD_SET(so, NetworkEvents, closefds)
 #endif
+#ifdef NAT_CONNECT_EXPERIMENT
+# ifdef RT_OS_WINDOWS
+            /**
+             * In some cases FD_CONNECT comes with FD_OOB, that confuse tcp processing.
+             */
+            && !WIN_CHECK_FD_SET(so, NetworkEvents, connectfds)
+# endif
+#endif
         )
         {
             sorecvoob(pData, so);
