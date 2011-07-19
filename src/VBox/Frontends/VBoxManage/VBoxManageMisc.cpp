@@ -281,8 +281,8 @@ static int parseCloneMode(const char *psz, CloneMode_T *pMode)
 {
     if (!RTStrICmp(psz, "machine"))
         *pMode = CloneMode_MachineState;
-    else if (!RTStrICmp(psz, "machineandchildren"))
-        *pMode = CloneMode_MachineAndChildStates;
+//    else if (!RTStrICmp(psz, "machineandchildren"))
+//        *pMode = CloneMode_MachineAndChildStates;
     else if (!RTStrICmp(psz, "all"))
         *pMode = CloneMode_AllStates;
     else

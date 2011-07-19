@@ -39,7 +39,8 @@ UICloneVMWizard::UICloneVMWizard(QWidget *pParent, CMachine machine, bool fShowC
     /* If the machine has no snapshots, we don't bother the user about options
      * for it. */
     if (machine.GetSnapshotCount() > 0)
-        addPage(new UICloneVMWizardPage2(fShowChildsOption));
+//        addPage(new UICloneVMWizardPage2(fShowChildsOption));
+        addPage(new UICloneVMWizardPage2(false));
 
     /* Translate wizard: */
     retranslateUi();
