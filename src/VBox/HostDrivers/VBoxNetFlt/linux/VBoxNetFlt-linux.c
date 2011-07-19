@@ -962,9 +962,10 @@ static void vboxNetFltLinuxHookDev(PVBOXNETFLTINS pThis, struct net_device *pDev
     if (!pOverride)
         return;
     pOverride->pOrgOps              = pDev->OVR_OPS;
-    /* We only need to save ethtool_ops structure if it is present (#5712) */
-    if (VALID_PTR(pDev->OVR_OPS))
-        pOverride->Ops              = *pDev->OVR_OPS;
+    /* Cancel override if ethtool_ops is missing (host-only case, #5712) */
+    if (!VALID_PTR(pDev->OVR_OPS))
+        return;
+    pOverride->Ops                  = *pDev->OVR_OPS;
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
     pOverride->pfnStartXmit         = pDev->hard_start_xmit;
 # else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29) */
