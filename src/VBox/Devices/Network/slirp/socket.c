@@ -625,7 +625,7 @@ sowrite(PNATState pData, struct socket *so)
     /* Update sbuf */
     sb->sb_cc -= nn;
     sb->sb_rptr += nn;
-    Log2(("%s: update so_rcv (written nn = %d) %R[sbuf]\n", __PRETTY_FUNCTION__, sb, nn));
+    Log2(("%s: update so_rcv (written nn = %d) %R[sbuf]\n", __PRETTY_FUNCTION__, nn, sb));
     if (sb->sb_rptr >= (sb->sb_data + sb->sb_datalen))
     {
         sb->sb_rptr -= sb->sb_datalen;
