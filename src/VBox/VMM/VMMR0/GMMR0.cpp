@@ -805,7 +805,7 @@ GMMR0DECL(void) GMMR0Term(void)
     RTAvlU32Destroy(&pGMM->pChunks, gmmR0TermDestroyChunk, pGMM);
 
     /* Destroy the chunk locks. */
-    for (unsigned iMtx = 0; iMtx++ < RT_ELEMENTS(pGMM->aChunkMtx); iMtx++)
+    for (unsigned iMtx = 0; iMtx < RT_ELEMENTS(pGMM->aChunkMtx); iMtx++)
     {
         Assert(pGMM->aChunkMtx[iMtx].cUsers == 0);
         RTSemFastMutexDestroy(pGMM->aChunkMtx[iMtx].hMtx);
