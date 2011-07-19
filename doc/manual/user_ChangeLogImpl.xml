@@ -109,6 +109,12 @@
       </listitem>
 
       <listitem>
+        <para>GUI: added slider for setting the CPU execution cap allowing to
+          limit the amount of CPU time spent for the execution of the guest,
+          see <xref linkend="settings-processor"/>.</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: the VM description is editable during the runtime of
           a VM (bug #1551)</para>
       </listitem>

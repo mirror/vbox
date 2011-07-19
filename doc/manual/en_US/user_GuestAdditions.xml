@@ -229,11 +229,13 @@
         guest.</para>
 
         <note>
-          <para>For the basic Direct 3D acceleration to work in a Windows Guest, you
-          must install the Guest Additions in "Safe Mode".
-          This does NOT apply to experimental WDDM Direct 3D video driver available for 
-          Vista and Windows 7 guests. see <xref
-          linkend="KnownIssues" /> for details.</para>
+          <para>For the basic Direct3D acceleration to work in a Windows Guest, you
+          have to install the Guest Additions in "Safe Mode".
+          This does <emphasis role="bold">not</emphasis> apply to the experimental
+          WDDM Direct3D video driver available
+          for Vista and Windows 7 guests, see <xref linkend="KnownIssues" /> for
+          details.<footnote><para>The experimental WDDM driver was added with
+          VirtualBox 4.1.</para></footnote></para>
         </note>
 
         <para>If you prefer to mount the additions manually, you can perform
@@ -1163,17 +1165,17 @@ $</screen>
 
           <listitem>
             <para>The Guest Additions must be installed.<note>
-                <para>For the basic Direct 3D acceleration to work in a Windows Guest,
+                <para>For the basic Direct3D acceleration to work in a Windows Guest,
                 VirtualBox needs to replace Windows system files in the
                 virtual machine. As a result, the Guest Additions installation
-                program offers Direct 3D acceleration as an option that must
+                program offers Direct3D acceleration as an option that must
                 be explicitly enabled. Also, you must install the Guest
-                Additions in "Safe Mode".
-                <note><para>This does NOT apply to experimental WDDM Direct 3D video driver 
-                available for Vista and Windows 7 guests.</para></note> 
-                See <xref linkend="KnownIssues" />
-                for details.</para>
-              </note></para>
+                Additions in "Safe Mode". This does <emphasis role="bold">not</emphasis>
+                apply to the experimental WDDM Direct3D video
+                driver available for Vista and Windows 7 guests,
+                see <xref linkend="KnownIssues" />
+                for details.</para></note>
+              </para>
           </listitem>
 
           <listitem>
@@ -1190,18 +1192,19 @@ $</screen>
           </listitem>
         </orderedlist></para>
 
-      <para>With VirtualBox 4.1 Windows Aero theme support is added for
+      <para>With VirtualBox 4.1, Windows Aero theme support is added for
       Windows Vista and Windows 7 guests. To enable Aero theme support, 
       the experimental VirtualBox WDDM video driver must be installed, 
       which is available with the Guest Additions installation.
-      Since WDDM video driver is still experimental at this time, it is
+      Since the WDDM video driver is still experimental at this time, it is
       not installed by default and must be <emphasis role="bold">manually
       selected</emphasis> in the Guest Additions installer by answering "No"
       int the "Would you like to install basic Direct3D support" dialog 
-      displayed when the Direct 3D feature is selected.
-      <note><para>Unlike current basic Direct 3D support, WDDM video driver
-      installation does NOT require "Safe Mode"</para></note>
-      <note><para>Aero theme is not enabled by default, to enable it<itemizedlist>
+      displayed when the Direct3D feature is selected.
+      <note><para>Unlike the current basic Direct3D support, the WDDM video
+      driver installation does <emphasis role="bold">not</emphasis> require
+      the "Safe Mode".</para></note>
+      <para>The Aero theme is not enabled by default. To enable it<itemizedlist>
           <listitem>
             <para>In Windows Vista guest: right-click on the desktop, in the 
             contect menu select "Personalize", then select "Windows Color and Appearance"
@@ -1212,7 +1215,7 @@ $</screen>
             contect menu select "Personalize" and select any Aero theme
             in the "Personalization" window</para></listitem>
           </itemizedlist>
-        </para></note>
+        </para>
       </para>
 
       <para>Technically, VirtualBox implements this by installing an

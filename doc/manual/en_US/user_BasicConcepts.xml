@@ -614,6 +614,13 @@
       <para>You should not, however, configure virtual machines to use more
       CPU cores than you have available physically.</para>
 
+      <para>On this tab you can also set the CPU execution cap. This setting
+      limits the amount of time a host CPU spents to emulate a virtual CPU.
+      The default setting is 100% meaning that there is no limitation. A setting
+      of 50% implies a single virtual CPU can use up to 50% of a single host
+      CPU. Notet that limiting the execution time of the virtual CPUs may induce
+      guest timing problems.</para>
+
       <para>In addition, the <emphasis role="bold">"Enable PAE/NX"</emphasis>
       setting determines whether the PAE and NX capabilities of the host CPU
       will be exposed to the virtual machine. PAE stands for "Physical Address
