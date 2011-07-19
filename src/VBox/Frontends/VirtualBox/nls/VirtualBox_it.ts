@@ -4115,11 +4115,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Port Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>Numero &amp;porte:</translation>
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona il numero delle porte del controller di archiviazione SATA selezionato nell&apos;albero di archiviazione. Questo valore non può essere minore del numero di porte utilizzato + 1.</translation>
     </message>
 </context>
 <context>

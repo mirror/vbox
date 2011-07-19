@@ -3997,11 +3997,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Port Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Port érték:</translation>
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Válaszd ki a Tárolófán jelenleg kiválasztott SATA tárolási vezérlőjének Port értékét. Ez az érték nem lehet kisebb, mint a maximálisan használt portok száma + 1.</translation>
     </message>
 </context>
 <context>
