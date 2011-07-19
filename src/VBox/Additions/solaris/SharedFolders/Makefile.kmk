@@ -46,7 +46,7 @@ vboxfs_SOURCES       = \
 	vboxfs_prov.c
 vboxfs_LIBS          = \
 	$(VBOX_LIB_VBGL_R0)
-vboxfs_LDFLAGS      += -N drv/vboxguest
+vboxfs_LDFLAGS      += -N drv/vboxguest -N misc/ctf
 
 
 ifndef VBOX_OSE
@@ -67,7 +67,7 @@ vboxfs_s10_SOURCES       = \
 vboxfs_s10_LIBS          = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
-vboxfs_s10_LDFLAGS      += -N drv/vboxguest
+vboxfs_s10_LDFLAGS      += -N drv/vboxguest -N misc/ctf
 endif # VBOX_OSE
 
 
