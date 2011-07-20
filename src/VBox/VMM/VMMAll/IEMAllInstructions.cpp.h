@@ -7780,7 +7780,24 @@ FNIEMOP_DEF(iemOp_cwd)
 
 
 /** Opcode 0x9a. */
-FNIEMOP_STUB(iemOp_call_Ap);
+FNIEMOP_DEF(iemOp_call_Ap)
+{
+    IEMOP_MNEMONIC("call Ap");
+    IEMOP_HLP_NO_64BIT();
+
+    /* Decode the far pointer address and pass it on to the far call C implementation. */
+    uint32_t offSeg;
+    if (pIemCpu->enmEffOpSize != IEMMODE_16BIT)
+        IEM_OPCODE_GET_NEXT_U32(&offSeg);
+    else
+    {
+        uint16_t offSeg16; IEM_OPCODE_GET_NEXT_U16(&offSeg16);
+        offSeg = offSeg16;
+    }
+    uint16_t uSel;  IEM_OPCODE_GET_NEXT_U16(&uSel);
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_callf, uSel, offSeg, pIemCpu->enmEffOpSize);
+}
 
 
 /** Opcode 0x9b. (aka fwait) */
