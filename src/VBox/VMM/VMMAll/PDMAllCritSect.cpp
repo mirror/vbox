@@ -505,19 +505,10 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
      * Always check that the caller is the owner (screw performance).
      */
     RTNATIVETHREAD const hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
-    if (RT_UNLIKELY(pCritSect->s.Core.NativeThreadOwner != hNativeSelf))
-    {
-#if 1
-        AssertMsgFailed(("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
-                         pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
-                         pCritSect->s.Core.cLockers, pCritSect->s.Core.cNestings));
-#else
-        AssertReleaseMsgFailed(("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
+    AssertReleaseMsgReturnVoid(pCritSect->s.Core.NativeThreadOwner == hNativeSelf,
+                               ("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
                                 pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
                                 pCritSect->s.Core.cLockers, pCritSect->s.Core.cNestings));
-#endif
-        return;
-    }
     Assert(pCritSect->s.Core.cNestings >= 1);
 
     /*
