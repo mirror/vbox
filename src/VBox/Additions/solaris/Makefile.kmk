@@ -93,7 +93,7 @@ endif
 
 INSTALLS          += solaris-addcommon solaris-addcommonbins
 PROGRAMS          += VBoxAddISAExec
-PACKING           += $(PATH_BIN)/additions/$(PKGFILENAME)
+PACKING           += $(PATH_STAGE_BIN)/additions/$(PKGFILENAME)
 OTHER_CLEAN       += $(PACKING) $(SOLARIS_ADDINST_OUT_DIR)/$(PKGFILENAME)
 
 #
@@ -106,7 +106,7 @@ VBoxAddISAExec_DEPS     = $(VBOX_SVN_REV_KMK)
 VBoxAddISAExec_SOURCES  = $(PATH_ROOT)/src/VBox/Installer/solaris/VBoxISAExec.c
 
 #
-# Install to $(PATH_BIN)/additions/ files from various source paths (to pack them using rules)
+# Install to $(PATH_STAGE_BIN)/additions/ files from various source paths (to pack them using rules)
 #
 solaris-addcommonbins_INST = bin/additions/
 solaris-addcommonbins_MODE = a+rx,u+w
@@ -262,7 +262,7 @@ include $(KBUILD_PATH)/subfooter.kmk
 # -=-=-=-=-=-=-=- Additions package -=-=-=-=-=-=-=-
 #
 
-$(PATH_BIN)/additions/$(PKGFILENAME): \
+$(PATH_STAGE_BIN)/additions/$(PKGFILENAME): \
 		$(VBOX_VERSION_STAMP) \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/makepackage.sh \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/postinstall.sh \
@@ -315,7 +315,7 @@ else # !VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(LN_SYMLINK) -f ../../..$(SOLARIS_VBOXADDINST_SUBDIR)/$(SOLARIS_ADDDIR_NAME_ISA)/vboxfsmount         $(SOLARIS_ADD_ETCFS_DIR)/mount
 endif
 	$(QUIET)$(SOLARIS_ADDINST_OUT_DIR)/makepackage.sh $(SOLARIS_ADDINST_OUT_DIR) $(PKGFILENAME) $(VBOX_SVN_REV)
-	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADDINST_OUT_DIR)/$(PKGFILENAME) $(PATH_BIN)/additions/$(PKGFILENAME)
+	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADDINST_OUT_DIR)/$(PKGFILENAME) $(PATH_STAGE_BIN)/additions/$(PKGFILENAME)
 	$(QUIET)$(RM) -f $(SOLARIS_ADDINST_OUT_DIR)/$(PKGFILENAME)
 
 

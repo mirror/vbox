@@ -199,7 +199,7 @@ VBoxDrv_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxDrv_LIBS          = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
-	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 
 
 INSTALLS += VBoxDrv-inf
@@ -244,7 +244,7 @@ endif
 vboxdrv_INCS         := \
 	$(PATH_SUB_CURRENT) \
 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
-vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+vboxdrv_LIBS          = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_LIBS.debug    = $(vboxdrv_LIBS) $(VBOX_GCC_LIBGCC)
 vboxdrv_SOURCES       = \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
@@ -319,7 +319,7 @@ VBoxDrv_INST        = $(INST_VBOXDRV)Contents/MacOS/
 VBoxDrv_DEFS       := VBOX_WITH_HOST_VMX IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxDrv_DEFS.debug  = DEBUG_DARWIN_GIP
 VBoxDrv_INCS        = . $(VBoxDrv_0_OUTDIR)
-VBoxDrv_LIBS        = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+VBoxDrv_LIBS        = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 #VBoxDrv_LDFLAGS     = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxDrv_SOURCES     = \
 	SUPDrv.c \
@@ -378,7 +378,7 @@ VBoxDrv_SOURCES       = \
 	os2/SUPDrv-os2.def
 VBoxDrv_LIBS          = \
 	$(VBoxDrvLib_1_TARGET) \
-	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
 	$(VBOX_GCC_LIBGCC) \
 	end
 
@@ -404,7 +404,7 @@ ifeq ($(KBUILD_TARGET),freebsd)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
-vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+vboxdrv_LIBS          = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES      := \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
 	$(PATH_SUB_CURRENT)/$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).def \
@@ -450,7 +450,7 @@ ifdef VBOX_WITH_NATIVE_SOLARIS_LOADING
 endif
 vboxdrv_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
-vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+vboxdrv_LIBS          = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES       = \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
 	SUPDrv.c \

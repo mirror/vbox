@@ -64,13 +64,13 @@ VBoxSharedCrOpenGL_SOURCES = \
 	crserver/crservice.cpp
 VBoxSharedCrOpenGL_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSharedCrOpenGL.dylib
 VBoxSharedCrOpenGL_LIBS = \
-	$(PATH_LIB)/VBoxOGLcrserverlib$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxOGLhostcrstate$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxOGLcrunpacker$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxOGLhostcrpacker$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLcrserverlib$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLhostcrstate$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLcrunpacker$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLhostcrpacker$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	$(VBOX_LIB_OGL_HOSTCRUTIL) \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME) \
 	$(LIB_VMM)
 VBoxSharedCrOpenGL_LIBS.darwin = \
@@ -81,7 +81,7 @@ ifeq ($(KBUILD_TARGET),win)
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls$(VBOX_SUFF_LIB)
 else
  VBoxSharedCrOpenGL_LIBS += \
-	$(PATH_BIN)/VBoxOGLrenderspu$(VBOX_SUFF_DLL)
+	$(PATH_STAGE_BIN)/VBoxOGLrenderspu$(VBOX_SUFF_DLL)
 endif
 ifdef VBOX_WITH_XPCOM
  VBoxSharedCrOpenGL_LIBS += \
@@ -258,7 +258,7 @@ else
 endif
 VBoxOGLrenderspu_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLrenderspu.dylib
 VBoxOGLrenderspu_LIBS = \
-	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	$(VBOX_LIB_OGL_HOSTCRUTIL) \
 	$(LIB_RUNTIME)
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # the X11 gang

@@ -128,7 +128,7 @@ if "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.amd64"
         Sun/crt
  VBoxRemPrimary_SYSSUFF    = .rel
  VBoxRemPrimary_LIBS       = \
- 	$(PATH_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/RuntimeR3NoCRTGCC$(VBOX_SUFF_LIB)
  VBoxRemPrimary_POST_CMDS  = $(NO_SUCH_VARIABLE)
  VBOX_REM_WRAPPER          = 2
 

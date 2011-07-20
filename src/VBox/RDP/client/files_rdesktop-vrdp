@@ -121,7 +121,6 @@ rdesktop-nonbin_SOURCES = \
 	$(PATH_ROOT)/src/VBox/RDP/client/keymaps/fr-ca=>keymaps/fr-ca \
 	$(PATH_ROOT)/src/VBox/RDP/client/keymaps/en-us=>keymaps/en-us \
 	$(PATH_ROOT)/src/VBox/RDP/client/keymaps/et=>keymaps/et \
-	$(PATH_ROOT)/src/VBox/RDP/client/keymaps/convert-map=>keymaps/convert-map \
 	$(PATH_ROOT)/src/VBox/RDP/client/keymaps/en-dv=>keymaps/en-dv \
 	$(PATH_ROOT)/src/VBox/RDP/client/keymaps/mk=>keymaps/mk \
 	$(PATH_ROOT)/src/VBox/RDP/client/keymaps/nl-be=>keymaps/nl-be \

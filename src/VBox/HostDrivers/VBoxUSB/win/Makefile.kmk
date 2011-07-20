@@ -51,7 +51,7 @@ VBoxUSB_SOURCES     = \
 VBoxUSB_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
-	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
 	$(usbd_1_TARGET)
 
 #
@@ -83,7 +83,7 @@ VBoxUSBMon_SOURCES     = \
 VBoxUSBMon_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
-	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
 	$(usbd_1_TARGET)
 
 #
@@ -99,7 +99,7 @@ USBInstall_SOURCES  = \
 USBInstall_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
-	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB) \
 	$(VBoxDrvCfg_1_TARGET)
 
 
@@ -116,7 +116,7 @@ USBUninstall_SOURCES  = \
 USBUninstall_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
-	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB) \
     $(VBoxDrvCfg_1_TARGET)
 
 #
@@ -132,7 +132,7 @@ USBTest_SOURCES  = \
 USBTest_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/newdev.lib \
 	$(LIB_RUNTIME) \
-	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB) \
 	$(VBoxDrvCfg_1_TARGET)
 
 #

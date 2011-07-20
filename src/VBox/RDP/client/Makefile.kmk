@@ -129,30 +129,36 @@ rdesktop-vrdp-keymaps_SOURCES = $(wildcard $(VBOX_PATH_RDESKTOP_SRC)/keymaps/*)
 #
 # The source tarball (further down).
 #
-## @todo change this to an INSTALLS target.
-OTHERS += $(PATH_BIN)/rdesktop-vrdp.tar.gz
-OTHER_CLEAN += $(OTHERS)
-
 INSTALLS += rdesktop-bin
-rdesktop-bin_INST    = obj/rdesktop-src/$(VBOX_RDESKTOP_SRC_SUBDIR)/
-rdesktop-bin_MODE    = a+rx,u+w
-rdesktop-bin_SOURCES = \
+rdesktop-bin_INSTTYPE = stage
+rdesktop-bin_INST     = misc-staging/$(VBOX_RDESKTOP_SRC_SUBDIR)/
+rdesktop-bin_MODE     = a+rx,u+w
+rdesktop-bin_SOURCES  = \
 	configure \
 	config.sub \
 	config.guess \
 	bootstrap \
-	install-sh
+	install-sh \
+	keymaps/convert-map=>keymaps/convert-map
 
 INSTALLS += rdesktop-nonbin
-rdesktop-nonbin_INST    = obj/rdesktop-src/$(VBOX_RDESKTOP_SRC_SUBDIR)/
-rdesktop-nonbin_MODE    = a+r,u+w
+rdesktop-nonbin_INSTTYPE = stage
+rdesktop-nonbin_INST     = $(rdesktop-bin_INST)
+rdesktop-nonbin_MODE     = a+r,u+w
+## @todo move the content of files_rdesktop-vrdp here. There is no call for a separate file in this case.
 include $(PATH_SUB_CURRENT)/files_rdesktop-vrdp
 
-$(PATH_BIN)/rdesktop-vrdp.tar.gz: \
+INSTALLS += rdesktop-tarball
+rdesktop-tarball_INST    = $(INST_BIN)
+rdesktop-tarball_MODE    = a+r,u+w
+rdesktop-tarball_SOURCES = $(rdesktop-tarball_0_OUTDIR)/rdesktop-vrdp.tar.gz
+rdesktop-tarball_CLEAN   = $(rdesktop-tarball_0_OUTDIR)/rdesktop-vrdp.tar.gz
+$$(rdesktop-tarball_0_OUTDIR)/rdesktop-vrdp.tar.gz: \
 		$$(rdesktop-bin_1_TARGET) \
-		$$(rdesktop-nonbin_1_TARGET)
+		$$(rdesktop-nonbin_1_TARGET) \
+		| $$(dir $$@)
 	$(call MSG_TOOL,tar/gzip,,$@)
-	$(QUIET)cd $(PATH_INS)/obj/rdesktop-src/ && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR)/ | gzip - > $@
+	$(QUIET)cd $(PATH_STAGE)/$(rdesktop-bin_INST).. && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR)/ | gzip - > $@
 
 
 include $(KBUILD_PATH)/subfooter.kmk

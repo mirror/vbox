@@ -72,8 +72,8 @@ VBoxPythonBase_SOURCES  = \
 	src/TypeObject.cpp \
 	src/VariantUtils.cpp
 VBoxPythonBase_LIBS     = \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 
 
 if defined(VBOX_PYTHON23_INC) \

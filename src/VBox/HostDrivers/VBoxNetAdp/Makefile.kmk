@@ -56,7 +56,7 @@ VBoxNetAdp_SOURCES          =
 #VBoxNetAdp_SOURCES          = \
 #	VBoxNetAdp.c
 VBoxNetAdp_LIBS            += \
-	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
  endif
 endif
 

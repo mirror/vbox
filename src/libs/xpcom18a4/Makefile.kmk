@@ -1311,7 +1311,7 @@ VBoxXPCOMBase-xpt-inst_CLEAN = \
 # combined typelib library
 $(PATH_TARGET)/VBox-xpcom-xpt-files/VBoxXPCOMBase.xpt: $$(VBOX_XPTFILES) | $$(xpt_link_1_TARGET) $(PATH_TARGET)/VBox-xpcom-xpt-files/
 	$(call MSG_LINK,XPCOM_TYPELIB,$@)
-	$(QUIET)$(MKDIR) -p -- $(PATH_BIN)/components
+	$(QUIET)$(MKDIR) -p -- $(PATH_STAGE_BIN)/components
 	$(QUIET)$(xpt_link_1_TARGET) $@ $^
 
 
@@ -1355,7 +1355,7 @@ $(PATH_TARGET)/VBox-xpcom-idl-timestamp: $$(addprefix $$(VBOX_PATH_SDK)/bindings
 # i.e. the copy residing in obj/, while VBOX_XPIDL is pointing to
 # INSTARGET_xpidl which is the one in bin/.
 #
-$(VBOX_XPIDL): $(PATH_TARGET)/VBox-xpcom-idl-timestamp
+$(VBOX_XPIDL): | $(PATH_TARGET)/VBox-xpcom-idl-timestamp
 
 
 #

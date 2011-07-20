@@ -21,7 +21,7 @@ VBoxPci_SOURCES.linux   = \
 	VBoxPci.c
 VBoxPci_SOURCES          =
 VBoxPci_LIBS            += \
-	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 
 endif
 

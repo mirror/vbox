@@ -63,52 +63,52 @@ RegCleanup_SOURCES  = \
 #
 # The installer.
 #
-PACKING     += $(PATH_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe
+PACKING     += $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe
 OTHER_CLEAN += \
-	$(PATH_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe \
-	$(PATH_BIN)/additions/VBoxWHQLFake.exe
+	$(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe \
+	$(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe
 
 DRIVER_FILES := \
-	$(PATH_BIN)/additions/VBoxGuestDrvInst.exe \
-	$(PATH_BIN)/additions/RegCleanup.exe \
-	$(PATH_BIN)/additions/VBoxMouse.sys \
-	$(PATH_BIN)/additions/VBoxGuest.sys \
-	$(PATH_BIN)/additions/VBoxVideo.sys \
-	$(PATH_BIN)/additions/VBoxDisp.dll \
-	$(PATH_BIN)/additions/VBoxSF.sys \
-	$(PATH_BIN)/additions/VBoxMRXNP.dll \
-	$(PATH_BIN)/additions/VBoxTray.exe \
-	$(PATH_BIN)/additions/VBoxControl.exe \
-	$(PATH_BIN)/additions/VBoxWHQLFake.exe \
-	$(PATH_BIN)/additions/VBoxService.exe
+	$(PATH_STAGE_BIN)/additions/VBoxGuestDrvInst.exe \
+	$(PATH_STAGE_BIN)/additions/RegCleanup.exe \
+	$(PATH_STAGE_BIN)/additions/VBoxMouse.sys \
+	$(PATH_STAGE_BIN)/additions/VBoxGuest.sys \
+	$(PATH_STAGE_BIN)/additions/VBoxVideo.sys \
+	$(PATH_STAGE_BIN)/additions/VBoxDisp.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxSF.sys \
+	$(PATH_STAGE_BIN)/additions/VBoxMRXNP.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxTray.exe \
+	$(PATH_STAGE_BIN)/additions/VBoxControl.exe \
+	$(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe \
+	$(PATH_STAGE_BIN)/additions/VBoxService.exe
 ifeq ($(KBUILD_TARGET_ARCH),x86)
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/VBoxMouseNT.sys \
-	$(PATH_BIN)/additions/VBoxGuestNT.sys
+	$(PATH_STAGE_BIN)/additions/VBoxMouseNT.sys \
+	$(PATH_STAGE_BIN)/additions/VBoxGuestNT.sys
 endif
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/VBoxVideo.inf \
-	$(PATH_BIN)/additions/VBoxGuest.inf
+	$(PATH_STAGE_BIN)/additions/VBoxVideo.inf \
+	$(PATH_STAGE_BIN)/additions/VBoxGuest.inf
 ifdef VBOX_SIGN_ADDITIONS
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/VBoxVideo.cat \
-	$(PATH_BIN)/additions/VBoxGuest.cat
+	$(PATH_STAGE_BIN)/additions/VBoxVideo.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxGuest.cat
 endif
 ifdef VBOX_WITH_CROGL
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/VBoxOGLarrayspu.dll \
-	$(PATH_BIN)/additions/VBoxOGLcrutil.dll \
-	$(PATH_BIN)/additions/VBoxOGLerrorspu.dll \
-	$(PATH_BIN)/additions/VBoxOGLpackspu.dll \
-	$(PATH_BIN)/additions/VBoxOGLpassthroughspu.dll \
-	$(PATH_BIN)/additions/VBoxOGLfeedbackspu.dll \
-	$(PATH_BIN)/additions/VBoxOGL.dll \
-	$(PATH_BIN)/additions/wined3d.dll \
-	$(PATH_BIN)/additions/VBoxD3D9.dll \
-	$(PATH_BIN)/additions/VBoxD3D8.dll
+	$(PATH_STAGE_BIN)/additions/VBoxOGLarrayspu.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLcrutil.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLerrorspu.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLpackspu.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLpassthroughspu.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLfeedbackspu.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGL.dll \
+	$(PATH_STAGE_BIN)/additions/wined3d.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxD3D9.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxD3D8.dll
  ifeq ($(KBUILD_TARGET_ARCH),x86)
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/libWine.dll
+	$(PATH_STAGE_BIN)/additions/libWine.dll
  endif
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
 	# Also include 32-bit DLLs on 64-bit guests to enable
@@ -130,32 +130,32 @@ DRIVER_FILES += \
 endif
 ifdef VBOX_WITH_WDDM
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/VBoxVideoWddm.sys \
-	$(PATH_BIN)/additions/VBoxVideoWddm.inf \
-	$(PATH_BIN)/additions/VBoxDispD3D.dll
+	$(PATH_STAGE_BIN)/additions/VBoxVideoWddm.sys \
+	$(PATH_STAGE_BIN)/additions/VBoxVideoWddm.inf \
+	$(PATH_STAGE_BIN)/additions/VBoxDispD3D.dll
  ifdef VBOX_WITH_CROGL
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/wined3dwddm.dll \
-	$(PATH_BIN)/additions/VBoxD3D9wddm.dll
+	$(PATH_STAGE_BIN)/additions/wined3dwddm.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxD3D9wddm.dll
  endif
  ifdef VBOX_SIGN_ADDITIONS
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/VBoxVideoWddm.cat
+	$(PATH_STAGE_BIN)/additions/VBoxVideoWddm.cat
  endif
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/VBoxDispD3D-x86.dll
+	$(PATH_STAGE_BIN)/additions/VBoxDispD3D-x86.dll
   ifdef VBOX_WITH_CROGL
 DRIVER_FILES += \
-	$(PATH_BIN)/additions/wined3dwddm-x86.dll \
-	$(PATH_BIN)/additions/VBoxD3D9wddm-x86.dll \
-	$(PATH_BIN)/additions/VBoxOGL-x86.dll \
-	$(PATH_BIN)/additions/VBoxOGLarrayspu-x86.dll \
-	$(PATH_BIN)/additions/VBoxOGLcrutil-x86.dll \
-	$(PATH_BIN)/additions/VBoxOGLerrorspu-x86.dll \
-	$(PATH_BIN)/additions/VBoxOGLfeedbackspu-x86.dll \
-	$(PATH_BIN)/additions/VBoxOGLpackspu-x86.dll \
-	$(PATH_BIN)/additions/VBoxOGLpassthroughspu-x86.dll
+	$(PATH_STAGE_BIN)/additions/wined3dwddm-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxD3D9wddm-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGL-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLarrayspu-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLcrutil-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLerrorspu-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLfeedbackspu-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLpackspu-x86.dll \
+	$(PATH_STAGE_BIN)/additions/VBoxOGLpassthroughspu-x86.dll
   endif
  endif
 endif
@@ -223,16 +223,16 @@ endif
 
 WHQLFAKE := $(PATH_SUB_CURRENT)/VBoxWHQLFake.au3
 
-$(PATH_BIN)/additions/VBoxWHQLFake.exe:
+$(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe:
 	$(call MSG_L1,Creating $@, from $<)
 	$(QUIET)$(EXEC_X86_WIN32) $(VBOX_PATH_AUTOIT3)/Aut2Exe/Aut2exe.exe \
 		/in $(WHQLFAKE) \
-		/out $(PATH_BIN)/additions/VBoxWHQLFake.exe \
+		/out $(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe \
 		/icon $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \
 		/comp 4 \
 		/unicode
 
-$(PATH_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
+$(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditions.nsi \
 		$(DRIVER_FILES) \
 		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \

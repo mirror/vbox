@@ -1261,24 +1261,24 @@ VBoxRT_INCS                    = $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)   = $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_LIBS                    = \
-	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
 	$(SDK_VBOX_ZLIB_LIBS)
 if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 VBoxRT_LIBS                   += \
-	$(PATH_LIB)/SUPR3$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB)
 endif
 ifdef IPRT_WITH_KSTUFF
  VBoxRT_LIBS                  += \
-   	$(PATH_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
+   	$(PATH_STAGE_LIB)/VBox-kStuff$(VBOX_SUFF_LIB)
 endif
 ifndef SDK_VBOX_LIBXML2_LIBS
  VBoxRT_LIBS                 += \
-	$(PATH_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VBox-libxml2$(VBOX_SUFF_LIB)
 endif
 ifndef SDK_VBOX_OPENSSL_LIBS
  VBoxRT_LIBS                 += \
-	$(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
 endif
 ifdef IPRT_WITH_LZO
  VBoxRT_LIBS                  += lzo2
@@ -1306,7 +1306,7 @@ VBoxRT_LDFLAGS.win             = /MANIFEST
 endif
 VBoxRT_LDFLAGS.l4              = \
 	-Wl,-whole-archive \
-	$(PATH_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB) \
 	-Wl,-no-whole-archive
 ifeq ($(KBUILD_TARGET),l4)
 VBoxRT_LIBS                   += \
@@ -1314,7 +1314,7 @@ VBoxRT_LIBS                   += \
 	$(L4_LIBDIR)/libl4sys.p.a
 endif
 VBoxRT_LIBS.l4                 = \
-	$(PATH_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB)
 
 if1of ($(DLLS), VBoxRT)
 $$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
@@ -1338,11 +1338,11 @@ VBoxRT_NOINST = true
 DLLS += VBoxRTDummy
 VBoxRTDummy_TEMPLATE = VBOXR3
 VBoxRTDummy_NOINST = true
-VBoxRTDummy_LIBS = $(PATH_BIN)/VBoxRT.so
-VBoxRTDummy_CLEAN= $(PATH_BIN)/VBoxRT.so
-BLDDIRS += $(PATH_BIN)
+VBoxRTDummy_LIBS = $(PATH_STAGE_BIN)/VBoxRT.so
+VBoxRTDummy_CLEAN= $(PATH_STAGE_BIN)/VBoxRT.so
+BLDDIRS += $(PATH_STAGE_BIN)
 
-$(PATH_BIN)/VBoxRT.so: $$(VBoxRT_1_TARGET) | $$(dir $$@)
+$(PATH_STAGE_BIN)/VBoxRT.so: $$(VBoxRT_1_TARGET) | $$(dir $$@)
 	$(INSTALL) $< $@
 	chcon -t texrel_shlib_t $@ || true
 

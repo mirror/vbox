@@ -123,10 +123,10 @@ tstVBoxDbg_LIBS         = \
 	$(LIB_RUNTIME)
   ifeq ($(KBUILD_TARGET),win)
 tstVBoxDbg_LIBS        += \
-	$(PATH_LIB)/VBoxDbg.lib
+	$(PATH_STAGE_LIB)/VBoxDbg.lib
   else
 tstVBoxDbg_LIBS        += \
-	$(PATH_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
+	$(PATH_STAGE_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
   endif
  endif # TESTCASES
 endif # Qt4

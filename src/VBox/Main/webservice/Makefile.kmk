@@ -279,7 +279,7 @@ endif
   vboxwebsrv_CXXFLAGS += -Wno-shadow
  endif
  vboxwebsrv_LIBS += \
-	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
 	$(VBOX_GSOAP_CXX_LIBS)
  vboxwebsrv_LIBS.solaris += socket nsl
  vboxwebsrv_SOURCES = \
@@ -376,7 +376,7 @@ $$(VBOX_JWS_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_
 	$(VBOXWEB_OUT_DIR) \
 	.
  webtest_LIBS += \
-	$(PATH_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
 	$(VBOX_GSOAP_CXX_LIBS)
  webtest_LIBS.solaris += nsl
  webtest_SOURCES = \

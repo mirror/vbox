@@ -23,7 +23,7 @@
 #
 #   -- VirtualBox.chm
 #
-#   Both files end up in PATH_BIN.
+#   Both files end up in PATH_STAGE_BIN.
 #
 #   Both targets indirectly depend on the XML files in this directory;
 #   "indirectly" because we first copy them to PATH_TARGET and hack them
@@ -81,7 +81,7 @@ ifdef VBOX_WITH_DOCS
  endif
 
  ifdef VBOX_WITH_DOCS_CHM
-  VBOX_PATH_BIN_CHM = $(PATH_BIN)/VirtualBox.chm
+  VBOX_PATH_BIN_CHM = $(PATH_STAGE_BIN)/VirtualBox.chm
  else
   VBOX_PATH_BIN_CHM =
         # do not build
@@ -89,10 +89,10 @@ ifdef VBOX_WITH_DOCS
 
  ifndef VBOX_ONLY_SDK
   VBOX_MANUAL_PACK += \
-  		$(PATH_BIN)/UserManual.pdf \
+  		$(PATH_STAGE_BIN)/UserManual.pdf \
   		$(VBOX_PATH_BIN_CHM)
   OTHERS += \
-  	$(PATH_BIN)/UserManual.pdf
+  	$(PATH_STAGE_BIN)/UserManual.pdf
   OTHERS.win += \
   	$(VBOX_PATH_BIN_CHM)
   OTHERS.linux += \
@@ -100,17 +100,17 @@ ifdef VBOX_WITH_DOCS
 
   ifdef VBOX_WITH_DOCS_TRANSLATIONS
    OTHERS += \
-   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/UserManual_$(f).pdf)
+   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf)
    ifdef VBOX_WITH_DOCS_CHM
    OTHERS.win += \
-   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm)
+   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm)
    OTHERS.linux += \
-   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm)
+   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm)
    endif
   endif
  endif # !VBOX_ONLY_SDK
  ifdef VBOX_ONLY_DOCS
-  PACKING += $(PATH_BIN)/VBoxDocumentation.zip
+  PACKING += $(PATH_STAGE_BIN)/VBoxDocumentation.zip
  endif
 
  ifdef VBOX_WITH_DOCS_TRANSLATIONS
@@ -171,7 +171,7 @@ ifdef VBOX_WITH_DOCS
 
  ifdef VBOX_WITH_DOCS_CHM
  VBOX_MANUAL_PACK += \
- 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/UserManual_$(f).pdf $(PATH_BIN)/VirtualBox_$(f).chm)
+ 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf $(PATH_STAGE_BIN)/VirtualBox_$(f).chm)
  endif
 
  OTHER_CLEAN += \
@@ -191,12 +191,12 @@ ifdef VBOX_WITH_DOCS
  	$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(f)))) \
  	$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.pdf) \
  	$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/VirtualBox.chm) \
- 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/UserManual_$(f).pdf) \
- 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm) \
- 	$(PATH_BIN)/UserManual.pdf \
- 	$(PATH_BIN)/VirtualBox.chm \
+ 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
+ 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm) \
+ 	$(PATH_STAGE_BIN)/UserManual.pdf \
+ 	$(PATH_STAGE_BIN)/VirtualBox.chm \
  	$(foreach f,en_US,$(VBOX_PATH_MANUAL_OUTBASE)/$f/SDKRef.pdf) \
- 	$(PATH_BIN)/sdk/docs/SDKRef.pdf \
+ 	$(PATH_STAGE_BIN)/sdk/docs/SDKRef.pdf \
  	$(wildcard $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/*.h*)) \
  	$(foreach f,$(VBOX_MANUAL_LANGUAGES),\
  		$(patsubst $(VBOX_PATH_MANUAL_SRC)/texfiles/unicode/%,$(VBOX_PATH_MANUAL_OUTBASE)/$f/%, \
@@ -233,7 +233,7 @@ else
  # use docbook of the build host
  DOCBOOKPATH         ?= http://docbook.sourceforge.net/release/xsl/current/
 endif
-VBOXMANAGEPATH       ?= $(PATH_BIN)/VBoxManage$(SUFF_EXE)
+VBOXMANAGEPATH       ?= $(PATH_STAGE_BIN)/VBoxManage$(SUFF_EXE)
 
  # PDFLATEX_INTERACTION = errorstopmode - Use this when you wants to figure out build failures
  #                                        without catting the log a million times.
@@ -492,12 +492,12 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_cp_images_pdf)))
 ##########################################################################################
 
 ## @todo INSTALLS target for this!
-$(PATH_BIN)/UserManual.pdf: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf | $$(dir $$@)
+$(PATH_STAGE_BIN)/UserManual.pdf: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.pdf | $$(dir $$@)
 	$(QUIET)$(CP) $< $@
 	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
-$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/UserManual_$(f).pdf): \
-	$(PATH_BIN)/UserManual_%.pdf : $(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.pdf
+$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf): \
+	$(PATH_STAGE_BIN)/UserManual_%.pdf : $(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.pdf
 	$(QUIET)$(CP) $< $@
 	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
@@ -593,12 +593,12 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUT
 #
 
 ifdef VBOX_WITH_DOCS_CHM
-$(PATH_BIN)/VirtualBox.chm: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
+$(PATH_STAGE_BIN)/VirtualBox.chm: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
 	$(QUIET)$(CP) $< $@
 	$(call MSG_L1,Fresh CHM is now at $@)
 
-$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm): \
-	$(PATH_BIN)/VirtualBox_%.chm : $(VBOX_PATH_MANUAL_OUTBASE)/%/VirtualBox.chm
+$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm): \
+	$(PATH_STAGE_BIN)/VirtualBox_%.chm : $(VBOX_PATH_MANUAL_OUTBASE)/%/VirtualBox.chm
 	$(QUIET)$(CP) $< $@
 	$(call MSG_L1,Fresh CHM is now at $@)
 
@@ -640,10 +640,10 @@ endef
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_cp_images_html)))
 
 # Packing the docs into a zip file
-$(PATH_BIN)/VBoxDocumentation.zip: $(VBOX_MANUAL_PACK)
+$(PATH_STAGE_BIN)/VBoxDocumentation.zip: $(VBOX_MANUAL_PACK)
 	$(call MSG_L1,Packing documentation $@)
 	$(QUIET)$(RM) -f $@
-	$(QUIET)$(REDIRECT) -C $(PATH_BIN) -- zip$(HOSTSUFF_EXE) -9 $@ $(notdir $^)
+	$(QUIET)$(REDIRECT) -C $(PATH_STAGE_BIN) -- zip$(HOSTSUFF_EXE) -9 $@ $(notdir $^)
 endif # VBOX_WITH_DOCS_CHM
 
 ##########################################################################################
