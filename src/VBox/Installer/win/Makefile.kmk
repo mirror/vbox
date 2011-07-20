@@ -69,7 +69,7 @@ endif
 ## @todo VBOX_ prefixes!
 PACKAGE_BASE                := VirtualBox-$(VBOX_VERSION_STRING)
 PACKAGE_NAME_LANG           := $(PACKAGE_BASE)-r$(VBOX_SVN_REV)
-PACKAGE_NAME_FINAL          := $(PATH_BIN)/$(PACKAGE_NAME_LANG).msi
+PACKAGE_NAME_FINAL          := $(PATH_STAGE_BIN)/$(PACKAGE_NAME_LANG).msi
 
 ifdef VBOX_WITH_COMBINED_PACKAGE
  PATH_MULTIARCH_TEMP                := $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/obj/Installer
@@ -84,7 +84,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
  BLDDIRS += $(PATH_MULTIARCH_TEMP)
  PACKING += $(PACKAGE_NAME_FINAL)
  ifeq ($(KBUILD_TARGET_ARCH),x86)
-  PACKING += $(PATH_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)
+  PACKING += $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)
  endif
 else
  PACKING += $(PACKAGE_NAME_FINAL)
@@ -112,7 +112,7 @@ OTHER_CLEAN += \
 ifdef VBOX_WITH_COMBINED_PACKAGE
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   OTHER_CLEAN += \
-  	$(PATH_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
+  	$(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
   	$(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.x86) \
   	$(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.am64) \
   	$(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_MULTIARCH_COMMONCAB)
@@ -137,8 +137,8 @@ ifdef VBOX_WITH_BUNDLED_INSTALLER
   VBOX_PATH_PACK_TMP := $(VBOX_WIN_INST_OUT_DIR)
  endif
 
- VBOX_PATH_PACK_BUNDLE_TMP = $(PATH_BIN)/VBoxWinBundleInstaller
- VBOX_PATH_PACK_BUNDLE_ZIP = $(PATH_BIN)/VBoxWinBundleInstaller-$(KBUILD_TARGET_ARCH).zip
+ VBOX_PATH_PACK_BUNDLE_TMP = $(PATH_STAGE_BIN)/VBoxWinBundleInstaller
+ VBOX_PATH_PACK_BUNDLE_ZIP = $(PATH_STAGE_BIN)/VBoxWinBundleInstaller-$(KBUILD_TARGET_ARCH).zip
 
  VBOX_BRAND_WIN_INST_NAME.x86   = $(PACKAGE_BASE)-Win_x86$(VBOX_BRAND_WIN_INST_EXT).msi
  VBOX_BRAND_WIN_INST_NAME.amd64 = $(PACKAGE_BASE)-Win_amd64$(VBOX_BRAND_WIN_INST_EXT).msi
@@ -219,9 +219,9 @@ $(VBOX_WIN_INST_OUT_DIR)/Files_Main.wxi: $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
 	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
   ifdef VBOX_WITH_DOCS_CHM
-		$(APPEND) $@ '	<File Id="file_VirtualBox.chm" Name="VirtualBox.chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/VirtualBox.chm"></File>'
+		$(APPEND) $@ '	<File Id="file_VirtualBox.chm" Name="VirtualBox.chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_STAGE_BIN)/VirtualBox.chm"></File>'
 		$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
-		             '	<File Id="file_VirtualBox_$(lang).chm" Name="VirtualBox_$(lang).chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/VirtualBox_$(lang).chm"></File>')
+		             '	<File Id="file_VirtualBox_$(lang).chm" Name="VirtualBox_$(lang).chm" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_STAGE_BIN)/VirtualBox_$(lang).chm"></File>')
   endif
 	$(APPEND) $@ '</Include>'
 
@@ -229,10 +229,10 @@ $(VBOX_WIN_INST_OUT_DIR)/Files_Doc.wxi:	$(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 	$(APPEND) -t $@ '<?xml version="1.0" ?>'
 	$(APPEND) $@ '<Include xmlns="http://schemas.microsoft.com/wix/2006/wi">'
-	$(APPEND) $@ '	<File Id="file_UserManual.pdf" Name="UserManual.pdf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/UserManual.pdf">'
+	$(APPEND) $@ '	<File Id="file_UserManual.pdf" Name="UserManual.pdf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_STAGE_BIN)/UserManual.pdf">'
 	$(APPEND) $@ '	</File>'
 	$(APPEND) -n $@ $(foreach lang,$(VBOX_MANUAL_ADD_LANGUAGES), \
-	             '	<File Id="file_UserManual_$(lang).pdf" Name="UserManual_$(lang).pdf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_BIN)/UserManual_$(lang).pdf">' \
+	             '	<File Id="file_UserManual_$(lang).pdf" Name="UserManual_$(lang).pdf" DiskId="$(VBOX_INSTALLER_COMMON_DISKID)" Vital="yes" Source="$(PATH_STAGE_BIN)/UserManual_$(lang).pdf">' \
 	             '	</File>')
 	$(APPEND) $@ '</Include>'
 
@@ -287,7 +287,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi: \
 		$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj \
 		$(VBOX_WIN_INST_OUT_DIR)/Languages/Language_$(lang).wxl \
 		$(VBOX_WIN_INST_OUT_DIR)/Languages/License_$(lang).wxl \
-		$(PATH_BIN)/VBoxInstallHelper.dll \
+		$(PATH_STAGE_BIN)/VBoxInstallHelper.dll \
 		$(MAKEFILE_CURRENT) \
 		| $$$$(dir $$$$@)
 	$$(call MSG_L1,Linking installer $$@)
@@ -550,7 +550,7 @@ $(PACKAGE_NAME_FINAL): \
 		$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi) \
 		$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),	$(VBOX_WIN_INST_OUT_DIR)/Languages/$(lang).mst) \
 		| $$(dir $$@)
-	$(QUIET)$(RM) -f $(wildcard $(PATH_BIN)/$(PACKAGE_BASE)-r*.msi)
+	$(QUIET)$(RM) -f $(wildcard $(PATH_STAGE_BIN)/$(PACKAGE_BASE)-r*.msi)
 	$(REDIRECT) -C $(@D) -- \
 		wscript.exe $(VBOX_PATH_WISUMINFO) $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_en_US.msi $(VBOX_INS_PROD_LANG)
 	$(CP) -f $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_en_US.msi $@
@@ -563,7 +563,7 @@ if defined(VBOX_WITH_COMBINED_PACKAGE) && "$(KBUILD_TARGET_ARCH)" == "x86"
 # with both platform installers (x86 and amd64) + common cab. We only
 # need to do this once; so do it on x86 only.
 #
-$(PATH_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL): \
+$(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL): \
 		$(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.x86) \
 		$(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.amd64)
 		$(call MSG_L1,Building Windows combined package)
@@ -573,7 +573,7 @@ $(PATH_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL): \
 			-target-x86 $(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.x86) \
 			-target-amd64 $(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.amd64) \
 			-target-all $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_MULTIARCH_COMMONCAB) \
-			-stub $(PATH_BIN)/VBoxStub.exe
+			-stub $(PATH_STAGE_BIN)/VBoxStub.exe
 	$(call VBOX_SIGN_FILE_FN,$@)
 endif
 
@@ -584,9 +584,9 @@ endif
 $(VBOX_PATH_PACK_BUNDLE_ZIP): \
 		$(PACKAGE_NAME_FINAL) \
 		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86", \
-			$(PATH_BIN)/VBoxBundleMachine.exe \
-			$(if $(VBOX_BRAND_WIN_AS_MENU), $(PATH_BIN)/AutoStartMenu.exe) \
-			$(if $(VBOX_WITH_COMBINED_PACKAGE), $(PATH_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)),)
+			$(PATH_STAGE_BIN)/VBoxBundleMachine.exe \
+			$(if $(VBOX_BRAND_WIN_AS_MENU), $(PATH_STAGE_BIN)/AutoStartMenu.exe) \
+			$(if $(VBOX_WITH_COMBINED_PACKAGE), $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)),)
 	$(RM) -Rf -- $(VBOX_PATH_PACK_BUNDLE_TMP)/
 	$(MKDIR) -p $(VBOX_PATH_PACK_BUNDLE_TMP)/
 ifndef VBOX_WITH_COMBINED_PACKAGE
@@ -594,10 +594,10 @@ ifndef VBOX_WITH_COMBINED_PACKAGE
 endif
 ifeq ($(KBUILD_TARGET_ARCH),x86)
  ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(CP) $(PATH_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)       $(VBOX_PATH_PACK_BUNDLE_TMP)/$(PACKAGE_NAME_MULTIARCH_FINAL)
+	$(CP) $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL)       $(VBOX_PATH_PACK_BUNDLE_TMP)/$(PACKAGE_NAME_MULTIARCH_FINAL)
  endif
-	$(CP) $(PATH_BIN)/VBoxBundleMachine.exe     $(VBOX_PATH_PACK_BUNDLE_TMP)/
-	$(CP) $(PATH_BIN)/AutoStartMenu.exe         $(VBOX_PATH_PACK_BUNDLE_TMP)/
+	$(CP) $(PATH_STAGE_BIN)/VBoxBundleMachine.exe     $(VBOX_PATH_PACK_BUNDLE_TMP)/
+	$(CP) $(PATH_STAGE_BIN)/AutoStartMenu.exe         $(VBOX_PATH_PACK_BUNDLE_TMP)/
  ifdef VBOX_BRAND_WIN_AS_MENU
 	$(MKDIR) -p $(VBOX_PATH_PACK_BUNDLE_TMP)/Menu/Graphics/
 	$(CP) $(VBOX_BRAND_WIN_AS_CONTENT)          $(VBOX_PATH_PACK_BUNDLE_TMP)/

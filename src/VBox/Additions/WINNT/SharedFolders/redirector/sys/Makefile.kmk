@@ -88,7 +88,7 @@ VBoxSF_LIBS = \
 ##	$(PATH_SDK_W2K3DDKX86_LIB)/bufferoverflowk.lib \
 
 ##        rdbss.asm \
-##	$(PATH_LIB)/rdbss$(VBOXW32GUEST_SUFF_LIB)
+##	$(PATH_STAGE_LIB)/rdbss$(VBOXW32GUEST_SUFF_LIB)
 
 
 include	$(KBUILD_PATH)/subfooter.kmk

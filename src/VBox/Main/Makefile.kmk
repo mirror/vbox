@@ -36,7 +36,7 @@ VBOX_PATH_MAIN_SRC := $(PATH_SUB_CURRENT)
 ifdef VBOX_ONLY_SDK
  # I'm Evil! Dr. Evil.
  VBoxCOM_0_OUTDIR = $(PATH_TARGET)/VBoxCOM
- BLDDIRS += $(VBoxCOM_0_OUTDIR) $(PATH_BIN)/components
+ BLDDIRS += $(VBoxCOM_0_OUTDIR) $(PATH_STAGE_BIN)/components
  include $(KBUILD_PATH)/tools/VCC70.kmk
  include $(KBUILD_PATH)/sdks/WINPSDK.kmk
 endif # !VBOX_ONLY_SDK
@@ -70,7 +70,7 @@ VBOX_MAIN_DEFS += VBOX_WITH_NEW_SYS_V_KEYGEN
 VBOX_IDL_FILE.MSCOM    = $(VBOX_PATH_SDK)/bindings/mscom/idl/VirtualBox.idl
 VBOX_IDL_FILE.XPCOM    = $(VBOX_PATH_SDK)/bindings/xpcom/idl/VirtualBox_XPCOM.idl
 
-VBOX_IDL_TYPELIB.XPCOM = $(PATH_BIN)/components/VirtualBox_XPCOM.xpt
+VBOX_IDL_TYPELIB.XPCOM = $(PATH_STAGE_BIN)/components/VirtualBox_XPCOM.xpt
 VBOX_IDL_HEADER.XPCOM  = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 
 # The MS COM specific stuff.
@@ -257,7 +257,7 @@ ifdef VBOX_WITH_USB
 endif
 
 VBoxSVC_LIBS += \
-	$(PATH_LIB)/SSMStandalone$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/SSMStandalone$(VBOX_SUFF_LIB) \
 	$(LIB_DDU)
 VBoxSVC_SDKS = VBOX_LIBPNG VBOX_ZLIB
 VBoxSVC_LIBS.solaris = \
@@ -503,9 +503,9 @@ if (   defined(VBOX_WITH_QTGUI) \
   VBoxTestOGL_SOURCES = src-server/generic/OpenGLTestApp.cpp
   VBoxTestOGL_LIBS = \
 	$(if $(VBOX_WITH_CROGL), \
-	  $(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+	  $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	  $(VBOX_LIB_OGL_HOSTCRUTIL),) \
-	$(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
+	$(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
 	$(LIB_RUNTIME)
   VBoxTestOGL_DEFS += \
 	$(if $(VBOX_WITH_CROGL), VBOX_WITH_CROGL,) \

@@ -28,13 +28,22 @@ VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 # Experimental
 .SECONDTARGETEXPANSION:
 
-# Enable automatic installation of what's built.
-KBUILD_DO_AUTO_INSTALL := 1
-PASSES := $(filter-out PACKING,$(PASSES)) PACKING # temporary hack
-# Modify the order of the INSTALLS and OTHERS passes.
-DEFAULT_PASSES       := BLDPROGS LIBRARIES DLLS BINARIES INSTALLS OTHERS
+# Installation and staging changes in the works for kBuild 0.2.0 and VBox 4.1.2.
+if $(KMK_REVISION) >= 2475 \
+ && $(KBUILD_VERSION_MAJOR) == 0 \
+ && (   ($(KBUILD_VERSION_MINOR) == 1 && $(KBUILD_VERSION_PATCH) >= 99) \
+     || $(KBUILD_VERSION_MINOR) >= 2)
+ VBOX_WITH_0_2_0_KBUILD = 1
+endif
+
+ifndef VBOX_WITH_0_2_0_KBUILD
+ # Enable automatic installation of what's built.
+ KBUILD_DO_AUTO_INSTALL := 1
+ PASSES := $(filter-out PACKING,$(PASSES)) PACKING # temporary hack
+ # Modify the order of the INSTALLS and OTHERS passes.
+ DEFAULT_PASSES       := BLDPROGS LIBRARIES DLLS BINARIES INSTALLS OTHERS
+endif
 # Modify the build types.
-## @todo checked and dbgopt
 KBUILD_BLD_TYPES = release profile debug kprofile
 
 ## 'strict' builds
@@ -74,20 +83,16 @@ VBOX_PUEL_MANGLED_NAME := Oracle_VM_VirtualBox_Extension_Pack
 #
 # Changes related to this are marked VBOX_WITH_NEW_LAYOUT, while changes marked
 # VBOX_WITH_0_2_0_KBUILD are for building with current kBuild svn.
-if $(KMK_REVISION) >= 2475 \
- && $(KBUILD_VERSION_MAJOR) == 0 \
- && (   ($(KBUILD_VERSION_MINOR) == 1 && $(KBUILD_VERSION_PATCH) >= 99) \
-     || $(KBUILD_VERSION_MINOR) >= 2)
- VBOX_WITH_0_2_0_KBUILD = 1
-endif
 ifndef VBOX_WITH_NEW_LAYOUT
- PATH_STAGE           = $(PATH_OUT)
- ifdef VBOX_WITH_0_2_0_KBUILD
-  PATH_INS            = $(PATH_OUT)/dist
- else
+ ifndef VBOX_WITH_0_2_0_KBUILD
   PATH_INS            = $(PATH_OUT)
+  PATH_STAGE          = $(PATH_INS)
+ else
+  PATH_INS            = $(PATH_OUT)/dist
+  PATH_STAGE          = $(PATH_OUT)
  endif
 endif
+
 ifeq ($(KBUILD_TARGET),darwin)
  ifndef VBOX_WITH_NEW_LAYOUT
   INST_DIST           = dist/
@@ -132,24 +137,29 @@ else
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
 endif
+
+INST_DOC              = doc/
 INST_EXTPACK          = $(INST_BIN)ExtensionPacks/
 INST_EXTPACK_CERTS    = $(INST_BIN)ExtPackCertificates/
 INST_EXTPACK_PUEL     = $(INST_EXTPACK)$(VBOX_PUEL_MANGLED_NAME)/
 INST_PACKAGES         = packages/
 
-PATH_BIN              = $(patsubst %/,%,$(PATH_INS)/$(INST_BIN))
-PATH_DLL              = $(patsubst %/,%,$(PATH_INS)/$(INST_DLL))
-PATH_SYS              = $(patsubst %/,%,$(PATH_INS)/$(INST_SYS))
-PATH_LIB              = $(patsubst %/,%,$(PATH_INS)/$(INST_LIB))
-PATH_DOC              = $(PATH_OUT)/doc
-VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_INS)/$(INST_SDK))
-VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_INS)/$(INST_DIST))
-VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
-VBOX_PATH_ADDITIONS   = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS))
-VBOX_PATH_ADDITIONS_ISO = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_ISO))
-VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
-VBOX_PATH_EXTPACK_PUEL= $(patsubst %/,%,$(PATH_INS)/$(INST_EXTPACK_PUEL))
-VBOX_PATH_PACKAGES    = $(patsubst %/,%,$(PATH_INS)/$(INST_PACKAGES))
+ifndef VBOX_WITH_0_2_0_KBUILD
+ PATH_BIN             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_BIN))
+ PATH_DLL             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_DLL))
+ PATH_SYS             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_SYS))
+ PATH_LIB             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_LIB))
+ PATH_DOC             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_DOC))
+ $(foreach path, BIN DLL SYS LIB DOC, $(eval PATH_STAGE_$(path) = $(PATH_$(path))))
+endif
+VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_STAGE)/$(INST_SDK))
+VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_STAGE)/$(INST_DIST))
+VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_STAGE)/$(INST_TESTSUITE))
+VBOX_PATH_ADDITIONS   = $(patsubst %/,%,$(PATH_STAGE)/$(INST_ADDITIONS))
+VBOX_PATH_ADDITIONS_ISO = $(patsubst %/,%,$(PATH_STAGE)/$(INST_ADDITIONS_ISO))
+VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_STAGE)/$(INST_ADDITIONS_LIB))
+VBOX_PATH_EXTPACK_PUEL= $(patsubst %/,%,$(PATH_STAGE)/$(INST_EXTPACK_PUEL))
+VBOX_PATH_PACKAGES    = $(patsubst %/,%,$(PATH_STAGE)/$(INST_PACKAGES))
 
 
 # Delete targets on failure.
@@ -1519,71 +1529,71 @@ ARCH_BITS_DEFS += $(VBOX_GC_ARCH_BITS_DEFS)
 # Add the output dir(s) to the dynamic loader search path.
 #
 if1of ($(KBUILD_HOST), freebsd linux l4 netbsd openbsd solaris)
- export LD_LIBRARY_PATH:=$(PATH_BIN):$(PATH_LIB):$(LD_LIBRARY_PATH)
+ export LD_LIBRARY_PATH:=$(PATH_STAGE_BIN):$(PATH_STAGE_LIB):$(LD_LIBRARY_PATH)
 endif
 ifeq ($(KBUILD_HOST),os2)
- #fixme! export BEGINLIBPATH:=$(PATH_BIN);$(PATH_LIB);$(BEGINLIBPATH)
+ #fixme! export BEGINLIBPATH:=$(PATH_STAGE_BIN);$(PATH_STAGE_LIB);$(BEGINLIBPATH)
 endif
 ifeq ($(KBUILD_HOST),win)
- export PATH:=$(PATH_BIN);$(PATH_LIB);$(PATH)
+ export PATH:=$(PATH_STAGE_BIN);$(PATH_STAGE_LIB);$(PATH)
 endif
 
 #
 # Common libraries and tools.
 #
 ifeq ($(KBUILD_TARGET),darwin)
- LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.dylib
- LIB_RUNTIME_EF  = #$(PATH_LIB)/RuntimeEFCPP.a
- LIB_KPROFILE    = $(PATH_BIN)/kPrf2.dylib
- LIB_VMM         = $(PATH_BIN)/VBoxVMM.dylib
- LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
- LIB_REM         = $(PATH_LIB)/VBoxREM.dylib
- LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dylib
- LIB_DDU         = $(PATH_BIN)/VBoxDDU.dylib
+ LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.dylib
+ LIB_RUNTIME_EF  = #$(PATH_STAGE_LIB)/RuntimeEFCPP.a
+ LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.dylib
+ LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.dylib
+ LIB_VMMGC       = $(PATH_STAGE_BIN)/VMMGC.gc
+ LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.dylib
+ LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.dylib
+ LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.dylib
 endif
 ifeq ($(KBUILD_TARGET),l4)
- LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.s.so
- LIB_RUNTIME_EF  = #$(PATH_LIB)/RuntimeEFCPP.a
- LIB_KPROFILE    = $(PATH_BIN)/kPrf2.s.so
- LIB_VMM         = $(PATH_BIN)/VBoxVMM.s.so
- LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
- LIB_REM         = $(PATH_LIB)/VBoxREM.s.so
- LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.s.so
- LIB_DDU         = $(PATH_BIN)/VBoxDDU.s.so
+ LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.s.so
+ LIB_RUNTIME_EF  = #$(PATH_STAGE_LIB)/RuntimeEFCPP.a
+ LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.s.so
+ LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.s.so
+ LIB_VMMGC       = $(PATH_STAGE_BIN)/VMMGC.gc
+ LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.s.so
+ LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.s.so
+ LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.s.so
 endif
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris)
- LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.so
- LIB_RUNTIME_EF  = $(PATH_LIB)/RuntimeEFCPP.a
- LIB_KPROFILE    = $(PATH_BIN)/kPrf2.so
- LIB_VMM         = $(PATH_BIN)/VBoxVMM.so
- LIB_VMMGC       = $(PATH_BIN)/VMMGC.gc
- LIB_REM         = $(PATH_LIB)/VBoxREM.so
- LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.so
- LIB_DDU         = $(PATH_BIN)/VBoxDDU.so
+ LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.so
+ LIB_RUNTIME_EF  = $(PATH_STAGE_LIB)/RuntimeEFCPP.a
+ LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.so
+ LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.so
+ LIB_VMMGC       = $(PATH_STAGE_BIN)/VMMGC.gc
+ LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.so
+ LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.so
+ LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.so
 endif
 ifeq ($(KBUILD_TARGET),os2)
- LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.dll
- LIB_RUNTIME_EF  = #$(PATH_LIB)/RuntimeEFCPP.a
- LIB_KPROFILE    = $(PATH_BIN)/kPrf2.dll
- LIB_VMM         = $(PATH_BIN)/VBoxVMM.dll
- LIB_VMMGC       = $(PATH_LIB)/VMMRCImp.lib
- LIB_REM         = $(PATH_LIB)/VBoxREMImp.lib
- LIB_XPCOM       = $(PATH_BIN)/VBoxXCOM.dll
- LIB_DDU         = $(PATH_BIN)/VBoxDDU.dll
+ LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.dll
+ LIB_RUNTIME_EF  = #$(PATH_STAGE_LIB)/RuntimeEFCPP.a
+ LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.dll
+ LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.dll
+ LIB_VMMGC       = $(PATH_STAGE_LIB)/VMMRCImp.lib
+ LIB_REM         = $(PATH_STAGE_LIB)/VBoxREMImp.lib
+ LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXCOM.dll
+ LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.dll
  VBOX_OBJ_SYS0   = $(PATH_OBJ)/RuntimeR0/os2/sys0.obj
 endif
 ifeq ($(KBUILD_TARGET),win)
- LIB_RUNTIME     = $(PATH_LIB)/VBoxRT.lib
- LIB_RUNTIME_EF  = #$(PATH_LIB)/RuntimeEFCPP.lib
- LIB_KPROFILE    = $(PATH_LIB)/kPrf2.lib
- LIB_VMM         = $(PATH_LIB)/VBoxVMM.lib
+ LIB_RUNTIME     = $(PATH_STAGE_LIB)/VBoxRT.lib
+ LIB_RUNTIME_EF  = #$(PATH_STAGE_LIB)/RuntimeEFCPP.lib
+ LIB_KPROFILE    = $(PATH_STAGE_LIB)/kPrf2.lib
+ LIB_VMM         = $(PATH_STAGE_LIB)/VBoxVMM.lib
  LIB_VMMGC       = $(PATH_OBJ)/VMMRC/VMMGC.lib
- LIB_REM         = $(PATH_LIB)/VBoxREMImp.lib
- LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dll
- LIB_DDU         = $(PATH_LIB)/VBoxDDU.lib
+ LIB_REM         = $(PATH_STAGE_LIB)/VBoxREMImp.lib
+ LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.dll
+ LIB_DDU         = $(PATH_STAGE_LIB)/VBoxDDU.lib
 endif
-VBOX_LIB_SUPHARDENED    = $(PATH_LIB)/SUPR3HardenedStatic$(VBOX_SUFF_LIB)
-VBOX_LIB_RUNTIME_STATIC = $(PATH_LIB)/RuntimeR3$(VBOX_SUFF_LIB)
+VBOX_LIB_SUPHARDENED    = $(PATH_STAGE_LIB)/SUPR3HardenedStatic$(VBOX_SUFF_LIB)
+VBOX_LIB_RUNTIME_STATIC = $(PATH_STAGE_LIB)/RuntimeR3$(VBOX_SUFF_LIB)
 
 # Python
 ifndef VBOX_BLD_PYTHON
@@ -1719,7 +1729,7 @@ endif
 ifneq ($(KBUILD_TARGET),win)
  VBOX_WITH_XPCOM      = 1
  # if updating, also update xpidl_INST var in src/libs/xpcom18a4/Makefile.kmk
- VBOX_XPIDL          ?= $(PATH_BIN)/xpidl$(HOSTSUFF_EXE)
+ VBOX_XPIDL          ?= $(PATH_STAGE_BIN)/xpidl$(HOSTSUFF_EXE)
  ifeq ($(KBUILD_TARGET),os2)
   VBOX_XPIDL_ENV      = BEGINLIBPATH="$(dir $(VBOX_XPIDL));$$BEGINLIBPATH"$(SP)
  endif
@@ -1983,7 +1993,7 @@ ifdef VBOX_WITH_CROGL
   endif
  else
   VBOX_LIB_OGL_CRUTIL = $(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
-  VBOX_LIB_OGL_HOSTCRUTIL = $(PATH_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
+  VBOX_LIB_OGL_HOSTCRUTIL = $(PATH_STAGE_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
  endif
 
  if1of ($(KBUILD_TARGET), freebsd linux solaris)
@@ -2402,7 +2412,7 @@ SDK_VBOX_LIBXML2_DEFS.win += WIN32 _WINDOWS _MBCS
 SDK_VBOX_LIBXSLT          = .
 #if1of ($(KBUILD_TARGET), os2 solaris win)
  SDK_VBOX_LIBXSLT_INCS   ?= $(PATH_ROOT)/src/libs/libxslt-1.1.22
- SDK_VBOX_LIBXSLT_LIBS   ?= $(PATH_LIB)/VBox-libxslt$(VBOX_SUFF_LIB)
+ SDK_VBOX_LIBXSLT_LIBS   ?= $(PATH_STAGE_LIB)/VBox-libxslt$(VBOX_SUFF_LIB)
  SDK_VBOX_LIBXSLT_DEFS   ?=
  SDK_VBOX_LIBXSLT_DEFS.win += WIN32 _WINDOWS _MBCS _REENTRANT
 #else if1of ($(KBUILD_TARGET), linux)
@@ -2418,12 +2428,12 @@ SDK_VBOX_LIBXSLT          = .
 
 SDK_VBOX_LIBPNG       = .
 SDK_VBOX_LIBPNG_INCS ?= $(PATH_ROOT)/src/libs/libpng-1.2.8
-SDK_VBOX_LIBPNG_LIBS ?= $(PATH_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
+SDK_VBOX_LIBPNG_LIBS ?= $(PATH_STAGE_LIB)/VBox-libpng$(VBOX_SUFF_LIB)
 
 SDK_VBOX_ZLIB         = .
 if1of ($(KBUILD_TARGET), os2 win)
  SDK_VBOX_ZLIB_INCS  ?= $(PATH_ROOT)/src/libs/zlib-1.2.1
- SDK_VBOX_ZLIB_LIBS  ?= $(PATH_LIB)/VBox-zlib$(VBOX_SUFF_LIB)
+ SDK_VBOX_ZLIB_LIBS  ?= $(PATH_STAGE_LIB)/VBox-zlib$(VBOX_SUFF_LIB)
 else
  SDK_VBOX_ZLIB_INCS  ?=
  SDK_VBOX_ZLIB_LIBS  ?= z
@@ -2435,8 +2445,8 @@ SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-headers/include
 SDK_VBOX_OPENSSL_INCS ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
 SDK_VBOX_OPENSSL_ORDERDEPS ?= $(crypto-headers_1_TARGET)
 SDK_VBOX_OPENSSL_LIBS ?= \
-	$(PATH_LIB)/VBox-libssl$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
 # Build entire openssl library, not just the minimal subset.
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_OPENSSL_ALL = 1
@@ -2451,13 +2461,13 @@ endif
 SDK_VBOX_BLD_OPENSSL      = .
 SDK_VBOX_BLD_OPENSSL_EXTENDS = VBOX_OPENSSL
 SDK_VBOX_BLD_OPENSSL_LIBS ?= \
-	$(PATH_LIB)/VBoxBldProg-libcrypto$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VBoxBldProg-libcrypto$(VBOX_SUFF_LIB)
 
 ifdef VBOX_WITH_S3
 VBOX_WITH_LIBCURL = 1
 SDK_VBOX_LIBCURL       = .
 SDK_VBOX_LIBCURL_INCS ?= $(PATH_ROOT)/src/libs/curl-7.19.4/include
-SDK_VBOX_LIBCURL_LIBS ?= $(PATH_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
+SDK_VBOX_LIBCURL_LIBS ?= $(PATH_STAGE_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
 SDK_VBOX_LIBCURL_DEFS ?= BUILDING_LIBCURL
 endif
 
@@ -2468,11 +2478,11 @@ if1of ($(KBUILD_TARGET), darwin linux os2 solaris win)
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavcodec \
 	$(PATH_ROOT)/src/libs/ffmpeg-20060710/libavformat
  ifeq ($(KBUILD_TARGET),win)
-  ## @todo Michael! Where is $(PATH_LIB)/VBoxFFmpegImp$(VBOX_SUFF_LIB) supposed to come from?
-  #SDK_VBOX_FFMPEG_LIBS ?= $(PATH_LIB)/VBoxFFmpeg.a
-  SDK_VBOX_FFMPEG_LIBS ?= $(PATH_LIB)/VBoxFFmpegImp.lib
+  ## @todo Michael! Where is $(PATH_STAGE_LIB)/VBoxFFmpegImp$(VBOX_SUFF_LIB) supposed to come from?
+  #SDK_VBOX_FFMPEG_LIBS ?= $(PATH_STAGE_LIB)/VBoxFFmpeg.a
+  SDK_VBOX_FFMPEG_LIBS ?= $(PATH_STAGE_LIB)/VBoxFFmpegImp.lib
  else
-  SDK_VBOX_FFMPEG_LIBS ?= $(PATH_BIN)/VBoxFFmpeg$(SUFF_DLL)
+  SDK_VBOX_FFMPEG_LIBS ?= $(PATH_STAGE_BIN)/VBoxFFmpeg$(SUFF_DLL)
  endif
 else
  SDK_VBOX_FFMPEG_INCS ?= /usr/include/ffmpeg /usr/include/libpng
@@ -2487,8 +2497,8 @@ SDK_VBOX_BOOST_INCS  ?= $(PATH_ROOT)/src/libs/boost-1.37.0
 # Special SDK for the problematic NTDLL.LIB.
 #
 SDK_VBOX_NTDLL = Mini NTDLL import library, required IPRT.
-SDK_VBOX_NTDLL_LIBS.x86   ?= $(PATH_LIB)/RuntimeR3NtDll-x86.lib
-SDK_VBOX_NTDLL_LIBS.amd64 ?= $(PATH_LIB)/RuntimeR3NtDll-amd64.lib
+SDK_VBOX_NTDLL_LIBS.x86   ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-x86.lib
+SDK_VBOX_NTDLL_LIBS.amd64 ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-amd64.lib
 
 #
 # The linux kernel headers(/sources).
@@ -2602,7 +2612,7 @@ ifdef VBOX_WITH_RAW_MODE
 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
   endif
   TEMPLATE_VBoxRc_LIBS              += \
-  	$(PATH_LIB)/RuntimeRCStub$(VBOX_SUFF_LIB)
+  	$(PATH_STAGE_LIB)/RuntimeRCStub$(VBOX_SUFF_LIB)
   TEMPLATE_VBoxRc_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
  endif # pe
 
@@ -2721,7 +2731,7 @@ TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_
 TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
 TEMPLATE_VBoxR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Debug
 TEMPLATE_VBoxR0_LIBS                = \
-	$(PATH_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
  ifdef VBOX_USE_WINDDK
 TEMPLATE_VBoxR0_LIBS.x86            = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
@@ -2742,7 +2752,7 @@ ifeq ($(KBUILD_TARGET),solaris)
  TEMPLATE_VBoxR0_LDFLAGS            = -r
  TEMPLATE_VBoxR0_LDFLAGS.solaris    = -u _init -u _info
  TEMPLATE_VBoxR0_LIBS.solaris       = \
-	$(PATH_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
 else
  TEMPLATE_VBoxR0_LDFLAGS            = -nostdlib -Bsymbolic
  # temporarily, must fix the loader.
@@ -3673,7 +3683,7 @@ endif # !win
 
 # Add COM/XPCOM stuff
 TEMPLATE_VBOXMAINEXE_LIBS               += \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
 ifdef VBOX_WITH_XPCOM
  ## @todo may be worth creating the VBOX_XPCOM SDK def
  TEMPLATE_VBOXMAINEXE_DEFS              += VBOX_WITH_XPCOM
@@ -3822,13 +3832,13 @@ ifdef VBOX_WITH_EXTPACK
   if1of ($(KBUILD_TARGET), win os2)
    TEMPLATE_VBoxR3ExtPack_LIBS = \
    	$(TEMPLATE_LIBS_VBOXR3) \
-   	$(PATH_LIB)/VMMR3Imp$(VBOX_SUFF_LIB) \
-   	$(PATH_LIB)/VBoxRTImp$(VBOX_SUFF_LIB)
+   	$(PATH_STAGE_LIB)/VMMR3Imp$(VBOX_SUFF_LIB) \
+   	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_LIB)
   else
    TEMPLATE_VBoxR3ExtPack_LIBS = \
    	$(TEMPLATE_LIBS_VBOXR3) \
-   	$(PATH_LIB)/VMMR3Imp$(VBOX_SUFF_DLL) \
-   	$(PATH_LIB)/VBoxRTImp$(VBOX_SUFF_DLL)
+   	$(PATH_STAGE_LIB)/VMMR3Imp$(VBOX_SUFF_DLL) \
+   	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_DLL)
   endif
  else
   TEMPLATE_VBoxR3ExtPack_LIBS = \
@@ -3844,8 +3854,8 @@ ifdef VBOX_WITH_EXTPACK
  TEMPLATE_VBoxR0ExtPack_DEFS = VBOX_IN_EXTPACK VBOX_IN_EXTPACK_R0
  if1of ($(VBOX_LDR_FMT), pe lx)
   TEMPLATE_VBoxR0ExtPack_LIBS = \
-	$(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
  endif
 
  TEMPLATE_VBoxRcExtPack = For the raw-mode context extension pack modules.
@@ -3856,8 +3866,8 @@ ifdef VBOX_WITH_EXTPACK
  TEMPLATE_VBoxRcExtPack_DEFS = VBOX_IN_EXTPACK VBOX_IN_EXTPACK_RC
  if1of ($(VBOX_LDR_FMT32), pe lx)
   TEMPLATE_VBoxRcExtPack_LIBS = \
-	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
  endif
 
  TEMPLATE_VBoxInsExtPack = For the install targets of an extension pack.
@@ -4095,7 +4105,7 @@ ifdef VBOX_WITH_QTGUI
 
  # Add COM/XPCOM stuff
  TEMPLATE_VBOXQT4GUIEXE_LIBS += \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB)
  ifdef VBOX_WITH_XPCOM
   ## @todo may be worth creating the VBOX_XPCOM SDK def, or just a SDK_VBOXXPCOM.
   TEMPLATE_VBOXQT4GUIEXE_DEFS += VBOX_WITH_XPCOM
@@ -4295,7 +4305,7 @@ TEMPLATE_VBoxAdvBldProg_SDKS    = $(TEMPLATE_VBOXBLDPROG_SDKS) VBOX_BLD_OPENSSL
 TEMPLATE_VBoxAdvBldProg_SDKS.win= $(TEMPLATE_VBOXBLDPROG_SDKS.win) VBOX_NTDLL
 TEMPLATE_VBoxAdvBldProg_DEFS    = $(TEMPLATE_VBOXBLDPROG_DEFS) IN_RT_R3
 TEMPLATE_VBoxAdvBldProg_LIBS    = \
-	$(PATH_LIB)/RuntimeBldProg$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/RuntimeBldProg$(VBOX_SUFF_LIB) \
 	$(TEMPLATE_VBOXBLDPROG_LIBS)
 TEMPLATE_VBoxAdvBldProg_LIBS.darwin = \
 	$(TEMPLATE_VBOXBLDPROG_LIBS) \
@@ -4774,7 +4784,7 @@ $(VBOX_LICENSE_VER_KMK): $(VBOX_BRAND_LICENSE_HTML)
    VBOX_LICENSE_FILES = \
 	 License-$(VBOX_LICENSE_VER).html \
 	 $(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES),License-$(VBOX_LICENSE_VER)-$(f).html)
-   VBOX_LICENSE_BINS = $(addprefix $(PATH_BIN)/,$(VBOX_LICENSE_FILES))
+   VBOX_LICENSE_BINS = $(addprefix $(PATH_STAGE_BIN)/,$(VBOX_LICENSE_FILES))
   endif
  endif
 endif

@@ -25,7 +25,7 @@ tstDisasm-2_DEFS        = IN_DIS
 tstDisasm-2_SOURCES     = \
 	tstDisasm-2.cpp
 tstDisasm-2_LIBS        = \
-	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME)
 
 # Tests that will be build, disassembled and re-build from disassembly.
@@ -57,7 +57,7 @@ VBOX_DISAS_TESTS_BINARIES += \
 	tstBin-4.bin \
 	tstBin-5.bin \
 	tstBin-6.bin
-#	$(PATH_BIN)/testcase/tstDisasm-2$(SUFF_EXEC)
+#	$(PATH_STAGE_BIN)/testcase/tstDisasm-2$(SUFF_EXEC)
 endif
 
 

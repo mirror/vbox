@@ -42,7 +42,7 @@ VBOX_PATH_X11_ADDITION_INSTALLER     := $(PATH_ROOT)/src/VBox/Additions/x11/Inst
 #
 ifndef VBOX_OSE
  BLDDIRS     += $(VBOX_FBSD_ADD_INS_OUT_DIR) $(VBOX_FBSD_ADD_INS_OUT_DIR)/module
- PACKING     += $(PATH_BIN)/additions/VBoxFreeBSDAdditions.tbz
+ PACKING     += $(PATH_STAGE_BIN)/additions/VBoxFreeBSDAdditions.tbz
  OTHER_CLEAN += $(PACKING)
 endif
 
@@ -91,13 +91,13 @@ OTHER_CLEAN += $(VBOX_FBSD_ADD_INS_FILES)) $(VBOX_FBSD_ADD_INS_MODULES)
 
 # pattern rule for copying the debug info from the VBOX_FBSD_ADD_STRIP_BIN files to the installation directory
 $(addprefix $(VBOX_FBSD_ADD_INS_OUT_DIR)/,$(VBOX_FBSD_ADD_DBG_SYM_FILES)): \
-		$(VBOX_FBSD_ADD_INS_OUT_DIR)/%.dbgsym : $(PATH_BIN)/additions/% | $$(dir $$@)
+		$(VBOX_FBSD_ADD_INS_OUT_DIR)/%.dbgsym : $(PATH_STAGE_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_TOOL,copydbg,$<,$@)
 	$(QUIET)objcopy --only-keep-debug $< $@
 
 # pattern rule for stripping and copying the VBOX_FBSD_ADD_STRIP_BIN files to the installation directory
 $(addprefix $(VBOX_FBSD_ADD_INS_OUT_DIR)/,$(VBOX_FBSD_ADD_STRIP_BIN)): \
-		$(VBOX_FBSD_ADD_INS_OUT_DIR)/% : $(PATH_BIN)/additions/% \
+		$(VBOX_FBSD_ADD_INS_OUT_DIR)/% : $(PATH_STAGE_BIN)/additions/% \
 		$(VBOX_FBSD_ADD_INS_OUT_DIR)/%.dbgsym \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
@@ -106,7 +106,7 @@ $(addprefix $(VBOX_FBSD_ADD_INS_OUT_DIR)/,$(VBOX_FBSD_ADD_STRIP_BIN)): \
 
 # pattern rule for stripping and copying the VBOX_FBSD_ADD_STRIP_OBJ files to the installation directory
 $(addprefix $(VBOX_FBSD_ADD_INS_OUT_DIR)/,$(VBOX_FBSD_ADD_STRIP_OBJ)): \
-		$(VBOX_FBSD_ADD_INS_OUT_DIR)/% : $(PATH_BIN)/additions/% | $$(dir $$@)
+		$(VBOX_FBSD_ADD_INS_OUT_DIR)/% : $(PATH_STAGE_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 ifeq ($(VBOX_DO_STRIP),)
 	$(QUIET)$(INSTALL) -m 0644 $< $@
@@ -118,7 +118,7 @@ endif
 
 # pattern rule for copying the VBOX_FBSD_ADD_MODULES files to the installation directory
 $(VBOX_FBSD_ADD_INS_MODULES): \
-		$(VBOX_FBSD_ADD_INS_OUT_DIR)/module/% : $(PATH_BIN)/additions/src/% | $(VBOX_FBSD_ADD_INS_OUT_DIR)/module/
+		$(VBOX_FBSD_ADD_INS_OUT_DIR)/module/% : $(PATH_STAGE_BIN)/additions/src/% | $(VBOX_FBSD_ADD_INS_OUT_DIR)/module/
 	$(call MSG_INST_FILE,$<,$@)
 # Remove target directories first, otherwise the behaviour of cp will not be
 # what we want if it already exists. See the cp manual page for more details.
@@ -172,16 +172,16 @@ include	$(KBUILD_PATH)/subfooter.kmk
 ## @todo Replace the wildcard stuff by the correct file lists now that
 #        we've got everything included.
 #
-$(PATH_BIN)/additions/VBoxFreeBSDAdditions.tbz: \
+$(PATH_STAGE_BIN)/additions/VBoxFreeBSDAdditions.tbz: \
 		$(INSTARGET_fbsd_add_inst-nobin) \
 		$(INSTARGET_fbsd_add_inst-bin) \
 		$(VBOX_FBSD_ADD_INS_FILES) \
 		$(VBOX_FBSD_ADD_INS_MODULES) \
 		$(VBOX_FBSD_ADD_INS_OUT_DIR)/install.sh \
-		$(wildcard $(PATH_BIN)/additions/src/*) \
-		$(wildcard $(PATH_BIN)/additions/src/*/*) \
-		$(wildcard $(PATH_BIN)/additions/src/*/*/*) \
-		$(wildcard $(PATH_BIN)/additions/src/*/*/*/*) \
+		$(wildcard $(PATH_STAGE_BIN)/additions/src/*) \
+		$(wildcard $(PATH_STAGE_BIN)/additions/src/*/*) \
+		$(wildcard $(PATH_STAGE_BIN)/additions/src/*/*/*) \
+		$(wildcard $(PATH_STAGE_BIN)/additions/src/*/*/*/*) \
 		$(VBOX_VERSION_STAMP)
 	pkg_create \
 		-I $(VBOX_PATH_FREEBSD_ADDITION_INSTALLER)/install.sh \

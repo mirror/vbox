@@ -42,7 +42,7 @@ VBOX_FBSD_INST_SHAREVBOX_DIR := $(VBOX_FBSD_INST_SHARE_DIR)/virtualbox
 VBOX_FBSD_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
 
 BLDDIRS  += $(VBOX_FBSD_INST_OUT_DIR) $(VBOX_FBSD_INST_STAGE_DIR)
-PACKING  += $(PATH_BIN)/$(VBOX_FBSD_PACKAGE_NAME)
+PACKING  += $(PATH_STAGE_BIN)/$(VBOX_FBSD_PACKAGE_NAME)
 
 OTHER_CLEAN   += \
 	$(addprefix $(VBOX_FBSD_INST_STAGE_DIR)/,\
@@ -153,7 +153,7 @@ ifdef VBOX_WITH_QTGUI
  	VirtualBox
  VBOX_FBSD_NO_STRIP += \
 	$(VBOX_LICENSE_FILES) \
- 	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/lib*VBox*)),) \
+ 	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_STAGE_BIN)/lib*VBox*)),) \
 	$(if $(VBOX_WITH_QT4_SUN),accessible/libqtaccessiblewidgets.so,) \
  	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
  VBOX_FBSD_DESKTOP_FILE = \
@@ -230,16 +230,16 @@ OTHER_CLEAN += $(addprefix $(VBOX_FBSD_INST_LIBVBOX_DIR)/,$(VBOX_FBSD_ARCH_FILES
 #
 # The module source archive
 #
-$(PATH_BIN)/vboxdrv.tar.gz: \
+$(PATH_STAGE_BIN)/vboxdrv.tar.gz: \
 		src
 	$(call MSG_TOOL, export_modules,,$@)
-	$(QUIET)$(PATH_BIN)/export_modules $@
+	$(QUIET)$(PATH_STAGE_BIN)/export_modules $@
 
 #
 # The generic installer.
 # @todo r=aeichner: Create pkg_plist dynamically based on the available features
 #
-$(PATH_BIN)/$(VBOX_FBSD_PACKAGE_NAME): \
+$(PATH_STAGE_BIN)/$(VBOX_FBSD_PACKAGE_NAME): \
 		$(VBOX_VERSION_STAMP) \
 		$(VBOX_FBSD_INST_OUT_DIR)/pkg_plist \
 		$(addprefix $(VBOX_FBSD_INST_LIBVBOX_DIR)/,$(VBOX_FBSD_ARCH_FILES)) \
@@ -263,14 +263,14 @@ $(PATH_BIN)/$(VBOX_FBSD_PACKAGE_NAME): \
 	$(QUIET)$(RM) -Rf $(VBOX_FBSD_INST_STAGE_DIR)
 
 $(addprefix $(VBOX_FBSD_INST_LIBVBOX_DIR)/,$(VBOX_FBSD_STRIP_BIN)): \
-		$(VBOX_FBSD_INST_LIBVBOX_DIR)/% : $(PATH_BIN)/%
+		$(VBOX_FBSD_INST_LIBVBOX_DIR)/% : $(PATH_STAGE_BIN)/%
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -d $(dir $@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 
 # pattern rule for striping and copying the VBOX_FBSD_STRIP_OBJ files to install/lib/virtualbox
 $(addprefix $(VBOX_FBSD_INST_LIBVBOX_DIR)/,$(VBOX_FBSD_STRIP_OBJ)): \
-		$(VBOX_FBSD_INST_LIBVBOX_DIR)/% : $(PATH_BIN)/%
+		$(VBOX_FBSD_INST_LIBVBOX_DIR)/% : $(PATH_STAGE_BIN)/%
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -d $(dir $@)
 ifeq ($(VBOX_DO_STRIP),)
@@ -283,7 +283,7 @@ endif
 
 # pattern rule for linking the VBOX_FBSD_NO_STRIP into lib/virtualbox/
 $(addprefix $(VBOX_FBSD_INST_LIBVBOX_DIR)/,$(VBOX_FBSD_NO_STRIP)): \
-		$(VBOX_FBSD_INST_LIBVBOX_DIR)/% : $(PATH_BIN)/%
+		$(VBOX_FBSD_INST_LIBVBOX_DIR)/% : $(PATH_STAGE_BIN)/%
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -d $(dir $@)
 	$(QUIET)$(RM) -f $@
@@ -291,7 +291,7 @@ $(addprefix $(VBOX_FBSD_INST_LIBVBOX_DIR)/,$(VBOX_FBSD_NO_STRIP)): \
 
 # pattern rule for symlinking the VBOX_FBSD_SYMLINKS into bin/
 $(addprefix $(VBOX_FBSD_INST_BIN_DIR)/,$(VBOX_FBSD_SYMLINKS)): \
-		$(VBOX_FBSD_INST_BIN_DIR)/% : $(PATH_BIN)/%
+		$(VBOX_FBSD_INST_BIN_DIR)/% : $(PATH_STAGE_BIN)/%
 	$(call MSG_INST_SYM,$<,$@)
 	$(QUIET)$(INSTALL) -d $(dir $@)
 	$(QUIET)$(RM) -f $@
@@ -299,7 +299,7 @@ $(addprefix $(VBOX_FBSD_INST_BIN_DIR)/,$(VBOX_FBSD_SYMLINKS)): \
 
 # pattern rule for copying the VBOX_FBSD_DESKTOP_FILE into share/applications/
 $(addprefix $(VBOX_FBSD_INST_SHAREAPP_DIR)/,$(VBOX_FBSD_DESKTOP_FILE)): \
-		$(VBOX_FBSD_INST_SHAREAPP_DIR)/% : $(PATH_BIN)/%
+		$(VBOX_FBSD_INST_SHAREAPP_DIR)/% : $(PATH_STAGE_BIN)/%
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -d $(dir $@)
 	$(QUIET)$(RM) -f $@
@@ -307,7 +307,7 @@ $(addprefix $(VBOX_FBSD_INST_SHAREAPP_DIR)/,$(VBOX_FBSD_DESKTOP_FILE)): \
 
 # pattern rule for copying the VBOX_FBSD_ICON_FILE into share/pixmaps/
 $(addprefix $(VBOX_FBSD_INST_SHAREICON_DIR)/,$(VBOX_FBSD_ICON_FILE)): \
-		$(VBOX_FBSD_INST_SHAREICON_DIR)/% : $(PATH_BIN)/%
+		$(VBOX_FBSD_INST_SHAREICON_DIR)/% : $(PATH_STAGE_BIN)/%
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -d $(dir $@)
 	$(QUIET)$(RM) -f $@

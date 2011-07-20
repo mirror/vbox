@@ -278,7 +278,7 @@ tstLdr_SOURCES = tstLdr.cpp
 tstLdr-2_SOURCES = tstLdr-2.cpp
 tstLdr-2_DEFS = IN_DIS
 tstLdr-2_LIBS = \
-	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
 ifdef VBOX_WITH_RAW_MODE
  tstLdrObj_TEMPLATE = VBoxRc
@@ -290,25 +290,25 @@ ifdef VBOX_WITH_RAW_MODE
  tstLdrObj_DEFS += VBOX_SOME_IMPORT_FUNCTION
  endif
  tstLdrObj_LIBS = \
- 	$(PATH_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
- 	$(PATH_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
  ifeq ($(VBOX_LDR_FMT32),pe)
  tstLdrObj_LIBS += \
- 	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
  endif # PE
  ifeq ($(VBOX_LDR_FMT32),elf)
  tstLdrObj_LDFLAGS = -e Entrypoint
  endif
  ifeq ($(VBOX_LDR_FMT32),lx)
  tstLdrObj_LIBS += \
- 	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
  endif
 endif # VBOX_WITH_RAW_MODE
 
 tstLdr-3_SOURCES = tstLdr-3.cpp
 tstLdr-3_DEFS = IN_DIS
 tstLdr-3_LIBS = \
-	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
 tstLdr-4Imp_TEMPLATE = VBoxR0
 ifeq ($(VBOX_LDR_FMT),lx)
@@ -329,11 +329,11 @@ ifn1of ($(KBUILD_TARGET), win)
  tstLdrObjR0_CXXFLAGS = $(VBOX_GCC_Wno-array_bounds)
 endif
 tstLdrObjR0_LIBS = \
-	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/DisasmR0$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
 ifeq ($(VBOX_LDR_FMT),pe)
  tstLdrObjR0_LIBS += \
-	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB) \
 	$(TARGET_tstLdr-4Imp)
 endif
 ifeq ($(VBOX_LDR_FMT),elf)
@@ -341,14 +341,14 @@ ifeq ($(VBOX_LDR_FMT),elf)
 endif
 ifeq ($(VBOX_LDR_FMT),lx)
  tstLdrObjR0_LIBS += \
-	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB) \
 	$(TARGET_tstLdr-4Imp)
 endif
 
 tstLdr-4_SOURCES = tstLdr-4.cpp tstLdrDisasmTest.cpp
 tstLdr-4_DEFS = IN_DIS
 tstLdr-4_LIBS = \
-	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
 tstLdrLoad_SOURCES = tstLdrLoad.cpp
 
@@ -527,9 +527,9 @@ tstRTR0MemUserKernel_INST = $(INST_TESTCASE)
 tstRTR0MemUserKernel_DEFS = IN_RT_R0
 tstRTR0MemUserKernel_SYSSUFF = .r0
 tstRTR0MemUserKernel_SOURCES = tstRTR0MemUserKernel.cpp
-tstRTR0MemUserKernel_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+tstRTR0MemUserKernel_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
 if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0MemUserKernel_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ tstRTR0MemUserKernel_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
 endif
 tstRTR0MemUserKernelDriver_TEMPLATE = VBOXR3TSTEXE
 tstRTR0MemUserKernelDriver_SOURCES = tstRTR0MemUserKernelDriver.cpp
@@ -540,9 +540,9 @@ tstRTR0SemMutex_INST = $(INST_TESTCASE)
 tstRTR0SemMutex_DEFS = IN_RT_R0
 tstRTR0SemMutex_SYSSUFF = .r0
 tstRTR0SemMutex_SOURCES = tstRTR0SemMutex.cpp
-tstRTR0SemMutex_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+tstRTR0SemMutex_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
 if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0SemMutex_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ tstRTR0SemMutex_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
 endif
 tstRTR0SemMutexDriver_TEMPLATE = VBOXR3TSTEXE
 tstRTR0SemMutexDriver_SOURCES = tstRTR0SemMutexDriver.cpp
@@ -553,9 +553,9 @@ tstRTR0Timer_INST = $(INST_TESTCASE)
 tstRTR0Timer_DEFS = IN_RT_R0
 tstRTR0Timer_SYSSUFF = .r0
 tstRTR0Timer_SOURCES = tstRTR0Timer.cpp
-tstRTR0Timer_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+tstRTR0Timer_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
 if1of ($(VBOX_LDR_FMT), pe lx)
- tstRTR0Timer_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ tstRTR0Timer_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
 endif
 tstRTR0TimerDriver_TEMPLATE = VBOXR3TSTEXE
 tstRTR0TimerDriver_SOURCES = tstRTR0TimerDriver.cpp
@@ -566,9 +566,9 @@ tstR0ThreadPreemption_INST = $(INST_TESTCASE)
 tstR0ThreadPreemption_DEFS = IN_RT_R0
 tstR0ThreadPreemption_SYSSUFF = .r0
 tstR0ThreadPreemption_SOURCES = tstR0ThreadPreemption.cpp
-tstR0ThreadPreemption_LIBS = $(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+tstR0ThreadPreemption_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
 if1of ($(VBOX_LDR_FMT), pe lx)
- tstR0ThreadPreemption_LIBS += $(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ tstR0ThreadPreemption_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
 endif
 tstR0ThreadPreemptionDriver_TEMPLATE = VBOXR3TSTEXE
 tstR0ThreadPreemptionDriver_SOURCES = tstR0ThreadPreemptionDriver.cpp

@@ -81,7 +81,7 @@ VBoxSDL_LIBS = \
 endif
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 VBoxSDL_LIBS += \
-	$(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL) \
+	$(PATH_STAGE_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL) \
 	$(VBOX_XCURSOR_LIBS) \
 	X11
 VBoxSDL_LIBPATH = \

@@ -23,7 +23,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 BLDDIRS += \
 	$(VBOX_PATH_CROGL_GENFILES)/
-	
+
 DLLS.win += \
     VBoxOGL \
     VBoxOGLarrayspu \
@@ -198,13 +198,13 @@ VBoxOGL_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_OGL_CRUTIL) \
-	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGL_LIBS += \
- 	$(PATH_LIB)/libXcomposite.so \
- 	$(PATH_LIB)/libXdamage.so \
- 	$(PATH_LIB)/libXfixes.so \
- 	$(PATH_LIB)/libXext.so
+ 	$(PATH_STAGE_LIB)/libXcomposite.so \
+ 	$(PATH_STAGE_LIB)/libXdamage.so \
+ 	$(PATH_STAGE_LIB)/libXfixes.so \
+ 	$(PATH_STAGE_LIB)/libXext.so
  ifdef VBoxOGL_FAKEDRI
   VBoxOGL_LIBS += \
   	dl
@@ -213,7 +213,7 @@ endif
 
 ifdef VBOX_WITH_WDDM
 #
-# VBoxOGL-x86 - x86 VBoxOGL version built for amd64 build 
+# VBoxOGL-x86 - x86 VBoxOGL version built for amd64 build
 #
 DLLS.win.amd64 += VBoxOGL-x86
 VBoxOGL-x86_EXTENDS = VBoxOGL
@@ -221,7 +221,7 @@ VBoxOGL-x86_BLD_TRG_ARCH = x86
 VBoxOGL-x86_LIBS = $(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
 	$(VBOX_LIB_VBGL_R3_SHARED_X86) \
 	$(VBOX_LIB_OGL_CRUTIL_X86) \
-	$(PATH_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB)
 VBoxOGL-x86_SOURCES.win = $(subst cropengl.def,cropengl-x86.def,$(VBoxOGL_SOURCES.win))
 VBoxOGL-x86_CLEAN.win = $(subst cropengl.def,cropengl-x86.def,$(VBoxOGL_CLEAN.win))
 VBoxOGL-x86_DEFS = $(VBoxOGL_DEFS) VBOX_WDDM_WOW64
@@ -397,8 +397,8 @@ VBoxOGLarrayspu_SOURCES.win   = \
 	array/arrayspu.rc
 VBoxOGLarrayspu_LIBS          = \
 	$(VBOX_LIB_OGL_CRUTIL) \
-	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
 
 ifdef VBOX_WITH_WDDM
 #
@@ -408,8 +408,8 @@ DLLS.win.amd64 += VBoxOGLarrayspu-x86
 VBoxOGLarrayspu-x86_EXTENDS = VBoxOGLarrayspu
 VBoxOGLarrayspu-x86_BLD_TRG_ARCH = x86
 VBoxOGLarrayspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
-	$(PATH_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB)
 VBoxOGLarrayspu-x86_DEFS = $(VBoxOGLarrayspu_DEFS) VBOX_WDDM_WOW64
 endif
 
@@ -436,7 +436,7 @@ VBoxOGLpassthroughspu_CLEAN       = \
 	$(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c
 VBoxOGLpassthroughspu_LIBS        = \
 	$(VBOX_LIB_OGL_CRUTIL)
-	
+
 ifdef VBOX_WITH_WDDM
 #
 # VBoxOGLpassthroughspu-x86 - x86 version of VBoxOGLpassthroughspu built for amd64 build
@@ -502,9 +502,9 @@ VBoxOGLpackspu_CLEAN       = \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu_beginend.c
 VBoxOGLpackspu_LIBS        = \
 	$(VBOX_LIB_OGL_CRUTIL) \
-	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
 
 ifdef VBOX_WITH_WDDM
 #
@@ -514,9 +514,9 @@ DLLS.win.amd64 += VBoxOGLpackspu-x86
 VBoxOGLpackspu-x86_EXTENDS = VBoxOGLpackspu
 VBoxOGLpackspu-x86_BLD_TRG_ARCH = x86
 VBoxOGLpackspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
-	$(PATH_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/additions/VBoxOGLcrpacker-x86$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxOGLcrpacker-x86$(VBOX_SUFF_LIB)
 VBoxOGLpackspu-x86_DEFS = $(VBoxOGLpackspu_DEFS) VBOX_WDDM_WOW64
 endif
 
@@ -573,9 +573,9 @@ VBoxOGLfeedbackspu_CLEAN       = \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_state.c
 VBoxOGLfeedbackspu_LIBS        = \
 	$(VBOX_LIB_OGL_CRUTIL) \
-	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
-	
+	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
+
 ifdef VBOX_WITH_WDDM
 #
 # VBoxOGLfeedbackspu-x86 - x86 version of VBoxOGLfeedbackspu built for amd64 build
@@ -584,8 +584,8 @@ DLLS.win.amd64 += VBoxOGLfeedbackspu-x86
 VBoxOGLfeedbackspu-x86_EXTENDS = VBoxOGLfeedbackspu
 VBoxOGLfeedbackspu-x86_BLD_TRG_ARCH = x86
 VBoxOGLfeedbackspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
-	$(PATH_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB)
 VBoxOGLfeedbackspu-x86_DEFS = $(VBoxOGLfeedbackspu_DEFS) VBOX_WDDM_WOW64
 endif
 

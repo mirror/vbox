@@ -85,11 +85,11 @@ ifdef VBOX_WITH_TESTCASES
 	$(VBOX_LIB_RUNTIME_STATIC)
  if1of ($(KBUILD_TARGET),os2 win)
   vbox-img_LIBS += \
-	$(PATH_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB)
  else
   vbox-img_LIBS += \
-	$(PATH_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
 	$(SDK_VBOX_ZLIB_LIBS)
  endif
  ifeq ($(KBUILD_TARGET),linux)

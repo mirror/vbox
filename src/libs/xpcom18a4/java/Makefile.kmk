@@ -57,8 +57,8 @@ VBoxJXpcom_SOURCES  = \
         src/nsJavaXPCOMGlue.cpp \
         src/nsJavaInterfaces.cpp
 VBoxJXpcom_LIBS     = \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
+	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 
 #VBoxJXpcom_ORDERDEPS = $(VBOX_JXPCOM_GENH)
 #VBoxJXpcom_CLEAN     = $(VBOX_JXPCOM_GENH)

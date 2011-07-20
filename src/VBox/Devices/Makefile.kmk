@@ -80,12 +80,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
  VBoxDDU_LIBS             = \
  	$(LIB_RUNTIME) \
- 	$(PATH_LIB)/StorageLib$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/StorageLib$(VBOX_SUFF_LIB)
  ifdef VBOX_WITH_USB
   VBoxDDU_LIBS           += \
- 	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/USBLib$(VBOX_SUFF_LIB)
   VBoxDDU_LIBS.win       += \
- 	$(PATH_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
  endif
  ifeq ($(KBUILD_TARGET),l4)
   VBoxDDU_LIBS           += \
@@ -170,15 +170,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  VBoxDD_LIBS             = \
- 	$(PATH_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
- 	$(PATH_LIB)/Drivers$(VBOX_SUFF_LIB) \
- 	$(PATH_LIB)/VgaDefBiosLogo$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/DevicesR3$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/Drivers$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/VgaDefBiosLogo$(VBOX_SUFF_LIB) \
  	$(LIB_VMM) \
  	$(LIB_RUNTIME)
  ifeq ($(KBUILD_TARGET),win)
   VBoxDD_LIBS           += \
  	$(LIB_DDU) \
- 	$(PATH_LIB)/VBoxDD2.lib \
+ 	$(PATH_STAGE_LIB)/VBoxDD2.lib \
  	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
  else
   VBoxDD_LIBS           += \
@@ -192,15 +192,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  ifdef VBOX_WITH_HGSMI
   VBoxDD_LIBS           += \
- 	$(PATH_LIB)/HGSMIHostR3Lib$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/HGSMIHostR3Lib$(VBOX_SUFF_LIB)
  endif
 
  ifdef VBOX_WITH_NETFLT
-  VBoxDD_LIBS.win       += $(PATH_LIB)/WinNetConfig.lib
+  VBoxDD_LIBS.win       += $(PATH_STAGE_LIB)/WinNetConfig.lib
  endif
 
  ifdef VBOX_WITH_EFI
-  VBoxDD_LIBS           += $(PATH_LIB)/EfiThunkBin$(VBOX_SUFF_LIB)
+  VBoxDD_LIBS           += $(PATH_STAGE_LIB)/EfiThunkBin$(VBOX_SUFF_LIB)
  endif
 
  ifeq ($(KBUILD_TARGET),solaris)
@@ -242,9 +242,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevSMC.cpp  \
  	PC/DevLPC.cpp
  VBoxDD2_LIBS            = \
- 	$(PATH_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
- 	$(PATH_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
- 	$(if $(VBOX_WITH_PXE_ROM),$(PATH_LIB)/NetBiosBin$(VBOX_SUFF_LIB),) \
+ 	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
+ 	$(if $(VBOX_WITH_PXE_ROM),$(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB),) \
  	$(LIB_VMM) \
  	$(LIB_RUNTIME)
  ifeq ($(KBUILD_TARGET),l4)
@@ -639,8 +639,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
   if1of ($(VBOX_LDR_FMT32), pe lx)
   VBoxDDGC_LIBS           = \
-  	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
-  	$(PATH_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
+  	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
+  	$(PATH_STAGE_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
   endif
  endif # VBOX_WITH_RAW_MODE
 
@@ -719,7 +719,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
-  VBoxDDR0_SOURCES      += 
+  VBoxDDR0_SOURCES      +=
 	Bus/DevPciRaw.cpp
  endif
 
@@ -751,8 +751,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  if1of ($(VBOX_LDR_FMT), pe lx)
  VBoxDDR0_LIBS           = \
- 	$(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
- 	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
  endif
 
 
@@ -769,8 +769,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	PC/DevSMC.cpp
   if1of ($(VBOX_LDR_FMT32), pe lx)
    VBoxDD2GC_LIBS          = \
-   	$(PATH_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
-   	$(PATH_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
+   	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
+   	$(PATH_STAGE_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
   endif
  endif
 
@@ -788,8 +788,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  if1of ($(VBOX_LDR_FMT), pe lx)
   VBoxDD2R0_LIBS          = \
-  	$(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
-  	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+  	$(PATH_STAGE_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
+  	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
  endif
 
 
@@ -1228,7 +1228,7 @@ ifdef VBOX_WITH_EXTPACK_PUEL
   SYSMODS += VBoxPciRawR0
   VBoxPciRawR0_TEMPLATE = VBoxR0ExtPackPuel
   VBoxPciRawR0_SOURCES  = Bus/DevPciRaw.cpp
- 
+
   Bus/DevPciRaw.cpp_INCS   = Bus
  endif
 

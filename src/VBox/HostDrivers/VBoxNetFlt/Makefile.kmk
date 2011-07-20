@@ -60,9 +60,9 @@ VBoxNetFlt_LIBS.win = \
 	$(PATH_SDK_WINDDKWLH_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_WINDDKWLH_LIB)/hal.lib \
 	$(PATH_SDK_WINDDKWLH_LIB)/ndis.lib \
-	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxNetFlt_LIBS = \
-	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 
 darwin/VBoxNetFlt-darwin.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
@@ -278,9 +278,9 @@ VBoxNetAdp_LIBS.win = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/ndis.lib \
-	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxNetAdp_LIBS = \
-	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 
 
 INSTALLS.win += VBoxNetAdp-inf
@@ -332,10 +332,10 @@ vboxnetflt_INCS         := \
 	$(PATH_SUB_CURRENT)
 vboxnetflt_LDFLAGS.solaris += -N drv/vboxdrv -N misc/ctf
 vboxnetflt_LIBS = \
-	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 ## @todo vboxflt should resolves all the IPRT bits from vboxdrv.
 #vboxnetflt_LIBS += \
-#	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+#	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxnetflt_SOURCES.linux = linux/VBoxNetFlt-linux.c
 vboxnetflt_SOURCES.solaris = solaris/VBoxNetFlt-solaris.c
 vboxnetflt_SOURCES.freebsd = freebsd/VBoxNetFlt-freebsd.c
@@ -350,7 +350,7 @@ vboxnetbow_DEPS         += $(VBOX_SVN_REV_KMK)
 vboxnetbow_INCS         := $(PATH_SUB_CURRENT)
 vboxnetbow_LDFLAGS      += -N drv/vboxdrv -N drv/vnic -N misc/mac -N misc/dls
 vboxnetbow_LIBS = \
-	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 vboxnetbow_SOURCES.solaris = solaris/VBoxNetFltBow-solaris.c
 vboxnetbow_SOURCES         = VBoxNetFlt.c
 solaris/VBoxNetFltBow-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
