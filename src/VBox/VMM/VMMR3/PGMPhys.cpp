@@ -4247,6 +4247,27 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
         VM_FF_CLEAR(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
         VM_FF_CLEAR(pVM, VM_FF_PGM_NO_MEMORY);
 
+#ifdef VBOX_STRICT
+        bool fOk = true;
+        uint32_t i;
+        for (i = iClear; i < pVM->pgm.s.cHandyPages; i++)
+            if (   pVM->pgm.s.aHandyPages[i].idPage == NIL_GMM_PAGEID
+                || pVM->pgm.s.aHandyPages[i].idSharedPage != NIL_GMM_PAGEID
+                || (pVM->pgm.s.aHandyPages[i].HCPhysGCPhys & PAGE_OFFSET_MASK))
+                break;
+        if (i != pVM->pgm.s.cHandyPages)
+        {
+            RTAssertMsg1Weak(NULL, __LINE__, __FILE__, __FUNCTION__);
+            RTAssertMsg2Weak("i=%d iClear=%d cHandyPages=%d\n", i, iClear, pVM->pgm.s.cHandyPages);
+            for (uint32_t j = iClear; j < pVM->pgm.s.cHandyPages; j++)
+                RTAssertMsg2Add(("%03d: idPage=%d HCPhysGCPhys=%RHp idSharedPage=%d%\n", j,
+                                 pVM->pgm.s.aHandyPages[j].idPage,
+                                 pVM->pgm.s.aHandyPages[j].HCPhysGCPhys,
+                                 pVM->pgm.s.aHandyPages[j].idSharedPage,
+                                 j == i ? " <---" : ""));
+            RTAssertPanic();
+        }
+#endif
         /*
          * Clear the pages.
          */
