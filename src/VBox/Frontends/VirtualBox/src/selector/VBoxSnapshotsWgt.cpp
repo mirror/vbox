@@ -685,20 +685,18 @@ void VBoxSnapshotsWgt::sltCloneSnapshot()
     AssertReturn (item, (void) 0);
 
     CMachine machine;
-    bool fShowChildsOption = false;
+    CSnapshot snapshot;
     if (item->isCurrentStateItem())
         machine = item->machine();
     else
     {
-        const CSnapshot &snap = item->snapshot();
-        AssertReturn(!snap.isNull(), (void)0);
-        machine = snap.GetMachine();
-        if (snap.GetChildrenCount() > 0)
-            fShowChildsOption = true;
+        snapshot = item->snapshot();
+        AssertReturn(!snapshot.isNull(), (void)0);
+        machine = snapshot.GetMachine();
     }
     AssertReturn(!machine.isNull(), (void)0);
 
-    UICloneVMWizard wzd(this, machine, fShowChildsOption);
+    UICloneVMWizard wzd(this, machine, snapshot);
     wzd.exec();
 }
 
