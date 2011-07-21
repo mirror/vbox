@@ -168,7 +168,7 @@ INSTALLS += VBox-python-glue
 VBox-python-glue_INST = $(INST_SDK)installer/vboxapi/
 VBox-python-glue_MODE = a+r,u+w
 VBox-python-glue_SOURCES = \
-	glue/vboxapi.py \
+	glue/vboxapi.py=>__init__.py \
         $(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
 VBox-python-glue_CLEAN = \
         $(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
