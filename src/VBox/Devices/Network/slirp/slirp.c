@@ -1043,6 +1043,63 @@ done:
     STAM_PROFILE_STOP(&pData->StatFill, a);
 }
 
+
+static bool slirpConnectOrWrite(PNATState pData, struct socket *so, bool fConnectOnly)
+{
+    int ret;
+    LogFlowFunc(("ENTER: so:%R[natsock], fConnectOnly:%RTbool\n", so, fConnectOnly));
+    /*
+     * Check for non-blocking, still-connecting sockets
+     */
+    if (so->so_state & SS_ISFCONNECTING)
+    {
+        Log2(("connecting %R[natsock] catched\n", so));
+        /* Connected */
+        so->so_state &= ~SS_ISFCONNECTING;
+
+        /*
+         * This should be probably guarded by PROBE_CONN too. Anyway,
+         * we disable it on OS/2 because the below send call returns
+         * EFAULT which causes the opened TCP socket to close right
+         * after it has been opened and connected.
+         */
+#ifndef RT_OS_OS2
+    ret = send(so->s, (const char *)&ret, 0, 0);
+    if (ret < 0)
+    {
+        /* XXXXX Must fix, zero bytes is a NOP */
+        if (   errno == EAGAIN
+            || errno == EWOULDBLOCK
+            || errno == EINPROGRESS
+            || errno == ENOTCONN)
+        {
+            LogFlowFunc(("LEAVE: true"));
+            return false;
+        }
+
+        /* else failed */
+        so->so_state = SS_NOFDREF;
+    }
+    /* else so->so_state &= ~SS_ISFCONNECTING; */
+#endif
+
+        /*
+         * Continue tcp_input
+         */
+        TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
+        /* continue; */
+    }
+    else if (!fConnectOnly)
+        SOWRITE(ret, pData, so);
+    /*
+     * XXX If we wrote something (a lot), there could be the need
+     * for a window update. In the worst case, the remote will send
+     * a window probe to get things going again.
+     */
+    LogFlowFunc(("LEAVE: true"));
+    return true;
+}
+
 #if defined(RT_OS_WINDOWS)
 void slirp_select_poll(PNATState pData, int fTimeout, int fIcmp)
 #else /* RT_OS_WINDOWS */
@@ -1194,8 +1251,10 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
 #ifdef NAT_CONNECT_EXPERIMENT
             if (WIN_CHECK_FD_SET(so, NetworkEvents, connectfds))
             {
-                TCP_ENGAGE_EVENT2(so, readfds, acceptds);
-                goto dont_read_now;
+                /* Finish connection first */
+                /* should we ignore return value? */
+                bool fRet = slirpConnectOrWrite(pData, so, true);
+                LogFunc(("fRet:%RTbool\n", fRet));
             }
 #endif
             /*
@@ -1212,9 +1271,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             /* Output it if we read something */
             if (RT_LIKELY(ret > 0))
                 TCP_OUTPUT(pData, sototcpcb(so));
-#ifdef NAT_CONNECT_EXPERIMENT
-dont_read_now:;
-#endif
         }
 
         /*
@@ -1258,51 +1314,8 @@ dont_read_now:;
 #endif
             )
         {
-            /*
-             * Check for non-blocking, still-connecting sockets
-             */
-            if (so->so_state & SS_ISFCONNECTING)
-            {
-                Log2(("connecting %R[natsock] catched\n", so));
-                /* Connected */
-                so->so_state &= ~SS_ISFCONNECTING;
-
-                /*
-                 * This should be probably guarded by PROBE_CONN too. Anyway,
-                 * we disable it on OS/2 because the below send call returns
-                 * EFAULT which causes the opened TCP socket to close right
-                 * after it has been opened and connected.
-                 */
-#ifndef RT_OS_OS2
-                ret = send(so->s, (const char *)&ret, 0, 0);
-                if (ret < 0)
-                {
-                    /* XXXXX Must fix, zero bytes is a NOP */
-                    if (   errno == EAGAIN
-                        || errno == EWOULDBLOCK
-                        || errno == EINPROGRESS
-                        || errno == ENOTCONN)
-                        CONTINUE(tcp);
-
-                    /* else failed */
-                    so->so_state = SS_NOFDREF;
-                }
-                /* else so->so_state &= ~SS_ISFCONNECTING; */
-#endif
-
-                /*
-                 * Continue tcp_input
-                 */
-                TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
-                /* continue; */
-            }
-            else
-                SOWRITE(ret, pData, so);
-            /*
-             * XXX If we wrote something (a lot), there could be the need
-             * for a window update. In the worst case, the remote will send
-             * a window probe to get things going again.
-             */
+            if(!slirpConnectOrWrite(pData, so, false))
+                CONTINUE(tcp);
         }
 
         /*
