@@ -150,7 +150,7 @@ ifndef VBOX_WITH_0_2_0_KBUILD
  PATH_SYS             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_SYS))
  PATH_LIB             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_LIB))
  PATH_DOC             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_DOC))
- $(foreach path, BIN DLL SYS LIB DOC, $(eval PATH_STAGE_$(path) = $(PATH_$(path))))
+ $(foreach path, BIN DLL SYS LIB DOC, $(eval PATH_STAGE_$(path) = $$(PATH_$(path))))
 endif
 VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_STAGE)/$(INST_SDK))
 VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_STAGE)/$(INST_DIST))
