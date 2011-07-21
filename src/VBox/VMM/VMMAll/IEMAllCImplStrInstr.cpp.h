@@ -568,7 +568,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
                 RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
                 uCounterReg -= i;
                 uAddrReg    += i * cbIncr;
-                Assert(!(uEFlags & X86_EFL_ZF) != (i < cLeftPage));
+                Assert((!(uEFlags & X86_EFL_ZF) != (i < cLeftPage)) || (i == cLeftPage));
                 if (fQuit)
                     break;
 
