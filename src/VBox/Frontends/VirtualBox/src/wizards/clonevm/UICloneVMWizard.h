@@ -26,6 +26,7 @@
 /* Generated includes: */
 #include "UICloneVMWizardPage1.gen.h"
 #include "UICloneVMWizardPage2.gen.h"
+#include "UICloneVMWizardPage3.gen.h"
 
 /* Clone vm wizard class: */
 class UICloneVMWizard : public QIWizard
@@ -34,10 +35,17 @@ class UICloneVMWizard : public QIWizard
 
 public:
 
-    /* Constructor: */
-    UICloneVMWizard(QWidget *pParent, CMachine machine, bool fShowChildsOption = true);
+    enum
+    {
+        PageIntro,
+        PageType,
+        PageMode
+    };
 
-    bool createClone(const QString &strName, KCloneMode mode, bool fReinitMACs);
+    /* Constructor: */
+    UICloneVMWizard(QWidget *pParent, CMachine machine, CSnapshot snapshot = CSnapshot());
+
+    bool createClone(const QString &strName, KCloneMode mode, bool fReinitMACs, bool fLinked = false);
 
 private:
 
@@ -107,12 +115,38 @@ private:
 class UICloneVMWizardPage2 : public UICloneVMWizardPage, public Ui::UICloneVMWizardPage2
 {
     Q_OBJECT;
+
+public:
+
+    /* Constructor: */
+    UICloneVMWizardPage2();
+    int nextId() const;
+
+protected:
+
+    /* Translation stuff: */
+    void retranslateUi();
+
+    /* Prepare page: */
+    void initializePage();
+
+    bool validatePage();
+
+private slots:
+
+    void buttonClicked(QAbstractButton *pButton);
+};
+
+/* Page3 of the new clonevm wizard: */
+class UICloneVMWizardPage3 : public UICloneVMWizardPage, public Ui::UICloneVMWizardPage3
+{
+    Q_OBJECT;
     Q_PROPERTY(KCloneMode cloneMode READ cloneMode WRITE setCloneMode);
 
 public:
 
     /* Constructor: */
-    UICloneVMWizardPage2(bool fShowChildsOption = true);
+    UICloneVMWizardPage3(bool fShowChildsOption = true);
 
 protected:
 

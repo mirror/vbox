@@ -13,8 +13,8 @@
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <class>UICloneVMWizardPage2</class>
- <widget class="QWidget" name="UICloneVMWizardPage2">
+ <class>UICloneVMWizardPage3</class>
+ <widget class="QWidget" name="UICloneVMWizardPage3">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -33,7 +33,7 @@
    <item>
     <widget class="QILabel" name="m_pLabel">
      <property name="text">
-      <string>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</string>
+      <string></string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -41,9 +41,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QRadioButton" name="m_pFullCloneRadio">
+    <widget class="QRadioButton" name="m_pMachineRadio">
      <property name="text">
-      <string>Full Clone</string>
+      <string>Current machine state</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -51,9 +51,16 @@
     </widget>
    </item>
    <item>
-    <widget class="QRadioButton" name="m_pLinkedCloneRadio">
+    <widget class="QRadioButton" name="m_pMachineAndChildsRadio">
      <property name="text">
-      <string>Linked Clone</string>
+      <string>Current machine and all child states</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="m_pAllRadio">
+     <property name="text">
+      <string>All states</string>
      </property>
     </widget>
    </item>
