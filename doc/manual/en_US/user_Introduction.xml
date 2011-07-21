@@ -426,6 +426,10 @@
           <listitem>
             <para>10.6 (Snow Leopard, 32-bit and 64-bit)</para>
           </listitem>
+
+          <listitem>
+            <para>10.7 (Lion, 32-bit and 64-bit)</para>
+          </listitem>
         </itemizedlist>
 
         <para>Intel hardware is required; please see <xref
