@@ -759,7 +759,7 @@ void VBoxSelectorWnd::vmClone(const QString &aUuid /* = QString::null */)
 
     CMachine machine = item->machine();
 
-    UICloneVMWizard wzd(this, machine, false);
+    UICloneVMWizard wzd(this, machine);
     wzd.exec();
 }
 
