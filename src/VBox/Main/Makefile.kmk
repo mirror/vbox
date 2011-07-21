@@ -648,6 +648,7 @@ VBoxC_SOURCES = \
 	src-client/ConsoleVRDPServer.cpp \
 	src-client/DisplayImpl.cpp \
 	src-client/GuestCtrlImpl.cpp \
+	src-client/GuestCtrlIO.cpp \
 	src-client/GuestImpl.cpp \
 	src-client/KeyboardImpl.cpp \
 	src-client/MachineDebuggerImpl.cpp \

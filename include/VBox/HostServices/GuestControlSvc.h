@@ -87,7 +87,9 @@ enum eProcessStatus
  * @{
  */
 #define VBOXSERVICE_TOOL_CAT        "vbox_cat"
+#define VBOXSERVICE_TOOL_LS         "vbox_ls"
 #define VBOXSERVICE_TOOL_MKDIR      "vbox_mkdir"
+#define VBOXSERVICE_TOOL_STAT       "vbox_stat"
 /** @} */
 
 /**

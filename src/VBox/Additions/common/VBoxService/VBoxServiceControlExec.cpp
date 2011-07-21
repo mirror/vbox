@@ -1272,7 +1272,8 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
         if (uFlags & INPUT_FLAG_EOF)
         {
             fPendingClose = true;
-            VBoxServiceVerbose(4, "ControlExec: Got last input block (PID %u) of size %u ...\n", uPID, cbSize);
+            VBoxServiceVerbose(4, "ControlExec: Got last input block (PID %u) of size %u ...\n",
+                               uPID, cbSize);
         }
 
         rc = VBoxServiceControlExecThreadSetInput(uPID, fPendingClose, pabBuffer,
@@ -1318,7 +1319,8 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
     rc = VbglR3GuestCtrlExecReportStatusIn(u32ClientId, uContextID, uPID,
                                            uStatus, uFlags, (uint32_t)cbWritten);
 
-    VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecHandleCmdSetInput returned with %Rrc\n", rc);
+    if (RT_FAILURE(rc))
+        VBoxServiceError("ControlExec: Failed to report input status! Error: %Rrc\n", rc);
     return rc;
 }
 
@@ -1350,6 +1352,9 @@ int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNum
                                                        pBuf, _64K /* cbSize */, &cbRead);
             if (RT_SUCCESS(rc))
             {
+                VBoxServiceVerbose(3, "ControlExec: Got output (PID %u), read=%u, handle=%u, flags=%u\n",
+                                   uPID, cbRead, uHandleID, uFlags);
+
                 /* Note: Since the context ID is unique the request *has* to be completed here,
                  *       regardless whether we got data or not! Otherwise the progress object
                  *       on the host never will get completed! */
@@ -1357,6 +1362,9 @@ int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNum
                 rc = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, uHandleID, uFlags,
                                                 pBuf, cbRead);
             }
+            else
+                VBoxServiceError("ControlExec: Failed to retrieve output (PID %u), rc=%Rrc\n",
+                                 uPID, rc);
             RTMemFree(pBuf);
         }
         else
@@ -1364,7 +1372,6 @@ int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNum
     }
     else
         VBoxServiceError("ControlExec: Failed to retrieve exec output command! Error: %Rrc\n", rc);
-    VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecHandleCmdGetOutput returned with %Rrc\n", rc);
     return rc;
 }
 

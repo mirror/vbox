@@ -53,29 +53,33 @@ static struct
 } aTests[] =
 {
     /* Invalid stuff. */
-    { NULL,                             0,                                                 0,  0,       0, VERR_INVALID_POINTER },
-    { NULL,                             512,                                               0,  0,       0, VERR_INVALID_POINTER },
-    { "",                               0,                                                 0,  0,       0, VERR_INVALID_PARAMETER },
-    { "",                               0,                                                 0,  0,       0, VERR_INVALID_PARAMETER },
-    { "foo=bar1",                       0,                                                 0,  0,       0, VERR_INVALID_PARAMETER },
-    { "foo=bar2",                       0,                                                 50, 50,      0, VERR_INVALID_PARAMETER },
-    /* Incomplete buffer (missing \0 termination). */
-    { "",                               1,                                                 0, 0,       0, VERR_MORE_DATA },
-    { "\0",                             1,                                                 0, 0,       0, VERR_MORE_DATA },
-    { szUnterm1,                        5,                                                 0, 0,       0, VERR_MORE_DATA },
-    { "foo1",                           sizeof("foo1"),                                    0, 0,       0, VERR_MORE_DATA },
-    { szUnterm2,                        8,                                                 0, 0,       0, VERR_MORE_DATA },
+    { NULL,                             0,                                                 0,  0,                                         0, VERR_INVALID_POINTER },
+    { NULL,                             512,                                               0,  0,                                         0, VERR_INVALID_POINTER },
+    { "",                               0,                                                 0,  0,                                         0, VERR_INVALID_PARAMETER },
+    { "",                               0,                                                 0,  0,                                         0, VERR_INVALID_PARAMETER },
+    { "foo=bar1",                       0,                                                 0,  0,                                         0, VERR_INVALID_PARAMETER },
+    { "foo=bar2",                       0,                                                 50, 50,                                        0, VERR_INVALID_PARAMETER },
+    /* Empty buffers. */
+    { "",                               1,                                                 0, 1,                                          0, VERR_MORE_DATA },
+    { "\0",                             1,                                                 0, 1,                                          0, VERR_MORE_DATA },
     /* Incomplete buffer (missing components). */
-    { "=bar\0",                         sizeof("=bar"),                                    0,  0,                                         0, VERR_MORE_DATA },
+    { szUnterm1,                        5,                                                 0, 0,                                          0, VERR_MORE_DATA },
+    { "foo1",                           sizeof("foo1"),                                    0, 0,                                          0, VERR_MORE_DATA },
+    { "=bar\0",                         sizeof("=bar"),                                    0, 0 ,                                         0, VERR_MORE_DATA },
     /* Last sequence is incomplete -- new offset should point to it. */
     { "hug=sub\0incomplete",            sizeof("hug=sub\0incomplete"),                     0,  sizeof("hug=sub"),                         1, VERR_MORE_DATA },
     { "boo=hoo\0baz=boo\0qwer",         sizeof("boo=hoo\0baz=boo\0qwer"),                  0,  sizeof("boo=hoo\0baz=boo"),                2, VERR_MORE_DATA },
     /* Parsing good stuff. */
+    { "novalue=",                       sizeof("novalue="),                                0,  sizeof("novalue="),                        1, VINF_SUCCESS },
+    { szUnterm2,                        8,                                                 0,  sizeof(szUnterm2),                         1, VINF_SUCCESS },
     { "foo2=",                          sizeof("foo2="),                                   0,  sizeof("foo2="),                           1, VINF_SUCCESS },
     { "har=hor",                        sizeof("har=hor"),                                 0,  sizeof("har=hor"),                         1, VINF_SUCCESS },
     { "foo=bar\0baz=boo",               sizeof("foo=bar\0baz=boo"),                        0,  sizeof("foo=bar\0baz=boo"),                2, VINF_SUCCESS },
     /* Parsing until a different block (two terminations, returning offset to next block). */
-    { "off=rab\0\0zab=oob",             sizeof("off=rab\0\0zab=oob"),                      0,  sizeof("zab=oob"),                         1, VERR_MORE_DATA }
+    { "off=rab\0a=b\0\0\0\0",           sizeof("off=rab\0a=b\0\0\0"),                      0,  13,                                        2, VERR_MORE_DATA },
+    { "off=rab\0\0zab=oob",             sizeof("off=rab\0\0zab=oob"),                      0,  9,                                         1, VERR_MORE_DATA },
+    { "\0\0\0\0off=rab\0zab=oob\0\0",   sizeof("\0\0\0\0off=rab\0zab=oob\0\0"),            0,  1,                                         0, VERR_MORE_DATA },
+    { "o2=r2\0z3=o3\0\0f3=g3",          sizeof("o2=r2\0z3=o3\0\0f3=g3"),                   0,  13,                                        2, VERR_MORE_DATA }
 };
 
 static struct
@@ -88,10 +92,12 @@ static struct
     int         iResult;
 } aTests2[] =
 {
+    { "\0\0\0\0",                                      sizeof("\0\0\0\0"),                                0, VERR_MORE_DATA },
     { "off=rab\0\0zab=oob",                            sizeof("off=rab\0\0zab=oob"),                      2, VINF_SUCCESS },
     { "\0\0\0soo=foo\0goo=loo\0\0zab=oob",             sizeof("\0\0\0soo=foo\0goo=loo\0\0zab=oob"),       2, VINF_SUCCESS },
-    { "qoo=uoo\0\0\0\0asdf=\0\0",                      sizeof("qoo=uoo\0\0\0\0asdf=\0\0"),                2, VINF_SUCCESS },
-    { "foo=bar\0\0\0\0\0\0",                           sizeof("foo=bar\0\0\0\0\0\0"),                     1, VINF_SUCCESS }
+    { "qoo=uoo\0\0\0\0asdf=\0\0",                      sizeof("qoo=uoo\0\0\0\0asdf=\0\0"),                2, VERR_MORE_DATA },
+    { "foo=bar\0\0\0\0\0\0",                           sizeof("foo=bar\0\0\0\0\0\0"),                     1, VERR_MORE_DATA },
+    { "qwer=cvbnr\0\0\0gui=uig\0\0\0",                 sizeof("qwer=cvbnr\0\0\0gui=uig\0\0\0"),           2, VERR_MORE_DATA }
 };
 
 int outputBufferParse(const BYTE *pbData, size_t cbData, uint32_t *puOffset, GuestBufferMap& mapBuf)
@@ -109,7 +115,7 @@ int outputBufferParse(const BYTE *pbData, size_t cbData, uint32_t *puOffset, Gue
         const char *pszStart = (char*)&pbData[uCur];
         const char *pszEnd = pszStart;
 
-        /* Search and of current pair (key=value\0). */
+        /* Search end of current pair (key=value\0). */
         while (uCur++ < cbData)
         {
             if (*pszEnd == '\0')
@@ -118,64 +124,82 @@ int outputBufferParse(const BYTE *pbData, size_t cbData, uint32_t *puOffset, Gue
         }
 
         size_t uPairLen = pszEnd - pszStart;
-        if (   *pszEnd != '\0'
-            || !uPairLen)
+        if (uPairLen)
         {
-            rc = VERR_MORE_DATA;
-            break;
-        }
-
-        const char *pszSep = pszStart;
-        while (   *pszSep != '='
-               &&  pszSep != pszEnd)
-        {
-            pszSep++;
-        }
-
-        if (   pszSep == pszStart
-            || pszSep == pszEnd)
-        {
-            rc = VERR_MORE_DATA;
-            break;
-        }
-
-        size_t uKeyLen = pszSep - pszStart;
-        size_t uValLen = pszEnd - (pszSep + 1);
-
-        /* Get key (if present). */
-        if (uKeyLen)
-        {
-            Assert(pszSep > pszStart);
-            char *pszKey = (char*)RTMemAllocZ(uKeyLen + 1);
-            if (!pszKey)
+            const char *pszSep = pszStart;
+            while (   *pszSep != '='
+                   &&  pszSep != pszEnd)
             {
-                rc = VERR_NO_MEMORY;
-                break;
+                pszSep++;
             }
-            memcpy(pszKey, pszStart, uKeyLen);
 
-            mapBuf[RTCString(pszKey)].pszValue = NULL;
-
-            /* Get value (if present). */
-            if (uValLen)
+            /* No separator found (or incomplete key=value pair)? */
+            if (   pszSep == pszStart
+                || pszSep == pszEnd)
             {
-                Assert(pszEnd > pszSep);
-                char *pszVal = (char*)RTMemAllocZ(uValLen + 1);
-                if (!pszVal)
+                *puOffset =  uCur - uPairLen - 1;
+                rc = VERR_MORE_DATA;
+            }
+
+            if (RT_FAILURE(rc))
+                break;
+
+            size_t uKeyLen = pszSep - pszStart;
+            size_t uValLen = pszEnd - (pszSep + 1);
+
+            /* Get key (if present). */
+            if (uKeyLen)
+            {
+                Assert(pszSep > pszStart);
+                char *pszKey = (char*)RTMemAllocZ(uKeyLen + 1);
+                if (!pszKey)
                 {
                     rc = VERR_NO_MEMORY;
                     break;
                 }
-                memcpy(pszVal, pszSep + 1, uValLen);
+                memcpy(pszKey, pszStart, uKeyLen);
 
-                mapBuf[RTCString(pszKey)].pszValue = pszVal;
+                mapBuf[RTCString(pszKey)].pszValue = NULL;
+
+                /* Get value (if present). */
+                if (uValLen)
+                {
+                    Assert(pszEnd > pszSep);
+                    char *pszVal = (char*)RTMemAllocZ(uValLen + 1);
+                    if (!pszVal)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    memcpy(pszVal, pszSep + 1, uValLen);
+
+                    mapBuf[RTCString(pszKey)].pszValue = pszVal;
+                }
+
+                RTMemFree(pszKey);
+
+                *puOffset += uCur - *puOffset;
             }
-
-            RTMemFree(pszKey);
-
-            *puOffset += uCur - *puOffset;
         }
+        else /* No pair detected, check for a new block. */
+        {
+            do
+            {
+                if (*pszEnd == '\0')
+                {
+                    *puOffset = uCur;
+                    rc = VERR_MORE_DATA;
+                    break;
+                }
+                pszEnd++;
+            } while (++uCur < cbData);
+        }
+
+        if (RT_FAILURE(rc))
+            break;
     }
+
+    RT_CLAMP(*puOffset, 0, cbData);
 
     return rc;
 }
@@ -205,16 +229,22 @@ int main()
     RTTestIPrintf(RTTESTLVL_INFO, "Doing basic tests ...\n");
 
     if (sizeof("sizecheck") != 10)
-        RTTestFailed(hTest, "Basic size test failed (%u <-> 10)", sizeof("sizecheck"));
+        RTTestFailed(hTest, "Basic size test #1 failed (%u <-> 10)", sizeof("sizecheck"));
+    if (sizeof("off=rab") != 8)
+        RTTestFailed(hTest, "Basic size test #2 failed (%u <-> 7)", sizeof("off=rab"));
+    if (sizeof("off=rab\0\0") != 10)
+        RTTestFailed(hTest, "Basic size test #3 failed (%u <-> 10)", sizeof("off=rab\0\0"));
 
     RTTestIPrintf(RTTESTLVL_INFO, "Doing line tests ...\n");
 
-    for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
+    unsigned iTest = 0;
+    for (iTest; iTest < RT_ELEMENTS(aTests); iTest++)
     {
         GuestBufferMap bufMap;
+        uint32_t uOffset = aTests[iTest].uOffsetStart;
 
         int iResult = outputBufferParse((BYTE*)aTests[iTest].pbData, aTests[iTest].cbData,
-                                        &aTests[iTest].uOffsetStart, bufMap);
+                                        &uOffset, bufMap);
 
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Test #%u\n", iTest);
 
@@ -228,22 +258,23 @@ int main()
             RTTestFailed(hTest, "\tMap has %u elements, expected %u",
                          bufMap.size(), aTests[iTest].uMapElements);
         }
-        else if (aTests[iTest].uOffsetStart != aTests[iTest].uOffsetAfter)
+        else if (uOffset != aTests[iTest].uOffsetAfter)
         {
             RTTestFailed(hTest, "\tOffset %u wrong, expected %u",
-                         aTests[iTest].uOffsetStart, aTests[iTest].uOffsetAfter);
+                         uOffset, aTests[iTest].uOffsetAfter);
         }
         else if (iResult == VERR_MORE_DATA)
         {
+            RTTestIPrintf(RTTESTLVL_DEBUG, "\tMore data (Offset: %u)\n", uOffset);
+
             /* There is remaining data left in the buffer (which needs to be merged
              * with a following buffer) -- print it. */
-            const char *pszRemaining = aTests[iTest].pbData;
-            size_t uOffsetNew = aTests[iTest].uOffsetStart;
-            size_t uToWrite = aTests[iTest].cbData - uOffsetNew;
-            if (pszRemaining && uOffsetNew)
+            size_t uToWrite = aTests[iTest].cbData - uOffset;
+            if (uToWrite)
             {
+                const char *pszRemaining = aTests[iTest].pbData;
                 RTTestIPrintf(RTTESTLVL_DEBUG, "\tRemaining (%u):\n", uToWrite);
-                RTStrmWriteEx(g_pStdOut, &aTests[iTest].pbData[uOffsetNew], uToWrite - 1, NULL);
+                RTStrmWriteEx(g_pStdOut, &aTests[iTest].pbData[uOffset], uToWrite - 1, NULL);
                 RTTestIPrintf(RTTESTLVL_DEBUG, "\n");
             }
         }
@@ -263,7 +294,7 @@ int main()
         uint32_t uOffset = 0;
         uint32_t uNumBlocks = 0;
 
-        while (uOffset < aTests2[iTest].cbData)
+        while (uOffset < aTests2[iTest].cbData - 1)
         {
             iResult = outputBufferParse((BYTE*)aTests2[iTest].pbData, aTests2[iTest].cbData,
                                         &uOffset, bufMap);
@@ -278,7 +309,6 @@ int main()
 
                 RTTestIPrintf(RTTESTLVL_DEBUG, "\tNext offset %u (total: %u)\n",
                               uOffset, aTests2[iTest].cbData);
-                uOffset++;
             }
             else
                 break;
@@ -287,7 +317,12 @@ int main()
                 break; /* Give up if unreasonable big. */
         }
 
-        if (uNumBlocks != aTests2[iTest].uNumBlocks)
+        if (iResult != aTests2[iTest].iResult)
+        {
+            RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
+                         iResult, aTests2[iTest].iResult);
+        }
+        else if (uNumBlocks != aTests2[iTest].uNumBlocks)
         {
             RTTestFailed(hTest, "\tReturned %u blocks, expected %u\n",
                          uNumBlocks, aTests2[iTest].uNumBlocks);

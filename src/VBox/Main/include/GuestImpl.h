@@ -114,12 +114,18 @@ public:
     STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress);
 
     // Public methods that are not in IDL (only called internally).
+    HRESULT directoryCreateInternal(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword,
+                                    ULONG aMode, ULONG aFlags, int *pRC);
+    HRESULT directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
+                                  ULONG aFlags,
+                                  IN_BSTR aUserName, IN_BSTR aPassword,
+                                  ULONG *aHandle, int *pRC);
     HRESULT executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                    IN_BSTR aUserName, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
-    HRESULT directoryCreateInternal(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword,
-                                    ULONG aMode, ULONG aFlags, int *pRC);
+    HRESULT fileExistsInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists, int *pRC);
+    HRESULT fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, LONG64 *aSize, int *pRC);
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
     bool facilityIsActive(VBoxGuestFacilityType enmFacility);
@@ -195,9 +201,27 @@ private:
     int processGetByPID(uint32_t u32PID, PVBOXGUESTCTRL_PROCESS pProcess);
     int processSetStatus(uint32_t u32PID, ExecuteProcessStatus_T enmStatus, uint32_t uExitCode, uint32_t uFlags);
 
+    // Internal guest directory representation.
+    typedef struct VBOXGUESTCTRL_DIRECTORY
+    {
+        char    *mpszDirectory;
+        char    *mpszFilter;
+        ULONG    uFlags;
+        /** Associated PID of started vbox_ls tool. */
+        uint32_t mPID;
+        /** Offset within the current retrieved stdout buffer. */
+        uint64_t mOffset;
+    } VBOXGUESTCTRL_DIRECTORY, *PVBOXGUESTCTRL_DIRECTORY;
+    typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY > GuestDirectoryMap;
+    typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY >::iterator GuestDirectoryMapIter;
+    typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY >::const_iterator GuestDirectoryMapIterConst;
+
+    int directoryCreateHandle(ULONG *puHandle, const char *pszDirectory, const char *pszFilter, ULONG uFlags);
+    void directoryDestroyHandle(uint32_t uHandle);
+    uint32_t directoryGetPID(uint32_t uHandle);
+    bool directoryHandleExists(uint32_t uHandle);
+
     // Utility functions.
-    int directoryEntryAppend(const char *pszPath, PRTLISTNODE pList);
-    int directoryRead(const char *pszDirectory, const char *pszFilter, ULONG uFlags, ULONG *pcObjects, PRTLISTNODE pList);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
 
     /*
@@ -238,7 +262,10 @@ private:
     HGCMSVCEXTHANDLE  mhExtCtrl;
     /** Next upcoming context ID. */
     volatile uint32_t mNextContextID;
+    /** Next upcoming directory handle ID. */
+    volatile uint32_t mNextDirectoryID;
     CallbackMap       mCallbackMap;
+    GuestDirectoryMap mGuestDirectoryMap;
     GuestProcessMap   mGuestProcessMap;
 # endif
 };

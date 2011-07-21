@@ -2879,6 +2879,64 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
+          <para><computeroutput>stat</computeroutput>, which displays file
+          or file system status on the guest.</para>
+
+          <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; stat
+            &lt;file element(s) to check on guest&gt;
+            [--username "&lt;name&gt;"] [--password "&lt;password&gt;"]
+            [--verbose]</screen>
+
+          <para>where the parameters mean: <glosslist>
+              <glossentry>
+                <glossterm>uuid|vmname</glossterm>
+
+                <glossdef>
+                  <para>The VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>file element(s) to check on guest</glossterm>
+
+                <glossdef>
+                  <para>Absolute path of directory/directories to check on
+                  guest, e.g. <computeroutput>/home/foo/a.out</computeroutput>.
+                  The specified user must have appropriate rights to access
+                  the given file element(s).</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--username &lt;name&gt;</glossterm>
+
+                <glossdef>
+                  <para>Name of the user the copy process should run under.
+                  This user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--password &lt;password&gt;</glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified with
+                  <computeroutput>--username</computeroutput>. If not given,
+                  an empty password is assumed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>--verbose</glossterm>
+
+                <glossdef>
+                  <para>Tells VBoxManage to be more verbose.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
+
+        <listitem>
           <para><computeroutput>updateadditions</computeroutput>, which allows
           for updating an already installed Guest Additions version on the
           guest (only already installed Guest Additions 4.0 and later).</para>
