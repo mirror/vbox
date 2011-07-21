@@ -311,6 +311,7 @@ VBOX_GLUE_XSLT_DIR := $(PATH_ROOT)/src/VBox/Main/glue
 VBOX_JAXLIB_DIR    := $(PATH_ROOT)/src/VBox/Main/webservice/jaxlibs
 
 VBoxJWs-inst-jar_INST = $(INST_SDK)bindings/webservice/java/jax-ws/
+VBoxJWs-inst-jar_MODE = a+r,u+w
 VBoxJWs-inst-jar_SOURCES = \
 	$(VBOX_JWS_JAR)
 VBoxJWs-inst-jar_CLEAN = \

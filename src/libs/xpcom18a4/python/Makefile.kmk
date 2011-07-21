@@ -170,6 +170,7 @@ endif # VBOX_ONLY_SDK
 #
 INSTALLS += VBoxPython-inst-py-xpcom
 VBoxPython-inst-py-xpcom_INST = $(INST_SDK)bindings/xpcom/python/xpcom/
+VBoxPython-inst-py-xpcom_MODE = a+r,u+w
 VBoxPython-inst-py-xpcom_SOURCES = \
 	vboxxpcom.py \
 	components.py \

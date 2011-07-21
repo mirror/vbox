@@ -26,15 +26,16 @@ tstInstallerLinux_SOURCES = $(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh
 tstInstallerLinux_CLEAN   = $(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh
 
 $$(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh: \
-	$(PATH_SUB_CURRENT)/tstInstallerLinux.sh \
-	$(PATH_SUB_CURRENT)/../installer-utils.sh \
-	| $$(dir $$@)
+		$(PATH_SUB_CURRENT)/tstInstallerLinux.sh \
+		$(PATH_SUB_CURRENT)/../installer-utils.sh \
+		| $$(dir $$@)
 	$(QUIET)$(SED) \
-	-e '/#include installer-utils.sh/ {' \
-	-e "r $(PATH_ROOT)/src/VBox/Installer/linux/installer-utils.sh" \
-	-e 'd' \
-	-e '}' \
-	--output $@ \
-	$<
+		-e '/#include installer-utils.sh/ {' \
+		-e "r $(PATH_ROOT)/src/VBox/Installer/linux/installer-utils.sh" \
+		-e 'd' \
+		-e '}' \
+		--output $@ \
+		$<
+	$(QUIET)$(CHMOD) a+rx,u+w $@
 
 include	$(KBUILD_PATH)/subfooter.kmk

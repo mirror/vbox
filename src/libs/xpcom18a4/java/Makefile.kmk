@@ -89,6 +89,7 @@ VBOX_JXPCOM_GEN     = $(VBOX_JXPCOM_TARGET)/jxpcomgen-idl
 endif
 
 VBoxJXpcom-inst-jar_INST = $(INST_SDK)bindings/xpcom/java/
+VBoxJXpcom-inst-jar_MODE = a+r,u+w
 VBoxJXpcom-inst-jar_SOURCES = \
 	$(VBOX_JXPCOM_JAR)
 VBoxJXpcom-inst-jar_CLEAN = \

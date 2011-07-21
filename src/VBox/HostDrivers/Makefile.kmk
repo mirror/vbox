@@ -96,6 +96,7 @@ $$(HostDrivers-dkms-sh_0_OUTDIR)/do_dkms: \
 		-e "s;_MODULE_;vboxhost;g" \
 		-e "s;_OLDMODULES_;vboxhost vboxdrv vboxnetflt vboxnetadp;g" \
 		--output $@ $<
+	$(QUIET)$(CHMOD) a+rx,u+w $@
 
  endif
 

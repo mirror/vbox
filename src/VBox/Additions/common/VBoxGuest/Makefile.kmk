@@ -186,6 +186,7 @@ ifeq ($(KBUILD_TARGET),linux)
 		-e "s;_MODULE_;vboxguest;g" \
 		-e "s;_OLDMODULES_;vboxguest vboxadd vboxsf vboxvfs vboxvideo;g" \
 		--output $@ $<
+	$(QUIET)$(CHMOD) a+rx,u+w $@
 
  # scripts.
  INSTALLS += vboxguest-sh
