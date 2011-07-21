@@ -50,6 +50,7 @@ FORMS = \
     src/settings/machine/UIMachineSettingsSFDetails.ui \
     src/wizards/clonevm/UICloneVMWizardPage1.ui \
     src/wizards/clonevm/UICloneVMWizardPage2.ui \
+    src/wizards/clonevm/UICloneVMWizardPage3.ui \
     src/wizards/newvm/UINewVMWzdPage1.ui \
     src/wizards/newvm/UINewVMWzdPage2.ui \
     src/wizards/newvm/UINewVMWzdPage3.ui \
