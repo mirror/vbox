@@ -83,7 +83,7 @@ sfprov_connect(int version)
 	int rc = -1;
 	if (version != SFPROV_VERSION)
 	{
-		cmn_err(CE_WARN, "sfprov_connect: wrong version");
+		cmn_err(CE_WARN, "sfprov_connect: wrong version. version=%d expected=%d", version, SFPROV_VERSION);
 		return NULL;
 	}
 	rc = vboxInit();
@@ -139,7 +139,7 @@ sfprov_mount(sfp_connection_t *conn, char *path, sfp_mount_t **mnt)
 	str = sfprov_string(path, &size);
 	rc = vboxCallMapFolder(&vbox_client, str, &m->map);
 	if (!RT_SUCCESS(rc)) {
-		cmn_err(CE_WARN, "sfprov_mount: vboxCallMapFolder() failed");
+		cmn_err(CE_WARN, "sfprov_mount: vboxCallMapFolder() failed rc=%d\n", rc);
 		kmem_free(m, sizeof (*m));
 		*mnt = NULL;
 		rc = EINVAL;
@@ -158,7 +158,7 @@ sfprov_unmount(sfp_mount_t *mnt)
 
 	rc = vboxCallUnmapFolder(&vbox_client, &mnt->map);
 	if (!RT_SUCCESS(rc)) {
-		cmn_err(CE_WARN, "sfprov_mount: vboxCallUnmapFolder() failed");
+		cmn_err(CE_WARN, "sfprov_mount: vboxCallUnmapFolder() failed rc=%d\n", rc);
 		rc = EINVAL;
 	} else {
 		rc = 0;
