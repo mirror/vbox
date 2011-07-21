@@ -121,10 +121,10 @@ rdesktop-vrdp_LIBS.solaris = \
 # The keymaps.
 #
 INSTALLS += rdesktop-vrdp-keymaps
-rdesktop-vrdp-keymaps_INST    = $(INST_BIN)rdesktop-vrdp-keymaps/
-rdesktop-vrdp-keymaps_MODE    = 644
-rdesktop-vrdp-keymaps_DEFPATH := $(PATH_CURRENT)/keymaps
-rdesktop-vrdp-keymaps_SOURCES = \
+rdesktop-vrdp-keymaps_INST     = $(INST_BIN)rdesktop-vrdp-keymaps/
+rdesktop-vrdp-keymaps_MODE     = 644
+rdesktop-vrdp-keymaps_DEFPATH := $(PATH_SUB_CURRENT)/keymaps
+rdesktop-vrdp-keymaps_SOURCES  = \
 	$(notdir $(wildcard $(VBOX_PATH_RDESKTOP_SRC)/keymaps/*))
 rdesktop-vrdp-keymaps_convert-map_MODE = 755
 
