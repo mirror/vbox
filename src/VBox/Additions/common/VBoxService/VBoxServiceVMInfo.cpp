@@ -261,8 +261,8 @@ static int vboxserviceVMInfoWriteUsers(void)
     while (   (ut_user = getutxent())
            && RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(4, "VMInfo: Found logged in user \"%s\"\n", ut_user->ut_user);
-
+        VBoxServiceVerbose(4, "VMInfo/Users: Found logged in user \"%s\"\n",
+                           ut_user->ut_user);
         if (cUsersInList > cListSize)
         {
             cListSize += 32;
@@ -321,7 +321,7 @@ static int vboxserviceVMInfoWriteUsers(void)
     if (RT_FAILURE(rc))
         cUsersInList = 0;
 
-    VBoxServiceVerbose(4, "VMInfo: cUsersInList: %u, pszUserList: %s, rc=%Rrc\n",
+    VBoxServiceVerbose(4, "VMInfo/Users: cUsersInList: %u, pszUserList: %s, rc=%Rrc\n",
                        cUsersInList, pszUserList ? pszUserList : "<NULL>", rc);
 
     if (pszUserList && cUsersInList > 0)
@@ -763,7 +763,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         VbglR3GetSessionId(&idNewSession);
         if (idNewSession != g_idVMInfoSession)
         {
-            VBoxServiceVerbose(3, "VMInfo: The VM session ID changed, flushing all properties.\n");
+            VBoxServiceVerbose(3, "VMInfo: The VM session ID changed, flushing all properties\n");
             vboxserviceVMInfoWriteFixedProperties();
             VBoxServicePropCacheFlush(&g_VMInfoPropCache);
             g_idVMInfoSession = idNewSession;
