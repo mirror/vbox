@@ -2015,6 +2015,7 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
     {
         enmAttachmentType = NetworkAttachmentType_NAT;
 
+        elmMode.getAttributeValue("network", nic.nat.strNetwork);
         elmMode.getAttributeValue("hostip", nic.nat.strBindIP);
         elmMode.getAttributeValue("mtu", nic.nat.u32Mtu);
         elmMode.getAttributeValue("sockrcv", nic.nat.u32SockRcv);
