@@ -83,7 +83,7 @@ sfprov_connect(int version)
 	int rc = -1;
 	if (version != SFPROV_VERSION)
 	{
-		cmn_err(CE_WARN, "sfprov_connect: wrong version. version=%d expected=%d", version, SFPROV_VERSION);
+		cmn_err(CE_WARN, "sfprov_connect: wrong version. version=%d expected=%d\n", version, SFPROV_VERSION);
 		return NULL;
 	}
 	rc = vboxInit();
@@ -98,23 +98,23 @@ sfprov_connect(int version)
 				return ((sfp_connection_t *)&vbox_client);
 			}
 			else
-				cmn_err(CE_WARN, "sfprov_connect: vboxCallSetUtf8() failed");
+				cmn_err(CE_WARN, "sfprov_connect: vboxCallSetUtf8() failed\n");
 
 			vboxDisconnect(&vbox_client);
 		}
 		else
-			cmn_err(CE_WARN, "sfprov_connect: vboxConnect() failed rc=%d", rc);
+			cmn_err(CE_WARN, "sfprov_connect: vboxConnect() failed rc=%d\n", rc);
 		vboxUninit();
 	}
 	else
-		cmn_err(CE_WARN, "sfprov_connect: vboxInit() failed rc=%d", rc);
+		cmn_err(CE_WARN, "sfprov_connect: vboxInit() failed rc=%d\n", rc);
 }
 
 void
 sfprov_disconnect(sfp_connection_t *conn)
 {
 	if (conn != (sfp_connection_t *)&vbox_client)
-		cmn_err(CE_WARN, "sfprov_disconnect: bad argument");
+		cmn_err(CE_WARN, "sfprov_disconnect: bad argument\n");
 	vboxDisconnect(&vbox_client);
 	vboxUninit();
 }
@@ -628,7 +628,7 @@ sfprov_set_attr(
 	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
 
 	if (RT_FAILURE(rc)) {
-		cmn_err(CE_WARN, "sfprov_set_attr: vboxCallCreate(%s) failed rc=%d",
+		cmn_err(CE_WARN, "sfprov_set_attr: vboxCallCreate(%s) failed rc=%d\n",
 		    path, rc);
 		err = EINVAL;
 		goto fail2;
@@ -686,7 +686,7 @@ sfprov_set_attr(
 	if (RT_FAILURE(rc)) {
 		if (rc != VERR_ACCESS_DENIED && rc != VERR_WRITE_PROTECT)
 		{
-			cmn_err(CE_WARN, "sfprov_set_attr: vboxCallFSInfo(%s, FILE) failed rc=%d",
+			cmn_err(CE_WARN, "sfprov_set_attr: vboxCallFSInfo(%s, FILE) failed rc=%d\n",
 		    path, rc);
 		}
 		err = sfprov_vbox2errno(rc);
@@ -698,7 +698,7 @@ sfprov_set_attr(
 fail1:
 	rc = vboxCallClose(&vbox_client, &mnt->map, parms.Handle);
 	if (RT_FAILURE(rc)) {
-		cmn_err(CE_WARN, "sfprov_set_attr: vboxCallClose(%s) failed rc=%d",
+		cmn_err(CE_WARN, "sfprov_set_attr: vboxCallClose(%s) failed rc=%d\n",
 		    path, rc);
 	}
 fail2:
@@ -726,7 +726,7 @@ sfprov_set_size(sfp_mount_t *mnt, char *path, uint64_t size)
 	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
 
 	if (RT_FAILURE(rc)) {
-		cmn_err(CE_WARN, "sfprov_set_size: vboxCallCreate(%s) failed rc=%d",
+		cmn_err(CE_WARN, "sfprov_set_size: vboxCallCreate(%s) failed rc=%d\n",
 		    path, rc);
 		err = EINVAL;
 		goto fail2;
@@ -742,7 +742,7 @@ sfprov_set_size(sfp_mount_t *mnt, char *path, uint64_t size)
 	rc = vboxCallFSInfo(&vbox_client, &mnt->map, parms.Handle,
 	    (SHFL_INFO_SET | SHFL_INFO_SIZE), &bytes, (SHFLDIRINFO *)&info);
 	if (RT_FAILURE(rc)) {
-		cmn_err(CE_WARN, "sfprov_set_size: vboxCallFSInfo(%s, SIZE) failed rc=%d",
+		cmn_err(CE_WARN, "sfprov_set_size: vboxCallFSInfo(%s, SIZE) failed rc=%d\n",
 		    path, rc);
 		err = sfprov_vbox2errno(rc);
 		goto fail1;
@@ -753,7 +753,7 @@ sfprov_set_size(sfp_mount_t *mnt, char *path, uint64_t size)
 fail1:
 	rc = vboxCallClose(&vbox_client, &mnt->map, parms.Handle);
 	if (RT_FAILURE(rc)) {
-		cmn_err(CE_WARN, "sfprov_set_size: vboxCallClose(%s) failed rc=%d",
+		cmn_err(CE_WARN, "sfprov_set_size: vboxCallClose(%s) failed rc=%d\n",
 		    path, rc);
 	}
 fail2:
