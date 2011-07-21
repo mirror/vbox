@@ -12,6 +12,11 @@
         <para>VBoxManage: fixed <emphasis>extpack install --replace</emphasis></para>
       </listitem>
 
+      <listitem>
+        <para>VRDP: fixed a case when the screen was not redrawn correctly
+          (bug #9242)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
