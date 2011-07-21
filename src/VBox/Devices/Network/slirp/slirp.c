@@ -587,13 +587,14 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 {
     int fNATfailed = 0;
     int rc;
-    PNATState pData = RTMemAllocZ(RT_ALIGN_Z(sizeof(NATState), sizeof(uint64_t)));
-    *ppData = pData;
-    if (!pData)
-        return VERR_NO_MEMORY;
+    PNATState pData;
     if (u32Netmask & 0x1f)
         /* CTL is x.x.x.15, bootp passes up to 16 IPs (15..31) */
         return VERR_INVALID_PARAMETER;
+    pData = RTMemAllocZ(RT_ALIGN_Z(sizeof(NATState), sizeof(uint64_t)));
+    *ppData = pData;
+    if (!pData)
+        return VERR_NO_MEMORY;
     pData->fPassDomain = !fUseHostResolver ? fPassDomain : false;
     pData->fUseHostResolver = fUseHostResolver;
     pData->pvUser = pvUser;
@@ -622,10 +623,12 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     link_up = 1;
 
     rc = bootp_dhcp_init(pData);
-    if (rc != 0)
+    if (RT_FAILURE(rc))
     {
-        Log(("NAT: DHCP server initialization was failed\n"));
-        return VINF_NAT_DNS;
+        Log(("NAT: DHCP server initialization failed\n"));
+        RTMemFree(pData);
+        *ppData = NULL;
+        return rc;
     }
     debug_init();
     if_init(pData);
