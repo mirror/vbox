@@ -160,19 +160,23 @@ endif
 #
 INSTALLS += VBox-main-xidl
 VBox-main-xidl_INST = $(INST_SDK)bindings/
+VBox-main-xidl_MODE = a+r,u+w
 VBox-main-xidl_SOURCES = $(VBOX_XIDL_FILE_SRC)
 
 ifdef VBOX_WITH_PYTHON
-
-# or to some subdir?
-VBOX_PYTHON_CONSTANTS = $(PATH_TARGET)/VirtualBox_constants.py
-
 INSTALLS += VBox-python-glue
-VBox-python-glue_INST = $(INST_SDK)installer/
-VBox-python-glue_SOURCES = glue/vboxapi.py=>vboxapi/__init__.py  \
-                           $(VBOX_PYTHON_CONSTANTS)=>vboxapi/VirtualBox_constants.py
+VBox-python-glue_INST = $(INST_SDK)installer/vboxapi/
+VBox-python-glue_MODE = a+r,u+w
+VBox-python-glue_SOURCES = \
+	glue/vboxapi.py \
+        $(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
+VBox-python-glue_CLEAN = \
+        $(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py
 
-$(VBOX_PYTHON_CONSTANTS):  $(VBOX_PATH_MAIN_SRC)/glue/constants-python.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+$$(VBox-python-glue_0_OUTDIR)/VirtualBox_constants.py:  \
+		$(VBOX_PATH_MAIN_SRC)/glue/constants-python.xsl \
+		$(VBOX_XIDL_FILE) \
+		| $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,Python constants,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
 
@@ -761,6 +765,7 @@ endif # !VBOX_ONLY_SDK (the ifndef is far above)
 #
 INSTALLS.win += VBoxMain-com-inst
 VBoxMain-com-inst_INST = $(INST_BIN)
+VBoxMain-com-inst_MODE = a+r,u+w
 VBoxMain-com-inst_SOURCES = src-all/win/comregister.cmd
 
 
@@ -864,7 +869,6 @@ VBoxC_VBOX_TRANSLATIONS = \
 	nls/VBoxC_de.ts
 
 ifdef VBOX_WITH_JMSCOM
-INSTALLS += VBoxJMscom-inst-jar
 
 #
 # Java glue JAR files
@@ -876,7 +880,9 @@ VBOX_JMSCOM_JDEST  := $(VBOX_JMSCOM_TARGET)/jdest
 VBOX_GLUE_XSLT_DIR := $(PATH_ROOT)/src/VBox/Main/glue
 VBOX_JACOB_DIR     := $(PATH_ROOT)/src/libs/jacob-1.15-M3
 
+INSTALLS += VBoxJMscom-inst-jar
 VBoxJMscom-inst-jar_INST = $(INST_SDK)bindings/mscom/java/
+VBoxJMscom-inst-jar_MODE = a+r,u+w
 VBoxJMscom-inst-jar_SOURCES = \
 	$(VBOX_JMSCOM_JAR)
 VBoxJMscom-inst-jar_CLEAN = \
@@ -923,7 +929,7 @@ endif # VBOX_WITH_JMSCOM
 #
 INSTALLS += javagluesample
 javagluesample_INST = $(INST_SDK)bindings/glue/java/
-javagluesample_MODE = a+rx,u+w
+javagluesample_MODE = a+r,u+w
 javagluesample_SOURCES = \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/TestVBox.java=>TestVBox.java \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/Makefile.kmk=>Makefile.kmk
@@ -939,3 +945,4 @@ testconverter:: $(VBOX_USER_HOME)/VirtualBox.xml
 testconverter2:: $(VBOX_USER_HOME)/Machines/dos/dos.xml
 	$(call MSG_TOOL,xsltproc,Test Settings Converter,$<,$<.test)
 	$(QUIET)$(VBOX_XSLTPROC) -o $<.test xml/SettingsConverter.xsl $<
+

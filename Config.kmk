@@ -2587,6 +2587,7 @@ ifdef VBOX_WITH_RAW_MODE
  TEMPLATE_VBoxRc_INCS                = $(PATH_ROOT)/include/iprt/nocrt
  TEMPLATE_VBoxRc_SYSSUFF             = .gc
  TEMPLATE_VBoxRc_BLD_TRG_ARCH        = x86
+ TEMPLATE_VBoxRc_MODE                = a+r,u+w
 
  ifeq ($(VBOX_LDR_FMT32),pe)
   ifndef VBOX_USE_VCC70
@@ -2662,6 +2663,7 @@ ifdef VBOX_WITH_RAW_MODE
  TEMPLATE_VBoxRcExe_EXTENDS = VBoxRc
  TEMPLATE_VBoxRcExe_DEFS = $(filter-out IPRT_NO_CRT RT_WITH_NOCRT_ALIASES,$(TEMPLATE_VBoxRc_DEFS))
  TEMPLATE_VBoxRcExe_INCS = $(NO_SUCH_VARIABLE)
+ TEMPLATE_VBoxRcExe_MODE = $(NO_SUCH_VARIABLE)
 
  ifeq ($(VBOX_LDR_FMT32),pe)
   TEMPLATE_VBoxRcExe_LDFLAGS = -Incremental:NO -MapInfo:Exports -NoD -Debug
@@ -2720,6 +2722,7 @@ TEMPLATE_VBoxR0_ASFLAGS             = $(VBOX_ASFLAGS)
 TEMPLATE_VBoxR0_DEFS                = IN_RING0 IN_RING0_AGNOSTIC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES $(ARCH_BITS_DEFS)
 TEMPLATE_VBoxR0_INCS                = $(PATH_ROOT)/include/iprt/nocrt
 TEMPLATE_VBoxR0_SYSSUFF             = .r0
+TEMPLATE_VBoxR0_MODE                = a+r,u+w
 
 ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
