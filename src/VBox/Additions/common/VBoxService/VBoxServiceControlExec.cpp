@@ -384,8 +384,6 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 #endif
                     rc = VBoxServiceControlExecProcHandleOutputEvent(hPollSet, fPollEvt, phStdOutR,
                                                                      VBOXSERVICECTRLPIPEID_STDOUT, &pData->stdOut);
-// TEST!!!
-VBoxServicePipeBufIsEnabled(&pData->stdOut);
                     break;
 
                 case VBOXSERVICECTRLPIPEID_STDERR:
