@@ -133,6 +133,7 @@ typedef struct NATState
     int tcp_sndspace;
     int socket_rcv;
     int socket_snd;
+    int soMaxConn;
 #ifdef VBOX_WITH_SLIRP_MT
     PRTREQQUEUE pReqQueue;
 #endif
