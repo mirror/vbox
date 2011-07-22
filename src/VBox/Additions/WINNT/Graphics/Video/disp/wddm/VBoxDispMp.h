@@ -1,11 +1,11 @@
 /* $Id$ */
 
 /** @file
- * VBoxVideo Display D3D User mode dll
+ * VBoxVideo Display external interface
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
