@@ -35,6 +35,7 @@
 extern RTLISTNODE g_GuestControlExecThreads;
 extern RTCRITSECT g_GuestControlExecThreadsCritSect;
 
+const PVBOXSERVICECTRLTHREAD vboxServiceControlExecThreadGetByPID(uint32_t uPID);
 
 /**
  *  Allocates and gives back a thread data struct which then can be used by the worker thread.
@@ -133,24 +134,26 @@ int VBoxServiceControlExecThreadAlloc(PVBOXSERVICECTRLTHREAD pThread,
                             ? RT_INDEFINITE_WAIT : uTimeLimitMS;
 
         /* Init buffers. */
-        rc = VBoxServicePipeBufInit(&pData->stdOut, false /*fNeedNotificationPipe*/);
+        rc = VBoxServicePipeBufInit(&pData->stdOut, VBOXSERVICECTRLPIPEID_STDOUT,
+                                    false /*fNeedNotificationPipe*/);
         if (RT_SUCCESS(rc))
         {
-            rc = VBoxServicePipeBufInit(&pData->stdErr, false /*fNeedNotificationPipe*/);
+            rc = VBoxServicePipeBufInit(&pData->stdErr, VBOXSERVICECTRLPIPEID_STDERR,
+                                        false /*fNeedNotificationPipe*/);
             if (RT_SUCCESS(rc))
-                rc = VBoxServicePipeBufInit(&pData->stdIn, true /*fNeedNotificationPipe*/);
+                rc = VBoxServicePipeBufInit(&pData->stdIn, VBOXSERVICECTRLPIPEID_STDIN,
+                                            true /*fNeedNotificationPipe*/);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            pThread->enmType = kVBoxServiceCtrlThreadDataExec;
+            pThread->pvData = pData;
         }
     }
 
     if (RT_FAILURE(rc))
-    {
         VBoxServiceControlExecThreadDestroy(pData);
-    }
-    else
-    {
-        pThread->enmType = kVBoxServiceCtrlThreadDataExec;
-        pThread->pvData = pData;
-    }
     return rc;
 }
 
@@ -164,6 +167,9 @@ void VBoxServiceControlExecThreadDestroy(PVBOXSERVICECTRLTHREADDATAEXEC pData)
 {
     if (pData)
     {
+        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Destroying thread ...\n",
+                           pData->uPID);
+
         RTStrFree(pData->pszCmd);
         if (pData->uNumEnvVars)
         {
@@ -185,6 +191,42 @@ void VBoxServiceControlExecThreadDestroy(PVBOXSERVICECTRLTHREADDATAEXEC pData)
 }
 
 
+int VBoxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREADDATAEXEC pData, uint32_t uPID)
+{
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    AssertReturn(uPID, VERR_INVALID_PARAMETER);
+
+    int rc = RTCritSectEnter(&g_GuestControlExecThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /* Search an old thread using the desired PID and shut it down completely -- it's
+         * not used anymore. */
+        const PVBOXSERVICECTRLTHREAD pOldThread = vboxServiceControlExecThreadGetByPID(uPID);
+        if (   pOldThread
+            && pOldThread->pvData != pData)
+        {
+            VBoxServiceVerbose(3, "ControlExec: PID %u was used before, shutting down stale exec thread ...\n",
+                               uPID);
+            AssertPtr(pOldThread->pvData);
+            VBoxServiceControlExecThreadDestroy((PVBOXSERVICECTRLTHREADDATAEXEC)pOldThread->pvData);
+        }
+        /** @todo Remove node from thread list! */
+
+        /* Assign PID to current thread. */
+        pData->uPID = uPID;
+        VBoxServicePipeBufSetPID(&pData->stdIn, pData->uPID);
+        VBoxServicePipeBufSetPID(&pData->stdOut, pData->uPID);
+        VBoxServicePipeBufSetPID(&pData->stdErr, pData->uPID);
+
+        int rc2 = RTCritSectLeave(&g_GuestControlExecThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+
 /**
  * Finds a (formerly) started process given by its PID.
  * Internal function, does not do locking -- this must be done from the caller function!
@@ -192,7 +234,7 @@ void VBoxServiceControlExecThreadDestroy(PVBOXSERVICECTRLTHREADDATAEXEC pData)
  * @return  PVBOXSERVICECTRLTHREAD      Process structure if found, otherwise NULL.
  * @param   uPID                        PID to search for.
  */
-PVBOXSERVICECTRLTHREAD vboxServiceControlExecThreadGetByPID(uint32_t uPID)
+const PVBOXSERVICECTRLTHREAD vboxServiceControlExecThreadGetByPID(uint32_t uPID)
 {
     PVBOXSERVICECTRLTHREAD pNode = NULL;
     RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
@@ -235,10 +277,10 @@ int VBoxServiceControlExecThreadSetInput(uint32_t uPID, bool fPendingClose, uint
 
             if (VBoxServicePipeBufIsEnabled(&pData->stdIn))
             {
-                uint32_t cbWritten;
                 /*
                  * Feed the data to the pipe.
                  */
+                uint32_t cbWritten;
                 rc = VBoxServicePipeBufWriteToBuf(&pData->stdIn, pBuf,
                                                   cbSize, fPendingClose, &cbWritten);
                 if (pcbWritten)
@@ -278,13 +320,13 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
     int rc = RTCritSectEnter(&g_GuestControlExecThreadsCritSect);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLTHREAD pNode = vboxServiceControlExecThreadGetByPID(uPID);
+        const PVBOXSERVICECTRLTHREAD pNode = vboxServiceControlExecThreadGetByPID(uPID);
         if (pNode)
         {
-            PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
+            const PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
             AssertPtr(pData);
 
-            PVBOXSERVICECTRLEXECPIPEBUF pPipeBuf;
+            PVBOXSERVICECTRLEXECPIPEBUF pPipeBuf = NULL;
             switch (uHandleId)
             {
                 case OUTPUT_HANDLE_ID_STDERR: /* StdErr */
@@ -292,27 +334,47 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
                     break;
 
                 case OUTPUT_HANDLE_ID_STDOUT: /* StdOut */
-                default:
                     pPipeBuf = &pData->stdOut;
                     break;
-            }
-            AssertPtr(pPipeBuf);
 
+                default:
+                    AssertReleaseMsgFailed(("Unknown output handle ID (%u)\n", uHandleId));
+                    break;
+            }
+            if (!pPipeBuf)
+                return VERR_INVALID_PARAMETER;
+
+#ifdef DEBUG_andy
+            VBoxServiceVerbose(4, "ControlExec: [PID %u]: Getting output from pipe buffer %u ...\n",
+                               uPID, pPipeBuf->uPipeId);
+#endif
             /* If the stdout pipe buffer is enabled (that is, still could be filled by a running
              * process) wait for the signal to arrive so that we don't return without any actual
              * data read. */
-            if (VBoxServicePipeBufIsEnabled(pPipeBuf))
+            bool fEnabled = VBoxServicePipeBufIsEnabled(pPipeBuf);
+            if (fEnabled)
+            {
+#ifdef DEBUG_andy
+                VBoxServiceVerbose(4, "ControlExec: [PID %u]: Waiting for pipe buffer %u\n",
+                                   uPID, pPipeBuf->uPipeId);
+#endif
                 rc = VBoxServicePipeBufWaitForEvent(pPipeBuf, uTimeout);
-
+            }
             if (RT_SUCCESS(rc))
             {
                 uint32_t cbRead = cbSize;
                 rc = VBoxServicePipeBufRead(pPipeBuf, pBuf, cbSize, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
+                    if (fEnabled && !cbRead)
+                        AssertMsgFailed(("Waited for pipe buffer %u, but nothing read!\n",
+                                         pPipeBuf->uPipeId));
                     if (pcbRead)
                         *pcbRead = cbRead;
                 }
+                else
+                    VBoxServiceError("ControlExec: [PID %u]: Unable to read from pipe buffer %u, rc=%Rrc\n",
+                                     uPID, pPipeBuf->uPipeId, rc);
             }
         }
         else

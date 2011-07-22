@@ -58,6 +58,10 @@
 char *g_pszProgName =  (char *)"";
 /** The current verbosity level. */
 int g_cVerbosity = 0;
+/** Critical section for (debug) logging. */
+#ifdef DEBUG
+ RTCRITSECT g_csLog;
+#endif
 /** The default service interval (the -i | --interval) option). */
 uint32_t g_DefaultInterval = 0;
 #ifdef RT_OS_WINDOWS
@@ -216,17 +220,35 @@ RTEXITCODE VBoxServiceError(const char *pszFormat, ...)
  */
 void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...)
 {
-    if (iLevel <= g_cVerbosity)
+#ifdef DEBUG
+    int rc = RTCritSectEnter(&g_csLog);
+    if (RT_SUCCESS(rc))
     {
-        RTStrmPrintf(g_pStdOut, "%s: ", g_pszProgName);
-        va_list va;
-        va_start(va, pszFormat);
-        RTStrmPrintfV(g_pStdOut, pszFormat, va);
-        va_end(va);
-        va_start(va, pszFormat);
-        LogRel(("%s: %N", g_pszProgName, pszFormat, &va));
-        va_end(va);
+#endif
+        if (iLevel <= g_cVerbosity)
+        {
+#ifdef DEBUG
+            const char *pszThreadName = RTThreadSelfName();
+            AssertPtr(pszThreadName);
+            RTStrmPrintf(g_pStdOut, "%s [%s]: ",
+                         g_pszProgName, pszThreadName);
+#else
+            RTStrmPrintf(g_pStdOut, "%s: ", g_pszProgName);
+#endif
+            va_list va;
+            va_start(va, pszFormat);
+            RTStrmPrintfV(g_pStdOut, pszFormat, va);
+            va_end(va);
+            va_start(va, pszFormat);
+            LogRel(("%s: %N", g_pszProgName, pszFormat, &va));
+            va_end(va);
+        }
+#ifdef DEBUG
+        int rc2 = RTCritSectLeave(&g_csLog);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
+#endif
 }
 
 
@@ -579,6 +601,10 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
     g_pszProgName = RTPathFilename(argv[0]);
+#ifdef DEBUG
+    rc = RTCritSectInit(&g_csLog);
+    AssertRC(rc);
+#endif
 
 #ifdef VBOXSERVICE_TOOLBOX
     /*
@@ -850,6 +876,10 @@ int main(int argc, char **argv)
 #endif
 
     VBoxServiceVerbose(0, "Ended.\n");
+
+#ifdef DEBUG
+    RTCritSectDelete(&g_csLog);
+#endif
     return rcExit;
 }
 

@@ -190,7 +190,7 @@ static int  VBoxServiceControlExecProcHandleStdInWritableEvent(RTPOLLSET hPollSe
 
 
 /**
- * Handle pending output data/error on standard out or standard error.
+ * Handle pending output data/error on stdout or stderr.
  *
  * @return  IPRT status code.
  * @param   hPollSet            The polling set.
@@ -205,11 +205,6 @@ static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint3
     AssertPtrReturn(phPipeR, VERR_INVALID_POINTER);
     AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
 
-#ifdef DEBUG
-    VBoxServiceVerbose(4, "ControlExec: HandleOutputEvent: fPollEvt=%#x, uHandle=%u\n",
-                       fPollEvt, uHandleId);
-#endif
-
     /*
      * Try drain the pipe before acting on any errors.
      */
@@ -223,6 +218,10 @@ static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint3
         uint32_t cbWritten;
         rc = VBoxServicePipeBufWriteToBuf(pBuf, abBuf,
                                           cbRead, false /* Pending close */, &cbWritten);
+#ifdef DEBUG_andy
+        VBoxServiceVerbose(4, "ControlExec: Written output event [%u %u], cbRead=%u, cbWritten=%u, rc=%Rrc, uHandleId=%u, fPollEvt=%#x\n",
+                           pBuf->uPID, pBuf->uPipeId, cbRead, cbWritten, rc, uHandleId, fPollEvt);
+#endif
         if (RT_SUCCESS(rc))
         {
             Assert(cbRead == cbWritten);
@@ -256,7 +255,7 @@ static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint3
 int VBoxServiceControlExecProcHandleStdInputNotify(RTPOLLSET hPollSet,
                                                    PRTPIPE phNotificationPipeR, PRTPIPE phInputPipeW)
 {
-#ifdef DEBUG
+#ifdef DEBUG_andy
     VBoxServiceVerbose(4, "ControlExec: HandleStdInputNotify\n");
 #endif
     /* Drain the notification pipe. */
@@ -316,14 +315,23 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
     PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData;
     AssertPtr(pData);
 
-    /* Assign PID to thread data. */
-    pData->uPID = hProcess;
+    /*
+     * Assign PID to thread data.
+     * Also check if there already was a thread with the same PID and shut it down -- otherwise
+     * the first (stale) entry will be found and we get really weird results!
+     */
+    rc = VBoxServiceControlExecThreadAssignPID(pData, hProcess);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("ControlExec: Unable to assign PID to new thread, rc=%Rrc\n", rc);
+        return rc;
+    }
 
     /*
      * Before entering the loop, tell the host that we've started the guest
      * and that it's now OK to send input to the process.
      */
-    VBoxServiceVerbose(3, "ControlExec: Process started: PID=%u, CID=%u, User=%s\n",
+    VBoxServiceVerbose(3, "ControlExec: [PID %u]: Process started, CID=%u, User=%s\n",
                        pData->uPID, pThread->uContextID, pData->pszUser);
     rc = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
                                          pData->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
@@ -348,7 +356,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
         if (RT_SUCCESS(rc2))
         {
-            VBoxServiceVerbose(4, "ControlExec: RTPollNoResume idPollHnd=%u\n", idPollHnd);
+            /*VBoxServiceVerbose(4, "ControlExec: [PID %u}: RTPollNoResume idPollHnd=%u\n",
+                                 pData->uPID, idPollHnd);*/
             switch (idPollHnd)
             {
                 case VBOXSERVICECTRLPIPEID_STDIN_ERROR:
@@ -369,17 +378,28 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                 }
 
                 case VBOXSERVICECTRLPIPEID_STDOUT:
+#ifdef DEBUG
+                    VBoxServiceVerbose(4, "ControlExec: [PID %u]: StdOut fPollEvt=%#x\n",
+                                       pData->uPID, fPollEvt);
+#endif
                     rc = VBoxServiceControlExecProcHandleOutputEvent(hPollSet, fPollEvt, phStdOutR,
                                                                      VBOXSERVICECTRLPIPEID_STDOUT, &pData->stdOut);
+// TEST!!!
+VBoxServicePipeBufIsEnabled(&pData->stdOut);
                     break;
 
                 case VBOXSERVICECTRLPIPEID_STDERR:
+#ifdef DEBUG
+                    VBoxServiceVerbose(4, "ControlExec: [PID %u]: StdErr: fPollEvt=%#x\n",
+                                       pData->uPID, fPollEvt);
+#endif
                     rc = VBoxServiceControlExecProcHandleOutputEvent(hPollSet, fPollEvt, phStdErrR,
                                                                      VBOXSERVICECTRLPIPEID_STDERR, &pData->stdErr);
                     break;
 
                 default:
-                    AssertMsgFailed(("idPollHnd=%u fPollEvt=%#x\n", idPollHnd, fPollEvt));
+                    AssertMsgFailed(("PID=%u idPollHnd=%u fPollEvt=%#x\n",
+                                     pData->uPID, idPollHnd, fPollEvt));
                     break;
             }
             if (RT_FAILURE(rc) || rc == VINF_EOF)
@@ -427,7 +447,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
             uint64_t cMsElapsed = u64Now - MsStart;
             if (cMsElapsed >= cMsTimeout)
             {
-                VBoxServiceVerbose(3, "ControlExec: Process timed out (%ums elapsed > %ums timeout), killing ...", cMsElapsed, cMsTimeout);
+                VBoxServiceVerbose(3, "ControlExec: [PID %u]: Timed out (%ums elapsed > %ums timeout), killing ...",
+                                   pData->uPID, cMsElapsed, cMsTimeout);
 
                 fProcessTimedOut = true;
                 if (    MsProcessKilled == UINT64_MAX
@@ -462,7 +483,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
     {
         if (MsProcessKilled == UINT64_MAX)
         {
-            VBoxServiceVerbose(3, "ControlExec: Process (PID=%u) is still alive and not killed yet\n",
+            VBoxServiceVerbose(3, "ControlExec: [PID %u]: Is still alive and not killed yet\n",
                                pData->uPID);
 
             MsProcessKilled = RTTimeMilliTS();
@@ -472,31 +493,31 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
         for (size_t i = 0; i < 10; i++)
         {
-            VBoxServiceVerbose(4, "ControlExec: Kill attempt %d/10: Waiting for process (PID=%u) exit ...\n",
-                               i + 1, pData->uPID);
+            VBoxServiceVerbose(4, "ControlExec: [PID %u]: Kill attempt %d/10: Waiting to exit ...\n",
+                               pData->uPID, i + 1);
             rc2 = RTProcWait(hProcess, RTPROCWAIT_FLAGS_NOBLOCK, &ProcessStatus);
             if (RT_SUCCESS(rc2))
             {
-                VBoxServiceVerbose(4, "ControlExec: Kill attempt %d/10: Process (PID=%u) exited\n",
-                                   i + 1, pData->uPID);
+                VBoxServiceVerbose(4, "ControlExec: [PID %u]: Kill attempt %d/10: Exited\n",
+                                   pData->uPID, i + 1);
                 fProcessAlive = false;
                 break;
             }
             if (i >= 5)
             {
-                VBoxServiceVerbose(4, "ControlExec: Kill attempt %d/10: Try to terminate (PID=%u) ...\n",
-                                   i + 1, pData->uPID);
+                VBoxServiceVerbose(4, "ControlExec: [PID %u]: Kill attempt %d/10: Trying to terminate ...\n",
+                                   pData->uPID, i + 1);
                 RTProcTerminate(hProcess);
             }
             RTThreadSleep(i >= 5 ? 2000 : 500);
         }
 
         if (fProcessAlive)
-            VBoxServiceVerbose(3, "ControlExec: Process (PID=%u) could not be killed\n", pData->uPID);
+            VBoxServiceVerbose(3, "ControlExec: [PID %u]: Could not be killed\n", pData->uPID);
     }
 
     /*
-     * If we don't have a client problem (RT_FAILURE(rc) we'll reply to the
+     * If we don't have a client problem (RT_FAILURE(rc)) we'll reply to the
      * clients exec packet now.
      */
     if (RT_SUCCESS(rc))
@@ -515,63 +536,68 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
         if (     fProcessTimedOut  && !fProcessAlive && MsProcessKilled != UINT64_MAX)
         {
-            VBoxServiceVerbose(3, "ControlExec: Process timed out and got killed\n");
+            VBoxServiceVerbose(3, "ControlExec: [PID %u]: Timed out and got killed\n",
+                               pData->uPID);
             uStatus = PROC_STS_TOK;
         }
         else if (fProcessTimedOut  &&  fProcessAlive && MsProcessKilled != UINT64_MAX)
         {
-            VBoxServiceVerbose(3, "ControlExec: Process timed out and did *not* get killed\n");
+            VBoxServiceVerbose(3, "ControlExec: [PID %u]: Timed out and did *not* get killed\n",
+                               pData->uPID);
             uStatus = PROC_STS_TOA;
         }
         else if (pThread->fShutdown && (fProcessAlive || MsProcessKilled != UINT64_MAX))
         {
-            VBoxServiceVerbose(3, "ControlExec: Process got terminated because system/service is about to shutdown\n");
+            VBoxServiceVerbose(3, "ControlExec: [PID %u]: Got terminated because system/service is about to shutdown\n",
+                               pData->uPID);
             uStatus = PROC_STS_DWN; /* Service is stopping, process was killed. */
             uFlags = pData->uFlags; /* Return handed-in execution flags back to the host. */
         }
         else if (fProcessAlive)
         {
-            VBoxServiceError("ControlExec: Process is alive when it should not!\n");
+            VBoxServiceError("ControlExec: [PID %u]: Is alive when it should not!\n",
+                             pData->uPID);
         }
         else if (MsProcessKilled != UINT64_MAX)
         {
-            VBoxServiceError("ControlExec: Process has been killed when it should not!\n");
+            VBoxServiceError("ControlExec: [PID %u]: Has been killed when it should not!\n",
+                             pData->uPID);
         }
         else if (ProcessStatus.enmReason == RTPROCEXITREASON_NORMAL)
         {
-            VBoxServiceVerbose(3, "ControlExec: Process ended with RTPROCEXITREASON_NORMAL (%u)\n",
-                               ProcessStatus.iStatus);
+            VBoxServiceVerbose(3, "ControlExec: [PID %u]: Ended with RTPROCEXITREASON_NORMAL (%u)\n",
+                               pData->uPID, ProcessStatus.iStatus);
 
             uStatus = PROC_STS_TEN;
             uFlags = ProcessStatus.iStatus;
         }
         else if (ProcessStatus.enmReason == RTPROCEXITREASON_SIGNAL)
         {
-            VBoxServiceVerbose(3, "ControlExec: Process ended with RTPROCEXITREASON_SIGNAL (%u)\n",
-                               ProcessStatus.iStatus);
+            VBoxServiceVerbose(3, "ControlExec: [PID %u]: Ended with RTPROCEXITREASON_SIGNAL (%u)\n",
+                               pData->uPID, ProcessStatus.iStatus);
 
             uStatus = PROC_STS_TES;
             uFlags = ProcessStatus.iStatus;
         }
         else if (ProcessStatus.enmReason == RTPROCEXITREASON_ABEND)
         {
-            VBoxServiceVerbose(3, "ControlExec: Process ended with RTPROCEXITREASON_ABEND (%u)\n",
-                               ProcessStatus.iStatus);
+            VBoxServiceVerbose(3, "ControlExec: [PID %u]: Ended with RTPROCEXITREASON_ABEND (%u)\n",
+                               pData->uPID, ProcessStatus.iStatus);
 
             uStatus = PROC_STS_TEA;
             uFlags = ProcessStatus.iStatus;
         }
         else
-        {
-            VBoxServiceError("ControlExec: Process has reached an undefined status!\n");
-        }
+            VBoxServiceError("ControlExec: [PID %u]: Reached an undefined state!\n",
+                             pData->uPID);
 
-        VBoxServiceVerbose(3, "ControlExec: Process ended: PID=%u, CID=%u, Status=%u, Flags=%u\n",
+        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Ended, CID=%u, Status=%u, Flags=%u\n",
                            pData->uPID, pThread->uContextID, uStatus, uFlags);
         rc = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
                                              pData->uPID, uStatus, uFlags,
                                              NULL /* pvData */, 0 /* cbData */);
-        VBoxServiceVerbose(3, "ControlExec: Process loop ended with rc=%Rrc\n", rc);
+        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Process loop ended with rc=%Rrc\n",
+                           pData->uPID, rc);
 
         /*
          * Dump stdout for debugging purposes.
@@ -579,7 +605,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
          */
         if (g_cVerbosity >= 5)
         {
-            VBoxServiceVerbose(5, "StdOut of process (PID %u):\n", pData->uPID);
+            VBoxServiceVerbose(5, "[PID %u]: StdOut:\n", pData->uPID);
 
             uint8_t szBuf[_64K];
             uint32_t cbOffset = 0;
@@ -588,7 +614,6 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                                                         cbOffset, &cbRead, &cbLeft))
                    && cbRead)
             {
-                RTStrmWrite(g_pStdOut, szBuf, cbRead);
                 cbOffset += cbRead;
                 if (!cbLeft)
                     break;
@@ -598,7 +623,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
         }
     }
     else
-        VBoxServiceError("ControlExec: Process loop failed with rc=%Rrc\n", rc);
+        VBoxServiceError("ControlExec: [PID %u]: Loop failed with rc=%Rrc\n",
+                         pData->uPID, rc);
     return rc;
 }
 
@@ -882,9 +908,9 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
             if (*pszAsUser)
                 uProcFlags |= RTPROC_FLAGS_SERVICE;
 #ifdef DEBUG
-            VBoxServiceVerbose(3, "Command: %s\n", szExecExp);
+            VBoxServiceVerbose(3, "ControlExec: Command: %s\n", szExecExp);
             for (size_t i = 0; papszArgsExp[i]; i++)
-                VBoxServiceVerbose(3, "\targv[%ld]: %s\n", i, papszArgsExp[i]);
+                VBoxServiceVerbose(3, "ControlExec:\targv[%ld]: %s\n", i, papszArgsExp[i]);
 #endif
             /* Do normal execution. */
             rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, uProcFlags,
@@ -1019,11 +1045,13 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
                                      * the guest from getting stuck accessing them.
                                      * So, NIL the handles to avoid closing them again.
                                      */
-                                    if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, 0 /* stdin */, NULL)))
+                                    if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE, NULL)))
                                         pData->pipeStdInW = NIL_RTPIPE;
-                                    if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, 1 /* stdout */, NULL)))
+                                    if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_INPUT_NOTIFY, NULL)))
+                                        pData->stdIn.hNotificationPipeR = NIL_RTPIPE;
+                                    if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDOUT, NULL)))
                                         hStdOutR = NIL_RTPIPE;
-                                    if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, 2 /* stderr */, NULL)))
+                                    if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDERR, NULL)))
                                         hStdErrR = NIL_RTPIPE;
                                 }
                                 else /* Something went wrong; report error! */
@@ -1040,6 +1068,7 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
                                 }
                             }
                             RTPollSetDestroy(hPollSet);
+                            RTPipeClose(pData->stdIn.hNotificationPipeR);
                         }
                         RTPipeClose(hStdErrR);
                         RTHandleClose(phStdErr);
@@ -1055,8 +1084,8 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
     }
 
     VbglR3GuestCtrlDisconnect(pThread->uClientID);
-    VBoxServiceVerbose(3, "ControlExec: Thread of process \"%s\" (PID: %u) ended with rc=%Rrc\n",
-                       pData->pszCmd, pData->uPID, rc);
+    VBoxServiceVerbose(3, "ControlExec: [PID %u]: Thread of process \"%s\" ended with rc=%Rrc\n",
+                       pData->uPID, pData->pszCmd, rc);
 
     /*
      * If something went wrong signal the user event so that others don't wait
@@ -1121,9 +1150,14 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
                                                uTimeLimitMS);
         if (RT_SUCCESS(rc))
         {
+            static uint32_t uCtrlExecThread = 0;
+            char szThreadName[32];
+            if (!RTStrPrintf(szThreadName, sizeof(szThreadName), "controlexec%ld", uCtrlExecThread++))
+                AssertMsgFailed(("Unable to create unique control exec thread name!\n"));
+
             rc = RTThreadCreate(&pThread->Thread, VBoxServiceControlExecThread,
                                 (void *)(PVBOXSERVICECTRLTHREAD*)pThread, 0,
-                                RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "Exec");
+                                RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, szThreadName);
             if (RT_FAILURE(rc))
             {
                 VBoxServiceError("ControlExec: RTThreadCreate failed, rc=%Rrc\n, pThread=%p\n",
@@ -1134,7 +1168,7 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
                 VBoxServiceVerbose(4, "ControlExec: Waiting for thread to initialize ...\n");
 
                 /* Wait for the thread to initialize. */
-                RTThreadUserWait(pThread->Thread, 60 * 1000);
+                RTThreadUserWait(pThread->Thread, 60 * 1000 /* 60 seconds max. */);
                 if (pThread->fShutdown)
                 {
                     VBoxServiceError("ControlExec: Thread for process \"%s\" failed to start!\n", pszCmd);
@@ -1219,7 +1253,6 @@ int VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t u
     }
     else
         VBoxServiceError("ControlExec: Failed to retrieve exec start command! Error: %Rrc\n", rc);
-    VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecHandleCmdStartProcess returned with %Rrc\n", rc);
     return rc;
 }
 
@@ -1255,12 +1288,13 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
                                                 pabBuffer, cbMaxBufSize, &cbSize);
     if (RT_FAILURE(rc))
     {
-        VBoxServiceError("ControlExec: Failed to retrieve exec input command! Error: %Rrc\n", rc);
+        VBoxServiceError("ControlExec: [PID %u]: Failed to retrieve exec input command! Error: %Rrc\n",
+                         uPID, rc);
     }
     else if (cbSize >  cbMaxBufSize)
     {
-        VBoxServiceError("ControlExec: Maximum input buffer size is too small! cbSize=%u, cbMaxBufSize=%u\n",
-                         cbSize, cbMaxBufSize);
+        VBoxServiceError("ControlExec: [PID %u]: Maximum input buffer size is too small! cbSize=%u, cbMaxBufSize=%u\n",
+                         uPID, cbSize, cbMaxBufSize);
         rc = VERR_INVALID_PARAMETER;
     }
     else
@@ -1272,13 +1306,13 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
         if (uFlags & INPUT_FLAG_EOF)
         {
             fPendingClose = true;
-            VBoxServiceVerbose(4, "ControlExec: Got last input block (PID %u) of size %u ...\n",
+            VBoxServiceVerbose(4, "ControlExec: [PID %u]: Got last input block of size %u ...\n",
                                uPID, cbSize);
         }
 
         rc = VBoxServiceControlExecThreadSetInput(uPID, fPendingClose, pabBuffer,
                                                   cbSize, &cbWritten);
-        VBoxServiceVerbose(4, "ControlExec: Written input (PID %u): rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
+        VBoxServiceVerbose(4, "ControlExec: [PID %u]: Written input, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
                            uPID, rc, uFlags, fPendingClose, cbSize, cbWritten);
         if (RT_SUCCESS(rc))
         {
@@ -1310,7 +1344,7 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
     }
     Assert(uStatus > INPUT_STS_UNDEFINED);
 
-    VBoxServiceVerbose(3, "ControlExec: Input processed (PID %u), Status=%u, Flags=0x%x, cbWritten=%u\n",
+    VBoxServiceVerbose(3, "ControlExec: [PID %u]: Input processed, uStatus=%u, uFlags=0x%x, cbWritten=%u\n",
                        uPID, uStatus, uFlags, cbWritten);
 
     /* Note: Since the context ID is unique the request *has* to be completed here,
@@ -1320,7 +1354,8 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
                                            uStatus, uFlags, (uint32_t)cbWritten);
 
     if (RT_FAILURE(rc))
-        VBoxServiceError("ControlExec: Failed to report input status! Error: %Rrc\n", rc);
+        VBoxServiceError("ControlExec: [PID %u]: Failed to report input status! Error: %Rrc\n",
+                         uPID, rc);
     return rc;
 }
 
@@ -1344,34 +1379,36 @@ int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNum
                                                  &uContextID, &uPID, &uHandleID, &uFlags);
     if (RT_SUCCESS(rc))
     {
-        uint32_t cbRead;
+        uint32_t cbRead = 0;
         uint8_t *pBuf = (uint8_t*)RTMemAlloc(_64K);
         if (pBuf)
         {
             rc = VBoxServiceControlExecThreadGetOutput(uPID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
                                                        pBuf, _64K /* cbSize */, &cbRead);
             if (RT_SUCCESS(rc))
-            {
-                VBoxServiceVerbose(3, "ControlExec: Got output (PID %u), read=%u, handle=%u, flags=%u\n",
+                VBoxServiceVerbose(3, "ControlExec: [PID %u]: Got output, cbRead=%u, uHandle=%u, uFlags=%u\n",
                                    uPID, cbRead, uHandleID, uFlags);
-
-                /* Note: Since the context ID is unique the request *has* to be completed here,
-                 *       regardless whether we got data or not! Otherwise the progress object
-                 *       on the host never will get completed! */
-                /* cbRead now contains actual size. */
-                rc = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, uHandleID, uFlags,
-                                                pBuf, cbRead);
-            }
             else
-                VBoxServiceError("ControlExec: Failed to retrieve output (PID %u), rc=%Rrc\n",
-                                 uPID, rc);
+                VBoxServiceError("ControlExec: [PID %u]: Failed to retrieve output, uHandle=%u, rc=%Rrc\n",
+                                 uPID, uHandleID, rc);
+
+            /* Note: Since the context ID is unique the request *has* to be completed here,
+             *       regardless whether we got data or not! Otherwise the progress object
+             *       on the host never will get completed! */
+            /* cbRead now contains actual size. */
+            int rc2 = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, uHandleID, uFlags,
+                                                 pBuf, cbRead);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
             RTMemFree(pBuf);
         }
         else
             rc = VERR_NO_MEMORY;
     }
-    else
-        VBoxServiceError("ControlExec: Failed to retrieve exec output command! Error: %Rrc\n", rc);
+
+    if (RT_FAILURE(rc))
+        VBoxServiceError("ControlExec: [PID %u]: Failed to handle output command! Error: %Rrc\n",
+                         uPID, rc);
     return rc;
 }
 
