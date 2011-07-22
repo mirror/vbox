@@ -553,13 +553,6 @@ static void surface_force_reload(IWineD3DSurface *iface)
 {
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
 
-#if defined(DEBUG_misha) && defined (VBOX_WITH_WDDM)
-    if (VBOXSHRC_IS_SHARED_UNLOCKED(This))
-    {
-        Assert(0);
-    }
-#endif
-
     This->Flags &= ~(SFLAG_ALLOCATED | SFLAG_SRGBALLOCATED);
 }
 

@@ -291,11 +291,20 @@ typedef struct VBOXWDDM_RECTS_INFO
 #define VBOXWDDM_RECTS_INFO_SIZE4CRECTS(_cRects) (RT_OFFSETOF(VBOXWDDM_RECTS_INFO, aRects[(_cRects)]))
 #define VBOXWDDM_RECTS_INFO_SIZE(_pRects) (VBOXVIDEOCM_CMD_RECTS_SIZE4CRECTS((_pRects)->cRects))
 
+typedef enum
+{
+    /* command to be post to user mode */
+    VBOXVIDEOCM_CMD_TYPE_UM = 0,
+    /* control command processed in kernel mode */
+    VBOXVIDEOCM_CMD_TYPE_CTL_KM,
+    VBOXVIDEOCM_CMD_DUMMY_32BIT = 0x7fffffff
+} VBOXVIDEOCM_CMD_TYPE;
+
 typedef struct VBOXVIDEOCM_CMD_HDR
 {
     uint64_t u64UmData;
     uint32_t cbCmd;
-    uint32_t u32CmdSpecific;
+    VBOXVIDEOCM_CMD_TYPE enmType;
 }VBOXVIDEOCM_CMD_HDR, *PVBOXVIDEOCM_CMD_HDR;
 
 AssertCompile((sizeof (VBOXVIDEOCM_CMD_HDR) & 7) == 0);

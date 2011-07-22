@@ -107,7 +107,8 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
     }
 #ifdef VBOX_WITH_WDDM
     if(This->device_window) {
-        ReleaseDC(This->device_window, This->hDC);
+        /* see VBoxExtGet/ReleaseDC for comments */
+        VBoxExtReleaseDC(This->device_window, This->hDC);
     }
 #else
     HeapFree(GetProcessHeap(), 0, This->context);
@@ -375,15 +376,7 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
         Assert(context->currentSwapchain && context->win_handle==context->currentSwapchain->win_handle);
         Assert(wnd==context->win_handle);
         Assert(IsWindow(context->win_handle));
-
-        if (wnd != context->win_handle)
-        {
-            extern void context_update_window(struct wined3d_context *context, IWineD3DSwapChainImpl *swapchain);
-
-            context->valid = 0;
-            Assert(context->currentSwapchain == This);
-            context_update_window(context, context->currentSwapchain);
-        }
+        Assert(wnd == context->win_handle);
     }
 #endif
 
@@ -738,7 +731,8 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
     swapchain->device_window = window;
 #ifdef VBOX_WITH_WDDM
     Assert(window);
-    swapchain->hDC = GetDC(window);
+    /* see VBoxExtGet/ReleaseDC for comments */
+    swapchain->hDC = VBoxExtGetDC(window);
     if (!swapchain->hDC)
     {
         DWORD winEr = GetLastError();

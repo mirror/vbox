@@ -268,7 +268,7 @@ HRESULT vboxDispWndDoCreate(DWORD w, DWORD h, HWND *phWnd)
     WNDCLASS wc;
     if (!GetClassInfo(hInstance, VBOXDISPWND_NAME, &wc))
     {
-        wc.style = CS_OWNDC;
+        wc.style = 0;//CS_OWNDC;
         wc.lpfnWndProc = WindowProc;
         wc.cbClsExtra = 0;
         wc.cbWndExtra = 0;

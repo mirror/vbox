@@ -206,6 +206,9 @@ typedef struct VBOXWDDMDISP_LOCKINFO
     };
     D3DDDI_LOCKFLAGS fFlags;
     D3DLOCKED_RECT LockedRect;
+#ifdef VBOXWDDMDISP_DEBUG
+    PVOID pvData;
+#endif
 } VBOXWDDMDISP_LOCKINFO;
 
 typedef enum

@@ -215,16 +215,10 @@ DECLINLINE(BOOLEAN) vboxWddmSwapchainRetain(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SW
 
 DECLINLINE(VOID) vboxWddmSwapchainRelease(PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
-    uint32_t cRefs = ASMAtomicDecU32(&pSwapchain->cRefs);
+    const uint32_t cRefs = ASMAtomicDecU32(&pSwapchain->cRefs);
     Assert(cRefs < UINT32_MAX/2);
     if (!cRefs)
     {
-        Assert(pSwapchain->pContext);
-        if (pSwapchain->pContext)
-        {
-            NTSTATUS tmpStatus = vboxVdmaPostHideSwapchain(pSwapchain);
-            Assert(tmpStatus == STATUS_SUCCESS);
-        }
         vboxWddmMemFree(pSwapchain);
     }
 }
@@ -311,6 +305,17 @@ VOID vboxWddmSwapchainAllocRemoveAll(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SWAPCHAIN
 VOID vboxWddmSwapchainDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
     vboxWddmSwapchainAllocRemoveAllInternal(pDevExt, pSwapchain, TRUE);
+
+    Assert(pSwapchain->pContext);
+    if (pSwapchain->pContext)
+    {
+        NTSTATUS tmpStatus = vboxVdmaGgCmdCancel(pDevExt, pSwapchain->pContext, pSwapchain);
+        if (tmpStatus != STATUS_SUCCESS)
+        {
+            WARN(("vboxVdmaGgCmdCancel returned Status (0x%x)", tmpStatus));
+        }
+    }
+
     vboxWddmSwapchainRelease(pSwapchain);
 }
 
@@ -396,96 +401,124 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
     if (cbSize < RT_OFFSETOF(VBOXDISPIFESCAPE_SWAPCHAININFO, SwapchainInfo.ahAllocs[pSwapchainInfo->SwapchainInfo.cAllocs]))
         return STATUS_INVALID_PARAMETER;
 
-    PVBOXWDDM_SWAPCHAIN pSwapchain;
+    PVBOXWDDM_SWAPCHAIN pSwapchain = NULL;
     PVBOXWDDM_ALLOCATION *apAlloc = NULL;
-    if (pSwapchainInfo->SwapchainInfo.cAllocs)
-    {
-        apAlloc = (PVBOXWDDM_ALLOCATION *)vboxWddmMemAlloc(sizeof (PVBOXWDDM_ALLOCATION) * pSwapchainInfo->SwapchainInfo.cAllocs);
-        Assert(apAlloc);
-        if (!apAlloc)
-            return STATUS_NO_MEMORY;
-        for (UINT i = 0; i < pSwapchainInfo->SwapchainInfo.cAllocs; ++i)
+    Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    do {
+        if (pSwapchainInfo->SwapchainInfo.cAllocs)
         {
-            DXGKARGCB_GETHANDLEDATA GhData;
-            GhData.hObject = pSwapchainInfo->SwapchainInfo.ahAllocs[i];
-            GhData.Type = DXGK_HANDLE_ALLOCATION;
-            GhData.Flags.Value = 0;
-            PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pDevExt->u.primary.DxgkInterface.DxgkCbGetHandleData(&GhData);
-            Assert(pAlloc);
-            if (!pAlloc)
-                return STATUS_INVALID_PARAMETER;
-            apAlloc[i] = pAlloc;
-        }
-    }
+            apAlloc = (PVBOXWDDM_ALLOCATION *)vboxWddmMemAlloc(sizeof (PVBOXWDDM_ALLOCATION) * pSwapchainInfo->SwapchainInfo.cAllocs);
+            Assert(apAlloc);
+            if (!apAlloc)
+            {
+                Status = STATUS_NO_MEMORY;
+                break;
+            }
+            for (UINT i = 0; i < pSwapchainInfo->SwapchainInfo.cAllocs; ++i)
+            {
+                DXGKARGCB_GETHANDLEDATA GhData;
+                GhData.hObject = pSwapchainInfo->SwapchainInfo.ahAllocs[i];
+                GhData.Type = DXGK_HANDLE_ALLOCATION;
+                GhData.Flags.Value = 0;
+                PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pDevExt->u.primary.DxgkInterface.DxgkCbGetHandleData(&GhData);
+                Assert(pAlloc);
+                if (!pAlloc)
+                {
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+                apAlloc[i] = pAlloc;
+            }
 
-    if (pSwapchainInfo->SwapchainInfo.hSwapchainKm)
-    {
-        ExAcquireFastMutex(&pDevExt->ContextMutex);
-        pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmHTableGet(&pContext->Swapchains, (VBOXWDDM_HANDLE)pSwapchainInfo->SwapchainInfo.hSwapchainKm);
-        Assert(pSwapchain);
-        if (!pSwapchain)
+            if (!NT_SUCCESS(Status))
+                break;
+        }
+
+        if (pSwapchainInfo->SwapchainInfo.hSwapchainKm)
         {
-            ExReleaseFastMutex(&pDevExt->ContextMutex);
-            return STATUS_INVALID_PARAMETER;
+            ExAcquireFastMutex(&pDevExt->ContextMutex);
+            pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmHTableGet(&pContext->Swapchains, (VBOXWDDM_HANDLE)pSwapchainInfo->SwapchainInfo.hSwapchainKm);
+            Assert(pSwapchain);
+            if (!pSwapchain)
+            {
+                ExReleaseFastMutex(&pDevExt->ContextMutex);
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+            Assert(pSwapchain->hSwapchainKm == pSwapchainInfo->SwapchainInfo.hSwapchainKm);
+            Assert(pSwapchain->pContext == pContext);
+            if (pSwapchain->pContext != pContext)
+            {
+                ExReleaseFastMutex(&pDevExt->ContextMutex);
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
         }
-        Assert(pSwapchain->hSwapchainKm == pSwapchainInfo->SwapchainInfo.hSwapchainKm);
-        Assert(pSwapchain->pContext == pContext);
-        if (pSwapchain->pContext != pContext)
+        else if (pSwapchainInfo->SwapchainInfo.cAllocs)
         {
-            ExReleaseFastMutex(&pDevExt->ContextMutex);
-            return STATUS_INVALID_PARAMETER;
+            pSwapchain = vboxWddmSwapchainCreate();
+            if (!pSwapchain)
+            {
+                Status = STATUS_NO_MEMORY;
+                break;
+            }
+
+            ExAcquireFastMutex(&pDevExt->ContextMutex);
+            BOOLEAN bRc = vboxWddmSwapchainCtxAddLocked(pDevExt, pContext, pSwapchain);
+            Assert(bRc);
         }
-    }
-    else if (pSwapchainInfo->SwapchainInfo.cAllocs)
-    {
-        pSwapchain = vboxWddmSwapchainCreate();
-        if (!pSwapchain)
-            return STATUS_NO_MEMORY;
-
-        ExAcquireFastMutex(&pDevExt->ContextMutex);
-        BOOLEAN bRc = vboxWddmSwapchainCtxAddLocked(pDevExt, pContext, pSwapchain);
-        Assert(bRc);
-    }
-    else
-        return STATUS_INVALID_PARAMETER;
-
-    memset(&pSwapchain->ViewRect, 0, sizeof (pSwapchain->ViewRect));
-    if (pSwapchain->pLastReportedRects)
-    {
-        vboxVideoCmCmdRelease(pSwapchain->pLastReportedRects);
-        pSwapchain->pLastReportedRects = NULL;
-    }
-
-    vboxWddmSwapchainAllocRemoveAll(pDevExt, pSwapchain);
-
-    if (pSwapchainInfo->SwapchainInfo.cAllocs)
-    {
-        for (UINT i = 0; i < pSwapchainInfo->SwapchainInfo.cAllocs; ++i)
+        else
         {
-            vboxWddmSwapchainAllocAdd(pDevExt, pSwapchain, apAlloc[i]);
+            Status = STATUS_INVALID_PARAMETER;
+            break;
         }
-        pSwapchain->hSwapchainUm = pSwapchainInfo->SwapchainInfo.hSwapchainUm;
-    }
-    else
-    {
-        vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
-    }
 
-    ExReleaseFastMutex(&pDevExt->ContextMutex);
+        memset(&pSwapchain->ViewRect, 0, sizeof (pSwapchain->ViewRect));
+        if (pSwapchain->pLastReportedRects)
+        {
+            vboxVideoCmCmdRelease(pSwapchain->pLastReportedRects);
+            pSwapchain->pLastReportedRects = NULL;
+        }
 
-    if (pSwapchainInfo->SwapchainInfo.cAllocs)
-    {
-        Assert(pSwapchain->pContext);
-        Assert(pSwapchain->hSwapchainKm);
-        pSwapchainInfo->SwapchainInfo.hSwapchainKm = pSwapchain->hSwapchainKm;
-    }
-    else
-    {
-        vboxWddmSwapchainDestroy(pDevExt, pSwapchain);
-        pSwapchainInfo->SwapchainInfo.hSwapchainKm = 0;
-    }
+        vboxWddmSwapchainAllocRemoveAll(pDevExt, pSwapchain);
 
-    return STATUS_SUCCESS;
+        if (pSwapchainInfo->SwapchainInfo.cAllocs)
+        {
+            for (UINT i = 0; i < pSwapchainInfo->SwapchainInfo.cAllocs; ++i)
+            {
+                vboxWddmSwapchainAllocAdd(pDevExt, pSwapchain, apAlloc[i]);
+            }
+            pSwapchain->hSwapchainUm = pSwapchainInfo->SwapchainInfo.hSwapchainUm;
+        }
+        else
+        {
+            vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
+        }
+
+        ExReleaseFastMutex(&pDevExt->ContextMutex);
+
+        if (pSwapchainInfo->SwapchainInfo.cAllocs)
+        {
+            Assert(pSwapchain->pContext);
+            Assert(pSwapchain->hSwapchainKm);
+            pSwapchainInfo->SwapchainInfo.hSwapchainKm = pSwapchain->hSwapchainKm;
+        }
+        else
+        {
+            vboxWddmSwapchainDestroy(pDevExt, pSwapchain);
+            pSwapchainInfo->SwapchainInfo.hSwapchainKm = 0;
+        }
+
+        Assert(Status == STATUS_SUCCESS);
+    } while (0);
+
+    /* cleanup */
+    if (apAlloc)
+        vboxWddmMemFree(apAlloc);
+
+    return Status;
 }
 
 NTSTATUS vboxWddmSwapchainCtxInit(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext)

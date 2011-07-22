@@ -281,7 +281,7 @@ HRESULT vboxScreenMonWndCreate(HWND *phWnd)
     WNDCLASS wc;
     if (!GetClassInfo(hInstance, VBOXSCREENMONWND_NAME, &wc))
     {
-        wc.style = CS_OWNDC;
+        wc.style = 0;//CS_OWNDC;
         wc.lpfnWndProc = vboxScreenMonWndProc;
         wc.cbClsExtra = 0;
         wc.cbWndExtra = 0;

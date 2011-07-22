@@ -926,6 +926,7 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessFast(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
             Assert(Status == STATUS_SUCCESS);
             break;
         }
+
         default:
             Assert(0);
             break;
@@ -1065,6 +1066,17 @@ static NTSTATUS vboxVdmaGgDmaCmdProcessSlow(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE
     return Status;
 }
 
+static DECLCALLBACK(UINT) vboxVdmaGgCmdCancelVisitor(PVBOXVIDEOCM_CTX pContext, PVOID pvCmd, uint32_t cbCmd, PVOID pvVisitor)
+{
+    PVBOXWDDM_SWAPCHAIN pSwapchain = (PVBOXWDDM_SWAPCHAIN)pvVisitor;
+    if (!pSwapchain)
+        return VBOXVIDEOCMCMDVISITOR_RETURN_RMCMD;
+    PVBOXVIDEOCM_CMD_RECTS_INTERNAL pCmdInternal = (PVBOXVIDEOCM_CMD_RECTS_INTERNAL)pvCmd;
+    if (pCmdInternal->hSwapchainUm == pSwapchain->hSwapchainUm)
+        return VBOXVIDEOCMCMDVISITOR_RETURN_RMCMD;
+    return 0;
+}
+
 static VOID vboxVdmaGgWorkerThread(PVOID pvUser)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvUser;
@@ -1100,6 +1112,33 @@ static VOID vboxVdmaGgWorkerThread(PVOID pvUser)
                             Status = vboxVdmaGgDirtyRectsProcess(pDevExt, pRects->pContext, pRects->pSwapchain, &pRects->ContextsRects);
                             Assert(Status == STATUS_SUCCESS);
                             vboxVdmaGgCmdDestroy(pDevExt, pDr);
+                            break;
+                        }
+                        case VBOXVDMAPIPE_CMD_TYPE_FINISH:
+                        {
+                            PVBOXVDMAPIPE_CMD_FINISH pCmd = (PVBOXVDMAPIPE_CMD_FINISH)pDr;
+                            PVBOXWDDM_CONTEXT pContext = pCmd->pContext;
+                            Assert(pCmd->pEvent);
+                            Status = vboxVideoCmCmdSubmitCompleteEvent(&pContext->CmContext, pCmd->pEvent);
+                            if (Status != STATUS_SUCCESS)
+                            {
+                                WARN(("vboxVideoCmCmdWaitCompleted failedm Status (0x%x)", Status));
+                            }
+                            vboxVdmaGgCmdDestroy(pDevExt, &pCmd->Hdr);
+                            break;
+                        }
+                        case VBOXVDMAPIPE_CMD_TYPE_CANCEL:
+                        {
+                            PVBOXVDMAPIPE_CMD_CANCEL pCmd = (PVBOXVDMAPIPE_CMD_CANCEL)pDr;
+                            PVBOXWDDM_CONTEXT pContext = pCmd->pContext;
+                            Status = vboxVideoCmCmdVisit(&pContext->CmContext, FALSE, vboxVdmaGgCmdCancelVisitor, pCmd->pSwapchain);
+                            if (Status != STATUS_SUCCESS)
+                            {
+                                WARN(("vboxVideoCmCmdWaitCompleted failedm Status (0x%x)", Status));
+                            }
+                            Assert(pCmd->pEvent);
+                            KeSetEvent(pCmd->pEvent, 0, FALSE);
+                            vboxVdmaGgCmdDestroy(pDevExt, &pCmd->Hdr);
                             break;
                         }
                         default:
@@ -1216,6 +1255,60 @@ VOID vboxVdmaGgCmdDmaNotifyInit(PVBOXVDMAPIPE_CMD_DMACMD pCmd,
     pDdiCmd = &pCmd->DdiCmd;
 #endif
     vboxVdmaDdiCmdInit(pDdiCmd, u32NodeOrdinal, u32FenceId, pfnComplete, pvComplete);
+}
+
+NTSTATUS vboxVdmaGgCmdFinish(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, PKEVENT pEvent)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    PVBOXVDMAPIPE_CMD_FINISH pCmd = (PVBOXVDMAPIPE_CMD_FINISH)vboxVdmaGgCmdCreate(pDevExt, VBOXVDMAPIPE_CMD_TYPE_FINISH, sizeof (*pCmd));
+    if (pCmd)
+    {
+        pCmd->pContext = pContext;
+        pCmd->pEvent = pEvent;
+        Status = vboxVdmaGgCmdSubmit(pDevExt, &pCmd->Hdr);
+        if (!NT_SUCCESS(Status))
+        {
+            WARN(("vboxVdmaGgCmdSubmit returned 0x%x", Status));
+        }
+    }
+    else
+    {
+        WARN(("vboxVdmaGgCmdCreate failed"));
+        Status = STATUS_NO_MEMORY;
+    }
+    return Status;
+}
+
+NTSTATUS vboxVdmaGgCmdCancel(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, PVBOXWDDM_SWAPCHAIN pSwapchain)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    PVBOXVDMAPIPE_CMD_CANCEL pCmd = (PVBOXVDMAPIPE_CMD_CANCEL)vboxVdmaGgCmdCreate(pDevExt, VBOXVDMAPIPE_CMD_TYPE_CANCEL, sizeof (*pCmd));
+    if (pCmd)
+    {
+        KEVENT Event;
+        KeInitializeEvent(&Event, NotificationEvent, FALSE);
+        pCmd->pContext = pContext;
+        pCmd->pSwapchain = pSwapchain;
+        pCmd->pEvent = &Event;
+        Status = vboxVdmaGgCmdSubmit(pDevExt, &pCmd->Hdr);
+        if (NT_SUCCESS(Status))
+        {
+            Status = KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
+            Assert(Status == STATUS_SUCCESS);
+        }
+        else
+        {
+            WARN(("vboxVdmaGgCmdSubmit returned 0x%x", Status));
+        }
+    }
+    else
+    {
+        WARN(("vboxVdmaGgCmdCreate failed"));
+        Status = STATUS_NO_MEMORY;
+    }
+    return Status;
 }
 
 /* end */

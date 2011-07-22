@@ -1,7 +1,7 @@
 /* $Id$ */
 /** @file
  *
- * VBox extension to Wine D3D
+ * VBox extension to Wine D3D - shared resource
  *
  * Copyright (C) 2010 Oracle Corporation
  *

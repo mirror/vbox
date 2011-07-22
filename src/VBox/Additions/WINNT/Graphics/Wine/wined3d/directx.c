@@ -391,6 +391,10 @@ static ULONG WINAPI IWineD3DImpl_Release(IWineD3D *iface) {
             wined3d_adapter_cleanup(&This->adapters[i]);
         }
         HeapFree(GetProcessHeap(), 0, This);
+
+#ifdef VBOX_WITH_WDDM
+        VBoxExtCheckTerm();
+#endif
     }
 
     return ref;
