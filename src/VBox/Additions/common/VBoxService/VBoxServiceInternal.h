@@ -101,7 +101,7 @@ typedef VBOXSERVICE const *PCVBOXSERVICE;
 /** The friendly service name. */
 # define VBOXSERVICE_FRIENDLY_NAME  "VirtualBox Guest Additions Service"
 /** The service description (only W2K+ atm) */
-# define VBOXSERVICE_DESCRIPTION    "Manages VM runtime information, time synchronization, remote sysprep execution and miscellaneous utilities for guest operating systems."
+# define VBOXSERVICE_DESCRIPTION    "Manages VM runtime information, time synchronization, guest control execution and miscellaneous utilities for guest operating systems."
 /** The following constant may be defined by including NtStatus.h. */
 # define STATUS_SUCCESS             ((NTSTATUS)0x00000000L)
 #endif /* RT_OS_WINDOWS */
@@ -115,7 +115,8 @@ typedef enum VBOXSERVICECTRLTHREADDATATYPE
 
 typedef enum VBOXSERVICECTRLPIPEID
 {
-    VBOXSERVICECTRLPIPEID_STDIN_ERROR  = 0,
+    VBOXSERVICECTRLPIPEID_STDIN = 0,
+    VBOXSERVICECTRLPIPEID_STDIN_ERROR,
     VBOXSERVICECTRLPIPEID_STDIN_WRITABLE,
     VBOXSERVICECTRLPIPEID_STDIN_INPUT_NOTIFY,
     VBOXSERVICECTRLPIPEID_STDOUT,
@@ -127,6 +128,10 @@ typedef enum VBOXSERVICECTRLPIPEID
  */
 typedef struct
 {
+    /** The PID the pipe is assigned to. */
+    uint32_t    uPID;
+    /** The pipe's Id of enum VBOXSERVICECTRLPIPEID. */
+    uint8_t     uPipeId;
     /** The data buffer. */
     uint8_t    *pbData;
     /** The amount of allocated buffer space. */

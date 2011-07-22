@@ -27,20 +27,22 @@
 
 #include "VBoxServicePipeBuf.h"
 
-
 /**
  * Initializes a pipe buffer.
  *
  * @returns IPRT status code.
  * @param   pBuf                    The pipe buffer to initialize.
+ * @param   uId                     The pipe's ID handle.
  * @param   fNeedNotificationPipe   Whether the buffer needs a notification
  *                                  pipe or not.
  */
-int VBoxServicePipeBufInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificationPipe)
+int VBoxServicePipeBufInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, uint8_t uId, bool fNeedNotificationPipe)
 {
     AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
 
     /** @todo Add allocation size as function parameter! */
+    pBuf->uPID = 0; /* We don't have the PID yet. */
+    pBuf->uPipeId = uId;
     pBuf->pbData = (uint8_t *)RTMemAlloc(_64K); /* Start with a 64k buffer. */
     AssertReturn(pBuf->pbData, VERR_NO_MEMORY);
     pBuf->cbAllocated = _64K;
@@ -58,15 +60,15 @@ int VBoxServicePipeBufInit(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fNeedNotificat
     {
         rc = RTCritSectInit(&pBuf->CritSect);
         if (RT_SUCCESS(rc) && fNeedNotificationPipe)
-        {
             rc = RTPipeCreate(&pBuf->hNotificationPipeR, &pBuf->hNotificationPipeW, 0);
-            if (RT_FAILURE(rc))
-            {
-                RTCritSectDelete(&pBuf->CritSect);
-                if (pBuf->hEventSem != NIL_RTSEMEVENT)
-                    RTSemEventDestroy(pBuf->hEventSem);
-            }
-        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (RTCritSectIsInitialized(&pBuf->CritSect))
+            RTCritSectDelete(&pBuf->CritSect);
+        if (pBuf->hEventSem != NIL_RTSEMEVENT)
+            RTSemEventDestroy(pBuf->hEventSem);
     }
     return rc;
 }
@@ -95,16 +97,18 @@ int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
     if (RT_SUCCESS(rc))
     {
         Assert(pBuf->cbSize >= pBuf->cbOffset);
-        if (*pcbToRead > pBuf->cbSize - pBuf->cbOffset)
-            *pcbToRead = pBuf->cbSize - pBuf->cbOffset;
+        uint32_t cbToRead = *pcbToRead;
 
-        if (*pcbToRead > cbBuffer)
-            *pcbToRead = cbBuffer;
+        if (cbToRead > pBuf->cbSize - pBuf->cbOffset)
+            cbToRead = pBuf->cbSize - pBuf->cbOffset;
 
-        if (*pcbToRead > 0)
+        if (cbToRead > cbBuffer)
+            cbToRead = cbBuffer;
+
+        if (cbToRead)
         {
-            memcpy(pbBuffer, pBuf->pbData + pBuf->cbOffset, *pcbToRead);
-            pBuf->cbOffset += *pcbToRead;
+            memcpy(pbBuffer, &pBuf->pbData[pBuf->cbOffset], cbToRead);
+            pBuf->cbOffset += cbToRead;
 
             if (pBuf->hEventSem != NIL_RTSEMEVENT)
             {
@@ -113,13 +117,13 @@ int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
             }
 
 #ifdef DEBUG_andy
-            VBoxServiceVerbose(4, "PipeBuf[0x%p]: read=%u, size=%u, alloc=%u, off=%u\n",
-                                   pBuf, *pcbToRead, pBuf->cbSize, pBuf->cbAllocated, pBuf->cbOffset);
+            VBoxServiceVerbose(4, "Pipe [%u %u 0x%p %s] read pcbToRead=%u, cbSize=%u, cbAlloc=%u, cbOff=%u\n",
+                               pBuf->uPID, pBuf->uPipeId, pBuf, pBuf->fEnabled ? "EN" : "DIS", cbToRead, pBuf->cbSize, pBuf->cbAllocated, pBuf->cbOffset);
 #endif
+            *pcbToRead = cbToRead;
         }
         else
         {
-            pbBuffer = NULL;
             *pcbToRead = 0;
         }
 
@@ -131,6 +135,20 @@ int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
 }
 
 
+/**
+ * Peeks for buffer data without moving the buffer's offset
+ * or touching any other internal data.
+ *
+ * @return  IPRT status code.
+ * @param   pBuf                        Pointer to pipe buffer to read the data from.
+ * @param   pbBuffer                    Pointer to buffer to store the read out data.
+ * @param   cbBuffer                    Size (in bytes) of the buffer where to store the data.
+ * @param   cbOffset                    Offset (in bytes) where to start reading.
+ * @param   pcbRead                     Pointer to desired amount (in bytes) of data to read,
+ *                                      will reflect the actual amount read on return.
+ * @param   pcbLeft                     Pointer to bytes left in buffer after the current read
+ *                                      operation.
+ */
 int VBoxServicePipeBufPeek(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                            uint8_t *pbBuffer, uint32_t cbBuffer,
                            uint32_t cbOffset,
@@ -139,11 +157,11 @@ int VBoxServicePipeBufPeek(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
     AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pbBuffer, VERR_INVALID_POINTER);
     AssertReturn(cbBuffer, VERR_INVALID_PARAMETER);
+    AssertReturn(pBuf->cbSize >= pBuf->cbOffset, VERR_BUFFER_OVERFLOW);
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
     {
-        Assert(pBuf->cbSize >= pBuf->cbOffset);
         if (cbOffset > pBuf->cbSize)
             cbOffset = pBuf->cbSize;
         uint32_t cbToRead = pBuf->cbSize - cbOffset;
@@ -151,7 +169,7 @@ int VBoxServicePipeBufPeek(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
             cbToRead = cbBuffer;
         if (cbToRead)
         {
-            memcpy(pbBuffer, pBuf->pbData + cbOffset, cbToRead);
+            memcpy(pbBuffer, &pBuf->pbData[cbOffset], cbToRead);
             pbBuffer[cbBuffer - 1] = '\0';
         }
         if (pcbRead)
@@ -182,11 +200,11 @@ int VBoxServicePipeBufWriteToBuf(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                                  uint32_t *pcbWritten)
 {
     AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pbData, VERR_INVALID_POINTER);
 
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
     {
-        AssertPtrReturn(pbData, VERR_INVALID_POINTER);
         if (pBuf->fEnabled)
         {
             /* Rewind the buffer if it's empty. */
@@ -268,15 +286,17 @@ int VBoxServicePipeBufWriteToBuf(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                 if (pcbWritten)
                     *pcbWritten = cbData;
 
-                if (pBuf->hEventSem != NIL_RTSEMEVENT)
+                /* Only trigger signal if we really wrote something. */
+                if (   cbData
+                    && pBuf->hEventSem != NIL_RTSEMEVENT)
                 {
                     rc = RTSemEventSignal(pBuf->hEventSem);
                     AssertRC(rc);
                 }
 
 #ifdef DEBUG_andy
-                VBoxServiceVerbose(4, "PipeBuf[0x%p]: written=%u, size=%u, alloc=%u, off=%u\n",
-                                   pBuf, cbData, pBuf->cbSize, pBuf->cbAllocated, pBuf->cbOffset);
+                VBoxServiceVerbose(4, "Pipe [%u %u 0x%p %s] written cbData=%u, cbSize=%u, cbAlloc=%u, cbOff=%u\n",
+                                   pBuf->uPID, pBuf->uPipeId, pBuf, pBuf->fEnabled ? "EN" : "DIS", cbData, pBuf->cbSize, pBuf->cbAllocated, pBuf->cbOffset);
 #endif
             }
         }
@@ -348,7 +368,8 @@ int VBoxServicePipeBufWriteToPipe(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTPIPE hPipe
             else
             {
                 *pcbWritten = 0;
-                pBuf->fEnabled = false;
+                /* Don't set pBuf->fEnabled to false here! We just didn't write
+                 * anything -- that doesn't mean this buffer is disabled (again). */
             }
         }
         else
@@ -376,8 +397,8 @@ bool VBoxServicePipeBufIsEnabled(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
     AssertPtrReturn(pBuf, false);
 
     bool fEnabled = false;
-    if (   RTCritSectIsInitialized(&pBuf->CritSect)
-        && RT_SUCCESS(RTCritSectEnter(&pBuf->CritSect)))
+    int rc = RTCritSectEnter(&pBuf->CritSect);
+    if (RT_SUCCESS(rc))
     {
         fEnabled = pBuf->fEnabled;
         RTCritSectLeave(&pBuf->CritSect);
@@ -399,9 +420,11 @@ bool VBoxServicePipeBufIsClosing(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
     AssertPtrReturn(pBuf, false);
 
+    if (!RTCritSectIsInitialized(&pBuf->CritSect))
+        return false;
+
     bool fClosing = false;
-    if (   RTCritSectIsInitialized(&pBuf->CritSect)
-        && RT_SUCCESS(RTCritSectEnter(&pBuf->CritSect)))
+    if (RT_SUCCESS(RTCritSectEnter(&pBuf->CritSect)))
     {
         fClosing = pBuf->fPendingClose;
         RTCritSectLeave(&pBuf->CritSect);
@@ -424,16 +447,51 @@ int VBoxServicePipeBufSetStatus(PVBOXSERVICECTRLEXECPIPEBUF pBuf, bool fEnabled)
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
     {
+        bool fEnabledOld = pBuf->fEnabled;
         pBuf->fEnabled = fEnabled;
-        /* Let waiter know that something has changed ... */
-        if (pBuf->hEventSem)
+        if (   pBuf->fEnabled != fEnabledOld
+            && pBuf->hEventSem)
+        {
+            /* Let waiter know that something has changed ... */
             RTSemEventSignal(pBuf->hEventSem);
+        }
         rc = RTCritSectLeave(&pBuf->CritSect);
     }
     return rc;
 }
 
 
+/**
+ * Assigns a PID to the specified pipe buffer. Does not allow
+ * setting a new PID after a PID already was set.
+ *
+ * @return  IPRT status code.
+ * @param   pBuf            The pipe buffer.
+ * @param   uPID            PID to assign.
+ */
+int VBoxServicePipeBufSetPID(PVBOXSERVICECTRLEXECPIPEBUF pBuf, uint32_t uPID)
+{
+    AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
+
+    int rc = RTCritSectEnter(&pBuf->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        if (!pBuf->uPID)
+            pBuf->uPID = uPID;
+        rc = RTCritSectLeave(&pBuf->CritSect);
+    }
+    return rc;
+}
+
+
+/**
+ * Waits for the pipe buffer to get notified when something changed, like
+ * new data was written to or the buffer was disabled, i.e. not used anymore.
+ *
+ * @return  IPRT status code.
+ * @param   pBuf            The pipe buffer.
+ * @param   cMillies        The maximum time (in ms) to wait for the event.
+ */
 int VBoxServicePipeBufWaitForEvent(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTMSINTERVAL cMillies)
 {
     AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
@@ -454,23 +512,28 @@ int VBoxServicePipeBufWaitForEvent(PVBOXSERVICECTRLEXECPIPEBUF pBuf, RTMSINTERVA
  */
 void VBoxServicePipeBufDestroy(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
-    AssertPtr(pBuf);
+    AssertPtrReturnVoid(pBuf);
+
     if (pBuf->pbData)
     {
-        RTMemFree(pBuf->pbData);
-        pBuf->pbData = NULL;
+        pBuf->uPID = 0;
+        pBuf->uPipeId = 0;
         pBuf->cbAllocated = 0;
         pBuf->cbSize = 0;
         pBuf->cbOffset = 0;
+
+        RTPipeClose(pBuf->hNotificationPipeR);
+        pBuf->hNotificationPipeR = NIL_RTPIPE;
+        RTPipeClose(pBuf->hNotificationPipeW);
+        pBuf->hNotificationPipeW = NIL_RTPIPE;
+
+        if (RTCritSectIsInitialized(&pBuf->CritSect))
+            RTCritSectDelete(&pBuf->CritSect);
+        if (pBuf->hEventSem != NIL_RTSEMEVENT)
+            RTSemEventDestroy(pBuf->hEventSem);
+
+        RTMemFree(pBuf->pbData);
+        pBuf->pbData = NULL;
     }
-
-    RTPipeClose(pBuf->hNotificationPipeR);
-    pBuf->hNotificationPipeR = NIL_RTPIPE;
-    RTPipeClose(pBuf->hNotificationPipeW);
-    pBuf->hNotificationPipeW = NIL_RTPIPE;
-
-    RTCritSectDelete(&pBuf->CritSect);
-    if (pBuf->hEventSem != NIL_RTSEMEVENT)
-        RTSemEventDestroy(pBuf->hEventSem);
 }
 
