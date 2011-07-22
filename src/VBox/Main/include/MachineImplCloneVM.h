@@ -33,10 +33,6 @@ public:
 
 protected:
     HRESULT run();
-    HRESULT createDiffHelper(const ComObjPtr<Medium> &pParent,
-                             const Utf8Str &strSnapshotFolder,
-                             RTCList<ComObjPtr<Medium> > *pNewMedia,
-                             ComObjPtr<Medium> *ppDiff);
     void destroy();
 
     /* d-pointer */
