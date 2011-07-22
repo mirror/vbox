@@ -605,6 +605,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->socket_snd = 64 * _1K;
     tcp_sndspace = 64 * _1K;
     tcp_rcvspace = 64 * _1K;
+    pData->soMaxConn = 1; /* historical value */
 
 #ifdef RT_OS_WINDOWS
     {
@@ -2001,6 +2002,18 @@ void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
             LogRel(("NAT: (" #name ":%d)\n", (val)));                               \
     } while (0)
 
+void slirp_set_somaxconn(PNATState pData, int iSoMaxConn)
+{
+    LogFlowFunc(("iSoMaxConn:d\n", iSoMaxConn));
+    if (iSoMaxConn > SOMAXCONN)
+    {
+        LogRel(("New value of somaxconn(%d) bigger than SOMAXCONN(%d)\n", iSoMaxConn, SOMAXCONN));
+        pData->soMaxConn = SOMAXCONN;
+    }
+    pData->soMaxConn = iSoMaxConn > 0 ? iSoMaxConn : pData->soMaxConn;
+    LogRel(("New value of somaxconn: %d\n", pData->soMaxConn));
+    LogFlowFuncLeave();
+}
 /* don't allow user set less 8kB and more than 1M values */
 #define _8K_1M_CHECK_ARG(name, val) CHECK_ARG(name, (val), 8, 1024)
 void slirp_set_rcvbuf(PNATState pData, int kilobytes)

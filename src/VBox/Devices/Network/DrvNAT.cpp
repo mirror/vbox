@@ -297,7 +297,6 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
     int rc;
     STAM_PROFILE_START(&pThis->StatNATRecv, a);
 
-    STAM_PROFILE_START(&pThis->StatNATRecvWait, b);
 
     while (ASMAtomicReadU32(&pThis->cUrgPkts) != 0)
     {
@@ -311,7 +310,10 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
     rc = RTCritSectEnter(&pThis->DevAccessLock);
     AssertRC(rc);
 
+    STAM_PROFILE_START(&pThis->StatNATRecvWait, b);
     rc = pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, RT_INDEFINITE_WAIT);
+    STAM_PROFILE_STOP(&pThis->StatNATRecvWait, b);
+
     if (RT_SUCCESS(rc))
     {
         rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pu8Buf, cb);
@@ -332,7 +334,6 @@ done_unlocked:
 
     drvNATNotifyNATThread(pThis, "drvNATRecvWorker");
 
-    STAM_PROFILE_STOP(&pThis->StatNATRecvWait, b);
     STAM_PROFILE_STOP(&pThis->StatNATRecv, a);
 }
 
@@ -1155,7 +1156,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
                               "PassDomain\0TFTPPrefix\0BootFile\0Network"
                               "\0NextServer\0DNSProxy\0BindIP\0UseHostResolver\0"
                               "SlirpMTU\0AliasMode\0"
-                              "SockRcv\0SockSnd\0TcpRcv\0TcpSnd\0"))
+                              "SockRcv\0SockSnd\0TcpRcv\0TcpSnd\0"
+                              "SoMaxConnection\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                 N_("Unknown NAT configuration option, only supports PassDomain,"
                                 " TFTPPrefix, BootFile and Network"));
@@ -1212,6 +1214,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     i32AliasMode |= (i32MainAliasMode & 0x1 ? 0x1 : 0);
     i32AliasMode |= (i32MainAliasMode & 0x2 ? 0x40 : 0);
     i32AliasMode |= (i32MainAliasMode & 0x4 ? 0x4 : 0);
+    int i32SoMaxConn = 1;
+    GET_S32(rc, pThis, pCfg, "SoMaxConnection", i32SoMaxConn);
     /*
      * Query the network port interface.
      */
@@ -1254,6 +1258,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
         slirp_set_dhcp_next_server(pThis->pNATState, pThis->pszNextServer);
         slirp_set_dhcp_dns_proxy(pThis->pNATState, !!fDNSProxy);
         slirp_set_mtu(pThis->pNATState, MTU);
+        slirp_set_somaxconn(pThis->pNATState, i32SoMaxConn);
         char *pszBindIP = NULL;
         GET_STRING_ALLOC(rc, pThis, pCfg, "BindIP", pszBindIP);
         rc = slirp_set_binding_address(pThis->pNATState, pszBindIP);
