@@ -141,6 +141,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
     }
 #endif
     ip = mtod(m, struct ip *);
+    LogFunc(("ip(src:%RTnaipv4, dst:%RTnaipv4)\n", ip->ip_src, ip->ip_dst));
     /*
      * Fill in IP header.
      */

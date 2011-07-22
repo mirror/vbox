@@ -2080,7 +2080,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     struct mbuf *m;
     struct ethhdr *ehdr;
     struct arphdr *ahdr;
-    LogFunc(("ENTER: %RTnaipv4\n", dst));
+    LogFlowFunc(("ENTER: %RTnaipv4\n", dst));
 
     m = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
     if (m == NULL)
