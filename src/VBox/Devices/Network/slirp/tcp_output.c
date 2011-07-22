@@ -101,7 +101,7 @@ tcp_output(PNATState pData, register struct tcpcb *tp)
     int idle, sendalot;
     int size = 0;
 
-    LogFlow(("ENTER: tcp_output: tp = %R[tcpcb793]\n", tp));
+    LogFlowFunc(("ENTER: tcp_output: tp = %R[tcpcb793]\n", tp));
 
     /*
      * Determine length of data that should be transmitted,
@@ -296,9 +296,11 @@ again:
      */
     tcpstat.tcps_didnuttin++;
 
+    LogFlowFuncLeave();
     return (0);
 
 send:
+    LogFlowFunc(("send\n"));
     /*
      * Before ESTABLISHED, force sending of initial options
      * unless TCP set not to do any options.
