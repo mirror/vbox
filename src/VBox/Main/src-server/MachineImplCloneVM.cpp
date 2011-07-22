@@ -113,6 +113,7 @@ struct MachineCloneVMPrivate
     void updateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
     void updateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
     void updateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const;
+    HRESULT createDifferencingMedium(const ComObjPtr<Medium> &pParent, const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia, ComObjPtr<Medium> *ppDiff) const;
     static int copyStateFileProgress(unsigned uPercentage, void *pvUser);
 
     /* Private q and parent pointer */
@@ -431,7 +432,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
             RTPrintf("%ls: %d (%d)\n", bstrSrcName.raw(), hist, used);
 #endif
             /* Check if there is a "step" in the histogram when going the chain
-             * upwards. If so, we need this image, cause there is another leave
+             * upwards. If so, we need this image, cause there is another branch
              * from here in the cloned VM. */
             if (hist > used)
             {
@@ -610,6 +611,54 @@ void MachineCloneVMPrivate::updateStateFile(settings::SnapshotsList &snl, const 
         else if (!it->llChildSnapshots.empty())
             updateStateFile(it->llChildSnapshots, id, strFile);
     }
+}
+
+HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> &pParent, const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia, ComObjPtr<Medium> *ppDiff) const
+{
+    HRESULT rc = S_OK;
+    try
+    {
+        Bstr bstrSrcId;
+        rc = pParent->COMGETTER(Id)(bstrSrcId.asOutParam());
+        if (FAILED(rc)) throw rc;
+        ComObjPtr<Medium> diff;
+        diff.createObject();
+        rc = diff->init(p->getVirtualBox(),
+                        pParent->getPreferredDiffFormat(),
+                        Utf8StrFmt("%s%c", strSnapshotFolder.c_str(), RTPATH_DELIMITER),
+                        Guid::Empty, /* empty media registry */
+                        NULL);       /* pllRegistriesThatNeedSaving */
+        if (FAILED(rc)) throw rc;
+        MediumLockList *pMediumLockList(new MediumLockList());
+        rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
+                                        true /* fMediumLockWrite */,
+                                        pParent,
+                                        *pMediumLockList);
+        if (FAILED(rc)) throw rc;
+        rc = pMediumLockList->Lock();
+        if (FAILED(rc)) throw rc;
+        /* this already registers the new diff image */
+        rc = pParent->createDiffStorage(diff, MediumVariant_Standard,
+                                        pMediumLockList,
+                                        NULL /* aProgress */,
+                                        true /* aWait */,
+                                        NULL); // pllRegistriesThatNeedSaving
+        delete pMediumLockList;
+        if (FAILED(rc)) throw rc;
+        /* Remember created medium. */
+        newMedia.append(diff);
+        *ppDiff = diff;
+    }
+    catch (HRESULT rc2)
+    {
+        rc = rc2;
+    }
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+    }
+
+    return rc;
 }
 
 /* static */
@@ -971,8 +1020,8 @@ HRESULT MachineCloneVM::run()
                     {
                         ComObjPtr<Medium> pDiff;
                         /* create the diff under the snapshot medium */
-                        rc = createDiffHelper(pLMedium, strTrgSnapshotFolder,
-                                              &newMedia, &pDiff);
+                        rc = d->createDifferencingMedium(pLMedium, strTrgSnapshotFolder,
+                                                         newMedia, &pDiff);
                         if (FAILED(rc)) throw rc;
                         map.insert(TStrMediumPair(Utf8Str(bstrSrcId), pDiff));
                         /* diff image has to be used... */
@@ -1141,8 +1190,8 @@ HRESULT MachineCloneVM::run()
                 if (pBase->isReadOnly())
                 {
                     ComObjPtr<Medium> pDiff;
-                    rc = createDiffHelper(pNewParent, strTrgSnapshotFolder,
-                                          &newMedia, &pDiff);
+                    rc = d->createDifferencingMedium(pNewParent, strTrgSnapshotFolder,
+                                                     newMedia, &pDiff);
                     if (FAILED(rc)) throw rc;
                     /* diff image has to be used... */
                     pNewParent = pDiff;
@@ -1284,60 +1333,6 @@ HRESULT MachineCloneVM::run()
     }
 
     return mrc;
-}
-
-HRESULT MachineCloneVM::createDiffHelper(const ComObjPtr<Medium> &pParent,
-                                         const Utf8Str &strSnapshotFolder,
-                                         RTCList< ComObjPtr<Medium> > *pNewMedia,
-                                         ComObjPtr<Medium> *ppDiff)
-{
-    DPTR(MachineCloneVM);
-    ComObjPtr<Machine> &p = d->p;
-    HRESULT rc = S_OK;
-
-    try
-    {
-        Bstr bstrSrcId;
-        rc = pParent->COMGETTER(Id)(bstrSrcId.asOutParam());
-        if (FAILED(rc)) throw rc;
-        ComObjPtr<Medium> diff;
-        diff.createObject();
-        rc = diff->init(p->mParent,
-                        pParent->getPreferredDiffFormat(),
-                        Utf8StrFmt("%s%c", strSnapshotFolder.c_str(), RTPATH_DELIMITER),
-                        Guid::Empty, /* empty media registry */
-                        NULL);       /* pllRegistriesThatNeedSaving */
-        if (FAILED(rc)) throw rc;
-        MediumLockList *pMediumLockList(new MediumLockList());
-        rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
-                                        true /* fMediumLockWrite */,
-                                        pParent,
-                                        *pMediumLockList);
-        if (FAILED(rc)) throw rc;
-        rc = pMediumLockList->Lock();
-        if (FAILED(rc)) throw rc;
-        /* this already registers the new diff image */
-        rc = pParent->createDiffStorage(diff, MediumVariant_Standard,
-                                        pMediumLockList,
-                                        NULL /* aProgress */,
-                                        true /* aWait */,
-                                        NULL); // pllRegistriesThatNeedSaving
-        delete pMediumLockList;
-        if (FAILED(rc)) throw rc;
-        /* Remember created medium. */
-        pNewMedia->append(diff);
-        *ppDiff = diff;
-    }
-    catch (HRESULT rc2)
-    {
-        rc = rc2;
-    }
-    catch (...)
-    {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
-    }
-
-    return rc;
 }
 
 void MachineCloneVM::destroy()
