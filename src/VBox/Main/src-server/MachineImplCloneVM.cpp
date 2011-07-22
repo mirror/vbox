@@ -843,8 +843,8 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
          * - All disks which are directly or indirectly attached to the
          *   original VM are cloned.
          *
-         * Note: If you change something generic on one if the methods its
-         * likely that it need changed in the others as well! */
+         * Note: If you change something generic in one of the methods its
+         * likely that it need to be changed in the others as well! */
         ULONG uCount       = 2; /* One init task and the machine creation. */
         ULONG uTotalWeight = 2; /* The init task and the machine creation is worth one. */
         bool fAttachLinked = d->options.contains(CloneOptions_Link); /* Linked clones requested? */
