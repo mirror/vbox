@@ -289,6 +289,7 @@ extern DWORD g_VBoxVDbgPid;
 #define VBOXVDBG_DUMP_FLUSH(_pDevice) do { } while (0)
 #define VBOXVDBG_DUMP_LOCK_ST(_pData) do { } while (0)
 #define VBOXVDBG_DUMP_UNLOCK_ST(_pData) do { } while (0)
+#define VBOXVDBG_BREAK_SHARED(_pRc) do { } while (0)
 #endif
 
 
