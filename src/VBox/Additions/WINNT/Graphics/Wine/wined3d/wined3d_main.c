@@ -94,10 +94,22 @@ IWineD3D * WINAPI WineDirect3DCreate(UINT version, IUnknown *parent)
     IWineD3DImpl *object;
     HRESULT hr;
 
+#ifdef VBOX_WITH_WDDM
+    hr = VBoxExtCheckInit();
+    if (FAILED(hr))
+    {
+        ERR("VBoxExtCheckInit failed, hr (0x%x)\n", hr);
+        return NULL;
+    }
+#endif
+
     object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object));
     if (!object)
     {
         ERR("Failed to allocate wined3d object memory.\n");
+#ifdef VBOX_WITH_WDDM
+        VBoxExtCheckTerm();
+#endif
         return NULL;
     }
 
@@ -106,6 +118,9 @@ IWineD3D * WINAPI WineDirect3DCreate(UINT version, IUnknown *parent)
     {
         WARN("Failed to initialize wined3d object, hr %#x.\n", hr);
         HeapFree(GetProcessHeap(), 0, object);
+#ifdef VBOX_WITH_WDDM
+        VBoxExtCheckTerm();
+#endif
         return NULL;
     }
 

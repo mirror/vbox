@@ -36,6 +36,16 @@
 #include <guiddef.h>
 #endif
 
+#ifdef VBOX_WITH_WDDM
+# ifdef VBOX_WINE_WITH_IPRT
+#  include <iprt/assert.h>
+# else
+#  define AssertBreakpoint() do { } while (0)
+#  define Assert(_expr) do { } while (0)
+#  define RT_BREAKPOINT()
+# endif
+#endif
+
 #ifdef __WINE_WINE_TEST_H
 #error This file should not be used in Wine tests
 #endif
@@ -74,14 +84,26 @@ struct __wine_debug_channel
 
 #ifndef WINE_NO_DEBUG_MSGS
 # define __WINE_GET_DEBUGGING_WARN(dbch)  ((dbch)->flags & (1 << __WINE_DBCL_WARN))
-# define __WINE_GET_DEBUGGING_FIXME(dbch) ((dbch)->flags & (1 << __WINE_DBCL_FIXME))
+# if defined(VBOX_WITH_WDDM) && defined(DEBUG_misha)
+#  define __WINE_GET_DEBUGGING_FIXME(dbch) (RT_BREAKPOINT(), ((dbch)->flags & (1 << __WINE_DBCL_FIXME)))
+# else
+#  define __WINE_GET_DEBUGGING_FIXME(dbch) ((dbch)->flags & (1 << __WINE_DBCL_FIXME))
+# endif
 #else
 # define __WINE_GET_DEBUGGING_WARN(dbch)  0
-# define __WINE_GET_DEBUGGING_FIXME(dbch) 0
+# if defined(VBOX_WITH_WDDM) && defined(DEBUG_misha)
+#  define __WINE_GET_DEBUGGING_FIXME(dbch) (RT_BREAKPOINT(), 0)
+# else
+#  define __WINE_GET_DEBUGGING_FIXME(dbch) 0
+# endif
 #endif
 
 /* define error macro regardless of what is configured */
+#if defined(VBOX_WITH_WDDM) && defined(DEBUG_misha)
+#define __WINE_GET_DEBUGGING_ERR(dbch)  (RT_BREAKPOINT(), ((dbch)->flags & (1 << __WINE_DBCL_ERR)))
+#else
 #define __WINE_GET_DEBUGGING_ERR(dbch)  ((dbch)->flags & (1 << __WINE_DBCL_ERR))
+#endif
 
 #define __WINE_GET_DEBUGGING(dbcl,dbch)  __WINE_GET_DEBUGGING##dbcl(dbch)
 

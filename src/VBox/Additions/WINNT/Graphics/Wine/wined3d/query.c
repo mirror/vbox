@@ -63,7 +63,11 @@ enum wined3d_event_query_result wined3d_event_query_test(struct wined3d_event_qu
 
     if (!query->context->gl_info->supported[ARB_SYNC] && query->context->tid != GetCurrentThreadId())
     {
+#ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
+        ERR("Event query tested from wrong thread\n");
+#else
         WARN("Event query tested from wrong thread\n");
+#endif
         return WINED3D_EVENT_QUERY_WRONG_THREAD;
     }
 
@@ -140,7 +144,11 @@ enum wined3d_event_query_result wined3d_event_query_finish(struct wined3d_event_
         /* A glFinish does not reliably wait for draws in other contexts. The caller has
          * to find its own way to cope with the thread switch
          */
+#ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
+        ERR("Event query finished from wrong thread\n");
+#else
         WARN("Event query finished from wrong thread\n");
+#endif
         return WINED3D_EVENT_QUERY_WRONG_THREAD;
     }
 
@@ -197,6 +205,9 @@ void wined3d_event_query_issue(struct wined3d_event_query *query, IWineD3DDevice
     {
         if (!query->context->gl_info->supported[ARB_SYNC] && query->context->tid != GetCurrentThreadId())
         {
+#ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
+            ERR("unexpected\n");
+#endif
             context_free_event_query(query);
             context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
             context_alloc_event_query(context, query);

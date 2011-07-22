@@ -28,6 +28,24 @@ typedef struct VBOXVIDEOCM_CMD_DR
     VBOXVIDEOCM_CMD_HDR CmdHdr;
 } VBOXVIDEOCM_CMD_DR, *PVBOXVIDEOCM_CMD_DR;
 
+typedef enum
+{
+    VBOXVIDEOCM_CMD_CTL_KM_TYPE_POST_INVOKE = 1,
+    VBOXVIDEOCM_CMD_CTL_KM_TYPE_PRE_INVOKE,
+    VBOXVIDEOCM_CMD_CTL_KM_TYPE_DUMMY_32BIT = 0x7fffffff
+} VBOXVIDEOCM_CMD_CTL_KM_TYPE;
+
+typedef DECLCALLBACK(VOID) FNVBOXVIDEOCM_CMD_CB(PVBOXVIDEOCM_CTX pContext, struct VBOXVIDEOCM_CMD_CTL_KM *pCmd, PVOID pvContext);
+typedef FNVBOXVIDEOCM_CMD_CB *PFNVBOXVIDEOCM_CMD_CB;
+
+typedef struct VBOXVIDEOCM_CMD_CTL_KM
+{
+    VBOXVIDEOCM_CMD_CTL_KM_TYPE enmType;
+    uint32_t u32Reserved;
+    PFNVBOXVIDEOCM_CMD_CB pfnCb;
+    PVOID pvCb;
+} VBOXVIDEOCM_CMD_CTL_KM, *PVBOXVIDEOCM_CMD_CTL_KM;
+
 AssertCompile(VBOXWDDM_ROUNDBOUND(RT_OFFSETOF(VBOXVIDEOCM_CMD_DR, CmdHdr), 8) == RT_OFFSETOF(VBOXVIDEOCM_CMD_DR, CmdHdr));
 
 #define VBOXVIDEOCM_HEADER_SIZE() (VBOXWDDM_ROUNDBOUND(sizeof (VBOXVIDEOCM_CMD_DR), 8))
@@ -48,6 +66,8 @@ typedef struct VBOXVIDEOCM_SESSION
     LIST_ENTRY ContextList;
     /* commands list  */
     LIST_ENTRY CommandsList;
+    /* post process commands list  */
+    LIST_ENTRY PpCommandsList;
     /* event used to notify UMD about pending commands */
     PKEVENT pUmEvent;
     /* sync lock */
@@ -92,6 +112,43 @@ void* vboxVideoCmCmdCreate(PVBOXVIDEOCM_CTX pContext, uint32_t cbSize)
         pCmd->CmdHdr.cbCmd = pCmd->cbMaxCmdSize;
     }
     return VBOXVIDEOCM_BODY(pCmd, void);
+}
+
+static PVBOXVIDEOCM_CMD_CTL_KM vboxVideoCmCmdCreateKm(PVBOXVIDEOCM_CTX pContext, VBOXVIDEOCM_CMD_CTL_KM_TYPE enmType,
+        PFNVBOXVIDEOCM_CMD_CB pfnCb, PVOID pvCb,
+        uint32_t cbSize)
+{
+    PVBOXVIDEOCM_CMD_CTL_KM pCmd = (PVBOXVIDEOCM_CMD_CTL_KM)vboxVideoCmCmdCreate(pContext, cbSize + sizeof (*pCmd));
+    pCmd->enmType = enmType;
+    pCmd->pfnCb = pfnCb;
+    pCmd->pvCb = pvCb;
+    PVBOXVIDEOCM_CMD_DR pHdr = VBOXVIDEOCM_HEAD(pCmd);
+    pHdr->CmdHdr.enmType = VBOXVIDEOCM_CMD_TYPE_CTL_KM;
+    return pCmd;
+}
+
+static DECLCALLBACK(VOID) vboxVideoCmCmdCbSetEventAndDereference(PVBOXVIDEOCM_CTX pContext, PVBOXVIDEOCM_CMD_CTL_KM pCmd, PVOID pvContext)
+{
+    PKEVENT pEvent = (PKEVENT)pvContext;
+    KeSetEvent(pEvent, 0, FALSE);
+    ObDereferenceObject(pEvent);
+    vboxVideoCmCmdRelease(pCmd);
+}
+
+NTSTATUS vboxVideoCmCmdSubmitCompleteEvent(PVBOXVIDEOCM_CTX pContext, PKEVENT pEvent)
+{
+    Assert(pEvent);
+    PVBOXVIDEOCM_CMD_CTL_KM pCmd = vboxVideoCmCmdCreateKm(pContext, VBOXVIDEOCM_CMD_CTL_KM_TYPE_POST_INVOKE,
+            vboxVideoCmCmdCbSetEventAndDereference, pEvent, 0);
+    if (!pCmd)
+    {
+        WARN(("vboxVideoCmCmdCreateKm failed"));
+        return STATUS_NO_MEMORY;
+    }
+
+    vboxVideoCmCmdSubmit(pCmd, VBOXVIDEOCM_SUBMITSIZE_DEFAULT);
+
+    return STATUS_SUCCESS;
 }
 
 DECLINLINE(void) vboxVideoCmCmdRetainByHdr(PVBOXVIDEOCM_CMD_DR pHdr)
@@ -161,7 +218,7 @@ void vboxVideoCmCmdSubmit(void *pvCmd, uint32_t cbSize)
     vboxVideoCmCmdPostByHdr(pHdr->pContext->pSession, pHdr, cbSize);
 }
 
-NTSTATUS vboxVideoCmCmdVisit(PVBOXVIDEOCM_CTX pContext, BOOL bEntireSession, PFNVBOXVIDEOCMCMDVISITOR pfnVisitor, PVOID pvVisitor)
+NTSTATUS vboxVideoCmCmdVisit(PVBOXVIDEOCM_CTX pContext, BOOLEAN bEntireSession, PFNVBOXVIDEOCMCMDVISITOR pfnVisitor, PVOID pvVisitor)
 {
     PVBOXVIDEOCM_SESSION pSession = pContext->pSession;
     PLIST_ENTRY pCurEntry = NULL;
@@ -178,14 +235,21 @@ NTSTATUS vboxVideoCmCmdVisit(PVBOXVIDEOCM_CTX pContext, BOOL bEntireSession, PFN
             pCurEntry = pHdr->QueueList.Blink;
             if (bEntireSession || pHdr->pContext == pContext)
             {
-                void * pvBody = VBOXVIDEOCM_BODY(pHdr, void);
-                UINT fRet = pfnVisitor(pHdr->pContext, pvBody, pHdr->CmdHdr.cbCmd, pvVisitor);
-                if (fRet & VBOXVIDEOCMCMDVISITOR_RETURN_RMCMD)
+                if (pHdr->CmdHdr.enmType == VBOXVIDEOCM_CMD_TYPE_UM)
                 {
-                    RemoveEntryList(&pHdr->QueueList);
+                    void * pvBody = VBOXVIDEOCM_BODY(pHdr, void);
+                    UINT fRet = pfnVisitor(pHdr->pContext, pvBody, pHdr->CmdHdr.cbCmd, pvVisitor);
+                    if (fRet & VBOXVIDEOCMCMDVISITOR_RETURN_RMCMD)
+                    {
+                        RemoveEntryList(&pHdr->QueueList);
+                    }
+                    if ((fRet & VBOXVIDEOCMCMDVISITOR_RETURN_BREAK))
+                        break;
                 }
-                if (!(fRet & VBOXVIDEOCMCMDVISITOR_RETURN_CONTINUE))
-                    break;
+                else
+                {
+                    WARN(("non-um cmd on visit, skipping"));
+                }
             }
         }
         else
@@ -230,10 +294,46 @@ static void vboxVideoCmSessionDestroyLocked(PVBOXVIDEOCM_SESSION pSession)
     ObDereferenceObject(pSession->pUmEvent);
     Assert(IsListEmpty(&pSession->ContextList));
     Assert(IsListEmpty(&pSession->CommandsList));
+    Assert(IsListEmpty(&pSession->PpCommandsList));
     RemoveEntryList(&pSession->QueueEntry);
     vboxWddmMemFree(pSession);
 }
 
+static void vboxVideoCmSessionCtxPpList(PVBOXVIDEOCM_CTX pContext, PLIST_ENTRY pHead)
+{
+    LIST_ENTRY *pCur;
+    for (pCur = pHead->Flink; pCur != pHead; pCur = pHead->Flink)
+    {
+        RemoveEntryList(pCur);
+        PVBOXVIDEOCM_CMD_DR pHdr = VBOXCMENTRY_2_CMD(pCur);
+        PVBOXVIDEOCM_CMD_CTL_KM pCmd = VBOXVIDEOCM_BODY(pHdr, VBOXVIDEOCM_CMD_CTL_KM);
+        pCmd->pfnCb(pContext, pCmd, pCmd->pvCb);
+    }
+}
+
+static void vboxVideoCmSessionCtxDetachCmdsLocked(PLIST_ENTRY pEntriesHead, PVBOXVIDEOCM_CTX pContext, PLIST_ENTRY pDstHead)
+{
+    LIST_ENTRY *pCur;
+    LIST_ENTRY *pPrev;
+    pCur = pEntriesHead->Flink;
+    pPrev = pEntriesHead;
+    while (pCur != pEntriesHead)
+    {
+        PVBOXVIDEOCM_CMD_DR pCmd = VBOXCMENTRY_2_CMD(pCur);
+        if (pCmd->pContext == pContext)
+        {
+            RemoveEntryList(pCur);
+            InsertTailList(pDstHead, pCur);
+            pCur = pPrev;
+            /* pPrev - remains unchanged */
+        }
+        else
+        {
+            pPrev = pCur;
+        }
+        pCur = pCur->Flink;
+    }
+}
 /**
  * @return true iff the given session is destroyed
  */
@@ -241,9 +341,10 @@ bool vboxVideoCmSessionCtxRemoveLocked(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEO
 {
     bool bDestroy;
     LIST_ENTRY RemainedList;
+    LIST_ENTRY RemainedPpList;
     LIST_ENTRY *pCur;
-    LIST_ENTRY *pPrev;
     InitializeListHead(&RemainedList);
+    InitializeListHead(&RemainedPpList);
     Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
     ExAcquireFastMutex(&pSession->Mutex);
     pContext->pSession = NULL;
@@ -253,27 +354,12 @@ bool vboxVideoCmSessionCtxRemoveLocked(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEO
     if (bDestroy)
     {
         vboxVideoLeDetach(&pSession->CommandsList, &RemainedList);
+        vboxVideoLeDetach(&pSession->PpCommandsList, &RemainedPpList);
     }
     else
     {
-        pCur = pSession->CommandsList.Flink;
-        pPrev = &pSession->CommandsList;
-        while (pCur != &pSession->CommandsList)
-        {
-            PVBOXVIDEOCM_CMD_DR pCmd = VBOXCMENTRY_2_CMD(pCur);
-            if (pCmd->pContext == pContext)
-            {
-                RemoveEntryList(pCur);
-                InsertHeadList(&RemainedList, pCur);
-                pCur = pPrev;
-                /* pPrev - remains unchanged */
-            }
-            else
-            {
-                pPrev = pCur;
-            }
-            pCur = pCur->Flink;
-        }
+        vboxVideoCmSessionCtxDetachCmdsLocked(&pSession->CommandsList, pContext, &RemainedList);
+        vboxVideoCmSessionCtxDetachCmdsLocked(&pSession->PpCommandsList, pContext, &RemainedPpList);
     }
     ExReleaseFastMutex(&pSession->Mutex);
 
@@ -283,6 +369,8 @@ bool vboxVideoCmSessionCtxRemoveLocked(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEO
         PVBOXVIDEOCM_CMD_DR pCmd = VBOXCMENTRY_2_CMD(pCur);
         vboxVideoCmCmdCancel(pCmd);
     }
+
+    vboxVideoCmSessionCtxPpList(pContext, &RemainedPpList);
 
     if (bDestroy)
     {
@@ -302,6 +390,7 @@ NTSTATUS vboxVideoCmSessionCreateLocked(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_SESS
     {
         InitializeListHead(&pSession->ContextList);
         InitializeListHead(&pSession->CommandsList);
+        InitializeListHead(&pSession->PpCommandsList);
         pSession->pUmEvent = pUmEvent;
         Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
         ExInitializeFastMutex(&pSession->Mutex);
@@ -410,6 +499,35 @@ NTSTATUS vboxVideoCmTerm(PVBOXVIDEOCM_MGR pMgr)
     return STATUS_SUCCESS;
 }
 
+VOID vboxVideoCmProcessKm(PVBOXVIDEOCM_CTX pContext, PVBOXVIDEOCM_CMD_CTL_KM pCmd)
+{
+    PVBOXVIDEOCM_SESSION pSession = pContext->pSession;
+
+    switch (pCmd->enmType)
+    {
+        case VBOXVIDEOCM_CMD_CTL_KM_TYPE_PRE_INVOKE:
+        {
+            pCmd->pfnCb(pContext, pCmd, pCmd->pvCb);
+            break;
+        }
+
+        case VBOXVIDEOCM_CMD_CTL_KM_TYPE_POST_INVOKE:
+        {
+            PVBOXVIDEOCM_CMD_DR pHdr = VBOXVIDEOCM_HEAD(pCmd);
+            ExAcquireFastMutex(&pSession->Mutex);
+            InsertTailList(&pSession->PpCommandsList, &pHdr->QueueList);
+            ExReleaseFastMutex(&pSession->Mutex);
+            break;
+        }
+
+        default:
+        {
+            WARN(("unsupported cmd type %d", pCmd->enmType));
+            break;
+        }
+    }
+}
+
 NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD pCmd, uint32_t cbCmd)
 {
     Assert(cbCmd >= sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD));
@@ -419,6 +537,7 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
     PVBOXVIDEOCM_SESSION pSession = pContext->pSession;
     PVBOXVIDEOCM_CMD_DR pHdr;
     LIST_ENTRY DetachedList;
+    LIST_ENTRY DetachedPpList;
     PLIST_ENTRY pCurEntry = NULL;
     uint32_t cbCmdsReturned = 0;
     uint32_t cbRemainingCmds = 0;
@@ -427,10 +546,13 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
     uint8_t * pvData = ((uint8_t *)pCmd) + sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD);
     bool bDetachMode = true;
     InitializeListHead(&DetachedList);
+    InitializeListHead(&DetachedPpList);
 //    PVBOXWDDM_GETVBOXVIDEOCMCMD_HDR *pvCmd
 
     Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
     ExAcquireFastMutex(&pSession->Mutex);
+
+    vboxVideoCmSessionCtxDetachCmdsLocked(&pSession->PpCommandsList, pContext, &DetachedPpList);
 
     do
     {
@@ -441,16 +563,18 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
                 Assert(!pCurEntry);
                 pHdr = VBOXCMENTRY_2_CMD(pSession->CommandsList.Blink);
                 Assert(pHdr->CmdHdr.cbCmd);
-                if (cbData >= pHdr->CmdHdr.cbCmd)
+                uint32_t cbUserCmd = pHdr->CmdHdr.enmType == VBOXVIDEOCM_CMD_TYPE_UM ? pHdr->CmdHdr.cbCmd : 0;
+                if (cbData >= cbUserCmd)
                 {
                     RemoveEntryList(&pHdr->QueueList);
                     InsertHeadList(&DetachedList, &pHdr->QueueList);
-                    cbData -= pHdr->CmdHdr.cbCmd;
+                    cbData -= cbUserCmd;
                 }
                 else
                 {
-                    cbRemainingFirstCmd = pHdr->CmdHdr.cbCmd;
-                    cbRemainingCmds = pHdr->CmdHdr.cbCmd;
+                    Assert(cbUserCmd);
+                    cbRemainingFirstCmd = cbUserCmd;
+                    cbRemainingCmds = cbUserCmd;
                     pCurEntry = pHdr->QueueList.Blink;
                     bDetachMode = false;
                 }
@@ -467,8 +591,9 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
             if (pCurEntry != &pSession->CommandsList)
             {
                 pHdr = VBOXCMENTRY_2_CMD(pCurEntry);
+                uint32_t cbUserCmd = pHdr->CmdHdr.enmType == VBOXVIDEOCM_CMD_TYPE_UM ? pHdr->CmdHdr.cbCmd : 0;
                 Assert(cbRemainingFirstCmd);
-                cbRemainingCmds += pHdr->CmdHdr.cbCmd;
+                cbRemainingCmds += cbUserCmd;
                 pCurEntry = pHdr->QueueList.Blink;
             }
             else
@@ -482,15 +607,36 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
 
     ExReleaseFastMutex(&pSession->Mutex);
 
+    vboxVideoCmSessionCtxPpList(pContext, &DetachedPpList);
+
     pCmd->Hdr.cbCmdsReturned = 0;
     for (pCurEntry = DetachedList.Blink; pCurEntry != &DetachedList; pCurEntry = DetachedList.Blink)
     {
         pHdr = VBOXCMENTRY_2_CMD(pCurEntry);
-        memcpy(pvData, &pHdr->CmdHdr, pHdr->CmdHdr.cbCmd);
-        pvData += pHdr->CmdHdr.cbCmd;
-        pCmd->Hdr.cbCmdsReturned += pHdr->CmdHdr.cbCmd;
         RemoveEntryList(pCurEntry);
-        vboxVideoCmCmdReleaseByHdr(pHdr);
+        switch (pHdr->CmdHdr.enmType)
+        {
+            case VBOXVIDEOCM_CMD_TYPE_UM:
+            {
+                memcpy(pvData, &pHdr->CmdHdr, pHdr->CmdHdr.cbCmd);
+                pvData += pHdr->CmdHdr.cbCmd;
+                pCmd->Hdr.cbCmdsReturned += pHdr->CmdHdr.cbCmd;
+                vboxVideoCmCmdReleaseByHdr(pHdr);
+                break;
+            }
+
+            case VBOXVIDEOCM_CMD_TYPE_CTL_KM:
+            {
+                vboxVideoCmProcessKm(pContext, VBOXVIDEOCM_BODY(pHdr, VBOXVIDEOCM_CMD_CTL_KM));
+                break;
+            }
+
+            default:
+            {
+                WARN(("unsupported cmd type %d", pHdr->CmdHdr.enmType));
+                break;
+            }
+        }
     }
 
     pCmd->Hdr.cbRemainingCmds = cbRemainingCmds;

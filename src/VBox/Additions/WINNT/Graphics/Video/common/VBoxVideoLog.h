@@ -38,9 +38,9 @@
 #endif
 
 #ifdef DEBUG_misha
-# define BREAK_WARN() AssertFailed()
+# define BP_WARN() AssertFailed()
 #else
-# define BREAK_WARN() do {} while(0)
+# define BP_WARN() do {} while(0)
 #endif
 
 #define _LOGMSG_EXACT(_logger, _a)                                          \
@@ -57,13 +57,19 @@
         _logger((VBOX_VIDEO_LOG_SUFFIX_FMT  VBOX_VIDEO_LOG_SUFFIX_PARMS));  \
     } while (0)
 
-#define WARN(_a)                                                                  \
+#define WARN_NOBP(_a)                                                          \
     do                                                                            \
     {                                                                             \
         Log((VBOX_VIDEO_LOG_PREFIX_FMT"WARNING! ", VBOX_VIDEO_LOG_PREFIX_PARMS)); \
         Log(_a);                                                                  \
         Log((VBOX_VIDEO_LOG_SUFFIX_FMT VBOX_VIDEO_LOG_SUFFIX_PARMS));             \
-        BREAK_WARN(); \
+    } while (0)
+
+#define WARN(_a)                                                                  \
+    do                                                                            \
+    {                                                                             \
+        WARN_NOBP(_a);                                                         \
+        BP_WARN();                                                             \
     } while (0)
 
 #define LOG(_a) _LOGMSG(Log, _a)

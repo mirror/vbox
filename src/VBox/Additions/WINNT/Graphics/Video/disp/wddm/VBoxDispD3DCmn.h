@@ -37,6 +37,7 @@
 #include "VBoxDispD3DIf.h"
 #include "common/wddm/VBoxMPIf.h"
 #include "VBoxDispCm.h"
+#include "VBoxDispMpInternal.h"
 #include "VBoxDispKmt.h"
 #ifdef VBOX_WITH_CRHGSMI
 #include "VBoxUhgsmiBase.h"

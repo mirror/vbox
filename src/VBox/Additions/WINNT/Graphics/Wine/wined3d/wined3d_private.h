@@ -50,6 +50,10 @@
 #endif
 #include "wine/debug.h"
 #include "wine/unicode.h"
+#ifdef VBOX_WITH_WDDM
+# include "vboxext.h"
+#endif
+
 
 #ifndef VBOX_WINE_WITHOUT_LIBWINE
 #include "objbase.h"
