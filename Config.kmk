@@ -2012,7 +2012,7 @@ ifdef VBOX_WITH_CROGL
  VBOX_DARWIN_OPENGL_HEADERS  = gl.h glu.h
  SDK_DARWIN-OPENGL           = Workaround SDK for the darwin OpenGL include directorly layout layout.
  SDK_DARWIN-OPENGL_INCS      = $(PATH_OUT)/obj/VBoxOGL
- SDK_DARWIN-OPENGL_ORDERDEPS = $(addprefix $(PATH_OUT)/obj/VBoxOGL/GL/./,$(VBOX_DARWIN_OPENGL_HEADERS))
+ SDK_DARWIN-OPENGL_ORDERDEPS = $(addprefix $(PATH_OUT)/obj/VBoxOGL/GL/,$(VBOX_DARWIN_OPENGL_HEADERS))
  ## @todo kBuild: Using INTERMEDIATES doesn't work!
 endif
 
