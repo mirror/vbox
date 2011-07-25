@@ -4844,7 +4844,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">권장하는 기본 메모리 크기는 &lt;b&gt;%1&lt;/b&gt; 메가바이트입니다.</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">권장하는 부팅 하드디스크 크기는 &lt;b&gt;%1&lt;/b&gt; 메가바이트입니다.</translation>
     </message>
     <message>
@@ -4896,7 +4896,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">기본 메모리</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">부팅 하드디스크</translation>
     </message>
@@ -4905,11 +4905,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">취소</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;가상 머신을 부팅하기 위한 하드디스크를 선택하십시오. &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 눌러서 새로운 하드디스크를 만들 수 있으며, 또한 &lt;b&gt;기존 디스크 사용&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자에서 존재하는 하드디스크를 선택할 수 있습니다.&lt;/p&gt;&lt;p&gt;자세한 하드디스크 설정을 원하신다면 이 단계를 건너뛰고 가상 머신 설정 대화 상자에서 하드디스크를 연결하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">부팅용 하드디스크 (프라이머리 마스터)(&amp;D)</translation>
     </message>
     <message>
@@ -4986,11 +4986,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;가상 머신을 부팅하기 위한 하드디스크를 선택하십시오. &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 눌러서 새로운 하드디스크를 만들 수 있으며, 또한 &lt;b&gt;기존 디스크 사용&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자에서 존재하는 하드디스크를 선택할 수 있습니다.&lt;/p&gt;&lt;p&gt;자세한 하드디스크 설정을 원하신다면 이 단계를 건너뛰고 가상 머신 설정 대화 상자에서 하드디스크를 연결하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">부팅용 하드디스크 (프라이머리 마스터)(&amp;D)</translation>
     </message>
     <message>
@@ -5006,15 +5006,15 @@ p, li { white-space: pre-wrap; }
         <translation>가상 하드디스크</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">권장하는 부팅 하드디스크 크기는 &lt;b&gt;%1&lt;/b&gt; 메가바이트입니다.</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
+        <source>Start-up &amp;Disk</source>
         <translation>부팅 하드디스크(&amp;D)</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation>&lt;p&gt;가상 머신을 부팅하기 위한 하드디스크를 선택하십시오. 새로운 하드디스크를 만들 수 있으며, 해당하는 단추를 누르거나 목록에서 존재하는 하드디스크를 선택할 수 있습니다.&lt;/p&gt;&lt;p&gt;자세한 하드디스크 설정을 원하신다면 이 단계를 건너뛰고 가상 머신 설정 대화 상자에서 하드디스크를 연결하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5022,7 +5022,7 @@ p, li { white-space: pre-wrap; }
         <translation>가상 하드디스크 파일 선택...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>권장하는 부팅 하드디스크 크기는 &lt;b&gt;%1&lt;/b&gt;입니다.</translation>
     </message>
 </context>
@@ -5057,7 +5057,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation>부팅 하드디스크</translation>
     </message>

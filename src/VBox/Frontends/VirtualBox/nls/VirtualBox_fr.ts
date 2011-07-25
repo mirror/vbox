@@ -4046,7 +4046,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translatorcomment>There isn&apos;t any &quot;New&quot; or &quot;Existing&quot; buttons, just two checkboxes labelled &quot;Create new HD&quot; and &quot;Use existing HD&quot;</translatorcomment>
         <translation type="obsolete">&lt;p&gt;Choisissez une image de disque dur à utiliser pour l&apos;amorçage de la machine virtuelle. Vous pouvez soit créer une nouvelle image en cliquant sur &lt;b&gt;Nouveau&lt;/b&gt; soit choisir une image existante dans le Gestionnaire de médias virtuels avec le bouton &lt;b&gt;Existant&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la Configuration de la machine.&lt;/p&gt;</translation>
     </message>
@@ -4063,15 +4063,15 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Disque dur virtuel</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">La taille recommandée pour le disque dur d&apos;amorçage est de &lt;b&gt;%1&lt;/b&gt; Mio.</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
+        <source>Start-up &amp;Disk</source>
         <translation>&amp;Disque dur d&apos;amorçage</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Choisissez un disque dur virtuel à utiliser pour l&apos;amorçage de la machine virtuelle. Vous pouvez soit créer un nouveau disque, soit choisir un disque existant dans la liste ou en cliquant sur le bouton correspondant.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la Configuration de la machine.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4079,7 +4079,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Choisissez un fichier de disque dur virtuel...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>La taille recommandée pour le disque dur d&apos;amorçage est de &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -4114,7 +4114,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="obsolete">Mio</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation>Disque dur d&apos;amorçage</translation>
     </message>

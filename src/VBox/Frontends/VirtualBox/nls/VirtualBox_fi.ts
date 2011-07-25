@@ -4838,7 +4838,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">Järjestelmämuistin suositeltu koko on &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Käynnistyskiintolevyn suositeltu koko on &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
@@ -4898,7 +4898,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">Järjestelmämuisti</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">Käynnistyskiintolevy</translation>
     </message>
@@ -4907,11 +4907,11 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">Peru</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Valitse virtuaalikoneessa käytettävä kiintolevyn levykuva. Voit luoda uuden levykuvan napista &lt;b&gt;Uusi&lt;/b&gt;, valita aiemmin luodun levykuvan pudotusvalikosta tai valita levykuvan virtuaalimedioiden hallinnasta painamassa nappia &lt;b&gt;Olemassaoleva&lt;/b&gt;. &lt;/p&gt;&lt;p&gt;Jos haluat tehdä monimutkaisemman kiintolevymäärittelyn, voit ohittaa tämän kohdan ja lisätä kiintolevyt myöhemmin virtuaalikoneen asetuksista.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Käynnistys&amp;kiintolevy (ensisijainen isäntä)</translation>
     </message>
     <message>
@@ -4980,11 +4980,11 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Valitse virtuaalikoneessa käytettävä kiintolevyn levykuva. Voit luoda uuden levykuvan napista &lt;b&gt;Uusi&lt;/b&gt;, valita aiemmin luodun levykuvan pudotusvalikosta tai valita levykuvan virtuaalimedioiden hallinnasta painamassa nappia &lt;b&gt;Olemassaoleva&lt;/b&gt;. &lt;/p&gt;&lt;p&gt;Jos haluat tehdä monimutkaisemman kiintolevymäärittelyn, voit ohittaa tämän kohdan ja lisätä kiintolevyt myöhemmin virtuaalikoneen asetuksista.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Käynnistys&amp;kiintolevy (ensisijainen isäntä)</translation>
     </message>
     <message>
@@ -5000,15 +5000,15 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="unfinished">Virtuaalikiintolevy</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Käynnistyskiintolevyn suositeltu koko on &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
+        <source>Start-up &amp;Disk</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5016,7 +5016,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5051,7 +5051,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation type="unfinished">Käynnistyskiintolevy</translation>
     </message>

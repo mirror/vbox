@@ -4096,7 +4096,7 @@
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Pasirinkite standžiojo diko atvaizdį, naudotiną kaip virtualios mašinos įkrovos standųjį diską. Galite arba sukurti naują diską nuspaudę &lt;b&gt;Naujas&lt;/b&gt;, arba pasirinkite jau sukurtąjį iš išskleidžiamojo meniu nuspaudę &lt;b&gt;Esamas&lt;/b&gt; (atsivers virtualių laikmenų tvarkytuvė).&lt;/p&gt;&lt;p&gt;Jei norite sudėtingesnės disko konfigūracijos, galite praleisti šį etapą – standųjį diską pridėsite vėliau per šios virtualios mašinos nuostatas.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4112,15 +4112,15 @@
         <translation>Virtualus standusis diskas</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Įkraunamam standžiajam diskui patariama paskirti &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
+        <source>Start-up &amp;Disk</source>
         <translation>Įkraunamas standusis &amp;diskas</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Pasirinkite virtualų standųjį diską, iš kurio bus paleidžiama virtuali mašina. Galite arba sukurti naują diską, arba pasirinkite jau sukurtąjį iš išskleidžiamojo meniu nuspaudę atitinkamą mygtuką.&lt;/p&gt;&lt;p&gt;Jei norite sudėtingesnės disko konfigūracijos, galite praleisti šį etapą – standųjį diską pridėsite vėliau per šios virtualios mašinos nuostatas.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4128,7 +4128,7 @@
         <translation>Pasirinkti virtualaus standžiojo disko rinkmeną...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Rekomenduojamas standžiojo disko dydis yra &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -4167,7 +4167,7 @@
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary
 </comment>
         <translation type="obsolete">Įkraunamas standusis diskas</translation>
@@ -4192,7 +4192,7 @@
         <translation>Pagrindinė atmintis</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation>Standusis diskas, iš kurio paleidžiama</translation>
     </message>

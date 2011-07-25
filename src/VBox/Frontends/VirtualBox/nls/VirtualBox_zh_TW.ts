@@ -3671,11 +3671,11 @@
         <translation>虛擬硬碟</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
+        <source>Start-up &amp;Disk</source>
         <translation>開機硬碟(&amp;D)</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation>&lt;p&gt;選取用來作為虛擬機器開機硬碟的虛擬硬碟。 您可以建立新的硬碟或從下拉清單選取現有的一個或按下相應的按鈕 (調用 [開啟檔案] 視窗)。&lt;/p&gt;&lt;p&gt;如果您需要更複雜的硬碟設定，您也可以略過這個步驟並稍後使用 VM 設定對話方塊附加硬碟。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3683,7 +3683,7 @@
         <translation>選擇虛擬硬碟檔案...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>開機硬碟的建議大小為 &lt;b&gt;%1&lt;/b&gt;。</translation>
     </message>
 </context>
@@ -3713,7 +3713,7 @@
         <translation>基本記憶體</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation>開機硬碟</translation>
     </message>
