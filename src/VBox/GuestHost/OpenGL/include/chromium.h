@@ -687,6 +687,7 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 
 /*Global resource ids sharing*/
 #define GL_SHARE_CONTEXT_RESOURCES_CR 0x8B27
+#define GL_FLUSH_ON_THREAD_SWITCH_CR  0x8B28
 
 /**********************************************************************/
 /*****                Chromium-specific API                       *****/

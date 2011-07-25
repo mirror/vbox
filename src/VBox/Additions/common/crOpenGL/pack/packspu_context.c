@@ -212,6 +212,7 @@ void PACKSPU_APIENTRY packspu_DestroyContext( GLint ctx )
     }
 }
 
+#define PACK_FORCED_SYNC
 
 void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLint ctx )
 {
@@ -233,6 +234,42 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
 
         newCtx = &pack_spu.context[slot];
         CRASSERT(newCtx->clientState);  /* verify valid */
+
+        if (newCtx->fAutoFlush)
+        {
+            if (newCtx->currentThread && newCtx->currentThread != thread)
+            {
+                int writeback = 1;
+                crLockMutex(&_PackMutex);
+                /* do a flush for the previusly assigned thread
+                 * to ensure all commands issued there are submitted */
+                if (newCtx->currentThread
+                    && newCtx->currentThread->inUse
+                    && newCtx->currentThread->netServer.conn
+                    && newCtx->currentThread->packer && newCtx->currentThread->packer->currentBuffer)
+                {
+#ifdef PACK_FORCED_SYNC
+                    CRPackContext *pc = newCtx->currentThread->packer;
+                    unsigned char *data_ptr;
+
+                    CR_GET_BUFFERED_POINTER( pc, 16 );
+                    WRITE_DATA( 0, GLint, 16 );
+                    WRITE_DATA( 4, GLenum, CR_WRITEBACK_EXTEND_OPCODE );
+                    WRITE_NETWORK_POINTER( 8, (void *) &writeback );
+                    WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+                    CR_UNLOCK_PACKER_CONTEXT(pc);
+#endif
+                    packspuFlush((void *) newCtx->currentThread);
+
+#ifdef PACK_FORCED_SYNC
+                    while (writeback)
+                        crNetRecv();
+#endif
+                }
+                crUnlockMutex(&_PackMutex);
+            }
+            newCtx->currentThread = thread;
+        }
 
         thread->currentContext = newCtx;
 
