@@ -373,7 +373,7 @@
            </sizepolicy>
           </property>
           <property name="whatsThis" >
-           <string>When checked, this marks the medium as non-rotational storage (SSD).</string>
+           <string>When checked the guest system will see the virtual disk as a solid state device.</string>
           </property>
           <property name="text" >
            <string>&amp;Solid-state drive</string>

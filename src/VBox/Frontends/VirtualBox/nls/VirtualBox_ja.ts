@@ -4717,7 +4717,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="376"/>
-        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
+        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
