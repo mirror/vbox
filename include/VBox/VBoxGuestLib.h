@@ -548,19 +548,6 @@ VBGLR3DECL(int)     VbglR3GuestCtrlConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3GuestCtrlDisconnect(uint32_t u32ClientId);
 VBGLR3DECL(int)     VbglR3GuestCtrlWaitForHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms);
 VBGLR3DECL(int)     VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId);
-
-VBGLR3DECL(int) VbglR3GuestCtrlGetCmdDirClose(uint32_t  u32ClientId,    uint32_t  uNumParms,
-                                              uint32_t *puContext,      uint32_t *puHandle);
-VBGLR3DECL(int) VbglR3GuestCtrlGetCmdDirOpen(uint32_t  u32ClientId,    uint32_t  uNumParms,
-                                             uint32_t *puContext,
-                                             char     *pszDir,         uint32_t  cbDir,
-                                             char     *pszFilter,      uint32_t  cbFilter,
-                                             uint32_t *puFlags,
-                                             char     *pszUser,        uint32_t  cbUser,
-                                             char     *pszPassword,    uint32_t  cbPassword);
-VBGLR3DECL(int) VbglR3GuestCtrlGetCmdDirRead(uint32_t  u32ClientId,    uint32_t  uNumParms,
-                                             uint32_t *puContext,      uint32_t *puHandle);
-
 VBGLR3DECL(int)     VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t  uNumParms,
                                                   uint32_t *puContext,
                                                   char     *pszCmd,         uint32_t  cbCmd,

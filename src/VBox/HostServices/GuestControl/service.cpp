@@ -761,33 +761,6 @@ int Service::notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paP
             rc = mpfnHostCallback(mpvHostData, eFunction,
                                   (void *)(&data), sizeof(data));
     }
-    else if (   eFunction == GUEST_DIR_SEND_OPEN
-             && cParms    == 2)
-    {
-        CALLBACKDATADIROPEN data;
-        data.hdr.u32Magic = CALLBACKDATAMAGIC_DIR_OPEN;
-        paParms[0].getUInt32(&data.hdr.u32ContextID);
-
-        paParms[1].getUInt32(&data.u32Handle);
-
-        if (mpfnHostCallback)
-            rc = mpfnHostCallback(mpvHostData, eFunction,
-                                  (void *)(&data), sizeof(data));
-    }
-    else if (   eFunction == GUEST_DIR_SEND_READ
-             && cParms    == 3)
-    {
-        CALLBACKDATADIRREAD data;
-        data.hdr.u32Magic = CALLBACKDATAMAGIC_DIR_READ;
-        paParms[0].getUInt32(&data.hdr.u32ContextID);
-
-        paParms[1].getUInt64(&data.u64NodeId);
-        paParms[2].getString(&data.pszName, &data.cbName);
-
-        if (mpfnHostCallback)
-            rc = mpfnHostCallback(mpvHostData, eFunction,
-                                  (void *)(&data), sizeof(data));
-    }
     else
         rc = VERR_NOT_SUPPORTED;
     LogFlowFunc(("returning %Rrc\n", rc));
