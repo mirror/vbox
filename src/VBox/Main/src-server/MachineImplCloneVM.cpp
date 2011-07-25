@@ -107,7 +107,7 @@ struct MachineCloneVMPrivate
     HRESULT queryMediasForAllStates(const RTCList<ComObjPtr<Machine> > &machineList, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
 
     /* MachineCloneVM::run helper: */
-    settings::Snapshot findSnapshot(settings::MachineConfigFile *pMCF, const settings::SnapshotsList &snl, const Guid &id) const;
+    bool findSnapshot(const settings::SnapshotsList &snl, const Guid &id, settings::Snapshot &sn) const;
     void updateMACAddresses(settings::NetworkAdaptersList &nwl) const;
     void updateMACAddresses(settings::SnapshotsList &sl) const;
     void updateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
@@ -529,17 +529,23 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
     return rc;
 }
 
-settings::Snapshot MachineCloneVMPrivate::findSnapshot(settings::MachineConfigFile *pMCF, const settings::SnapshotsList &snl, const Guid &id) const
+bool MachineCloneVMPrivate::findSnapshot(const settings::SnapshotsList &snl, const Guid &id, settings::Snapshot &sn) const
 {
     settings::SnapshotsList::const_iterator it;
     for (it = snl.begin(); it != snl.end(); ++it)
     {
         if (it->uuid == id)
-            return *it;
+        {
+            sn = (*it);
+            return true;
+        }
         else if (!it->llChildSnapshots.empty())
-            return findSnapshot(pMCF, it->llChildSnapshots, id);
+        {
+            if (findSnapshot(it->llChildSnapshots, id, sn))
+                return true;
+        }
     }
-    return settings::Snapshot();
+    return false;
 }
 
 void MachineCloneVMPrivate::updateMACAddresses(settings::NetworkAdaptersList &nwl) const
@@ -921,7 +927,7 @@ HRESULT MachineCloneVM::run()
          * with the stuff from the snapshot. */
         settings::Snapshot sn;
         if (!d->snapshotId.isEmpty())
-            sn = d->findSnapshot(&trgMCF, trgMCF.llFirstSnapshot, d->snapshotId);
+            d->findSnapshot(trgMCF.llFirstSnapshot, d->snapshotId, sn);
 
         if (d->mode == CloneMode_MachineState)
         {
