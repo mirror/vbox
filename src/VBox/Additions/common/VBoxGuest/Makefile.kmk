@@ -49,7 +49,7 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
  VBoxGuest_DEPS.freebsd += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
  VBoxGuest_INCS          = .
- VBoxGuest_INCS.freebsd  = $(PATH_VBoxGuest) $(PATH_INS)/gen-sys-hdrs
+ VBoxGuest_INCS.freebsd  = $(PATH_VBoxGuest) $(PATH_STAGE)/gen-sys-hdrs
  VBoxGuest_INCS.linux    = ../../../Runtime/r0drv/linux
  VBoxGuest_LDFLAGS.solaris += -N misc/ctf
  ifneq ($(KBUILD_TARGET),os2)
@@ -84,9 +84,9 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0)
   VBoxGuest_ORDERDEPS.freebsd = \
-  	$(PATH_INS)/gen-sys-hdrs/pci_if.h \
-  	$(PATH_INS)/gen-sys-hdrs/bus_if.h \
-  	$(PATH_INS)/gen-sys-hdrs/device_if.h
+  	$(PATH_STAGE)/gen-sys-hdrs/pci_if.h \
+  	$(PATH_STAGE)/gen-sys-hdrs/bus_if.h \
+  	$(PATH_STAGE)/gen-sys-hdrs/device_if.h
  else # OS/2:
   # The library order is crucial, so a bit of trickery is necessary.
   # A library is used to make sure that VBoxGuestA-os2.asm is first in the link. (temporary hack?)
