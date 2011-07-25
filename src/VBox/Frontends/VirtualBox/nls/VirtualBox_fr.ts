@@ -3783,7 +3783,7 @@
         <translation>Emplacement du fichier de disque virtuel</translation>
     </message>
     <message>
-        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
+        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
         <translation>Entrez le chemin du fichier qui contiendra les données du disque dur ou cliquez sur le bouton pour choisir son emplacement.</translation>
     </message>
     <message>

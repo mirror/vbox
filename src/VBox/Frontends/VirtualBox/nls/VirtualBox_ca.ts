@@ -4982,7 +4982,7 @@ l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
+        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -3342,7 +3342,7 @@
         <translation>Ort der virtuellen Datei</translation>
     </message>
     <message>
-        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
+        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
         <translation>Wählen Sie &lt;b&gt;Auswählen&lt;/b&gt; um den Ort der Datei festzulegen oder bestimmen Sie direkt einen Dateinamen.</translation>
     </message>
     <message>

@@ -656,7 +656,7 @@ void UINewHDWizardPageOptions::retranslateUi()
         default:
             break;
     }
-    m_pLabel1->setText(UINewHDWizard::tr("Press the <b>Select</b> button to select the location of a file to store the virtual disk data or type a file name in the entry field."));
+    m_pLabel1->setText(UINewHDWizard::tr("Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in."));
 }
 
 void UINewHDWizardPageOptions::initializePage()

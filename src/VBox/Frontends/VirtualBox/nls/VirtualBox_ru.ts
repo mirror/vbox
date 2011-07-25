@@ -4738,7 +4738,7 @@ p, li { white-space: pre-wrap; }
         <translation>Расположение виртуального диска</translation>
     </message>
     <message>
-        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
+        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
         <translation>Нажмите кнопку &lt;b&gt;Выбрать&lt;/b&gt; для выбора расположения/имени файла виртуального диска или введите имя файла в поле ввода.</translation>
     </message>
     <message>
