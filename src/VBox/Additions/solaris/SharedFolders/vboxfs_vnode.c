@@ -212,7 +212,7 @@ sfnode_get_vnode(sfnode_t *node)
 		vp->v_vfsp = node->sf_sffs->sf_vfsp;
 		VFS_HOLD(vp->v_vfsp);
 		vn_setops(vp, sffs_ops);
-		vp->v_flag = VNOMAP | VNOSWAP;
+		vp->v_flag = VNOSWAP | VNOMAP;	/* @todo -XXX- remove VNOMAP when ro-mmap is working*/
 		vn_exists(vp);
 		vp->v_data = node;
 		node->sf_vnode = vp;
@@ -1486,7 +1486,7 @@ sffs_page_unmap(
  * Called when there's no page in the cache. This will create new page(s) and read
  * the file data into it.
  */
-static int
+int
 sffs_readpages(
 	vnode_t		*dvp,
 	offset_t	off,
@@ -1508,10 +1508,13 @@ sffs_readpages(
 	ASSERT(node);
 	ASSERT(node->sf_file);
 
+	cmn_err(CE_NOTE, "sffs_readpages\n");
 	if (pagelistsize == PAGESIZE)
 	{
 		io_off = off;
 		io_len = PAGESIZE;
+
+		cmn_err(CE_NOTE, "sffs_readpages io_off=%lld io_len=%lld\n", (u_longlong_t)io_off, (u_longlong_t)io_len);
 
 		ppages = page_create_va(dvp, io_off, io_len, PG_WAIT | PG_EXCL, segp, addr);
 	}
@@ -1521,6 +1524,7 @@ sffs_readpages(
 	/* If page already exists return success */
 	if (!ppages)
 	{
+		cmn_err(CE_NOTE, "sffs_readpages nothing done\n");
 		*pagelist = NULL;
 		return (0);
 	}
@@ -1534,6 +1538,7 @@ sffs_readpages(
 	{
 		ASSERT3U(io_off, ==, pcur->p_offset);
 
+		cmn_err(CE_NOTE, "sffs_readpages page-by-page reading io_off=%lld\n", (u_longlong_t)io_off);
 		caddr_t virtaddr = sffs_page_map(pcur, segaccess);
 		uint32_t bytes = PAGESIZE;
 		error = sfprov_read(node->sf_file, virtaddr, io_off, &bytes);
@@ -1553,6 +1558,8 @@ sffs_readpages(
 	 */
 	pvn_plist_init(ppages, pagelist, pagelistsize, off, io_len, segaccess);
 	ASSERT(pagelist == NULL || (*pagelist)->p_offset == off);
+	cmn_err(CE_NOTE, "sffs_readpages done\n");
+
 	return (0);
 }
 
@@ -1577,14 +1584,14 @@ sffs_getpage(
 {
 	int error = 0;
 	page_t **pageliststart = pagelist;
+	sfnode_t *node = VN2SFN(dvp);
+	ASSERT(node);
+	ASSERT(node->sf_file);
 
 	if (segaccess == S_WRITE)
 		return (ENOSYS);	/* Will this ever happen? */
 
-	if (protp)
-		*protp = PROT_ALL;
-
-	/* We don't really support async ops, pretend success. */
+	/* Don't bother about faultahead for now. */
 	if (pagelist == NULL)
 		return (0);
 
@@ -1594,7 +1601,17 @@ sffs_getpage(
 		len = P2ROUNDUP(len, PAGESIZE);
 	ASSERT(pagelistsize >= len);
 
+	if (protp)
+		*protp = PROT_ALL;
+
 	mutex_enter(&sffs_lock);
+
+	/* Don't map pages past end of the file. */
+	if (off + len > node->sf_stat.sf_size + PAGEOFFSET)
+	{
+		mutex_exit(&sffs_lock);
+		return (EFAULT);
+	}
 
 	while (len > 0)
 	{
@@ -1613,6 +1630,7 @@ sffs_getpage(
 			return (error);
 		}
 
+		cmn_err(CE_NOTE, "sffs_getpage addr=%p len=%lld off=%lld\n", addr, (u_longlong_t)len, (u_longlong_t)off);
 		while (*pagelist)
 		{
 			ASSERT3U((*pagelist)->p_offset, ==, off);
@@ -1628,24 +1646,21 @@ sffs_getpage(
 			pagelistsize -= PAGESIZE;
 			pagelist++;
 		}
+	}
 
-		/*
-		 * Fill the page list array with any pages left in the cache.
-		 */
-		while (pagelistsize > 0)
-		{
-			if ((*pagelist++ = page_lookup_nowait(dvp, off, SE_SHARED)) != NULL)
-			{
-				off += PAGESIZE;
-				pagelistsize -= PAGESIZE;
-			}
-			else
-				break;
-		}
+	/*
+	 * Fill the page list array with any pages left in the cache.
+	 */
+	while (   pagelistsize > 0
+		   && (*pagelist++ = page_lookup_nowait(dvp, off, SE_SHARED)))
+	{
+		off += PAGESIZE;
+		pagelistsize -= PAGESIZE;
 	}
 
 	*pagelist = NULL;
 	mutex_exit(&sffs_lock);
+	cmn_err(CE_NOTE,  "sffs_getpage done\n");
 	return (error);
 }
 
