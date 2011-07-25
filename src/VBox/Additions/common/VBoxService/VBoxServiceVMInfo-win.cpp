@@ -345,7 +345,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
             case ERROR_NOT_ENOUGH_MEMORY:
                 /* If we don't have enough memory it's hard to judge whether the specified user
                  * is logged in or not, so just assume he/she's not. */
-                VBoxServiceError("VMInfo/Users: Not enough memory to retrieve logon session data!\n");
+                VBoxServiceVerbose(3, "VMInfo/Users: Not enough memory to retrieve logon session data!\n");
                 break;
 
             case ERROR_NO_SUCH_LOGON_SESSION:
@@ -513,7 +513,7 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
         switch (ulError)
         {
             case ERROR_NOT_ENOUGH_MEMORY:
-                VBoxServiceError("VMInfo/Users: Not enough memory to enumerate logon sessions!\n");
+                VBoxServiceVerbose(3, "VMInfo/Users: Not enough memory to enumerate logon sessions!\n");
                 break;
 
             case ERROR_SHUTDOWN_IN_PROGRESS:
