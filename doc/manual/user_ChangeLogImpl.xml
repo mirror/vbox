@@ -9,12 +9,34 @@
     <itemizedlist>
 
       <listitem>
+        <para>Guest control execution: implemented copying single files from
+          guest to the host (directories and filters not supported yet)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: implemented new API calls <emphasis>IGuest::CopyFromGuest</emphasis>,
+        <emphasis>IGuest::FileExists</emphasis> and
+        <emphasis>IGuest::FileQuerySize</emphasis>.</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: implemented <emphasis>copyfrom</emphasis> and <emphasis>stat</emphasis>
+          guest control tools to copy files from guest to host and to check for
+          existence of files on the guest</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: fixed <emphasis>extpack install --replace</emphasis></para>
       </listitem>
 
       <listitem>
         <para>VRDP: fixed a case when the screen was not redrawn correctly
           (bug #9242)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxService: keep logged in user count in out-of-memory situations and
+          warn about it</para>
       </listitem>
 
     </itemizedlist>
