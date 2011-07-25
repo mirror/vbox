@@ -1681,6 +1681,7 @@ struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3
 
 #ifdef VBOX_WITH_WDDM
     GL_EXTCALL(glChromiumParameteriCR(GL_SHARE_CONTEXT_RESOURCES_CR, GL_TRUE));
+    GL_EXTCALL(glChromiumParameteriCR(GL_FLUSH_ON_THREAD_SWITCH_CR,  GL_TRUE));
 #endif
 
     LEAVE_GL();
