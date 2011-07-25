@@ -400,8 +400,24 @@ void PACKSPU_APIENTRY packspu_GetPixelMapusv( GLenum map, GLushort * values )
     }
 }
 
+static void packspuFluchOnThreadSwitch(GLboolean fEnable)
+{
+    GET_THREAD(thread);
+    if (thread->currentContext->fAutoFlush == fEnable)
+        return;
+
+    thread->currentContext->fAutoFlush = fEnable;
+    thread->currentContext->currentThread = fEnable ? thread : NULL;
+}
+
 void PACKSPU_APIENTRY packspu_ChromiumParameteriCR(GLenum target, GLint value)
 {
+    if (GL_FLUSH_ON_THREAD_SWITCH_CR==target)
+    {
+        /* this is a pure packspu state, don't propagate it any further */
+        packspuFluchOnThreadSwitch(value);
+        return;
+    }
     if (GL_SHARE_CONTEXT_RESOURCES_CR==target)
     {
         crStateShareContext(value);
@@ -551,6 +567,16 @@ void PACKSPU_APIENTRY packspu_VBoxPackDetachThread()
                 }
 
                 break;
+            }
+        }
+
+        for (i=0; i<CR_MAX_CONTEXTS; ++i)
+        {
+            ContextInfo *ctx = &pack_spu.context[i];
+            if (ctx->currentThread == thread)
+            {
+                CRASSERT(ctx->fAutoFlush);
+                ctx->currentThread = NULL;
             }
         }
 

@@ -41,6 +41,8 @@ struct thread_info_t {
 struct context_info_t {
     CRContext *clientState;  /* used to store client-side GL state */
     GLint serverCtx;         /* context ID returned by server */
+    GLboolean  fAutoFlush;
+    ThreadInfo *currentThread;
     GLubyte glVersion[100];     /* GL_VERSION string */
     GLubyte pszRealVendor[100];
     GLubyte pszRealVersion[100];
