@@ -19,6 +19,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/getopt.h>
 #include <iprt/mem.h>
@@ -39,17 +40,52 @@ using namespace guestControl;
 uint32_t g_ControlInterval = 0;
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI      g_hControlEvent = NIL_RTSEMEVENTMULTI;
-/** The Guest Control service client ID. */
+/** The guest control service client ID. */
 static uint32_t             g_GuestControlSvcClientID = 0;
-/** List of spawned processes. */
-RTLISTNODE                  g_GuestControlExecThreads;
+/** How many started guest processes are kept into memory for supplying
+ *  information to the host. Default is 5 processes. If 0 is specified,
+ *  the maximum number of processes is unlimited. */
+uint32_t                    g_GuestControlProcsMaxKept = 5;
+/** List of guest control threads. */
+RTLISTNODE                  g_GuestControlThreads;
 /** Critical section protecting g_GuestControlExecThreads. */
-RTCRITSECT                  g_GuestControlExecThreadsCritSect;
+RTCRITSECT                  g_GuestControlThreadsCritSect;
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceControlPreInit(void)
 {
+#ifdef VBOX_WITH_GUEST_PROPS
+    /*
+     * Read the service options from the VM's guest properties.
+     * Note that these options can be overridden by the command line options later.
+     */
+    uint32_t uGuestPropSvcClientID;
+    int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
+        {
+            VBoxServiceVerbose(0, "Control: Guest property service is not available, skipping\n");
+            rc = VINF_SUCCESS;
+        }
+        else
+            VBoxServiceError("Control: Failed to connect to the guest property service! Error: %Rrc\n", rc);
+    }
+    else
+    {
+        rc = VBoxServiceReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept",
+                                       &g_GuestControlProcsMaxKept, 0, UINT32_MAX - 1);
+
+        VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
+    }
+
+    if (rc == VERR_NOT_FOUND) /* If a value is not found, don't be sad! */
+        rc = VINF_SUCCESS;
+    return rc;
+#else
+    /* Nothing to do here yet. */
     return VINF_SUCCESS;
+#endif
 }
 
 
@@ -62,6 +98,9 @@ static DECLCALLBACK(int) VBoxServiceControlOption(const char **ppszShort, int ar
     else if (!strcmp(argv[*pi], "--control-interval"))
         rc = VBoxServiceArgUInt32(argc, argv, "", pi,
                                   &g_ControlInterval, 1, UINT32_MAX - 1);
+    else if (!strcmp(argv[*pi], "--control-procs-max-kept"))
+        rc = VBoxServiceArgUInt32(argc, argv, "", pi,
+                                  &g_GuestControlProcsMaxKept, 0, UINT32_MAX - 1);
     return rc;
 }
 
@@ -82,11 +121,11 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
     rc = VbglR3GuestCtrlConnect(&g_GuestControlSvcClientID);
     if (RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(3, "Control: Service Client ID: %#x\n", g_GuestControlSvcClientID);
+        VBoxServiceVerbose(3, "Control: Service client ID: %#x\n", g_GuestControlSvcClientID);
 
         /* Init thread list. */
-        RTListInit(&g_GuestControlExecThreads);
-        rc = RTCritSectInit(&g_GuestControlExecThreadsCritSect);
+        RTListInit(&g_GuestControlThreads);
+        rc = RTCritSectInit(&g_GuestControlThreadsCritSect);
         AssertRC(rc);
     }
     else
@@ -212,13 +251,87 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
     }
 }
 
+void VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread)
+{
+    AssertPtrReturnVoid(pThread);
+    ASMAtomicXchgBool(&pThread->fShutdown, true);
+}
+
+
+int VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread)
+{
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    int rc = VINF_SUCCESS;
+    if (pThread->Thread != NIL_RTTHREAD)
+    {
+        /* Wait a bit ... */
+        rc = RTThreadWait(pThread->Thread, 30 * 1000 /* Wait 30 seconds max. */, NULL);
+    }
+    return rc;
+}
+
+
+static void VBoxServiceControlDestroyThreads(void)
+{
+    VBoxServiceVerbose(3, "Control: Destroying threads ...\n");
+
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /* Signal all threads that we want to shutdown. */
+        PVBOXSERVICECTRLTHREAD pNode;
+        RTListForEach(&g_GuestControlThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
+            VBoxServiceControlThreadSignalShutdown(pNode);
+
+        /* Wait for threads to shutdown. */
+        RTListForEach(&g_GuestControlThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
+        {
+            int rc2 = VBoxServiceControlThreadWaitForShutdown(pNode);
+            if (RT_FAILURE(rc2))
+                VBoxServiceError("Control: Thread failed to stop; rc2=%Rrc\n", rc2);
+
+            /* Destroy thread specific data. */
+            switch (pNode->enmType)
+            {
+                case kVBoxServiceCtrlThreadDataExec:
+                    VBoxServiceControlExecThreadDataDestroy((PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        /* Finally destroy thread list. */
+        pNode = RTListGetFirst(&g_GuestControlThreads, VBOXSERVICECTRLTHREAD, Node);
+        while (pNode)
+        {
+            PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICECTRLTHREAD, Node);
+            bool fLast = RTListNodeIsLast(&g_GuestControlThreads, &pNode->Node);
+
+            RTListNodeRemove(&pNode->Node);
+            RTMemFree(pNode);
+
+            if (fLast)
+                break;
+
+            pNode = pNext;
+        }
+
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+    RTCritSectDelete(&g_GuestControlThreadsCritSect);
+}
+
 
 /** @copydoc VBOXSERVICE::pfnTerm */
 static DECLCALLBACK(void) VBoxServiceControlTerm(void)
 {
     VBoxServiceVerbose(3, "Control: Terminating ...\n");
 
-    VBoxServiceControlExecThreadsShutdown();
+    VBoxServiceControlDestroyThreads();
 
     VbglR3GuestCtrlDisconnect(g_GuestControlSvcClientID);
     g_GuestControlSvcClientID = 0;
@@ -241,11 +354,14 @@ VBOXSERVICE g_Control =
     /* pszDescription. */
     "Host-driven Guest Control",
     /* pszUsage. */
-   "              [--control-interval <ms>]"
+    "              [--control-interval <ms>] [--control-procs-max-kept <x>]"
     ,
     /* pszOptions. */
     "    --control-interval      Specifies the interval at which to check for\n"
     "                            new control commands. The default is 1000 ms.\n"
+    "    --control-procs-max-kept\n"
+    "                            Specifies how many started guest processes are\n"
+    "                            kept into memory to work with.\n"
     ,
     /* methods */
     VBoxServiceControlPreInit,

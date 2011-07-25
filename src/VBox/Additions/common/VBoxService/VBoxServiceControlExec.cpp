@@ -46,8 +46,8 @@
 
 using namespace guestControl;
 
-extern RTLISTNODE g_GuestControlExecThreads;
-extern RTCRITSECT g_GuestControlExecThreadsCritSect;
+extern RTLISTNODE g_GuestControlThreads;
+extern RTCRITSECT g_GuestControlThreadsCritSect;
 
 
 /**
@@ -1134,8 +1134,13 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
                                   const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                   const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
-    int rc;
+    int rc = VBoxServiceControlExecThreadsApplyPolicies();
+    if (RT_FAILURE(rc))
+        return rc;
 
+    /*
+     * Allocate new thread data and assign it to our thread list.
+     */
     PVBOXSERVICECTRLTHREAD pThread = (PVBOXSERVICECTRLTHREAD)RTMemAlloc(sizeof(VBOXSERVICECTRLTHREAD));
     if (pThread)
     {
@@ -1175,12 +1180,12 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
                 else
                 {
                     pThread->fStarted = true;
-                    /*rc =*/ RTListAppend(&g_GuestControlExecThreads, &pThread->Node);
+                    /*rc =*/ RTListAppend(&g_GuestControlThreads, &pThread->Node);
                 }
             }
 
             if (RT_FAILURE(rc))
-                VBoxServiceControlExecThreadDestroy((PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData);
+                VBoxServiceControlExecThreadDataDestroy((PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData);
         }
         if (RT_FAILURE(rc))
             RTMemFree(pThread);
