@@ -28,21 +28,6 @@ VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 # Experimental
 .SECONDTARGETEXPANSION:
 
-# Installation and staging changes in the works for kBuild 0.2.0 and VBox 4.1.2.
-if $(KMK_REVISION) >= 2475 \
- && $(KBUILD_VERSION_MAJOR) == 0 \
- && (   ($(KBUILD_VERSION_MINOR) == 1 && $(KBUILD_VERSION_PATCH) >= 99) \
-     || $(KBUILD_VERSION_MINOR) >= 2)
- VBOX_WITH_0_2_0_KBUILD = 1
-endif
-
-ifndef VBOX_WITH_0_2_0_KBUILD
- # Enable automatic installation of what's built.
- KBUILD_DO_AUTO_INSTALL := 1
- PASSES := $(filter-out PACKING,$(PASSES)) PACKING # temporary hack
- # Modify the order of the INSTALLS and OTHERS passes.
- DEFAULT_PASSES       := BLDPROGS LIBRARIES DLLS BINARIES INSTALLS OTHERS
-endif
 # Modify the build types.
 KBUILD_BLD_TYPES = release profile debug kprofile
 
@@ -81,16 +66,10 @@ VBOX_PUEL_MANGLED_NAME := Oracle_VM_VirtualBox_Extension_Pack
 # When running 'kmk install' files will be copied to 'dist/', on unix systems
 # this will be done in FHS fashion assuming /usr/local or /usr as 'prefix'.
 #
-# Changes related to this are marked VBOX_WITH_NEW_LAYOUT, while changes marked
-# VBOX_WITH_0_2_0_KBUILD are for building with current kBuild svn.
+# Changes related to this are marked VBOX_WITH_NEW_LAYOUT.
 ifndef VBOX_WITH_NEW_LAYOUT
- ifndef VBOX_WITH_0_2_0_KBUILD
-  PATH_INS            = $(PATH_OUT)
-  PATH_STAGE          = $(PATH_INS)
- else
-  PATH_INS            = $(PATH_OUT)/dist
-  PATH_STAGE          = $(PATH_OUT)
- endif
+ PATH_INS             = $(PATH_OUT)/dist
+ PATH_STAGE           = $(PATH_OUT)
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
@@ -132,7 +111,7 @@ else
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
  INST_ADDITIONS_ISO   = $(INST_ADDITIONS)
- 
+
  INST_VBOXNETADP      = $(INST_BIN)
 
  INST_TESTSUITE       = testsuite/
@@ -146,14 +125,6 @@ INST_EXTPACK_CERTS    = $(INST_BIN)ExtPackCertificates/
 INST_EXTPACK_PUEL     = $(INST_EXTPACK)$(VBOX_PUEL_MANGLED_NAME)/
 INST_PACKAGES         = packages/
 
-ifndef VBOX_WITH_0_2_0_KBUILD
- PATH_BIN             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_BIN))
- PATH_DLL             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_DLL))
- PATH_SYS             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_SYS))
- PATH_LIB             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_LIB))
- PATH_DOC             = $(patsubst %/,%,$(PATH_STAGE)/$(INST_DOC))
- $(foreach path, BIN DLL SYS LIB DOC, $(eval PATH_STAGE_$(path) = $$(PATH_$(path))))
-endif
 VBOX_PATH_SDK         = $(patsubst %/,%,$(PATH_STAGE)/$(INST_SDK))
 VBOX_PATH_DIST        = $(patsubst %/,%,$(PATH_STAGE)/$(INST_DIST))
 VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_STAGE)/$(INST_TESTSUITE))
@@ -168,8 +139,17 @@ VBOX_PATH_PACKAGES    = $(patsubst %/,%,$(PATH_STAGE)/$(INST_PACKAGES))
 .DELETE_ON_ERROR:
 
 # Notify about important kBuild updates.
-ifneq ($(call if-expr, $(KMK_REVISION) >= 2274 && $(KBUILD_KMK_REVISION) >= 2206,fine,old),fine)
- $(error You must update kBuild! KMK_REVISION=$(KMK_REVISION) KBUILD_KMK_REVISION=$(KBUILD_KMK_REVISION) KBUILD_PATH=$(KBUILD_PATH))
+if  $(KBUILD_VERSION_MAJOR) == 0 \
+ && (   $(KBUILD_VERSION_MINOR) >= 2 \
+     || (   $(KBUILD_VERSION_MINOR) == 1 \
+         && $(KBUILD_VERSION_PATCH) >= 999))
+ if $(KMK_REVISION) >= 2512
+  # OK.
+ else
+  $(error You must update kBuild! Requires kBuild revision 2512 or later, found $(KMK_REVISION) ($(KBUILD_VERSION)))
+ endif
+else
+ $(error You must update kBuild! Requires 0.1.999 or later, found $(KBUILD_VERSION))
 endif
 
 #
