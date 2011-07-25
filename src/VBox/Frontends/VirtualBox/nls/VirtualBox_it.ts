@@ -4068,7 +4068,7 @@ p, li { white-space: pre-wrap; }
         <translation>Scegli un file di disco floppy virtuale...</translation>
     </message>
     <message>
-        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
+        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
         <translation>Se marcata, impedisce lo smontaggio del supporto quando il sistema operativo guest lo rimuove.</translation>
     </message>
     <message>

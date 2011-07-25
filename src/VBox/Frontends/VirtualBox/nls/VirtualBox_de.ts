@@ -2724,7 +2724,7 @@
         <translation>haben Sie keine Platte für &lt;i&gt;%1&lt;/i&gt; ausgewählt.</translation>
     </message>
     <message>
-        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
+        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
         <translation>Unterdrückt das Auswerfen des Mediums durch den Gast.</translation>
     </message>
     <message>

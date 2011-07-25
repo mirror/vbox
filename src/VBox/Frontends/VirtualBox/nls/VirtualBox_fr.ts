@@ -3115,7 +3115,7 @@
         <translation>Choisissez un fichier de disquette virtuel...</translation>
     </message>
     <message>
-        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
+        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
         <translation>Si cette case est cochée le média ne sera pas déselectionné quand le système d&apos;exploitation invité l&apos;éjecte.</translation>
     </message>
     <message>

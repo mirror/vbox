@@ -357,7 +357,7 @@
            </sizepolicy>
           </property>
           <property name="whatsThis" >
-           <string>When checked, it suppresses unmounting the medium when the guest OS ejects it.</string>
+           <string>When checked the virtual disk will not be removed when the guest system ejects it.</string>
           </property>
           <property name="text" >
            <string>&amp;Live CD/DVD</string>

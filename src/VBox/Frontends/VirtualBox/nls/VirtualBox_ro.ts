@@ -3807,7 +3807,7 @@ Acest director este folosit, dacÄƒ nu este explicit specificat altfel, atunci cÃ
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
+        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
