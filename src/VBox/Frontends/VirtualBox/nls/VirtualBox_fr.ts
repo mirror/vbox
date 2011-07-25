@@ -852,7 +852,7 @@
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation>Temps processeur alloué</translation>
+        <translation>Ressources allouées</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
@@ -2481,7 +2481,7 @@
     </message>
     <message>
         <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation>Choisit la politique pour le mode promicuité de la carte réseau quand elle est connectée à un réseau interne, un réseau privé hôte ou un pont.</translation>
+        <translation>Choisit la politique pour le mode promiscuité de la carte réseau quand elle est connectée à un réseau interne, un réseau privé hôte ou un pont.</translation>
     </message>
     <message>
         <source>Generic Properties:</source>
@@ -3344,15 +3344,15 @@
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
-        <translation>&amp;Temps processeur alloué :</translation>
+        <translation>&amp;Ressources allouées :</translation>
     </message>
     <message>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</source>
-        <translation>Limite le temps d&apos;exécution alloué aux procésseurs virtuels. Chaque procésseur virtuel pourra utiliser jusqu&apos;à ce pourcentage du temps d&apos;exécution disponible sur un procésseur physique. La limite de temps d&apos;exécution peut être désactivée en y affectant 100%. Si vous affectez une valeur trop basse le temps de réponse subjectif de la machine peut devenir plus lent.</translation>
+        <translation>Limite les ressources allouées aux processeurs virtuels. Chaque processeur virtuel pourra utiliser une partie des ressources disponibles sur un processeur physique. Cette limite peut être désactivée en affectant 100% des ressources disponibles. Si vous affectez une valeur trop basse le temps de réponse de la machine virtuelle peut augmenter.</translation>
     </message>
     <message>
         <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
-        <translation>vous avez affecté une valeur basse au temps procésseur alloué. Le temps de réponse subjectif de la machine peut devenir plus lent.</translation>
+        <translation>vous avez affecté une valeur basse aux ressources allouées.Le temps de réponse de la machine virtuelle peut augmenter.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -3748,11 +3748,11 @@
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un fichier disque virtuel &lt;b&gt;dynamiquement alloué&lt;/b&gt; n&apos;utilisera de l&apos;espace sur votre disque dur physique qu&apos;au fur et à mesure qu&apos;il se remplit, quoiqu&apos;il ne se comprira pas automatiquement quand l&apos;espace y est libéré.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Un fichier disque virtuel &lt;b&gt;dynamiquement alloué&lt;/b&gt; utilisera de l&apos;espace sur votre disque dur physique au fur et à mesure qu&apos;il se remplit. Il ne diminuera pas de taille automatiquement quand de l&apos;espace y est libéré.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un fichier disque virtuel à &lt;b&gt;taille fixe&lt;/b&gt; peut nécéssiter plus de temps à créer sur certains systèmes mais est souvent plus rapide à l&apos;utilisation.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Un fichier disque virtuel à &lt;b&gt;taille fixe&lt;/b&gt; peut nécessiter plus de temps à la création sur certains systèmes mais est souvent plus rapide à l&apos;utilisation.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the virtual disk into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
@@ -3760,7 +3760,7 @@
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
-        <translation>Taille &amp;dynamique</translation>
+        <translation>&amp;Dynamiquement alloué</translation>
     </message>
     <message>
         <source>&amp;Fixed size</source>
@@ -6425,7 +6425,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation>Échec de la mise en place des paramètres globals.VirtualBox.</translation>
+        <translation>Échec de la mise en place des paramètres globaux de VirtualBox.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
@@ -6490,7 +6490,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Êtes-vous sûr de vouloir oublier l&apos;état sauvegardé pour la machine virtuelle &lt;b&gt;%1&lt;/b&gt;&amp;nbsp;?&lt;/p&gt;&lt;p&gt;Ceci revient à redémarrer l&apos;ordinateur virtuel sans que son système d&apos;exploitation ne s&apos;éteigne proprement.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Êtes-vous sûr de vouloir oublier l&apos;état sauvegardé pour la machine virtuelle &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ceci revient à redémarrer l&apos;ordinateur virtuel sans que son système d&apos;exploitation ne s&apos;éteigne proprement.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create a new session.</source>
@@ -8121,7 +8121,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible ! La version &lt;b&gt;%1&lt;/b&gt; est disponible sur &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version en cliquant sur le lien suivant : &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible ! La version &lt;b&gt;%1&lt;/b&gt; est disponible sur &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version en cliquant sur le lien suivant : &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
