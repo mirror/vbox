@@ -9257,7 +9257,7 @@ p, li { white-space: pre-wrap; }
         <translation>변경 사항 유지</translation>
     </message>
     <message>
-        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
         <translation>편집 중인 가상 머신의 상태가 변경되었습니다. 확인 단추를 누르면 실행 중 변경 가능한 설정만 저장되며 모든 다른 설정은 저장되지 않습니다.</translation>
     </message>
     <message>

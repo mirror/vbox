@@ -11076,7 +11076,7 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
         <translation>Mantener cambios</translation>
     </message>
     <message>
-        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
         <translation>El estado de la máquina virtual que está editando ha cambiado. Solo la configuración que era editable en tiempo de ejecución será guardada cuando presione Aceptar. Todos los demás cambios se perderán.</translation>
     </message>
     <message>

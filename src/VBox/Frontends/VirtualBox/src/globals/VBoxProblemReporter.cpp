@@ -748,9 +748,9 @@ void VBoxProblemReporter::warnAboutStateChange(QWidget *pParent)
     setShownStatus("warnAboutStateChange");
 
     message(pParent ? pParent : mainWindowShown(), Warning,
-            tr("The state of the virtual machine you currently edit has changed. "
-               "Only settings which are editable at runtime are saved when you press OK. "
-               "All changes to other settings will be lost."));
+            tr("The virtual machine that you are changing has been started. "
+               "Only certain settings can be changed while a machine is running. "
+               "All other changes will be lost if you close this window now."));
 
     clearShownStatus("warnAboutStateChange");
 }

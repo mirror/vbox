@@ -10662,7 +10662,7 @@ to the system default language.&lt;/qt&gt;
         <translation>Módosítások megtartása</translation>
     </message>
     <message>
-        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
         <translation>A jelenleg szerkesztett virtuális gép állapota megváltozott. Csak a futáskor szerkesztett beállítások lesznek mentve az OK gomb megnyomásakor. Minden egyéb módosítás elveszik.</translation>
     </message>
     <message>
