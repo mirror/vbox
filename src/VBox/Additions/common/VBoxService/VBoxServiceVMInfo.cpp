@@ -318,8 +318,24 @@ static int vboxserviceVMInfoWriteUsers(void)
     endutxent(); /* Close utmpx file. */
 #endif
     Assert(RT_FAILURE(rc) || cUsersInList == 0 || (pszUserList && *pszUserList));
+
+    /* If the user enumeration above failed, reset the user count to 0 except
+     * we didn't have enough memory anymore. In that case we want to preserve
+     * the previous user count in order to not confuse third party tools which
+     * rely on that count. */
     if (RT_FAILURE(rc))
-        cUsersInList = 0;
+    {
+        if (rc == VERR_NO_MEMORY)
+        {
+            static int s_iVMInfoBitchedOOM = 0;
+            if (s_iVMInfoBitchedOOM++ < 3)
+                VBoxServiceVerbose(0, "VMInfo/Users: Warning: Not enough memory available to enumerate users! Keeping old value (%u)\n",
+                                   g_cVMInfoLoggedInUsers);
+            cUsersInList = g_cVMInfoLoggedInUsers;
+        }
+        else
+            cUsersInList = 0;
+    }
 
     VBoxServiceVerbose(4, "VMInfo/Users: cUsersInList: %u, pszUserList: %s, rc=%Rrc\n",
                        cUsersInList, pszUserList ? pszUserList : "<NULL>", rc);
