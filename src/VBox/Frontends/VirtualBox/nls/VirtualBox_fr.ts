@@ -7480,7 +7480,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Conserver changements</translation>
     </message>
     <message>
-        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
         <translation>L&apos;état de la machine virtuelle que vous êtes en train de modifier a changé. Seuls les paramètres modifiables pendant l&apos;exécution seront sauvegardés si vous actionnez le bouton &lt;b&gt;OK&lt;/b&gt;. Les autres modifications seront perdus.</translation>
     </message>
     <message>
