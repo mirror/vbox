@@ -538,7 +538,7 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_NO_MEMORY)
-            VBoxServiceError("VMInfo/Users: Not enough memory to enumerate processes for a session!\n");
+            VBoxServiceVerbose(3, "VMInfo/Users: Not enough memory to enumerate processes for a session!\n");
         else
             VBoxServiceError("VMInfo/Users: Failed to enumerate processes for a session, rc=%Rrc\n", rc);
     }
