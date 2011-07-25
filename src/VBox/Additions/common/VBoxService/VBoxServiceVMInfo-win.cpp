@@ -340,10 +340,23 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
     if (rcNt != STATUS_SUCCESS)
     {
         ULONG ulError = LsaNtStatusToWinError(rcNt);
-        /* Skip session data which is not valid anymore because it may have been
-         * already terminated. */
-        if (ulError != ERROR_NO_SUCH_LOGON_SESSION)
-            VBoxServiceError("VMInfo/Users: LsaGetLogonSessionData failed, LSA error %u\n", ulError);
+        switch (ulError)
+        {
+            case ERROR_NOT_ENOUGH_MEMORY:
+                /* If we don't have enough memory it's hard to judge whether the specified user
+                 * is logged in or not, so just assume he/she's not. */
+                VBoxServiceError("VMInfo/Users: Not enough memory to retrieve logon session data!\n");
+                break;
+
+            case ERROR_NO_SUCH_LOGON_SESSION:
+                /* Skip session data which is not valid anymore because it may have been
+                 * already terminated. */
+                break;
+
+            default:
+                VBoxServiceError("VMInfo/Users: LsaGetLogonSessionData failed with error %ul\n", ulError);
+                break;
+        }
         if (pSessionData)
             LsaFreeReturnBuffer(pSessionData);
         return false;
@@ -496,25 +509,40 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
     NTSTATUS rcNt = LsaEnumerateLogonSessions(&cSession, &paSessions);
     if (rcNt != STATUS_SUCCESS)
     {
-        ULONG rcWin = LsaNtStatusToWinError(rcNt);
-
-        /* If we're about to shutdown when we were in the middle of enumerating the logon
-           sessions, skip the error to not confuse the user with an unnecessary log message. */
-        if (rcWin == ERROR_SHUTDOWN_IN_PROGRESS)
+        ULONG ulError = LsaNtStatusToWinError(rcNt);
+        switch (ulError)
         {
-            VBoxServiceVerbose(3, "VMInfo/Users: Shutdown in progress ...\n");
-            rcWin = ERROR_SUCCESS;
+            case ERROR_NOT_ENOUGH_MEMORY:
+                VBoxServiceError("VMInfo/Users: Not enough memory to enumerate logon sessions!\n");
+                break;
+
+            case ERROR_SHUTDOWN_IN_PROGRESS:
+                /* If we're about to shutdown when we were in the middle of enumerating the logon
+                 * sessions, skip the error to not confuse the user with an unnecessary log message. */
+                VBoxServiceVerbose(3, "VMInfo/Users: Shutdown in progress ...\n");
+                ulError = ERROR_SUCCESS;
+                break;
+
+            default:
+                VBoxServiceError("VMInfo/Users: LsaEnumerate failed with error %ul\n", ulError);
+                break;
         }
-        else
-            VBoxServiceError("VMInfo/Users: LsaEnumerate failed with %lu\n", rcWin);
-        return RTErrConvertFromWin32(rcWin);
+
+        return RTErrConvertFromWin32(ulError);
     }
     VBoxServiceVerbose(3, "VMInfo/Users: Found %ld sessions\n", cSession);
 
     PVBOXSERVICEVMINFOPROC  paProcs;
     DWORD                   cProcs;
     int rc = VBoxServiceVMInfoWinProcessesEnumerate(&paProcs, &cProcs);
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_NO_MEMORY)
+            VBoxServiceError("VMInfo/Users: Not enough memory to enumerate processes for a session!\n");
+        else
+            VBoxServiceError("VMInfo/Users: Failed to enumerate processes for a session, rc=%Rrc\n", rc);
+    }
+    else
     {
         *pcUsersInList = 0;
         for (ULONG i = 0; i < cSession; i++)
