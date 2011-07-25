@@ -81,8 +81,8 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstClipboardX11-2_LIBS     = $(LIB_RUNTIME)
  tstClipboardX11-2_CLEANS   = $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
 
-$$(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run: $$(INSTARGET_tstClipboardX11-2)
-	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11-2) quiet
+$$(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run: $$(tstClipboardX11-2_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstClipboardX11-2_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
  endif # 1of ($(KBUILD_TARGET),freebsd linux netbsd openbsd solaris)
 endif

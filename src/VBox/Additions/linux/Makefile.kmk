@@ -390,11 +390,11 @@ include	$(KBUILD_PATH)/subfooter.kmk
 
 # All the files that go into our archive
 VBOX_LNX_ADD_ARCH_FILES = \
-	$(INSTARGET_lnx_add_inst-noexec) \
-	$(INSTARGET_lnx_add_inst-exec) \
-	$(INSTARGET_lnx_add_inst-license) \
-	$(INSTARGET_LnxAddTest-src) \
-	$(INSTARGET_LnxAddDRM-src) \
+	$(lnx_add_inst-noexec_2_STAGE_TARGET) \
+	$(lnx_add_inst-exec_2_STAGE_TARGET) \
+	$(lnx_add_inst-license_2_STAGE_TARGET) \
+	$(LnxAddTest-src_2_STAGE_TARGET) \
+	$(LnxAddDRM-src_2_STAGE_TARGET) \
 	$(VBOX_LNX_ADD_INST_FILES)
 
 #
@@ -453,7 +453,7 @@ endif
 $(PATH_STAGE_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(VBOX_LNX_ADD_ARCHIVES) \
 		$(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh \
-		$$(INSTARGET_LnxAdd-scripts) \
+		$$(LnxAdd-scripts_2_STAGE_TARGET) \
 		$(VBOX_VERSION_STAMP)
     # Remove any archives left over from previous builds so that they don't
     # end up in our installer as well.

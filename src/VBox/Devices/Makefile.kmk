@@ -182,8 +182,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(PATH_SDK_DXSDK_LIB)/dxguid.lib
  else
   VBoxDD_LIBS           += \
- 	$(INSTARGET_VBoxDDU) \
- 	$(INSTARGET_VBoxDD2)
+ 	$(VBoxDDU_1_STAGE_TARGET) \
+ 	$(VBoxDD2_1_STAGE_TARGET)
  endif
  ifeq ($(KBUILD_TARGET),l4)
   VBoxDD_LIBS           += \
