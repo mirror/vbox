@@ -173,8 +173,8 @@ include	$(KBUILD_PATH)/subfooter.kmk
 #        we've got everything included.
 #
 $(PATH_STAGE_BIN)/additions/VBoxFreeBSDAdditions.tbz: \
-		$$(fbsd_add_inst-nobin_2_STAGE_TARGET) \
-		$$(fbsd_add_inst-bin_2_STAGE_TARGET) \
+		$$(fbsd_add_inst-nobin_2_STAGE_TARGETS) \
+		$$(fbsd_add_inst-bin_2_STAGE_TARGETS) \
 		$(VBOX_FBSD_ADD_INS_FILES) \
 		$(VBOX_FBSD_ADD_INS_MODULES) \
 		$(VBOX_FBSD_ADD_INS_OUT_DIR)/install.sh \
