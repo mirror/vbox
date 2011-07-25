@@ -814,9 +814,6 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                 {
                     if (fSubtreeIncludesCurrent)
                     {
-                        /* zap d->snapshotId because there is no need to
-                         * create a new current state. */
-                        d->snapshotId.clear();
                         if (pCurrState.isNull())
                             throw E_FAIL;
                         machineList.append(pCurrState);
@@ -948,12 +945,16 @@ HRESULT MachineCloneVM::run()
         else if (   d->mode == CloneMode_MachineAndChildStates
                  && !sn.uuid.isEmpty())
         {
-            /* Copy the snapshot data to the current machine. */
-            trgMCF.hardwareMachine = sn.hardware;
-            trgMCF.storageMachine  = sn.storage;
+            if (!d->pOldMachineState.isNull())
+            {
+                /* Copy the snapshot data to the current machine. */
+                trgMCF.hardwareMachine = sn.hardware;
+                trgMCF.storageMachine  = sn.storage;
 
+                /* Current state is under root snapshot. */
+                trgMCF.uuidCurrentSnapshot = sn.uuid;
+            }
             /* The snapshot will be the root one. */
-            trgMCF.uuidCurrentSnapshot = sn.uuid;
             trgMCF.llFirstSnapshot.clear();
             trgMCF.llFirstSnapshot.push_back(sn);
         }
