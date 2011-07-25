@@ -163,18 +163,6 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     rc = VBoxServiceControlExecHandleCmdGetOutput(g_GuestControlSvcClientID, uNumParms);
                     break;
 
-                case HOST_DIR_CLOSE:
-                    rc = VBoxServiceGCtrlDirClose(g_GuestControlSvcClientID, uNumParms);
-                    break;
-
-                case HOST_DIR_OPEN:
-                    rc = VBoxServiceGCtrlDirOpen(g_GuestControlSvcClientID, uNumParms);
-                    break;
-
-                case HOST_DIR_READ:
-                    rc = VBoxServiceGCtrlDirRead(g_GuestControlSvcClientID, uNumParms);
-                    break;
-
                 default:
                     VBoxServiceVerbose(3, "Control: Unsupported message from host! Msg=%u\n", uMsg);
                     /* Don't terminate here; just wait for the next message. */

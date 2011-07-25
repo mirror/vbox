@@ -3386,6 +3386,10 @@ HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPas
          * Prepare tool command line.
          */
 
+        /* We need to get output which is machine-readable in form
+         * of "key=value\0..key=value\0\0". */
+        args.push_back(Bstr("--machinereadable").raw());
+
         /* Only the actual file name to chekc is needed for now. */
         args.push_back(Bstr(Utf8File).raw());
 
@@ -3547,7 +3551,7 @@ HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR a
                             for (;;)
                             {
                                 rc = this->GetProcessOutput(uPID, ProcessOutputFlag_None,
-                                                            30 * 1000 /* Timeout in ms */,
+                                                            10 * 1000 /* Timeout in ms */,
                                                             _64K, ComSafeArrayAsOutParam(aOutputData));
                                 /** @todo Do stream header validation! */
                                 if (   SUCCEEDED(rc)
@@ -3556,9 +3560,10 @@ HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR a
                                     vrc = guestStream.AddData(aOutputData.raw(), aOutputData.size());
                                     if (RT_UNLIKELY(RT_FAILURE(vrc)))
                                         rc = setError(VBOX_E_IPRT_ERROR,
-                                                      tr("Error while adding guest output to stream buffer (%Rrc)"), vrc);
+                                                      tr("Query file size: Error while adding guest output to stream buffer for file \"%s\" (%Rrc)"),
+                                                      Utf8File.c_str(), vrc);
                                 }
-                                else
+                                else /* No more output! */
                                     break;
                             }
 
@@ -3574,25 +3579,27 @@ HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR a
                                         *aSize = iVal;
                                     else
                                         rc = setError(VBOX_E_IPRT_ERROR,
-                                                      tr("Unable to retrieve file size (%Rrc)"), vrc);
+                                                      tr("Query file size: Unable to retrieve file size for file \"%s\" (%Rrc)"),
+                                                      Utf8File.c_str(), vrc);
                                 }
                                 else
                                     rc = setError(VBOX_E_IPRT_ERROR,
-                                                  tr("Error while parsing guest output (%Rrc)"), vrc);
+                                                  tr("Query file size: Error while parsing guest output for file \"%s\" (%Rrc)"),
+                                                  Utf8File.c_str(), vrc);
                             }
                         }
                         else
                             rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("Error querying file size for file \"%s\" (exit code %u)"),
+                                          tr("Query file size: Error querying file size for file \"%s\" (exit code %u)"),
                                           Utf8File.c_str(), uRetExitCode);
                     }
                 }
             }
             else if (fCanceled)
                 rc = setError(VBOX_E_IPRT_ERROR,
-                              tr("Checking for file existence was aborted"));
+                              tr("Query file size: Checking for file size was aborted"));
             else
-                AssertReleaseMsgFailed(("Checking for file existence neither completed nor canceled!?\n"));
+                AssertReleaseMsgFailed(("Checking for file size neither completed nor canceled!?\n"));
         }
     }
     catch (std::bad_alloc &)

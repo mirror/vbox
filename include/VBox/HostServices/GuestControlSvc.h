@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -182,38 +182,13 @@ typedef struct VBoxGuestCtrlCallbackDataExecInStatus
 } CALLBACKDATAEXECINSTATUS;
 typedef CALLBACKDATAEXECINSTATUS *PCALLBACKDATAEXECINSTATUS;
 
-typedef struct VBoxGuestCtrlCallbackDataDirOpen
-{
-    /** Callback data header. */
-    CALLBACKHEADER hdr;
-    /** The native node id. */
-    uint32_t u32Handle;
-} CALLBACKDATADIROPEN;
-typedef CALLBACKDATADIROPEN *PCALLBACKDATADIROPEN;
-
-typedef struct VBoxGuestCtrlCallbackDataDirRead
-{
-    /** Callback data header. */
-    CALLBACKHEADER hdr;
-    /** The native node id. */
-    uint64_t u64NodeId;
-    /** The entry name. */
-    char *pszName;
-    /** Size (in bytes) of entry name. */
-    uint32_t cbName;
-} CALLBACKDATADIRREAD;
-typedef CALLBACKDATADIRREAD *PCALLBACKDATADIRREAD;
-
 enum eVBoxGuestCtrlCallbackDataMagic
 {
     CALLBACKDATAMAGIC_CLIENT_DISCONNECTED = 0x08041984,
 
     CALLBACKDATAMAGIC_EXEC_STATUS = 0x26011982,
     CALLBACKDATAMAGIC_EXEC_OUT = 0x11061949,
-    CALLBACKDATAMAGIC_EXEC_IN_STATUS = 0x19091951,
-
-    CALLBACKDATAMAGIC_DIR_OPEN = 0x05031907,
-    CALLBACKDATAMAGIC_DIR_READ = 0x02041932
+    CALLBACKDATAMAGIC_EXEC_IN_STATUS = 0x19091951
 };
 
 enum eVBoxGuestCtrlCallbackType
@@ -222,10 +197,7 @@ enum eVBoxGuestCtrlCallbackType
 
     VBOXGUESTCTRLCALLBACKTYPE_EXEC_START = 1,
     VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT = 2,
-    VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS = 3,
-
-    VBOXGUESTCTRLCALLBACKTYPE_DIR_OPEN = 100,
-    VBOXGUESTCTRLCALLBACKTYPE_DIR_READ = 105
+    VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS = 3
 };
 
 /**
@@ -255,24 +227,7 @@ enum eHostFn
      * Gets the current status of a running process, e.g.
      * new data on stdout/stderr, process terminated etc.
      */
-    HOST_EXEC_GET_OUTPUT = 102,
-
-    /*
-     * Directory handling.
-     */
-
-    /**
-     * Opens a directory for reading.
-     */
-    HOST_DIR_OPEN = 200,
-    /**
-     * Closes a formerly opened directory.
-     */
-    HOST_DIR_CLOSE = 201,
-    /**
-     * Reads the next entry from an open directory.
-     */
-    HOST_DIR_READ = 202
+    HOST_EXEC_GET_OUTPUT = 102
 };
 
 /**
@@ -313,20 +268,7 @@ enum eGuestFn
     /**
      * Guests sends an input status notification to the host.
      */
-    GUEST_EXEC_SEND_INPUT_STATUS = 102,
-
-    /*
-     * Directory handling.
-     */
-
-    /**
-     * Guest sends back the directory handle.
-     */
-    GUEST_DIR_SEND_OPEN = 200,
-    /**
-     * Guest sends back the next directory entry.
-     */
-    GUEST_DIR_SEND_READ = 202
+    GUEST_EXEC_SEND_INPUT_STATUS = 102
 };
 
 /*
@@ -468,55 +410,6 @@ typedef struct VBoxGuestCtrlHGCMMsgExecStatusIn
     HGCMFunctionParameter written;
 
 } VBoxGuestCtrlHGCMMsgExecStatusIn;
-
-/**
- * Closes a formerly openend guest directory.
- */
-typedef struct VBoxGuestCtrlHGCMMsgDirClose
-{
-    VBoxGuestHGCMCallInfo hdr;
-    /** Context ID. */
-    HGCMFunctionParameter context;
-    /** Directory handle to close. */
-    HGCMFunctionParameter handle;
-
-} VBoxGuestCtrlHGCMMsgDirClose;
-
-/**
- * Opens a guest directory for reading.
- */
-typedef struct VBoxGuestCtrlHGCMMsgDirOpen
-{
-    VBoxGuestHGCMCallInfo hdr;
-    /** Context ID. */
-    HGCMFunctionParameter context;
-    /** Directory (path) to open. */
-    HGCMFunctionParameter directory;
-    /** Filter (DOS style wildcard). */
-    HGCMFunctionParameter filter;
-    /** Open flags. */
-    HGCMFunctionParameter flags;
-    /** The user name to run the executed command under. */
-    HGCMFunctionParameter username;
-    /** The user's password. */
-    HGCMFunctionParameter password;
-    /** OUT: Handle for opened directory. */
-    HGCMFunctionParameter handle;
-
-} VBoxGuestCtrlHGCMMsgDirOpen;
-
-/**
- * Reads next entry of an open guest directory.
- */
-typedef struct VBoxGuestCtrlHGCMMsgDirRead
-{
-    VBoxGuestHGCMCallInfo hdr;
-    /** Context ID. */
-    HGCMFunctionParameter context;
-    /** Directory handle to read from. */
-    HGCMFunctionParameter handle;
-
-} VBoxGuestCtrlHGCMMsgDirRead;
 
 #pragma pack ()
 
