@@ -374,20 +374,27 @@ VOID vboxWddmSwapchainCtxRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pConte
 VOID vboxWddmSwapchainCtxDestroyAll(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext)
 {
     VBOXWDDM_HTABLE_ITERATOR Iter;
-    ExAcquireFastMutex(&pDevExt->ContextMutex);
-    vboxWddmHTableIterInit(&pContext->Swapchains, &Iter);
+    bool fRestart = false;
     do
     {
-        PVBOXWDDM_SWAPCHAIN pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmHTableIterNext(&Iter, NULL);
-        if (!pSwapchain)
-            break;
+        ExAcquireFastMutex(&pDevExt->ContextMutex);
+        vboxWddmHTableIterInit(&pContext->Swapchains, &Iter);
+        do
+        {
+            PVBOXWDDM_SWAPCHAIN pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmHTableIterNext(&Iter, NULL);
+            if (!pSwapchain)
+                break;
 
-        /* yes, we can call remove locked even when using iterator */
-        vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
-//        vboxWddmHTableIterRemoveCur(&Iter);
+            /* yes, we can call remove locked even when using iterator */
+            vboxWddmSwapchainCtxRemoveLocked(pDevExt, pContext, pSwapchain);
+    //        vboxWddmHTableIterRemoveCur(&Iter);
 
-        vboxWddmSwapchainDestroy(pDevExt, pSwapchain);
-    } while (1);
+            ExReleaseFastMutex(&pDevExt->ContextMutex);
+            /* we must not do vboxWddmSwapchainDestroy inside a context mutex */
+            vboxWddmSwapchainDestroy(pDevExt, pSwapchain);
+            fRestart = true;
+        } while (1);
+    } while (fRestart);
     ExReleaseFastMutex(&pDevExt->ContextMutex);
 }
 
