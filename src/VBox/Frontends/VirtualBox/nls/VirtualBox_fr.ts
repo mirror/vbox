@@ -26,7 +26,7 @@
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Martin d&apos;Allens, Jean-Jacques Sarton, Oracle Corporation</translation>
+        <translation>Martin d&apos;Allens, Erkan Valentin, Jean-Jacques Sarton, Oracle Corporation</translation>
     </message>
 </context>
 <context>
