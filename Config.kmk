@@ -132,6 +132,8 @@ else
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
  INST_ADDITIONS_ISO   = $(INST_ADDITIONS)
+ 
+ INST_VBOXNETADP      = $(INST_BIN)
 
  INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
