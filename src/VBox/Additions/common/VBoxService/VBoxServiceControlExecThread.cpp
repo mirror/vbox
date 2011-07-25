@@ -19,7 +19,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/getopt.h>
 #include <iprt/mem.h>
@@ -32,10 +31,12 @@
 #include "VBoxServicePipeBuf.h"
 #include "VBoxServiceControlExecThread.h"
 
-extern RTLISTNODE g_GuestControlExecThreads;
-extern RTCRITSECT g_GuestControlExecThreadsCritSect;
+extern uint32_t g_GuestControlProcsMaxKept;
+extern RTLISTNODE g_GuestControlThreads;
+extern RTCRITSECT g_GuestControlThreadsCritSect;
 
 const PVBOXSERVICECTRLTHREAD vboxServiceControlExecThreadGetByPID(uint32_t uPID);
+int VBoxServiceControlExecThreadShutdown(const PVBOXSERVICECTRLTHREAD pThread);
 
 /**
  *  Allocates and gives back a thread data struct which then can be used by the worker thread.
@@ -153,7 +154,129 @@ int VBoxServiceControlExecThreadAlloc(PVBOXSERVICECTRLTHREAD pThread,
     }
 
     if (RT_FAILURE(rc))
-        VBoxServiceControlExecThreadDestroy(pData);
+        VBoxServiceControlExecThreadDataDestroy(pData);
+    return rc;
+}
+
+
+/**
+ * Applies the policies to all guest execution threads.
+ *
+ * @return  IPRT status code.
+ */
+int VBoxServiceControlExecThreadsApplyPolicies(void)
+{
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        VBoxServiceVerbose(2, "Control: Applying policies ...\n");
+
+        /*
+         * Check if we're respecting our memory policy by checking
+         * how many guest processes are started and served already.
+         */
+        if (g_GuestControlProcsMaxKept) /* If we allow unlimited processes, take a shortcut. */
+        {
+            uint32_t uNumProcs = 0;
+            PVBOXSERVICECTRLTHREAD pNode;
+            RTListForEach(&g_GuestControlThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
+            {
+                if (pNode->enmType == kVBoxServiceCtrlThreadDataExec)
+                    uNumProcs++;
+            }
+
+            /*
+             * Do we serve more guest processes than we should? Kill the oldest n ones (=beginning
+             * at the list).
+             */
+            uint32_t uProcsToKill = 0;
+            if (uNumProcs > g_GuestControlProcsMaxKept)
+                uProcsToKill = uNumProcs - g_GuestControlProcsMaxKept;
+            if (uProcsToKill)
+            {
+                VBoxServiceVerbose(2, "Control: Maximum guest processes set to %u, running %u, killing %u oldest one(s) ...\n",
+                                   g_GuestControlProcsMaxKept, uNumProcs, uProcsToKill);
+
+                RTListForEach(&g_GuestControlThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
+                {
+                    PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICECTRLTHREAD, Node);
+
+                    rc = VBoxServiceControlExecThreadShutdown(pNode);
+                    if (RT_FAILURE(rc))
+                    {
+                        VBoxServiceError("Control: Unable to shut down thread due to policy, rc=%Rrc", rc);
+                        /* Keep going. */
+                    }
+
+                    RTListNodeRemove(&pNode->Node);
+                    RTMemFree(pNode);
+                    pNode = pNext;
+
+                    /* Did we fullfill our rate? Then stop killing innocent guest processes. */
+                    if (--uProcsToKill == 0)
+                        break;
+                }
+            }
+        }
+
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Assigns a valid PID to a guest control thread and also checks if there already was
+ * another (stale) guest process which was using that PID before and destroys it.
+ *
+ * @return  IPRT status code.
+ * @param   pData          Pointer to guest control execution thread data.
+ * @param   uPID           PID to assign to the specified guest control execution thread.
+ */
+int VBoxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREADDATAEXEC pData, uint32_t uPID)
+{
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+    AssertReturn(uPID, VERR_INVALID_PARAMETER);
+
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /* Search an old thread using the desired PID and shut it down completely -- it's
+         * not used anymore. */
+        PVBOXSERVICECTRLTHREAD pOldNode = vboxServiceControlExecThreadGetByPID(uPID);
+        if (   pOldNode
+            && pOldNode->pvData != pData)
+        {
+            PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pOldNode->Node, VBOXSERVICECTRLTHREAD, Node);
+
+            VBoxServiceVerbose(3, "ControlExec: PID %u was used before, shutting down stale exec thread ...\n",
+                               uPID);
+            AssertPtr(pOldNode->pvData);
+            rc = VBoxServiceControlExecThreadShutdown(pOldNode);
+            if (RT_FAILURE(rc))
+            {
+                VBoxServiceVerbose(3, "ControlExec: Unable to shut down stale exec thread, rc=%Rrc\n", rc);
+                /* Keep going. */
+            }
+
+            RTListNodeRemove(&pOldNode->Node);
+            RTMemFree(pOldNode);
+        }
+
+        /* Assign PID to current thread. */
+        pData->uPID = uPID;
+        VBoxServicePipeBufSetPID(&pData->stdIn, pData->uPID);
+        VBoxServicePipeBufSetPID(&pData->stdOut, pData->uPID);
+        VBoxServicePipeBufSetPID(&pData->stdErr, pData->uPID);
+
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
     return rc;
 }
 
@@ -163,11 +286,11 @@ int VBoxServiceControlExecThreadAlloc(PVBOXSERVICECTRLTHREAD pThread,
  *
  * @param   pData          Pointer to thread data to free.
  */
-void VBoxServiceControlExecThreadDestroy(PVBOXSERVICECTRLTHREADDATAEXEC pData)
+void VBoxServiceControlExecThreadDataDestroy(PVBOXSERVICECTRLTHREADDATAEXEC pData)
 {
     if (pData)
     {
-        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Destroying thread ...\n",
+        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Destroying thread data ...\n",
                            pData->uPID);
 
         RTStrFree(pData->pszCmd);
@@ -191,42 +314,6 @@ void VBoxServiceControlExecThreadDestroy(PVBOXSERVICECTRLTHREADDATAEXEC pData)
 }
 
 
-int VBoxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREADDATAEXEC pData, uint32_t uPID)
-{
-    AssertPtrReturn(pData, VERR_INVALID_POINTER);
-    AssertReturn(uPID, VERR_INVALID_PARAMETER);
-
-    int rc = RTCritSectEnter(&g_GuestControlExecThreadsCritSect);
-    if (RT_SUCCESS(rc))
-    {
-        /* Search an old thread using the desired PID and shut it down completely -- it's
-         * not used anymore. */
-        const PVBOXSERVICECTRLTHREAD pOldThread = vboxServiceControlExecThreadGetByPID(uPID);
-        if (   pOldThread
-            && pOldThread->pvData != pData)
-        {
-            VBoxServiceVerbose(3, "ControlExec: PID %u was used before, shutting down stale exec thread ...\n",
-                               uPID);
-            AssertPtr(pOldThread->pvData);
-            VBoxServiceControlExecThreadDestroy((PVBOXSERVICECTRLTHREADDATAEXEC)pOldThread->pvData);
-        }
-        /** @todo Remove node from thread list! */
-
-        /* Assign PID to current thread. */
-        pData->uPID = uPID;
-        VBoxServicePipeBufSetPID(&pData->stdIn, pData->uPID);
-        VBoxServicePipeBufSetPID(&pData->stdOut, pData->uPID);
-        VBoxServicePipeBufSetPID(&pData->stdErr, pData->uPID);
-
-        int rc2 = RTCritSectLeave(&g_GuestControlExecThreadsCritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
-
-    return rc;
-}
-
-
 /**
  * Finds a (formerly) started process given by its PID.
  * Internal function, does not do locking -- this must be done from the caller function!
@@ -237,7 +324,7 @@ int VBoxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREADDATAEXEC pData, 
 const PVBOXSERVICECTRLTHREAD vboxServiceControlExecThreadGetByPID(uint32_t uPID)
 {
     PVBOXSERVICECTRLTHREAD pNode = NULL;
-    RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
+    RTListForEach(&g_GuestControlThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
     {
         if (   pNode->fStarted
             && pNode->enmType == kVBoxServiceCtrlThreadDataExec)
@@ -266,7 +353,7 @@ int VBoxServiceControlExecThreadSetInput(uint32_t uPID, bool fPendingClose, uint
 {
     AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
 
-    int rc = RTCritSectEnter(&g_GuestControlExecThreadsCritSect);
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
     if (RT_SUCCESS(rc))
     {
         PVBOXSERVICECTRLTHREAD pNode = vboxServiceControlExecThreadGetByPID(uPID);
@@ -294,7 +381,7 @@ int VBoxServiceControlExecThreadSetInput(uint32_t uPID, bool fPendingClose, uint
         }
         else
             rc = VERR_NOT_FOUND; /* PID not found! */
-        RTCritSectLeave(&g_GuestControlExecThreadsCritSect);
+        RTCritSectLeave(&g_GuestControlThreadsCritSect);
     }
     return rc;
 }
@@ -317,7 +404,7 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
     AssertPtrReturn(pBuf, VERR_INVALID_POINTER);
     AssertReturn(cbSize, VERR_INVALID_PARAMETER);
 
-    int rc = RTCritSectEnter(&g_GuestControlExecThreadsCritSect);
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
     if (RT_SUCCESS(rc))
     {
         const PVBOXSERVICECTRLTHREAD pNode = vboxServiceControlExecThreadGetByPID(uPID);
@@ -380,71 +467,27 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
         else
             rc = VERR_NOT_FOUND; /* PID not found! */
 
-        int rc2 = RTCritSectLeave(&g_GuestControlExecThreadsCritSect);
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
     return rc;
 }
 
-
-/**
- * Gracefully shuts down all process execution threads.
- *
- */
-void VBoxServiceControlExecThreadsShutdown(void)
+int VBoxServiceControlExecThreadShutdown(const PVBOXSERVICECTRLTHREAD pThread)
 {
-    int rc = RTCritSectEnter(&g_GuestControlExecThreadsCritSect);
-    if (RT_SUCCESS(rc))
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+
+    if (pThread->enmType == kVBoxServiceCtrlThreadDataExec)
     {
-        /* Signal all threads that we want to shutdown. */
-        PVBOXSERVICECTRLTHREAD pNode;
-        RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
-            ASMAtomicXchgBool(&pNode->fShutdown, true);
-
-        /* Wait for threads to shutdown. */
-        RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
-        {
-            if (pNode->Thread != NIL_RTTHREAD)
-            {
-                /* Wait a bit ... */
-                int rc2 = RTThreadWait(pNode->Thread, 30 * 1000 /* Wait 30 seconds max. */, NULL);
-                if (RT_FAILURE(rc2))
-                    VBoxServiceError("Control: Thread failed to stop; rc2=%Rrc\n", rc2);
-            }
-
-            /* Destroy thread specific data. */
-            switch (pNode->enmType)
-            {
-                case kVBoxServiceCtrlThreadDataExec:
-                    VBoxServiceControlExecThreadDestroy((PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData);
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
-        /* Finally destroy thread list. */
-        pNode = RTListGetFirst(&g_GuestControlExecThreads, VBOXSERVICECTRLTHREAD, Node);
-        while (pNode)
-        {
-            PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICECTRLTHREAD, Node);
-            bool fLast = RTListNodeIsLast(&g_GuestControlExecThreads, &pNode->Node);
-
-            RTListNodeRemove(&pNode->Node);
-            RTMemFree(pNode);
-
-            if (fLast)
-                break;
-
-            pNode = pNext;
-        }
-
-        int rc2 = RTCritSectLeave(&g_GuestControlExecThreadsCritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData;
+        if (!pData)
+            return VINF_SUCCESS;
+        VBoxServiceVerbose(2, "Control: [PID %u]: Will not be served anymore\n",
+                           pData->uPID);
+        VBoxServiceControlExecThreadDataDestroy(pData);
     }
-    RTCritSectDelete(&g_GuestControlExecThreadsCritSect);
-}
 
+    VBoxServiceControlThreadSignalShutdown(pThread);
+    return VBoxServiceControlThreadWaitForShutdown(pThread);
+}
