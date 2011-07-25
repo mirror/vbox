@@ -17,7 +17,6 @@
 
 SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
-$(warning soldbg: VBoxNetAdp/Makefile.kmk is being loaded)
 
 if1of ($(KBUILD_TARGET), solaris darwin linux freebsd)
 #
@@ -28,7 +27,6 @@ if1of ($(KBUILD_TARGET), solaris darwin linux freebsd)
 SYSMODS += VBoxNetAdp
 VBoxNetAdp_TEMPLATE         = VBOXR0DRV
 VBoxNetAdp_INST = $(INST_VBOXNETADP)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
-$(warning soldbg: VBoxNetAdp is being built (SYSMODS=$(SYSMODS)) VBoxNetAdp_INST="$(VBoxNetAdp_INST)")
 VBoxNetAdp_NAME.solaris     = vboxnet
 VBoxNetAdp_NAME.linux       = vboxnetadp
 VBoxNetAdp_NAME.freebsd     = vboxnetadp
