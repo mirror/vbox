@@ -84,14 +84,14 @@ struct __wine_debug_channel
 
 #ifndef WINE_NO_DEBUG_MSGS
 # define __WINE_GET_DEBUGGING_WARN(dbch)  ((dbch)->flags & (1 << __WINE_DBCL_WARN))
-# if defined(VBOX_WITH_WDDM) && defined(DEBUG_misha)
+# if 0 && defined(VBOX_WITH_WDDM) && defined(DEBUG_misha)
 #  define __WINE_GET_DEBUGGING_FIXME(dbch) (RT_BREAKPOINT(), ((dbch)->flags & (1 << __WINE_DBCL_FIXME)))
 # else
 #  define __WINE_GET_DEBUGGING_FIXME(dbch) ((dbch)->flags & (1 << __WINE_DBCL_FIXME))
 # endif
 #else
 # define __WINE_GET_DEBUGGING_WARN(dbch)  0
-# if defined(VBOX_WITH_WDDM) && defined(DEBUG_misha)
+# if 0 && defined(VBOX_WITH_WDDM) && defined(DEBUG_misha)
 #  define __WINE_GET_DEBUGGING_FIXME(dbch) (RT_BREAKPOINT(), 0)
 # else
 #  define __WINE_GET_DEBUGGING_FIXME(dbch) 0
