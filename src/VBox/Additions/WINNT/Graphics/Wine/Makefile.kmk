@@ -199,9 +199,7 @@ wined3dwddm_LIBS          += \
 							$(VBOX_LIB_VBGL_R3)
 wined3dwddm_DEFS          += VBOX_WINE_WITH_IPRT
 endif
-ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
 wined3dwddm_DEFS          += VBOX_WINE_WITH_SINGLE_CONTEXT
-endif
 
 DLLS.amd64 += wined3dwddm-x86
 wined3dwddm-x86_EXTENDS    = wined3dwddm
