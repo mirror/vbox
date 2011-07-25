@@ -183,8 +183,6 @@ typedef struct VBOXNETFLTINS
             bool fIsVNICTemplate;
             /** Handle to list of created VNICs. */
             list_t hVNICs;
-            /** Instance number while creating VNICs. */
-            uint64_t uInstance;
             /** The MAC address of the host interface. */
             RTMAC MacAddr;
             /** Handle of this interface (lower MAC). */
