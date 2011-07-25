@@ -35,8 +35,8 @@ tstShflSizes_DEFS     = VBOX_WITH_HGCM
 tstShflSizes_SOURCES  = tstShflSizes.cpp
 tstShflSizes_CLEAN    = $(tstShflSizes_0_OUTDIR)/tstShflSizes.run
 
-$$(tstShflSizes_0_OUTDIR)/tstShflSizes.run: $$(INSTARGET_tstShflSizes)
-	$(INSTARGET_tstShflSizes) quiet
+$$(tstShflSizes_0_OUTDIR)/tstShflSizes.run: $$(tstShflSizes_1_STAGE_TARGET)
+	$(tstShflSizes_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
 

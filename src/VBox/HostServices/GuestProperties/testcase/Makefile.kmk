@@ -34,8 +34,8 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  tstGuestPropSvc_SOURCES  = tstGuestPropSvc.cpp ../service.cpp
  tstGuestPropSvc_LIBS     = $(LIB_RUNTIME)
 
-$$(tstGuestPropSvc_0_OUTDIR)/tstGuestPropSvc.run: $$(INSTARGET_tstGuestPropSvc)
-	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstGuestPropSvc) quiet
+$$(tstGuestPropSvc_0_OUTDIR)/tstGuestPropSvc.run: $$(tstGuestPropSvc_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstGuestPropSvc_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
 endif

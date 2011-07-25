@@ -100,13 +100,13 @@ endif
 
 ifdef VBOX_WITH_RAW_MODE
 # 1&2. Manually dump selected structures and members.
-$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h: $$(INSTARGET_tstDeviceStructSizeRC) | $$(dir $$@)
+$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h: $$(tstDeviceStructSizeRC_1_STAGE_TARGET) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(REDIRECT) -wo $@ -- $^
 endif
 
 # 3. run it.
-$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run: $$(INSTARGET_tstDeviceStructSize) | $$(dir $$@)
+$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run: $$(tstDeviceStructSize_1_STAGE_TARGET) | $$(dir $$@)
 	$(QUIET)$(RM) -f $@
 	$^
 	$(QUIET)$(APPEND) "$@" "done"

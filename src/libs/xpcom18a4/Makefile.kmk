@@ -1353,7 +1353,7 @@ $(PATH_TARGET)/VBox-xpcom-idl-timestamp: $$(addprefix $$(VBOX_PATH_SDK)/bindings
 # HACK ALERT! Make sure main doesn't start using xpidl before we're done
 # with the idl files here. The trick here is that we're using TARGET_xpidl,
 # i.e. the copy residing in obj/, while VBOX_XPIDL is pointing to
-# INSTARGET_xpidl which is the one in bin/.
+# xpidl_1_STAGE_TARGET which is the one in bin/.
 #
 $(VBOX_XPIDL): | $(PATH_TARGET)/VBox-xpcom-idl-timestamp
 

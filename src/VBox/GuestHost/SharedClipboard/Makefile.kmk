@@ -42,12 +42,12 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   tstClipboardX11Smoke_LIBS     = X11 Xt
   tstClipboardX11Smoke_CLEAN    = $(tstClipboardX11Smoke_0_OUTDIR)/tstClipboardX11Smoke.run
 
-$$(tstClipboardX11_0_OUTDIR)/tstClipboardX11.run: $$(INSTARGET_tstClipboardX11)
-	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11) quiet
+$$(tstClipboardX11_0_OUTDIR)/tstClipboardX11.run: $$(tstClipboardX11_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstClipboardX11_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
-$$(tstClipboardX11Smoke_0_OUTDIR)/tstClipboardX11Smoke.run:	$$(INSTARGET_tstClipboardX11)
-	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstClipboardX11Smoke) quiet
+$$(tstClipboardX11Smoke_0_OUTDIR)/tstClipboardX11Smoke.run:	$$(tstClipboardX11_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstClipboardX11Smoke_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
  endif
 endif

@@ -89,8 +89,8 @@ ifdef VBOX_X11_SEAMLESS_GUEST
 
    TESTING  += $(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto
 $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
-        $$(INSTARGET_tstSeamlessX11-auto)
-	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstSeamlessX11-auto) quiet
+        $$(tstSeamlessX11-auto_1_STAGE_TARGET)
+	export VBOX_LOG_DEST=nofile; $(tstSeamlessX11-auto_1_STAGE_TARGET) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
 
    #

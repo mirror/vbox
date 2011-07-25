@@ -300,12 +300,12 @@ include	$(KBUILD_PATH)/subfooter.kmk
 #
 # Run rule for tstInstrEmul.
 #
-$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run: $$(INSTARGET_tstInstrEmul) | $$(dir $$@)
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstInstrEmul.run: $$(tstInstrEmul_1_STAGE_TARGET) | $$(dir $$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(REDIRECT) -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
 		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
 		-- \
-		$(INSTARGET_tstInstrEmul)
+		$(tstInstrEmul_1_STAGE_TARGET)
 	$(QUIET)$(APPEND) "$@" "done"
 
 
@@ -400,12 +400,12 @@ endif
 
 # 4. run it.
 $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructs.run: \
-		$$(INSTARGET_tstAsmStructs) \
-		$(if-expr defined(VBOX_WITH_RAW_MODE),$$(INSTARGET_tstAsmStructsRC),)
+		$$(tstAsmStructs_1_STAGE_TARGET) \
+		$(if-expr defined(VBOX_WITH_RAW_MODE),$$(tstAsmStructsRC_1_STAGE_TARGET),)
 	$(QUIET)$(RM) -f $@
-	$(INSTARGET_tstAsmStructs)
+	$(tstAsmStructs_1_STAGE_TARGET)
 ifdef VBOX_WITH_RAW_MODE
-	$(INSTARGET_tstAsmStructsRC)
+	$(tstAsmStructsRC_1_STAGE_TARGET)
 endif
 	$(QUIET)$(APPEND) "$@" "done"
 
@@ -417,13 +417,13 @@ endif
 
 ifdef VBOX_WITH_RAW_MODE
 # 1. Manually dump selected structures and members.
-$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructRC.h: $$(INSTARGET_tstVMStructRC) | $$(dir $$@)
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructRC.h: $$(tstVMStructRC_1_STAGE_TARGET) | $$(dir $$@)
 	$(call MSG_GENERATE,tstVMStructSize,$@)
 	$(QUIET)$(REDIRECT) -wo $@ -- $<
 endif # VBOX_WITH_RAW_MODE
 
 # 2. run it.
-$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run: $$(INSTARGET_tstVMStructSize) | $$(dir $$@)
+$(VBOX_VMM_TESTCASE_OUT_DIR)/tstVMStructSize.run: $$(tstVMStructSize_1_STAGE_TARGET) | $$(dir $$@)
 	$(QUIET)$(RM) -f $@
 	$<
 	$(QUIET)$(APPEND) "$@" "done"
