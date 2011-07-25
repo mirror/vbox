@@ -3840,7 +3840,7 @@ p, li { white-space: pre-wrap; }
         <translation>라이브 CD/DVD(&amp;L)</translation>
     </message>
     <message>
-        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
+        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
         <translation>선택하면 이 미디어를 SSD로 표시합니다.</translation>
     </message>
     <message>
