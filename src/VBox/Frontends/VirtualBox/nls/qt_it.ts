@@ -29,7 +29,7 @@
     </message>
     <message>
         <source>About %1</source>
-        <translation>Informzioni su %1</translation>
+        <translation>Informazioni su %1</translation>
     </message>
 </context>
 <context>
