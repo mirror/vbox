@@ -3832,7 +3832,7 @@ p, li { white-space: pre-wrap; }
         <translation>가상 플로피 디스크 파일 선택...</translation>
     </message>
     <message>
-        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
+        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
         <translation>선택하면 게스트 운영 체제에서 미디어를 꺼낼 때 마운트를 해제하지 않습니다.</translation>
     </message>
     <message>

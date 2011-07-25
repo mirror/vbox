@@ -3874,7 +3874,7 @@ p, li { white-space: pre-wrap; }
         <translation>Seleccionar un archivo de disquete virtual...</translation>
     </message>
     <message>
-        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
+        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
         <translation>Seleccionado, suprime el desmontaje del medio cuando el SO invitado lo extrae.</translation>
     </message>
     <message>

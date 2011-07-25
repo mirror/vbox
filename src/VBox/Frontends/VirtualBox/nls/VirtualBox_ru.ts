@@ -3947,7 +3947,7 @@ p, li { white-space: pre-wrap; }
         <translation>Выбрать образ гибкого диска...</translation>
     </message>
     <message>
-        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
+        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
         <translation>Если стоит галочка, VirtualBox будет подавлять демонтирование образа в случаях извлечения его со стороны гостевой системы.</translation>
     </message>
     <message>
