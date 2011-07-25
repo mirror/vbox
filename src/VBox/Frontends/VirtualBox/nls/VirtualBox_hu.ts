@@ -4000,7 +4000,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Port érték:</translation>
     </message>
     <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
         <translation>Válaszd ki a Tárolófán jelenleg kiválasztott SATA tárolási vezérlőjének Port értékét. Ez az érték nem lehet kisebb, mint a maximálisan használt portok száma + 1.</translation>
     </message>
 </context>

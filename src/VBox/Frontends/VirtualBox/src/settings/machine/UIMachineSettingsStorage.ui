@@ -224,7 +224,7 @@
         <item row="3" column="2" >
          <widget class="QSpinBox" name="mSbPortCount" >
           <property name="whatsThis" >
-           <string>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can't be less than the maximum used port number + 1.</string>
+           <string>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</string>
           </property>
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
