@@ -4696,7 +4696,7 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Nome:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Tipo de Sistema:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Memória Principal:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
+        <source>&lt;tr&gt;&lt;td&gt;Start-up Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Disco Rígido de Arranque:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
@@ -4704,7 +4704,7 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">O tamanho recomendado para memória principal é de &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">O tamanho recomendado para o disco rígido de arranque é de &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
@@ -4821,15 +4821,15 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation>Disco Rígido Virtual</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">O tamanho recomendado para o disco rígido de arranque é de &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
+        <source>Start-up &amp;Disk</source>
         <translation>Arrancar &amp;Disco Rígido</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Selecciona um disco rígido virtual para ser usado como o disco rígido de arranque da máquina virtual. Pod criar um novo disco rígido ou seleccionar um existente da lista ou premindo o botão correspondente (para invocar a janela de ficheiro aberto).&lt;/p&gt;&lt;p&gt;Se precisar de uma definição de disco rígido mais complicada, pode também saltar este passo e ligar discos rígidos mais tarde usando o diálogo de Definições da MV.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4837,7 +4837,7 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation>Escolha um ficheiro de disco rígido virtual...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>O tamanho recomendado do disco rígido de arranque é &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -4872,7 +4872,7 @@ diálogo de Configurações da MV.&lt;/p&gt;</translation>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation>Arrancar Disco Rígido</translation>
     </message>

@@ -4636,7 +4636,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Anbefalet størrelse på hukommelsen er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Anbefalet størrelse på opstartsharddisken er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
@@ -4688,7 +4688,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Hukommelse</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">Opstartsdisk</translation>
     </message>
@@ -4697,11 +4697,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Annullér</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vælg det harddisk-aftryk, som den virtuelle maskine skal starte op fra. Du kan enten oprette en ny harddisk ved hjælp af knappen &lt;b&gt;Ny&lt;/b&gt; eller vælge et eksisterende harddisk-aftryk fra rullegardinmenuen eller ved at klikke på knappen &lt;b&gt;Eksisterende&lt;/b&gt; (starter Virtuel diskhåndtering).&lt;/p&gt;&lt;p&gt;Har du brug for en mere avanceret harddisk-opsætning, kan du springe dette trin over og montere dine harddiske senere i &lt;i&gt;Indstillinger for VM&lt;/i&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Opstarts&amp;disk (Primær master)</translation>
     </message>
     <message>
@@ -4778,11 +4778,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vælg det harddisk-aftryk, som den virtuelle maskine skal starte op fra. Du kan enten oprette en ny harddisk ved hjælp af knappen &lt;b&gt;Ny&lt;/b&gt; eller vælge et eksisterende harddisk-aftryk fra rullegardinmenuen eller ved at klikke på knappen &lt;b&gt;Eksisterende&lt;/b&gt; (starter Virtuel diskhåndtering).&lt;/p&gt;&lt;p&gt;Har du brug for en mere avanceret harddisk-opsætning, kan du springe dette trin over og montere dine harddiske senere i &lt;i&gt;Indstillinger for VM&lt;/i&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Opstarts&amp;disk (Primær master)</translation>
     </message>
     <message>
@@ -4798,15 +4798,15 @@ p, li { white-space: pre-wrap; }
         <translation>Virtuel harddisk</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Anbefalet størrelse på opstartsharddisken er &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
+        <source>Start-up &amp;Disk</source>
         <translation>Opstarts&amp;disk</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vælg den virtuelle harddisk, som den virtuelle maskine skal starte fra. Du kan enten oprette en ny harddisk, vælge en eksisterende fra rullegardinlisten eller trykke på den tilhørende knap (viser Åbn-fil vinduet).&lt;/p&gt;&lt;p&gt;Har du brug for en mere avanceret harddisk-konfiguration, kan du springe dette trin over og tilslutte harddiske senere via indstillingerne for den virtuelle maskine.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4814,7 +4814,7 @@ p, li { white-space: pre-wrap; }
         <translation>Vælg en virtuel harddisk-fil...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Anbefalet størrelse på opstartsharddisken er &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -4849,7 +4849,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation>Opstartsdisk</translation>
     </message>

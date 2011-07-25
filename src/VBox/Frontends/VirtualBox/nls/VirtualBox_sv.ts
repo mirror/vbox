@@ -5123,7 +5123,7 @@ serial ports</comment>
         <translation type="obsolete">Den rekommenderade storleken på basminnet är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Den rekommenderade storleken på uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
@@ -5143,7 +5143,7 @@ serial ports</comment>
         <translation type="obsolete">&lt;p&gt;Ange ett namn för den nya virtuella maskinen och välj vilken typ av gästoperativsystem som du planerar att installera på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Namnet på den virtuella maskinen brukar ofta indikera dess programvara och maskinvarukonfiguration. Det kommer att användas av alla VirtualBox-komponenter för att identifiera din virtuella maskin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning som ska användas som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt;  (för att anropa Virtuella diskhanteraren).&lt;/p&gt;&lt;p&gt;Om du behöver en mer avancerat hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningsdialogrutan.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5179,7 +5179,7 @@ serial ports</comment>
         <translation type="obsolete">Basminne</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">Uppstartshårddisk</translation>
     </message>
@@ -5188,11 +5188,11 @@ serial ports</comment>
         <translation type="obsolete">Avbryt</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hantera för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Uppstartshård&amp;disk (Primär master)</translation>
     </message>
     <message>
@@ -5269,11 +5269,11 @@ serial ports</comment>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hanterare för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Uppstartshård&amp;disk (Primär master)</translation>
     </message>
     <message>
@@ -5289,15 +5289,15 @@ serial ports</comment>
         <translation>Virtuell hårddisk</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Rekommenderad storlek för uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
+        <source>Start-up &amp;Disk</source>
         <translation>Uppstartshård&amp;disk</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Välj en virtuell hårddisk att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk eller välja en befintlig hårddisk från rullgardinslistan, eller genom att trycka på motsvarade knapp (för att visa filväljarfönstret).&lt;/p&gt;&lt;p&gt;Om du behöver en mer avancerad hårddiskkonfiguration så kan du även hoppa över detta steg och ansluta hårddiskar senare genom inställningsdialogen för den virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5305,7 +5305,7 @@ serial ports</comment>
         <translation>Välj en virtuell hårddiskfil...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Rekommenderad storlek för uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -5340,7 +5340,7 @@ serial ports</comment>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation>Uppstartshårddisk</translation>
     </message>

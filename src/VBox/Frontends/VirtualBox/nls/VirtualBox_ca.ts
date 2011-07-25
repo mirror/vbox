@@ -5305,7 +5305,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Nom:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Tipus de sistema operatiu:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Memòria RAM:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
+        <source>&lt;tr&gt;&lt;td&gt;Start-up Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Disc dur d&apos;arrencada:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
@@ -5313,7 +5313,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation type="obsolete">La mida de memòria base recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">La mida del disc dur d&apos;arrencada recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
@@ -5341,7 +5341,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation type="obsolete">&amp;Fes servir un disc existent</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt; &lt;p&gt;Si us cal una configuració de disc dur més complexa, podeu també saltar-vos aquest pas i connectar discos durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5377,7 +5377,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation type="obsolete">Memòria RAM</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">Arrenca Disc Dur</translation>
     </message>
@@ -5386,11 +5386,11 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation type="obsolete">Cancel·la</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals). Si us cal una configuració de disc dur més complexa, podeu també saltar-vos aquest pas i connectar discos durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">D&amp;isc dur d&apos;arrencada (primari mestre)</translation>
     </message>
     <message>
@@ -5459,11 +5459,11 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt;&lt;p&gt;Si us cal una configuració més complexa, podeu també saltar-vos aquest pas i connectar discos durs més endavant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">D&amp;isc dur d&apos;arrencada (primari mestre)</translation>
     </message>
     <message>
@@ -5479,15 +5479,15 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>Disc dur virtual</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">La mida del disc dur d&apos;arrencada recomanada és &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
+        <source>Start-up &amp;Disk</source>
         <translation>Arrenca el &amp;disc dur</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seleccioneu un disc dur virtual que s&apos;utilitzarà com a disc d&apos;arrencada de la màquina virtual. Podeu crear un disc dur nou o bé seleccionar un d&apos;existent de la llista desplegable o bé prement el botó corresponent (per invocar una finestra per obrir el fitxer).&lt;/p&gt;&lt;p&gt;Si necessiteu una configuració més avançada, podeu ometre aquest pas i adjuntar discos durs més tard des del diàleg de paràmetres de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5495,7 +5495,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation>Selecciona un fitxer de disc dur virtual...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>La mida recomanada del disc dur d&apos;arrencada és &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -5530,7 +5530,7 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation>Arrenca el disc</translation>
     </message>
