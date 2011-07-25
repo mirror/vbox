@@ -106,7 +106,14 @@ for index in range(len(funcs)):
         bufid = (GLuint) *get_values;
         *get_values = (%s) crStateBufferHWIDtoID(bufid);
     }
-    """ % (types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index])
+    else if (GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS==pname)
+    {
+    	if (CR_MAX_TEXTURE_UNITS < (GLuint)*get_values)
+    	{
+    		*get_values = (%s)CR_MAX_TEXTURE_UNITS;
+    	} 
+    }
+    """ % (types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index])
     print '\tcrServerReturnValue( get_values, tablesize );'
     print '\tcrFree(get_values);'
     print '}\n'
