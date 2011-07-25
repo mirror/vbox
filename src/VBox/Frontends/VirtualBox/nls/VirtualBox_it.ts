@@ -4963,7 +4963,7 @@ alla velocità di scrittura del tuo disco rigido.&lt;/p&gt;</translation>
         <translation>Posizione del file del disco virtuale</translation>
     </message>
     <message>
-        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
+        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
         <translation>Premi il pulsante &lt;b&gt;Seleziona&lt;/b&gt; per selezionare la posizione di un file dove archiviare i dati del disco virtuale o digita un nome file nel campo di inserimento.</translation>
     </message>
     <message>

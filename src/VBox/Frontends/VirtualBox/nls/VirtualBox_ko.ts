@@ -4623,7 +4623,7 @@ p, li { white-space: pre-wrap; }
         <translation>가상 디스크 파일 위치</translation>
     </message>
     <message>
-        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
+        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
         <translation>&lt;b&gt;선택&lt;/b&gt; 단추를 눌러서 가상 디스크 데이터를 저장할 경로와 파일 이름을 지정하거나 파일 이름을 직접 입력하십시오.</translation>
     </message>
     <message>

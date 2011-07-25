@@ -4856,7 +4856,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
         <translation>Virtuális lemezfájl helye</translation>
     </message>
     <message>
-        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
+        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
         <translation>Nyomd meg a &lt;b&gt;Választ&lt;/b&gt; gombot a virtuális merevlemez elhelyezkedésének megadásához, vagy gépeld be a fájl nevét a mezőbe.</translation>
     </message>
     <message>
