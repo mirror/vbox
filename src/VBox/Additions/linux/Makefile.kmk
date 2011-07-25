@@ -45,10 +45,10 @@ VBOX_LNX_ADD_INST_KMOD_DIR_MOD    := $(VBOX_LNX_ADD_INST_OUT_DIR)src/vboxguest-$
 VBOX_LNX_ADD_INST_INIT_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)init/
 
 # Installation paths for debug symbols
-VBOX_LNX_ADD_DBG_BIN_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)bin/
-VBOX_LNX_ADD_DBG_SBIN_DIR    := $(VBOX_LNX_ADD_INST_DBG_DIR)sbin/
-VBOX_LNX_ADD_DBG_LIB_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/
-VBOX_LNX_ADD_DBG_MOD_DIR     := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/$(VBOX_LNX_ADD_PACKAGE_NAME)/
+VBOX_LNX_ADD_DBG_BIN_DIR          := $(VBOX_LNX_ADD_INST_DBG_DIR)bin/
+VBOX_LNX_ADD_DBG_SBIN_DIR         := $(VBOX_LNX_ADD_INST_DBG_DIR)sbin/
+VBOX_LNX_ADD_DBG_LIB_DIR          := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/
+VBOX_LNX_ADD_DBG_MOD_DIR          := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/$(VBOX_LNX_ADD_PACKAGE_NAME)/
 
 # Script source directories
 VBOX_PATH_LNX_ADD_INST            := $(PATH_SUB_CURRENT)/installer/
@@ -157,9 +157,8 @@ VBOX_ADD_STRIP_OBJ.linux = \
 	vboxmouse_drv.o \
 	vboxvideo_drv.o
 
-VBOX_ADD_KMOD = \
-	$(addprefix vboxguest-$(VBOX_VERSION_STRING)/,\
-		vboxguest vboxsf vboxvideo Makefile dkms.conf do_dkms)
+VBOX_ADD_KMOD_FILES = $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, Makefile dkms.conf do_dkms)
+VBOX_ADD_KMOD_DIRS =  $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, vboxguest/ vboxsf/ vboxvideo/)
 
 VBOX_ADD_INIT.linux = \
 	vboxadd \
@@ -173,7 +172,8 @@ VBOX_LNX_ADD_STRIP_LIB = $(VBOX_ADD_STRIP_LIB) $(VBOX_ADD_STRIP_LIB.linux)
 VBOX_LNX_ADD_STRIP_MOD = $(VBOX_ADD_STRIP_MOD) $(VBOX_ADD_STRIP_MOD.linux)
 VBOX_LNX_ADD_MOD       = $(VBOX_ADD_MOD) $(VBOX_ADD_MOD.linux)
 VBOX_LNX_ADD_STRIP_OBJ = $(VBOX_ADD_STRIP_OBJ) $(VBOX_ADD_STRIP_OBJ.linux)
-VBOX_LNX_ADD_KMOD      = $(VBOX_ADD_KMOD)
+VBOX_LNX_ADD_KMOD_FILES= $(VBOX_ADD_KMOD_FILES)
+VBOX_LNX_ADD_KMOD_DIRS = $(VBOX_ADD_KMOD_DIRS)
 VBOX_LNX_ADD_INIT      = $(VBOX_ADD_INIT) $(VBOX_ADD_INIT.linux)
 
 #
@@ -187,9 +187,13 @@ VBOX_LNX_ADD_INST_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_FILES)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT))
+
+## @todo figure how to clean these... Or maybe rewrite everything here to somehow use install targets?
+VBOX_LNX_ADD_INST_DIRS := \
+	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS))
 
 VBOX_LNX_ADD_DBG_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_DBG_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)) \
@@ -270,7 +274,7 @@ else # strip to temp file because of umask.
 endif
 
 # pattern rule for copying the VBOX_LNX_ADD_KMOD files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD)): \
+$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS) $(VBOX_LNX_ADD_KMOD_FILES)): \
 		$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD)% : $(PATH_STAGE_BIN)/additions/src/% | $$(dir $$@)
 	$(call MSG_INST_DIR,$<,$@)
 	$(QUIET)$(RM) -Rf $@
@@ -395,7 +399,8 @@ VBOX_LNX_ADD_ARCH_FILES = \
 	$(lnx_add_inst-license_2_STAGE_TARGETS) \
 	$(LnxAddTest-src_2_STAGE_TARGETS) \
 	$(LnxAddDRM-src_2_STAGE_TARGETS) \
-	$(VBOX_LNX_ADD_INST_FILES)
+	$(VBOX_LNX_ADD_INST_FILES) \
+	$(VBOX_LNX_ADD_INST_DIRS)
 
 #
 # .tar.bz2 for converting into .run
