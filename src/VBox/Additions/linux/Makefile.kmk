@@ -280,7 +280,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS) $(VBOX_LNX_A
 		| $$(dir $$(patsubst $$(PERCENT)/,$$(PERCENT),$$@))
 	$(call MSG_INST_DIR,$<,$@)
 	$(QUIET)$(RM) -Rf $@
-	$(QUIET)cp -af $< $@
+	$(QUIET)$(CP) -RPf -- $< $@
 
 # pattern rule for copying the VBOX_LNX_ADD_INIT files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)): \
@@ -289,7 +289,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)): \
 # Remove target directories first, otherwise the behaviour of cp will not be
 # what we want if it already exists. See the cp manual page for more details.
 	$(QUIET)$(RM) -Rf $@
-	$(QUIET)cp -af $< $@
+	$(QUIET)$(CP) -RPf -- $< $@
 
 # pattern rule for copying the VBOX_LNX_ADD_INIT files to the module directory
 $(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT)): \
@@ -298,7 +298,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT)): \
 # Remove target directories first, otherwise the behaviour of cp will not be
 # what we want if it already exists. See the cp manual page for more details.
 	$(QUIET)$(RM) -Rf $@
-	$(QUIET)cp -af $< $@
+	$(QUIET)$(CP) -RPf -- $< $@
 
 
 INSTALLS += GuestDrivers-src
