@@ -944,14 +944,10 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         {
             Log2(("connecting %R[natsock] engaged\n",so));
             STAM_COUNTER_INC(&pData->StatTCPHot);
-#ifndef NAT_CONNECT_EXPERIMENT
-            TCP_ENGAGE_EVENT1(so, writefds);
-#else
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
             WIN_TCP_ENGAGE_EVENT2(so, writefds, connectfds);
-# else
+#else
             TCP_ENGAGE_EVENT1(so, writefds);
-# endif
 #endif
         }
 
@@ -972,7 +968,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         /* @todo: vvl - check which predicat here will be more useful here in rerm of new sbufs. */
         if (   CONN_CANFRCV(so)
             && (SBUF_LEN(&so->so_snd) < (SBUF_SIZE(&so->so_snd)/2))
-#ifdef NAT_CONNECT_EXPERIMENT
+#ifdef RT_OS_WINDOWS
             && !(so->so_state & SS_ISFCONNECTING)
 #endif
         )
@@ -1229,13 +1225,11 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
              */
             &&  !CHECK_FD_SET(so, NetworkEvents, closefds)
 #endif
-#ifdef NAT_CONNECT_EXPERIMENT
-# ifdef RT_OS_WINDOWS
+#ifdef RT_OS_WINDOWS
             /**
              * In some cases FD_CLOSE comes with FD_OOB, that confuse tcp processing.
              */
             && !WIN_CHECK_FD_SET(so, NetworkEvents, closefds)
-# endif
 #endif
         )
         {
@@ -1249,10 +1243,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                  || WIN_CHECK_FD_SET(so, NetworkEvents, acceptds))
         {
 
-#ifdef DEBUG_vvl
-            Assert(((so->so_state & SS_ISFCONNECTING) == 0));
-#endif
-#ifdef NAT_CONNECT_EXPERIMENT
+#ifdef RT_OS_WINDOWS
             if (WIN_CHECK_FD_SET(so, NetworkEvents, connectfds))
             {
                 /* Finish connection first */
@@ -1313,7 +1304,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
          * Check sockets for writing
          */
         if (    CHECK_FD_SET(so, NetworkEvents, writefds)
-#if defined(NAT_CONNECT_EXPERIMENT)
+#ifdef RT_OS_WINDOWS
             ||  WIN_CHECK_FD_SET(so, NetworkEvents, connectfds)
 #endif
             )
