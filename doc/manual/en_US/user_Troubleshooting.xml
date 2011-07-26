@@ -552,7 +552,7 @@
       <title>Poor performance caused by host power management</title>
 
       <para>On some hardware platforms and operating systems, virtualization
-      peformance is negatively affected by host CPU power management. The
+      performance is negatively affected by host CPU power management. The
       symptoms may be choppy audio in the guest or erratic guest clock
       behavior.</para>
 
@@ -760,6 +760,23 @@
 
       <para>To restore the default behavior, remove the key or set its value
           to 1.
+      </para>
+    </sect2>
+
+    <sect2>
+      <title>Windows guests are removed from an Active Directory domain after
+          restoring a snapshot</title>
+
+      <para>If a Windows guest is a member of an Active Directory domain and
+          the snapshot feature of VirtualBox is used, it could happen it loses
+          this status after you restore an older snapshot.
+      </para>
+
+      <para>The reason is the automatic machine password changing performed by
+          Windows in regular intervals for security purposes. You can disable
+          this feature by following the instruction of this <ulink
+          url="http://support.microsoft.com/kb/154501">http://support.microsoft.com/kb/154501</ulink>
+          article from Microsoft.
       </para>
     </sect2>
 
