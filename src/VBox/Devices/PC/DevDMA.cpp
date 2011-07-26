@@ -429,14 +429,22 @@ static DECLCALLBACK(int) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT p
 static DECLCALLBACK(int) dmaReadPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
                                      uint32_t *pu32, unsigned cb)
 {
+    DMAControl  *dc = (DMAControl *)pvUser;
+    int         reg;
+
     if (cb == 1)
     {
-        DMAControl  *dc = (DMAControl *)pvUser;
-        int         reg;
-
         reg   = port & 7;
         *pu32 = dc->au8Page[reg];
-        Log2(("Read %#x to from page register %#x (channel %d)\n",
+        Log2(("Read %#x (byte) from page register %#x (channel %d)\n",
+              *pu32, port, DMAPG2CX(reg)));
+        return VINF_SUCCESS;
+    } 
+    else if (cb == 2) 
+    {
+        reg   = port & 7;
+        *pu32 = dc->au8Page[reg] | (dc->au8Page[(reg + 1) & 7] << 8);
+        Log2(("Read %#x (word) from page register %#x (channel %d)\n",
               *pu32, port, DMAPG2CX(reg)));
         return VINF_SUCCESS;
     }
@@ -447,17 +455,26 @@ static DECLCALLBACK(int) dmaReadPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 static DECLCALLBACK(int) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
                                       uint32_t u32, unsigned cb)
 {
+    DMAControl  *dc = (DMAControl *)pvUser;
+    int         reg;
+
+    Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
     if (cb == 1)
     {
-        DMAControl  *dc = (DMAControl *)pvUser;
-        int         reg;
-
-        Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
         reg = port & 7;
         dc->au8Page[reg]   = u32;
         dc->au8PageHi[reg] = 0;  /* Corresponding high page cleared. */
         Log2(("Wrote %#x to page register %#x (channel %d)\n",
               u32, port, DMAPG2CX(reg)));
+    }
+    else if (cb == 2) 
+    {
+        reg = port & 7;
+        dc->au8Page[reg]   = u32;
+        dc->au8PageHi[reg] = 0;  /* Corresponding high page cleared. */
+        reg = (port + 1) & 7;
+        dc->au8Page[reg]   = u32 >> 8;
+        dc->au8PageHi[reg] = 0;  /* Corresponding high page cleared. */
     }
     else
     {
