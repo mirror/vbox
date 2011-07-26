@@ -399,8 +399,6 @@ VBOX_LNX_ADD_ARCH_FILES = \
 	$(lnx_add_inst-noexec_2_STAGE_TARGETS) \
 	$(lnx_add_inst-exec_2_STAGE_TARGETS) \
 	$(lnx_add_inst-license_2_STAGE_TARGETS) \
-	$(LnxAddTest-src_2_STAGE_TARGETS) \
-	$(LnxAddDRM-src_2_STAGE_TARGETS) \
 	$(VBOX_LNX_ADD_INST_FILES) \
 	$(VBOX_LNX_ADD_INST_DIRS)
 
