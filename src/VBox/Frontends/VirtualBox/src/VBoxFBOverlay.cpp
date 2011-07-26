@@ -3693,26 +3693,6 @@ void VBoxVHWAImage::vboxDoUpdateRect(const QRect * pRect)
 
 void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
 {
-//    VBOXQGLLOG(("format().blueBufferSize()(%d)\n", format().blueBufferSize()));
-//    VBOXQGLLOG(("format().greenBufferSize()(%d)\n", format().greenBufferSize()));
-//    VBOXQGLLOG(("format().redBufferSize()(%d)\n", format().redBufferSize()));
-//#ifdef DEBUG_misha
-//    Assert(format().blueBufferSize() == 8);
-//    Assert(format().greenBufferSize() == 8);
-//    Assert(format().redBufferSize() == 8);
-//#endif
-//
-//    Assert(format().directRendering());
-//    Assert(format().doubleBuffer());
-//    Assert(format().hasOpenGL());
-//    VBOXQGLLOG(("hasOpenGLOverlays(%d), hasOverlay(%d)\n", format().hasOpenGLOverlays(), format().hasOverlay()));
-//    Assert(format().plane() == 0);
-//    Assert(format().rgba());
-//    Assert(!format().sampleBuffers());
-//    Assert(!format().stereo());
-//    VBOXQGLLOG(("swapInterval(%d)\n", format().swapInterval()));
-
-
     VBOXQGL_CHECKERR(
             vboxglActiveTexture(GL_TEXTURE0);
         );
@@ -5133,7 +5113,7 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWA
 
         if (pList)
         {
-            /* assume the caller atimically calls detachCmdList to free the elements obtained now those and reset the state */
+            /* assume the caller atomically calls detachCmdList to free the elements obtained now those and reset the state */
             mbProcessingList = true;
             RTCritSectLeave(&mCritSect);
             return pList;
