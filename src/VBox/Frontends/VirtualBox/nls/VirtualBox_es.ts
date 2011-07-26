@@ -3874,7 +3874,7 @@ p, li { white-space: pre-wrap; }
         <translation>Seleccionar un archivo de disquete virtual...</translation>
     </message>
     <message>
-        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
+        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
         <translation>Seleccionado, suprime el desmontaje del medio cuando el SO invitado lo extrae.</translation>
     </message>
     <message>
@@ -3882,7 +3882,7 @@ p, li { white-space: pre-wrap; }
         <translation>CD/DVD &amp;vivo</translation>
     </message>
     <message>
-        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
+        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
         <translation>Seleccionado, marca el medio como almacenamiento no rotacional (SSD).</translation>
     </message>
     <message>
@@ -3924,7 +3924,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4786,7 +4786,7 @@ dependiendo del tamaño de la imagen y el rendimiento de su disco duro.&lt;/p&gt
         <translation>Localización del archivo del disco virtual</translation>
     </message>
     <message>
-        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
         <translation>Presione el botón &lt;b&gt;Seleccionar&lt;/b&gt; para seleccionar la localización de un archivo para almacenar los datos del disco virtual o escriba una nombre de archivo en el campo de entrada.</translation>
     </message>
     <message>
@@ -5106,7 +5106,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Nombre:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Tipo de OS:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Memoria Base:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <source>&lt;tr&gt;&lt;td&gt;Start-up Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
+        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Iniciar Disco Duro:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
@@ -5114,7 +5114,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="obsolete">El tamaño recomendado de memoria base (RAM) es &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">El tamaño recomendado de disco duro de arranque es &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
@@ -5174,7 +5174,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="obsolete">Memoria base</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">Disco duro de arranque</translation>
     </message>
@@ -5183,11 +5183,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="obsolete">Cancelar</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccione la imagen de disco duro que será usada como disco de arranque. Puede crear un disco duro nuevo presionando en &lt;b&gt;Nuevo&lt;/b&gt; o puede seleccionar un disco duro existente desde la lista desplegable o presionando el botón &lt;b&gt;Existentes&lt;/b&gt; (invoca el Administrador de medios virtuales).&lt;/p&gt;&lt;p&gt;Si necesita una configuración más complicada de discos duros puede saltarse este paso y luego conectar los discos duros desde el diálogo de configuración de la máquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">&amp;Disco duro de arranque (Primario maestro)</translation>
     </message>
     <message>
@@ -5256,11 +5256,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccione la imagen de disco duro que será usada como disco de arranque. Puede crear un disco duro nuevo presionando en &lt;b&gt;Nuevo&lt;/b&gt; o puede seleccionar un disco duro existente desde la lista desplegable o presionando el botón &lt;b&gt;Existentes&lt;/b&gt; (invoca el Administrador de medios virtuales).&lt;/p&gt;&lt;p&gt;Si necesita una configuración más complicada de discos duros puede saltarse este paso y luego conectar los discos duros desde el diálogo de configuración de la máquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">&amp;Disco duro de arranque (Primario maestro)</translation>
     </message>
     <message>
@@ -5276,15 +5276,15 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation>Disco duro virtual</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">El tamaño recomendado de disco duro de arranque es &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk</source>
+        <source>Boot Hard &amp;Disk</source>
         <translation>Disco &amp;duro de arranque</translation>
     </message>
     <message>
-        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seleccione un disco duro virtual a ser usado como disco duro de arranque de la máquina virtual. Puede crear un nuevo disco duro o seleccionar uno existente de la lista desplegable o presionando el botón correspondiente (para invocar la ventana de abrir archivos)&lt;/p&gt;&lt;p&gt;Si necesita una configuración más complicada de disco duro, también puede omitir este paso y conectar un disco duro más tarde usando el diálogo de configuración de la MV.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5292,7 +5292,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation>Seleccionar un archivo de disco duro virtual...</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>El tamaño recomendado del disco duro de arranque es &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -5327,7 +5327,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation>Disco duro de arranque</translation>
     </message>
@@ -11076,7 +11076,7 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
         <translation>Mantener cambios</translation>
     </message>
     <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
         <translation>El estado de la máquina virtual que está editando ha cambiado. Solo la configuración que era editable en tiempo de ejecución será guardada cuando presione Aceptar. Todos los demás cambios se perderán.</translation>
     </message>
     <message>

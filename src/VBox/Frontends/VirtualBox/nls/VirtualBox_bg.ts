@@ -3750,7 +3750,7 @@ p, li { white-space: pre-wrap; }
         <translation>Изберете файл с виртуален флопи диск...</translation>
     </message>
     <message>
-        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
+        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3758,7 +3758,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
+        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3800,7 +3800,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4541,7 +4541,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4762,7 +4762,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Препоръчителният размер на оперативната памет е &lt;b&gt;%1&lt;/b&gt; МБ.</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Препоръчителният размер на зареждащият твърд диск е &lt;b&gt;%1&lt;/b&gt; МБ.</translation>
     </message>
     <message>
@@ -4814,7 +4814,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Оперативна памет</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">Зареждащ твърд диск</translation>
     </message>
@@ -4823,11 +4823,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Отказ</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Изберете изображение на твърд диск, което да бъде използвано като зареждащ твърд диск на виртуалната машина. Можете или да създадете нов твърд диск като използвате бутона &lt;b&gt;Нов&lt;/b&gt;, или да изберете съществуващо изображение на твърд диск от падащият списък или чрез натискане на бутона &lt;b&gt;Съществуващ&lt;/b&gt; (за да извикате диалога Управление на виртуални дискове).&lt;/p&gt;&lt;p&gt;Ако имате нужда от по-комплексна настройка на твърдите дискове, можете да пропуснете тази стъпка и да закачите твърди дискове по-късно от диалога ВМ Настройки.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Зареждащ твърд &amp;диск (Първичен Главен)</translation>
     </message>
     <message>
@@ -4904,11 +4904,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Изберете изображение на твърд диск, което да бъде използвано като зареждащ твърд диск на виртуалната машина. Можете или да създадете нов твърд диск като използвате бутона &lt;b&gt;Нов&lt;/b&gt;, или да изберете съществуващо изображение на твърд диск от падащият списък или чрез натискане на бутона &lt;b&gt;Съществуващ&lt;/b&gt; (за да извикате диалога Управление на виртуални дискове).&lt;/p&gt;&lt;p&gt;Ако имате нужда от по-комплексна настройка на твърдите дискове, можете да пропуснете тази стъпка и да закачите твърди дискове по-късно от диалога ВМ Настройки.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Зареждащ твърд &amp;диск (Първичен Главен)</translation>
     </message>
     <message>
@@ -4924,15 +4924,15 @@ p, li { white-space: pre-wrap; }
         <translation>Виртуален твърд диск</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Препоръчителният размер на зареждащия твърд диск е &lt;b&gt;%1&lt;/b&gt; МБ.</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk</source>
+        <source>Boot Hard &amp;Disk</source>
         <translation>Зареждащ твърд &amp;диск</translation>
     </message>
     <message>
-        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Изберете виртуален твърд диск, който да се използва като зареждащ твърд диск във виртуалната машина. Можете или да създадете нов твърд диск, или да изберете вече съществуващ от падащия списък, с натискане на съответния бутон (за да извикате прозорец за отваряне на файл).&lt;/p&gt;&lt;p&gt;Ако имате нужда от по-сложна настройка на твърдия диск, можете да пропуснете тази стъпка и да закачите твърд диск по-късно, като използвате диалога за нстройки на ВМ.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4940,7 +4940,7 @@ p, li { white-space: pre-wrap; }
         <translation>Изберете файл с виртуален твърд диск...</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Препоръчителният размер на зареждащия твърд диск е &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -4975,7 +4975,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">МБ</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation>Зареждащ твърд диск</translation>
     </message>
@@ -9191,7 +9191,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

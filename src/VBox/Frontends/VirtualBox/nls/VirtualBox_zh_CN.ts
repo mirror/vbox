@@ -4015,7 +4015,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
+        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4023,7 +4023,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
+        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4065,7 +4065,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4906,7 +4906,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5191,7 +5191,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;指定名称:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;系统类型:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;内存大小:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <source>&lt;tr&gt;&lt;td&gt;Start-up Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
+        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;引导盘:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
@@ -5199,7 +5199,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">建议分配的内存大小是 &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">建议分配的虚拟硬盘大小是： &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
@@ -5219,7 +5219,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">&lt;p&gt;为即将新建的虚拟电脑输入一个名称，并指定虚拟电脑上即将安装的操作系统类型.&lt;/p&gt;&lt;p&gt;每个虚拟电脑都要有一个唯一的名称来标识，用来区分该虚拟电脑的硬件配置和上面的系统、软件和数据.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的虚拟硬盘，也可以在下拉列表中选择一个现有的虚拟硬盘，或者单击&lt;b&gt;现有&lt;/b&gt;按钮 (打开虚拟介质管理器).&lt;/p&gt;&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5255,7 +5255,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">内存大小</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">主硬盘</translation>
     </message>
@@ -5264,11 +5264,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">取消</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的虚拟硬盘，也可以在下拉列表中选择一个现有的虚拟硬盘，或者单击&lt;b&gt;现有&lt;/b&gt;按钮 (打开虚拟介质管理器).&lt;/p&gt;&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">启动盘(第一IDE控制器主通道)(&amp;D)</translation>
     </message>
     <message>
@@ -5345,11 +5345,11 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;选择一个虚拟硬盘作为虚拟电脑的主硬盘。你即可以单击&lt;b&gt;新建&lt;/b&gt;按钮建立一个新的虚拟硬盘，也可以在下拉列表中选择一个现有的虚拟硬盘，或者单击&lt;b&gt;现有&lt;/b&gt;按钮 (打开虚拟介质管理器).&lt;/p&gt;&lt;p&gt;如果你需要一个更复杂的硬盘设置，也可以忽略这步，以后再在虚拟电脑设置对话框中指定硬盘.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">启动盘(第一IDE控制器主通道)(&amp;D)</translation>
     </message>
     <message>
@@ -5365,15 +5365,15 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished">虚拟硬盘</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">建议分配的虚拟硬盘大小是： &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk</source>
+        <source>Boot Hard &amp;Disk</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5381,7 +5381,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5416,7 +5416,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation type="unfinished">主硬盘</translation>
     </message>
@@ -11025,7 +11025,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

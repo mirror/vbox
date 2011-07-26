@@ -3115,7 +3115,7 @@
         <translation>Choisissez un fichier de disquette virtuel...</translation>
     </message>
     <message>
-        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
+        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
         <translation>Si cette case est cochée le média ne sera pas déselectionné quand le système d&apos;exploitation invité l&apos;éjecte.</translation>
     </message>
     <message>
@@ -3124,7 +3124,7 @@
         <translation>&amp;Live CD/DVD</translation>
     </message>
     <message>
-        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
+        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
         <translation>Si cette case est cochée l&apos;invité verra le média comme stockage solid-state.</translation>
     </message>
     <message>
@@ -3166,7 +3166,7 @@
         <translation>Nombre de &amp;ports :</translation>
     </message>
     <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
         <translation>Choisit le nombre de ports du contrôleur de stockage SATA actuellement sélectionné dans l&apos;arborescence. Cette valeur doit être strictement supérieur au plus grand numéro de port utilisé.</translation>
     </message>
 </context>
@@ -3783,7 +3783,7 @@
         <translation>Emplacement du fichier de disque virtuel</translation>
     </message>
     <message>
-        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
         <translation>Entrez le chemin du fichier qui contiendra les données du disque dur ou cliquez sur le bouton pour choisir son emplacement.</translation>
     </message>
     <message>
@@ -4046,7 +4046,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translatorcomment>There isn&apos;t any &quot;New&quot; or &quot;Existing&quot; buttons, just two checkboxes labelled &quot;Create new HD&quot; and &quot;Use existing HD&quot;</translatorcomment>
         <translation type="obsolete">&lt;p&gt;Choisissez une image de disque dur à utiliser pour l&apos;amorçage de la machine virtuelle. Vous pouvez soit créer une nouvelle image en cliquant sur &lt;b&gt;Nouveau&lt;/b&gt; soit choisir une image existante dans le Gestionnaire de médias virtuels avec le bouton &lt;b&gt;Existant&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la Configuration de la machine.&lt;/p&gt;</translation>
     </message>
@@ -4063,15 +4063,15 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Disque dur virtuel</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">La taille recommandée pour le disque dur d&apos;amorçage est de &lt;b&gt;%1&lt;/b&gt; Mio.</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk</source>
+        <source>Boot Hard &amp;Disk</source>
         <translation>&amp;Disque dur d&apos;amorçage</translation>
     </message>
     <message>
-        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Choisissez un disque dur virtuel à utiliser pour l&apos;amorçage de la machine virtuelle. Vous pouvez soit créer un nouveau disque, soit choisir un disque existant dans la liste ou en cliquant sur le bouton correspondant.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la Configuration de la machine.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4079,7 +4079,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Choisissez un fichier de disque dur virtuel...</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>La taille recommandée pour le disque dur d&apos;amorçage est de &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -4114,7 +4114,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="obsolete">Mio</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation>Disque dur d&apos;amorçage</translation>
     </message>
@@ -7480,7 +7480,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Conserver changements</translation>
     </message>
     <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
         <translation>L&apos;état de la machine virtuelle que vous êtes en train de modifier a changé. Seuls les paramètres modifiables pendant l&apos;exécution seront sauvegardés si vous actionnez le bouton &lt;b&gt;OK&lt;/b&gt;. Les autres modifications seront perdus.</translation>
     </message>
     <message>

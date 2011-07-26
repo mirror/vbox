@@ -4068,7 +4068,7 @@ p, li { white-space: pre-wrap; }
         <translation>Scegli un file di disco floppy virtuale...</translation>
     </message>
     <message>
-        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
+        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
         <translation>Se marcata, impedisce lo smontaggio del supporto quando il sistema operativo guest lo rimuove.</translation>
     </message>
     <message>
@@ -4076,7 +4076,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Live CD/DVD</translation>
     </message>
     <message>
-        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
+        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
         <translation>Se marcata, segna il supporto come archiviazione senza rotazione (SSD).</translation>
     </message>
     <message>
@@ -4118,7 +4118,7 @@ p, li { white-space: pre-wrap; }
         <translation>Numero &amp;porte:</translation>
     </message>
     <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
         <translation>Seleziona il numero delle porte del controller di archiviazione SATA selezionato nell&apos;albero di archiviazione. Questo valore non può essere minore del numero di porte utilizzato + 1.</translation>
     </message>
 </context>
@@ -4963,7 +4963,7 @@ alla velocità di scrittura del tuo disco rigido.&lt;/p&gt;</translation>
         <translation>Posizione del file del disco virtuale</translation>
     </message>
     <message>
-        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
         <translation>Premi il pulsante &lt;b&gt;Seleziona&lt;/b&gt; per selezionare la posizione di un file dove archiviare i dati del disco virtuale o digita un nome file nel campo di inserimento.</translation>
     </message>
     <message>
@@ -5282,7 +5282,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Nome:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Sistema operativo:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Memoria di base:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <source>&lt;tr&gt;&lt;td&gt;Start-up Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
+        <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;Hard disk di avvio:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
@@ -5290,7 +5290,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation type="obsolete">La dimensione consigliata per la memoria di base è &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">La dimensione consigliata per il disco fisso di avvio è &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
@@ -5342,7 +5342,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation type="obsolete">Memoria di base</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">Disco fisso di avvio</translation>
     </message>
@@ -5351,11 +5351,11 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation type="obsolete">Annulla</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleziona un&apos;immagine di disco fisso da utilizzare come disco fisso di avvio della macchina virtuale. Puoi creare un nuovo disco fisso utilizzando il pulsante &lt;b&gt;Nuovo&lt;/b&gt; o selezionare un&apos;immagine esistente dell&apos;elenco a tendina premendo il pulsante &lt;b&gt;Esistente&lt;/b&gt; (per richiamare la finestra del gestore supporti virtuali).&lt;/p&gt;&lt;p&gt;Se necessiti di una configurazione più complessa dei dischi fissi, puoi anche saltare questa fase e collegare successivamente dischi fissi utilizzando la finestra Impostazioni VM.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">&amp;Disco fisso di avvio (Master primario)</translation>
     </message>
     <message>
@@ -5427,11 +5427,11 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleziona un&apos;immagine di disco fisso da utilizzare come disco di avvio della macchina virtuale. Puoi creare un nuovo disco fisso utilizzando il pulsante &lt;b&gt;Nuovo&lt;/b&gt; o selezionare un&apos;immagine esistente dell&apos;elenco a tendina, premendo il pulsante &lt;b&gt;Esistente&lt;/b&gt; (per richiamare la finestra del gestore supporti virtuali).&lt;/p&gt;&lt;p&gt;Se necessiti di una configurazione avanzata dei dischi fissi, puoi anche saltare questa fase e collegare successivamente dischi fissi utilizzando la finestra Impostazioni MV.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">&amp;Disco fisso di avvio (Master primario)</translation>
     </message>
     <message>
@@ -5447,15 +5447,15 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation>Disco fisso virtuale</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">La dimensione consigliata per il disco fisso di avvio è &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk</source>
+        <source>Boot Hard &amp;Disk</source>
         <translation>&amp;Disco fisso d&apos;avvio</translation>
     </message>
     <message>
-        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Seleziona un disco fisso da utilizzare come disco fisso di avvio della macchina virtuale. Puoi creare un nuovo disco fisso o selezionarne uno esistente dell&apos;elenco a tendina o premendo il pulsante corrispondente (per richiamare la finestra di apertura file).&lt;/p&gt;&lt;p&gt;Se necessiti di una configurazione più complessa dei dischi fissi, puoi anche saltare questa fase e collegare successivamente i dischi fissi utilizzando la finestra Impostazioni della MV.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5463,7 +5463,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation>Scegli un file di disco fisso virtuale...</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>La dimensione consigliata del disco fisso di avvio è &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -5493,7 +5493,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
         <translation>Memoria di base</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation>Disco fisso di avvio</translation>
     </message>
@@ -11196,7 +11196,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation>Mantieni le modifiche</translation>
     </message>
     <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
         <translation>Lo stato della macchina virtuale che hai appena modificato è cambiato. Solo le impostazioni che sono modificabili in esecuzione sono salvate quando premi OK. Tutte le modifiche alle altre impostazioni saranno perse.</translation>
     </message>
     <message>
