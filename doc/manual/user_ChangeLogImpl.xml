@@ -14,6 +14,11 @@
       </listitem>
 
       <listitem>
+        <para>Guest control execution: limited to serve up to 5 guest processes at a time
+          by default</para>
+      </listitem>
+
+      <listitem>
         <para>Main: implemented new API calls <emphasis>IGuest::CopyFromGuest</emphasis>,
         <emphasis>IGuest::FileExists</emphasis> and
         <emphasis>IGuest::FileQuerySize</emphasis>.</para>
