@@ -930,6 +930,7 @@ STDMETHODIMP Progress::WaitForAsyncProgressCompletion(IProgress *pProgressAsync)
     BOOL fCancelable     = FALSE;
     BOOL fCompleted      = FALSE;
     BOOL fCanceled       = FALSE;
+    ULONG prevPercent    = UINT32_MAX;
     ULONG currentPercent = 0;
     ULONG cOp            = 0;
     /* Is the async process cancelable? */
@@ -976,14 +977,19 @@ STDMETHODIMP Progress::WaitForAsyncProgressCompletion(IProgress *pProgressAsync)
                     rc = SetNextOperation(bstr.raw(), currentWeight);
                     if (FAILED(rc)) return rc;
                     ++cOp;
-                }else
+                }
+                else
                     break;
             }
 
             rc = pProgressAsync->COMGETTER(OperationPercent(&currentPercent));
             if (FAILED(rc)) return rc;
-            rc = SetCurrentOperationProgress(currentPercent);
-            if (FAILED(rc)) return rc;
+            if (currentPercent != prevPercent)
+            {
+                prevPercent = currentPercent;
+                rc = SetCurrentOperationProgress(currentPercent);
+                if (FAILED(rc)) return rc;
+            }
         }
         if (fCompleted)
             break;
