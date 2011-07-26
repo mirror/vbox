@@ -37,6 +37,7 @@
 #include <QStylePainter>
 #include <QToolButton>
 #include <QKeyEvent>
+#include <QClipboard>
 
 #ifdef Q_WS_MAC
 # include "UIMachineWindowFullscreen.h"
@@ -163,6 +164,15 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     if (mButton2PB)
         connect (mButton2PB, SIGNAL (clicked()), SLOT (done2()));
 
+    /* If this is an error message add an "Copy to clipboard" button for easier
+     * bug reports. */
+    if (aIcon == QIMessageBox::Critical)
+    {
+        QPushButton *pCopyButton = createButton(Copy);
+        pCopyButton->setToolTip(tr("Copy all errors to the clipboard"));
+        connect(pCopyButton, SIGNAL(clicked()), SLOT(copy()));
+    }
+
     /* this call is a must -- it initializes mFlagCB and mSpacer */
     setDetailsShown (false);
 }
@@ -257,13 +267,14 @@ QPushButton *QIMessageBox::createButton (int aButton)
     QDialogButtonBox::ButtonRole role;
     switch (aButton & ButtonMask)
     {
-        case Ok:        text = tr ("OK"); role = QDialogButtonBox::AcceptRole; break;
-        case Yes:       text = tr ("Yes"); role = QDialogButtonBox::YesRole; break;
-        case No:        text = tr ("No"); role = QDialogButtonBox::NoRole; break;
-        case Cancel:    text = tr ("Cancel"); role = QDialogButtonBox::RejectRole; break;
-        case Ignore:    text = tr ("Ignore"); role = QDialogButtonBox::AcceptRole; break;
+        case Ok:     text = tr("OK");     role = QDialogButtonBox::AcceptRole; break;
+        case Yes:    text = tr("Yes");    role = QDialogButtonBox::YesRole; break;
+        case No:     text = tr("No");     role = QDialogButtonBox::NoRole; break;
+        case Cancel: text = tr("Cancel"); role = QDialogButtonBox::RejectRole; break;
+        case Ignore: text = tr("Ignore"); role = QDialogButtonBox::AcceptRole; break;
+        case Copy:   text = tr("Copy");   role = QDialogButtonBox::ActionRole; break;
         default:
-            AssertMsgFailed (("Type %d is not implemented", aButton));
+            AssertMsgFailed(("Type %d is not implemented", aButton));
             return NULL;
     }
 
@@ -452,5 +463,27 @@ void QIMessageBox::reject()
         QDialog::reject();
         setResult (mButtonEsc & ButtonMask);
     }
+}
+
+void QIMessageBox::copy() const
+{
+    /* Create the error string with all errors. First the html version. */
+    QString strError = "<html><body><p>" + mText + "</p>";
+    for (size_t i = 0; i < mDetailsList.size(); ++i)
+        strError += mDetailsList.at(i).first + mDetailsList.at(i).second + "<br>";
+    strError += "</body></html>";
+    strError.remove(QRegExp("</+qt>"));
+    strError = strError.replace(QRegExp("&nbsp;"), " ");
+    /* Create a new mime data object holding both the html and the plain text version. */
+    QMimeData *pMd = new QMimeData();
+    pMd->setHtml(strError);
+    /* Replace all the html entities. */
+    strError = strError.replace(QRegExp("<br>|</tr>"), "\n");
+    strError = strError.replace(QRegExp("</p>"), "\n\n");
+    strError = strError.remove(QRegExp("<[^>]*>"));
+    pMd->setText(strError);
+    /* Add the mime data to the global clipboard. */
+    QClipboard *pClipboard = QApplication::clipboard();
+    pClipboard->setMimeData(pMd);
 }
 

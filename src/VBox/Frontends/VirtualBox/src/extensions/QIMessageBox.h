@@ -65,7 +65,7 @@ public:
     enum
     {
         NoButton = 0, Ok = 1, Cancel = 2, Yes = 3, No = 4, Abort = 5,
-        Retry = 6, Ignore = 7, YesAll = 8, NoAll = 9,
+        Retry = 6, Ignore = 7, YesAll = 8, NoAll = 9, Copy = 10,
         ButtonMask = 0xFF,
 
         Default = 0x100, Escape = 0x200,
@@ -112,6 +112,8 @@ private slots:
     void done2() { mWasDone = true; done (mButton2 & ButtonMask); }
 
     void reject();
+
+    void copy() const;
 
 private:
 
