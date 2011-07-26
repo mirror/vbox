@@ -54,6 +54,8 @@
 
 #include "VBoxManage.h"
 
+#include <list>
+
 using namespace com;
 
 
@@ -463,7 +465,7 @@ int handleCloneVM(HandlerArg *a)
 int handleStartVM(HandlerArg *a)
 {
     HRESULT rc;
-    const char *VMName = NULL;
+    std::list<const char *> VMs;
     Bstr sessionType = "gui";
 
     static const RTGETOPTDEF s_aStartVMOptions[] =
@@ -507,10 +509,7 @@ int handleStartVM(HandlerArg *a)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                if (!VMName)
-                    VMName = ValueUnion.psz;
-                else
-                    return errorSyntax(USAGE_STARTVM, "Invalid parameter '%s'", ValueUnion.psz);
+                VMs.push_back(ValueUnion.psz);
                 break;
 
             default:
@@ -531,54 +530,73 @@ int handleStartVM(HandlerArg *a)
     }
 
     /* check for required options */
-    if (!VMName)
-        return errorSyntax(USAGE_STARTVM, "VM name required");
+    if (VMs.empty())
+        return errorSyntax(USAGE_STARTVM, "at least one VM name or uuid required");
 
-    ComPtr<IMachine> machine;
-    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName).raw(),
-                                           machine.asOutParam()));
-    if (machine)
+    for (std::list<const char *>::const_iterator it = VMs.begin();
+         it != VMs.end();
+         ++it)
     {
-        Bstr env;
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-        /* make sure the VM process will start on the same display as VBoxManage */
-        Utf8Str str;
-        const char *pszDisplay = RTEnvGet("DISPLAY");
-        if (pszDisplay)
-            str = Utf8StrFmt("DISPLAY=%s\n", pszDisplay);
-        const char *pszXAuth = RTEnvGet("XAUTHORITY");
-        if (pszXAuth)
-            str.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
-        env = str;
-#endif
-        ComPtr<IProgress> progress;
-        CHECK_ERROR_RET(machine, LaunchVMProcess(a->session, sessionType.raw(),
-                                                 env.raw(), progress.asOutParam()), rc);
-        if (!progress.isNull())
+        HRESULT rc2 = rc;
+        const char *pszVM = *it;
+        ComPtr<IMachine> machine;
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(pszVM).raw(),
+                                               machine.asOutParam()));
+        if (machine)
         {
-            RTPrintf("Waiting for the VM to power on...\n");
-            CHECK_ERROR_RET(progress, WaitForCompletion(-1), 1);
-
-            BOOL completed;
-            CHECK_ERROR_RET(progress, COMGETTER(Completed)(&completed), rc);
-            ASSERT(completed);
-
-            LONG iRc;
-            CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-            if (FAILED(iRc))
+            Bstr env;
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+            /* make sure the VM process will start on the same display as VBoxManage */
+            Utf8Str str;
+            const char *pszDisplay = RTEnvGet("DISPLAY");
+            if (pszDisplay)
+                str = Utf8StrFmt("DISPLAY=%s\n", pszDisplay);
+            const char *pszXAuth = RTEnvGet("XAUTHORITY");
+            if (pszXAuth)
+                str.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
+            env = str;
+#endif
+            ComPtr<IProgress> progress;
+            CHECK_ERROR(machine, LaunchVMProcess(a->session, sessionType.raw(),
+                                                 env.raw(), progress.asOutParam()));
+            if (SUCCEEDED(rc) && !progress.isNull())
             {
-                ProgressErrorInfo info(progress);
-                com::GluePrintErrorInfo(info);
-            }
-            else
-            {
-                RTPrintf("VM has been successfully started.\n");
+                RTPrintf("Waiting for VM \"%s\" to power on...\n", pszVM);
+                CHECK_ERROR(progress, WaitForCompletion(-1));
+                if (SUCCEEDED(rc))
+                {
+                    BOOL completed = true;
+                    CHECK_ERROR(progress, COMGETTER(Completed)(&completed));
+                    if (SUCCEEDED(rc))
+                    {
+                        ASSERT(completed);
+
+                        LONG iRc;
+                        CHECK_ERROR(progress, COMGETTER(ResultCode)(&iRc));
+                        if (SUCCEEDED(rc))
+                        {
+                            if (FAILED(iRc))
+                            {
+                                ProgressErrorInfo info(progress);
+                                com::GluePrintErrorInfo(info);
+                            }
+                            else
+                            {
+                                RTPrintf("VM \"%s\" has been successfully started.\n", pszVM);
+                            }
+                        }
+                    }
+                }
             }
         }
-    }
 
-    /* it's important to always close sessions */
-    a->session->UnlockMachine();
+        /* it's important to always close sessions */
+        a->session->UnlockMachine();
+
+        /* make sure that we remember the failed state */
+        if (FAILED(rc2))
+            rc = rc2;
+    }
 
     return SUCCEEDED(rc) ? 0 : 1;
 }
