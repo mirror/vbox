@@ -20,61 +20,59 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 
 if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
-#
-# VBoxNetFlt.sys - The mixed case driver.
-#
-SYSMODS += VBoxNetFlt
-VBoxNetFlt_TEMPLATE = VBOXR0DRV
-VBoxNetFlt_INST = $(INST_VBOXNETFLT)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
-if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
- VBoxNetFlt_NOINST = true
-endif
-VBoxNetFlt_DEFS = IN_RT_R0 IN_SUP_STATIC
-VBoxNetFlt_INCS = .
-VBoxNetFlt_SOURCES.darwin = \
-	darwin/VBoxNetFlt-darwin.cpp
-#VBoxNetFlt_SOURCES.darwin += \
-#	darwin/VBoxNetAdapter-darwin.cpp
-VBoxNetFlt_SDKS.win = WINDDKWLH WINPSDKINCS
-VBoxNetFlt_SOURCES.win = \
-	win/drv/VBoxNetFltP-win.cpp \
-	win/drv/VBoxNetFltM-win.cpp \
-	win/drv/VBoxNetFltRt-win.cpp \
-	win/drv/VBoxNetFlt-win.rc
-# with WINDDKWLH the WIN9X_COMPAT_SPINLOCK is needed to avoid inline declaration of KeInitializeSpinLock
-# otherwise the linker would complain about dumplicate _KeInitializeSpinLock@4 definition
-# in ntoskrnl.lib and our object files
-VBoxNetFlt_DEFS.win += WIN9X_COMPAT_SPINLOCK=1
-VBoxNetFlt_DEFS.win += VBOXNETFLT_STATIC_CONFIG
-VBoxNetFlt_DEFS.win += VBOXNETFLT_NO_PACKET_QUEUE
-VBoxNetFlt_DEFS.win += NDIS_MINIPORT_DRIVER NDIS_WDM=1 BINARY_COMPATIBLE=0
-VBoxNetFlt_DEFS.win += NDIS50_MINIPORT=1 NDIS50=1
-ifdef VBOX_LOOPBACK_USEFLAGS
- VBoxNetFlt_DEFS.win += VBOX_LOOPBACK_USEFLAGS
-endif
-VBoxNetFlt_SOURCES = VBoxNetFlt.c
-#VBoxNetFlt_LDFLAGS.darwin = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
-VBoxNetFlt_LDFLAGS.win.x86 = -Entry:DriverEntry@8
-VBoxNetFlt_LDFLAGS.win.amd64 = -Entry:DriverEntry
-VBoxNetFlt_LIBS.win = \
-	$(PATH_SDK_WINDDKWLH_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_WINDDKWLH_LIB)/hal.lib \
-	$(PATH_SDK_WINDDKWLH_LIB)/ndis.lib \
-	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-VBoxNetFlt_LIBS = \
-	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+ #
+ # VBoxNetFlt.sys - The mixed case driver.
+ #
+ SYSMODS += VBoxNetFlt
+ VBoxNetFlt_TEMPLATE = VBOXR0DRV
+ VBoxNetFlt_INST = $(INST_VBOXNETFLT)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
+ if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
+  VBoxNetFlt_NOINST = true
+ endif
+ VBoxNetFlt_DEFS = IN_RT_R0 IN_SUP_STATIC
+ VBoxNetFlt_INCS = .
+ VBoxNetFlt_SOURCES.darwin = \
+ 	darwin/VBoxNetFlt-darwin.cpp
+ VBoxNetFlt_SDKS.win = WINDDKWLH WINPSDKINCS
+ VBoxNetFlt_SOURCES.win = \
+ 	win/drv/VBoxNetFltP-win.cpp \
+ 	win/drv/VBoxNetFltM-win.cpp \
+ 	win/drv/VBoxNetFltRt-win.cpp \
+ 	win/drv/VBoxNetFlt-win.rc
+ # with WINDDKWLH the WIN9X_COMPAT_SPINLOCK is needed to avoid inline declaration of KeInitializeSpinLock
+ # otherwise the linker would complain about dumplicate _KeInitializeSpinLock@4 definition
+ # in ntoskrnl.lib and our object files
+ VBoxNetFlt_DEFS.win += WIN9X_COMPAT_SPINLOCK=1
+ VBoxNetFlt_DEFS.win += VBOXNETFLT_STATIC_CONFIG
+ VBoxNetFlt_DEFS.win += VBOXNETFLT_NO_PACKET_QUEUE
+ VBoxNetFlt_DEFS.win += NDIS_MINIPORT_DRIVER NDIS_WDM=1 BINARY_COMPATIBLE=0
+ VBoxNetFlt_DEFS.win += NDIS50_MINIPORT=1 NDIS50=1
+ ifdef VBOX_LOOPBACK_USEFLAGS
+  VBoxNetFlt_DEFS.win += VBOX_LOOPBACK_USEFLAGS
+ endif
+ VBoxNetFlt_SOURCES = VBoxNetFlt.c
+ #VBoxNetFlt_LDFLAGS.darwin = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+ VBoxNetFlt_LDFLAGS.win.x86 = -Entry:DriverEntry@8
+ VBoxNetFlt_LDFLAGS.win.amd64 = -Entry:DriverEntry
+ VBoxNetFlt_LIBS.win = \
+ 	$(PATH_SDK_WINDDKWLH_LIB)/ntoskrnl.lib \
+ 	$(PATH_SDK_WINDDKWLH_LIB)/hal.lib \
+ 	$(PATH_SDK_WINDDKWLH_LIB)/ndis.lib \
+ 	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+ VBoxNetFlt_LIBS = \
+ 	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 
-darwin/VBoxNetFlt-darwin.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+ darwin/VBoxNetFlt-darwin.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 
 # Darwin extras.
 ifeq ($(KBUILD_TARGET),darwin)
-INSTALLS += VBoxNetFlt.kext
-VBoxNetFlt.kext_INST     = $(INST_VBOXNETFLT)Contents/
-VBoxNetFlt.kext_SOURCES  = \
-	$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist
-VBoxNetFlt.kext_CLEAN    = \
-	$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist
+ INSTALLS += VBoxNetFlt.kext
+ VBoxNetFlt.kext_INST     = $(INST_VBOXNETFLT)Contents/
+ VBoxNetFlt.kext_SOURCES  = \
+ 	$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist
+ VBoxNetFlt.kext_CLEAN    = \
+ 	$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist
 
 $$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $(VBOX_VERSION_MK) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetFlt,$@,$<)
@@ -90,25 +88,24 @@ $$(VBoxNetFlt.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/darwin/Info.plist $
 		--output $@ \
 		$<
 
-INSTALLS.darwin += Scripts-darwin
-Scripts-darwin_INST = $(INST_DIST)
-Scripts-darwin_SOURCES = \
-	darwin/loadnetflt.sh
+ INSTALLS.darwin += Scripts-darwin
+ Scripts-darwin_INST = $(INST_DIST)
+ Scripts-darwin_EXEC_SOURCES = \
+ 	darwin/loadnetflt.sh
 endif # darwin
 
 
 ifeq ($(KBUILD_TARGET),win)
-#
-# Windows extras.
-#
-INSTALLS.win += VBoxNetFlt-inf
-VBoxNetFlt-inf_INST = $(INST_BIN)
-VBoxNetFlt-inf_MODE = a+r,u+w
-VBoxNetFlt-inf_SOURCES = \
-	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf \
-	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltM.inf
-VBoxNetFlt-inf_CLEAN = $(VBoxNetFlt-inf_SOURCES)
-VBoxNetFlt-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetFltCat.dir
+ #
+ # Windows extras.
+ #
+ INSTALLS.win += VBoxNetFlt-inf
+ VBoxNetFlt-inf_INST = $(INST_BIN)
+ VBoxNetFlt-inf_SOURCES = \
+ 	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf \
+ 	$(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFltM.inf
+ VBoxNetFlt-inf_CLEAN = $(VBoxNetFlt-inf_SOURCES)
+ VBoxNetFlt-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetFltCat.dir
 
 $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.inf: $(PATH_SUB_CURRENT)/win/drv/VBoxNetFlt.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetFlt-inf,$@,$<)
@@ -140,103 +137,103 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
 
  endif # signing
 
-#
-# WinNetConfig - static library with host network interface config API
-#
-LIBRARIES.win += WinNetConfig
-WinNetConfig_TEMPLATE = VBOXR3STATIC
-WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
-WinNetConfig_SDKS     = WINPSDK W2K3DDK
-WinNetConfig_SOURCES  = \
-	win/cfg/VBoxNetCfg.cpp
-WinNetConfig_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
+ #
+ # WinNetConfig - static library with host network interface config API
+ #
+ LIBRARIES.win += WinNetConfig
+ WinNetConfig_TEMPLATE = VBOXR3STATIC
+ WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
+ WinNetConfig_SDKS     = WINPSDK W2K3DDK
+ WinNetConfig_SOURCES  = \
+ 	win/cfg/VBoxNetCfg.cpp
+ WinNetConfig_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
 
-#
-# NetFltInstall
-#
-PROGRAMS.win  += NetFltInstall
-NetFltInstall_TEMPLATE = VBOXR3STATIC
-NetFltInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
-NetFltInstall_SOURCES  = win/tools/VBoxNetFltInstall.cpp
-NetFltInstall_LIBS     = \
-	$(WinNetConfig_1_TARGET) \
-	$(VBoxDrvCfg_1_TARGET) \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
-
-
-#
-# NetFltUninstall
-#
-PROGRAMS.win  += NetFltUninstall
-NetFltUninstall_TEMPLATE = VBOXR3STATIC
-NetFltUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
-NetFltUninstall_SOURCES  = win/tools/VBoxNetFltUninstall.cpp
-NetFltUninstall_LIBS     = \
-	$(WinNetConfig_1_TARGET) \
-	$(VBoxDrvCfg_1_TARGET) \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
-
-#
-# NetAdpInstall
-#
-PROGRAMS.win  += NetAdpInstall
-NetAdpInstall_TEMPLATE = VBOXR3STATIC
-NetAdpInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
-NetAdpInstall_SOURCES  = win/tools/VBoxNetAdpInstall.cpp
-NetAdpInstall_LIBS     = \
-	$(WinNetConfig_1_TARGET) \
-	$(VBoxDrvCfg_1_TARGET) \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+ #
+ # NetFltInstall
+ #
+ PROGRAMS.win  += NetFltInstall
+ NetFltInstall_TEMPLATE = VBOXR3STATIC
+ NetFltInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+ NetFltInstall_SOURCES  = win/tools/VBoxNetFltInstall.cpp
+ NetFltInstall_LIBS     = \
+ 	$(WinNetConfig_1_TARGET) \
+ 	$(VBoxDrvCfg_1_TARGET) \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+ 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
 
-#
-# NetAdpUninstall
-#
-PROGRAMS.win  += NetAdpUninstall
-NetAdpUninstall_TEMPLATE = VBOXR3STATIC
-NetAdpUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
-NetAdpUninstall_SOURCES  = win/tools/VBoxNetAdpUninstall.cpp
-NetAdpUninstall_LIBS     = \
-	$(WinNetConfig_1_TARGET) \
-	$(VBoxDrvCfg_1_TARGET) \
- 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
-	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+ #
+ # NetFltUninstall
+ #
+ PROGRAMS.win  += NetFltUninstall
+ NetFltUninstall_TEMPLATE = VBOXR3STATIC
+ NetFltUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+ NetFltUninstall_SOURCES  = win/tools/VBoxNetFltUninstall.cpp
+ NetFltUninstall_LIBS     = \
+ 	$(WinNetConfig_1_TARGET) \
+ 	$(VBoxDrvCfg_1_TARGET) \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+ 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
-#
-# VBoxNetFltNobj
-#
-DLLS.win += VBoxNetFltNobj
-if defined(VBOX_SIGNING_MODE)
-VBoxNetFltNobj_NOINST = true
-endif
-VBoxNetFltNobj_TEMPLATE   = VBOXR3STATIC
-VBoxNetFltNobj_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
-VBoxNetFltNobj_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
-VBoxNetFltNobj_INCS       = \
-	$(VBoxNetFltNobj_0_OUTDIR)
-VBoxNetFltNobj_SOURCES    = \
-	win/nobj/VBoxNetFltNobj.cpp \
-	win/nobj/VBoxNetFltNobj.def \
-	win/nobj/VBoxNetFltNobj.rc
-VBoxNetFltNobj_LIBS       = \
-	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls$(VBOX_VCC_CRT_TYPE).lib
-#VBoxNetFltNobj_INTERMEDIATES =
-VBoxNetFltNobj_DEPS       = \
-	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
-	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_p.c \
-	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.h \
-	$(VBoxNetFltNobj_0_OUTDIR)/dlldata.c \
-	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.tlb
-VBoxNetFltNobj_CLEAN      = $(VBoxNetFltNobj_DEPS)
+ #
+ # NetAdpInstall
+ #
+ PROGRAMS.win  += NetAdpInstall
+ NetAdpInstall_TEMPLATE = VBOXR3STATIC
+ NetAdpInstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+ NetAdpInstall_SOURCES  = win/tools/VBoxNetAdpInstall.cpp
+ NetAdpInstall_LIBS     = \
+ 	$(WinNetConfig_1_TARGET) \
+ 	$(VBoxDrvCfg_1_TARGET) \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+ 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
-VBOXNETFLT_NOBJ_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
-	$(PATH_SDK_WINPSDK_BIN)/Midl.Exe\
-	$(PATH_SDK_WINPSDK)/Bin/Midl.Exe\
-	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
-	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
+
+ #
+ # NetAdpUninstall
+ #
+ PROGRAMS.win  += NetAdpUninstall
+ NetAdpUninstall_TEMPLATE = VBOXR3STATIC
+ NetAdpUninstall_SDKS     = WINPSDK W2K3DDK VBOX_NTDLL
+ NetAdpUninstall_SOURCES  = win/tools/VBoxNetAdpUninstall.cpp
+ NetAdpUninstall_LIBS     = \
+ 	$(WinNetConfig_1_TARGET) \
+ 	$(VBoxDrvCfg_1_TARGET) \
+  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
+ 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
+
+ #
+ # VBoxNetFltNobj
+ #
+ DLLS.win += VBoxNetFltNobj
+ VBoxNetFltNobj_TEMPLATE   = VBOXR3STATIC
+ if defined(VBOX_SIGNING_MODE)
+  VBoxNetFltNobj_NOINST    = true
+ endif
+ VBoxNetFltNobj_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
+ VBoxNetFltNobj_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
+ VBoxNetFltNobj_INCS       = \
+ 	$(VBoxNetFltNobj_0_OUTDIR)
+ VBoxNetFltNobj_SOURCES    = \
+ 	win/nobj/VBoxNetFltNobj.cpp \
+ 	win/nobj/VBoxNetFltNobj.def \
+ 	win/nobj/VBoxNetFltNobj.rc
+ VBoxNetFltNobj_LIBS       = \
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_LIB)/atls$(VBOX_VCC_CRT_TYPE).lib
+ #VBoxNetFltNobj_INTERMEDIATES =
+ VBoxNetFltNobj_DEPS       = \
+ 	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
+ 	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_p.c \
+ 	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.h \
+ 	$(VBoxNetFltNobj_0_OUTDIR)/dlldata.c \
+ 	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT.tlb
+ VBoxNetFltNobj_CLEAN      = $(VBoxNetFltNobj_DEPS)
+
+ VBOXNETFLT_NOBJ_IDL      ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard \
+ 	$(PATH_SDK_WINPSDK_BIN)/Midl.Exe\
+ 	$(PATH_SDK_WINPSDK)/Bin/Midl.Exe\
+ 	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
+ 	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 
 $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
 + $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_p.c \
@@ -251,45 +248,45 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
 		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_W2K3DDK_INCS))) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 
-#
-# VBoxNetAdp.sys - The VirtualBox Adapter miniport driver.
-#
-SYSMODS.win += VBoxNetAdp
-VBoxNetAdp_TEMPLATE = VBOXR0DRV
-#VBoxNetAdp_INST = $(INST_VBOXNETADP)
+ #
+ # VBoxNetAdp.sys - The VirtualBox Adapter miniport driver.
+ #
+ SYSMODS.win += VBoxNetAdp
+ VBoxNetAdp_TEMPLATE = VBOXR0DRV
+ #VBoxNetAdp_INST = $(INST_VBOXNETADP)
  if defined(VBOX_SIGNING_MODE)
-VBoxNetAdp_NOINST = true
+  VBoxNetAdp_NOINST = true
  endif
-VBoxNetAdp_DEFS = IN_RT_R0 IN_SUP_STATIC
-VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)
-VBoxNetAdp_SDKS = WINDDKWLH WINPSDKINCS
-VBoxNetAdp_SOURCES = \
-	VBoxNetFlt.c \
-	win/drv/VBoxNetFltM-win.cpp \
-	win/drv/VBoxNetFltRt-win.cpp \
-	win/drv/VBoxNetFlt-win.rc
-VBoxNetAdp_DEFS += VBOXNETFLT_STATIC_CONFIG VBOXNETADP
-VBoxNetAdp_DEFS.win += VBOXNETFLT_NO_PACKET_QUEUE
-VBoxNetAdp_DEFS += NDIS_MINIPORT_DRIVER NDIS_WDM=1 BINARY_COMPATIBLE=0
-VBoxNetAdp_DEFS += NDIS50_MINIPORT=1 NDIS50=1
-VBoxNetAdp_LDFLAGS.win.x86 = -Entry:DriverEntry@8
-VBoxNetAdp_LDFLAGS.win.amd64 = -Entry:DriverEntry
-VBoxNetAdp_LIBS.win = \
-	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/ndis.lib \
-	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-VBoxNetAdp_LIBS = \
-	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+ VBoxNetAdp_DEFS = IN_RT_R0 IN_SUP_STATIC
+ VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)
+ VBoxNetAdp_SDKS = WINDDKWLH WINPSDKINCS
+ VBoxNetAdp_SOURCES = \
+ 	VBoxNetFlt.c \
+ 	win/drv/VBoxNetFltM-win.cpp \
+ 	win/drv/VBoxNetFltRt-win.cpp \
+ 	win/drv/VBoxNetFlt-win.rc
+ VBoxNetAdp_DEFS += VBOXNETFLT_STATIC_CONFIG VBOXNETADP
+ VBoxNetAdp_DEFS.win += VBOXNETFLT_NO_PACKET_QUEUE
+ VBoxNetAdp_DEFS += NDIS_MINIPORT_DRIVER NDIS_WDM=1 BINARY_COMPATIBLE=0
+ VBoxNetAdp_DEFS += NDIS50_MINIPORT=1 NDIS50=1
+ VBoxNetAdp_LDFLAGS.win.x86 = -Entry:DriverEntry@8
+ VBoxNetAdp_LDFLAGS.win.amd64 = -Entry:DriverEntry
+ VBoxNetAdp_LIBS.win = \
+ 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
+ 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+ 	$(PATH_SDK_W2K3DDK_LIB)/ndis.lib \
+ 	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+ VBoxNetAdp_LIBS = \
+ 	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 
 
-INSTALLS.win += VBoxNetAdp-inf
-VBoxNetAdp-inf_INST = $(INST_BIN)
-VBoxNetAdp-inf_MODE = a+r,u+w
-VBoxNetAdp-inf_SOURCES = \
-	$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf
-VBoxNetAdp-inf_CLEAN = $(VBoxNetAdp-inf_SOURCES)
-VBoxNetAdp-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetAdpCat.dir
+ INSTALLS.win += VBoxNetAdp-inf
+ VBoxNetAdp-inf_INST = $(INST_BIN)
+ VBoxNetAdp-inf_MODE = a+r,u+w
+ VBoxNetAdp-inf_SOURCES = \
+ 	$(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf
+ VBoxNetAdp-inf_CLEAN = $(VBoxNetAdp-inf_SOURCES)
+ VBoxNetAdp-inf_BLDDIRS = $(PATH_TARGET)/VBoxNetAdpCat.dir
 
 $(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.inf: $(PATH_SUB_CURRENT)/win/drv/VBoxNetAdp.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxNetAdp-inf,$@,$<)
@@ -319,41 +316,41 @@ else if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo merge this with th
 # Note! On Solaris the name has to be <= 8 chars long.
 #
  ifdef VBOX_WITH_VBOXDRV
-SYSMODS += vboxnetflt
-vboxnetflt_TEMPLATE      = VBOXR0DRV
-vboxnetflt_NAME.solaris  = vboxflt
-vboxnetflt_DEFS.linux    = KBUILD_MODNAME=KBUILD_STR\(vboxnetflt\) KBUILD_BASENAME=KBUILD_STR\(vboxnetflt\) MODULE
-vboxnetflt_DEFS          = IN_RT_R0
-vboxnetflt_DEPS.solaris += $(VBOX_SVN_REV_KMK)
-vboxnetflt_NOINST.linux  = true
-vboxnetflt_INCS.linux   := \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
-vboxnetflt_INCS         := \
-	$(PATH_SUB_CURRENT)
-vboxnetflt_LDFLAGS.solaris += -N drv/vboxdrv -N misc/ctf
-vboxnetflt_LIBS = \
-	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
-## @todo vboxflt should resolves all the IPRT bits from vboxdrv.
-#vboxnetflt_LIBS += \
-#	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-vboxnetflt_SOURCES.linux = linux/VBoxNetFlt-linux.c
-vboxnetflt_SOURCES.solaris = solaris/VBoxNetFlt-solaris.c
-vboxnetflt_SOURCES.freebsd = freebsd/VBoxNetFlt-freebsd.c
-vboxnetflt_SOURCES = VBoxNetFlt.c
-solaris/VBoxNetFlt-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+  SYSMODS += vboxnetflt
+  vboxnetflt_TEMPLATE      = VBOXR0DRV
+  vboxnetflt_NAME.solaris  = vboxflt
+  vboxnetflt_DEFS.linux    = KBUILD_MODNAME=KBUILD_STR\(vboxnetflt\) KBUILD_BASENAME=KBUILD_STR\(vboxnetflt\) MODULE
+  vboxnetflt_DEFS          = IN_RT_R0
+  vboxnetflt_DEPS.solaris += $(VBOX_SVN_REV_KMK)
+  vboxnetflt_NOINST.linux  = true
+  vboxnetflt_INCS.linux   := \
+  	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
+  vboxnetflt_INCS         := \
+  	$(PATH_SUB_CURRENT)
+  vboxnetflt_LDFLAGS.solaris += -N drv/vboxdrv -N misc/ctf
+  vboxnetflt_LIBS = \
+  	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+  ## @todo vboxflt should resolves all the IPRT bits from vboxdrv.
+  #vboxnetflt_LIBS += \
+  #	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+  vboxnetflt_SOURCES.linux = linux/VBoxNetFlt-linux.c
+  vboxnetflt_SOURCES.solaris = solaris/VBoxNetFlt-solaris.c
+  vboxnetflt_SOURCES.freebsd = freebsd/VBoxNetFlt-freebsd.c
+  vboxnetflt_SOURCES = VBoxNetFlt.c
+  solaris/VBoxNetFlt-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+
   ifdef VBOX_WITH_NETFLT_CROSSBOW
-SYSMODS += vboxnetbow
-vboxnetbow_TEMPLATE      = VBOXR0DRV
-vboxnetbow_NAME          = vboxbow
-vboxnetbow_DEFS          = vboxnetflt_DEFS VBOX_WITH_NETFLT_CROSSBOW
-vboxnetbow_DEPS         += $(VBOX_SVN_REV_KMK)
-vboxnetbow_INCS         := $(PATH_SUB_CURRENT)
-vboxnetbow_LDFLAGS      += -N drv/vboxdrv -N drv/vnic -N misc/mac -N misc/dls
-vboxnetbow_LIBS = \
-	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
-vboxnetbow_SOURCES.solaris = solaris/VBoxNetFltBow-solaris.c
-vboxnetbow_SOURCES         = VBoxNetFlt.c
-solaris/VBoxNetFltBow-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+   SYSMODS += vboxnetbow
+   vboxnetbow_TEMPLATE      = VBOXR0DRV
+   vboxnetbow_NAME          = vboxbow
+   vboxnetbow_DEFS          = vboxnetflt_DEFS VBOX_WITH_NETFLT_CROSSBOW
+   vboxnetbow_INCS         := $(PATH_SUB_CURRENT)
+   vboxnetbow_LDFLAGS      += -N drv/vboxdrv -N drv/vnic -N misc/mac -N misc/dls
+   vboxnetbow_LIBS = \
+   	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+   vboxnetbow_SOURCES.solaris = solaris/VBoxNetFltBow-solaris.c
+   vboxnetbow_SOURCES         = VBoxNetFlt.c
+   solaris/VBoxNetFltBow-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
   endif  # VBOX_WITH_NETFLT_CROSSBOW
  endif # VBOX_WITH_VBOXDRV
 endif # to be removed.
@@ -367,27 +364,25 @@ ifeq ($(KBUILD_TARGET),linux)
  include $(PATH_SUB_CURRENT)/linux/files_vboxnetflt
  INSTALLS += VBoxNetFlt-src VBoxNetFlt-sh
  VBoxNetFlt-src_INST    = bin/src/vboxnetflt/
- VBoxNetFlt-src_MODE    = a+r,u+w
- VBoxNetFlt-src_SOURCES = $(subst ",,$(VBOX_VBOXNETFLT_SOURCES)) #"
- VBoxNetFlt-src_SOURCES+= \
+ VBoxNetFlt-src_SOURCES = \
+	$(subst $(DQUOTE),,$(VBOX_VBOXNETFLT_SOURCES)) \
 	$(VBoxNetFlt-src_0_OUTDIR)/Makefile
- VBoxNetFlt-src_CLEAN   = \
-	$(VBoxNetFlt-src_0_OUTDIR)/Makefile	\
-	$(PATH_TARGET)/VBoxNetFlt-src-1.dep
-
- VBoxNetFlt-sh_INST    = bin/src/vboxnetflt/
- VBoxNetFlt-sh_MODE    = a+rx,u+w
- VBoxNetFlt-sh_SOURCES = \
-	$(VBoxNetFlt-sh_0_OUTDIR)/build_in_tmp \
+ VBoxNetFlt-src_EXEC_SOURCES = \
+	$(VBoxNetFlt-src_0_OUTDIR)/build_in_tmp \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
- VBoxNetFlt-sh_CLEAN   = $(VBoxNetFlt-sh_0_OUTDIR)/build_in_tmp
+ VBoxNetFlt-src_CLEAN   = \
+	$(VBoxNetFlt-src_0_OUTDIR)/Makefile \
+	$(PATH_TARGET)/VBoxNetFlt-src-1.dep \
+ 	$(VBoxNetFlt-src_0_OUTDIR)/build_in_tmp
 
+ # Scripts needed for building the kernel module.
 
  includedep $(PATH_TARGET)/VBoxNetFlt-src-1.dep
  $$(VBoxNetFlt-src_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/linux/Makefile \
 		$$(if $$(eq $$(VBoxNetFlt/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)
+	$(QUIET)$(RM) -f -- $@
  ifndef VBOX_WITH_HARDENING
 	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
  else
@@ -396,21 +391,21 @@ ifeq ($(KBUILD_TARGET),linux)
 	%$(QUIET2)$(RM) -f -- $(PATH_TARGET)/VBoxNetFlt-src-1.dep
 	%$(QUIET2)$(APPEND) '$(PATH_TARGET)/VBoxNetFlt-src-1.dep' 'VBoxNetFlt/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 
- # Script needed for building the kernel module
- $$(VBoxNetFlt-sh_0_OUTDIR)/build_in_tmp: \
+ $$(VBoxNetFlt-src_0_OUTDIR)/build_in_tmp: \
 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxnetflt;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
-	$(QUIET)chmod 0755 $@
+	$(QUIET)$(CHMOD) 0755 $@
 
 endif # linux
 
 # Gross hack for FreeBSD 7, should figure this out properly
 ## @todo Properly generate opt_netgraph.h
 ifeq ($(KBUILD_TARGET),freebsd)
-vboxnetflt_DEPS.freebsd += $(PATH_OUT)/opt_netgraph.h
+ vboxnetflt_DEPS.freebsd += $(PATH_OUT)/opt_netgraph.h
 $(PATH_OUT)/opt_netgraph.h:
 	echo > $(PATH_OUT)/opt_netgraph.h
 
@@ -421,17 +416,17 @@ $(PATH_OUT)/opt_netgraph.h:
  include $(PATH_SUB_CURRENT)/freebsd/files_vboxnetflt
  INSTALLS += VBoxNetFlt-src
  VBoxNetFlt-src_INST    = bin/src/vboxnetflt/
- VBoxNetFlt-src_MODE    = a+r,u+w
- VBoxNetFlt-src_SOURCES = $(subst ",,$(VBOX_VBOXNETFLT_SOURCES)) #"
- VBoxNetFlt-src_SOURCES+= \
-	$(VBoxNetFlt-src_0_OUTDIR)/Makefile
+ VBoxNetFlt-src_SOURCES = \
+	$(subst $(DQUOTE),,$(VBOX_VBOXNETFLT_SOURCES)) \
+ 	$(VBoxNetFlt-src_0_OUTDIR)/Makefile
  VBoxNetFlt-src_CLEAN   = \
-	$(VBoxNetFlt-src_0_OUTDIR)/Makefile	\
+ 	$(VBoxNetFlt-src_0_OUTDIR)/Makefile	\
 
  $$(VBoxNetFlt-src_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/freebsd/Makefile \
 		$$(if $$(eq $$(VBoxNetFlt/freebsd/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)
+	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(CP) -f $< $@
  ifndef VBOX_WITH_HARDENING
 	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@.tmp $@

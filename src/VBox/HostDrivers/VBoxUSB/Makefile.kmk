@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -49,18 +49,18 @@ USBLib_SOURCES.solaris = \
 USBLib_SOURCES.win = \
 	win/lib/VBoxUsbLib-win.cpp
 
-#
-# USBFilter testcase.
-#
 ifdef VBOX_WITH_TESTCASES
-PROGRAMS += tstUSBFilter
-tstUSBFilter_TEMPLATE = VBOXR3TSTEXE
-tstUSBFilter_DEFS = IN_USBLIB
-tstUSBFilter_SOURCES  = \
-	testcase/tstUSBFilter.cpp
-tstUSBFilter_LIBS  = \
-        $(USBLib_1_TARGET)
-endif
+ #
+ # USBFilter testcase.
+ #
+ PROGRAMS += tstUSBFilter
+ tstUSBFilter_TEMPLATE = VBOXR3TSTEXE
+ tstUSBFilter_DEFS = IN_USBLIB
+ tstUSBFilter_SOURCES  = \
+ 	testcase/tstUSBFilter.cpp
+ tstUSBFilter_LIBS  = \
+ 	$(USBLib_1_TARGET)
+endif # VBOX_WITH_TESTCASES
 
 
 # generate rules
