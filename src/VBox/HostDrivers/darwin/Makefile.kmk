@@ -19,9 +19,9 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 INSTALLS += HostDrivers-darwin-sh
-HostDrivers-darwin-sh_INST    = $(INST_DIST)
-HostDrivers-darwin-sh_MODE    = a+rx,u+w
-HostDrivers-darwin-sh_SOURCES = \
+HostDrivers-darwin-sh_INST = $(INST_DIST)
+HostDrivers-darwin-sh_INSTTYPE = stage
+HostDrivers-darwin-sh_EXEC_SOURCES = \
 	loadall.sh
 
 include $(KBUILD_PATH)/subfooter.kmk

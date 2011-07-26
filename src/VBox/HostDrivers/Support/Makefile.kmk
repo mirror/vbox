@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -50,8 +50,8 @@ if  !defined(VBOX_ONLY_DOCS) \
   SYSMODS.os2     += VBoxDrv
   SYSMODS.solaris += vboxdrv
  endif
- INSTALLS.linux   += vboxdrv-mod vboxdrv-sh vboxdrv-dkms
- INSTALLS.freebsd += vboxdrv-mod vboxdrv-sh
+ INSTALLS.linux   += vboxdrv-mod
+ INSTALLS.freebsd += vboxdrv-mod
 
  #
  # Include sub-makefile(s).
@@ -184,7 +184,7 @@ ifdef VBOX_WITHOUT_NATIVE_R0_LOADER
  VBoxDrv_DEFS        += VBOX_WITHOUT_NATIVE_R0_LOADER
 endif
 ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-VBoxDrv_DEFS         += VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+ VBoxDrv_DEFS        += VBOX_WITH_VMMR0_DISABLE_PREEMPTION
 endif
 VBoxDrv_SDKS          = W2K3DDK WINPSDKINCS
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
@@ -239,7 +239,7 @@ vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_NOINST        = true
 vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC
 ifdef VBOX_LINUX_VERSION_2_4
-vboxdrv_DEFS         += EXPORT_SYMTAB
+ vboxdrv_DEFS        += EXPORT_SYMTAB
 endif
 vboxdrv_INCS         := \
 	$(PATH_SUB_CURRENT) \
@@ -251,8 +251,8 @@ vboxdrv_SOURCES       = \
 	SUPDrv.c \
 	SUPDrvSem.c
 ifndef VBOX_LINUX_VERSION_2_4
-vboxdrv_SOURCES      += \
-	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).mod.c
+ vboxdrv_SOURCES     += \
+ 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).mod.c
 endif
 
 
@@ -260,26 +260,21 @@ endif
 # Targets for installing the linux sources.
 #
 vboxdrv-mod_INST    = bin/src/vboxdrv/
-vboxdrv-mod_MODE    = a+r,u+w
-vboxdrv-mod_SOURCES = $(subst ",,$(FILES_VBOXDRV_NOBIN)) #"
-vboxdrv-mod_SOURCES += \
+vboxdrv-mod_SOURCES = \
+	$(subst $(DQUOTE),,$(FILES_VBOXDRV_NOBIN)) \
 	$(vboxdrv-mod_0_OUTDIR)/Makefile
-vboxdrv-mod_CLEAN   = \
-	$(vboxdrv-mod_0_OUTDIR)/Makefile
-
-vboxdrv-sh_INST     = bin/src/vboxdrv/
-vboxdrv-sh_MODE     = a+rx,u+w
-vboxdrv-sh_SOURCES  = $(subst ",,$(FILES_VBOXDRV_BIN)) #"
-vboxdrv-sh_SOURCES += \
-	$(vboxdrv-sh_0_OUTDIR)/build_in_tmp \
+vboxdrv-mod_EXEC_SOURCES  = \
+	$(subst $(DQUOTE),,$(FILES_VBOXDRV_BIN)) \
+	$(vboxdrv-mod_0_OUTDIR)/build_in_tmp \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
-vboxdrv-sh_CLEAN    = \
-	$(PATH_TARGET)/vboxdrv-sh-1.dep \
-	$(vboxdrv-sh_0_OUTDIR)/build_in_tmp
+vboxdrv-mod_CLEAN   = \
+	$(vboxdrv-mod_0_OUTDIR)/Makefile \
+	$(PATH_TARGET)/vboxdrv-mod-1.dep \
+	$(vboxdrv-mod_0_OUTDIR)/build_in_tmp
 
 # Scripts needed for building the kernel modules
 
-$$(vboxdrv-sh_0_OUTDIR)/build_in_tmp: \
+$$(vboxdrv-mod_0_OUTDIR)/build_in_tmp: \
 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
@@ -290,7 +285,7 @@ $$(vboxdrv-sh_0_OUTDIR)/build_in_tmp: \
 		-e "s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
 	$(QUIET)chmod 0755 $@
 
-includedep $(PATH_TARGET)/vboxdrv-sh-1.dep
+includedep $(PATH_TARGET)/vboxdrv-mod-1.dep
 $$(vboxdrv-mod_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/linux/Makefile \
 		$$(if $$(eq $$(Support/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
@@ -301,8 +296,7 @@ $$(vboxdrv-mod_0_OUTDIR)/Makefile: \
  else
 	$(QUIET)$(CP) -f $< $@
  endif
-	%$(QUIET2)$(RM) -f -- $(PATH_TARGET)/vboxdrv-sh-1.dep
-	%$(QUIET2)$(APPEND) '$(PATH_TARGET)/vboxdrv-sh-1.dep' 'Support/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
+	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/vboxdrv-mod-1.dep' 'Support/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 
 endif # real linux
 
@@ -359,8 +353,8 @@ $$(VBoxDrv.kext_0_OUTDIR)/Info.plist: \
 
 # Common manual loader script.
 INSTALLS += Scripts
-Scripts_INST     = $(INST_DIST)
-Scripts_SOURCES  = \
+Scripts_INST = $(INST_DIST)
+Scripts_EXEC_SOURCES  = \
 	darwin/load.sh
 
 endif # darwin
@@ -416,9 +410,8 @@ vboxdrv_SOURCES      := \
 # Targets for installing the freebsd sources.
 #
 vboxdrv-mod_INST    = bin/src/vboxdrv/
-vboxdrv-mod_MODE    = a+r,u+w
-vboxdrv-mod_SOURCES = $(subst ",,$(FILES_VBOXDRV_NOBIN)) #"
-vboxdrv-mod_SOURCES += \
+vboxdrv-mod_SOURCES = \
+	$(subst $(DQUOTE),,$(FILES_VBOXDRV_NOBIN)) \
 	$(vboxdrv-mod_0_OUTDIR)/Makefile
 vboxdrv-mod_CLEAN   = \
 	$(vboxdrv-mod_0_OUTDIR)/Makefile
@@ -428,6 +421,7 @@ $$(vboxdrv-mod_0_OUTDIR)/Makefile: \
 		$$(if $$(eq $$(Support/freebsd/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(RM) -f -- $@
  ifndef VBOX_WITH_HARDENING
 	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
  else

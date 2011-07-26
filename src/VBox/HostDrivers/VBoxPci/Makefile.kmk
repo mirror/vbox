@@ -1,78 +1,88 @@
+# $Id$
+## @file
+# Sub-Makefile for the PCI passthru driver (VBoxPci).
+#
+
+#
+# Copyright (C) 2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
-
-ifeq (1,1)
-
 if1of ($(KBUILD_TARGET), linux)
 
-SYSMODS += VBoxPci
-VBoxPci_TEMPLATE         = VBOXR0DRV
-VBoxPci_INST = $(INST_VBOXPCI)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
-VBoxPci_NAME.linux       = vboxpci
-VBoxPci_NOINST.linux     = true
-VBoxPci_DEFS             = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
-VBoxPci_DEFS.linux       = KBUILD_MODNAME=KBUILD_STR\(vboxpci\) KBUILD_BASENAME=KBUILD_STR\(vboxpci\) MODULE
-VBoxPci_INCS.linux   := \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
-VBoxPci_INCS             = \
-	.
-VBoxPci_SOURCES.linux   = \
-	linux/VBoxPci-linux.c \
-	VBoxPci.c
-VBoxPci_SOURCES          =
-VBoxPci_LIBS            += \
-	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
+ #
+ # The driver.
+ # Note! For Linux, this is just a compile test. Don't use the binary!
+ #
+ SYSMODS += VBoxPci
+ VBoxPci_TEMPLATE       = VBOXR0DRV
+ VBoxPci_INST           = $(INST_VBOXPCI)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
+ VBoxPci_NAME.linux     = vboxpci
+ VBoxPci_NOINST.linux   = true
+ VBoxPci_DEFS           = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
+ VBoxPci_DEFS.linux     = KBUILD_MODNAME=KBUILD_STR\(vboxpci\) KBUILD_BASENAME=KBUILD_STR\(vboxpci\) MODULE
+ VBoxPci_INCS.linux    := \
+ 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
+ VBoxPci_INCS           = \
+ 	.
+ VBoxPci_SOURCES.linux  = \
+ 	linux/VBoxPci-linux.c
+ VBoxPci_SOURCES        = \
+ 	VBoxPci.c
+ VBoxPci_LIBS          += \
+ 	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
 
-endif
 
-
-ifeq ($(KBUILD_TARGET),linux)
-
+ #
+ # Install the sources.
+ #
  include $(PATH_SUB_CURRENT)/linux/files_vboxpci
+ INSTALLS += VBoxPci-src
+ VBoxPci-src_INST       = bin/src/vboxpci/
+ VBoxPci-src_SOURCES    = \
+	$(subst $(DQUOTE),,$(VBOX_VBOXPCI_SOURCES)) \
+ 	$(VBoxPci-src_0_OUTDIR)/Makefile
+ VBoxPci-src_EXEC_SOURCES = \
+ 	$(VBoxPci-src_0_OUTDIR)/build_in_tmp \
+ 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
+ VBoxPci-src_CLEAN      = \
+ 	$(VBoxPci-src_0_OUTDIR)/Makefile \
+ 	$(PATH_TARGET)/VBoxPciSrc-src-1.dep \
+ 	$(VBoxPci-src_0_OUTDIR)/build_in_tmp
 
- INSTALLS += VBoxPci-src VBoxPci-sh
+ # Generate the scripts needed for building the kernel module.
 
- VBoxPci-src_INST    = bin/src/vboxpci/
- VBoxPci-src_MODE    = a+r,u+w
- VBoxPci-src_SOURCES = $(subst ",,$(VBOX_VBOXPCI_SOURCES)) #"
- VBoxPci-src_SOURCES+= \
-        $(VBoxPci-src_0_OUTDIR)/Makefile
- VBoxPci-src_CLEAN   = \
-        $(VBoxPci-src_0_OUTDIR)/Makefile     \
-        $(PATH_TARGET)/VBoxPciSrc-src-1.dep
-
- VBoxPci-sh_INST    = bin/src/vboxpci/
- VBoxPci-sh_MODE    = a+rx,u+w
- VBoxPci-sh_SOURCES = \
-	$(VBoxPci-sh_0_OUTDIR)/build_in_tmp \
-	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
- VBoxPci-sh_CLEAN   = $(VBoxPci-sh_0_OUTDIR)/build_in_tmp
-
-
-includedep $(PATH_TARGET)/VBoxPci-src-1.dep
+ includedep $(PATH_TARGET)/VBoxPci-src-1.dep
 $$(VBoxPci-src_0_OUTDIR)/Makefile: \
 		$(PATH_SUB_CURRENT)/linux/Makefile \
 		$$(if $$(eq $$(VBoxPci/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)
-ifndef VBOX_WITH_HARDENING
+	$(QUIET)$(RM) -f -- $@
+ ifndef VBOX_WITH_HARDENING
 	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
-else
+ else
 	$(QUIET)$(CP) -f $< $@
-endif
-	%$(QUIET2)$(RM) -f -- $(PATH_TARGET)/VBoxPci-src-1.dep
-	%$(QUIET2)$(APPEND) '$(PATH_TARGET)/VBoxPci-src-1.dep' 'VBoxPci/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
+ endif
+	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/VBoxPci-src-1.dep' 'VBoxPci/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 
-## Scripts needed for building the kernel modules
-
-$$(VBoxPci-sh_0_OUTDIR)/build_in_tmp: \
+$$(VBoxPci-src_0_OUTDIR)/build_in_tmp: \
 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxpci;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
-	$(QUIET)chmod 0755 $@
-endif
+	$(QUIET)$(CHMOD) 0755 $@
 
-endif
-
+endif # Supported platform.
 include $(KBUILD_PATH)/subfooter.kmk
+
