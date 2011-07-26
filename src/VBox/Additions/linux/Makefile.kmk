@@ -302,23 +302,25 @@ $(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT)): \
 
 
 INSTALLS += GuestDrivers-src
-GuestDrivers-src_INST = bin/additions/src/
+GuestDrivers-src_INST = $(INST_ADDITIONS)src/
 GuestDrivers-src_MODE = a+r,u+w
 GuestDrivers-src_SOURCES = Makefile
 
 
 INSTALLS += lnx_add_inst-exec
-lnx_add_inst-exec_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_MOD_DIR))
-lnx_add_inst-exec_MODE = a+rx,u+w
-lnx_add_inst-exec_SOURCES = \
+lnx_add_inst-exec_INST     = $(VBOX_LNX_ADD_INST_MOD_DIR)
+lnx_add_inst-exec_INSTTYPE = stage
+lnx_add_inst-exec_MODE     = a+rx,u+w
+lnx_add_inst-exec_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient \
 	$(VBOX_REL_X11_ADD_INST)x11config.sh
 
 
 INSTALLS += lnx_add_inst-noexec
-lnx_add_inst-noexec_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_SHARE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME))/
-lnx_add_inst-noexec_MODE = a+r,u+w
-lnx_add_inst-noexec_SOURCES = \
+lnx_add_inst-noexec_INST     = $(VBOX_LNX_ADD_INST_SHARE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME)/
+lnx_add_inst-noexec_INSTTYPE = stage
+lnx_add_inst-noexec_MODE     = a+r,u+w
+lnx_add_inst-noexec_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)vboxclient.desktop \
 	$(VBOX_REL_X11_ADD_INST)vboxvideo.ids \
 	$(VBOX_REL_X11_ADD_INST)50-vboxmouse.conf \
@@ -328,9 +330,10 @@ lnx_add_inst-noexec_SOURCES = \
 	selinux-fedora/vbox_accel.pp
 
 INSTALLS += lnx_add_inst-license
-lnx_add_inst-license_INST = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_OUT_DIR))
-lnx_add_inst-license_MODE = a+r,u+w
-lnx_add_inst-license_SOURCES = \
+lnx_add_inst-license_INST     = $(VBOX_LNX_ADD_INST_OUT_DIR)
+lnx_add_inst-license_INSTTYPE = stage
+lnx_add_inst-license_MODE     = a+r,u+w
+lnx_add_inst-license_SOURCES  = \
 	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE
 
 
@@ -339,9 +342,10 @@ lnx_add_inst-license_SOURCES = \
 # directory too
 #
 INSTALLS += LnxAdd-scripts
-LnxAdd-scripts_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_STAGE_DIR))
-LnxAdd-scripts_MODE    = a+rx,u+w
-LnxAdd-scripts_SOURCES = \
+LnxAdd-scripts_INST     = $(VBOX_LNX_ADD_INST_STAGE_DIR)
+LnxAdd-scripts_INSTTYPE = stage
+LnxAdd-scripts_MODE     = a+rx,u+w
+LnxAdd-scripts_SOURCES  = \
 	$(VBOX_REL_LNX_INST_SRC)routines.sh \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh=>vboxadd \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh=>vboxadd-service \
@@ -353,9 +357,10 @@ LnxAdd-scripts_SOURCES = \
 # VBoxClient-all
 #
 INSTALLS += LnxAdd-Nostrip-Bin
-LnxAdd-Nostrip-Bin_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_BIN_DIR))
-LnxAdd-Nostrip-Bin_MODE    = a+rx,u+w
-LnxAdd-Nostrip-Bin_SOURCES = \
+LnxAdd-Nostrip-Bin_INST     = $(VBOX_LNX_ADD_INST_BIN_DIR)
+LnxAdd-Nostrip-Bin_INSTTYPE = stage
+LnxAdd-Nostrip-Bin_MODE     = a+rx,u+w
+LnxAdd-Nostrip-Bin_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient=>VBoxClient-all
 
 
@@ -468,4 +473,5 @@ $(PATH_STAGE_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(VBOX_MAKESELF) --nocomp $(VBOX_LNX_ADD_INST_STAGE_DIR) $@ \
 		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux" \
 		/bin/sh ./install.sh "\$$0 1> /dev/null"
+
 
