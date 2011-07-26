@@ -370,7 +370,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_STARTVM)
     {
         RTStrmPrintf(pStrm,
-                     "VBoxManage startvm          <uuid>|<name>\n");
+                     "VBoxManage startvm          <uuid>|<name>...\n");
         RTStrmPrintf(pStrm,
                      "                            [--type gui");
         if (fVBoxSDL)
