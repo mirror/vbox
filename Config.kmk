@@ -104,15 +104,19 @@ else
 
  INST_BIN             = bin/
  INST_DIST            = $(INST_BIN)
- INST_DLL             = $(INST_BIN)
  INST_SDK             = $(INST_BIN)sdk/
+
+ INST_VIRTUALBOX      = $(INST_BIN)
+ INST_VBOXDRV         = $(INST_BIN)
+ INST_VBOXNETFLT      = $(INST_BIN)
+ INST_VBOXNETADP      = $(INST_BIN)
+ INST_VBOXUSB         = $(INST_BIN)
+
  INST_DLL             = $(INST_BIN)
  INST_SYS             = $(INST_BIN)
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
  INST_ADDITIONS_ISO   = $(INST_ADDITIONS)
-
- INST_VBOXNETADP      = $(INST_BIN)
 
  INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
@@ -143,10 +147,10 @@ if  $(KBUILD_VERSION_MAJOR) == 0 \
  && (   $(KBUILD_VERSION_MINOR) >= 2 \
      || (   $(KBUILD_VERSION_MINOR) == 1 \
          && $(KBUILD_VERSION_PATCH) >= 999))
- if $(KMK_REVISION) >= 2515
+ if $(KMK_REVISION) >= 2520
   # OK.
  else
-  $(error You must update kBuild! Requires kBuild revision 2515 or later, found $(KMK_REVISION) ($(KBUILD_VERSION)))
+  $(error You must update kBuild! Requires kBuild revision 2520 or later, found $(KMK_REVISION) ($(KBUILD_VERSION)))
  endif
 else
  $(error You must update kBuild! Requires 0.1.999 or later, found $(KBUILD_VERSION))
