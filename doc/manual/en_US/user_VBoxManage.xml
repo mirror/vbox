@@ -1101,12 +1101,12 @@ Statistics update:  disabled
 
     <itemizedlist>
        <listitem>
-           <para><computeroutput>--snapshot &lt;uuid&gt;|&lt;name&gt;</computeroutput>: 
+           <para><computeroutput>--snapshot &lt;uuid&gt;|&lt;name&gt;</computeroutput>:
             Select a specific snapshot where the clone operation should refer
             to. Default is referring to the current state.</para>
        </listitem>
        <listitem>
-           <para><computeroutput>--mode machine|machineandchildren|all</computeroutput>: 
+           <para><computeroutput>--mode machine|machineandchildren|all</computeroutput>:
            Selects the cloning mode of the operation. If
            <computeroutput>machine</computeroutput> is selected (the default),
            the current state of the VM without any snapshots is cloned. In the
@@ -1117,7 +1117,7 @@ Statistics update:  disabled
            </para>
        </listitem>
        <listitem>
-           <para><computeroutput>--options link|keepallmacs|keepnatmacs|keepdisknames</computeroutput>: 
+           <para><computeroutput>--options link|keepallmacs|keepnatmacs|keepdisknames</computeroutput>:
            Allows additional fine tuning of the clone operation. The first
            option defines that a linked clone should be created, which is
            only possible for a machine clone from a snapshot. The next two
@@ -1137,18 +1137,18 @@ Statistics update:  disabled
            Clone".</para>
        </listitem>
        <listitem>
-           <para><computeroutput>--basefolder &lt;basefolder&gt;</computeroutput>: 
+           <para><computeroutput>--basefolder &lt;basefolder&gt;</computeroutput>:
            Select the folder where the new virtual machine configuration should
            be saved in.</para>
        </listitem>
        <listitem>
-           <para><computeroutput>--uuid &lt;uuid&gt;</computeroutput>: 
+           <para><computeroutput>--uuid &lt;uuid&gt;</computeroutput>:
            Select the UUID the new VM should have. This id has to be unique in
            the VirtualBox instance this clone should be registered. Default is
            creating a new UUID.</para>
        </listitem>
        <listitem>
-           <para><computeroutput>--register</computeroutput>: 
+           <para><computeroutput>--register</computeroutput>:
            Automatically register the new clone in this VirtualBox
            installation. If you manually want register the new VM later, see
            <xref linkend="vboxmanage-registervm" /> for instructions how to do
@@ -2686,6 +2686,20 @@ Value: 2006.01.01</screen>
           --username foo --password bar --wait-exit --wait-stdout</screen> Note that
           the double backslashes in the second example are only required on
           Unix hosts.</para>
+
+          <para>Starting at VirtualBox 4.1.2 guest process execution by default is limited
+          to serve up to 5 guest processes at a time. If a new guest process gets started
+          which would exceed this limit, the oldest not running guest process will be discarded
+          in order to be able to run that new process. Also, retrieving output from this
+          old guest process will not be possible anymore then. If all 5 guest processes
+          are still active and running, starting a new guest process will result in an
+          appropriate error message.</para>
+
+          <para>To raise or lower the guest process execution limit, either the guest
+          property <computerouptut>/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept</computerouptut>
+          or VBoxService' command line by specifying <computeroutput>--control-procs-max-kept</computeroutput>
+          needs to be modified. A restart of the guest OS is required afterwards. To serve unlimited
+          guest processes, a value of <computeroutput>0</computeroutput> needs to be set (not recommended).</para>
         </listitem>
 
         <listitem>

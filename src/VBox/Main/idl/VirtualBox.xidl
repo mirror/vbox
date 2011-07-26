@@ -8733,6 +8733,22 @@
       <desc>
         Executes an existing program inside the guest VM.
 
+        <note>
+        Starting at VirtualBox 4.1.2 guest process execution by default is limited
+        to serve up to 5 guest processes at a time. If a new guest process gets started
+        which would exceed this limit, the oldest not running guest process will be discarded
+        in order to be able to run that new process. Also, retrieving output from this
+        old guest process will not be possible anymore then. If all 5 guest processes
+        are still active and running, starting a new guest process will result in an
+        appropriate error message.
+
+        To raise or lower the guest process execution limit, either the guest property
+        "/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept" or VBoxService'
+        command line by specifying "--control-procs-max-kept" needs to be modified.
+        A restart of the guest OS is required afterwards. To serve unlimited guest
+        processes, a value of "0" needs to be set (not recommended).
+        </note>
+
         <result name="VBOX_E_IPRT_ERROR">
           Could not execute process.
         </result>
