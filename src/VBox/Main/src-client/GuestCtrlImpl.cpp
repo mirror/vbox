@@ -2050,6 +2050,9 @@ HRESULT Guest::executeProcessResult(const char *pszCommand, const char *pszUser,
                 else if (vrc == VERR_PERMISSION_DENIED)
                     rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
                                        tr("Invalid user/password credentials"));
+                else if (vrc == VERR_MAX_PROCS_REACHED)
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("Concurrent guest process limit is reached"));
                 else
                 {
                     if (pExecStatus && pExecStatus->u32Status == PROC_STS_ERROR)
