@@ -520,14 +520,8 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
      */
     if (RT_SUCCESS(rc))
     {
-        VBoxServicePipeBufSetStatus(&pData->stdIn, false /* Disabled */);
-        VBoxServicePipeBufSetStatus(&pData->stdOut, false /* Disabled */);
-        VBoxServicePipeBufSetStatus(&pData->stdErr, false /* Disabled */);
-
-        /* Since the process is not alive anymore, destroy its local
-         * stdin pipe buffer - it's not used anymore and can eat up quite
-         * a bit of memory. */
-        VBoxServicePipeBufDestroy(&pData->stdIn);
+        /* Mark this thread as stopped and do some action required for stopping ... */
+        VBoxServiceControlExecThreadStop(pThread);
 
         uint32_t uStatus = PROC_STS_UNDEFINED;
         uint32_t uFlags = 0;
@@ -1116,6 +1110,7 @@ static DECLCALLBACK(int) VBoxServiceControlExecThread(RTTHREAD ThreadSelf, void 
  * so that this function will not block the overall program execution.
  *
  * @return  IPRT status code.
+ * @param   uClientID                   Client ID for accessing host service.
  * @param   uContextID                  Context ID to associate the process to start with.
  * @param   pszCmd                      Full qualified path of process to start (without arguments).
  * @param   uFlags                      Process execution flags.
@@ -1129,69 +1124,83 @@ static DECLCALLBACK(int) VBoxServiceControlExecThread(RTTHREAD ThreadSelf, void 
  * @param   pszPassword                 Password of specified user name (account).
  * @param   uTimeLimitMS                Time limit (in ms) of the process' life time.
  */
-int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint32_t uFlags,
+int VBoxServiceControlExecProcess(uint32_t uClientID, uint32_t uContextID,
+                                  const char *pszCmd, uint32_t uFlags,
                                   const char *pszArgs, uint32_t uNumArgs,
                                   const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                   const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
-    int rc = VBoxServiceControlExecThreadsApplyPolicies();
+    bool fAllowed = false;
+    int rc = VBoxServiceControlExecThreadStartAllowed(&fAllowed);
     if (RT_FAILURE(rc))
-        return rc;
+        VBoxServiceError("ControlExec: Error determining whether process can be started or not, rc=%Rrc\n", rc);
 
-    /*
-     * Allocate new thread data and assign it to our thread list.
-     */
-    PVBOXSERVICECTRLTHREAD pThread = (PVBOXSERVICECTRLTHREAD)RTMemAlloc(sizeof(VBOXSERVICECTRLTHREAD));
-    if (pThread)
+    if (fAllowed)
     {
-        rc = VBoxServiceControlExecThreadAlloc(pThread,
-                                               uContextID,
-                                               pszCmd, uFlags,
-                                               pszArgs, uNumArgs,
-                                               pszEnv, cbEnv, uNumEnvVars,
-                                               pszUser, pszPassword,
-                                               uTimeLimitMS);
-        if (RT_SUCCESS(rc))
+        /*
+         * Allocate new thread data and assign it to our thread list.
+         */
+        PVBOXSERVICECTRLTHREAD pThread = (PVBOXSERVICECTRLTHREAD)RTMemAlloc(sizeof(VBOXSERVICECTRLTHREAD));
+        if (pThread)
         {
-            static uint32_t uCtrlExecThread = 0;
-            char szThreadName[32];
-            if (!RTStrPrintf(szThreadName, sizeof(szThreadName), "controlexec%ld", uCtrlExecThread++))
-                AssertMsgFailed(("Unable to create unique control exec thread name!\n"));
-
-            rc = RTThreadCreate(&pThread->Thread, VBoxServiceControlExecThread,
-                                (void *)(PVBOXSERVICECTRLTHREAD*)pThread, 0,
-                                RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, szThreadName);
-            if (RT_FAILURE(rc))
+            rc = VBoxServiceControlExecThreadAlloc(pThread,
+                                                   uContextID,
+                                                   pszCmd, uFlags,
+                                                   pszArgs, uNumArgs,
+                                                   pszEnv, cbEnv, uNumEnvVars,
+                                                   pszUser, pszPassword,
+                                                   uTimeLimitMS);
+            if (RT_SUCCESS(rc))
             {
-                VBoxServiceError("ControlExec: RTThreadCreate failed, rc=%Rrc\n, pThread=%p\n",
-                                 rc, pThread);
-            }
-            else
-            {
-                VBoxServiceVerbose(4, "ControlExec: Waiting for thread to initialize ...\n");
+                static uint32_t uCtrlExecThread = 0;
+                char szThreadName[32];
+                if (!RTStrPrintf(szThreadName, sizeof(szThreadName), "controlexec%ld", uCtrlExecThread++))
+                    AssertMsgFailed(("Unable to create unique control exec thread name!\n"));
 
-                /* Wait for the thread to initialize. */
-                RTThreadUserWait(pThread->Thread, 60 * 1000 /* 60 seconds max. */);
-                if (pThread->fShutdown)
+                rc = RTThreadCreate(&pThread->Thread, VBoxServiceControlExecThread,
+                                    (void *)(PVBOXSERVICECTRLTHREAD*)pThread, 0,
+                                    RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, szThreadName);
+                if (RT_FAILURE(rc))
                 {
-                    VBoxServiceError("ControlExec: Thread for process \"%s\" failed to start!\n", pszCmd);
-                    rc = VERR_GENERAL_FAILURE;
+                    VBoxServiceError("ControlExec: RTThreadCreate failed, rc=%Rrc\n, pThread=%p\n",
+                                     rc, pThread);
                 }
                 else
                 {
-                    pThread->fStarted = true;
-                    /*rc =*/ RTListAppend(&g_GuestControlThreads, &pThread->Node);
-                }
-            }
+                    VBoxServiceVerbose(4, "ControlExec: Waiting for thread to initialize ...\n");
 
+                    /* Wait for the thread to initialize. */
+                    RTThreadUserWait(pThread->Thread, 60 * 1000 /* 60 seconds max. */);
+                    if (pThread->fShutdown)
+                    {
+                        VBoxServiceError("ControlExec: Thread for process \"%s\" failed to start!\n", pszCmd);
+                        rc = VERR_GENERAL_FAILURE;
+                    }
+                    else
+                    {
+                        pThread->fStarted = true;
+                        /*rc =*/ RTListAppend(&g_GuestControlThreads, &pThread->Node);
+                    }
+                }
+
+                if (RT_FAILURE(rc))
+                    VBoxServiceControlExecThreadDataDestroy((PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData);
+            }
             if (RT_FAILURE(rc))
-                VBoxServiceControlExecThreadDataDestroy((PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData);
+                RTMemFree(pThread);
         }
-        if (RT_FAILURE(rc))
-            RTMemFree(pThread);
+        else
+            rc = VERR_NO_MEMORY;
     }
-    else
-        rc = VERR_NO_MEMORY;
+    else /* Process start is not allowed due to policy settings. */
+    {
+        VBoxServiceVerbose(3, "ControlExec: Guest process limit is reached!\n");
+
+        /* Tell the host. */
+        rc = VbglR3GuestCtrlExecReportStatus(uClientID, uContextID, 0 /* PID */,
+                                             PROC_STS_ERROR, VERR_MAX_PROCS_REACHED,
+                                             NULL /* pvData */, 0 /* cbData */);
+    }
     return rc;
 }
 
@@ -1250,7 +1259,9 @@ int VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t u
 #endif
     if (RT_SUCCESS(rc))
     {
-        rc = VBoxServiceControlExecProcess(uContextID, szCmd, uFlags, szArgs, uNumArgs,
+        /** @todo Put the following params into a struct! */
+        rc = VBoxServiceControlExecProcess(u32ClientId, uContextID,
+                                           szCmd, uFlags, szArgs, uNumArgs,
                                            szEnv, cbEnv, uNumEnvVars,
                                            szUser, szPassword, uTimeLimitMS);
     }

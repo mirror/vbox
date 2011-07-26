@@ -26,12 +26,13 @@ int VBoxServiceControlExecThreadAlloc(PVBOXSERVICECTRLTHREAD pThread,
                                       const char *pszArgs, uint32_t uNumArgs,
                                       const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                       const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS);
-int VBoxServiceControlExecThreadsApplyPolicies();
 int VBoxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREADDATAEXEC pData, uint32_t uPID);
 void VBoxServiceControlExecThreadDataDestroy(PVBOXSERVICECTRLTHREADDATAEXEC pData);
 int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uint32_t uTimeout,
                                           uint8_t *pBuf, uint32_t cbSize, uint32_t *pcbRead);
 int VBoxServiceControlExecThreadSetInput(uint32_t uPID, bool fPendingClose, uint8_t *pBuf,
                                          uint32_t cbSize, uint32_t *pcbWritten);
+int VBoxServiceControlExecThreadStartAllowed(bool *pbAllowed);
+void VBoxServiceControlExecThreadStop(const PVBOXSERVICECTRLTHREAD pThread);
 #endif  /* !___VBoxServiceControlExecThread_h */
 
