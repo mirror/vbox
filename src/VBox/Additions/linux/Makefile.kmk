@@ -277,7 +277,7 @@ endif
 $(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS) $(VBOX_LNX_ADD_KMOD_FILES)): \
 		$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD)% : \
 		$(PATH_STAGE_BIN)/additions/src/% \
-		| $$(dir $$(patsubst %/,%,$$@))
+		| $$(dir $$(patsubst $$(PERCENT)/,$$(PERCENT),$$@))
 	$(call MSG_INST_DIR,$<,$@)
 	$(QUIET)$(RM) -Rf $@
 	$(QUIET)cp -af $< $@
