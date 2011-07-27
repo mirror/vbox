@@ -1,6 +1,6 @@
-#!/bin/sh
-#
+## @file
 # VirtualBox linux Guest Additions default files list
+#
 
 #
 # Copyright (C) 2009-2010 Oracle Corporation
@@ -78,3 +78,4 @@ DEFAULT_VERSIONED_FILE_NAMES=" \
     /usr/src/vboxsf \
     /usr/src/vboxvideo \
 "
+

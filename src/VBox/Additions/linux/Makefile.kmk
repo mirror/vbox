@@ -310,8 +310,7 @@ GuestDrivers-src_SOURCES = Makefile
 INSTALLS += lnx_add_inst-exec
 lnx_add_inst-exec_INST     = $(VBOX_LNX_ADD_INST_MOD_DIR)
 lnx_add_inst-exec_INSTTYPE = stage
-lnx_add_inst-exec_MODE     = a+rx,u+w
-lnx_add_inst-exec_SOURCES  = \
+lnx_add_inst-exec_EXEC_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient \
 	$(VBOX_REL_X11_ADD_INST)x11config.sh
 
@@ -319,7 +318,6 @@ lnx_add_inst-exec_SOURCES  = \
 INSTALLS += lnx_add_inst-noexec
 lnx_add_inst-noexec_INST     = $(VBOX_LNX_ADD_INST_SHARE_DIR)$(VBOX_LNX_ADD_PACKAGE_NAME)/
 lnx_add_inst-noexec_INSTTYPE = stage
-lnx_add_inst-noexec_MODE     = a+r,u+w
 lnx_add_inst-noexec_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)vboxclient.desktop \
 	$(VBOX_REL_X11_ADD_INST)vboxvideo.ids \
@@ -332,7 +330,6 @@ lnx_add_inst-noexec_SOURCES  = \
 INSTALLS += lnx_add_inst-license
 lnx_add_inst-license_INST     = $(VBOX_LNX_ADD_INST_OUT_DIR)
 lnx_add_inst-license_INSTTYPE = stage
-lnx_add_inst-license_MODE     = a+r,u+w
 lnx_add_inst-license_SOURCES  = \
 	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE
 
@@ -344,13 +341,13 @@ lnx_add_inst-license_SOURCES  = \
 INSTALLS += LnxAdd-scripts
 LnxAdd-scripts_INST     = $(VBOX_LNX_ADD_INST_STAGE_DIR)
 LnxAdd-scripts_INSTTYPE = stage
-LnxAdd-scripts_MODE     = a+rx,u+w
 LnxAdd-scripts_SOURCES  = \
+	$(VBOX_REL_LNX_ADD_INST)deffiles
+LnxAdd-scripts_EXEC_SOURCES  = \
 	$(VBOX_REL_LNX_INST_SRC)routines.sh \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh=>vboxadd \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh=>vboxadd-service \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd-x11.sh=>vboxadd-x11 \
-	$(VBOX_REL_LNX_ADD_INST)deffiles
 
 
 #
@@ -376,21 +373,21 @@ LnxAdd-init-scripts_SOURCES = \
 
 # this file needs editing before it can be included in the generic installer.
 $(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh: \
-	$(VBOX_PATH_LNX_INST_SRC)run-inst.sh | $$(dir $$@)
+		$(VBOX_PATH_LNX_INST_SRC)run-inst.sh | $$(dir $$@)
+	$(RM) -f -- $@
 	$(QUIET)$(SED) \
-	    -e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
-	    -e "s;_PACKAGE_NAME_;VirtualBox Guest Additions;g" \
-	    -e "s;_PACKAGE_;VBoxGuestAdditions;g" \
-	    -e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
-	    -e "s;_BUILD_;$(shell date);g" \
-	    -e "s;_OSE_;$(VBOX_OSE);g" \
-	    -e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
-	    -e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
-	    -e "s;_UNINSTALL_SCRIPTS_;vboxadd-x11 vboxadd-timesync vboxadd-service vboxadd;g" \
-	    --output $(VBOX_LNX_ADD_INST_OUT_DIR)install.sh \
-	    $<
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_ADD_INST_OUT_DIR)install.sh $@
-	$(QUIET)$(RM) $(VBOX_LNX_ADD_INST_OUT_DIR)install.sh
+		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
+		-e "s;_PACKAGE_NAME_;VirtualBox Guest Additions;g" \
+		-e "s;_PACKAGE_;VBoxGuestAdditions;g" \
+		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
+		-e "s;_BUILD_;$(shell date);g" \
+		-e "s;_OSE_;$(VBOX_OSE);g" \
+		-e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
+		-e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
+		-e "s;_UNINSTALL_SCRIPTS_;vboxadd-x11 vboxadd-timesync vboxadd-service vboxadd;g" \
+		--output $@ \
+		$<
+	$(QUIET)$(CHMOD) 0755 $@
 OTHER_CLEAN += \
 	$(VBOX_LNX_ADD_INST_OUT_DIR)install.sh \
 	$(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh
