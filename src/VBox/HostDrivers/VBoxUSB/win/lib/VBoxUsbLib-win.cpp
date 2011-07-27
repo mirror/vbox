@@ -765,7 +765,7 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
         return VINF_SUCCESS;
     }
 
-    char nameEmptyBuf = '0';
+    char nameEmptyBuf = '\0';
     LPSTR lpszName = NULL;
     rc = usbLibDevStrDriverKeyGet(hHub, iPort, &lpszName);
     Assert(!!lpszName == !!RT_SUCCESS(rc));
