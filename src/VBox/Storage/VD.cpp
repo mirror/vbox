@@ -808,12 +808,33 @@ static int vdDiskReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImagePare
 }
 
 /**
- * internal: read the specified amount of data in whatever blocks the backend
- * will give us.
+ * Extended version of vdReadHelper(), implementing certain optimizations
+ * for image cloning.
+ *
+ * @returns VBox status code.
+ * @param   pDisk                   The disk to read from.
+ * @param   pImage                  The image to start reading from.
+ * @param   pImageParentOverride    The parent image to read from
+ *                                  if the starting image returns a free block.
+ *                                  If NULL is passed the real parent of the image
+ *                                  in the chain is used.
+ * @param   uOffset                 Offset in the disk to start reading from.
+ * @param   pvBuf                   Where to store the read data.
+ * @param   cbRead                  How much to read.
+ * @param   fZeroFreeBlocks         Flag whether free blocks should be zeroed.
+ *                                  If false and no image has data for sepcified
+ *                                  range VERR_VD_BLOCK_FREE is returned.
+ *                                  Note that unallocated blocks are still zeroed
+ *                                  if at least one image has valid data for a part
+ *                                  of the range.
+ * @param   fUpdateCache            Flag whether to update the attached cache if
+ *                                  available.
+ * @param   cImagesRead             Number of images in the chain to read until
+ *                                  the read is cut off. A value of 0 disables the cut off.
  */
-static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
-                        uint64_t uOffset, void *pvBuf, size_t cbRead,
-                        bool fZeroFreeBlocks, bool fUpdateCache)
+static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
+                          uint64_t uOffset, void *pvBuf, size_t cbRead,
+                          bool fZeroFreeBlocks, bool fUpdateCache, unsigned cImagesRead)
 {
     int rc = VINF_SUCCESS;
     size_t cbThisRead;
@@ -836,8 +857,8 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
 
             if (rc == VERR_VD_BLOCK_FREE)
             {
-                rc = vdDiskReadHelper(pDisk, pImage, pImageParentOverride,
-                                      uOffset, pvBuf, cbThisRead, &cbThisRead);
+                rc = vdDiskReadHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbThisRead,
+                                      &cbThisRead);
 
                 /* If the read was successful, write the data back into the cache. */
                 if (   RT_SUCCESS(rc)
@@ -861,8 +882,11 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
                                           uOffset, pvBuf, cbThisRead,
                                           &cbThisRead);
 
-            if (rc == VERR_VD_BLOCK_FREE)
+            if (   rc == VERR_VD_BLOCK_FREE
+                && cImagesRead != 1)
             {
+                unsigned cImagesToProcess = cImagesRead;
+
                 for (PVDIMAGE pCurrImage = pImageParentOverride ? pImageParentOverride : pImage->pPrev;
                      pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
                      pCurrImage = pCurrImage->pPrev)
@@ -870,6 +894,10 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
                     rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
                                                       uOffset, pvBuf, cbThisRead,
                                                       &cbThisRead);
+                    if (cImagesToProcess == 1)
+                        break;
+                    else if (cImagesToProcess > 0)
+                        cImagesToProcess--;
                 }
             }
         }
@@ -903,6 +931,17 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
     } while (cbRead != 0 && RT_SUCCESS(rc));
 
     return (!fZeroFreeBlocks && fAllFree) ? VERR_VD_BLOCK_FREE : rc;
+}
+
+/**
+ * internal: read the specified amount of data in whatever blocks the backend
+ * will give us.
+ */
+static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
+                        void *pvBuf, size_t cbRead, bool fUpdateCache)
+{
+    return vdReadHelperEx(pDisk, pImage, NULL, uOffset, pvBuf, cbRead,
+                          true /* fZeroFreeBlocks */, fUpdateCache, 0);
 }
 
 DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
@@ -1376,9 +1415,8 @@ static int vdParentRead(void *pvUser, uint64_t uOffset, void *pvBuf,
                         size_t cbRead)
 {
     PVDPARENTSTATEDESC pParentState = (PVDPARENTSTATEDESC)pvUser;
-    return vdReadHelper(pParentState->pDisk, pParentState->pImage, NULL, uOffset,
-                        pvBuf, cbRead, true /* fZeroFreeBlocks */,
-                        false /* fUpdateCache */);
+    return vdReadHelper(pParentState->pDisk, pParentState->pImage, uOffset,
+                        pvBuf, cbRead, false /* fUpdateCache */);
 }
 
 /**
@@ -1446,10 +1484,10 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
          * Updating the cache doesn't make sense here because
          * this will be done after the complete block was written.
          */
-        rc = vdReadHelper(pDisk, pImage, pImageParentOverride,
-                          uOffset - cbPreRead, pvTmp, cbPreRead,
-                          true /* fZeroFreeBlocks*/,
-                          false /* fUpdateCache */);
+        rc = vdReadHelperEx(pDisk, pImage, pImageParentOverride,
+                            uOffset - cbPreRead, pvTmp, cbPreRead,
+                            true /* fZeroFreeBlocks*/,
+                            false /* fUpdateCache */, 0);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1483,11 +1521,11 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
             memcpy((char *)pvTmp + cbPreRead + cbThisWrite,
                    (char *)pvBuf + cbThisWrite, cbWriteCopy);
         if (cbReadImage)
-            rc = vdReadHelper(pDisk, pImage, pImageParentOverride,
-                              uOffset + cbThisWrite + cbWriteCopy,
-                              (char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy,
-                              cbReadImage, true /* fZeroFreeBlocks */,
-                              false /* fUpdateCache */);
+            rc = vdReadHelperEx(pDisk, pImage, pImageParentOverride,
+                                uOffset + cbThisWrite + cbWriteCopy,
+                                (char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy,
+                                cbReadImage, true /* fZeroFreeBlocks */,
+                                false /* fUpdateCache */, 0);
         if (RT_FAILURE(rc))
             return rc;
         /* Zero out the remainder of this block. Will never be visible, as this
@@ -1520,7 +1558,7 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
                                   uint64_t uOffset, size_t cbWrite,
                                   size_t cbThisWrite, size_t cbPreRead,
                                   size_t cbPostRead, const void *pvBuf,
-                                  void *pvTmp)
+                                  void *pvTmp, unsigned cImagesRead)
 {
     size_t cbFill = 0;
     size_t cbWriteCopy = 0;
@@ -1546,10 +1584,10 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
 
     /* Read the entire data of the block so that we can compare whether it will
      * be modified by the write or not. */
-    rc = vdReadHelper(pDisk, pImage, pImageParentOverride, uOffset - cbPreRead, pvTmp,
-                      cbPreRead + cbThisWrite + cbPostRead - cbFill,
-                      true /* fZeroFreeBlocks */,
-                      false /* fUpdateCache */);
+    rc = vdReadHelperEx(pDisk, pImage, pImageParentOverride, uOffset - cbPreRead, pvTmp,
+                        cbPreRead + cbThisWrite + cbPostRead - cbFill,
+                        true /* fZeroFreeBlocks */, false /* fUpdateCache */,
+                        cImagesRead);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1595,10 +1633,10 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
  * internal: write buffer to the image, taking care of block boundaries and
  * write optimizations.
  */
-static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage,
-                         PVDIMAGE pImageParentOverride, uint64_t uOffset,
-                         const void *pvBuf, size_t cbWrite,
-                         bool fUpdateCache)
+static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
+                           PVDIMAGE pImageParentOverride, uint64_t uOffset,
+                           const void *pvBuf, size_t cbWrite,
+                           bool fUpdateCache, unsigned cImagesRead)
 {
     int rc;
     unsigned fWrite;
@@ -1635,7 +1673,7 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage,
                 rc = vdWriteHelperOptimized(pDisk, pImage, pImageParentOverride,
                                             uOffsetCur, cbWriteCur,
                                             cbThisWrite, cbPreRead, cbPostRead,
-                                            pcvBufCur, pvTmp);
+                                            pcvBufCur, pvTmp, cImagesRead);
             }
             else
             {
@@ -1664,6 +1702,158 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage,
         && fUpdateCache)
         rc = vdCacheWriteHelper(pDisk->pCache, uOffset, pvBuf, cbWrite, NULL);
 
+    return rc;
+}
+
+/**
+ * internal: write buffer to the image, taking care of block boundaries and
+ * write optimizations.
+ */
+static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
+                         const void *pvBuf, size_t cbWrite, bool fUpdateCache)
+{
+    return vdWriteHelperEx(pDisk, pImage, NULL, uOffset, pvBuf, cbWrite,
+                           fUpdateCache, 0);
+}
+
+/**
+ * Internal: Copies the content of one disk to another one applying optimizations
+ * to speed up the copy process if possible.
+ */
+static int vdCopyHelper(PVBOXHDD pDiskFrom, PVDIMAGE pImageFrom, PVBOXHDD pDiskTo,
+                        uint64_t cbSize, unsigned cImagesFromRead, unsigned cImagesToRead,
+                        bool fSuppressRedundantIo,
+                        PVDINTERFACE pIfProgress, PVDINTERFACEPROGRESS pCbProgress,
+                        PVDINTERFACE pDstIfProgress, PVDINTERFACEPROGRESS pDstCbProgress)
+{
+    int rc = VINF_SUCCESS;
+    int rc2;
+    uint64_t uOffset = 0;
+    uint64_t cbRemaining = cbSize;
+    void *pvBuf = NULL;
+    bool fLockReadFrom = false;
+    bool fLockWriteTo = false;
+    bool fBlockwiseCopy = fSuppressRedundantIo || (cImagesFromRead > 0);
+    unsigned uProgressOld = 0;
+
+    LogFlowFunc(("pDiskFrom=%#p pImageFrom=%#p pDiskTo=%#p cbSize=%llu cImagesFromRead=%u cImagesToRead=%u fSuppressRedundantIo=%RTbool pIfProgress=%#p pCbProgress=%#p pDstIfProgress=%#p pDstCbProgress=%#p\n",
+                 pDiskFrom, pImageFrom, pDiskTo, cbSize, cImagesFromRead, cImagesToRead, fSuppressRedundantIo, pIfProgress, pCbProgress, pDstIfProgress, pDstCbProgress));
+
+    /* Allocate tmp buffer. */
+    pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
+    if (!pvBuf)
+        return rc;
+
+    do
+    {
+        size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
+
+        /* Note that we don't attempt to synchronize cross-disk accesses.
+         * It wouldn't be very difficult to do, just the lock order would
+         * need to be defined somehow to prevent deadlocks. Postpone such
+         * magic as there is no use case for this. */
+
+        rc2 = vdThreadStartRead(pDiskFrom);
+        AssertRC(rc2);
+        fLockReadFrom = true;
+
+        if (fBlockwiseCopy)
+        {
+            /* Read the source data. */
+            rc = pImageFrom->Backend->pfnRead(pImageFrom->pBackendData,
+                                              uOffset, pvBuf, cbThisRead,
+                                              &cbThisRead);
+
+            if (   rc == VERR_VD_BLOCK_FREE
+                && cImagesFromRead != 1)
+            {
+                unsigned cImagesToProcess = cImagesFromRead;
+
+                for (PVDIMAGE pCurrImage = pImageFrom->pPrev;
+                     pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
+                     pCurrImage = pCurrImage->pPrev)
+                {
+                    rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
+                                                      uOffset, pvBuf, cbThisRead,
+                                                      &cbThisRead);
+                    if (cImagesToProcess == 1)
+                        break;
+                    else if (cImagesToProcess > 0)
+                        cImagesToProcess--;
+                }
+            }
+        }
+        else
+            rc = vdReadHelper(pDiskFrom, pImageFrom, uOffset, pvBuf, cbThisRead,
+                              false /* fUpdateCache */);
+
+        if (RT_FAILURE(rc) && rc != VERR_VD_BLOCK_FREE)
+            break;
+
+        rc2 = vdThreadFinishRead(pDiskFrom);
+        AssertRC(rc2);
+        fLockReadFrom = false;
+
+        if (rc != VERR_VD_BLOCK_FREE)
+        {
+            rc2 = vdThreadStartWrite(pDiskTo);
+            AssertRC(rc2);
+            fLockWriteTo = true;
+
+            /* Only do collapsed I/O if we are copying the data blockwise. */
+            rc = vdWriteHelperEx(pDiskTo, pDiskTo->pLast, NULL, uOffset, pvBuf,
+                                 cbThisRead, false /* fUpdateCache */,
+                                 fBlockwiseCopy ? cImagesToRead : 0);
+            if (RT_FAILURE(rc))
+                break;
+
+            rc2 = vdThreadFinishWrite(pDiskTo);
+            AssertRC(rc2);
+            fLockWriteTo = false;
+        }
+        else /* Don't propagate the error to the outside */
+            rc = VINF_SUCCESS;
+
+        uOffset += cbThisRead;
+        cbRemaining -= cbThisRead;
+
+        unsigned uProgressNew = uOffset * 99 / cbSize;
+        if (uProgressNew != uProgressOld)
+        {
+            uProgressOld = uProgressNew;
+
+            if (pCbProgress && pCbProgress->pfnProgress)
+            {
+                rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                              uProgressOld);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            if (pDstCbProgress && pDstCbProgress->pfnProgress)
+            {
+                rc = pDstCbProgress->pfnProgress(pDstIfProgress->pvUser,
+                                                 uProgressOld);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+    } while (uOffset < cbSize);
+
+    RTMemFree(pvBuf);
+
+    if (fLockReadFrom)
+    {
+        rc2 = vdThreadFinishRead(pDiskFrom);
+        AssertRC(rc2);
+    }
+
+    if (fLockWriteTo)
+    {
+        rc2 = vdThreadFinishWrite(pDiskTo);
+        AssertRC(rc2);
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -5502,9 +5692,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                         if (RT_FAILURE(rc))
                             break;
                         /* Updating the cache is required because this might be a live merge. */
-                        rc = vdWriteHelper(pDisk, pImageTo, pImageFrom->pPrev,
-                                           uOffset, pvBuf, cbThisRead,
-                                           true /* fUpdateCache */);
+                        rc = vdWriteHelperEx(pDisk, pImageTo, pImageFrom->pPrev,
+                                             uOffset, pvBuf, cbThisRead,
+                                             true /* fUpdateCache */, 0);
                         if (RT_FAILURE(rc))
                             break;
                     }
@@ -5617,7 +5807,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 {
                     if (RT_FAILURE(rc))
                         break;
-                    rc = vdWriteHelper(pDisk, pImageTo, NULL, uOffset, pvBuf,
+                    rc = vdWriteHelper(pDisk, pImageTo, uOffset, pvBuf,
                                        cbThisRead, true /* fUpdateCache */);
                     if (RT_FAILURE(rc))
                         break;
@@ -5773,7 +5963,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 }
 
 /**
- * Copies an image from one HDD container to another.
+ * Copies an image from one HDD container to another - extended version.
  * The copy is opened in the target HDD container.
  * It is possible to convert between different image formats, because the
  * backend for the destination may be different from the source.
@@ -5782,39 +5972,47 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * The source container is unchanged if the move operation fails, otherwise
  * the image at the new location is opened in the same way as the old one was.
  *
- * @returns VBox status code.
- * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @note The read/write accesses across disks are not synchronized, just the
+ * accesses to each disk. Once there is a use case which requires a defined
+ * read/write behavior in this situation this needs to be extended.
+ *
+ * @return  VBox status code.
+ * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDiskFrom       Pointer to source HDD container.
  * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  * @param   pDiskTo         Pointer to destination HDD container.
- * @param   pszBackend      Name of the image file backend to use.
- * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
+ * @param   pszBackend      Name of the image file backend to use (may be NULL to use the same as the source, case insensitive).
+ * @param   pszFilename     New name of the image (may be NULL to specify that the
+ *                          copy destination is the destination container, or
+ *                          if pDiskFrom == pDiskTo, i.e. when moving).
  * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
  * @param   cbSize          New image size (0 means leave unchanged).
+ * @param   nImageSameFrom  todo
+ * @param   nImageSameTo    todo
  * @param   uImageFlags     Flags specifying special destination image features.
  * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
  *                          This parameter is used if and only if a true copy is created.
- *                          In all rename/move cases the UUIDs are copied over.
+ *                          In all rename/move cases or copy to existing image cases the modification UUIDs are copied over.
  * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
  *                          Only used if the destination image is created.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
  *                          destination image.
- * @param   pDstVDIfsOperation Pointer to the per-image VD interface list,
- *                          for the destination image.
+ * @param   pDstVDIfsOperation Pointer to the per-operation VD interface list,
+ *                          for the destination operation.
  */
-VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
-                         const char *pszBackend, const char *pszFilename,
-                         bool fMoveByRename, uint64_t cbSize,
-                         unsigned uImageFlags, PCRTUUID pDstUuid,
-                         unsigned uOpenFlags, PVDINTERFACE pVDIfsOperation,
-                         PVDINTERFACE pDstVDIfsImage,
-                         PVDINTERFACE pDstVDIfsOperation)
+VBOXDDU_DECL(int) VDCopyEx(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
+                           const char *pszBackend, const char *pszFilename,
+                           bool fMoveByRename, uint64_t cbSize,
+                           unsigned nImageFromSame, unsigned nImageToSame,
+                           unsigned uImageFlags, PCRTUUID pDstUuid,
+                           unsigned uOpenFlags, PVDINTERFACE pVDIfsOperation,
+                           PVDINTERFACE pDstVDIfsImage,
+                           PVDINTERFACE pDstVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
     int rc2;
     bool fLockReadFrom = false, fLockWriteFrom = false, fLockWriteTo = false;
-    void *pvBuf = NULL;
     PVDIMAGE pImageTo = NULL;
 
     LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu uImageFlags=%#x pDstUuid=%#p uOpenFlags=%#x pVDIfsOperation=%#p pDstVDIfsImage=%#p pDstVDIfsOperation=%#p\n",
@@ -5848,6 +6046,12 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                            rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDiskTo->u32Signature == VBOXHDDDISK_SIGNATURE,
                   ("u32Signature=%08x\n", pDiskTo->u32Signature));
+        AssertMsgBreakStmt(   (nImageFromSame < nImage || nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN)
+                           && (nImageToSame < pDiskTo->cImages || nImageToSame == VD_IMAGE_CONTENT_UNKNOWN)
+                           && (   (nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN && nImageToSame == VD_IMAGE_CONTENT_UNKNOWN)
+                               || (nImageFromSame != VD_IMAGE_CONTENT_UNKNOWN && nImageToSame != VD_IMAGE_CONTENT_UNKNOWN)),
+                           ("nImageFromSame=%u nImageToSame=%u\n", nImageFromSame, nImageToSame),
+                           rc = VERR_INVALID_PARAMETER);
 
         /* Move the image. */
         if (pDiskFrom == pDiskTo)
@@ -6007,91 +6211,17 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         AssertRC(rc2);
         fLockWriteTo = false;
 
-        /* Allocate tmp buffer. */
-        pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
-        if (!pvBuf)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
         /* Whether we can take the optimized copy path (false) or not.
          * Don't optimize if the image existed or if it is a child image. */
-        bool fRegularRead = (pszFilename == NULL) || (cImagesTo > 0);
+        bool fSuppressRedundantIo = (   !(pszFilename == NULL || cImagesTo > 0)
+                                     || (nImageToSame != UINT32_MAX));
 
         /* Copy the data. */
-        uint64_t uOffset = 0;
-        uint64_t cbRemaining = cbSize;
-
-        do
-        {
-            size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
-
-            /* Note that we don't attempt to synchronize cross-disk accesses.
-             * It wouldn't be very difficult to do, just the lock order would
-             * need to be defined somehow to prevent deadlocks. Postpone such
-             * magic as there is no use case for this. */
-
-            rc2 = vdThreadStartRead(pDiskFrom);
-            AssertRC(rc2);
-            fLockReadFrom = true;
-
-            /*
-             * Updating the cache doesn't make any sense
-             * as we are looping once through the image.
-             */
-            rc = vdReadHelper(pDiskFrom, pImageFrom, NULL, uOffset, pvBuf,
-                              cbThisRead, fRegularRead,
-                              false /* fUpdateCache */);
-            if (RT_FAILURE(rc) && rc != VERR_VD_BLOCK_FREE)
-                break;
-
-            rc2 = vdThreadFinishRead(pDiskFrom);
-            AssertRC(rc2);
-            fLockReadFrom = false;
-
-            if (rc != VERR_VD_BLOCK_FREE)
-            {
-                rc2 = vdThreadStartWrite(pDiskTo);
-                AssertRC(rc2);
-                fLockWriteTo = true;
-
-                rc = vdWriteHelper(pDiskTo, pImageTo, NULL, uOffset, pvBuf,
-                                   cbThisRead, false /* fUpdateCache */);
-                if (RT_FAILURE(rc))
-                    break;
-
-                rc2 = vdThreadFinishWrite(pDiskTo);
-                AssertRC(rc2);
-                fLockWriteTo = false;
-            }
-            else /* Don't propagate the error to the outside */
-                rc = VINF_SUCCESS;
-
-            uOffset += cbThisRead;
-            cbRemaining -= cbThisRead;
-
-            if (pCbProgress && pCbProgress->pfnProgress)
-            {
-                /** @todo r=klaus: this can update the progress to the same
-                 * percentage over and over again if the image format makes
-                 * relatively small increments. */
-                rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
-                                              uOffset * 99 / cbSize);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-            if (pDstCbProgress && pDstCbProgress->pfnProgress)
-            {
-                /** @todo r=klaus: this can update the progress to the same
-                 * percentage over and over again if the image format makes
-                 * relatively small increments. */
-                rc = pDstCbProgress->pfnProgress(pDstIfProgress->pvUser,
-                                                 uOffset * 99 / cbSize);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-        } while (uOffset < cbSize);
+        rc = vdCopyHelper(pDiskFrom, pImageFrom, pDiskTo, cbSize,
+                          nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN ? 0 : nImage - nImageFromSame,
+                          nImageToSame == VD_IMAGE_CONTENT_UNKNOWN ? 0 : pDiskTo->cImages - nImageToSame + 1,
+                          fSuppressRedundantIo, pIfProgress, pCbProgress,
+                          pDstIfProgress, pDstCbProgress);
 
         if (RT_SUCCESS(rc))
         {
@@ -6154,9 +6284,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         AssertRC(rc2);
     }
 
-    if (pvBuf)
-        RTMemTmpFree(pvBuf);
-
     if (RT_SUCCESS(rc))
     {
         if (pCbProgress && pCbProgress->pfnProgress)
@@ -6167,6 +6294,51 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/**
+ * Copies an image from one HDD container to another.
+ * The copy is opened in the target HDD container.
+ * It is possible to convert between different image formats, because the
+ * backend for the destination may be different from the source.
+ * If both the source and destination reference the same HDD container,
+ * then the image is moved (by copying/deleting or renaming) to the new location.
+ * The source container is unchanged if the move operation fails, otherwise
+ * the image at the new location is opened in the same way as the old one was.
+ *
+ * @returns VBox status code.
+ * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDiskFrom       Pointer to source HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pDiskTo         Pointer to destination HDD container.
+ * @param   pszBackend      Name of the image file backend to use.
+ * @param   pszFilename     New name of the image (may be NULL if pDiskFrom == pDiskTo).
+ * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
+ * @param   cbSize          New image size (0 means leave unchanged).
+ * @param   uImageFlags     Flags specifying special destination image features.
+ * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
+ *                          This parameter is used if and only if a true copy is created.
+ *                          In all rename/move cases the UUIDs are copied over.
+ * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ *                          Only used if the destination image is created.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
+ *                          destination image.
+ * @param   pDstVDIfsOperation Pointer to the per-image VD interface list,
+ *                          for the destination image.
+ */
+VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
+                         const char *pszBackend, const char *pszFilename,
+                         bool fMoveByRename, uint64_t cbSize,
+                         unsigned uImageFlags, PCRTUUID pDstUuid,
+                         unsigned uOpenFlags, PVDINTERFACE pVDIfsOperation,
+                         PVDINTERFACE pDstVDIfsImage,
+                         PVDINTERFACE pDstVDIfsOperation)
+{
+    return VDCopyEx(pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename,
+                    cbSize, VD_IMAGE_CONTENT_UNKNOWN, VD_IMAGE_CONTENT_UNKNOWN,
+                    uImageFlags, pDstUuid, uOpenFlags, pVDIfsOperation,
+                    pDstVDIfsImage, pDstVDIfsOperation);
 }
 
 /**
@@ -6685,8 +6857,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
-        rc = vdReadHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbRead,
-                          true /* fZeroFreeBlocks */,
+        rc = vdReadHelper(pDisk, pImage, uOffset, pvBuf, cbRead,
                           true /* fUpdateCache */);
     } while (0);
 
@@ -6747,7 +6918,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
         vdSetModifiedFlag(pDisk);
-        rc = vdWriteHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbWrite,
+        rc = vdWriteHelper(pDisk, pImage, uOffset, pvBuf, cbWrite,
                            true /* fUpdateCache */);
         if (RT_FAILURE(rc))
             break;
@@ -6761,7 +6932,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
          * to a full allocation size. The cache doesn't need to be touched
          * as this write is covered by the previous one. */
         if (RT_UNLIKELY(pDisk->pImageRelay))
-            rc = vdWriteHelper(pDisk, pDisk->pImageRelay, NULL, uOffset,
+            rc = vdWriteHelper(pDisk, pDisk->pImageRelay, uOffset,
                                pvBuf, cbWrite, false /* fUpdateCache */);
     } while (0);
 

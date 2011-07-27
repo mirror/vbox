@@ -64,6 +64,9 @@ RT_C_DECLS_BEGIN
 /** Placeholder for specifying the last opened image. */
 #define VD_LAST_IMAGE               0xffffffffU
 
+/** Placeholder for VDCopyEx to indicate that the image content is unknown. */
+#define VD_IMAGE_CONTENT_UNKNOWN    0xffffffffU
+
 /** @name VBox HDD container image flags
  * @{
  */
@@ -2184,6 +2187,79 @@ VBOXDDU_DECL(int) VDCreateCache(PVBOXHDD pDisk, const char *pszBackend,
  */
 VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                           unsigned nImageTo, PVDINTERFACE pVDIfsOperation);
+
+/**
+ * Copies an image from one HDD container to another - extended version.
+ * The copy is opened in the target HDD container.
+ * It is possible to convert between different image formats, because the
+ * backend for the destination may be different from the source.
+ * If both the source and destination reference the same HDD container,
+ * then the image is moved (by copying/deleting or renaming) to the new location.
+ * The source container is unchanged if the move operation fails, otherwise
+ * the image at the new location is opened in the same way as the old one was.
+ *
+ * @note The read/write accesses across disks are not synchronized, just the
+ * accesses to each disk. Once there is a use case which requires a defined
+ * read/write behavior in this situation this needs to be extended.
+ *
+ * @return  VBox status code.
+ * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @param   pDiskFrom       Pointer to source HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   pDiskTo         Pointer to destination HDD container.
+ * @param   pszBackend      Name of the image file backend to use (may be NULL to use the same as the source, case insensitive).
+ * @param   pszFilename     New name of the image (may be NULL to specify that the
+ *                          copy destination is the destination container, or
+ *                          if pDiskFrom == pDiskTo, i.e. when moving).
+ * @param   fMoveByRename   If true, attempt to perform a move by renaming (if successful the new size is ignored).
+ * @param   cbSize          New image size (0 means leave unchanged).
+ * @param   nImageSameFrom  The number of the last image in the source chain having the same content as the
+ *                          image in the destination chain given by nImageSameTo or
+ *                          VD_IMAGE_CONTENT_UNKNOWN to indicate that the content of both containers is unknown.
+ *                          See the notes for further information.
+ * @param   nImageSameTo    The number of the last image in the destination chain having the same content as the
+ *                          image in the source chain given by nImageSameFrom or
+ *                          VD_IMAGE_CONTENT_UNKNOWN to indicate that the content of both containers is unknown.
+ *                          See the notes for further information.
+ * @param   uImageFlags     Flags specifying special destination image features.
+ * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
+ *                          This parameter is used if and only if a true copy is created.
+ *                          In all rename/move cases or copy to existing image cases the modification UUIDs are copied over.
+ * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ *                          Only used if the destination image is created.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
+ *                          destination image.
+ * @param   pDstVDIfsOperation Pointer to the per-operation VD interface list,
+ *                          for the destination operation.
+ *
+ * @note Using nImageSameFrom and nImageSameTo can lead to a significant speedup
+ *       when copying an image but can also lead to a corrupted copy if used incorrectly.
+ *       It is mainly useful when cloning a chain of images and it is known that
+ *       the virtual disk content of the two chains is exactly the same upto a certain image.
+ *       Example:
+ *          Imagine the chain of images which consist of a base and one diff image.
+ *          Copying the chain starts with the base image. When copying the first
+ *          diff image VDCopy() will read the data from the diff of the source chain
+ *          and probably from the base image again in case the diff doesn't has data
+ *          for the block. However the block will be optimized away because VDCopy()
+ *          reads data from the base image of the destination chain compares the to
+ *          and suppresses the write because the data is unchanged.
+ *          For a lot of diff images this will be a huge waste of I/O bandwidth if
+ *          the diff images contain only few changes.
+ *          Because it is known that the base image of the source and the destination chain
+ *          have the same content it is enough to check the diff image for changed data
+ *          and copy it to the destination diff image which is achieved with
+ *          nImageSameFrom and nImageSameTo. Setting both to 0 can suppress a lot of I/O.
+ */
+VBOXDDU_DECL(int) VDCopyEx(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
+                           const char *pszBackend, const char *pszFilename,
+                           bool fMoveByRename, uint64_t cbSize,
+                           unsigned nImageFromSame, unsigned nImageToSame,
+                           unsigned uImageFlags, PCRTUUID pDstUuid,
+                           unsigned uOpenFlags, PVDINTERFACE pVDIfsOperation,
+                           PVDINTERFACE pDstVDIfsImage,
+                           PVDINTERFACE pDstVDIfsOperation);
 
 /**
  * Copies an image from one HDD container to another.
