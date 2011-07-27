@@ -1588,11 +1588,25 @@ NTSTATUS VBoxMRxSetFileInformation (IN PRX_CONTEXT RxContext)
     case FileAllocationInformation:
     {
         PFILE_ALLOCATION_INFORMATION pAllocInfo = (PFILE_ALLOCATION_INFORMATION)pBuffer;
+        LARGE_INTEGER NewAllocationSize;
 
-        Log(("VBOXSF: VBoxMRxSetFileInformation: FileAllocationInformation: AllocSize = %RX64\n", pAllocInfo->AllocationSize.QuadPart));
+        Log(("VBOXSF: VBoxMRxSetFileInformation: FileAllocationInformation: new AllocSize = %RX64, FileSize = %RX64\n",
+             pAllocInfo->AllocationSize.QuadPart, capFcb->Header.FileSize.QuadPart));
 
-        /* Pretend success */
-        Status = STATUS_SUCCESS;
+        /* Check if the new allocation size changes the file size. */
+        if (pAllocInfo->AllocationSize.QuadPart > capFcb->Header.FileSize.QuadPart)
+        {
+            /* Ignore this request and return success. Shared folders do not distinguish between
+             * AllocationSize and FileSize.
+             */
+            Status = STATUS_SUCCESS;
+        }
+        else
+        {
+            /* Treat the request as a EndOfFile update. */
+            Status = VBoxMRxSetEndOfFile(RxContext, &pAllocInfo->AllocationSize, &NewAllocationSize);
+        }
+
         break;
     }
 
@@ -1601,8 +1615,9 @@ NTSTATUS VBoxMRxSetFileInformation (IN PRX_CONTEXT RxContext)
         PFILE_END_OF_FILE_INFORMATION pEndOfFileInfo = (PFILE_END_OF_FILE_INFORMATION)pBuffer;
         LARGE_INTEGER NewAllocationSize;
 
-        Log(("VBOXSF: VBoxMRxSetFileInformation: FileEndOfFileInformation: FileSize = %RX64\n", capFcb->Header.AllocationSize.QuadPart));
-        if (pEndOfFileInfo->EndOfFile.QuadPart > capFcb->Header.AllocationSize.QuadPart)
+        Log(("VBOXSF: VBoxMRxSetFileInformation: FileEndOfFileInformation: new EndOfFile %RX64, FileSize = %RX64\n",
+             pEndOfFileInfo->EndOfFile.QuadPart, capFcb->Header.FileSize.QuadPart));
+        if (pEndOfFileInfo->EndOfFile.QuadPart > capFcb->Header.FileSize.QuadPart)
         {
             Status = VBoxMRxExtendFile(RxContext, &pEndOfFileInfo->EndOfFile, &NewAllocationSize);
 
