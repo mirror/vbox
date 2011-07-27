@@ -3140,11 +3140,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>disabled feature used</source>
-        <translation type="unfinished"></translation>
+        <translation>използвана забранена функция</translation>
     </message>
     <message>
         <source>bad char class syntax</source>
-        <translation type="unfinished"></translation>
+        <translation>лош синтаксис на класа със знаци</translation>
     </message>
     <message>
         <source>bad lookahead syntax</source>
@@ -3322,63 +3322,63 @@ Please choose a different file name.</source>
     <name>QSharedMemory</name>
     <message>
         <source>%1: unable to set key on lock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: не може да се зададе ключ на заключване</translation>
     </message>
     <message>
         <source>%1: create size is less then 0</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: размерът на създаване е по-малък от 0</translation>
     </message>
     <message>
         <source>%1: unable to lock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: невъзможност за заключване</translation>
     </message>
     <message>
         <source>%1: unable to unlock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: невъзможност за отключване</translation>
     </message>
     <message>
         <source>%1: permission denied</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: отказан достъп</translation>
     </message>
     <message>
         <source>%1: already exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: вече съществува</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: не съществува</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: недостатъчни ресурси</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: непозната грешка %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: ключът е празен</translation>
     </message>
     <message>
         <source>%1: unix key file doesn&apos;t exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: файлът с unix ключ не съществува</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: неуспешен ftok</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: не може да се създаде ключ</translation>
     </message>
     <message>
         <source>%1: system-imposed size restrictions</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: наложени в системата ограничения за размер</translation>
     </message>
     <message>
         <source>%1: not attached</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: не е закачен</translation>
     </message>
 </context>
 <context>
@@ -3569,103 +3569,103 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Launch Mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване на поща</translation>
     </message>
     <message>
         <source>Launch Media</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване на медия</translation>
     </message>
     <message>
         <source>Launch (0)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (0)</translation>
     </message>
     <message>
         <source>Launch (1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (1)</translation>
     </message>
     <message>
         <source>Launch (2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (2)</translation>
     </message>
     <message>
         <source>Launch (3)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (3)</translation>
     </message>
     <message>
         <source>Launch (4)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (4)</translation>
     </message>
     <message>
         <source>Launch (5)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (5)</translation>
     </message>
     <message>
         <source>Launch (6)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (6)</translation>
     </message>
     <message>
         <source>Launch (7)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (7)</translation>
     </message>
     <message>
         <source>Launch (8)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (8)</translation>
     </message>
     <message>
         <source>Launch (9)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (9)</translation>
     </message>
     <message>
         <source>Launch (A)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (A)</translation>
     </message>
     <message>
         <source>Launch (B)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (B)</translation>
     </message>
     <message>
         <source>Launch (C)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (C)</translation>
     </message>
     <message>
         <source>Launch (D)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (D)</translation>
     </message>
     <message>
         <source>Launch (E)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (E)</translation>
     </message>
     <message>
         <source>Launch (F)</source>
-        <translation type="unfinished"></translation>
+        <translation>Включване (F)</translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Print Screen</translation>
     </message>
     <message>
         <source>Page Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Page Up</translation>
     </message>
     <message>
         <source>Page Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Page Down</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Caps Lock</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Num Lock</translation>
     </message>
     <message>
         <source>Number Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Number Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Scroll Lock</translation>
     </message>
     <message>
         <source>Insert</source>
@@ -3677,7 +3677,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Escape</source>
-        <translation type="unfinished"></translation>
+        <translation>Escape</translation>
     </message>
     <message>
         <source>System Request</source>
@@ -3713,43 +3713,43 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Call</source>
-        <translation type="unfinished"></translation>
+        <translation>Обаждане</translation>
     </message>
     <message>
         <source>Hangup</source>
-        <translation type="unfinished"></translation>
+        <translation>Затваряне</translation>
     </message>
     <message>
         <source>Flip</source>
-        <translation type="unfinished"></translation>
+        <translation>Обръщане</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Shift</source>
-        <translation type="unfinished"></translation>
+        <translation>Shift</translation>
     </message>
     <message>
         <source>Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt</translation>
     </message>
     <message>
         <source>Meta</source>
-        <translation type="unfinished"></translation>
+        <translation>Meta</translation>
     </message>
     <message>
         <source>+</source>
-        <translation type="unfinished"></translation>
+        <translation>+</translation>
     </message>
     <message>
         <source>F%1</source>
-        <translation type="unfinished"></translation>
+        <translation>F%1</translation>
     </message>
     <message>
         <source>Home Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Домашна страница</translation>
     </message>
 </context>
 <context>
@@ -3844,58 +3844,58 @@ Please choose a different file name.</source>
     <name>QSslSocket</name>
     <message>
         <source>Unable to write data: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Не могат да се запишат данни: %1</translation>
     </message>
     <message>
         <source>Error while reading: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка при четене: %1</translation>
     </message>
     <message>
         <source>Error during SSL handshake: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка при SSL здрависване: %1</translation>
     </message>
     <message>
         <source>Error creating SSL context (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка при създаване на SSL контекст (%1)</translation>
     </message>
     <message>
         <source>Invalid or empty cipher list (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Невалиден или празен списък с шифри (%1)</translation>
     </message>
     <message>
         <source>Error creating SSL session, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка при създаване на SSL сесия, %1</translation>
     </message>
     <message>
         <source>Error creating SSL session: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка при създаване на SSL сесия: %1</translation>
     </message>
     <message>
         <source>Cannot provide a certificate with no key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Не може да се осигури сертифкат без ключ, %1</translation>
     </message>
     <message>
         <source>Error loading local certificate, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка при зареждане на локален сертификат, %1</translation>
     </message>
     <message>
         <source>Error loading private key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка при зареждане на частен ключ, %1</translation>
     </message>
     <message>
         <source>Private key does not certificate public key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Частният ключ не сертифицира публичния ключ, %1</translation>
     </message>
 </context>
 <context>
     <name>QTDSDriver</name>
     <message>
         <source>Unable to open connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Не може да се отвори връзка</translation>
     </message>
     <message>
         <source>Unable to use database</source>
-        <translation type="unfinished"></translation>
+        <translation>Не може да се използва база данни</translation>
     </message>
 </context>
 <context>

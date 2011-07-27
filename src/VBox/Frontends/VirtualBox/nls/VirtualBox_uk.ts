@@ -517,88 +517,88 @@
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation type="unfinished">&amp;Налаштування...</translation>
+        <translation>&amp;Налаштування…</translation>
     </message>
     <message>
         <source>Manage the virtual machine settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Керувати налаштуваннями віртуальної машини</translation>
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Інформація про сеанс…</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрити віртуальну машину</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрити</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage1</name>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a clone of your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Цей майстер допоможе створити клон віртуальної машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Будь ласка, введіть назву для нової віртуальної машини:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо це позначено, до всіх мережевих плат буде призначено нову адресу MAC.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>Пере&amp;запустити адреси MAC усіх мережевих плат</translation>
     </message>
     <message>
         <source>Welcome to the virtual machine clone wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Ласкаво просимо до майстра клонування машин</translation>
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 клон</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Поточний стан машини</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished"></translation>
+        <translation>Стани поточної машини і її підпорядованих</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished"></translation>
+        <translation>Усі стани</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Налаштування клонування</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Будь ласка, виберіть, які частини віртуальної машини слід клонувати.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо вибрати &lt;b&gt;Поточний стан машини&lt;/b&gt;, клонується лише поточний стан віртуальної машини.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо вибрати &lt;b&gt;Стани поточної машини і її підпорядованих&lt;/b&gt;, клонується поточний стан віртуальної машини і певні зрізи.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо вибрати &lt;b&gt;Усі стани&lt;/b&gt;, клонується поточний стан машини і всі зрізи.</translation>
     </message>
 </context>
 <context>
@@ -894,22 +894,22 @@
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Виконавча шапка</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Загальний драйвер, «%1»</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Загальний драйвер, «%1» {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
 </context>
 <context>
@@ -1089,7 +1089,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Експортувати</translation>
     </message>
 </context>
 <context>
@@ -1423,7 +1423,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Запустити</translation>
     </message>
 </context>
 <context>
@@ -1568,7 +1568,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>Якщо це відмічено, програма забезпечуватиме піктограму з контекстним меню в системному лотку.</translation>
+        <translation>Якщо це позначено, програма забезпечуватиме піктограму з контекстним меню в системному лотку.</translation>
     </message>
     <message>
         <source>&amp;Show System Tray Icon</source>
@@ -1576,7 +1576,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
-        <translation type="obsolete">Якщо це відмічено, піктограма відображатиме вікно віртуальної машини в реальному часі.</translation>
+        <translation type="obsolete">Якщо це позначено, піктограма відображатиме вікно віртуальної машини в реальному часі.</translation>
     </message>
     <message>
         <source>&amp;Dock Icon Realtime Preview</source>
@@ -1588,7 +1588,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
-        <translation>Якщо це відмічено, зберігач головного екрана буде вимкнено, коли віртуальна машина запущена.</translation>
+        <translation>Якщо це позначено, зберігач головного екрана буде вимкнено, коли віртуальна машина запущена.</translation>
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
@@ -1615,7 +1615,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation>Якщо це відмічено, клавіатура автоматично захоплюється кожного разу, коли вікно віртуальної машини активне. Якщо клавіатура захоплена, будь-які натиснення клавіш (за винятком системних, наприклад, Alt-Tab) спрямовуються у віртуальну машину.</translation>
+        <translation>Якщо це позначено, клавіатура автоматично захоплюється кожного разу, коли вікно віртуальної машини активне. Якщо клавіатура захоплена, будь-які натиснення клавіш (за винятком системних, наприклад, Alt-Tab) спрямовуються у віртуальну машину.</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
@@ -1937,58 +1937,58 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalSettingsProxy</name>
     <message>
         <source>When checked, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо позначено, VirtualBox буде використовувати налаштування проксі для завдань на кшталт звантаження гостьових доповнень або перевіряння на оновлення.</translation>
     </message>
     <message>
         <source>&amp;Enable proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Увімкнути проксі</translation>
     </message>
     <message>
         <source>Ho&amp;st:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ву&amp;зол:</translation>
     </message>
     <message>
         <source>Changes the proxy host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Змінити вузол проксі.</translation>
     </message>
     <message>
         <source>&amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Порт:</translation>
     </message>
     <message>
         <source>Changes the proxy port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Змінити порт проксі.</translation>
     </message>
     <message>
         <source>When checked the authentication supplied will be used with the proxy server.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо позначено, автентифікація буде використовувати проксі-сервер.</translation>
     </message>
     <message>
         <source>&amp;Use authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Використовувати автентифікацію</translation>
     </message>
     <message>
         <source>User &amp;name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Користувач:</translation>
     </message>
     <message>
         <source>Changes the user name used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Змінити користувача для автентифікації.</translation>
     </message>
     <message>
         <source>Pass&amp;word:</source>
-        <translation type="unfinished"></translation>
+        <translation>Па&amp;роль:</translation>
     </message>
     <message>
         <source>Changes the password used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Змінити пароль для автентифікації.</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>Якщо це відмічено, програма періодично буде під&apos;єднуватись до сайта VirtualBox і перевірятиме доступність нових версій VirtualBox.</translation>
+        <translation>Якщо це позначено, програма періодично буде під&apos;єднуватись до сайту VirtualBox і перевірятиме доступність нових версій VirtualBox.</translation>
     </message>
     <message>
         <source>&amp;Check for updates</source>
@@ -2289,7 +2289,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Імпортувати</translation>
     </message>
 </context>
 <context>
@@ -2461,7 +2461,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>Описує стан різних можливостей віртуальної машини:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -2527,7 +2527,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation>Якщо це відмічено, віртуальна аудіоплата PCI під&apos;єднана до віртуальної машини, використовуючи вказаний драйвер для роботи з головною аудіоплатою.</translation>
+        <translation>Якщо це позначено, віртуальна аудіоплата PCI під&apos;єднана до віртуальної машини, використовуючи вказаний драйвер для роботи з головною аудіоплатою.</translation>
     </message>
     <message>
         <source>Enable &amp;Audio</source>
@@ -2582,7 +2582,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation>Якщо це відмічено, віртуальна машина отримає доступ до можливостей прискорення просторової графіки, доступних на головній операційній системі.</translation>
+        <translation>Якщо це позначено, віртуальна машина отримає доступ до можливостей прискорення просторової графіки, доступних на головній операційній системі.</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
@@ -2594,7 +2594,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Якщо це відмічено, то віртуальна машина буде діяти відповідно як сервер віддаленої стільниці (RDP), дозволяючи віддаленим клієнтам з&apos;єднатися та використовувати віртуальну машину (коли вона запущена), використовуючи стандартного клієнта RDP.</translation>
+        <translation>Якщо це позначено, то віртуальна машина буде діяти відповідно як сервер віддаленої стільниці (RDP), дозволяючи віддаленим клієнтам з&apos;єднатися та використовувати віртуальну машину (коли вона запущена), використовуючи стандартного клієнта RDP.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
@@ -2630,7 +2630,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation>Якщо це відмічено, віртуальна машина матиме доступ до прискорених можливостей відео у гостьовій операційній системі.</translation>
+        <translation>Якщо це позначено, віртуальна машина матиме доступ до прискорених можливостей відео у гостьовій операційній системі.</translation>
     </message>
     <message>
         <source>Enable &amp;2D Video Acceleration</source>
@@ -2666,11 +2666,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви увімкнули просторове прискорення для операційної системи, яка використовує відеодрайвер WDDM. Для найпродуктивнішої роботи ввімкніть хоча би гостьову VRAM&lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви увімкнули прискорення двовимірного відео. Оскільки прискорення двовимірного відео підтримується лише для гостьових Windows, цю властивість буде вимкнено.</translation>
     </message>
 </context>
 <context>
@@ -2765,7 +2765,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Якщо це відмічено, віртуальна машина буде підтримувати вдосконалений інтерфейс конфігурації та керування живленням (ACPI). &lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
+        <translation type="obsolete">Якщо це позначено, віртуальна машина буде підтримувати вдосконалений інтерфейс конфігурації та керування живленням (ACPI). &lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>
         <source>Enable A&amp;CPI</source>
@@ -2773,7 +2773,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Якщо це відмічено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (IO APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
+        <translation type="obsolete">Якщо це позначено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (IO APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -2781,7 +2781,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="obsolete">Якщо це відмічено, віртуальна машина спробує використати розширення апаратної віртуалізації, такі як Intel VT-x та AMD-V, для процесора головного комп&apos;ютера.</translation>
+        <translation type="obsolete">Якщо це позначено, віртуальна машина спробує використати розширення апаратної віртуалізації, такі як Intel VT-x та AMD-V, для процесора головного комп&apos;ютера.</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
@@ -2829,7 +2829,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Якщо це відмічено, будь-які зміни для носіїв CD/DVD або дискет, які змонтовані, виконані під час роботи машини будуть збережені в файл налаштувань в порядку збереження налаштувань носіїв, які змонтовані, перед запуском.</translation>
+        <translation>Якщо це позначено, будь-які зміни для носіїв CD/DVD або дискет, які змонтовані, виконані під час роботи машини будуть збережені в файл налаштувань в порядку збереження налаштувань носіїв, які змонтовані, перед запуском.</translation>
     </message>
     <message>
         <source>&amp;Remember Mounted Media</source>
@@ -2873,7 +2873,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation>Якщо це відмічено, показувати зменшену панель інструментів в повноекранному і ціловикроєному режимі.</translation>
+        <translation>Якщо це позначено, показувати зменшену панель інструментів в повноекранному і ціловикроєному режимі.</translation>
     </message>
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
@@ -2881,7 +2881,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>Якщо це відмічено, показувати зменшену панель інструментів зверху екрана, а не, як типово, знизу.</translation>
+        <translation>Якщо це позначено, показувати зменшену панель інструментів зверху екрана, а не, як типово, знизу.</translation>
     </message>
     <message>
         <source>Show At &amp;Top Of Screen</source>
@@ -2889,7 +2889,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви вибрали 64-ох бітну гостьову операційну систему для цієї віртуальної машини. Потрібна відповідна апаратна віртуалізація (VT-x/AMD-V), цю можливість буде автоматично ввімкнено.</translation>
     </message>
 </context>
 <context>
@@ -2904,7 +2904,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation>Якщо це відмічено, під&apos;єднує віртуальний мережевий адаптер у віртуальну машину.</translation>
+        <translation>Якщо це позначено, під&apos;єднує віртуальний мережевий адаптер у віртуальну машину.</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
@@ -3057,39 +3057,39 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Promiscuous Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Змішаний режим:</translation>
     </message>
     <message>
         <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибирає політику змішаного режиму мережевого адаптера, коли під&apos;єднано до внутрішньої мережі, лише головної або через міст.</translation>
     </message>
     <message>
         <source>Generic Properties:</source>
-        <translation type="unfinished"></translation>
+        <translation>Загальній властивості:</translation>
     </message>
     <message>
         <source>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Введіть будь-які налаштування для мережевого під&apos;єднання драйвера, котрий ви використовуватимете. Налаштування слід записувати у формі &lt;b&gt;назва=значення&lt;/b&gt; і це залежно від драйвера. Використайте &lt;b&gt;shift-enter&lt;/b&gt;, щоб додати новий запис.</translation>
     </message>
     <message>
         <source>no generic driver is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>не вибрано загально драйвера</translation>
     </message>
     <message>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибирає мережевий адаптер на головній системі, через мережеву плату якої буде проходити весь трафік.</translation>
     </message>
     <message>
         <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
-        <translation type="unfinished"></translation>
+        <translation>Введіть назву внутрішньої мережі, до котрої буде під&apos;єднано мережеву плату. Можете створити нову віртуальну мережу, вибравши назву, яка не використовується будь-якою іншою мережевою платою у цій віртуальній машині або інших.</translation>
     </message>
     <message>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибирає віртуальний мережевий адаптер на головній системі, через мережеву плату якої буде проходити весь трафік. Можете створити і вилучити адаптери, використовуючи загальні налаштування у менеджері вікон віртуальної машини.</translation>
     </message>
     <message>
         <source>Selects the driver to be used with this network card.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибирає драйвер для цієї мережевої плати.</translation>
     </message>
 </context>
 <context>
@@ -3139,7 +3139,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation>Якщо це відмічено, вмикається даний паралельний порт віртуальної машини.</translation>
+        <translation>Якщо це позначено, вмикається даний паралельний порт віртуальної машини.</translation>
     </message>
     <message>
         <source>&amp;Enable Parallel Port</source>
@@ -3347,7 +3347,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation>Якщо це відмічено, гостьова операційна система матиме можливість редагувати вибрану спільну теку.</translation>
+        <translation>Якщо це позначено, гостьова операційна система матиме можливість редагувати вибрану спільну теку.</translation>
     </message>
     <message>
         <source>&amp;Read-only</source>
@@ -3359,7 +3359,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
-        <translation>Якщо це відмічено, гостьова операційна система буде автоматично монтувати спільні теки при запуску.</translation>
+        <translation>Якщо це позначено, гостьова операційна система буде автоматично монтувати спільні теки при запуску.</translation>
     </message>
     <message>
         <source>&amp;Auto-mount</source>
@@ -3367,7 +3367,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, this shared folder will be permanent.</source>
-        <translation>Якщо це відмічено, ця спільна тека буде незмінною.</translation>
+        <translation>Якщо це позначено, ця спільна тека буде незмінною.</translation>
     </message>
 </context>
 <context>
@@ -3379,7 +3379,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation>Якщо це відмічено, вмикається даний послідовний порт віртуальної машини.</translation>
+        <translation>Якщо це позначено, вмикається даний послідовний порт віртуальної машини.</translation>
     </message>
     <message>
         <source>&amp;Enable Serial Port</source>
@@ -3419,7 +3419,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation>Якщо це відмічено, канал описується в полі &lt;b&gt;Шлях порту&lt;/b&gt;, яке буде створене при запуску віртуальної машини. Інакше віртуальна машина спробує використати наявний канал.</translation>
+        <translation>Якщо це позначено, канал описується в полі &lt;b&gt;Шлях порту&lt;/b&gt;, яке буде створене при запуску віртуальної машини. Інакше віртуальна машина спробує використати наявний канал.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
@@ -3493,7 +3493,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
-        <translation type="obsolete">Якщо це відмічено, ввімкнутий віртуальний контролер SATA цієї машини. Майте на увазі,  ви не можете під&apos;єднювати жорсткі диски до порту SATA, коли віртуальний контролер SATA вимкнутий.</translation>
+        <translation type="obsolete">Якщо це позначено, ввімкнутий віртуальний контролер SATA цієї машини. Майте на увазі,  ви не можете під&apos;єднювати жорсткі диски до порту SATA, коли віртуальний контролер SATA вимкнутий.</translation>
     </message>
     <message>
         <source>&amp;Enable SATA Controller</source>
@@ -3509,11 +3509,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation type="obsolete">Відкриває вікно керуванння віртуальними носіями для вибору жорсткого диска, який слід з&apos;єднати з вибраним слотом.</translation>
+        <translation type="obsolete">Відкриває вікно керування віртуальними носіями для вибору жорсткого диска, який слід з&apos;єднати з вибраним слотом.</translation>
     </message>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
-        <translation type="obsolete">Якщо це відмічено, буде показуватись обчислення жорстких дисків, які реально під&apos;єднані до гнізд замість основних жорстких дисків (у випадку непрямого під&apos;єднання) і також під&apos;єднає інші явні обчислення жорстких дисків. Перевіряйте це лише тоді, коли вам потрібне складене встановлення жорсткого диска.</translation>
+        <translation type="obsolete">Якщо це позначено, буде показуватись обчислення жорстких дисків, які реально під&apos;єднані до гнізд замість основних жорстких дисків (у випадку непрямого під&apos;єднання) і також під&apos;єднає інші явні обчислення жорстких дисків. Перевіряйте це лише тоді, коли вам потрібне складене встановлення жорсткого диска.</translation>
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
@@ -3529,7 +3529,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation type="obsolete">Якщо це відмічено, вмикається додатковий віртуальний контролер цієї машини (SATA або SCSI).</translation>
+        <translation type="obsolete">Якщо це позначено, вмикається додатковий віртуальний контролер цієї машини (SATA або SCSI).</translation>
     </message>
     <message>
         <source>&amp;Enable Additional Controller</source>
@@ -3713,7 +3713,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Якщо це відмічено, то гостьова система може відправляти команди ATAPI напряму до головних пристроїв, що дозволяє використовувати запис CD/DVD, які під&apos;єднано до головної системи. Майте на увазі, запис аудіо CD поки що не підтримується.</translation>
+        <translation>Якщо це позначено, то гостьова система може відправляти команди ATAPI напряму до головних пристроїв, що дозволяє використовувати запис CD/DVD, які під&apos;єднано до головної системи. Майте на увазі, запис аудіо CD поки що не підтримується.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
@@ -3833,57 +3833,49 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо позначено, це стримувати демонтування носія, коли госьова система виштовхуватиме його.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Live CD/DVD</translation>
     </message>
     <message>
         <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо позначено, це залишить носій як необертову пам&apos;ять (SSD).</translation>
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ьвердотіловий пристрій</translation>
     </message>
     <message>
         <source>Details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Подробиці:</translation>
     </message>
     <message>
         <source>no name specified for controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вказано назви для контролера в позиції &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>controller at position &lt;b&gt;%1&lt;/b&gt; uses the name that is already used by controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>контролер у позиції &lt;b&gt;%1&lt;/b&gt; використовує назву, яка вже використовується контролером у позиції &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>no hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вибрано жорсткого диска для &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>at most one supported</source>
         <comment>controller</comment>
-        <translation type="unfinished">щонайбільше один підтримується</translation>
+        <translation>щонайбільше один підтримується</translation>
     </message>
     <message>
         <source>up to %1 supported</source>
         <comment>controllers</comment>
-        <translation type="unfinished">до %1 підтримується</translation>
+        <translation>до %1 підтримується</translation>
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation type="unfinished">ви тепер використовуєте більше пам&apos;яті контролерів, аніж підтримується — %1. Будь ласка, змініть тип комплекс мікросхем на сторінці налаштувань системи або або збільште кількість кількість пам&apos;яті таких контролерів на сторінці налаштувань пам&apos;яті: %2.</translation>
-    </message>
-    <message>
-        <source>&amp;Port Count:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви тепер використовуєте більше пам&apos;яті контролерів, аніж підтримується — %1. Будь ласка, змініть тип комплексу мікросхем на сторінці налаштувань системи або збільште кількість пам&apos;яті таких контролерів на сторінці налаштувань пам&apos;яті: %2.</translation>
     </message>
 </context>
 <context>
@@ -3972,7 +3964,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Якщо це відмічено, віртуальна машина буде підтримувати вдосконалений інтерфейс налаштування та керування живленням (ACPI). &lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
+        <translation type="obsolete">Якщо це позначено, віртуальна машина буде підтримувати вдосконалений інтерфейс налаштування та керування живленням (ACPI). &lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>
         <source>Enable &amp;ACPI</source>
@@ -3980,7 +3972,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Якщо це відмічено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (IO APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
+        <translation>Якщо це позначено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (IO APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>
         <source>Enable &amp;IO APIC</source>
@@ -4000,7 +3992,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation>Якщо це відмічено, на віртуальній машині буде використано можливість розширення області фізичних адрес (PAE).</translation>
+        <translation>Якщо це позначено, на віртуальній машині буде використано можливість розширення області фізичних адрес (PAE).</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
@@ -4016,7 +4008,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>Якщо це відмічено, віртуальна машина спробує використати розширення апаратної віртуалізації такі, як Intel VT-x та AMD-V, для процесора головного комп&apos;ютера.</translation>
+        <translation>Якщо це позначено, віртуальна машина спробує використати розширення апаратної віртуалізації такі, як Intel VT-x та AMD-V, для процесора головного комп&apos;ютера.</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
@@ -4024,7 +4016,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation>Коли це відмічено, віртуальна машина спробує застосувати розширення вкладеного заміщення сторінок Intel VT-x і AMD-V.</translation>
+        <translation>Коли це позначено, віртуальна машина спробує застосувати розширення вкладеного заміщення сторінок Intel VT-x і AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -4037,7 +4029,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation>Якщо це відмічено, у гостьової буде підтримка інтерфейсу розширних мікропрограм (EFI), які потребують завантаження певних гостьових операційних систем, але вона унеможливлює завантаження інших.</translation>
+        <translation>Якщо це позначено, у гостьової буде підтримка інтерфейсу розширних мікропрограм (EFI), які потребують завантаження певних гостьових операційних систем, але вона унеможливлює завантаження інших.</translation>
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
@@ -4045,7 +4037,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation>Якщо це відмічено, пристрій RTC буде доповідати про час в UTC, якщо ні, то в локальному часі головної машини. Unix переважно використовує апаратний годинник для встановлення UTC.</translation>
+        <translation>Якщо це позначено, пристрій RTC буде доповідати про час в UTC, якщо ні, то в локальному часі головної машини. Unix переважно використовує апаратний годинник для встановлення UTC.</translation>
     </message>
     <message>
         <source>Hardware clock in &amp;UTC time</source>
@@ -4057,7 +4049,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation>Якщо це відмічено, підтримка абсолютного координатного покажчика (планшет USB) ввімкнено. Якщо ні, буде використовуватись стандартна мишка PS/2.</translation>
+        <translation>Якщо це позначено, підтримка абсолютного координатного покажчика (планшет USB) ввімкнено. Якщо ні, буде використовуватись стандартна мишка PS/2.</translation>
     </message>
     <message>
         <source>Enable &amp;absolute pointing device</source>
@@ -4077,29 +4069,29 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Виконавча шапка:</translation>
     </message>
     <message>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>Обмеження тривалості часу кожного віртуального процесора дозволяє нею керувати. Кожен віртуальний процесор дозволяє налаштувати процете відношення достуапного часу оброблення на фізичному процесорі. Виконавчу шапку можна вимкнути вказавши 100%. Налаштування шапки надто низькою може спричинити сповільнення реакції машини.</translation>
     </message>
     <message>
         <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви вказали виконавчій шапці процесора низьке значення.Це може сповільнити реацію машини.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished">ви маєте USB HID (людський інтерфейс пристрою) увімкнутим. Це не буде працювати, якщо вимкнено емулювання USB. Воно буде ввімкнуто автоматично, якщо ви дасте згоду на це в налаштуваннях віртуальної машини.</translation>
+        <translation>ви увімкнули USB HID. Це не буде працювати, якщо вимкнено емулювання USB. Воно буде ввімкнуто автоматично, якщо ви дасте згоду на це в налаштуваннях віртуальної машини.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Min CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -4159,7 +4151,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>Якщо це відмічено, буде увімкнено віртуальний контролер USB цієї машини.</translation>
+        <translation>Якщо це позначено, буде увімкнено віртуальний контролер USB цієї машини.</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
@@ -4167,7 +4159,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>Якщо це відмічено, на цій машині буде увімкнено віртуальний контролер USB EHCI. Контролер USB EHCI забезпечує підтримку USB 2.0.</translation>
+        <translation>Якщо це позначено, на цій машині буде увімкнено віртуальний контролер USB EHCI. Контролер USB EHCI забезпечує підтримку USB 2.0.</translation>
     </message>
     <message>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
@@ -4231,7 +4223,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 тепер увімкнуто для цієї віртуальної машини. Однак, це потребує встановити &lt;b&gt;%1&lt;/b&gt;. Будь ласка, встановіть пакунок розширень із сайту звантаження VirtualBox. Після цього ви зможете перезапустити USB 2.0. Покищо це вимкнуто, поки ви не скасуєте поточні зміни налаштувань.</translation>
     </message>
 </context>
 <context>
@@ -4347,15 +4339,15 @@ p, li { white-space: pre-wrap; }
     <name>UIMediumTypeChangeDialog</name>
     <message>
         <source>Modify medium attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Змінити атрибути носія</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ви збираєтесь змінити атрибути віртуально диска в &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будь ласка, виберіть один із цих типів носія і натисніть &lt;b&gt;%2&lt;/b&gt;, що продовжити, або ж &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose medium type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибрати тип носія:</translation>
     </message>
 </context>
 <context>
@@ -4419,7 +4411,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Підсумок</translation>
+        <translation>Підсумок</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
@@ -4431,7 +4423,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished">Виберіть файл для нового образу жорсткого диска</translation>
+        <translation>Виберіть файл для нового образу жорсткого диска</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
@@ -4453,12 +4445,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Адреса</translation>
+        <translation>Адреса</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Розмір</translation>
+        <translation>Розмір</translation>
     </message>
     <message>
         <source>Bytes</source>
@@ -4520,166 +4512,167 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk name</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1_копія</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Створити
+</translation>
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Чтворити віртуальний диск</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопіювати</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk copying wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Ласкаво просимо до майстра копіювання віртуального диска</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to copy a virtual disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Цей майстер допоможе скопіювати віртуальний диск.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Please select the virtual disk which you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select a virtual disk file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Будь ласка, виберіть віртуальний диск, який бажаєте скопіювати, якщо його ще не вибрано. Можете також вибрати один із списку або використати піктограму теки поруч зі списком, щоб вибрати файл віртуального диска.</translation>
     </message>
     <message>
         <source>&amp;VDI (VirtualBox Disk Image)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VDI (Образ диска VirtualBox)</translation>
     </message>
     <message>
         <source>V&amp;MDK (Virtual Machine Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;MDK (Диск віртуальної машини)</translation>
     </message>
     <message>
         <source>V&amp;HD (Virtual Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;HD (Віртуальний жорсткий диск)</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk creation wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Ласкаво просимо до майстра створення віртуального диска</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual disk for your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Цей майстер допоможе створити новий віртуальний диск для віртуальної машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Будь ласка, виберіть тип файла, який  бажаєте використати для нового віртуально диска. Якщо вам не потрібно це використовувати з іншими програмами віртуалізації, можете залити налаштування незміненими.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип файла віртуального диска</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Будь ласка, виберіть тип файла, який бажаєте використати для нового віртуального диска. Якщо вам не потрібно це використовувати з іншими програмами віртуалізації, можете залити налаштування незміненими.</translation>
     </message>
     <message>
         <source>Virtual disk storage details</source>
-        <translation type="unfinished"></translation>
+        <translation>Подробиці про пам&apos;ять віртуального диска</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Будь ласка, виберіть, чи файл нового віртуального диска повиннен визначатись, чи його слід створити повністю визначеним.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Динамічно визначений&lt;/b&gt; файл віртуального диска лише займає на фізичному жорсткому диску в міру його заповнення, хоча воно не зменшується назад автоматично, коли звільнилось місце.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Фіксований розмір&lt;/b&gt; файла віртуальної машини може зайняти більше часу для створення на деяких системах, але це часто прискорює роботу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the virtual disk into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Також можете вибрати &lt;b&gt;розділиння&lt;/b&gt; між віртуальними дисками кількох файлів до двох гігабайтів кожен. Це здебільшого зручно, коли бажаєте зберегти віртуальну машину змінних носіях USB або на старі системи, які не можуть працювати з великми файлами.</translation>
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Динамічно визначено</translation>
     </message>
     <message>
         <source>&amp;Fixed size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Фіксований розмір</translation>
     </message>
     <message>
         <source>&amp;Split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Розділити між файлами меншими за 2 ГБ</translation>
     </message>
     <message>
         <source>Virtual disk file location and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Адреса і розмір файла віртуально диска</translation>
     </message>
     <message>
         <source>Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виберіть розмір віртуального диска у мегабайтах. Цей розмір буде як максимальний розмір віртуального диска для гостьової системи.</translation>
     </message>
     <message>
         <source>Virtual disk file location</source>
-        <translation type="unfinished"></translation>
+        <translation>Адреса файла віртуального диска</translation>
     </message>
     <message>
         <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
-        <translation type="unfinished"></translation>
+        <translation>Натисніть кнопку &lt;b&gt;Вибрати&lt;/b&gt;, щоб вибрати адресу файла для збереження даних віртуального диска, або введіть назву файла в полі.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;%1 (%2 Б)&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 (%2 Б)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>You are going to create a new virtual disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ви збираєтесь стоврити новий віртуальний диск з такими параметрами:</translation>
     </message>
     <message>
         <source>You are going to create a copied virtual disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ви збираєтесь стоврити скопійований віртуальний диск з такими параметрами:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it the new virtual disk file will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо налаштування зверху — коректні, натисніть кнопку &lt;b&gt;%1&lt;/b&gt;. Натиснувши її новий файл віртуального диска буде створено.</translation>
     </message>
     <message>
         <source>%1 B</source>
-        <translation type="unfinished">%1 Б</translation>
+        <translation>%1 Б</translation>
     </message>
     <message>
         <source>File type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Тип файла</translation>
     </message>
     <message>
         <source>Details</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Подробиці</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageFormat</name>
     <message>
         <source>File type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип файла</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageOptions</name>
     <message>
         <source>&amp;Location</source>
-        <translation type="unfinished">&amp;Адреса</translation>
+        <translation>&amp;Адреса</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished">&amp;Розмір</translation>
+        <translation>&amp;Розмір</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageVariant</name>
     <message>
         <source>Storage details</source>
-        <translation type="unfinished"></translation>
+        <translation>Подробиці про пам&apos;ять</translation>
     </message>
 </context>
 <context>
@@ -4694,11 +4687,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Virtual disk to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Віртуальні диски для копіювання</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибрати файл віртуального жорсткого диска…</translation>
     </message>
 </context>
 <context>
@@ -4930,7 +4923,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Створити</translation>
     </message>
 </context>
 <context>
@@ -5252,7 +5245,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>Проксі</translation>
     </message>
 </context>
 <context>
@@ -5370,7 +5363,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Якщо це відмічено, стан машини буде відновлено до того, який збережено в поточному зрізі, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного зрізу.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Якщо це позначено, стан машини буде відновлено до того, який збережено в поточному зрізі, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного зрізу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
@@ -5628,11 +5621,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Якщо це позначено, до всіх налаштованих мережевих плат буде призначено нову адресу MAC.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>Пере&amp;запустити адреси MAC усіх мережевих плат</translation>
     </message>
 </context>
 <context>
@@ -5667,7 +5660,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Якщо це відмічено, стан машини буде відновлено до стану, який збережено в поточному зрізі, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного зрізу.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Якщо це позначено, стан машини буде відновлено до стану, який збережено в поточному зрізі, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного зрізу.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
@@ -6305,7 +6298,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="obsolete">Якщо це відмічено, клавіатура автоматично захоплюється кожного разу, коли вікно віртуальної машини активне. Якщо клавіатура захоплена, будь-які натиснення клавіш (за винятком системних, наприклад, Alt-Tab) спрямовуються у віртуальну машину.</translation>
+        <translation type="obsolete">Якщо це позначено, клавіатура автоматично захоплюється кожного разу, коли вікно віртуальної машини активне. Якщо клавіатура захоплена, будь-які натиснення клавіш (за винятком системних, наприклад, Alt-Tab) спрямовуються у віртуальну машину.</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
@@ -7694,58 +7687,58 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Dynamically allocated storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Динамічно змінна пам&apos;ять</translation>
     </message>
     <message>
         <source>Fixed size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Пам&apos;ять сталого розміру</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>Динамічно змінна пам&apos;ять розділяється між файлами меншими за 2 ГБ</translation>
     </message>
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>Пам&apos;ять сталого розміру розділяється між файлами меншими за 2 ГБ</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Виконавча шапка</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Загальна, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Загальний драйвер</translation>
     </message>
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Відкинути</translation>
     </message>
     <message>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Дозволи віртуальним машинам</translation>
     </message>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Дозволити всім</translation>
     </message>
     <message>
         <source>Adapter %1</source>
-        <translation type="unfinished">Адаптер %1</translation>
+        <translation>Адаптер %1</translation>
     </message>
 </context>
 <context>
@@ -8029,43 +8022,43 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished">Тип:</translation>
+        <translation>Тип:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished">Адреса:</translation>
+        <translation>Адреса:</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Подробиці про память:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>Приєднано до:</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Скопіювати…</translation>
     </message>
     <message>
         <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Змінити…</translation>
     </message>
     <message>
         <source>Copy an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопіювати наявний носій</translation>
     </message>
     <message>
         <source>Modify the attributes of the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Змінити атрибути вибраного носія</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Закрити</translation>
     </message>
 </context>
 <context>
@@ -8617,7 +8610,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Відкрити переглядач і перейти до сайта продукції VirtualBox</translation>
+        <translation>Відкрити переглядач і перейти до сайту продукції VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
@@ -9201,9 +9194,9 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation>
-            <numerusform>&lt;p&gt;Віртуальна машина &lt;b&gt;%1&lt;/b&gt; знаходиться у збереженому стані.&lt;/p&gt;&lt;p&gt;Якщо ви покинете цей стан, то експортування машини буде відкинуто. Майте на увазі, наявну машину не змінено.&lt;/p&gt;</numerusform>
-            <numerusform>&lt;p&gt;Віртуальні машини &lt;b&gt;%1&lt;/b&gt; знаходяться у збереженому стані.&lt;/p&gt;&lt;p&gt;Якщо ви покинете цей стан, то експортування машин буде відкинуто. Майте на увазі, наявні машини не змінено.&lt;/p&gt;</numerusform>
-            <numerusform>&lt;p&gt;Віртуальні машини &lt;b&gt;%1&lt;/b&gt; знаходяться у збереженому стані.&lt;/p&gt;&lt;p&gt;Якщо ви покинете цей стан, то експортування машин буде відкинуто. Майте на увазі, наявні машини не змінено.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;Віртуальна машина &lt;b&gt;%1&lt;/b&gt; у збереженому стані.&lt;/p&gt;&lt;p&gt;Якщо ви покинете цей стан, то експортування машини буде відкинуто. Майте на увазі, наявну машину не змінено.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;Віртуальні машини &lt;b&gt;%1&lt;/b&gt; у збереженому стані.&lt;/p&gt;&lt;p&gt;Якщо ви покинете цей стан, то експортування машин буде відкинуто. Майте на увазі, наявні машини не змінено.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;Віртуальні машини &lt;b&gt;%1&lt;/b&gt; у збереженому стані.&lt;/p&gt;&lt;p&gt;Якщо ви покинете цей стан, то експортування машин буде відкинуто. Майте на увазі, наявні машини не змінено.&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
@@ -9236,7 +9229,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished">Вибачте, трапилась деяка випадкова помилка.</translation>
+        <translation>Вибачте, трапилась деяка загальна помилка.</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9329,7 +9322,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation>Пакунок розширень &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; успішно втсановлено.</translation>
+        <translation>Пакунок розширень &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; успішно встановлено.</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -9337,67 +9330,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдалось зареєструвати віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Налаштування машини змінено протягом їхнього редагування. Тепер зміни у налаштуванні не збережено.&lt;/p&gt;&lt;p&gt;Перезавантажити змінені налаштування чи зберегти власні зміни?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Перезавантажити налаштування</translation>
     </message>
     <message>
         <source>Keep changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Зберегти зміни</translation>
     </message>
     <message>
         <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>Стан віртуальної машиний, яку ви зараз редагуєте, змінено. Щоб зберегти лише ті налаштування, які можна редагувати при роботі машини, натисніть «Гаразд». Усі інші зміни буде втрачено.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдалось клонувати віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ви збираєтесь відновити зріз &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Можете створити зріз поточного стану спочатку віртуальної машини, перевіривши коробку знизу; якщо цього не зробити, поточний стан буде безповоротно втрачено. Продовжити?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Створити зріз поточного стану машини</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Відновити зріз&lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Помилка зміни типу носія з &lt;b&gt;%1&lt;/b&gt; на &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;USB 2.0 тепер увімкнено для цієї віртуальної машини. Однак, це потребує встановити &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будь ласка, встановіть цей пакунок розширення із сайту звантаження VirtualBox. Після цього ви зможете перезапустити USB 2.0. Поки що це буде вимкнено, поки ви не скасуєте поточні зміни налаштувань.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Неможливо завантажити головний проксі сервер USB (VERR_FILE_NOT_FOUND). Службу, можливо, не встановили на головному комп&apos;ютері</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox зараз не дозволяє доступитись до пристроїв USB. Ви моежете змінити це, додавши користувача до групи «vboxusers». Будь ласка, ознайомтесь з користувацьким підручником для докладнішого пояснення</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox зараз не дозволяє доступитись до пристроїв USB. Ви моежете змінити це, надавши користувачеві доступ до теки і файлів «usbfs». Будь ласка, ознайомтесь з користувацьким підручником для докладнішого пояснення</translation>
     </message>
     <message>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="unfinished"></translation>
+        <translation>Службу проксі USB ще не портовано на цей вузол</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
+        <translation>Неможливо завантажити службу головного USB Proxy</translation>
     </message>
 </context>
 <context>
@@ -9436,7 +9429,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Будь ласка, заповніть реєстраційну форму, цим самим, ми будемо знати, що ви користуєтесь програмою VirtualBox і, за власним бажанням, отримаєте можливість бути в курсі новин і оновлень про VirtualBox.&lt;/p&gt;&lt;p&gt;Введіть ваше повне і&apos;мя, користуючись латинськими символами, та адресу електронної пошти в нижніх полях. Будь ласка, майте на увазі, що ця інформація буде використовуватись лише для статистичних даних кількості користувачів і розсилці новин про VirtualBox. Власне, Sun Microsystems ніколи не буде надавати ваші дані третій стороні. Більш детальна інформація про те, як ми використовуємо ваші особисті дані, можна знайти в розділі &lt;b&gt;Privacy Policy&lt;/b&gt; (Політика Конфіденційності) у документації програми або на сторінці  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; веб-сайта VirtualBox.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Будь ласка, заповніть реєстраційну форму, цим самим, ми будемо знати, що ви користуєтесь програмою VirtualBox і, за власним бажанням, отримаєте можливість бути в курсі новин і оновлень про VirtualBox.&lt;/p&gt;&lt;p&gt;Введіть ваше повне і&apos;мя, користуючись латинськими символами, та адресу електронної пошти в нижніх полях. Будь ласка, майте на увазі, що ця інформація буде використовуватись лише для статистичних даних кількості користувачів і розсилці новин про VirtualBox. Власне, Sun Microsystems ніколи не буде надавати ваші дані третій стороні. Більш детальна інформація про те, як ми використовуємо ваші особисті дані, можна знайти в розділі &lt;b&gt;Privacy Policy&lt;/b&gt; (Політика Конфіденційності) у документації програми або на сторінці  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; веб-сайту VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
@@ -9456,7 +9449,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Будь ласка, заповніть цю реєстраційну форму, щоб ми знали, що ви використуєте VirtualBox, і, за вашим бажанням, ми триматимемо вас у курсі всіх новин і оновлень щодо VirtualBox.&lt;/p&gt;&lt;p&gt;Будь ласка, використовуйте латинські символи для заповнення полів нижче. Будь ласка, майте на увазі, Sun Microsystems використовуватиме цю інформацію лише для збору статистичної інформації та розсилки новин. Власне, Sun Microsystems ніколи не надасть ваших даних третій особі. Детальна інформація про використання ваших особистих даних можна знайти в довідці VirtualBox у розділі  &lt;b&gt;Privacy Policy&lt;/b&gt; або на &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; сторінці сайта VirtualBox.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Будь ласка, заповніть цю реєстраційну форму, щоб ми знали, що ви використуєте VirtualBox, і, за вашим бажанням, ми триматимемо вас у курсі всіх новин і оновлень щодо VirtualBox.&lt;/p&gt;&lt;p&gt;Будь ласка, використовуйте латинські символи для заповнення полів нижче. Будь ласка, майте на увазі, Sun Microsystems використовуватиме цю інформацію лише для збору статистичної інформації та розсилки новин. Власне, Sun Microsystems ніколи не надасть ваших даних третій особі. Детальна інформація про використання ваших особистих даних можна знайти в довідці VirtualBox у розділі  &lt;b&gt;Privacy Policy&lt;/b&gt; або на &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; сторінці сайту VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
@@ -9566,7 +9559,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>&amp;Налаштування...</translation>
+        <translation>&amp;Параметри...</translation>
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
@@ -9798,19 +9791,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
+        <translation>К&amp;лонувати…</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Клонувати вибрану віртуальну машину</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Відкинути</translation>
+        <translation>Відкинути</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State</source>
-        <translation type="unfinished"></translation>
+        <translation>Ві&amp;дкинути збережений стан</translation>
     </message>
 </context>
 <context>
@@ -10043,11 +10036,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation type="unfinished"></translation>
+        <translation>К&amp;лонувати…</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Клонувати вибрану віртуальну машину </translation>
     </message>
 </context>
 <context>
@@ -10435,7 +10428,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation type="obsolete">Якщо це відмічено, змонтовує вказаний носій CD/DVD як носій віртуальної машини. Майте на увазі, носій CD/DVD завжди під&apos;єднаний до другого головного контролера машини.</translation>
+        <translation type="obsolete">Якщо це позначено, змонтовує вказаний носій CD/DVD як носій віртуальної машини. Майте на увазі, носій CD/DVD завжди під&apos;єднаний до другого головного контролера машини.</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
@@ -10455,7 +10448,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="obsolete">Якщо це відмічено, дозволяє гостям надсилати команди ATAPI прямо в головну машину, котра дозволяє використовувати запис CD/DVD, з&apos;єднаних з головною машиною. Майте на увазі, запис аудіо CD ще не підтримується.</translation>
+        <translation type="obsolete">Якщо це позначено, дозволяє гостям надсилати команди ATAPI прямо в головну машину, котра дозволяє використовувати запис CD/DVD, з&apos;єднаних з головною машиною. Майте на увазі, запис аудіо CD ще не підтримується.</translation>
     </message>
     <message>
         <source>Enable &amp;Passthrough</source>
@@ -10475,7 +10468,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation type="obsolete">Викликає керуванння віртуальними носіями, щоб вибрати образ CD/DVD для монтування.</translation>
+        <translation type="obsolete">Викликає керування віртуальними носіями, щоб вибрати образ CD/DVD для монтування.</translation>
     </message>
 </context>
 <context>
@@ -10554,11 +10547,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation type="obsolete">ви вибрали 64-ох бітну гостьову операційну систему для цієї віртуальної машини. VirtualBox зараз не підтримує більше, ніж один віртуальний 64-ох бітний гостьовий процесор, який виконується на 32-ох бітньому гогловному процесорі.</translation>
+        <translation type="obsolete">ви вибрали 64-ох бітну гостьову операційну систему для цієї віртуальної машини. VirtualBox зараз не підтримує більше, ніж один віртуальний 64-ох бітний гостьовий процесор, який виконується на 32-ох бітному гогловному процесорі.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="obsolete">ви маєте прискорення відео 2D увікнутим. Оскільки прискорення відео 2D підтримується лише для гостьових Windows, цю властивість вимкнено.</translation>
+        <translation type="obsolete">ви увімкнули двовимірне прискорення відео. Оскільки прискорення відео 2D підтримується лише для гостьових Windows, цю властивість вимкнено.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -10577,7 +10570,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
-        <translation type="obsolete">Якщо це відмічено, змонтовує вибраний носій до носія дискет віртуальної машини.</translation>
+        <translation type="obsolete">Якщо це позначено, змонтовує вибраний носій до носія дискет віртуальної машини.</translation>
     </message>
     <message>
         <source>&amp;Mount Floppy Drive</source>
@@ -10609,14 +10602,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation type="obsolete">Викликає керуванння віртуальними носіями, щоб вибрати образ дискет для монтування.</translation>
+        <translation type="obsolete">Викликає керування віртуальними носіями, щоб вибрати образ дискет для монтування.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsVRDP</name>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="obsolete">Якщо це відмічено, то віртуальна машина буде діяти відповідно як сервер віддаленої стільниці (RDP), дозволяючи віддаленим клієнтам з&apos;єднатися та використовувати віртуальну машину (коли вона запущена) використовуючи стандартного клієнта RDP.</translation>
+        <translation type="obsolete">Якщо це позначено, то віртуальна машина буде діяти відповідно як сервер віддаленої стільниці (RDP), дозволяючи віддаленим клієнтам з&apos;єднатися та використовувати віртуальну машину (коли вона запущена) використовуючи стандартного клієнта RDP.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>

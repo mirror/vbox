@@ -499,76 +499,76 @@
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation type="unfinished">Nuo&amp;statos...</translation>
+        <translation>Nuo&amp;statos...</translation>
     </message>
     <message>
         <source>Manage the virtual machine settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Keisti virtualios mašinos nuostatas</translation>
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesijos i&amp;nformacija...</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Klonuoti virtualią mašiną</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Klonuoti</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage1</name>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a clone of your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Šis vediklis klonuoti virtualią mašiną.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nurodykite naujos virtualios mašinos pavadinimą:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pažymėjus, visoms sukonfigūruotoms tinklo plokštėms bus priskirti nauji unikalūs MAC adresai.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Visoms tinklo plokštėms priskirti naujus MAC adresus</translation>
     </message>
     <message>
         <source>Welcome to the virtual machine clone wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Jus sveikina virtualios mašinos klonavimo vediklis</translation>
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 klonas</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Dabartinė mašinos būsena</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished"></translation>
+        <translation>Dabartinė būsena ir paveldėtos būsenos</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished"></translation>
+        <translation>Visos būsenos</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Klonavimo konfigūracija</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite virtualios mašinos klonuotinas dalis.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
@@ -881,7 +881,7 @@
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
@@ -931,7 +931,7 @@
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuoti</translation>
     </message>
 </context>
 <context>
@@ -1130,7 +1130,7 @@
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti</translation>
     </message>
 </context>
 <context>
@@ -1630,23 +1630,23 @@
     </message>
     <message>
         <source>&amp;Enable proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Naudoti įgaliotąjį serverį</translation>
     </message>
     <message>
         <source>Ho&amp;st:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagr. &amp;kompiuteris:</translation>
     </message>
     <message>
         <source>Changes the proxy host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakeičia įgaliotąjį serverį.</translation>
     </message>
     <message>
         <source>&amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Prievadas:</translation>
     </message>
     <message>
         <source>Changes the proxy port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakeičia įgaliotojo serverio prievadą.</translation>
     </message>
     <message>
         <source>When checked the authentication supplied will be used with the proxy server.</source>
@@ -1654,23 +1654,23 @@
     </message>
     <message>
         <source>&amp;Use authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nurodyti tapatybę</translation>
     </message>
     <message>
         <source>User &amp;name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Naudotojo &amp;vardas:</translation>
     </message>
     <message>
         <source>Changes the user name used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakeičia prisijungimui naudojamą naudotojo vardą.</translation>
     </message>
     <message>
         <source>Pass&amp;word:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Slaptažodis:</translation>
     </message>
     <message>
         <source>Changes the password used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakeičia prisijungimui naudojamą slaptažodį.</translation>
     </message>
 </context>
 <context>
@@ -1926,7 +1926,7 @@
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti</translation>
     </message>
 </context>
 <context>
@@ -2182,7 +2182,7 @@
     <message>
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rodo įvairias virtualios mašinos funkcijas:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -2383,11 +2383,11 @@
     </message>
     <message>
         <source>you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įgalinote 3D spartinimą operacinei sistemai, kuri naudoja WDDM vaizdo tvarkyklę. Didžiausią našumą pasieksite, jei vaizdo laisvosios prieigos atminčiai (VRAM) paskirsite bent &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished">įgalinote 2D vaizdo spartinimą. Kadangi 2D vaizdo spartinimas palaikomas tik Windows svečiui, pastaroji savybė bus uždrausta.</translation>
+        <translation>įgalinote 2D vaizdo spartinimą. Kadangi 2D vaizdo spartinimas palaikomas tik Windows svečiui, pastaroji savybė bus uždrausta.</translation>
     </message>
 </context>
 <context>
@@ -2466,7 +2466,7 @@
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="unfinished">pasirinkote 64 bitų svečio OS šioje mašinoje. Kadangi toks svečias reikalauja virtualizaciją palaikančio procesoriaus (VT-x/AMD-V), pastaroji parinktis bus įgalinta automatiškai.</translation>
+        <translation>šiai mašinai pasirinkote 64 bitų svečio OS. Kadangi toks svečias reikalauja virtualizaciją palaikančio procesoriaus (VT-x/AMD-V), pastaroji parinktis bus įgalinta automatiškai.</translation>
     </message>
 </context>
 <context>
@@ -3156,7 +3156,7 @@
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Demonstracinis CD/DVD</translation>
     </message>
     <message>
         <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
@@ -3164,11 +3164,11 @@
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Puslaidininkinis diskas</translation>
     </message>
     <message>
         <source>Details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsamiau:</translation>
     </message>
     <message>
         <source>no name specified for controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -3180,21 +3180,21 @@
     </message>
     <message>
         <source>no hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; neturi standžiojo disko.</translation>
     </message>
     <message>
         <source>at most one supported</source>
         <comment>controller</comment>
-        <translation type="unfinished">palaikoma ne daugiau kaip vienas</translation>
+        <translation>palaikoma ne daugiau kaip vienas</translation>
     </message>
     <message>
         <source>up to %1 supported</source>
         <comment>controllers</comment>
-        <translation type="unfinished">palaikoma ne daugiau kaip %1</translation>
+        <translation>palaikoma ne daugiau kaip %1</translation>
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation type="unfinished">naudojate daugiau laikmenų valdiklių nei palaiko %1 lustų rinkinys. Todėl arba pakeiskite lustų rinkinio tipą sistemos nuostatose, arba sumažinkite laikmenų valdiklių skaičių laikmenų nuostatose: %2.</translation>
+        <translation>naudojate daugiau laikmenų valdiklių nei palaiko %1 lustų rinkinys. Todėl arba pakeiskite lustų rinkinio tipą sistemos nuostatose, arba sumažinkite laikmenų valdiklių skaičių laikmenų nuostatose: %2.</translation>
     </message>
     <message>
         <source>&amp;Port Count:</source>
@@ -3285,11 +3285,11 @@
     </message>
     <message>
         <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pažymėjus, bus palaikomas absoliutusis manipuliatorius (USB planšetė). Priešingu atveju bus emuliuojama tik standartinė PS/2 pelė.</translation>
     </message>
     <message>
         <source>Enable &amp;absolute pointing device</source>
-        <translation type="unfinished"></translation>
+        <translation>Įgalinti &amp;absoliutųjį manipuliatorių</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
@@ -3391,17 +3391,17 @@
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished">įgalinote USB HID (žmogaus sąsajos įtaisą). Jis neveiks tol, kol neįgalinsite USB emuliacijos. Todėl pastaroji bus įgalinta automatiškai po to, kai patvirtinsite VM nuostatas mygtuku „Gerai“.</translation>
+        <translation>įgalinote USB HID (žmogaus sąsajos įtaisą). Jis neveiks tol, kol neįgalinsite USB emuliacijos. Todėl pastaroji bus įgalinta automatiškai po to, kai patvirtinsite VM nuostatas mygtuku „Gerai“.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Min CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -3533,7 +3533,7 @@
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šioje virtualioje mašinoje įgalintas USB 2.0. Tačiau tam turi įdiegtas &lt;b&gt;%1&lt;/b&gt;. Įdiegike papildinių paketą, kurį rasite VirtualBox svetainėje. Tuomet vėl galėsite įgalite USB 2.0. Iki tol ši funkcija bus uždrausta, nebent atsisakysite dabartinių nuostatų pakeitimų.</translation>
     </message>
 </context>
 <context>
@@ -3649,15 +3649,15 @@
     <name>UIMediumTypeChangeDialog</name>
     <message>
         <source>Modify medium attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Keisti laikmenos atributus</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Keistumėte &lt;b&gt;%1&lt;/b&gt; virtualaus disko atributus.&lt;/p&gt;&lt;p&gt;Pasirinkite laikmenos tipą ir norėdami tęsti spauskite &lt;b&gt;%2&lt;/b&gt;, priešingu atveju – &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose medium type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite laikmenos tipą:</translation>
     </message>
 </context>
 <context>
@@ -3714,67 +3714,67 @@
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk name</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1_kopija</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti</translation>
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti virtualų diską</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk copying wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Jus sveikina virtualaus disko kopijavimo vediklis</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to copy a virtual disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Šis vediklis padės nukopijuoti virtualų diską.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Please select the virtual disk which you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select a virtual disk file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jei dar nepasirinkote, pasirinkite virtualų diską, kurį nurėtumėte kopijuoti. Galite rinktis iš sąrašo arba virtualaus disko rinkmenos ieškojimui pasinaudoti aplanko ženkliuku.</translation>
     </message>
     <message>
         <source>&amp;VDI (VirtualBox Disk Image)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VDI (VirtualBox disko atvaizdis)</translation>
     </message>
     <message>
         <source>V&amp;MDK (Virtual Machine Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;MDK (virtualios mašinos diskas)</translation>
     </message>
     <message>
         <source>V&amp;HD (Virtual Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;HD (virtualus standusis diskas)</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk creation wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Jus sveikina virtualaus disko kūrimo vediklis</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual disk for your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Šis vediklis padės virtualiai mašinai sukurti naują virtualų standųjį diską.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Pasirinkite rinkmenos tipą naujam virtualiam diskui. Jei jos nenaudosite kitose virtualizacijos programose, galite palikti numatytą.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualaus disko rinkmenos tipas</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite rinkmenos tipą naujam virtualiam diskui. Jei jos nenaudosite kitose virtualizacijos programose, galite palikti numatytą.</translation>
     </message>
     <message>
         <source>Virtual disk storage details</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualaus disko detalės</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
@@ -3782,116 +3782,116 @@
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Dinaminio dydžio&lt;/b&gt; virtualaus disko rinkmena naudos tik tiek fizinio disko vietos, kad tilptų disko atvaizdis; tačiau virtualiame diske atlaisvinus vietos, atvaizdžio rinkmena nesumažės.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Pastovaus dydžio&lt;/b&gt; virtualaus disko rinkmenos kūrimas kai kuriose sistemose gali užtrukti ilgiau, tačiau leidžia greičiau naudotis vėliau.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the virtual disk into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Virtualų diską galite &lt;b&gt;skaidyti&lt;/b&gt; į kelias rinkmenas, kuriose būtų iki dviejų gigabaigų duomenų. Ši parinktis naudinga virtualią mašiną laikyti pašalinamame USB įrenginyje ar senoje sistemoje, kuri negali apdoroti labai didelių rinkmenų.</translation>
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dinamiško dydžio</translation>
     </message>
     <message>
         <source>&amp;Fixed size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Pastovaus dydžio</translation>
     </message>
     <message>
         <source>&amp;Split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Skaidyti į rinkmenas iki 2GB</translation>
     </message>
     <message>
         <source>Virtual disk file location and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualaus disko rinkmenos vieta ir dydis</translation>
     </message>
     <message>
         <source>Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nurodykite virtualaus standžiojo disko dydį megabaitais. Šis dydis svečio operacinėje sistemoje bus rodomas kaip didžiausias standžiojo disko dydis.</translation>
     </message>
     <message>
         <source>Virtual disk file location</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualaus disko vieta</translation>
     </message>
     <message>
         <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
-        <translation type="unfinished"></translation>
+        <translation>Norėdami nurodyti rinkmenos, kurioje bus laikomi virtualaus disko duomenys, vietą, spauskite &lt;b&gt;Pasirinkti&lt;/b&gt; arba įveskite rinkmenos pavadinimą laukelyje.</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished">Pasirinkite rinkmeną naujo standžiojo disko atvaizdžiui</translation>
+        <translation>Pasirinkite rinkmeną naujo standžiojo disko atvaizdžiui</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Santrauka</translation>
+        <translation>Santrauka</translation>
     </message>
     <message>
         <source>You are going to create a new virtual disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kurtumėte naują virtualų diską tokiomis savybėmis:</translation>
     </message>
     <message>
         <source>You are going to create a copied virtual disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Kurtumėte virtualaus disko kopiją tokiomis savybėmis:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it the new virtual disk file will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jei aukščiau esančios nuostatos tinkamos, spauskite mygtuką &lt;b&gt;%1&lt;/b&gt;. Tuomet bus sukurta nauja virtualaus disko rinkmena.</translation>
     </message>
     <message>
         <source>%1 B</source>
-        <translation type="unfinished">%1 B</translation>
+        <translation>%1 B</translation>
     </message>
     <message>
         <source>File type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Rinkmenos tipas</translation>
     </message>
     <message>
         <source>Details</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Išsamiau</translation>
     </message>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Vieta</translation>
+        <translation>Vieta</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Dydis</translation>
+        <translation>Dydis</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageFormat</name>
     <message>
         <source>File type</source>
-        <translation type="unfinished"></translation>
+        <translation>Rinkmenos tipas</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageOptions</name>
     <message>
         <source>&amp;Location</source>
-        <translation type="unfinished">&amp;Vieta</translation>
+        <translation>&amp;Vieta</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished">&amp;Dydis</translation>
+        <translation>&amp;Dydis</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageVariant</name>
     <message>
         <source>Storage details</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacija apie atminties įtaisą</translation>
     </message>
 </context>
 <context>
@@ -3906,11 +3906,11 @@
     </message>
     <message>
         <source>Virtual disk to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuotinas virtualus diskas</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished">Pasirinkti virtualaus standžiojo disko rinkmeną...</translation>
+        <translation>Pasirinkti virtualaus standžiojo disko rinkmeną...</translation>
     </message>
 </context>
 <context>
@@ -4031,7 +4031,7 @@
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti</translation>
     </message>
 </context>
 <context>
@@ -4319,7 +4319,7 @@
     </message>
     <message>
         <source>Proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>Įgaliotasis serveris</translation>
     </message>
 </context>
 <context>
@@ -4676,11 +4676,11 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pažymėjus, visoms sukonfigūruotoms tinklo plokštėms bus priskirti nauji unikalūs MAC adresai.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Visoms tinklo plokštėms priskirti naujus MAC adresus</translation>
     </message>
 </context>
 <context>
@@ -7431,19 +7431,19 @@ IPv6.</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Dinamiško dydžio diskas</translation>
     </message>
     <message>
         <source>Fixed size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Pastovaus dydžio diskas</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>Dinamiško dydžio diskas dalinamas į rinkmenas iki 2 GB</translation>
     </message>
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>Pastovaus dydžio diskas dalinamas į rinkmenas iki 2 GB</translation>
     </message>
     <message>
         <source>Execution Cap</source>
@@ -7453,7 +7453,7 @@ IPv6.</translation>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
@@ -7468,7 +7468,7 @@ IPv6.</translation>
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Uždrausti</translation>
     </message>
     <message>
         <source>Allow VMs</source>
@@ -7482,7 +7482,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>Adapter %1</source>
-        <translation type="unfinished">%1 plokštė</translation>
+        <translation>%1 plokštė</translation>
     </message>
 </context>
 <context>
@@ -7779,11 +7779,11 @@ IPv6.</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished">Tipas:</translation>
+        <translation>Tipas:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished">Vieta:</translation>
+        <translation>Vieta:</translation>
     </message>
     <message>
         <source>Format:</source>
@@ -7791,31 +7791,31 @@ IPv6.</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacija apie atminties įtaisą:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>Susietas su:</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopijuoti...</translation>
     </message>
     <message>
         <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Keisti...</translation>
     </message>
     <message>
         <source>Copy an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti esamą laikmeną</translation>
     </message>
     <message>
         <source>Modify the attributes of the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifikuoti pasirinktos laikmenos atributus</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Užverti</translation>
     </message>
 </context>
 <context>
@@ -8939,8 +8939,6 @@ IPv6.</translation>
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation type="unfinished">
             <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -9023,7 +9021,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished">Atleiskite, būna daugybinių klaidų.</translation>
+        <translation>Atleiskite, būna daugybinių klaidų.</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9139,27 +9137,27 @@ IPv6.</translation>
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko užregistruoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Jums besirenkant mašinos nuostatas, jos buvo pakeistos. Jūs dar neįrašėte pakeitimų.&lt;/p&gt;&lt;p&gt;Ar iš naujo įkelti nuostatas, ar išlaikyti dabar Jūsų atliktus pakeitimus?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Iš naujo įkelti nuostatas</translation>
     </message>
     <message>
         <source>Keep changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Išlaikyti pakeitimus</translation>
     </message>
     <message>
         <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šiuo metu tvarkomos virtualios mašinos būsena pasikeitė. Nuspaudus mygtuką „gerai“ bus įrašytos tik šiame dialoge matomos nuostatos. Visi kiti pakeitimai bus prarasti.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko klonuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
@@ -9167,39 +9165,39 @@ IPv6.</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti mašinos dabartinio būvio momentinę kopiją</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tikrai atkurti momentinį būvį &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Klaida keičiant laikmenos tipą iš &lt;b&gt;%1&lt;/b&gt; į &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Šioje virtualioje mašinoje įgalintas USB 2.0. Tačiau tam turi įdiegtas &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;/p&gt;&lt;p&gt;Įdiegike papildinių paketą, kurį rasite VirtualBox svetainėje. Tuomet vėl rinkitės įgalinti USB 2.0. Iki tol ši funkcija bus uždrausta, nebent atsisakysite dabartinių nuostatų pakeitimų.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyksta įkelti pagr. kompiuterio USB įgaliotojo serverio paslaugos (VERR_FILE_NOT_FOUND). Galbūt ši paslauga neįdiegta pagrindiniame kompiueryje</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox programai neleidote pasiekti USB įrenginių. Šią parinktį galite pakeisti savo naudotoją priskirdami „vboxusers“ grupei. Daugiau informacijos rasite naudotojo žinyne</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox programai neleidote pasiekti USB įrenginių. Tai pakeisite leisdami savo naudotojui pasiekti „usbfs“ aplankus ir rinkmenas. Daugiau informacijos rasite naudotojo žinyne</translation>
     </message>
     <message>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="unfinished"></translation>
+        <translation>USB įgaliotojo serverio paslauga dar nesusieta su pagrindiniu kompiuteriu</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyksta įkelti pagr. kompiuterio USB įgaliotojo serverio paslaugos</translation>
     </message>
 </context>
 <context>
@@ -9528,19 +9526,19 @@ IPv6.</translation>
     </message>
     <message>
         <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Klonuoti...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Klonuoti pasirinktą virtualią mašiną</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Atmesti</translation>
+        <translation>Atmesti</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nebesaugoti būsenos</translation>
     </message>
 </context>
 <context>
@@ -9742,11 +9740,11 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Klonuoti...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Klonuoti pasirinktą virtualią mašiną</translation>
     </message>
 </context>
 <context>

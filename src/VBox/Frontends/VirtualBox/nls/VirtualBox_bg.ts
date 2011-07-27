@@ -521,88 +521,88 @@
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation type="unfinished">&amp;Настройки...</translation>
+        <translation>&amp;Настройки...</translation>
     </message>
     <message>
         <source>Manage the virtual machine settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Управление на настройките на виртуалната машина</translation>
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation type="unfinished"></translation>
+        <translation>И&amp;нформация за сесията...</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Клониране на виртуална машина</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Клониране</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage1</name>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a clone of your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Този помощник ще ви помогне да създадете клонинг на вашата виртуална машина.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Моля, изберете име за новата виртуална машина:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, нов уникален MAC адрес ще бъде асоцииран към всички конфигурирани мрежови карти.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Реиницализиране MAC адреса на всички мрежови карти</translation>
     </message>
     <message>
         <source>Welcome to the virtual machine clone wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Добре дошли в помощника за клониране на виртуална машина</translation>
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Клониране</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущо състояние на машината</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущо състояние на тази и дъщерните машини</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished"></translation>
+        <translation>Всички състояния</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Конфигурация за клониране</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Моля, изберете кои части от виртуалната машина да бъдат клонирани.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ако изберете &lt;b&gt;Текущо състояние на машината&lt;/b&gt;, ще бъде клонирано само текущото състояние на тази виртуална машина.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ако изберете &lt;b&gt;Текущо състояние на тази и на дъщерните машини&lt;/b&gt;, ще бъдат клонрани състоянията на тази машина и на всички нейни дъщерни снимки.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ако изберете &lt;b&gt;Всички състояния&lt;/b&gt;, ще бъдат клонирани тази машина и всички снимки.</translation>
     </message>
 </context>
 <context>
@@ -898,22 +898,22 @@
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Лимит за изпълнение</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Основен драйвер, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Основен драйвер, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
 </context>
 <context>
@@ -1091,7 +1091,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Изнасяне</translation>
     </message>
 </context>
 <context>
@@ -1426,7 +1426,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Старт</translation>
     </message>
 </context>
 <context>
@@ -1940,51 +1940,51 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <name>UIGlobalSettingsProxy</name>
     <message>
         <source>When checked, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, VirtualBox ще използва настройките за прокси за задачи като изтегляне на Виртуални Добавки от мрежата или проверка за обновления.</translation>
     </message>
     <message>
         <source>&amp;Enable proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>По&amp;зволяване на прокси</translation>
     </message>
     <message>
         <source>Ho&amp;st:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Хост:</translation>
     </message>
     <message>
         <source>Changes the proxy host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задава хоста на проксито.</translation>
     </message>
     <message>
         <source>&amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Порт:</translation>
     </message>
     <message>
         <source>Changes the proxy port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задава порта на проксито.</translation>
     </message>
     <message>
         <source>When checked the authentication supplied will be used with the proxy server.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, ще бъде използвана автентикация за прокси сървъра.</translation>
     </message>
     <message>
         <source>&amp;Use authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Използване на автентикация</translation>
     </message>
     <message>
         <source>User &amp;name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Потребителско &amp;име:</translation>
     </message>
     <message>
         <source>Changes the user name used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задава потребителското име, използвано за автентикация.</translation>
     </message>
     <message>
         <source>Pass&amp;word:</source>
-        <translation type="unfinished"></translation>
+        <translation>Пар&amp;ола:</translation>
     </message>
     <message>
         <source>Changes the password used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задава паролата, използвана за автентикация.</translation>
     </message>
 </context>
 <context>
@@ -2286,7 +2286,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Внасяне</translation>
     </message>
 </context>
 <context>
@@ -2458,7 +2458,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>Показва статуса на различни функции, използвани от тази виртуална машина:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -2663,11 +2663,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Имате позволено 3D ускорение за операционна система, която използва WDDM видео драйвер. За максимална производителност задайте виртуалната VRAM да бъде поне &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished">Имате позволено 2D видео ускорение. Тъй като 2D видео ускорението се поддържа само за виртуални машини с Windows, тази функция ще бъде забранена.</translation>
+        <translation>Имате позволено 2D видео ускорение. Тъй като 2D видео ускорението се поддържа само за виртуални машини с Windows, тази функция ще бъде забранена.</translation>
     </message>
 </context>
 <context>
@@ -2898,7 +2898,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="unfinished">Избрали сте 64-битова виртуална ОС за тази ВМ. Тъй като виртуалната машина изисква хардуерно ускорение (VT-x/AMD-V), тази функция ще бъде включена автоматично.</translation>
+        <translation>Избрали сте 64-битова виртуална ОС за тази ВМ. Тъй като виртуалната машина изисква хардуерно ускорение (VT-x/AMD-V), тази функция ще бъде включена автоматично.</translation>
     </message>
 </context>
 <context>
@@ -2994,39 +2994,39 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Promiscuous Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Безразборен режим:</translation>
     </message>
     <message>
         <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation type="unfinished"></translation>
+        <translation>Избира политика на безразборен (promiscuous) режим на мрежовия адаптер, когато е закачен към вътрешна мрежа, мрежа само-хост или мост.</translation>
     </message>
     <message>
         <source>Generic Properties:</source>
-        <translation type="unfinished"></translation>
+        <translation>Основни настройки:</translation>
     </message>
     <message>
         <source>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Въведете всички конфигурационни настройки за закачащя към мрежата драйвер, които ще използвате. Настройкте трябва да са във формат &lt;b&gt;име=стойност&lt;/b&gt; и ще зависят от драйвера. Използвайте &lt;b&gt;Shift+Enter&lt;/b&gt;, за да добавите нова категория.</translation>
     </message>
     <message>
         <source>no generic driver is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>не е избран основен драйвер</translation>
     </message>
     <message>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation type="unfinished"></translation>
+        <translation>Избира мрежовия адаптер на реалната машина, през който ще минава трафикът от и до тази мрежова карта.</translation>
     </message>
     <message>
         <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
-        <translation type="unfinished"></translation>
+        <translation>Въведете името на вътрешната мрежа, към която ще бъде свързана тази мрежова карта. Можете да създадете нова вътрешна мрежа като изберете име, което не се използва от някоя друга мрежова карта в тази или другите виртуални машини.</translation>
     </message>
     <message>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Избира виртуалния мрежов адаптер на реалната система, през който ще минава трафикът от и до тази мрежова карта. Можете да създавате и премахвате адаптери, използвайки глобалните мрежови настройки в прозореца на управлението на виртуалната машина.</translation>
     </message>
     <message>
         <source>Selects the driver to be used with this network card.</source>
-        <translation type="unfinished"></translation>
+        <translation>Избира драйвера, който ще се използва с тази мрежова карта.</translation>
     </message>
 </context>
 <context>
@@ -3751,57 +3751,57 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, спира демонтирането на медията, когато виртуалната ОС я извади.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Живо CD/DVD</translation>
     </message>
     <message>
         <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, това маркира медията като механично статично съхранение (SSD).</translation>
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Механично статично устройство (SSD)</translation>
     </message>
     <message>
         <source>Details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Детайли:</translation>
     </message>
     <message>
         <source>no name specified for controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>не е зададено име за контролера на позиция &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>controller at position &lt;b&gt;%1&lt;/b&gt; uses the name that is already used by controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>контролерът на позиция &lt;b&gt;%1&lt;/b&gt; използва името, което вече се използва от контролера на позиция &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>no hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>не е избран твърд диск за &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>at most one supported</source>
         <comment>controller</comment>
-        <translation type="unfinished">поддържа се само един</translation>
+        <translation>поддържа се само един</translation>
     </message>
     <message>
         <source>up to %1 supported</source>
         <comment>controllers</comment>
-        <translation type="unfinished">поддържат се до %1</translation>
+        <translation>поддържат се до %1</translation>
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation type="unfinished">текущо използвате повече контролери за съхранение, отколкото чипсетът %1 поддържа. Моля, променете типа на чипсета от страницата с настройки Система или намалете броя на следните контролери за съхранение от страницата с настройки Съхранение: %2.</translation>
+        <translation>текущо използвате повече контролери за съхранение, отколкото чипсетът %1 поддържа. Моля, променете типа на чипсета от страницата с настройки Система или намалете броя на следните контролери за съхранение от страницата с настройки Съхранение: %2.</translation>
     </message>
     <message>
         <source>&amp;Port Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Брой портове:</translation>
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Избира броя портове на контролера за SATA съхранение, текущо избран в Дървото за съхранение. Тази стойност не може да бъде по-малка от максимално използвания брой портове + 1.</translation>
     </message>
 </context>
 <context>
@@ -3995,29 +3995,29 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Лимит за изпълнение:</translation>
     </message>
     <message>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ограничава времето, позволено на всяко вртуално CPU за изпълнение. На всяко виртуално CPU ще бъде позволено да използва най-много до този процент процесорно време, достъпно на едно физическо CPU. Лимитът за изпълнение може да бъде забранен със задаването му на 100%. Задаването на твърде нисък лимит може да направи виртуалната машина чувствително по-бавна.</translation>
     </message>
     <message>
         <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>задали сте лимита на процесора за изпълнение на ниска стойност. Това може да направи виртуалната машина чувствително по-бавна.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>позволили сте USB HID (Human Interface Device). Това няма да работи, докато не позволите и USB емулацията. Това ще бъде променено автоматично, когато потвърдите настройките на ВМ с натискане на бутона Добре.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Min CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -4149,7 +4149,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 текущо е позволено за тази виртуална машина. Това изисква да бъде инсталиран &lt;b&gt;%1&lt;/b&gt;. Моля, инсталирайте пакета с разширения от сайта на VirtualBox. След това ще можете да позволите отново USB 2.0. Междувременно тази настройка ще бъде забранена, освен ако не откажете тази промяна в настройките.</translation>
     </message>
 </context>
 <context>
@@ -4265,15 +4265,15 @@ p, li { white-space: pre-wrap; }
     <name>UIMediumTypeChangeDialog</name>
     <message>
         <source>Modify medium attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Промяна атрибутите на медията</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Предстои да промените атрибутите на виртуалния диск, разположен в &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Моля, изберете един от следните типове медия и натиснете &lt;b&gt;%2&lt;/b&gt;, за да продължите или &lt;b&gt;%3&lt;/b&gt; в противен случай.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose medium type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете тип медия:</translation>
     </message>
 </context>
 <context>
@@ -4337,7 +4337,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Обобщение</translation>
+        <translation>Обобщение</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
@@ -4349,7 +4349,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished">Изберете файл за новото изображение на твърд диск</translation>
+        <translation>Изберете файл за новото изображение на твърд диск</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
@@ -4371,12 +4371,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Местоположение</translation>
+        <translation>Местоположение</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Размер</translation>
+        <translation>Размер</translation>
     </message>
     <message>
         <source>Bytes</source>
@@ -4438,166 +4438,166 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk name</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1_копие</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Създаване</translation>
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Копиране на виртуален диск</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Копиране</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk copying wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Добре дошли в помощника за копиране на виртуален диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to copy a virtual disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Този помощник ще ви помогне да копирате виртуален диск.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Please select the virtual disk which you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select a virtual disk file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Моля, изберете виртуалния диск, който искате да копирате, ако вече не е избран. Можете да изберете един от списъка или използвайте иконата на папка до списъка, за да изберете файл с виртуален диск.</translation>
     </message>
     <message>
         <source>&amp;VDI (VirtualBox Disk Image)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VDI (VirtualBox дисково изображение)</translation>
     </message>
     <message>
         <source>V&amp;MDK (Virtual Machine Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;MDK (Виртуален диск на машината)</translation>
     </message>
     <message>
         <source>V&amp;HD (Virtual Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;HD (Виртуален твърд диск)</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk creation wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Добре дошли в помощника за създаване на виртуален диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual disk for your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Този помощник ще ви помогне да създадете нов виртуален диск за вашата виртуална машина.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Моля, изберете типа на файла, който искате да използвате за новия виртуален диск. Ако нямате нужда да използвате този файл с друг виртуализационен софтуер, можете да оставите тази настройка непроменена.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип файл за виртуален диск</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Моля, изберете типа на файла, който искате да използвате за новия виртуален диск. Ако нямате нужда да използвате този файл с друг виртуализационен софтуер, можете да оставите тази настройка непроменена.</translation>
     </message>
     <message>
         <source>Virtual disk storage details</source>
-        <translation type="unfinished"></translation>
+        <translation>Детайли на виртуалния диск за съхранение</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Моля, изберете дали файла на новия виртуален диск ще бъде зададен както е или трябва да се създаде напълно зададен.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Днамично зададен&lt;/b&gt; файл на виртуален диск ще използва място на вашия физически твърд диск, само когато се запълни, но няма да се смали отново автоматично, когато се освободи място на него.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Файл с&lt;b&gt;фиксиран размер&lt;/b&gt; на виртуален диск може да отнеме повече време при създаване на някои системи, но често е по-бърз при използване.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the virtual disk into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Също така, можете да изберете да &lt;b&gt;разделите&lt;/b&gt; виртуалния диск в няколко файла до 2ГБ всеки. Това е полезно, ако искате да съхраните виртуалната машина на преносими USB устройства или стар системи, някои от които не поддържат много големи файлове.</translation>
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Динамично зададена</translation>
     </message>
     <message>
         <source>&amp;Fixed size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Фиксиран размер</translation>
     </message>
     <message>
         <source>&amp;Split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Разделяне във файлове до 2ГБ</translation>
     </message>
     <message>
         <source>Virtual disk file location and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Размер и местоположение на файла на виртуалния диск</translation>
     </message>
     <message>
         <source>Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Изберете размера на виртуалния твърд диск в мегабайти. Този размер ще бъде съобщен на виртуалната ОС като максимален размер на този твърд диск.</translation>
     </message>
     <message>
         <source>Virtual disk file location</source>
-        <translation type="unfinished"></translation>
+        <translation>Местоположение на виртуалния диск</translation>
     </message>
     <message>
         <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
-        <translation type="unfinished"></translation>
+        <translation>Натиснете бутона &lt;b&gt;Избор&lt;/b&gt;, за да изберете местоположение на файла, в който ще се съхраняват данните на твърдия диск, или въведете име на файла в полето за въвеждане.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;%1 (%2 Б)&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 (%2 Б)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>You are going to create a new virtual disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Предстои да създадете нов виртуален твърд диск със следните параметри:</translation>
     </message>
     <message>
         <source>You are going to create a copied virtual disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Предстои да създадете копиран виртуален твърд диск със следните параметри:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it the new virtual disk file will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ако настройките по-горе са правилни, натиснете бутона &lt;b&gt;%1&lt;/b&gt;. След като го натиснете, ще започне създаване на новия твърд диск.</translation>
     </message>
     <message>
         <source>%1 B</source>
-        <translation type="unfinished">%1 Б</translation>
+        <translation>%1 Б</translation>
     </message>
     <message>
         <source>File type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Тип файл</translation>
     </message>
     <message>
         <source>Details</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Детайли</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageFormat</name>
     <message>
         <source>File type</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип файл</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageOptions</name>
     <message>
         <source>&amp;Location</source>
-        <translation type="unfinished">&amp;Местоположение</translation>
+        <translation>&amp;Местоположение</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished">&amp;Размер</translation>
+        <translation>&amp;Размер</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageVariant</name>
     <message>
         <source>Storage details</source>
-        <translation type="unfinished"></translation>
+        <translation>Детайли на паметта</translation>
     </message>
 </context>
 <context>
@@ -4612,11 +4612,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Virtual disk to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуален диск за копиране</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished">Изберете файл с виртуален твърд диск...</translation>
+        <translation>Изберете файл с виртуален твърд диск...</translation>
     </message>
 </context>
 <context>
@@ -4840,7 +4840,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Създаване</translation>
     </message>
 </context>
 <context>
@@ -5162,7 +5162,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>Прокси</translation>
     </message>
 </context>
 <context>
@@ -5515,11 +5515,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, нов уникален MAC адрес ще бъде асоцииран към всички конфигурирани мрежови карти.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Реиницализиране MAC адреса на всички мрежови карти</translation>
     </message>
 </context>
 <context>
@@ -7577,58 +7577,58 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Dynamically allocated storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Динамично зададена памет</translation>
     </message>
     <message>
         <source>Fixed size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Фксиран размер памет</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>Динамично зададена памет, разделена във файлове до 2ГБ</translation>
     </message>
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>Фиксиран размер памет, разделена във файлове до 2ГБ</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Лимит за изпълнение</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Основен, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic Driver</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Основен драйвер</translation>
     </message>
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забраняване</translation>
     </message>
     <message>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволяване на ВМ-и</translation>
     </message>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволяване на всички</translation>
     </message>
     <message>
         <source>Adapter %1</source>
-        <translation type="unfinished">Адаптер %1</translation>
+        <translation>Адаптер %1</translation>
     </message>
 </context>
 <context>
@@ -7912,43 +7912,43 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished">Тип:</translation>
+        <translation>Тип:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished">Местоположение:</translation>
+        <translation>Местоположение:</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished"></translation>
+        <translation>Формат:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Детайли на паметта:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>Закачен към:</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Копиране...</translation>
     </message>
     <message>
         <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Промяна...</translation>
     </message>
     <message>
         <source>Copy an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Копиране на съществуваща медия</translation>
     </message>
     <message>
         <source>Modify the attributes of the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Промяна на атрибутите на избраната медия</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Затваряне</translation>
     </message>
 </context>
 <context>
@@ -9075,7 +9075,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished">Съжалявам, възникна някакъв основен проблем.</translation>
+        <translation>Съжалявам, възникна някакъв основен проблем.</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9176,67 +9176,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем пр регистрирането на виртуалната машина &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Настройките на машината са били променени, докато сте ги редактирали. Текущо имате незапазени промени в настройките.&lt;/p&gt;&lt;p&gt;Искате ли да презаредите променените настройки или да запазите вашите промени?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Презареждане на настройките</translation>
     </message>
     <message>
         <source>Keep changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Запазване на промените</translation>
     </message>
     <message>
         <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>Състоянието на виртуалната машина, която текущо редактирате, се промени. Само настройките, които са редактируеми по време на изпълнение, ще бъдат запазени, когато натиснете Добре. Всички промени в другите настройки ще бъдат загубени.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Проблем при клонирането на виртуалната машина &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Предстои да възстановите снимка &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Можете преди това да създадете снимка на текущото състояние на виртуалната машина с отмятане на кутийката по-долу; ако не го направите, текущото състояние ще бъде загубено. Искате ли да продължите?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Създаване на снимка на текущото състояние на машината</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Сигурни ли сте, че искате да възстановите снимка &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Проблем пр промяната типа на медията от &lt;b&gt;%1&lt;/b&gt; на &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;USB 2.0 текущо е позволено за тази виртуална машина. Това изисква да бъде инсталиран &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Моля, инсталирайте пакета с разширения от сайта на VirtualBox. След това ще можете да позволите отново USB 2.0. Междувременно тази настройка ще бъде забранена, освен ако не откажете тази промяна в настройките.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Не може да се зареди услугата Host USB Proxy (VERR_FILE_NOT_FOUND). Услугата може да не е инсталрана на реалния компютър</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущо не е позволено VirtualBox да достъпва USB устройства. Можете да промените това с добавяне на вашия потребител към групата &apos;vboxusers&apos;.  Моля, погледнете потребителското ръководство за по-подробно описание</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущо не е позволено VirtualBox да достъпва USB устройства. Можете да промените това с позоволяване вашият потребител да достъпва &apos;usbfs&apos; папки и файлове.  Моля, погледнете потребителското ръководство за по-подробно описание</translation>
     </message>
     <message>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="unfinished"></translation>
+        <translation>Услугата USB прокси все още не е портната към тази реална ОС</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
+        <translation>Не може да се зареди услугата Host USB Proxy</translation>
     </message>
 </context>
 <context>
@@ -9625,19 +9625,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Клониране...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Клонира избраната виртуална машина</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Изчистване</translation>
+        <translation>Изчистване</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State</source>
-        <translation type="unfinished"></translation>
+        <translation>Из&amp;чистване на запазено състояние</translation>
     </message>
 </context>
 <context>
@@ -9866,11 +9866,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Клониране...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Клонира избраната виртуална машина</translation>
     </message>
 </context>
 <context>
