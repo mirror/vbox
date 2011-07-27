@@ -44,6 +44,11 @@
           warn about it</para>
       </listitem>
 
+      <listitem>
+        <para>Solaris hosts: fixed a bug preventing parallel usage of multiple host NICs
+          with Crossbow based bridged networking</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
