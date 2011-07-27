@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -18,84 +18,83 @@
 SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += mount.vboxsf
-INSTALLS += vboxsf-mod vboxsf-sh
-ifdef VBOX_WITH_ADDITION_DRIVERS
- SYSMODS += vboxsf
-endif
 
 #
 # Populate FILES_VBOXSF_NOBIN
 #
+INSTALLS += vboxsf-mod
 include $(PATH_SUB_CURRENT)/files_vboxsf
-
-vboxsf-mod_INST        = $(INST_ADDITIONS)src/vboxsf/
-vboxsf-mod_MODE        = a+r,u+w
-vboxsf-mod_SOURCES     = $(subst ",,$(FILES_VBOXSF_NOBIN))
-
-vboxsf-sh_INST        = $(INST_ADDITIONS)src/vboxsf/
-vboxsf-sh_MODE        = a+rx,u+w
-vboxsf-sh_SOURCES     = $(subst ",,$(FILES_VBOXSF_BIN))
-vboxsf-sh_SOURCES    += \
-	$(vboxsf-sh_0_OUTDIR)/build_in_tmp \
+vboxsf-mod_INST         = $(INST_ADDITIONS)src/vboxsf/
+vboxsf-mod_SOURCES      = \
+	$(subst $(DQUOTE),,$(FILES_VBOXSF_NOBIN))
+vboxsf-mod_EXEC_SOURCES = \
+	$(subst $(DQUOTE),,$(FILES_VBOXSF_BIN)) \
+	$(vboxsf-mod_0_OUTDIR)/build_in_tmp \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
-vboxsf-sh_CLEAN      += $(vboxsf-sh_0_OUTDIR)/build_in_tmp
+vboxsf-mod_CLEAN       += $(vboxsf-mod_0_OUTDIR)/build_in_tmp
+
+# Script needed for building the kernel module.
+$$(vboxsf-mod_0_OUTDIR)/build_in_tmp: \
+		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(RM) -f -- $@
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxsf;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" \
+		--output $@ $<
+	$(QUIET)$(CHMOD) 0755 $@
+
 
 
 #
 # The module (for syntax checking).
 # The DEBUG_HASH* stuff is for CONFIG_DYNAMIC_DEBUG-enabled kernels
 #
-vboxsf_TEMPLATE        = VBOXGUESTR0
-vboxsf_NOINST          = 1
-vboxsf_CFLAGS          = -fshort-wchar
-vboxsf_DEFS            = \
-	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
-	KBUILD_MODNAME=KBUILD_STR\(vboxsf\) \
-        KBUILD_BASENAME=KBUILD_STR\(vboxsf\) \
-	DEBUG_HASH=2 DEBUG_HASH2=3
-vboxsf_INCS            = \
-	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
-vboxsf_SOURCES         = \
-	vfsmod.c \
-	utils.c \
-	dirops.c \
-	lnkops.c \
-	regops.c
-vboxsf_LIBS            = \
-	$(VBOX_LIB_VBGL_R0)
+ifdef VBOX_WITH_ADDITION_DRIVERS
+ SYSMODS += vboxsf
+ vboxsf_TEMPLATE        = VBOXGUESTR0
+ vboxsf_NOINST          = 1
+ vboxsf_CFLAGS          = -fshort-wchar
+ vboxsf_DEFS            = \
+ 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
+ 	KBUILD_MODNAME=KBUILD_STR\(vboxsf\) \
+ 	KBUILD_BASENAME=KBUILD_STR\(vboxsf\) \
+ 	DEBUG_HASH=2 DEBUG_HASH2=3
+ # detect fc6 2.6.18
+ vboxsf_DEFS           += \
+ 	$(foreach inc, $(VBOX_LINUX_INCS),\
+ 		$(if $(wildcard $(inc)/linux/utsrelease.h),\
+ 		  $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
+ 		               then echo yes; fi),KERNEL_FC6,),))
+ # detect rhel5 2.6.18
+ vboxsf_DEFS           += \
+ 	$(foreach inc, $(VBOX_LINUX_INCS),\
+ 		$(if $(wildcard $(inc)/linux/utsrelease.h),\
+ 		  $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
+ 		               then echo yes; fi),KERNEL_FC6,),))
 
-# detect fc6 2.6.18
-vboxsf_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
-                            $(if $(wildcard $(inc)/linux/utsrelease.h),\
-                              $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
-                                then echo yes; fi),KERNEL_FC6,),))
-# detect rhel5 2.6.18
-vboxsf_DEFS           += $(foreach inc,$(VBOX_LINUX_INCS),\
-                            $(if $(wildcard $(inc)/linux/utsrelease.h),\
-                              $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
-                                then echo yes; fi),KERNEL_FC6,),))
-
+ vboxsf_INCS            = \
+ 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
+ 	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
+ vboxsf_SOURCES         = \
+ 	vfsmod.c \
+ 	utils.c \
+ 	dirops.c \
+ 	lnkops.c \
+ 	regops.c
+ vboxsf_LIBS            = \
+ 	$(VBOX_LIB_VBGL_R0)
+endif
 
 #
 # The mount util.
 #
+PROGRAMS += mount.vboxsf
 mount.vboxsf_TEMPLATE    = VBOXGUESTR3EXE
 mount.vboxsf_DEFS        = _GNU_SOURCE
 mount.vboxsf_SOURCES     = \
 	mount.vboxsf.c \
 	vbsfmount.c
-
-## Scripts needed for building kernel modules
-
-$$(vboxsf-sh_0_OUTDIR)/build_in_tmp: \
-		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
-		$(VBOX_VERSION_STAMP) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxsf;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
-	$(QUIET)chmod 0755 $@
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
