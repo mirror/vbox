@@ -765,14 +765,12 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
         return VINF_SUCCESS;
     }
 
+    char nameEmptyBuf = '0';
     LPSTR lpszName = NULL;
     rc = usbLibDevStrDriverKeyGet(hHub, iPort, &lpszName);
-    if (RT_FAILURE(rc))
-    {
-        return rc;
-    }
-
-    Assert(lpszName);
+    Assert(!!lpszName == !!RT_SUCCESS(rc));
+    if (!lpszName)
+        lpszName = &nameEmptyBuf;
 
     PUSB_CONFIGURATION_DESCRIPTOR pCfgDr = NULL;
     PVBOXUSB_STRING_DR_ENTRY pList = NULL;
