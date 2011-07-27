@@ -1,0 +1,75 @@
+# $Id$
+#
+# Storage: Testcase for VDCopy with snapshots and optimizations.
+#
+
+#
+# Copyright (C) 2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+# Init I/O RNG for generating random data for writes
+iorngcreate size=10M mode=manual seed=1234567890
+
+# Create source disk and fill data
+print msg=Creating_Source_Disk
+    createdisk name=source verify=no
+    create disk=source mode=base name=source_base.vdi type=dynamic backend=VDI size=512M
+    io disk=source async=no mode=rnd blocksize=64k off=0-512M size=256M writes=100
+
+# Create 1st snapshot
+print msg=Creating_First_Diff
+    create disk=source mode=diff name=source_diff1.vdi type=dynamic backend=VDI size=512M
+    io disk=source async=no mode=rnd blocksize=64k off=0M-512M size=256M writes=50
+
+# Create 2nd snapshot
+print msg=Creating_Second_Diff
+    create disk=source mode=diff name=source_diff2.vdi type=dynamic backend=VDI size=512M
+    io disk=source async=no mode=rnd blocksize=64k off=0M-512M size=128M writes=25
+
+# Create destination disk
+print msg=Creating_Destination_Disk
+    createdisk name=dest verify=no
+
+# Copy base image
+print msg=Copying_Base_Image
+    copy diskfrom=source diskto=dest imagefrom=0 backend=VDI filename=dest_base.vdi
+
+print msg=Copying_First_Diff_optimized
+    copy diskfrom=source diskto=dest imagefrom=1 backend=VDI filename=dest_diff1.vdi fromsame=0 tosame=0
+
+print msg=Copying_Second_Diff_optimized
+    copy diskfrom=source diskto=dest imagefrom=2 backend=VDI filename=dest_diff2.vdi fromsame=1 tosame=1
+
+print msg=Comparing_Disks
+    comparedisks disk1=source disk2=dest
+
+# Cleanup
+print msg=Cleaning_up
+    close disk=dest mode=single delete=yes
+    close disk=dest mode=single delete=yes
+    close disk=dest mode=single delete=yes
+
+# Test unoptimized copying now.
+print msg=Copy_Source_into_base_image
+    copy diskfrom=source diskto=dest imagefrom=2 backend=VDI filename=dest_base.vdi
+print msg=Comparing_Disks
+    comparedisks disk1=source disk2=dest
+
+print msg=Final_Cleanup
+    close disk=source mode=single delete=yes
+    close disk=source mode=single delete=yes
+    close disk=source mode=single delete=yes
+    close disk=dest mode=single delete=yes
+    destroydisk name=source
+    destroydisk name=dest
+
+iorngdestroy
+

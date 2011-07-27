@@ -299,6 +299,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
 static DECLCALLBACK(int) vdScriptHandlerFlush(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerMerge(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerCompact(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerCopy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerClose(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerIoRngCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerIoRngDestroy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
@@ -374,6 +375,21 @@ const VDSCRIPTARGDESC g_aArgCompact[] =
     /* pcszName    chId enmType                          fFlags */
     {"disk",       'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
     {"image",      'i', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
+};
+
+/* Compact a disk */
+const VDSCRIPTARGDESC g_aArgCopy[] =
+{
+    /* pcszName    chId enmType                          fFlags */
+    {"diskfrom",   's', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"diskto",     'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"imagefrom",  'i', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"backend",    'b', VDSCRIPTARGTYPE_STRING,          0},
+    {"filename",   'f', VDSCRIPTARGTYPE_STRING,          0},
+    {"movebyrename", 'm', VDSCRIPTARGTYPE_BOOL,          0},
+    {"size",       'z', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, 0},
+    {"fromsame",   'o', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, 0},
+    {"tosame",     't', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, 0}
 };
 
 /* close action */
@@ -480,6 +496,7 @@ const VDSCRIPTACTION g_aScriptActions[] =
     {"close",                      g_aArgClose,                       RT_ELEMENTS(g_aArgClose),                      vdScriptHandlerClose},
     {"merge",                      g_aArgMerge,                       RT_ELEMENTS(g_aArgMerge),                      vdScriptHandlerMerge},
     {"compact",                    g_aArgCompact,                     RT_ELEMENTS(g_aArgCompact),                    vdScriptHandlerCompact},
+    {"copy",                       g_aArgCopy,                        RT_ELEMENTS(g_aArgCopy),                       vdScriptHandlerCopy},
     {"iorngcreate",                g_aArgIoRngCreate,                 RT_ELEMENTS(g_aArgIoRngCreate),                vdScriptHandlerIoRngCreate},
     {"iorngdestroy",               NULL,                              0,                                             vdScriptHandlerIoRngDestroy},
     {"iopatterncreatefromnumber",  g_aArgIoPatternCreateFromNumber,   RT_ELEMENTS(g_aArgIoPatternCreateFromNumber),  vdScriptHandlerIoPatternCreateFromNumber},
@@ -1184,6 +1201,100 @@ static DECLCALLBACK(int) vdScriptHandlerCompact(PVDTESTGLOB pGlob, PVDSCRIPTARG 
              * doesn't corrupt the data.
              */
             rc = VDCompact(pDisk->pVD, nImage, NULL);
+        }
+    }
+
+    return rc;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerCopy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    const char *pcszDiskFrom = NULL;
+    const char *pcszDiskTo = NULL;
+    PVDDISK pDiskFrom = NULL;
+    PVDDISK pDiskTo = NULL;
+    unsigned nImageFrom = 0;
+    const char *pcszBackend = NULL;
+    const char *pcszFilename = NULL;
+    bool fMoveByRename = false;
+    uint64_t cbSize = 0;
+    unsigned nImageFromSame = VD_IMAGE_CONTENT_UNKNOWN;
+    unsigned nImageToSame = VD_IMAGE_CONTENT_UNKNOWN;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 's':
+            {
+                pcszDiskFrom = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'd':
+            {
+                pcszDiskTo = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'i':
+            {
+                nImageFrom = (unsigned)paScriptArgs[i].u.u64;
+                break;
+            }
+            case 'b':
+            {
+                pcszBackend = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'f':
+            {
+                pcszFilename = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'm':
+            {
+                fMoveByRename = paScriptArgs[i].u.fFlag;
+                break;
+            }
+            case 'z':
+            {
+                cbSize = paScriptArgs[i].u.u64;
+                break;
+            }
+            case 'o':
+            {
+                nImageFromSame = (unsigned)paScriptArgs[i].u.u64;
+                break;
+            }
+            case 't':
+            {
+                nImageToSame = (unsigned)paScriptArgs[i].u.u64;
+                break;
+            }
+
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pDiskFrom = tstVDIoGetDiskByName(pGlob, pcszDiskFrom);
+        pDiskTo = tstVDIoGetDiskByName(pGlob, pcszDiskTo);
+        if (!pDiskFrom || !pDiskTo)
+            rc = VERR_NOT_FOUND;
+        else
+        {
+            /** @todo: Provide progress interface to test that cancelation
+             * works as intended.
+             */
+            rc = VDCopyEx(pDiskFrom->pVD, nImageFrom, pDiskTo->pVD, pcszBackend, pcszFilename,
+                          fMoveByRename, cbSize, nImageFromSame, nImageToSame,
+                          VD_IMAGE_FLAGS_NONE, NULL, VD_OPEN_FLAGS_ASYNC_IO,
+                          NULL, pGlob->pInterfacesImages, NULL);
         }
     }
 
