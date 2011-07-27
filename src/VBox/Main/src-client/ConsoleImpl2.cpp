@@ -2299,6 +2299,16 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigInteger(pCfg,   "Object", mUsbWebcamInterface);
 # endif
 #endif
+#ifdef VBOX_WITH_USB_CARDREADER
+                InsertConfigNode(pUsbDevices, "CardReader", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+# ifdef VBOX_WITH_USB_CARDREADER_TEST
+                InsertConfigString(pLunL0,    "Driver", "DrvDirectCardReader");
+                InsertConfigNode(pLunL0,    "Config", &pCfg);
+# endif
+#endif
 # if 0  /* Virtual MSD*/
 
                 InsertConfigNode(pUsbDevices, "Msd", &pDev);
