@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,6 +42,34 @@ RTDECL(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx)
         /* Host reported some bad value. Continue in the 1 screen mode. */
         cDisplays = 1;
     return cDisplays;
+}
+
+
+/**
+ * Returns the size of the video RAM in bytes.
+ *
+ * @returns the size
+ */
+RTDECL(uint32_t) VBoxVideoGetVRAMSize(void)
+{
+    /** @note A 32bit read on this port returns the VRAM size. */
+    return VBoxVideoCmnPortReadUlong(VBE_DISPI_IOPORT_DATA);
+}
+
+
+/**
+ * Check whether this hardware allows the display width to have non-multiple-
+ * of-eight values.
+ *
+ * @returns true if any width is allowed, false otherwise.
+ */
+RTDECL(bool) VBoxVideoAnyWidthAllowed(void)
+{
+    unsigned DispiId;
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_ANYX);
+    DispiId = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
+    return (DispiId == VBE_DISPI_ID_ANYX);
 }
 
 
@@ -179,15 +207,7 @@ RTDECL(bool) VBoxVideoGetModeRegisters(uint16_t *pcWidth, uint16_t *pcHeight,
 
 
 /**
- * Get the video mode for the first screen using the port registers.  All
- * parameters are optional
- * @note  If anyone else needs additional values just extend the function with
- *        additional parameters and fix any existing callers.
- * @param  pcWidth      where to store the mode width
- * @param  pcHeight     where to store the mode height
- * @param  pcVirtWidth  where to store the mode pitch
- * @param  pcBPP        where to store the colour depth of the mode
- * @param  pfFlags      where to store the flags for the mode
+ * Disable our extended graphics mode and go back to VGA mode.
  */
 RTDECL(void) VBoxVideoDisableVBE(void)
 {

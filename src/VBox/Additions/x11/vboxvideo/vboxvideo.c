@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -787,17 +787,11 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Using the PCI information caused problems with non-powers-of-two
        sized video RAM configurations */
-    pVBox->cbFBMax = inl(VBE_DISPI_IOPORT_DATA);
+    pVBox->cbFBMax = VBoxVideoGetVRAMSize();
     pScrn->videoRam = pVBox->cbFBMax / 1024;
 
     /* Check if the chip restricts horizontal resolution or not. */
-    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
-    outw(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_ANYX);
-    DispiId = inw(VBE_DISPI_IOPORT_DATA);
-    if (DispiId == VBE_DISPI_ID_ANYX)
-        pVBox->fAnyX = TRUE;
-    else
-        pVBox->fAnyX = FALSE;
+    pVBox->fAnyX = VBoxVideoAnyWidthAllowed();
 
     /* Set up clock information that will support all modes we need. */
     pScrn->clockRanges = xnfcalloc(sizeof(ClockRange), 1);

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -257,6 +257,8 @@ RTDECL(void) VBoxVBVASetupBufferContext(PVBVABUFFERCONTEXT pCtx,
  * @{ */
 
 RTDECL(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx);
+RTDECL(uint32_t) VBoxVideoGetVRAMSize(void);
+RTDECL(bool)     VBoxVideoAnyWidthAllowed(void);
 
 struct VBVAINFOVIEW;
 /**
