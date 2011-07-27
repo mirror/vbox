@@ -257,7 +257,7 @@ static PDRIVER_OBJECT vboxUsbMonHookFindHubDrvObj()
             }
             else
             {
-                AssertFailed();
+                Log(("IoGetDeviceObjectPointer returned Status (0x%x) for %S returned\n", Status, szwHubName));
             }
         }
         else
