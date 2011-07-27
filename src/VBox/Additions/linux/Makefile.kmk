@@ -356,8 +356,7 @@ LnxAdd-scripts_EXEC_SOURCES  = \
 INSTALLS += LnxAdd-Nostrip-Bin
 LnxAdd-Nostrip-Bin_INST     = $(VBOX_LNX_ADD_INST_BIN_DIR)
 LnxAdd-Nostrip-Bin_INSTTYPE = stage
-LnxAdd-Nostrip-Bin_MODE     = a+rx,u+w
-LnxAdd-Nostrip-Bin_SOURCES  = \
+LnxAdd-Nostrip-Bin_EXEC_SOURCES = \
 	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient=>VBoxClient-all
 
 
@@ -365,9 +364,8 @@ LnxAdd-Nostrip-Bin_SOURCES  = \
 # And the init scripts
 #
 INSTALLS += LnxAdd-init-scripts
-LnxAdd-init-scripts_INST    = $(INST_ADDITIONS)
-LnxAdd-init-scripts_MODE    = a+rx,u+w
-LnxAdd-init-scripts_SOURCES = \
+LnxAdd-init-scripts_INST = $(INST_ADDITIONS)
+LnxAdd-init-scripts_EXEC_SOURCES = \
 	$(foreach i,$(VBOX_LNX_ADD_INIT), installer/$(i).sh=>$(i))
 
 
