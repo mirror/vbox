@@ -3675,16 +3675,16 @@ p, li { white-space: pre-wrap; }
         <translation>Одабрати виртуални флопи диск...</translation>
     </message>
     <message>
-        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
-        <translation>Када одабрано, брише демонтирање медијума када га гостов ОС избаци.</translation>
+        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
+        <translation type="unfinished">Када одабрано, брише демонтирање медијума када га гостов ОС избаци.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
         <translation>CD/DVD уживо</translation>
     </message>
     <message>
-        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
-        <translation>Када унето, поставља медијум као не SSD.</translation>
+        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
+        <translation type="unfinished">Када унето, поставља медијум као не SSD.</translation>
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
@@ -3725,8 +3725,8 @@ p, li { white-space: pre-wrap; }
         <translation>Број порта:</translation>
     </message>
     <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
-        <translation>Одабере број порта од SATA контролера који је одабран у дрво стоваришта. Вредност не може да буде мање од максималниј број порта + 1.</translation>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
+        <translation type="unfinished">Одабере број порта од SATA контролера који је одабран у дрво стоваришта. Вредност не може да буде мање од максималниј број порта + 1.</translation>
     </message>
 </context>
 <context>
@@ -4462,8 +4462,8 @@ p, li { white-space: pre-wrap; }
         <translation>Смештај виртуалног диска</translation>
     </message>
     <message>
-        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
-        <translation>Стиснути &lt;b&gt;Одабери&lt;/b&gt; за одабирање смештаја датотеке која садржава податке виртуалног диска, или унети име у уносно поље.</translation>
+        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <translation type="unfinished">Стиснути &lt;b&gt;Одабери&lt;/b&gt; за одабирање смештаја датотеке која садржава податке виртуалног диска, или унети име у уносно поље.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -4675,7 +4675,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Препоручена основна меморија је &lt;b&gt;%1&lt;/b&gt; МБ.</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Препоручена величина хард диска је &lt;b&gt;%1&lt;/b&gt; МБ.</translation>
     </message>
     <message>
@@ -4727,7 +4727,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Основна меморија</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">Хард диск бута</translation>
     </message>
@@ -4736,11 +4736,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Поништи</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Одабрати слику хард диска да се користи као бут виртуелне машине. Можете или креирати нов хард диск користићи &lt;b&gt;Ново&lt;/b&gt; или одабрати постојећи хард диск са списка или кликујући &lt;b&gt;Постоји&lt;/b&gt; (за позив менаджера виртуелног диска).&lt;/p&gt;&lt;p&gt;Ако вам је потребан комплекснији хард диск, можете прескоћити овај корак и касније прикачити хард диск користећи дијалог парачетри VM-а.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Хард диск бута (Примарни главни)</translation>
     </message>
     <message>
@@ -4817,11 +4817,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Одабрати слику хард диска да се користи као бут виртуелне машине. Можете или креирати нов хард диск користићи &lt;b&gt;Ново&lt;/b&gt; или одабрати постојећи хард диск са списка или кликујући &lt;b&gt;Постоји&lt;/b&gt; (за позив менаджера виртуелног диска).&lt;/p&gt;&lt;p&gt;Ако вам је потребан комплекснији хард диск, можете прескоћити овај корак и касније прикачити хард диск користећи дијалог парачетри VM-а.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk (Primary Master)</source>
+        <source>Start-up &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Хард диск бута (Примарни главни)</translation>
     </message>
     <message>
@@ -4837,24 +4837,24 @@ p, li { white-space: pre-wrap; }
         <translation>Виртуелни хард диск</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Препоручена величина хард диска је &lt;b&gt;%1&lt;/b&gt; МБ.</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
-        <translation>Диск бута харда</translation>
+        <source>Start-up &amp;Disk</source>
+        <translation type="unfinished">Диск бута харда</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Одаберите виртуални диск који ће да се употреби као „бут“ за машину. Можете или да креирате нов диск или да одаберете постојећи са списка.&lt;/p&gt;&lt;p&gt;Ако Вам треба сложенији хард диск, можете да прескочите овај корак и да касније прикачите хард диск пребо подешавања VM.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Одаберите виртуални диск који ће да се употреби као „бут“ за машину. Можете или да креирате нов диск или да одаберете постојећи са списка.&lt;/p&gt;&lt;p&gt;Ако Вам треба сложенији хард диск, можете да прескочите овај корак и да касније прикачите хард диск пребо подешавања VM.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
         <translation>Одабрати виртуелни хард диск...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Препоручена величина диска бута је &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished">Препоручена величина диска бута је &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -4888,9 +4888,9 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">МБ</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation>Хард диск бута</translation>
+        <translation type="unfinished">Хард диск бута</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
@@ -9121,8 +9121,8 @@ p, li { white-space: pre-wrap; }
         <translation>Задржи промене</translation>
     </message>
     <message>
-        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
-        <translation>Статус машине које уређујете је промењен. Само поставке које су променљиве су сачуване када стиснете У реду. Остале промене ће бити изгубљене.</translation>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished">Статус машине које уређујете је промењен. Само поставке које су променљиве су сачуване када стиснете У реду. Остале промене ће бити изгубљене.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
