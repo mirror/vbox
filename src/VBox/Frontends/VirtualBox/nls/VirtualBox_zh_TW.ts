@@ -2692,16 +2692,16 @@
         <translation>選擇虛擬軟碟檔案...</translation>
     </message>
     <message>
-        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
-        <translation>勾選時，略過客體作業系統退出的未掛載媒體。</translation>
+        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
+        <translation type="unfinished">勾選時，略過客體作業系統退出的未掛載媒體。</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
         <translation>即時 CD/DVD(&amp;L)</translation>
     </message>
     <message>
-        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
-        <translation>勾選時，標記媒體為固態硬碟 (SSD)。</translation>
+        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
+        <translation type="unfinished">勾選時，標記媒體為固態硬碟 (SSD)。</translation>
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
@@ -2742,8 +2742,8 @@
         <translation>連接埠數(&amp;P):</translation>
     </message>
     <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This value can&apos;t be less than the maximum used port number + 1.</source>
-        <translation>選取目前在 [存放裝置樹] 選取的 SATA 存放裝置控制器之連接埠數。 這個值不能小於所用的最大連接埠號 + 1。</translation>
+        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
+        <translation type="unfinished">選取目前在 [存放裝置樹] 選取的 SATA 存放裝置控制器之連接埠數。 這個值不能小於所用的最大連接埠號 + 1。</translation>
     </message>
 </context>
 <context>
@@ -3354,8 +3354,8 @@
         <translation>虛擬磁碟檔案位置</translation>
     </message>
     <message>
-        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
-        <translation>按下 [&lt;b&gt;選取&lt;/b&gt;] 按鈕選取要存放虛擬磁碟資料的檔案位置或在欄位輸入檔案名稱。</translation>
+        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <translation type="unfinished">按下 [&lt;b&gt;選取&lt;/b&gt;] 按鈕選取要存放虛擬磁碟資料的檔案位置或在欄位輸入檔案名稱。</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
@@ -3521,20 +3521,20 @@
         <translation>虛擬硬碟</translation>
     </message>
     <message>
-        <source>Boot Hard &amp;Disk</source>
-        <translation>開機硬碟(&amp;D)</translation>
+        <source>Start-up &amp;Disk</source>
+        <translation type="unfinished">開機硬碟(&amp;D)</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選取用來作為虛擬機器開機硬碟的虛擬硬碟。 您可以建立新的硬碟或從下拉清單選取現有的一個或按下相應的按鈕 (調用 [開啟檔案] 視窗)。&lt;/p&gt;&lt;p&gt;如果您需要更複雜的硬碟設定，您也可以略過這個步驟並稍後使用 VM 設定對話方塊附加硬碟。&lt;/p&gt;</translation>
+        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;選取用來作為虛擬機器開機硬碟的虛擬硬碟。 您可以建立新的硬碟或從下拉清單選取現有的一個或按下相應的按鈕 (調用 [開啟檔案] 視窗)。&lt;/p&gt;&lt;p&gt;如果您需要更複雜的硬碟設定，您也可以略過這個步驟並稍後使用 VM 設定對話方塊附加硬碟。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
         <translation>選擇虛擬硬碟檔案...</translation>
     </message>
     <message>
-        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>開機硬碟的建議大小為 &lt;b&gt;%1&lt;/b&gt;。</translation>
+        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished">開機硬碟的建議大小為 &lt;b&gt;%1&lt;/b&gt;。</translation>
     </message>
 </context>
 <context>
@@ -3563,9 +3563,9 @@
         <translation>基本記憶體</translation>
     </message>
     <message>
-        <source>Boot Hard Disk</source>
+        <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation>開機硬碟</translation>
+        <translation type="unfinished">開機硬碟</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
@@ -6460,8 +6460,8 @@
         <translation>保留變更</translation>
     </message>
     <message>
-        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
-        <translation>您目前編輯的虛擬機器狀態已變更。 在您按下 [確定] 時只會儲存執行階段可編輯的設定。 所有其它變更的設定將失去。</translation>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished">您目前編輯的虛擬機器狀態已變更。 在您按下 [確定] 時只會儲存執行階段可編輯的設定。 所有其它變更的設定將失去。</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
