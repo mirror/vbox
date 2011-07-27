@@ -785,15 +785,20 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     int period_code = pThis->cmos_data[RTC_REG_A] & 0x0f;
     if (    period_code != 0
-        &&  (pThis->cmos_data[RTC_REG_B] & REG_B_PIE)) {
+        &&  (pThis->cmos_data[RTC_REG_B] & REG_B_PIE))
+    {
         if (period_code <= 2)
             period_code += 7;
         int period = 1 << (period_code - 1);
         LogRel(("RTC: period=%#x (%d) %u Hz (restore)\n", period, period, _32K / period));
+        PDMCritSectEnter(pThis->pDevInsR3->pCritSectRoR3, VINF_SUCCESS);
         TMTimerSetFrequencyHint(pThis->CTX_SUFF(pPeriodicTimer), _32K / period);
+        PDMCritSectLeave(pThis->pDevInsR3->pCritSectRoR3);
         pThis->CurLogPeriod  = period;
         pThis->CurHintPeriod = period;
-    } else {
+    }
+    else
+    {
         LogRel(("RTC: stopped the periodic timer (restore)\n"));
         pThis->CurLogPeriod  = 0;
         pThis->CurHintPeriod = 0;
