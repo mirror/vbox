@@ -65,12 +65,12 @@ static struct
     { "foo=bar1",                       0,                                                 0,  0,                                         0, VERR_INVALID_PARAMETER },
     { "foo=bar2",                       0,                                                 50, 50,                                        0, VERR_INVALID_PARAMETER },
     /* Empty buffers. */
-    { "",                               1,                                                 0, 1,                                          0, VERR_MORE_DATA },
-    { "\0",                             1,                                                 0, 1,                                          0, VERR_MORE_DATA },
+    { "",                               1,                                                 0,  1,                                         0, VERR_MORE_DATA },
+    { "\0",                             1,                                                 0,  1,                                         0, VERR_MORE_DATA },
     /* Incomplete buffer (missing components). */
-    { szUnterm1,                        5,                                                 0, 0,                                          0, VERR_MORE_DATA },
-    { "foo1",                           sizeof("foo1"),                                    0, 0,                                          0, VERR_MORE_DATA },
-    { "=bar\0",                         sizeof("=bar"),                                    0, 0 ,                                         0, VERR_MORE_DATA },
+    { szUnterm1,                        5,                                                 0,  0,                                         0, VERR_MORE_DATA },
+    { "foo1",                           sizeof("foo1"),                                    0,  0,                                         0, VERR_MORE_DATA },
+    { "=bar\0",                         sizeof("=bar"),                                    0,  0,                                         0, VERR_MORE_DATA },
     /* Last sequence is incomplete -- new offset should point to it. */
     { "hug=sub\0incomplete",            sizeof("hug=sub\0incomplete"),                     0,  sizeof("hug=sub"),                         1, VERR_MORE_DATA },
     { "boo=hoo\0baz=boo\0qwer",         sizeof("boo=hoo\0baz=boo\0qwer"),                  0,  sizeof("boo=hoo\0baz=boo"),                2, VERR_MORE_DATA },
@@ -97,12 +97,12 @@ static struct
     int         iResult;
 } aTests2[] =
 {
-    { "\0\0\0\0",                                      sizeof("\0\0\0\0"),                                0, VERR_MORE_DATA },
+    { "\0\0\0\0",                                      sizeof("\0\0\0\0"),                                0, VINF_SUCCESS },
     { "off=rab\0\0zab=oob",                            sizeof("off=rab\0\0zab=oob"),                      2, VINF_SUCCESS },
     { "\0\0\0soo=foo\0goo=loo\0\0zab=oob",             sizeof("\0\0\0soo=foo\0goo=loo\0\0zab=oob"),       2, VINF_SUCCESS },
-    { "qoo=uoo\0\0\0\0asdf=\0\0",                      sizeof("qoo=uoo\0\0\0\0asdf=\0\0"),                2, VERR_MORE_DATA },
-    { "foo=bar\0\0\0\0\0\0",                           sizeof("foo=bar\0\0\0\0\0\0"),                     1, VERR_MORE_DATA },
-    { "qwer=cvbnr\0\0\0gui=uig\0\0\0",                 sizeof("qwer=cvbnr\0\0\0gui=uig\0\0\0"),           2, VERR_MORE_DATA }
+    { "qoo=uoo\0\0\0\0asdf=\0\0",                      sizeof("qoo=uoo\0\0\0\0asdf=\0\0"),                2, VINF_SUCCESS },
+    { "foo=bar\0\0\0\0\0\0",                           sizeof("foo=bar\0\0\0\0\0\0"),                     1, VINF_SUCCESS },
+    { "qwer=cvbnr\0\0\0gui=uig\0\0\0",                 sizeof("qwer=cvbnr\0\0\0gui=uig\0\0\0"),           2, VINF_SUCCESS }
 };
 
 int main()
@@ -113,7 +113,7 @@ int main()
         return rc;
     RTTestBanner(hTest);
 
-    RTPrintf("Initializing COM...\n");
+    RTTestIPrintf(RTTESTLVL_DEBUG, "Initializing COM...\n");
     rc = com::Initialize();
     if (FAILED(rc))
     {
@@ -141,43 +141,38 @@ int main()
 
         GuestProcessStream stream;
         int iResult = stream.AddData((BYTE*)aTests[iTest].pbData, aTests[iTest].cbData);
-        if (RT_FAILURE(iResult))
+        if (RT_SUCCESS(iResult))
         {
-            RTTestFailed(hTest, "\tAdding data returned %Rrc, expected VINF_SUCCESS",
-                         iResult);
-            continue;
-        }
-
-        iResult = stream.Parse();
-
-        if (iResult != aTests[iTest].iResult)
-        {
-            RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
-                         iResult, aTests[iTest].iResult);
-        }
-        else if (stream.GetNumPairs() != aTests[iTest].uMapElements)
-        {
-            RTTestFailed(hTest, "\tMap has %u elements, expected %u",
-                         stream.GetNumPairs(), aTests[iTest].uMapElements);
-        }
-        else if (stream.GetOffset() != aTests[iTest].uOffsetAfter)
-        {
-            RTTestFailed(hTest, "\tOffset %u wrong, expected %u",
-                         uOffset, aTests[iTest].uOffsetAfter);
-        }
-        else if (iResult == VERR_MORE_DATA)
-        {
-            RTTestIPrintf(RTTESTLVL_DEBUG, "\tMore data (Offset: %u)\n", uOffset);
-
-            /* There is remaining data left in the buffer (which needs to be merged
-             * with a following buffer) -- print it. */
-            size_t uToWrite = aTests[iTest].cbData - uOffset;
-            if (uToWrite)
+            iResult = stream.Parse();
+            if (iResult != aTests[iTest].iResult)
             {
-                const char *pszRemaining = aTests[iTest].pbData;
-                RTTestIPrintf(RTTESTLVL_DEBUG, "\tRemaining (%u):\n", uToWrite);
-                RTStrmWriteEx(g_pStdOut, &aTests[iTest].pbData[uOffset], uToWrite - 1, NULL);
-                RTTestIPrintf(RTTESTLVL_DEBUG, "\n");
+                RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
+                             iResult, aTests[iTest].iResult);
+            }
+            else if (stream.GetNumPairs() != aTests[iTest].uMapElements)
+            {
+                RTTestFailed(hTest, "\tMap has %u elements, expected %u",
+                             stream.GetNumPairs(), aTests[iTest].uMapElements);
+            }
+            else if (stream.GetOffsetParser() != aTests[iTest].uOffsetAfter)
+            {
+                RTTestFailed(hTest, "\tOffset %u wrong, expected %u",
+                             stream.GetOffsetParser(), aTests[iTest].uOffsetAfter);
+            }
+            else if (iResult == VERR_MORE_DATA)
+            {
+                RTTestIPrintf(RTTESTLVL_DEBUG, "\tMore data (Offset: %u)\n", uOffset);
+
+                /* There is remaining data left in the buffer (which needs to be merged
+                 * with a following buffer) -- print it. */
+                size_t uToWrite = aTests[iTest].cbData - uOffset;
+                if (uToWrite)
+                {
+                    const char *pszRemaining = aTests[iTest].pbData;
+                    RTTestIPrintf(RTTESTLVL_DEBUG, "\tRemaining (%u):\n", uToWrite);
+                    RTStrmWriteEx(g_pStdOut, &aTests[iTest].pbData[uOffset], uToWrite - 1, NULL);
+                    RTTestIPrintf(RTTESTLVL_DEBUG, "\n");
+                }
             }
         }
     }
@@ -197,8 +192,17 @@ int main()
             do
             {
                 iResult = stream.Parse();
-                if (iResult == VERR_MORE_DATA)
-                    uNumBlocks++;
+                RTTestIPrintf(RTTESTLVL_DEBUG, "\tReturned with %Rrc\n", iResult);
+                if (   iResult == VINF_SUCCESS
+ 	                || iResult == VERR_MORE_DATA)
+                {
+                    /* Only count block which have at least one pair. */
+                    if (stream.GetNumPairs())
+                    {
+                        uNumBlocks++;
+                        stream.ClearPairs();
+                    }
+                }
                 if (uNumBlocks > 32)
                     break; /* Give up if unreasonable big. */
             } while (iResult == VERR_MORE_DATA);
@@ -218,7 +222,7 @@ int main()
             RTTestFailed(hTest, "\tAdding data failed with %Rrc", iResult);
     }
 
-    RTPrintf("Shutting down COM...\n");
+    RTTestIPrintf(RTTESTLVL_DEBUG, "Shutting down COM...\n");
     com::Shutdown();
 
     /*
