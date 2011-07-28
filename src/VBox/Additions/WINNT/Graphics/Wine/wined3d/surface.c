@@ -888,7 +888,7 @@ static void surface_upload_data(IWineD3DSurfaceImpl *This, const struct wined3d_
 }
 
 #ifdef VBOX_WITH_WDDM
-static void surface_upload_data_rect(IWineD3DSurfaceImpl *This, const struct wined3d_gl_info *gl_info,
+static void surface_upload_data_rect(IWineD3DSurfaceImpl *This, IWineD3DSurfaceImpl *Src, const struct wined3d_gl_info *gl_info,
         const struct wined3d_format_desc *format_desc, BOOL srgb, const GLvoid *data, RECT *pRect)
 {
     GLsizei width = pRect->right - pRect->left;
@@ -918,13 +918,13 @@ static void surface_upload_data_rect(IWineD3DSurfaceImpl *This, const struct win
 
     ENTER_GL();
 
-    if (This->Flags & SFLAG_PBO)
+    if (Src->Flags & SFLAG_PBO)
     {
-        GL_EXTCALL(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, This->pbo));
+        GL_EXTCALL(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, Src->pbo));
         checkGLcall("glBindBufferARB");
 
-        TRACE("(%p) pbo: %#x, data: %p.\n", This, This->pbo, data);
-        data = NULL;
+        TRACE("(%p) pbo: %#x, data: %p.\n", Src, Src->pbo, data);
+        /* the data should contain a zero-based offset */
     }
 
     if (format_desc->Flags & WINED3DFMT_FLAG_COMPRESSED)
@@ -944,7 +944,7 @@ static void surface_upload_data_rect(IWineD3DSurfaceImpl *This, const struct win
         checkGLcall("glTexSubImage2D");
     }
 
-    if (This->Flags & SFLAG_PBO)
+    if (Src->Flags & SFLAG_PBO)
     {
         GL_EXTCALL(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0));
         checkGLcall("glBindBufferARB");
@@ -4178,8 +4178,8 @@ static HRESULT IWineD3DSurfaceImpl_BltSys2Vram(IWineD3DSurfaceImpl *This, const 
     glPixelStorei(GL_UNPACK_SKIP_PIXELS, src_rect.left);
     LEAVE_GL();
 
-    if (mem || (This->Flags & SFLAG_PBO))
-        surface_upload_data_rect(This, gl_info, &desc, srgb, updateMem, &dst_rect);
+    Assert(!!mem == !(Src->Flags & SFLAG_PBO));
+    surface_upload_data_rect(This, Src, gl_info, &desc, srgb, updateMem, &dst_rect);
 
     /* Restore the default pitch */
     ENTER_GL();
