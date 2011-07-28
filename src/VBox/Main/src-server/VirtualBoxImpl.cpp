@@ -3184,7 +3184,7 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
         Utf8Str strLocFound = pMediumFound->getLocationFull();
         Guid idFound = pMediumFound->getId();
 
-        if (    (strLocFound == aLocation)
+        if (    (RTPathCompare(strLocFound.c_str(), aLocation.c_str()) == 0)
              && (idFound == aId)
            )
             fIdentical = true;
