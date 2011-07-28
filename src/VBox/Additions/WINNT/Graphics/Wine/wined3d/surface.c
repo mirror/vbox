@@ -4101,6 +4101,17 @@ static HRESULT IWineD3DSurfaceImpl_BltSys2Vram(IWineD3DSurfaceImpl *This, const 
         return WINED3DERR_INVALIDCALL;
     }
 
+    if ((Src->Flags & SFLAG_PBO) && src_rect.right - src_rect.left != Src->currentDesc.Width)
+    {
+        WARN("Chromium does not support nondefault unpack row length for PBO\n");
+        return WINED3DERR_INVALIDCALL;
+    }
+
+    if((convert != NO_CONVERSION) && (Src->Flags & SFLAG_PBO)) {
+        WARN("conversion not supported here with PBO for src %p\n", Src);
+        return WINED3DERR_INVALIDCALL;
+    }
+
     d3dfmt_get_conv(Src, TRUE /* We need color keying */, TRUE /* We will use textures */,
             &desc, &convert);
 
@@ -4123,13 +4134,6 @@ static HRESULT IWineD3DSurfaceImpl_BltSys2Vram(IWineD3DSurfaceImpl *This, const 
 //    /* The width is in 'length' not in bytes */
     srcWidth = Src->currentDesc.Width;
     srcPitch = IWineD3DSurface_GetPitch(SrcSurface);
-
-    /* Don't use PBOs for converted surfaces. During PBO conversion we look at SFLAG_CONVERTED
-     * but it isn't set (yet) in all cases it is getting called. */
-    if((convert != NO_CONVERSION) && (Src->Flags & SFLAG_PBO)) {
-        TRACE("Removing the pbo attached to surface %p\n", Src);
-        surface_remove_pbo(Src, gl_info);
-    }
 
     if(desc.convert) {
         /* This code is entered for texture formats which need a fixup. */
