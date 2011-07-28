@@ -332,6 +332,7 @@ $(VBOX_JWS_GEN)/jwsglue.list:  \
                 $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
                 $(VBOX_FILESPLIT)    \
 		$(VBOXWEBSERVICE_WSDL) \
+		$(VBOXWEB_WSDL) \
 	        | $(VBOX_JWS_GEN)/java/jws/
 	$(call MSG_L1,Generating JAX-WS Java glue files from XIDL)
 	$(RM) -f $(wildcard $(VBOX_JWS_GEN)/java/*.java) $(wildcard $(VBOX_JWS_GEN)/java/jws/*/*/*/*.java)
