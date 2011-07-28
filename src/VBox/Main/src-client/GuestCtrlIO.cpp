@@ -31,8 +31,8 @@
 GuestProcessStream::GuestProcessStream()
     : m_cbAllocated(0),
       m_cbSize(0),
-      m_cbOffset(0),
-      m_cbParserOffset(0),
+      m_cbOffsetBuffer(0),
+      m_cbOffsetParser(0),
       m_pbBuffer(NULL)
 {
 
@@ -52,10 +52,10 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
     int rc = VINF_SUCCESS;
 
     /* Rewind the buffer if it's empty. */
-    size_t     cbInBuf   = m_cbSize - m_cbOffset;
+    size_t     cbInBuf   = m_cbSize - m_cbOffsetBuffer;
     bool const fAddToSet = cbInBuf == 0;
     if (fAddToSet)
-        m_cbSize = m_cbOffset = 0;
+        m_cbSize = m_cbOffsetBuffer = 0;
 
     /* Try and see if we can simply append the data. */
     if (cbData + m_cbSize <= m_cbAllocated)
@@ -66,14 +66,14 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
     else
     {
         /* Move any buffered data to the front. */
-        cbInBuf = m_cbSize - m_cbOffset;
+        cbInBuf = m_cbSize - m_cbOffsetBuffer;
         if (cbInBuf == 0)
-            m_cbSize = m_cbOffset = 0;
-        else if (m_cbOffset) /* Do we have something to move? */
+            m_cbSize = m_cbOffsetBuffer = 0;
+        else if (m_cbOffsetBuffer) /* Do we have something to move? */
         {
-            memmove(m_pbBuffer, &m_pbBuffer[m_cbOffset], cbInBuf);
+            memmove(m_pbBuffer, &m_pbBuffer[m_cbOffsetBuffer], cbInBuf);
             m_cbSize = cbInBuf;
-            m_cbOffset = 0;
+            m_cbOffsetBuffer = 0;
         }
 
         /* Do we need to grow the buffer? */
@@ -166,9 +166,14 @@ size_t GuestProcessStream::GetNumPairs()
     return m_mapPairs.size();
 }
 
-uint32_t GuestProcessStream::GetOffset()
+uint32_t GuestProcessStream::GetOffsetBuffer()
 {
-    return m_cbOffset;
+    return m_cbOffsetBuffer;
+}
+
+uint32_t GuestProcessStream::GetOffsetParser()
+{
+    return m_cbOffsetParser;
 }
 
 /**
@@ -225,11 +230,11 @@ int GuestProcessStream::Parse()
 {
     AssertPtrReturn(m_pbBuffer, VINF_SUCCESS);
     AssertReturn(m_cbSize, VINF_SUCCESS);
-    AssertReturn(m_cbParserOffset < m_cbSize, VERR_INVALID_PARAMETER);
+    AssertReturn(m_cbOffsetParser <= m_cbSize, VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
 
-    size_t uCur = m_cbParserOffset;
+    size_t uCur = m_cbOffsetParser;
     for (;uCur < m_cbSize;)
     {
         const char *pszStart = (char*)&m_pbBuffer[uCur];
@@ -257,7 +262,7 @@ int GuestProcessStream::Parse()
             if (   pszSep == pszStart
                 || pszSep == pszEnd)
             {
-                m_cbParserOffset =  uCur - uPairLen - 1;
+                m_cbOffsetParser =  uCur - uPairLen - 1;
                 rc = VERR_MORE_DATA;
             }
 
@@ -298,7 +303,7 @@ int GuestProcessStream::Parse()
 
                 RTMemFree(pszKey);
 
-                m_cbParserOffset += uCur - m_cbParserOffset;
+                m_cbOffsetParser += uCur - m_cbOffsetParser;
             }
         }
         else /* No pair detected, check for a new block. */
@@ -307,7 +312,7 @@ int GuestProcessStream::Parse()
             {
                 if (*pszEnd == '\0')
                 {
-                    m_cbParserOffset = uCur;
+                    m_cbOffsetParser = uCur;
                     rc = VERR_MORE_DATA;
                     break;
                 }
@@ -319,7 +324,7 @@ int GuestProcessStream::Parse()
             break;
     }
 
-    RT_CLAMP(m_cbParserOffset, 0, m_cbSize);
+    RT_CLAMP(m_cbOffsetParser, 0, m_cbSize);
 
     return rc;
 }

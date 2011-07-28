@@ -66,7 +66,9 @@ public:
 
     size_t GetNumPairs();
 
-    uint32_t GetOffset();
+    uint32_t GetOffsetBuffer();
+
+    uint32_t GetOffsetParser();
 
     const char* GetString(const char *pszKey);
 
@@ -85,9 +87,9 @@ protected:
     /** Currently used size of allocated internal stream buffer. */
     uint32_t m_cbSize;
     /** Current offset within the internal stream buffer. */
-    uint32_t m_cbOffset;
+    uint32_t m_cbOffsetBuffer;
     /** Current parser offset. */
-    uint32_t m_cbParserOffset;
+    uint32_t m_cbOffsetParser;
     /** Internal stream buffer. */
     BYTE *m_pbBuffer;
 };
