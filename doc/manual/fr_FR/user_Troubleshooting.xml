@@ -101,9 +101,10 @@
       information about the VM configuration and runtime events. The log file
       is called <computeroutput><literal>VBox.log</literal></computeroutput>
       and resides in the VM log file folder. Typically this will be a
-      directory like this:<screen>$HOME/.VirtualBox/Machines/{machinename}/Logs</screen>When
-      starting a VM, the configuration file of the last run will be renamed to
-      <computeroutput>.1</computeroutput>, up to
+      directory like this:<screen>$HOME/VirtualBox VMs/{machinename}/Logs</screen></para>
+
+      <para>When starting a VM, the configuration file of the last run will be
+      renamed to <computeroutput>.1</computeroutput>, up to
       <computeroutput>.3</computeroutput>. Sometimes when there is a problem,
       it is useful to have a look at the logs. Also when requesting support
       for VirtualBox, supplying the corresponding log file is
@@ -120,9 +121,9 @@
       (CFGM), detailed information about the host CPU type and supported
       features, whether hardware virtualization is enabled, information about
       VT-x/AMD-V setup, state transitions (creating, running, paused,
-      stopping, etc.), guest BIOS messages, guest Additions messages, device
-      specific log entries and at the end of execution, final guest state and
-      condensed statistics.</para>
+      stopping, etc.), guest BIOS messages, Guest Additions messages,
+      device-specific log entries and, at the end of execution, final guest
+      state and condensed statistics.</para>
 
       <para>In case of crashes, it is very important to collect <emphasis
       role="bold">crash dumps</emphasis>. This is true for both host and guest
@@ -132,6 +133,10 @@
           <para><ulink
           url="http://www.virtualbox.org/wiki/Core_dump">http://www.virtualbox.org/wiki/Core_dump</ulink>.</para>
         </footnote></para>
+
+      <para>You can also use <computeroutput>VBoxManage
+      debugvm</computeroutput> to create a dump of a complete virtual machine;
+      see <xref linkend="vboxmanage-debugvm" />.</para>
 
       <para>For network related problems, it is often helpful to capture a
       trace of network traffic. If the traffic is routed through an adapter on
@@ -144,25 +149,24 @@
       the VirtualBox website<footnote>
           <para><ulink
           url="http://www.virtualbox.org/wiki/Network_tips">http://www.virtualbox.org/wiki/Network_tips</ulink>.</para>
-        </footnote> for information on enabling this capture. Note that the
-      trace files created by VirtualBox are in .pcap format and can be easily
-      analyzed with Wireshark.</para>
+        </footnote> for information on enabling this capture. The trace files
+      created by VirtualBox are in <computeroutput>.pcap</computeroutput>
+      format and can be easily analyzed with Wireshark.</para>
     </sect2>
 
     <sect2>
-      <title>The built-in VM debugger</title>
+      <title id="debugger">The built-in VM debugger</title>
 
       <para>VirtualBox includes a built-in VM debugger, which advanced users
-      may find useful. This debugger allows the user to examine, and to some
-      extent, control, the VM state.<note>
+      may find useful. This debugger allows for examining and, to some extent,
+      controlling the VM state.<warning>
           <para>Use the VM debugger at your own risk. There is no support for
           it, and the following documentation is only made available for
           advanced users with a very high level of familiarity with the
           x86/AMD64 machine instruction set, as well as detailed knowledge of
           the PC architecture. A degree of familiarity with the internals of
-          the guest OS in question is not required, but may be very
-          helpful.</para>
-        </note></para>
+          the guest OS in question may also be very helpful.</para>
+        </warning></para>
 
       <para>The VM debugger is available in all regular production versions of
       VirtualBox, but it is disabled by default because the average user will
@@ -180,13 +184,12 @@
 
       <para>The debugger can be enabled in three ways:<itemizedlist>
           <listitem>
-            <para>Start the <computeroutput>VirtualBox</computeroutput>
-            process with a <computeroutput>--dbg</computeroutput>,
+            <para>Start the VM directly using <computeroutput>VirtualBox
+            --startvm</computeroutput>, with an additional
+            <computeroutput>--dbg</computeroutput>,
             <computeroutput>--debug</computeroutput>, or
             <computeroutput>--debug-command-line</computeroutput> argument.
-            See the VirtualBox usage help for details. Note that these
-            arguments are only useful when a VM is started immediately, using
-            the <computeroutput>--startvm</computeroutput> argument.</para>
+            See the VirtualBox usage help for details.</para>
           </listitem>
 
           <listitem>
@@ -302,8 +305,7 @@
 
           <listitem>
             <para><computeroutput>writecore</computeroutput> -- writes a VM
-            core file to disk, refer <xref linkend="guestcoreformat" />
-            </para>
+            core file to disk, refer <xref linkend="guestcoreformat" /></para>
           </listitem>
         </itemizedlist></para>
 
@@ -406,10 +408,12 @@
     <sect2 id="guestcoreformat">
       <title>VM core format</title>
 
-      <para>VirtualBox uses the 64-bit ELF format for its VM core files. The
-      VM core file contain the memory and CPU dumps of the VM and can be
-      useful for debugging your guest OS. The 64-bit ELF object format
-      specficiation can be obtained here: <literal><ulink
+      <para>VirtualBox uses the 64-bit ELF format for its VM core files
+      created by <computeroutput>VBoxManage debugvm</computeroutput>; see
+      <xref linkend="vboxmanage-debugvm" />. The VM core file contain the
+      memory and CPU dumps of the VM and can be useful for debugging your
+      guest OS. The 64-bit ELF object format specficiation can be obtained
+      here: <literal><ulink
       url="http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf">http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf</ulink></literal>.</para>
 
       <para>The overall layout of the VM core format is as follows:</para>
@@ -543,6 +547,45 @@
       commands is possible by setting the value to 1 or by removing the
       key.</para>
     </sect2>
+
+    <sect2 id="hostPowerMgmt">
+      <title>Poor performance caused by host power management</title>
+
+      <para>On some hardware platforms and operating systems, virtualization
+      performance is negatively affected by host CPU power management. The
+      symptoms may be choppy audio in the guest or erratic guest clock
+      behavior.</para>
+
+      <para>Some of the problems may be caused by firmware and/or host
+      operating system bugs. Therefore, updating the firmware and applying
+      operating systems fixes is recommended.</para>
+
+      <para>For optimal virtualization performance, the C1E power state
+      support in the system's BIOS should be disabled, if such a setting is
+      available (not all systems support the C1E power state). Disabling other
+      power management settings may also improve performance. However, a
+      balance between performance and power consumption must always be
+      considered.</para>
+    </sect2>
+
+    <sect2 id="gui2D_grayedout">
+      <title>GUI: 2D Video Acceleration option is grayed out</title>
+
+      <para>To use 2D Video Acceleration within VirtualBox, your host's video
+      card should support certain OpenGL extensions. On startup, VirtualBox
+      checks for those extensions, and, if the test fails, this option is
+      silently grayed out.</para>
+
+      <para>To find out why it has failed, you can manually execute the
+      following command:</para>
+
+      <screen>VBoxTestOGL --log "log_file_name" --test 2D</screen>
+
+      <para>It will list the required OpenGL extensions one by one and will
+      show you which one failed the test. This usually means that you are
+      running an outdated or misconfigured OpenGL driver on your host. It can
+      also mean that your video chip is lacking required functionality.</para>
+    </sect2>
   </sect1>
 
   <sect1>
@@ -662,15 +705,15 @@
     <sect2>
       <title>No networking in Windows Vista guests</title>
 
-      <para>Unfortunately, with Vista, Microsoft dropped support for the
-      virtual AMD PCNet card that we are providing to virtual machines. As a
-      result, after installation, Vista guests initially have no networking.
-      VirtualBox therefore ships a driver for that card with the Windows Guest
-      Additions; see <xref linkend="vista_networking" />.</para>
+      <para>With Windows Vista, Microsoft dropped support for the AMD PCNet
+      card that VirtualBox used to provide as the default virtual network card
+      before version 1.6.0. For Windows Vista guests, VirtualBox now uses an
+      Intel E1000 card by default.</para>
 
-      <para>Starting with version 1.6.0 VirtualBox can emulate an Intel E1000
-      network device which is supported by Vista without any third-party
-      drivers.</para>
+      <para>If, for some reason, you still want to use the AMD card, you need
+      to download the PCNet driver from the AMD website (available for 32-bit
+      Windows only). You can transfer it into the virtual machine using a
+      shared folder, see (see <xref linkend="sharedfolders" />).</para>
     </sect2>
 
     <sect2>
@@ -680,22 +723,6 @@
       virus scanners, are known to increases the CPU load notably even if the
       guest appears to be idle. We recommend to deactivate virus scanners
       within virtualized guests if possible.</para>
-    </sect2>
-
-    <sect2 id="win7_audio">
-      <title>No audio in Windows Vista (64-bit) and Windows 7 guests</title>
-
-      <para>32-bit Windows 7 does not ship with drivers for our emulated audio
-      hardware (AC'97). However, running Windows Update should solve the
-      problem by getting an appropriate driver for it automatically. After
-      that update followed by a reboot you should have working audio.</para>
-
-      <para>For the 64-bit versions of Windows Vista and 7 you have to
-      download the Realtek AC'97 drivers to enable audio.</para>
-
-      <para>See <ulink
-      url="http://www.realtek.com.tw/downloads">http://www.realtek.com.tw/downloads</ulink>
-      for download instructions.</para>
     </sect2>
 
     <sect2>
@@ -713,6 +740,46 @@
 
       <para>After doing this change, a reboot of the guest is required.</para>
     </sect2>
+
+    <sect2>
+      <title>USB tablet coordinates wrong in Windows 98 guests</title>
+
+      <para>If a Windows 98 VM is configured to use the emulated USB tablet 
+      (absolute pointing device), the coordinate translation may be incorrect 
+      and the pointer is restricted to the upper left quarter of the guest's 
+      screen.
+      </para>
+
+      <para>The USB HID (Human Interface Device) drivers in Windows 98 are very 
+          old and do not handle tablets the same way all more recent operating 
+          systems do (Windows 2000 and later, Mac OS X, Solaris). To 
+          work around the problem, issue the following command:
+      </para>
+
+      <para><screen>VBoxManage setextradata "VM name" "VBoxInternal/USB/HidMouse/0/Config/CoordShift" 0</screen></para>
+
+      <para>To restore the default behavior, remove the key or set its value
+          to 1.
+      </para>
+    </sect2>
+
+    <sect2>
+      <title>Windows guests are removed from an Active Directory domain after
+          restoring a snapshot</title>
+
+      <para>If a Windows guest is a member of an Active Directory domain and
+          the snapshot feature of VirtualBox is used, it could happen it loses
+          this status after you restore an older snapshot.
+      </para>
+
+      <para>The reason is the automatic machine password changing performed by
+          Windows in regular intervals for security purposes. You can disable
+          this feature by following the instruction of this <ulink
+          url="http://support.microsoft.com/kb/154501">http://support.microsoft.com/kb/154501</ulink>
+          article from Microsoft.
+      </para>
+    </sect2>
+
   </sect1>
 
   <sect1>
@@ -743,7 +810,7 @@
       <para>Most Linux-based guests will fail with AMD Phenoms or
       Barcelona-level Opterons due to a bug in the Linux kernel. Enable the
       I/O-APIC to work around the problem (see <xref
-      linkend="settings-general-advanced" />).</para>
+      linkend="settings-system" />).</para>
     </sect2>
 
     <sect2 id="trouble-linux-buggy">
@@ -852,7 +919,7 @@ VBoxClient --seamless</screen> when your X11 user session is started if you
       (called Remote Desktop Connection), there can be large delays between
       input (moving the mouse over a menu is the most obvious situation) and
       output. This is because this RDP client collects input for a certain
-      time before sending it to the VRDP server built into VirtualBox.</para>
+      time before sending it to the RDP server.</para>
 
       <para>The interval can be decreased by setting a Windows registry key to
       smaller values than the default of 100. The key does not exist initially
@@ -900,6 +967,56 @@ VirtualBox</screen>
       writes), it does not affect the performance of other applications
       running on the host.</para>
     </sect2>
+
+    <sect2>
+      <title>Bridged networking adapters missing</title>
+
+      <para>If no bridged adapters show up in the "Networking" section of the
+      VM settings, this typically means that the bridged networking driver was
+      not installed properly on your host. This could be due to the following
+      reasons: <itemizedlist>
+          <listitem>
+            <para>The maximum allowed filter count was reached on the host. In
+            this case, the MSI log would mention the
+            <computeroutput>0x8004a029</computeroutput> error code returned on
+            NetFlt network component install:<screen>VBoxNetCfgWinInstallComponent: Install failed, hr (0x8004a029)</screen></para>
+
+            <para>You can try to increase the maximum filter count in the
+            Windows registry at the following key:<screen>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Network\MaxNumFilters</screen>The
+            maximum number allowed is 14. After a reboot, try to re-install
+            VirtualBox.</para>
+          </listitem>
+
+          <listitem>
+            <para>The INF cache is corrupt. In this case, the install log
+            (<computeroutput>%windir%\inf\setupapi.log</computeroutput> on XP
+            or <computeroutput>%windir%\inf\setupapi.dev.log</computeroutput>
+            on Vista or later) would typically mention the failure to find a
+            suitable driver package for either the
+            <computeroutput>sun_VBoxNetFlt</computeroutput> or
+            <computeroutput>sun_VBoxNetFltmp</computeroutput> components. The
+            solution then is to uninstall VirtualBox, remove the INF cache
+            (<computeroutput>%windir%\inf\INFCACHE.1</computeroutput>), reboot
+            and try to re-install VirtualBox</para>
+          </listitem>
+        </itemizedlist></para>
+    </sect2>
+
+    <sect2>
+      <title>Host-only networking adapters cannot be created</title>
+
+      <para>If host-only adapter cannot be created (either via the Manager or
+      VBoxManage), then the INF cache is probably corrupt. In this case, the
+      install log (<computeroutput>%windir%\inf\setupapi.log</computeroutput>
+      on XP or <computeroutput>%windir%\inf\setupapi.dev.log</computeroutput>
+      on Vista or later) would typically mention the failure to find a
+      suitable driver package for the
+      <computeroutput>sun_VBoxNetAdp</computeroutput> component. Again, as
+      with the bridged networking problem described above, the solution is to
+      uninstall VirtualBox, remove the INF cache
+      (<computeroutput>%windir%\inf\INFCACHE.1</computeroutput>), reboot and
+      try to re-install VirtualBox.</para>
+    </sect2>
   </sect1>
 
   <sect1>
@@ -912,23 +1029,9 @@ VirtualBox</screen>
       (<computeroutput>vboxdrv</computeroutput>) refuses to load, i.e. you get
       an "Error inserting vboxdrv: Invalid argument", check (as root) the
       output of the <computeroutput>dmesg</computeroutput> command to find out
-      why the load failed. The most common reasons are:</para>
-
-      <itemizedlist>
-        <listitem>
-          <para>With Linux 2.6.19 and higher, the NMI watchdog may be active.
-          Add <computeroutput>nmi_watchdog=0</computeroutput> to the kernel
-          command line (e.g. in your grub configuration) and reboot. With the
-          Debian and Ubuntu installation modules, execute <computeroutput>sudo
-          dpkg-reconfigure virtualbox</computeroutput> again.</para>
-        </listitem>
-
-        <listitem>
-          <para>The kernel disagrees about the version of the gcc used to
-          compile the module. Make sure that you use the same compiler as used
-          to build the kernel.</para>
-        </listitem>
-      </itemizedlist>
+      why the load failed. Most probably the kernel disagrees with the version
+      of the gcc used to compile the module. Make sure that you use the same
+      compiler as used to build the kernel.</para>
     </sect2>
 
     <sect2>
@@ -1071,12 +1174,6 @@ VirtualBox</screen>
       filesystem (<computeroutput>usbfs</computeroutput>), which VirtualBox
       relies on to retrieve valid information about your host's USB devices.
       The rest of this section only applies to those older systems.</para>
-
-      <note>
-        <para>The current rdesktop-vrdp implementation does not support
-        accessing USB devices through the
-        <computeroutput>sysfs</computeroutput>!</para>
-      </note>
 
       <para>As <computeroutput>usbfs</computeroutput> is a virtual filesystem,
       a <computeroutput>chmod</computeroutput> on

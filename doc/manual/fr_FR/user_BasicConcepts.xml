@@ -745,7 +745,7 @@
           <computeroutput>mstsc.exe</computeroutput> qui est fourni avec 
           Microsoft Windows ou, sur les systèmes Linux, le programme standard 
           libre <computeroutput>rdesktop</computeroutput>. Ces fonctionnalités 
-          sont décrites en détail au <xref linkend="vrdp" />.</para>
+          sont décrites en détail au <xref linkend="vrde" />.</para>
         </glossdef>
       </glossentry>
     </glosslist>
@@ -910,13 +910,7 @@
     <para>Sur un hôte Linux, selon la configuration de votre hôte, vous pouvez 
     aussi choisir entre les sous systèmes OSS, ALSA ou PulseAudio. Sur les 
     distributions Linux récentes, (Fedora 8 et supérieur, Ubuntu 8.04 et supérieur), 
-    vous devriez préférer le sous-système PulseAudio.<note>
-        <para>Les versions récentes de Windows n'incluent pas de pilotes pour le
-        matériel audio virtuel émulé par VirtualBox. Ceci vaut pour Windows 7 
-        (versions 32 bits et 64 bits) ainsi que pour Windows Vista 64 bits. 
-        Voir le <xref linkend="win7_audio" /> pour des instructions sur la façon
-        de résoudre ce problème.</para>
-      </note></para>
+    vous devriez préférer le sous-système PulseAudio.</para>
   </sect1>
 
   <sect1 id="settings-network">

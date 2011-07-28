@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="Security">
+  <title>Security guide</title>
+
+  <sect1>
+    <title>Potentially insecure operations</title>
+
+    <para>The following features of VirtualBox can present security
+    problems:<itemizedlist>
+        <listitem>
+          <para>Enabling 3D graphics via the Guest Additions exposes the host
+          to additional security risks; see <xref
+          linkend="guestadd-3d" />.</para>
+        </listitem>
+
+        <listitem>
+          <para>When teleporting a machine, the data stream through which the
+          machine's memory contents are transferred from one host to another
+          is not encrypted. A third party with access to the network through
+          which the data is transferred could therefore intercept that
+          data.</para>
+        </listitem>
+
+        <listitem>
+          <para>When using the VirtualBox web service to control a VirtualBox
+          host remotely, connections to the web service (through which the API
+          calls are transferred via SOAP XML) are not encrypted, but use plain
+          HTTP. This is a potential security risk! For details about the web
+          service, please see <xref linkend="VirtualBoxAPI" />.</para>
+        </listitem>
+        
+        <listitem>
+          <para>All traffic sent over an UDP Tunnel network attachment is not
+          encrypted. You can either encrypt it on the host network level (with
+          IPsec), or use encrypted protocols in the guest network (such as
+          SSH). The security properties are similar to bridged Ethernet.</para>
+        </listitem>
+      </itemizedlist></para>
+  </sect1>
+
+  <sect1>
+    <title>Authentication</title>
+
+    <para>The following components of VirtualBox can use passwords for
+    authentication:<itemizedlist>
+        <listitem>
+          <para>When using the VirtualBox extension pack provided by Oracle
+          for VRDP remote desktop support, you can optionally use various
+          methods to configure RDP authentication. The "null" method is
+          very insecure and should be avoided in a public network.
+          See <xref linkend="vbox-auth" /> for details.</para>
+        </listitem>
+
+        <listitem>
+          <para>When using teleporting, passwords can optionally be used to
+          protect a machine waiting to be teleported from unauthorized access.
+          Note however that these passwords are stored <emphasis
+          role="bold">unencrypted</emphasis> in the machine configuration XML
+          and therefore potentially readable on the host. See <xref
+          linkend="teleporting" /> and <xref
+          linkend="vboxmanage-modifyvm-teleport" />.</para>
+        </listitem>
+
+        <listitem>
+          <para>When using remote iSCSI storage and the storage server
+          requires authentication, a password can optionally be supplied with
+          the <computeroutput>VBoxManage storageattach</computeroutput>
+          command. Note however that this is stored <emphasis
+          role="bold">unencrypted</emphasis> in the machine configuration and
+          is therefore potentially readable on the host. See <xref
+          linkend="storage-iscsi" /> and <xref
+          linkend="vboxmanage-storageattach" />.</para>
+        </listitem>
+
+        <listitem>
+          <para>When using the VirtualBox web service to control a VirtualBox
+          host remotely, connections to the web service are authenticated in
+          various ways. This is described in detail in the VirtualBox Software
+          Development Kit (SDK) reference; please see <xref
+          linkend="VirtualBoxAPI" />.</para>
+        </listitem>
+      </itemizedlist></para>
+  </sect1>
+
+  <sect1>
+    <title>Encryption</title>
+
+    <para>The following components of VirtualBox use encryption to protect
+    sensitive data:<itemizedlist>
+        <listitem>
+          <para>When using the VirtualBox extension pack provided by Oracle
+          for VRDP remote desktop support, RDP data can optionally be
+          encrypted. See <xref linkend="vrde-crypt" /> for details. Only
+          the Enhanced RDP Security method (RDP5.2) with TLS protocol
+          provides a secure connection. Standard RDP Security (RDP4 and
+          RDP5.1) is vulnerable to a man-in-the-middle attack.</para>
+        </listitem>
+      </itemizedlist></para>
+  </sect1>
+</chapter>
