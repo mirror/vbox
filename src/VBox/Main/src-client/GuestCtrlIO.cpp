@@ -43,114 +43,6 @@ GuestProcessStream::~GuestProcessStream()
     Destroy();
 }
 
-/**
- * Destroys the stored stream pairs.
- */
-void GuestProcessStream::Destroy()
-{
-    ClearPairs();
-
-    if (m_pbBuffer)
-        RTMemFree(m_pbBuffer);
-}
-
-void GuestProcessStream::ClearPairs()
-{
-    for (GuestCtrlStreamPairsIter it = m_mapPairs.begin(); it != m_mapPairs.end(); it++)
-    {
-        if (it->second.pszValue)
-            RTMemFree(it->second.pszValue);
-    }
-
-    m_mapPairs.clear();
-}
-
-/**
- * Returns a 32-bit unsigned integer of a specified key.
- *
- * @return  uint32_t            Value to return, 0 if not found / on failure.
- * @param   pszKey              Name of key to get the value for.
- */
-const char* GuestProcessStream::GetString(const char *pszKey)
-{
-    AssertPtrReturn(pszKey, NULL);
-
-    try
-    {
-        GuestCtrlStreamPairsIterConst itPairs = m_mapPairs.find(Utf8Str(pszKey));
-        if (itPairs != m_mapPairs.end())
-            return itPairs->second.pszValue;
-    }
-    catch (const std::exception &ex)
-    {
-        NOREF(ex);
-    }
-    return NULL;
-}
-
-int GuestProcessStream::GetUInt32Ex(const char *pszKey, uint32_t *puVal)
-{
-    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
-    AssertPtrReturn(puVal, VERR_INVALID_POINTER);
-    const char *pszValue = GetString(pszKey);
-    if (pszValue)
-    {
-        *puVal = RTStrToUInt32(pszValue);
-        return VINF_SUCCESS;
-    }
-    return VERR_NOT_FOUND;
-}
-
-/**
- * Returns a 32-bit unsigned integer of a specified key.
- *
- * @return  uint32_t            Value to return, 0 if not found / on failure.
- * @param   pszKey              Name of key to get the value for.
- */
-uint32_t GuestProcessStream::GetUInt32(const char *pszKey)
-{
-    uint32_t uVal;
-    if (RT_SUCCESS(GetUInt32Ex(pszKey, &uVal)))
-        return uVal;
-    return 0;
-}
-
-int GuestProcessStream::GetInt64Ex(const char *pszKey, int64_t *piVal)
-{
-    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
-    AssertPtrReturn(piVal, VERR_INVALID_POINTER);
-    const char *pszValue = GetString(pszKey);
-    if (pszValue)
-    {
-        *piVal = RTStrToInt64(pszValue);
-        return VINF_SUCCESS;
-    }
-    return VERR_NOT_FOUND;
-}
-
-/**
- * Returns a 64-bit integer of a specified key.
- *
- * @return  int64_t             Value to return, 0 if not found / on failure.
- * @param   pszKey              Name of key to get the value for.
- */
-int64_t GuestProcessStream::GetInt64(const char *pszKey)
-{
-    int64_t iVal;
-    if (RT_SUCCESS(GetInt64Ex(pszKey, &iVal)))
-        return iVal;
-    return 0;
-}
-
-/**
- * Returns the current number of stream pairs.
- *
- * @return  uint32_t            Current number of stream pairs.
- */
-size_t GuestProcessStream::GetNumPairs()
-{
-    return m_mapPairs.size();
-}
 
 int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
 {
@@ -213,6 +105,120 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
     }
 
     return rc;
+}
+
+void GuestProcessStream::ClearPairs()
+{
+    for (GuestCtrlStreamPairsIter it = m_mapPairs.begin(); it != m_mapPairs.end(); it++)
+    {
+        if (it->second.pszValue)
+            RTMemFree(it->second.pszValue);
+    }
+
+    m_mapPairs.clear();
+}
+
+/**
+ * Destroys the stored stream pairs.
+ */
+void GuestProcessStream::Destroy()
+{
+    ClearPairs();
+
+    if (m_pbBuffer)
+        RTMemFree(m_pbBuffer);
+}
+
+int GuestProcessStream::GetInt64Ex(const char *pszKey, int64_t *piVal)
+{
+    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+    AssertPtrReturn(piVal, VERR_INVALID_POINTER);
+    const char *pszValue = GetString(pszKey);
+    if (pszValue)
+    {
+        *piVal = RTStrToInt64(pszValue);
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_FOUND;
+}
+
+/**
+ * Returns a 64-bit integer of a specified key.
+ *
+ * @return  int64_t             Value to return, 0 if not found / on failure.
+ * @param   pszKey              Name of key to get the value for.
+ */
+int64_t GuestProcessStream::GetInt64(const char *pszKey)
+{
+    int64_t iVal;
+    if (RT_SUCCESS(GetInt64Ex(pszKey, &iVal)))
+        return iVal;
+    return 0;
+}
+
+/**
+ * Returns the current number of stream pairs.
+ *
+ * @return  uint32_t            Current number of stream pairs.
+ */
+size_t GuestProcessStream::GetNumPairs()
+{
+    return m_mapPairs.size();
+}
+
+uint32_t GuestProcessStream::GetOffset()
+{
+    return m_cbOffset;
+}
+
+/**
+ * Returns a 32-bit unsigned integer of a specified key.
+ *
+ * @return  uint32_t            Value to return, 0 if not found / on failure.
+ * @param   pszKey              Name of key to get the value for.
+ */
+const char* GuestProcessStream::GetString(const char *pszKey)
+{
+    AssertPtrReturn(pszKey, NULL);
+
+    try
+    {
+        GuestCtrlStreamPairsIterConst itPairs = m_mapPairs.find(Utf8Str(pszKey));
+        if (itPairs != m_mapPairs.end())
+            return itPairs->second.pszValue;
+    }
+    catch (const std::exception &ex)
+    {
+        NOREF(ex);
+    }
+    return NULL;
+}
+
+int GuestProcessStream::GetUInt32Ex(const char *pszKey, uint32_t *puVal)
+{
+    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+    AssertPtrReturn(puVal, VERR_INVALID_POINTER);
+    const char *pszValue = GetString(pszKey);
+    if (pszValue)
+    {
+        *puVal = RTStrToUInt32(pszValue);
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_FOUND;
+}
+
+/**
+ * Returns a 32-bit unsigned integer of a specified key.
+ *
+ * @return  uint32_t            Value to return, 0 if not found / on failure.
+ * @param   pszKey              Name of key to get the value for.
+ */
+uint32_t GuestProcessStream::GetUInt32(const char *pszKey)
+{
+    uint32_t uVal;
+    if (RT_SUCCESS(GetUInt32Ex(pszKey, &uVal)))
+        return uVal;
+    return 0;
 }
 
 int GuestProcessStream::Parse()

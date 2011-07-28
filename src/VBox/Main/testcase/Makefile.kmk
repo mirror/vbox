@@ -22,7 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Target and globals (small mess)
 #
 ifndef VBOX_ONLY_SDK
- if defined(VBOX_WITH_TESTCASES) || "$(USERNAME)" == "umoeller"
+ if defined(VBOX_WITH_TESTCASES)
   PROGRAMS       += \
 	tstAPI \
 	$(if $(VBOX_OSE),,tstOVF) \
@@ -68,6 +68,7 @@ ifdef VBOX_WITH_RESOURCE_USAGE_API
 tstAPI_DEFS += VBOX_WITH_RESOURCE_USAGE_API
 endif
 
+
 #
 # tstOVF
 #
@@ -96,6 +97,7 @@ ovf-testcases_SOURCES = \
 	ovf-winhost-audio-nodisks/WinXP.ovf=>ovf-winhost-audio-nodisks/WinXP.ovf \
 	ovf-winxp-vbox-sharedfolders/winxp.ovf=>ovf-winxp-vbox-sharedfolders/winxp.ovf
 endif
+
 
 #
 # tstVBoxAPILinux
@@ -143,11 +145,21 @@ tstCollector_LDFLAGS.darwin  += -lproc
 tstCollector_LDFLAGS.solaris += -lkstat
 tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 
+
 #
 # tstGuestCtrlParseBuffer
 #
-tstGuestCtrlParseBuffer_TEMPLATE = VBOXR3TSTNPEXE
-tstGuestCtrlParseBuffer_SOURCES = tstGuestCtrlParseBuffer.cpp
+tstGuestCtrlParseBuffer_TEMPLATE = VBOXMAINCLIENTEXE
+tstGuestCtrlParseBuffer_SOURCES  = \
+	tstGuestCtrlParseBuffer.cpp \
+	../src-client/GuestCtrlIO.cpp
+tstGuestCtrlParseBuffer_INCS     = ../include
+ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
+ tstGuestCtrlParseBuffer_DEPS    = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
+else
+ tstGuestCtrlParseBuffer_DEPS    = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
+endif
+
 
 #
 # tstUSBProxyLinux
