@@ -17,10 +17,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <map>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <iprt/string.h>
-#include <iprt/cpp/ministring.h>
+#include "../include/GuestCtrlImplPrivate.h"
+
+using namespace com;
+
+#define LOG_ENABLED
+#define LOG_GROUP LOG_GROUP_MAIN
+#define LOG_INSTANCE NULL
+#include <VBox/log.h>
 
 #include <iprt/test.h>
 #include <iprt/stream.h>
@@ -28,8 +35,6 @@
 #ifndef BYTE
 # define BYTE uint8_t
 #endif
-
-/** @todo Use original source of GuestCtrlImpl.cpp! */
 
 typedef struct VBOXGUESTCTRL_BUFFER_VALUE
 {
@@ -100,124 +105,6 @@ static struct
     { "qwer=cvbnr\0\0\0gui=uig\0\0\0",                 sizeof("qwer=cvbnr\0\0\0gui=uig\0\0\0"),           2, VERR_MORE_DATA }
 };
 
-int outputBufferParse(const BYTE *pbData, size_t cbData, uint32_t *puOffset, GuestBufferMap& mapBuf)
-{
-    AssertPtrReturn(pbData, VERR_INVALID_POINTER);
-    AssertReturn(cbData, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puOffset, VERR_INVALID_POINTER);
-    AssertReturn(*puOffset < cbData, VERR_INVALID_PARAMETER);
-
-    int rc = VINF_SUCCESS;
-
-    size_t uCur = *puOffset;
-    for (;uCur < cbData;)
-    {
-        const char *pszStart = (char*)&pbData[uCur];
-        const char *pszEnd = pszStart;
-
-        /* Search end of current pair (key=value\0). */
-        while (uCur++ < cbData)
-        {
-            if (*pszEnd == '\0')
-                break;
-            pszEnd++;
-        }
-
-        size_t uPairLen = pszEnd - pszStart;
-        if (uPairLen)
-        {
-            const char *pszSep = pszStart;
-            while (   *pszSep != '='
-                   &&  pszSep != pszEnd)
-            {
-                pszSep++;
-            }
-
-            /* No separator found (or incomplete key=value pair)? */
-            if (   pszSep == pszStart
-                || pszSep == pszEnd)
-            {
-                *puOffset =  uCur - uPairLen - 1;
-                rc = VERR_MORE_DATA;
-            }
-
-            if (RT_FAILURE(rc))
-                break;
-
-            size_t uKeyLen = pszSep - pszStart;
-            size_t uValLen = pszEnd - (pszSep + 1);
-
-            /* Get key (if present). */
-            if (uKeyLen)
-            {
-                Assert(pszSep > pszStart);
-                char *pszKey = (char*)RTMemAllocZ(uKeyLen + 1);
-                if (!pszKey)
-                {
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
-                memcpy(pszKey, pszStart, uKeyLen);
-
-                mapBuf[RTCString(pszKey)].pszValue = NULL;
-
-                /* Get value (if present). */
-                if (uValLen)
-                {
-                    Assert(pszEnd > pszSep);
-                    char *pszVal = (char*)RTMemAllocZ(uValLen + 1);
-                    if (!pszVal)
-                    {
-                        rc = VERR_NO_MEMORY;
-                        break;
-                    }
-                    memcpy(pszVal, pszSep + 1, uValLen);
-
-                    mapBuf[RTCString(pszKey)].pszValue = pszVal;
-                }
-
-                RTMemFree(pszKey);
-
-                *puOffset += uCur - *puOffset;
-            }
-        }
-        else /* No pair detected, check for a new block. */
-        {
-            do
-            {
-                if (*pszEnd == '\0')
-                {
-                    *puOffset = uCur;
-                    rc = VERR_MORE_DATA;
-                    break;
-                }
-                pszEnd++;
-            } while (++uCur < cbData);
-        }
-
-        if (RT_FAILURE(rc))
-            break;
-    }
-
-    RT_CLAMP(*puOffset, 0, cbData);
-
-    return rc;
-}
-
-void tstOutputAndDestroyMap(GuestBufferMap &bufMap)
-{
-    for (GuestBufferMapIter it = bufMap.begin(); it != bufMap.end(); it++)
-    {
-        RTTestIPrintf(RTTESTLVL_DEBUG, "\t%s -> %s\n",
-                      it->first.c_str(), it->second.pszValue ? it->second.pszValue : "<undefined>");
-
-        if (it->second.pszValue)
-            RTMemFree(it->second.pszValue);
-    }
-
-    bufMap.clear();
-}
-
 int main()
 {
     RTTEST hTest;
@@ -225,6 +112,14 @@ int main()
     if (rc)
         return rc;
     RTTestBanner(hTest);
+
+    RTPrintf("Initializing COM...\n");
+    rc = com::Initialize();
+    if (FAILED(rc))
+    {
+        RTPrintf("ERROR: failed to initialize COM!\n");
+        return rc;
+    }
 
     RTTestIPrintf(RTTESTLVL_INFO, "Doing basic tests ...\n");
 
@@ -240,25 +135,32 @@ int main()
     unsigned iTest = 0;
     for (iTest; iTest < RT_ELEMENTS(aTests); iTest++)
     {
-        GuestBufferMap bufMap;
         uint32_t uOffset = aTests[iTest].uOffsetStart;
 
-        int iResult = outputBufferParse((BYTE*)aTests[iTest].pbData, aTests[iTest].cbData,
-                                        &uOffset, bufMap);
-
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Test #%u\n", iTest);
+
+        GuestProcessStream stream;
+        int iResult = stream.AddData((BYTE*)aTests[iTest].pbData, aTests[iTest].cbData);
+        if (RT_FAILURE(iResult))
+        {
+            RTTestFailed(hTest, "\tAdding data returned %Rrc, expected VINF_SUCCESS",
+                         iResult);
+            continue;
+        }
+
+        iResult = stream.Parse();
 
         if (iResult != aTests[iTest].iResult)
         {
             RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
                          iResult, aTests[iTest].iResult);
         }
-        else if (bufMap.size() != aTests[iTest].uMapElements)
+        else if (stream.GetNumPairs() != aTests[iTest].uMapElements)
         {
             RTTestFailed(hTest, "\tMap has %u elements, expected %u",
-                         bufMap.size(), aTests[iTest].uMapElements);
+                         stream.GetNumPairs(), aTests[iTest].uMapElements);
         }
-        else if (uOffset != aTests[iTest].uOffsetAfter)
+        else if (stream.GetOffset() != aTests[iTest].uOffsetAfter)
         {
             RTTestFailed(hTest, "\tOffset %u wrong, expected %u",
                          uOffset, aTests[iTest].uOffsetAfter);
@@ -278,8 +180,6 @@ int main()
                 RTTestIPrintf(RTTESTLVL_DEBUG, "\n");
             }
         }
-
-        tstOutputAndDestroyMap(bufMap);
     }
 
     RTTestIPrintf(RTTESTLVL_INFO, "Doing block tests ...\n");
@@ -288,46 +188,38 @@ int main()
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u\n", iTest);
 
-        int iResult;
-
-        GuestBufferMap bufMap;
-        uint32_t uOffset = 0;
-        uint32_t uNumBlocks = 0;
-
-        while (uOffset < aTests2[iTest].cbData - 1)
+        GuestProcessStream stream;
+        int iResult = stream.AddData((BYTE*)aTests2[iTest].pbData, aTests2[iTest].cbData);
+        if (RT_SUCCESS(iResult))
         {
-            iResult = outputBufferParse((BYTE*)aTests2[iTest].pbData, aTests2[iTest].cbData,
-                                        &uOffset, bufMap);
-            RTTestIPrintf(RTTESTLVL_DEBUG, "\tReturned with %Rrc\n", iResult);
-            if (   iResult == VINF_SUCCESS
-                || iResult == VERR_MORE_DATA)
+            uint32_t uNumBlocks = 0;
+
+            do
             {
-                if (bufMap.size()) /* Only count block which have some valid data. */
+                iResult = stream.Parse();
+                if (iResult == VERR_MORE_DATA)
                     uNumBlocks++;
+                if (uNumBlocks > 32)
+                    break; /* Give up if unreasonable big. */
+            } while (iResult == VERR_MORE_DATA);
 
-                tstOutputAndDestroyMap(bufMap);
-
-                RTTestIPrintf(RTTESTLVL_DEBUG, "\tNext offset %u (total: %u)\n",
-                              uOffset, aTests2[iTest].cbData);
+            if (iResult != aTests2[iTest].iResult)
+            {
+                RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
+                             iResult, aTests2[iTest].iResult);
             }
-            else
-                break;
-
-            if (uNumBlocks > 32)
-                break; /* Give up if unreasonable big. */
+            else if (uNumBlocks != aTests2[iTest].uNumBlocks)
+            {
+                RTTestFailed(hTest, "\tReturned %u blocks, expected %u\n",
+                             uNumBlocks, aTests2[iTest].uNumBlocks);
+            }
         }
-
-        if (iResult != aTests2[iTest].iResult)
-        {
-            RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
-                         iResult, aTests2[iTest].iResult);
-        }
-        else if (uNumBlocks != aTests2[iTest].uNumBlocks)
-        {
-            RTTestFailed(hTest, "\tReturned %u blocks, expected %u\n",
-                         uNumBlocks, aTests2[iTest].uNumBlocks);
-        }
+        else
+            RTTestFailed(hTest, "\tAdding data failed with %Rrc", iResult);
     }
+
+    RTPrintf("Shutting down COM...\n");
+    com::Shutdown();
 
     /*
      * Summary.

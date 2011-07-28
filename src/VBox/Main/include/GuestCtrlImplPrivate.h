@@ -18,10 +18,14 @@
 #ifndef ____H_GUESTIMPLPRIVATE
 #define ____H_GUESTIMPLPRIVATE
 
-#include "VirtualBoxBase.h"
+#include <VBox/com/com.h>
+#include <VBox/com/string.h>
+#include <VBox/com/VirtualBox.h>
 
 #include <map>
 #include <vector>
+
+using namespace com;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
 # include <VBox/HostServices/GuestControlSvc.h>
@@ -50,15 +54,11 @@ public:
 
 public:
 
-    void Destroy();
+    int AddData(const BYTE *pbData, size_t cbData);
 
     void ClearPairs();
 
-    const char* GetString(const char *pszKey);
-
-    int GetUInt32Ex(const char *pszKey, uint32_t *puVal);
-
-    uint32_t GetUInt32(const char *pszKey);
+    void Destroy();
 
     int GetInt64Ex(const char *pszKey, int64_t *piVal);
 
@@ -66,7 +66,13 @@ public:
 
     size_t GetNumPairs();
 
-    int AddData(const BYTE *pbData, size_t cbData);
+    uint32_t GetOffset();
+
+    const char* GetString(const char *pszKey);
+
+    int GetUInt32Ex(const char *pszKey, uint32_t *puVal);
+
+    uint32_t GetUInt32(const char *pszKey);
 
     int Parse();
 
