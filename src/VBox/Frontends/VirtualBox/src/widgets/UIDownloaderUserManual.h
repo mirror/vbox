@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,42 +19,38 @@
 #ifndef __UIDownloaderUserManual_h__
 #define __UIDownloaderUserManual_h__
 
-/* Global includes */
-#include <QPointer>
-
-/* Local includes */
+/* Local includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIDownloader.h"
 
-class UIMiniProcessWidgetUserManual : public QIWithRetranslateUI<UIMiniProcessWidget>
+class UIMiniProcessWidgetUserManual : public QIWithRetranslateUI<UIMiniProgressWidget>
 {
     Q_OBJECT;
 
 public:
 
     UIMiniProcessWidgetUserManual(QWidget *pParent = 0)
-        : QIWithRetranslateUI<UIMiniProcessWidget>(pParent)
+        : QIWithRetranslateUI<UIMiniProgressWidget>(pParent)
     {
         retranslateUi();
     }
 
-protected slots:
+private slots:
 
     void sltSetSource(const QString &strSource)
     {
-        setSource(strSource);
+        UIMiniProgressWidget::sltSetSource(strSource);
         retranslateUi();
     }
 
-protected:
+private:
 
     void retranslateUi()
     {
-        setCancelButtonText(tr("Cancel"));
         setCancelButtonToolTip(tr("Cancel the VirtualBox User Manual download"));
-        QString strProgressBarTip = source().isEmpty() ? tr("Downloading the VirtualBox User Manual") :
-            tr("Downloading the VirtualBox User Manual <nobr><b>%1</b>...</nobr>").arg(source());
-        setProgressBarToolTip(strProgressBarTip);
+        setProgressBarToolTip(source().isEmpty() ? tr("Downloading the VirtualBox User Manual") :
+                                                   tr("Downloading the VirtualBox User Manual <nobr><b>%1</b>...</nobr>")
+                                                     .arg(source()));
     }
 };
 
@@ -66,41 +62,31 @@ public:
 
     static UIDownloaderUserManual* create();
     static UIDownloaderUserManual* current();
-    static void destroy();
 
     void setSource(const QString &strSource);
     void addSource(const QString &strSource);
 
-    void setParentWidget(QWidget *pParent);
-    QWidget *parentWidget() const;
-
-    UIMiniProcessWidgetUserManual* processWidget(QWidget *pParent = 0) const;
-    void startDownload();
+    void start();
 
 signals:
 
     void sigSourceChanged(const QString &strSource);
     void sigDownloadFinished(const QString &strFile);
 
-private slots:
-
-    void acknowledgeFinished(bool fError);
-    void downloadFinished(bool fError);
-    void suicide();
-
 private:
 
     UIDownloaderUserManual();
+    ~UIDownloaderUserManual();
 
-    bool confirmDownload();
-    void warnAboutError(const QString &strError);
+    void handleError(QNetworkReply *pReply);
+
+    UIMiniProgressWidget* createProgressWidgetFor(QWidget *pParent) const;
+    bool askForDownloadingConfirmation(QNetworkReply *pReply);
+    void handleDownloadedObject(QNetworkReply *pReply);
+    void warnAboutNetworkError(const QString &strError);
 
     /* Private member variables: */
     static UIDownloaderUserManual *m_pInstance;
-
-    /* We use QPointer here, cause these items could be deleted in the life of this object.
-     * QPointer guarantees that the ptr itself is zero in that case. */
-    QPointer<QWidget> m_pParent;
 
     /* List of sources to try to download from: */
     QList<QString> m_sourcesList;

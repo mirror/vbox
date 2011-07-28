@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,36 +17,29 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
-#include "UIDownloaderAdditions.h"
-#include "QIFileDialog.h"
-#include "QIHttp.h"
-#include "VBoxProblemReporter.h"
-
-/* Global includes */
+/* Global includes: */
 #include <QAction>
 #include <QDir>
 #include <QFile>
+#include <QNetworkReply>
+
+/* Local includes: */
+#include "UIDownloaderAdditions.h"
+#include "QIFileDialog.h"
+#include "VBoxProblemReporter.h"
+
 UIDownloaderAdditions *UIDownloaderAdditions::m_pInstance = 0;
 
 UIDownloaderAdditions *UIDownloaderAdditions::create()
 {
     if (!m_pInstance)
         m_pInstance = new UIDownloaderAdditions;
-
     return m_pInstance;
 }
 
 UIDownloaderAdditions *UIDownloaderAdditions::current()
 {
     return m_pInstance;
-}
-
-void UIDownloaderAdditions::destroy()
-{
-    if (m_pInstance)
-        delete m_pInstance;
-    m_pInstance = 0;
 }
 
 void UIDownloaderAdditions::setAction(QAction *pAction)
@@ -61,99 +54,68 @@ QAction *UIDownloaderAdditions::action() const
     return m_pAction;
 }
 
-void UIDownloaderAdditions::setParentWidget(QWidget *pParent)
+UIDownloaderAdditions::UIDownloaderAdditions()
+    : UIDownloader()
 {
-    m_pParent = pParent;
 }
 
-QWidget *UIDownloaderAdditions::parentWidget() const
-{
-    return m_pParent;
-}
-
-UIMiniProcessWidgetAdditions* UIDownloaderAdditions::processWidget(QWidget *pParent /* = 0 */) const
-{
-    UIMiniProcessWidgetAdditions *pWidget = new UIMiniProcessWidgetAdditions(m_source.toString(), pParent);
-
-    /* Connect the cancel signal. */
-    connect(pWidget, SIGNAL(sigCancel()),
-            this, SLOT(cancelDownloading()));
-    /* Connect the signal to notify about the download process. */
-    connect(this, SIGNAL(sigDownloadProcess(int, int)),
-            pWidget, SLOT(sltProcess(int, int)));
-    /* Make sure the widget is destroyed when this class is deleted. */
-    connect(this, SIGNAL(destroyed(QObject*)),
-            pWidget, SLOT(close()));
-
-    return pWidget;
-}
-
-void UIDownloaderAdditions::startDownload()
-{
-    acknowledgeStart();
-}
-
-void UIDownloaderAdditions::downloadFinished(bool fError)
-{
-    if (fError)
-        UIDownloader::downloadFinished(fError);
-    else
-    {
-        QByteArray receivedData(m_pHttp->readAll());
-        /* Serialize the incoming buffer into the .iso image. */
-        while (true)
-        {
-            QFile file(m_strTarget);
-            if (file.open(QIODevice::WriteOnly))
-            {
-                file.write(receivedData);
-                file.close();
-                if (vboxProblem().confirmMountAdditions(m_source.toString(),
-                                                        QDir::toNativeSeparators(m_strTarget)))
-                    emit downloadFinished(m_strTarget);
-                QTimer::singleShot(0, this, SLOT(suicide()));
-                break;
-            }
-            else
-            {
-                vboxProblem().message(m_pParent, VBoxProblemReporter::Error,
-                                      tr("<p>Failed to save the downloaded file as "
-                                         "<nobr><b>%1</b>.</nobr></p>")
-                                      .arg(QDir::toNativeSeparators(m_strTarget)));
-            }
-
-            QString target = QIFileDialog::getExistingDirectory(QFileInfo(m_strTarget).absolutePath(), m_pParent,
-                                                                tr("Select folder to save Guest Additions image to"), true);
-            if (target.isNull())
-                QTimer::singleShot(0, this, SLOT(suicide()));
-            else
-                m_strTarget = QDir(target).absoluteFilePath(QFileInfo(m_strTarget).fileName());
-        }
-    }
-}
-
-void UIDownloaderAdditions::suicide()
+UIDownloaderAdditions::~UIDownloaderAdditions()
 {
     if (m_pAction)
         m_pAction->setEnabled(true);
-    UIDownloaderAdditions::destroy();
+    if (m_pInstance == this)
+        m_pInstance = 0;
 }
 
-UIDownloaderAdditions::UIDownloaderAdditions()
-    : UIDownloader()
-    , m_pAction(0)
-    , m_pParent(0)
+UIMiniProgressWidget* UIDownloaderAdditions::createProgressWidgetFor(QWidget *pParent) const
 {
+    return new UIMiniProgressWidgetAdditions(source(), pParent);
 }
 
-bool UIDownloaderAdditions::confirmDownload()
+bool UIDownloaderAdditions::askForDownloadingConfirmation(QNetworkReply *pReply)
 {
-    return vboxProblem().confirmDownloadAdditions(m_source.toString(),
-                                                  m_pHttp->lastResponse().contentLength());
+    return vboxProblem().confirmDownloadAdditions(source(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
-void UIDownloaderAdditions::warnAboutError(const QString &strError)
+void UIDownloaderAdditions::handleDownloadedObject(QNetworkReply *pReply)
 {
-    return vboxProblem().cannotDownloadGuestAdditions(m_source.toString(), strError);
+    /* Read received data: */
+    QByteArray receivedData(pReply->readAll());
+    /* Serialize the incoming buffer into the .iso image: */
+    while (true)
+    {
+        /* Try to open file to save image: */
+        QFile file(target());
+        if (file.open(QIODevice::WriteOnly))
+        {
+            /* Write received data into the file: */
+            file.write(receivedData);
+            file.close();
+            /* Warn user about additions image loaded and saved, propose to mount it: */
+            if (vboxProblem().confirmMountAdditions(source(), QDir::toNativeSeparators(target())))
+                emit sigDownloadFinished(target());
+            break;
+        }
+        else
+        {
+            /* Warn user about additions image loaded but was not saved: */
+            vboxProblem().warnAboutAdditionsCantBeSaved(target());
+        }
+
+        /* Ask the user about additions image file save location: */
+        QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(), parentWidget(),
+                                                               tr("Select folder to save Guest Additions image to"), true);
+
+        /* Check if user set new target: */
+        if (!strTarget.isNull())
+            setTarget(QDir(strTarget).absoluteFilePath(QFileInfo(target()).fileName()));
+        else
+            break;
+    }
+}
+
+void UIDownloaderAdditions::warnAboutNetworkError(const QString &strError)
+{
+    return vboxProblem().cannotDownloadGuestAdditions(source(), strError);
 }
 

@@ -21,6 +21,7 @@
 #include <VBox/vd.h>
 #include <VBox/version.h>
 
+#include "VBoxUtils.h"
 #include "VBoxDefs.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxProblemReporter.h"
@@ -63,6 +64,7 @@
 #include <QDir>
 #include <QHelpEvent>
 #include <QLocale>
+#include <QNetworkProxy>
 
 #ifdef VBOX_GUI_WITH_PIDFILE
 # include <QTextStream>
@@ -2446,6 +2448,23 @@ void VBoxGlobal::startEnumeratingMedia()
     mMediaEnumThread->start();
 }
 
+void VBoxGlobal::reloadProxySettings()
+{
+    UIProxyManager proxyManager(settings().proxySettings());
+    if (proxyManager.proxyEnabled())
+    {
+        QNetworkProxy::setApplicationProxy(QNetworkProxy(QNetworkProxy::HttpProxy,
+                                                         proxyManager.proxyHost(),
+                                                         proxyManager.proxyPort().toInt(),
+                                                         proxyManager.authEnabled() ? proxyManager.authLogin() : QString(),
+                                                         proxyManager.authEnabled() ? proxyManager.authPassword() : QString()));
+    }
+    else
+    {
+        QNetworkProxy::setApplicationProxy(QNetworkProxy(QNetworkProxy::NoProxy));
+    }
+}
+
 VBoxDefs::MediumType VBoxGlobal::mediumTypeToLocal(KDeviceType globalType)
 {
     switch (globalType)
@@ -4654,6 +4673,12 @@ void VBoxGlobal::sltGUILanguageChange(QString strLang)
     loadLanguage(strLang);
 }
 
+void VBoxGlobal::sltProcessGlobalSettingChange()
+{
+    /* Reload proxy settings: */
+    reloadProxySettings();
+}
+
 // Protected members
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -5202,6 +5227,12 @@ void VBoxGlobal::init()
      * but this method should be run anyway just to enumerate null VBoxMedium object,
      * used by some VBox smart widgets, like VBoxMediaComboBox: */
     vboxGlobal().startEnumeratingMedia();
+
+    /* Prepare global settings change handler: */
+    connect(&settings(), SIGNAL(propertyChanged(const char*, const char*)),
+            this, SLOT(sltProcessGlobalSettingChange()));
+    /* Handle global settings change for the first time: */
+    sltProcessGlobalSettingChange();
 }
 
 

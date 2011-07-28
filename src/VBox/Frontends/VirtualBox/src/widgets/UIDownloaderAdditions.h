@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,23 +19,20 @@
 #ifndef __UIDownloaderAdditions_h__
 #define __UIDownloaderAdditions_h__
 
-/* Local includes */
+/* Local includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIDownloader.h"
 
-/* Global includes */
-#include <QPointer>
-
-class UIMiniProcessWidgetAdditions : public QIWithRetranslateUI<UIMiniProcessWidget>
+class UIMiniProgressWidgetAdditions : public QIWithRetranslateUI<UIMiniProgressWidget>
 {
     Q_OBJECT;
 
 public:
 
-    UIMiniProcessWidgetAdditions(const QString &strSource, QWidget *pParent = 0)
-      : QIWithRetranslateUI<UIMiniProcessWidget>(pParent)
+    UIMiniProgressWidgetAdditions(const QString &strSource, QWidget *pParent = 0)
+        : QIWithRetranslateUI<UIMiniProgressWidget>(pParent)
     {
-        setSource(strSource);
+        sltSetSource(strSource);
         retranslateUi();
     }
 
@@ -43,12 +40,9 @@ protected:
 
     void retranslateUi()
     {
-        setCancelButtonText(tr("Cancel"));
-        setCancelButtonToolTip(tr("Cancel the VirtualBox Guest "
-                                  "Additions CD image download"));
-        setProgressBarToolTip((tr("Downloading the VirtualBox Guest Additions "
-                                  "CD image from <nobr><b>%1</b>...</nobr>")
-                               .arg(source())));
+        setCancelButtonToolTip(tr("Cancel the VirtualBox Guest Additions CD image download"));
+        setProgressBarToolTip(tr("Downloading the VirtualBox Guest Additions CD image from <nobr><b>%1</b>...</nobr>")
+                                .arg(source()));
     }
 };
 
@@ -57,42 +51,32 @@ class UIDownloaderAdditions : public UIDownloader
     Q_OBJECT;
 
 public:
+
     static UIDownloaderAdditions* create();
     static UIDownloaderAdditions* current();
-    static void destroy();
 
     void setAction(QAction *pAction);
     QAction *action() const;
 
-    void setParentWidget(QWidget *pParent);
-    QWidget *parentWidget() const;
-
-    UIMiniProcessWidgetAdditions* processWidget(QWidget *pParent = 0) const;
-    void startDownload();
-
 signals:
-    void downloadFinished(const QString &strFile);
 
-private slots:
-
-    void downloadFinished(bool fError);
-    void suicide();
+    void sigDownloadFinished(const QString &strFile);
 
 private:
 
     UIDownloaderAdditions();
+    ~UIDownloaderAdditions();
 
-    bool confirmDownload();
-    void warnAboutError(const QString &strError);
+    UIMiniProgressWidget* createProgressWidgetFor(QWidget *pParent) const;
+    bool askForDownloadingConfirmation(QNetworkReply *pReply);
+    void handleDownloadedObject(QNetworkReply *pReply);
+    void warnAboutNetworkError(const QString &strError);
 
-    /* Private member vars */
+    /* Private member variables: */
     static UIDownloaderAdditions *m_pInstance;
 
-    /* We use QPointer here, cause these items could be deleted in the life of
-     * this object. QPointer guarantees that the ptr itself is zero in that
-     * case. */
+    /* Action to be blocked: */
     QPointer<QAction> m_pAction;
-    QPointer<QWidget> m_pParent;
 };
 
 #endif // __UIDownloaderAdditions_h__

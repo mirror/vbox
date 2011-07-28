@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,15 +17,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Global includes: */
 #include <QAction>
 #include <QDir>
 #include <QFile>
+#include <QNetworkReply>
 
-/* Local includes */
+/* Local includes: */
 #include "UIDownloaderUserManual.h"
 #include "QIFileDialog.h"
-#include "QIHttp.h"
 #include "VBoxProblemReporter.h"
 
 UIDownloaderUserManual *UIDownloaderUserManual::m_pInstance = 0;
@@ -42,13 +42,6 @@ UIDownloaderUserManual *UIDownloaderUserManual::current()
     return m_pInstance;
 }
 
-void UIDownloaderUserManual::destroy()
-{
-    if (m_pInstance)
-        delete m_pInstance;
-    m_pInstance = 0;
-}
-
 void UIDownloaderUserManual::setSource(const QString &strSource)
 {
     /* Erase the list first: */
@@ -63,33 +56,7 @@ void UIDownloaderUserManual::addSource(const QString &strSource)
     m_sourcesList << strSource;
 }
 
-void UIDownloaderUserManual::setParentWidget(QWidget *pParent)
-{
-    m_pParent = pParent;
-}
-
-QWidget* UIDownloaderUserManual::parentWidget() const
-{
-    return m_pParent;
-}
-
-UIMiniProcessWidgetUserManual* UIDownloaderUserManual::processWidget(QWidget *pParent /* = 0 */) const
-{
-    UIMiniProcessWidgetUserManual *pWidget = new UIMiniProcessWidgetUserManual(pParent);
-
-    /* Connect the cancel signal: */
-    connect(pWidget, SIGNAL(sigCancel()), this, SLOT(cancelDownloading()));
-    /* Connect the signal to notify about source changed: */
-    connect(this, SIGNAL(sigSourceChanged(const QString&)), pWidget, SLOT(sltSetSource(const QString&)));
-    /* Connect the signal to notify about the download process: */
-    connect(this, SIGNAL(sigDownloadProcess(int, int)), pWidget, SLOT(sltProcess(int, int)));
-    /* Make sure the widget is destroyed when this class is deleted: */
-    connect(this, SIGNAL(destroyed(QObject*)), pWidget, SLOT(close()));
-
-    return pWidget;
-}
-
-void UIDownloaderUserManual::startDownload()
+void UIDownloaderUserManual::start()
 {
     /* If at least one source to try left: */
     if (!m_sourcesList.isEmpty())
@@ -99,86 +66,86 @@ void UIDownloaderUserManual::startDownload()
         /* Warn process-bar(s) about source was changed: */
         emit sigSourceChanged(source());
         /* Try to download: */
-        acknowledgeStart();
+        startDelayedAcknowledging();
     }
-}
-
-void UIDownloaderUserManual::acknowledgeFinished(bool fError)
-{
-    /* If current source was wrong but other is present
-     * we will try other source else we should finish: */
-    if (m_pHttp->errorCode() != QIHttp::Aborted && m_pHttp->errorCode() != QIHttp::NoError && !m_sourcesList.isEmpty())
-        startDownload();
-    else
-        UIDownloader::acknowledgeFinished(fError);
-}
-
-void UIDownloaderUserManual::downloadFinished(bool fError)
-{
-    if (fError)
-        UIDownloader::downloadFinished(fError);
-    else
-    {
-        /* Read all received data: */
-        QByteArray receivedData(m_pHttp->readAll());
-
-        /* Serialize the incoming buffer into the User Manual file: */
-        while (true)
-        {
-            /* Try to open file to save document: */
-            QFile file(m_strTarget);
-            if (file.open(QIODevice::WriteOnly))
-            {
-                /* Write received data into file: */
-                file.write(receivedData);
-                file.close();
-                /* Warn user about User Manual document loaded and saved: */
-                vboxProblem().warnAboutUserManualDownloaded(m_source.toString(), QDir::toNativeSeparators(m_strTarget));
-                /* Warn listener about User Manual was downloaded: */
-                emit sigDownloadFinished(m_strTarget);
-                /* Close the downloader: */
-                QTimer::singleShot(0, this, SLOT(suicide()));
-                break;
-            }
-            else
-            {
-                /* Warn user about User Manual document loaded but was not saved: */
-                vboxProblem().warnAboutUserManualCantBeSaved(m_source.toString(), QDir::toNativeSeparators(m_strTarget));
-            }
-
-            /* Ask the user about User Manual file save location: */
-            QString target = QIFileDialog::getExistingDirectory(QFileInfo(m_strTarget).absolutePath(), m_pParent,
-                                                                tr("Select folder to save User Manual to"), true);
-            /* If user reject to set save point: */
-            if (target.isNull())
-                /* Just close the downloader: */
-                QTimer::singleShot(0, this, SLOT(suicide()));
-            /* If user set correct save point: */
-            else
-                /* Store it and try to save User Manual document there: */
-                m_strTarget = QDir(target).absoluteFilePath(QFileInfo(m_strTarget).fileName());
-        }
-    }
-}
-
-void UIDownloaderUserManual::suicide()
-{
-    UIDownloaderUserManual::destroy();
 }
 
 UIDownloaderUserManual::UIDownloaderUserManual()
     : UIDownloader()
-    , m_pParent(0)
 {
 }
 
-bool UIDownloaderUserManual::confirmDownload()
+UIDownloaderUserManual::~UIDownloaderUserManual()
 {
-    return vboxProblem().confirmUserManualDownload(m_source.toString(), m_pHttp->lastResponse().contentLength());
+    if (m_pInstance == this)
+        m_pInstance = 0;
 }
 
-void UIDownloaderUserManual::warnAboutError(const QString &strError)
+void UIDownloaderUserManual::handleError(QNetworkReply *pReply)
 {
-    return vboxProblem().warnAboutUserManualCantBeDownloaded(m_source.toString(), strError);
+    /* Check if other sources present: */
+    if (!m_sourcesList.isEmpty())
+    {
+        /* Restart acknowledging: */
+        start();
+    }
+    else
+    {
+        /* Call for base-class: */
+        UIDownloader::handleError(pReply);
+    }
+}
+
+UIMiniProgressWidget* UIDownloaderUserManual::createProgressWidgetFor(QWidget *pParent) const
+{
+    return new UIMiniProcessWidgetUserManual(pParent);
+}
+
+bool UIDownloaderUserManual::askForDownloadingConfirmation(QNetworkReply *pReply)
+{
+    return vboxProblem().confirmUserManualDownload(source(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+}
+
+void UIDownloaderUserManual::handleDownloadedObject(QNetworkReply *pReply)
+{
+    /* Read received data: */
+    QByteArray receivedData(pReply->readAll());
+    /* Serialize the incoming buffer into the User Manual file: */
+    while (true)
+    {
+        /* Try to open file to save document: */
+        QFile file(target());
+        if (file.open(QIODevice::WriteOnly))
+        {
+            /* Write received data into file: */
+            file.write(receivedData);
+            file.close();
+            /* Warn user about User Manual document loaded and saved: */
+            vboxProblem().warnAboutUserManualDownloaded(source(), QDir::toNativeSeparators(target()));
+            /* Warn listener about User Manual was downloaded: */
+            emit sigDownloadFinished(target());
+            break;
+        }
+        else
+        {
+            /* Warn user about User Manual document loaded but was not saved: */
+            vboxProblem().warnAboutUserManualCantBeSaved(source(), QDir::toNativeSeparators(target()));
+        }
+
+        /* Ask the user about User Manual file save location: */
+        QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(), parentWidget(),
+                                                               tr("Select folder to save User Manual to"), true);
+
+        /* Check if user set new target: */
+        if (!strTarget.isNull())
+            setTarget(QDir(strTarget).absoluteFilePath(QFileInfo(target()).fileName()));
+        else
+            break;
+    }
+}
+
+void UIDownloaderUserManual::warnAboutNetworkError(const QString &strError)
+{
+    return vboxProblem().warnAboutUserManualCantBeDownloaded(source(), strError);
 }
 

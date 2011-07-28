@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,32 +19,32 @@
 #ifndef __VBoxUpdateDlg_h__
 #define __VBoxUpdateDlg_h__
 
-/* Global includes */
-#include <QUrl>
+/* Global includes: */
 #include <QDate>
+#include <QUrl>
 
 /* Local includes */
 #include "QIWithRetranslateUI.h"
 #include "VBoxUpdateDlg.gen.h"
 
-/* Global forwards */
-class QIHttp;
+/* Forward declarations: */
+class QNetworkAccessManager;
 
 /**
  *  This structure is used to store retranslated reminder values.
  */
 struct UpdateDay
 {
-    UpdateDay (const QString &aVal, const QString &aKey)
-        : val (aVal), key (aKey) {}
+    UpdateDay(const QString &strVal, const QString &strKey)
+        : val(strVal), key(strKey) {}
+
+    bool operator==(const UpdateDay &other)
+    {
+        return val == other.val || key == other.key;
+    }
 
     QString val;
     QString key;
-
-    bool operator== (const UpdateDay &aOther)
-    {
-        return val == aOther.val || key == aOther.key;
-    }
 };
 
 /**
@@ -80,8 +80,8 @@ public:
     static void populate();
     static QStringList list();
 
-    VBoxUpdateData (const QString &aData);
-    VBoxUpdateData (PeriodType aPeriodIndex, BranchType aBranchIndex);
+    VBoxUpdateData(const QString &strData);
+    VBoxUpdateData(PeriodType periodIndex, BranchType branchIndex);
 
     bool isNecessary();
     bool isNoNeedToCheck();
@@ -99,16 +99,15 @@ private:
     void encode();
 
     /* Private variables */
-    static QList <UpdateDay> mDayList;
+    static QList <UpdateDay> m_dayList;
 
-    QString mData;
-    PeriodType mPeriodIndex;
-    QDate mDate;
-    BranchType mBranchIndex;
+    QString m_strData;
+    PeriodType m_periodIndex;
+    QDate m_date;
+    BranchType m_branchIndex;
 };
 
-class VBoxUpdateDlg : public QIWithRetranslateUI <QDialog>,
-                      public Ui::VBoxUpdateDlg
+class VBoxUpdateDlg : public QIWithRetranslateUI<QDialog>, public Ui::VBoxUpdateDlg
 {
     Q_OBJECT;
 
@@ -116,8 +115,12 @@ public:
 
     static bool isNecessary();
 
-    VBoxUpdateDlg (VBoxUpdateDlg **aSelf, bool aForceRun, QWidget *aParent = 0);
-   ~VBoxUpdateDlg();
+    VBoxUpdateDlg(VBoxUpdateDlg **ppSelf, bool fForceRun, QWidget *pParent = 0);
+    ~VBoxUpdateDlg();
+
+signals:
+
+    void sigDelayedAcception();
 
 public slots:
 
@@ -126,21 +129,19 @@ public slots:
 protected:
 
     void retranslateUi();
+    void acceptLater() { emit sigDelayedAcception(); }
 
 private slots:
 
     void accept();
-    void searchResponse (bool aError);
+    void sltHandleReply();
 
 private:
 
-    void abortRequest (const QString &aReason);
-
-    /* Private variables */
-    VBoxUpdateDlg **mSelf;
-    QUrl            mUrl;
-    QIHttp         *mHttp;
-    bool            mForceRun;
+    VBoxUpdateDlg         **m_ppSelf;
+    QNetworkAccessManager  *m_pNetworkManager;
+    QUrl                    m_url;
+    bool                    m_fForceRun;
 };
 
 #endif // __VBoxUpdateDlg_h__
