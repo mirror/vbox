@@ -25,6 +25,11 @@
       </listitem>
 
       <listitem>
+        <para>Main: made the path comparison OS independent when images are
+          registered (bug #9303)</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: implemented <emphasis>copyfrom</emphasis> and <emphasis>stat</emphasis>
           guest control tools to copy files from guest to host and to check for
           existence of files on the guest</para>
