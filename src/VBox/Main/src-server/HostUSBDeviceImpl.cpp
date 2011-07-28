@@ -1085,6 +1085,56 @@ bool HostUSBDevice::updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMach
     const USBDEVICESTATE enmOldState = mUsb->enmState; NOREF(enmOldState);
     if (mUsb != aDev)
     {
+#ifdef RT_OS_WINDOWS
+        /* we used this logic of string comparison in HostUSBDevice::compare
+         * now we need to preserve strings from the old device if the new device has zero strings
+         * this ensures the device is correctly matched later on
+         * otherwise we may end up with a phantom misconfigured device instance */
+        if ((mUniSubState == kHostUSBDeviceSubState_AwaitingDetach /* (In case we don't get the detach notice.) */
+                   || mUniSubState == kHostUSBDeviceSubState_AwaitingReAttach)
+               && (!aDev->pszSerialNumber || !*aDev->pszSerialNumber)
+               && (!aDev->pszManufacturer || !*aDev->pszManufacturer)
+               && (!aDev->pszProduct      || !*aDev->pszProduct))
+        {
+            aDev->u64SerialHash = mUsb->u64SerialHash;
+
+            if (mUsb->pszSerialNumber && *mUsb->pszSerialNumber)
+            {
+                if (aDev->pszSerialNumber)
+                    RTStrFree((char *)aDev->pszSerialNumber);
+
+                /* since we're going to free old device later on,
+                 * we can just assign the string from it to the new device
+                 * and zero up the string filed for the old device */
+                aDev->pszSerialNumber = mUsb->pszSerialNumber;
+                mUsb->pszSerialNumber = NULL;
+            }
+
+            if (mUsb->pszManufacturer && *mUsb->pszManufacturer)
+            {
+                if (aDev->pszManufacturer)
+                    RTStrFree((char *)aDev->pszManufacturer);
+
+                /* since we're going to free old device later on,
+                 * we can just assign the string from it to the new device
+                 * and zero up the string filed for the old device */
+                aDev->pszManufacturer = mUsb->pszManufacturer;
+                mUsb->pszManufacturer = NULL;
+            }
+
+            if (mUsb->pszProduct && *mUsb->pszProduct)
+            {
+                if (aDev->pszProduct)
+                    RTStrFree((char *)aDev->pszProduct);
+
+                /* since we're going to free old device later on,
+                 * we can just assign the string from it to the new device
+                 * and zero up the string filed for the old device */
+                aDev->pszProduct = mUsb->pszProduct;
+                mUsb->pszProduct = NULL;
+            }
+        }
+#endif
         aDev->pNext = mUsb->pNext;
         aDev->pPrev = mUsb->pPrev;
         USBProxyService::freeDevice (mUsb);
