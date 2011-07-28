@@ -22,7 +22,11 @@ include	$(KBUILD_PATH)/subheader.kmk
 # Populate FILES_VBOXVIDEO_DRM_NOBIN
 #
 INSTALLS += vboxvideo_drm-mod
-include $(PATH_SUB_CURRENT)/files_vboxvideo_drm
+if !defined(VBOX_WITH_GUEST_KMS_DRIVER)
+ include $(PATH_SUB_CURRENT)/files_vboxvideo_drm
+else
+ include $(PATH_SUB_CURRENT)/files_vboxvideo_drv
+endif
 vboxvideo_drm-mod_INST         = $(INST_ADDITIONS)src/vboxvideo/
 vboxvideo_drm-mod_SOURCES      = \
 	$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_NOBIN))
@@ -74,7 +78,16 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) \
  		$(if $(wildcard $(inc)/linux/utsrelease.h),\
  		 $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
  		               then echo yes; fi),KERNEL_FC6,),))
- vboxvideo_drm_SOURCES         = vboxvideo_drm.c
+ if !defined(VBOX_WITH_GUEST_KMS_DRIVER)
+  vboxvideo_drm_SOURCES         = vboxvideo_drm.c
+ else
+  vboxvideo_drm_SOURCES         = \
+     ../../common/VBoxVideo/Modesetting.cpp \
+  	vboxvideo_device.c \
+  	vboxvideo_display.c \
+  	vboxvideo_drv.c \
+  	vboxvideo_kms.c
+ endif
 
 endif
 
