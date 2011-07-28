@@ -77,7 +77,7 @@ static RTCPUSET g_MpPendingOfflineSet;
  * @param pvUser2           The notification event.
  * @remarks This can be invoked in interrupt context.
  */
-static void rtMpNotificationLinuxOnCurrentCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static DECLCALLBACK(void) rtMpNotificationLinuxOnCurrentCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     unsigned long ulNativeEvent = *(unsigned long *)pvUser2;
     NOREF(pvUser1);
