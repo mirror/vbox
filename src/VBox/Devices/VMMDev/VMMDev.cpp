@@ -2986,7 +2986,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                 N_("Configuration error: Failed querying \"GuestCoreDumpEnabled\" as a boolean"));
 
     char *pszGuestCoreDumpDir = NULL;
-    rc = CFGMR3QueryStringAlloc(pCfg, "GuestCoreDumpDir", &pszGuestCoreDumpDir);
+    rc = CFGMR3QueryStringAllocDef(pCfg, "GuestCoreDumpDir", &pszGuestCoreDumpDir, "");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"GuestCoreDumpDir\" as a string"));
