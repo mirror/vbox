@@ -49,6 +49,11 @@
           with Crossbow based bridged networking</para>
       </listitem>
 
+      <listitem>
+        <para>Windows Additions: fixed file truncation on a shared folder with
+          some applications (bugs #9276, #9315)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
