@@ -458,9 +458,9 @@ static DECLCALLBACK(int) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     DMAControl  *dc = (DMAControl *)pvUser;
     int         reg;
 
-    Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
     if (cb == 1)
     {
+        Assert(!(u32 & ~0xff)); /* Check for garbage in high bits. */
         reg = port & 7;
         dc->au8Page[reg]   = u32;
         dc->au8PageHi[reg] = 0;  /* Corresponding high page cleared. */
@@ -469,6 +469,7 @@ static DECLCALLBACK(int) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     }
     else if (cb == 2) 
     {
+        Assert(!(u32 & ~0xffff)); /* Check for garbage in high bits. */
         reg = port & 7;
         dc->au8Page[reg]   = u32;
         dc->au8PageHi[reg] = 0;  /* Corresponding high page cleared. */
