@@ -49,6 +49,12 @@
  *
  * @verbatim
   First CMOS bank (offsets 0x00 to 0x7f):
+    Floppy drive type:
+         0x10
+    Hard disk type (old):
+         0x12
+    Equipment byte:
+         0x14
     Base memory:
          0x15
          0x16
@@ -57,43 +63,40 @@
          0x18
          0x30
          0x31
+    First IDE HDD:
+         0x19
+         0x1e - 0x25
+    Second IDE HDD:
+         0x1a
+         0x26 - 0x2d
+    Checksum of 0x10-0x2d:
+         0x2e
+         0x2f
     Amount of memory above 16M and below 4GB in 64KB units:
          0x34
          0x35
-    Boot device (BOCHS bios specific):
-         0x3d
+    Boot device (BOCHS BIOS specific):
          0x38
          0x3c
+         0x3d
     PXE debug:
          0x3f
-    Floppy drive type:
-         0x10
-    Equipment byte:
-         0x14
-    First HDD:
-         0x19
-         0x1e - 0x25
-    Second HDD:
-         0x1a
-         0x26 - 0x2d
-    Third HDD:
-         0x67 - 0x6e
-    Fourth HDD:
-         0x70 - 0x77
-    Extended:
-         0x12
-    First Sata HDD:
+    First SATA HDD:
          0x40 - 0x47
-    Second Sata HDD:
+    Second SATA HDD:
          0x48 - 0x4f
-    Third Sata HDD:
+    Third SATA HDD:
          0x50 - 0x57
-    Fourth Sata HDD:
+    Fourth SATA HDD:
          0x58 - 0x5f
     Number of CPUs:
          0x60
     RAM above 4G in 64KB units:
          0x61 - 0x65
+    Third IDE HDD:
+         0x67 - 0x6e
+    Fourth IDE HDD:
+         0x70 - 0x77
 
   Second CMOS bank (offsets 0x80 to 0xff):
     Reserved for internal use by PXE ROM:
@@ -235,6 +238,22 @@ static void pcbiosCmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
 
     int rc = PDMDevHlpCMOSWrite(pDevIns, off, u32Val);
     AssertRC(rc);
+}
+
+/**
+ * Read from CMOS memory.
+ * This is used by the init complete code.
+ */
+static uint8_t pcbiosCmosRead(PPDMDEVINS pDevIns, int off)
+{
+    uint8_t     u8val;
+
+    Assert(off < 256);
+
+    int rc = PDMDevHlpCMOSRead(pDevIns, off, &u8val);
+    AssertRC(rc);
+
+    return u8val;
 }
 
 /* -=-=-=-=-=-=- based on code from pc.c -=-=-=-=-=-=- */
@@ -630,6 +649,13 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
             }
         }
     }
+
+    /* Calculate and store AT-style CMOS checksum. */
+    uint16_t    cksum = 0;
+    for (i = 0x10; i < 0x2e; ++i)
+        cksum += pcbiosCmosRead(pDevIns, i);
+    pcbiosCmosWrite(pDevIns, 0x2e, cksum >> 8);
+    pcbiosCmosWrite(pDevIns, 0x2f, cksum & 0xff);
 
     LogFlow(("%s: returns VINF_SUCCESS\n", __FUNCTION__));
     return VINF_SUCCESS;
