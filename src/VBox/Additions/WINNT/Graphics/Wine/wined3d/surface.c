@@ -4126,9 +4126,9 @@ static HRESULT IWineD3DSurfaceImpl_BltSys2Vram(IWineD3DSurfaceImpl *This, const 
 
     /* Don't use PBOs for converted surfaces. During PBO conversion we look at SFLAG_CONVERTED
      * but it isn't set (yet) in all cases it is getting called. */
-    if((convert != NO_CONVERSION) && (This->Flags & SFLAG_PBO)) {
-        TRACE("Removing the pbo attached to surface %p\n", This);
-        surface_remove_pbo(This, gl_info);
+    if((convert != NO_CONVERSION) && (Src->Flags & SFLAG_PBO)) {
+        TRACE("Removing the pbo attached to surface %p\n", Src);
+        surface_remove_pbo(Src, gl_info);
     }
 
     if(desc.convert) {
@@ -4190,7 +4190,7 @@ static HRESULT IWineD3DSurfaceImpl_BltSys2Vram(IWineD3DSurfaceImpl *This, const 
     if (context) context_release(context);
 
     /* Don't delete PBO memory */
-    if((mem != Src->resource.allocatedMemory) && !(This->Flags & SFLAG_PBO))
+    if((mem != Src->resource.allocatedMemory) && !(Src->Flags & SFLAG_PBO))
         HeapFree(GetProcessHeap(), 0, mem);
     ////
 
