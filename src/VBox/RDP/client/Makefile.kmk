@@ -31,7 +31,7 @@ VBOX_RDESKTOP_SRC_SUBDIR = rdesktop-1.7.0-vrdp
 #
 PROGRAMS += rdesktop-vrdp
 rdesktop-vrdp_TEMPLATE = VBOXR3NPEXE
-rdesktop-vrdp_SDKS = VBOX_OPENSSL
+rdesktop-vrdp_SDKS = VBOX_OPENSSL2
 rdesktop-vrdp_DEFS = \
 	PACKAGE_NAME=\"rdesktop-vrdp\" PACKAGE_TARNAME=\"rdesktop-vrdp\" PACKAGE_VERSION=\"1.7.0\" \
 	PACKAGE_STRING=\"rdesktop\ 1.7.0\" PACKAGE_BUGREPORT=\"\" STDC_HEADERS=1 L_ENDIAN=1 \
