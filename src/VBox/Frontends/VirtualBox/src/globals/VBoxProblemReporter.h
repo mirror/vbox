@@ -305,6 +305,7 @@ public:
     void cannotMountGuestAdditions (const QString &aMachineName);
     bool confirmDownloadAdditions (const QString &aURL, ulong aSize);
     bool confirmMountAdditions (const QString &aURL, const QString &aSrc);
+    void warnAboutAdditionsCantBeSaved(const QString &strTarget);
 
     bool askAboutUserManualDownload(const QString &strMissedLocation);
     bool confirmUserManualDownload(const QString &strURL, ulong uSize);

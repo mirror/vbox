@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,58 +19,66 @@
 #ifndef __UIDownloader_h__
 #define __UIDownloader_h__
 
-/* Global includes */
-#include <QUrl>
+/* Global includes: */
 #include <QWidget>
+#include <QUrl>
+#include <QPointer>
 
-/* Local forward declarations */
-class QIHttp;
-class UIMiniCancelButton;
-
-/* Global forward declarations */
-class QHttpResponseHeader;
+/* Forward declarations: */
 class QProgressBar;
+class UIMiniCancelButton;
+class QNetworkAccessManager;
+class QNetworkReply;
 
-class UIMiniProcessWidget : public QWidget
+/**
+ * The UIMiniProgressWidget class is QWidget class re-implementation which
+ * embeds into the dialog's status-bar and reflects background http downloading.
+ * This class is not supposed to be used itself and made for sub-classing only.
+ */
+class UIMiniProgressWidget : public QWidget
 {
     Q_OBJECT;
 
-public:
+signals:
 
-    UIMiniProcessWidget(QWidget *pParent = 0);
+    /* Signal to notify listeners about progress canceling: */
+    void sigCancel();
 
-    void setCancelButtonText(const QString &strText);
-    QString cancelButtonText() const;
+protected:
 
+    /* Constructor: */
+    UIMiniProgressWidget(QWidget *pParent = 0);
+
+    /* Source stuff: */
+    QString source() const { return m_strSource; }
+
+    /* Cancel-button stuff: */
     void setCancelButtonToolTip(const QString &strText);
     QString cancelButtonToolTip() const;
 
+    /* Progress-bar stuff: */
     void setProgressBarToolTip(const QString &strText);
     QString progressBarToolTip() const;
 
-    void setSource(const QString &strSource);
-    QString source() const;
+protected slots:
 
-signals:
+    /* Slot to set source: */
+    void sltSetSource(const QString &strSource);
 
-    void sigCancel();
-
-public slots:
-
-    virtual void sltProcess(int cDone, int cTotal);
+    /* Slot to set progress: */
+    void sltSetProgress(qint64 cDone, qint64 cTotal);
 
 private:
 
-    /* Private member vars */
+    /* Private member vars: */
     QProgressBar *m_pProgressBar;
     UIMiniCancelButton *m_pCancelButton;
-
     QString m_strSource;
 };
 
 /**
- * The UIDownloader class is QWidget class re-implementation which embeds
- * into the Dialog's status-bar and allows background http downloading.
+ * The UIDownloader class is QObject class re-implementation which
+ * allows background http downloading.
  * This class is not supposed to be used itself and made for sub-classing only.
  *
  * This class has two parts:
@@ -85,50 +93,83 @@ class UIDownloader : public QObject
 
 public:
 
-    UIDownloader();
+    /* Parent stuff: */
+    virtual void setParentWidget(QWidget *pParent) { m_pParent = pParent; }
+    virtual QWidget* parentWidget() const { return m_pParent; }
 
-    virtual void setSource(const QString &strSource);
-    virtual QString source() const;
-    virtual void setTarget(const QString &strTarget);
-    virtual QString target() const;
+    /* Source stuff: */
+    virtual void setSource(const QString &strSource) { m_source = strSource; }
+    virtual QString source() const { return m_source.toString(); }
 
-    virtual void startDownload() = 0;
+    /* Target stuff: */
+    virtual void setTarget(const QString &strTarget) { m_strTarget = strTarget; }
+    virtual QString target() const { return m_strTarget; }
+
+    /* Create UIMiniProgressWidget for particular parent: */
+    UIMiniProgressWidget* progressWidget(QWidget *pParent = 0) const;
+
+    /* Starting stuff: */
+    virtual void start();
 
 signals:
 
-    void sigDownloadProcess(int cDone, int cTotal);
-    void sigFinished();
+    /* Signal to notify listeners about source-change: */
+    void sigSourceChanged(const QString &strNewSource);
 
-protected slots:
+    /* Signal to start acknowledging: */
+    void sigToStartAcknowledging();
+    /* Signal to start downloading: */
+    void sigToStartDownloading();
 
-    /* Acknowledging part */
-    virtual void acknowledgeStart();
-    virtual void acknowledgeProcess(const QHttpResponseHeader &response);
-    virtual void acknowledgeFinished(bool fError);
-
-    /* Downloading part */
-    virtual void downloadStart();
-    virtual void downloadProcess(int cDone, int cTotal);
-    virtual void downloadFinished(bool fError);
-
-    /* Common slots */
-    virtual void cancelDownloading();
-    virtual void abortDownload(const QString &strError);
-    virtual void suicide();
+    /* Notifies about downloading progress: */
+    void sigDownloadProgress(qint64 cDone, qint64 cTotal);
 
 protected:
 
-    /* In sub-class this function will show the user downloading object size
-     * and ask him about downloading confirmation. Returns user response. */
-    virtual bool confirmDownload() = 0;
+    /* Constructor: */
+    UIDownloader();
 
-    /* In sub-class this function will show the user which error happens
-     * in context of downloading file and executing his request. */
-    virtual void warnAboutError(const QString &strError) = 0;
+    /* Start delayed acknowledging: */
+    void startDelayedAcknowledging() { emit sigToStartAcknowledging(); }
+    /* Start delayed downloading: */
+    void startDelayedDownloading() { emit sigToStartDownloading(); }
 
+    /* Handle acknowledging result: */
+    virtual void handleAcknowledgingResult(QNetworkReply *pReply);
+    /* Handle downloading result: */
+    virtual void handleDownloadingResult(QNetworkReply *pReply);
+    /* Handle errors: */
+    virtual void handleError(QNetworkReply *pReply);
+
+    /* Pure virtual function to create UIMiniProgressWidget sub-class: */
+    virtual UIMiniProgressWidget* createProgressWidgetFor(QWidget *pParent) const = 0;
+    /* Pure virtual function to ask user about downloading confirmation: */
+    virtual bool askForDownloadingConfirmation(QNetworkReply *pReply) = 0;
+    /* Pure virtual function to handle downloaded object: */
+    virtual void handleDownloadedObject(QNetworkReply *pReply) = 0;
+    /* Pure virtual function to warn user about issues: */
+    virtual void warnAboutNetworkError(const QString &strError) = 0;
+
+private slots:
+
+    /* Acknowledging part: */
+    void sltStartAcknowledging();
+    void sltFinishAcknowledging();
+
+    /* Downloading part: */
+    void sltStartDownloading();
+    void sltFinishDownloading();
+
+    /* Common slots: */
+    void sltCancel();
+
+private:
+
+    /* Private variables: */
+    QNetworkAccessManager *m_pNetworkManager;
     QUrl m_source;
     QString m_strTarget;
-    QIHttp *m_pHttp;
+    QPointer<QWidget> m_pParent;
 };
 
 #endif // __UIDownloader_h__

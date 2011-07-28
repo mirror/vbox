@@ -17,38 +17,37 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
+/* Global includes: */
+#include <QProgressBar>
+#include <QNetworkReply>
+
+/* Local includes: */
 #include "UIDownloader.h"
-#include "QIHttp.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "UISpecialControls.h"
 #include "VBoxUtils.h"
 
-/* Global includes */
-#include <QFile>
-#include <QProgressBar>
-
-UIMiniProcessWidget::UIMiniProcessWidget(QWidget *pParent /* = 0 */)
+/* UIMiniProgressWidget stuff: */
+UIMiniProgressWidget::UIMiniProgressWidget(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pProgressBar(new QProgressBar(this))
     , m_pCancelButton(new UIMiniCancelButton(this))
 {
-    /* Progress Bar setup */
+    /* Progress-bar setup: */
     m_pProgressBar->setFixedWidth(100);
     m_pProgressBar->setFormat("%p%");
     m_pProgressBar->setValue(0);
 
-    /* Cancel Button setup */
+    /* Cancel-button setup: */
     m_pCancelButton->setFocusPolicy(Qt::NoFocus);
     m_pCancelButton->removeBorder();
-    connect(m_pCancelButton, SIGNAL(clicked()),
-            this, SIGNAL(sigCancel()));
+    connect(m_pCancelButton, SIGNAL(clicked()), this, SIGNAL(sigCancel()));
 
     setContentsMargins(0, 0, 0, 0);
     setFixedHeight(16);
 
-    /* Layout setup */
+    /* Layout setup: */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
     VBoxGlobal::setLayoutMargin(pMainLayout, 0);
 
@@ -65,236 +64,175 @@ UIMiniProcessWidget::UIMiniProcessWidget(QWidget *pParent /* = 0 */)
 #endif /* !Q_WS_MAC */
 
     pMainLayout->addStretch(1);
-
 }
 
-void UIMiniProcessWidget::setCancelButtonText(const QString &strText)
-{
-    m_pCancelButton->setText(strText);
-}
-
-QString UIMiniProcessWidget::cancelButtonText() const
-{
-    return m_pCancelButton->text();
-}
-
-void UIMiniProcessWidget::setCancelButtonToolTip(const QString &strText)
+void UIMiniProgressWidget::setCancelButtonToolTip(const QString &strText)
 {
     m_pCancelButton->setToolTip(strText);
 }
 
-QString UIMiniProcessWidget::cancelButtonToolTip() const
+QString UIMiniProgressWidget::cancelButtonToolTip() const
 {
     return m_pCancelButton->toolTip();
 }
 
-void UIMiniProcessWidget::setProgressBarToolTip(const QString &strText)
+void UIMiniProgressWidget::setProgressBarToolTip(const QString &strText)
 {
     m_pProgressBar->setToolTip(strText);
 }
 
-QString UIMiniProcessWidget::progressBarToolTip() const
+QString UIMiniProgressWidget::progressBarToolTip() const
 {
     return m_pProgressBar->toolTip();
 }
 
-void UIMiniProcessWidget::setSource(const QString &strSource)
+void UIMiniProgressWidget::sltSetSource(const QString &strSource)
 {
     m_strSource = strSource;
 }
 
-QString UIMiniProcessWidget::source() const
-{
-    return m_strSource;
-}
-
-void UIMiniProcessWidget::sltProcess(int cDone, int cTotal)
+void UIMiniProgressWidget::sltSetProgress(qint64 cDone, qint64 cTotal)
 {
     m_pProgressBar->setMaximum(cTotal);
     m_pProgressBar->setValue(cDone);
 }
 
+/* UIDownloader stuff: */
+UIMiniProgressWidget* UIDownloader::progressWidget(QWidget *pParent) const
+{
+    /* Create progress widget: */
+    UIMiniProgressWidget *pWidget = createProgressWidgetFor(pParent);
+
+    /* Connect the signal to notify about progress canceled: */
+    connect(pWidget, SIGNAL(sigCancel()), this, SLOT(sltCancel()));
+    /* Connect the signal to notify about source changed: */
+    connect(this, SIGNAL(sigSourceChanged(const QString&)), pWidget, SLOT(sltSetSource(const QString&)));
+    /* Connect the signal to notify about downloading progress: */
+    connect(this, SIGNAL(sigDownloadProgress(qint64, qint64)), pWidget, SLOT(sltSetProgress(qint64, qint64)));
+    /* Make sure the widget is destroyed when this class is deleted: */
+    connect(this, SIGNAL(destroyed(QObject*)), pWidget, SLOT(deleteLater()));
+
+    /* Return widget: */
+    return pWidget;
+}
+
+void UIDownloader::start()
+{
+    startDelayedAcknowledging();
+}
+
 UIDownloader::UIDownloader()
-    : m_pHttp(0)
+    : m_pNetworkManager(new QNetworkAccessManager(this))
 {
+    connect(this, SIGNAL(sigToStartAcknowledging()), this, SLOT(sltStartAcknowledging()), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigToStartDownloading()), this, SLOT(sltStartDownloading()), Qt::QueuedConnection);
 }
 
-void UIDownloader::setSource(const QString &strSource)
+/* Start acknowledging: */
+void UIDownloader::sltStartAcknowledging()
 {
-    m_source = strSource;
+    /* Setup HEAD request: */
+    QNetworkRequest request;
+    request.setUrl(m_source);
+    QNetworkReply *pReply = m_pNetworkManager->head(request);
+    connect(pReply, SIGNAL(sslErrors(QList<QSslError>)), pReply, SLOT(ignoreSslErrors()));
+    connect(pReply, SIGNAL(finished()), this, SLOT(sltFinishAcknowledging()));
 }
 
-QString UIDownloader::source() const
+/* Finish acknowledging: */
+void UIDownloader::sltFinishAcknowledging()
 {
-    return m_source.toString();
-}
+    /* Get corresponding network reply object: */
+    QNetworkReply *pReply = qobject_cast<QNetworkReply*>(sender());
+    /* And ask it for suicide: */
+    pReply->deleteLater();
 
-void UIDownloader::setTarget(const QString &strTarget)
-{
-    m_strTarget = strTarget;
-}
-
-QString UIDownloader::target() const
-{
-    return m_strTarget;
-}
-
-void UIDownloader::startDownload()
-{
-    /* By default we are not using acknowledging step, so
-     * making downloading immediately */
-    downloadStart();
-}
-
-/* This function is used to start acknowledging mechanism:
- * checking file presence & size */
-void UIDownloader::acknowledgeStart()
-{
-    /* Recreate HTTP: */
-    delete m_pHttp;
-    m_pHttp = new QIHttp(this);
-    /* Setup HTTP proxy: */
-    UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
-    if (proxyManager.proxyEnabled())
-    {
-        m_pHttp->setProxy(proxyManager.proxyHost(), proxyManager.proxyPort().toInt(),
-                          proxyManager.authEnabled() ? proxyManager.authLogin() : QString(),
-                          proxyManager.authEnabled() ? proxyManager.authPassword() : QString());
-    }
-    /* Set HTTP host: */
-    m_pHttp->setHost(m_source.host());
-    /* Setup connections: */
-    connect(m_pHttp, SIGNAL(responseHeaderReceived(const QHttpResponseHeader &)),
-            this, SLOT(acknowledgeProcess(const QHttpResponseHeader &)));
-    connect(m_pHttp, SIGNAL(allIsDone(bool)),
-            this, SLOT(acknowledgeFinished(bool)));
-    /* Make a request: */
-    m_pHttp->get(m_source.toEncoded());
-}
-
-/* This function is used to store content length */
-void UIDownloader::acknowledgeProcess(const QHttpResponseHeader & /* response */)
-{
-    /* Abort connection as we already got all we need */
-    m_pHttp->abortAll();
-}
-
-/* This function is used to ask the user about if he really want
- * to download file of proposed size if no error present or
- * abort download progress if error is present */
-void UIDownloader::acknowledgeFinished(bool /* fError */)
-{
-    m_pHttp->disconnect(this);
-
-    switch (m_pHttp->errorCode())
-    {
-        case QIHttp::NoError: /* full packet comes before aborting */
-        case QIHttp::Aborted: /* part of packet comes before aborting */
-        {
-            /* Ask the user if he wish to download it */
-            if (confirmDownload())
-                QTimer::singleShot(0, this, SLOT(downloadStart()));
-            else
-                QTimer::singleShot(0, this, SLOT(suicide()));
-            break;
-        }
-        case QIHttp::MovedPermanentlyError:
-        case QIHttp::MovedTemporarilyError:
-        {
-            /* Restart downloading at new location */
-            m_source = m_pHttp->lastResponse().value("location");
-            QTimer::singleShot(0, this, SLOT(acknowledgeStart()));
-            break;
-        }
-        default:
-        {
-            /* Show error happens during acknowledging */
-            abortDownload(m_pHttp->errorString());
-            break;
-        }
-    }
-}
-
-/* This function is used to start downloading mechanism:
- * downloading and saving the target */
-void UIDownloader::downloadStart()
-{
-    /* Recreate HTTP: */
-    delete m_pHttp;
-    m_pHttp = new QIHttp(this);
-    /* Setup HTTP proxy: */
-    UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
-    if (proxyManager.proxyEnabled())
-    {
-        m_pHttp->setProxy(proxyManager.proxyHost(), proxyManager.proxyPort().toInt(),
-                          proxyManager.authEnabled() ? proxyManager.authLogin() : QString(),
-                          proxyManager.authEnabled() ? proxyManager.authPassword() : QString());
-    }
-    /* Set HTTP host: */
-    m_pHttp->setHost(m_source.host());
-    /* Setup connections: */
-    connect(m_pHttp, SIGNAL(dataReadProgress (int, int)),
-            this, SLOT (downloadProcess(int, int)));
-    connect(m_pHttp, SIGNAL(allIsDone(bool)),
-            this, SLOT(downloadFinished(bool)));
-    /* Make a request: */
-    m_pHttp->get(m_source.toEncoded());
-}
-
-/* this function is used to observe the downloading progress through
- * changing the corresponding qprogressbar value */
-void UIDownloader::downloadProcess(int cDone, int cTotal)
-{
-    emit sigDownloadProcess(cDone, cTotal);
-}
-
-/* This function is used to handle the 'downloading finished' issue
- * through saving the downloaded into the file if there in no error or
- * notifying the user about error happens */
-void UIDownloader::downloadFinished(bool fError)
-{
-    m_pHttp->disconnect(this);
-
-    if (fError)
-    {
-        /* Show information about error happens */
-        if (m_pHttp->errorCode() == QIHttp::Aborted)
-            abortDownload(tr("The download process has been canceled by the user."));
-        else
-            abortDownload(m_pHttp->errorString());
-    }
+    /* Handle normal reply: */
+    if (pReply->error() == QNetworkReply::NoError)
+        handleAcknowledgingResult(pReply);
+    /* Handle errors: */
     else
+        handleError(pReply);
+}
+
+/* Handle acknowledging result: */
+void UIDownloader::handleAcknowledgingResult(QNetworkReply *pReply)
+{
+    /* Check if redirection required: */
+    QUrl redirect = pReply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+    if (redirect.isValid())
     {
-        /* Trying to serialize the incoming buffer into the target, this is the
-         * default behavior which have to be reimplemented in sub-class */
-        QFile file(m_strTarget);
-        if (file.open(QIODevice::WriteOnly))
-        {
-            file.write(m_pHttp->readAll());
-            file.close();
-        }
-        QTimer::singleShot(0, this, SLOT(suicide()));
+        /* Set new source: */
+        UIDownloader::setSource(redirect.toString());
+        /* Start redirecting: */
+        startDelayedAcknowledging();
+        return;
     }
+
+    /* Ask for downloading confirmation: */
+    if (askForDownloadingConfirmation(pReply))
+    {
+        /* Start downloading: */
+        startDelayedDownloading();
+        return;
+    }
+
+    /* Delete downloader: */
+    deleteLater();
 }
 
-/* This slot is used to process cancel-button clicking */
-void UIDownloader::cancelDownloading()
+/* Start downloading: */
+void UIDownloader::sltStartDownloading()
 {
-    QTimer::singleShot(0, this, SLOT(suicide()));
+    /* Setup GET request: */
+    QNetworkRequest request;
+    request.setUrl(m_source);
+    QNetworkReply *pReply = m_pNetworkManager->get(request);
+    connect(pReply, SIGNAL(sslErrors(QList<QSslError>)), pReply, SLOT(ignoreSslErrors()));
+    connect(pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SIGNAL(sigDownloadProgress(qint64, qint64)));
+    connect(pReply, SIGNAL(finished()), this, SLOT(sltFinishDownloading()));
 }
 
-/* This function is used to abort download by showing aborting reason
- * and calling the downloader's delete function */
-void UIDownloader::abortDownload(const QString &strError)
+/* Finish downloading: */
+void UIDownloader::sltFinishDownloading()
 {
-    warnAboutError(strError);
-    QTimer::singleShot(0, this, SLOT(suicide()));
+    /* Get corresponding network reply object: */
+    QNetworkReply *pReply = qobject_cast<QNetworkReply*>(sender());
+    /* And ask it for suicide: */
+    pReply->deleteLater();
+
+    /* Handle normal reply: */
+    if (pReply->error() == QNetworkReply::NoError)
+        handleDownloadingResult(pReply);
+    /* Handle errors: */
+    else
+        handleError(pReply);
 }
 
-/* This function is used to delete the downloader widget itself,
- * should be reimplemented to enhance necessary functionality in sub-class */
-void UIDownloader::suicide()
+/* Handle downloading result: */
+void UIDownloader::handleDownloadingResult(QNetworkReply *pReply)
 {
-    delete this;
+    /* Handle downloaded object: */
+    handleDownloadedObject(pReply);
+
+    /* Delete downloader: */
+    deleteLater();
+}
+
+/* Handle simple errors: */
+void UIDownloader::handleError(QNetworkReply *pReply)
+{
+    /* Show error message: */
+    warnAboutNetworkError(pReply->errorString());
+
+    /* Delete downloader: */
+    deleteLater();
+}
+
+/* Cancel-button stuff: */
+void UIDownloader::sltCancel()
+{
+    /* Delete downloader: */
+    deleteLater();
 }
 

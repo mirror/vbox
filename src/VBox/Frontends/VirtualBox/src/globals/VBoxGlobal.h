@@ -583,6 +583,8 @@ public:
 
     void startEnumeratingMedia();
 
+    void reloadProxySettings();
+
     /**
      * Returns a list of all currently registered media. This list is used to
      * globally track the accessibility state of all media on a dedicated thread.
@@ -766,6 +768,7 @@ public slots:
     void showUpdateDialog (bool aForce = true);
     void perDayNewVersionNotifier();
     void sltGUILanguageChange(QString strLang);
+    void sltProcessGlobalSettingChange();
 
 protected:
 

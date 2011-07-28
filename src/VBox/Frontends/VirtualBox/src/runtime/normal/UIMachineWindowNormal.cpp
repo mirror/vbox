@@ -171,14 +171,14 @@ void UIMachineWindowNormal::sltDownloaderAdditionsEmbed()
 {
     /* If there is an additions download running show the process bar: */
     if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
-        statusBar()->addWidget(pDl->processWidget(this), 0);
+        statusBar()->addWidget(pDl->progressWidget(this), 0);
 }
 
 void UIMachineWindowNormal::sltDownloaderUserManualEmbed()
 {
     /* If there is an additions download running show the process bar: */
     if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
-        statusBar()->addWidget(pDl->processWidget(this), 0);
+        statusBar()->addWidget(pDl->progressWidget(this), 0);
 }
 
 void UIMachineWindowNormal::sltUpdateIndicators()
