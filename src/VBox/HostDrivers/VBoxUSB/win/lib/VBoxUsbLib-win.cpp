@@ -765,12 +765,16 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
         return VINF_SUCCESS;
     }
 
+    bool fFreeNameBuf = true;
     char nameEmptyBuf = '\0';
     LPSTR lpszName = NULL;
     rc = usbLibDevStrDriverKeyGet(hHub, iPort, &lpszName);
     Assert(!!lpszName == !!RT_SUCCESS(rc));
     if (!lpszName)
+    {
         lpszName = &nameEmptyBuf;
+        fFreeNameBuf = false;
+    }
 
     PUSB_CONFIGURATION_DESCRIPTOR pCfgDr = NULL;
     PVBOXUSB_STRING_DR_ENTRY pList = NULL;
@@ -795,8 +799,11 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
 
     if (pCfgDr)
         usbLibDevCfgDrFree(pCfgDr);
-    if (lpszName)
+    if (fFreeNameBuf)
+    {
+        Assert(lpszName);
         usbLibDevStrFree(lpszName);
+    }
     if (pList)
         usbLibDevStrDrEntryFreeList(pList);
 
