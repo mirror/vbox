@@ -387,6 +387,15 @@ static int vboxserviceVMInfoWriteNetwork(void)
             dwRet = GetAdaptersInfo(pAdpInfo, &cbAdpInfo);
         }
     }
+    else if (dwRet == ERROR_NO_DATA)
+    {
+        VBoxServiceVerbose(3, "VMInfo/Network: No network adapters available\n");
+
+        /* If no network adapters available / present in the
+         * system we pretend success to not bail out too early. */
+        dwRet = ERROR_SUCCESS;
+    }
+
     if (dwRet != ERROR_SUCCESS)
     {
         if (pAdpInfo)
@@ -685,7 +694,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/Status", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, fIfUp ? "Up" : "Down");
         cIfacesReport++;
-    }
+    } /* For all interfaces */
 
     close(sd);
     if (RT_FAILURE(rc))
