@@ -689,13 +689,15 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
             if (RT_SUCCESS(rc))
             {
                 rc = CFGMR3QueryStringAllocDef(pRoot, "Name", &pUVM->vm.s.pszName, "<unknown>");
-                AssertLogRelMsg(RT_SUCCESS(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND, ("Configuration error: Querying \"Name\" failed, rc=%Rrc\n", rc));
+                AssertLogRelMsg(RT_SUCCESS(rc), ("Configuration error: Querying \"Name\" failed, rc=%Rrc\n", rc));
             }
 
             if (RT_SUCCESS(rc))
             {
                 rc = CFGMR3QueryBytes(pRoot, "UUID", &pUVM->vm.s.Uuid, sizeof(pUVM->vm.s.Uuid));
-                AssertLogRelMsg(RT_SUCCESS(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND, ("Configuration error: Querying \"UUID\" failed, rc=%Rrc\n", rc));
+                if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                    rc = VINF_SUCCESS;
+                AssertLogRelMsg(RT_SUCCESS(rc), ("Configuration error: Querying \"UUID\" failed, rc=%Rrc\n", rc));
             }
 
             if (RT_SUCCESS(rc))
