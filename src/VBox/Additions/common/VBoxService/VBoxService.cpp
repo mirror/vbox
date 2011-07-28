@@ -131,7 +131,8 @@ static int vboxServiceUsage(void)
 {
     RTPrintf("Usage:\n"
              " %-12s [-f|--foreground] [-v|--verbose] [-i|--interval <seconds>]\n"
-             "              [--disable-<service>] [--enable-<service>] [-h|-?|--help]\n", g_pszProgName);
+             "              [--disable-<service>] [--enable-<service>]\n"
+             "              [--only-<service>] [-h|-?|--help]\n", g_pszProgName);
 #ifdef RT_OS_WINDOWS
     RTPrintf("              [-r|--register] [-u|--unregister]\n");
 #endif
@@ -157,6 +158,7 @@ static int vboxServiceUsage(void)
     {
         RTPrintf("    --enable-%-14s Enables the %s service. (default)\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
         RTPrintf("    --disable-%-13s Disables the %s service.\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
+        RTPrintf("    --only-%-16s Only enables the %s service.\n", g_aServices[j].pDesc->pszName, g_aServices[j].pDesc->pszName);
         if (g_aServices[j].pDesc->pszOptions)
             RTPrintf("%s", g_aServices[j].pDesc->pszOptions);
     }
@@ -698,6 +700,10 @@ int main(int argc, char **argv)
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aServices); j++)
                         if ((fFound = !RTStrICmp(psz + sizeof("disable-") - 1, g_aServices[j].pDesc->pszName)))
                             g_aServices[j].fEnabled = false;
+
+                if (cch > sizeof("only-") && !memcmp(psz, "only-", sizeof("only-") - 1))
+                    for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
+                        g_aServices[j].fEnabled = !RTStrICmp(psz + sizeof("only-") - 1, g_aServices[j].pDesc->pszName);
 
                 if (!fFound)
                 {
