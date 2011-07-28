@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <glossary id="Glossary">
   <glossdiv>
     <title>A</title>
@@ -223,6 +223,19 @@
         <computeroutput>00:17:3A:5E:CB:08</computeroutput>.</para>
       </glossdef>
     </glossentry>
+
+    <glossentry>
+      <glossterm>MSI</glossterm>
+
+      <glossdef>
+        <para>Message Signalled Interrupts, as supported by modern chipsets
+        such as the ICH9; see <xref linkend="settings-motherboard" />. As
+        opposed to traditional pin-based interrupts, with MSI, a small amount
+        of data can accompany the actual interrupt message. This reduces the
+        amount of hardware pins required, allows for more interrupts and
+        better performance.</para>
+      </glossdef>
+    </glossentry>
   </glossdiv>
 
   <glossdiv>
@@ -303,10 +316,10 @@
         RDP, a PC system can be controlled from a remote location using a
         network connection over which data is transferred in both directions.
         Typically graphics updates and audio are sent from the remote machine
-        and keyboard and mouse input events are sent from the client.
-        VirtualBox contains an enhanced implementation of the relevant
-        standards called "VirtualBox RDP" (VRDP), which is largely compatible
-        with Microsoft's RDP implementation. See <xref linkend="vrdp" /> for
+        and keyboard and mouse input events are sent from the client. A
+        VirtualBox extension package by Oracle provides VRDP, an enhanced
+        implementation of the relevant standards which is largely compatible
+        with Microsoft's RDP implementation. See <xref linkend="vrde" /> for
         details.</para>
       </glossdef>
     </glossentry>
@@ -353,6 +366,34 @@
         multiple CPU cores in one processor.</para>
       </glossdef>
     </glossentry>
+
+    <glossentry>
+      <glossterm>SSD</glossterm>
+
+      <glossdef>
+        <para>Solid-state drive, uses microships for storing data in a computer
+        system. Compared to classical hard-disks they are having no mechanical
+        components like spinning disks.
+        </para>
+      </glossdef>
+    </glossentry>
+  </glossdiv>
+
+  <glossdiv>
+    <title>T</title>
+
+    <glossentry>
+      <glossterm>TAR</glossterm>
+
+      <glossdef>
+        <para>A widely used file format for archiving. Originally, this stood
+        for "Tape ARchive" and was already supported by very early Unix
+        versions for backing up data on tape. The file format is still widely
+        used today, for example, with OVF archives (with an
+        <computeroutput>.ova</computeroutput> file extension); see <xref
+        linkend="ovf" />.</para>
+      </glossdef>
+    </glossentry>
   </glossdiv>
 
   <glossdiv>
@@ -382,6 +423,28 @@
         <para>Virtual Machine -- a virtual computer that VirtualBox allows you
         to run on top of your actual hardware. See <xref
         linkend="virtintro" /> for details.</para>
+      </glossdef>
+    </glossentry>
+
+    <glossentry>
+      <glossterm>VMM</glossterm>
+
+      <glossdef>
+        <para>Virtual Machine Manager -- the component of VirtualBox that
+        controls VM execution. See <xref linkend="technical-components" /> for
+        a list of VirtualBox components.</para>
+      </glossdef>
+    </glossentry>
+
+    <glossentry>
+      <glossterm>VRDE</glossterm>
+
+      <glossdef>
+        <para>VirtualBox Remote Desktop Extension. This interface is built
+        into VirtualBox to allow VirtualBox extension packages to supply
+        remote access to virtual machines. A VirtualBox extension package by
+        Oracle provides VRDP support; see <xref linkend="vrde" /> for
+        details.</para>
       </glossdef>
     </glossentry>
 

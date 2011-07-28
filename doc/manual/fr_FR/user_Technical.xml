@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="TechnicalBackground">
   <title>Technical background</title>
 
@@ -9,7 +9,290 @@
   readers who are more familiar with computer architecture and technology and
   wish to find out more about how VirtualBox works "under the hood".</para>
 
-  <sect1>
+  <sect1 id="vboxconfigdata">
+    <title>Where VirtualBox stores its files</title>
+
+    <para>In VirtualBox, a virtual machine and its settings are described in a
+    virtual machine settings file in XML format. In addition, most virtual
+    machine have one or more virtual hard disks, which are typically
+    represented by disk images (e.g. in VDI format). Where all these files are
+    stored depends on which version of VirtualBox created the machine.</para>
+
+    <sect2>
+      <title>Machines created by VirtualBox version 4.0 or later</title>
+
+      <para>Starting with version 4.0, by default, each virtual machine has
+      one directory on your host computer where all the files of that machine
+      are stored -- the XML settings file (with a
+      <computeroutput>.vbox</computeroutput> file extension) and its disk
+      images.</para>
+
+      <para>By default, this "machine folder" is placed in a common folder
+      called "VirtualBox VMs", which VirtualBox creates in the current system
+      user's home directory. The location of this home directory depends on
+      the conventions of the host operating system:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>On Windows, this is
+          <computeroutput>%HOMEDRIVE%%HOMEPATH%</computeroutput>; typically
+          something like <computeroutput>C:\Documents and
+          Settings\Username\</computeroutput>.</para>
+        </listitem>
+
+        <listitem>
+          <para>On Mac OS X, this is
+          <computeroutput>/Users/username</computeroutput>.</para>
+        </listitem>
+
+        <listitem>
+          <para>On Linux and Solaris, this is
+          <computeroutput>/home/username</computeroutput>.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>For simplicity, we will abbreviate this as
+      <computeroutput>$HOME</computeroutput> below. Using that convention, the
+      common folder for all virtual machines is
+      <computeroutput>$HOME/VirtualBox VMs</computeroutput>.</para>
+
+      <para>As an example, when you create a virtual machine called "Example
+      VM", you will find that VirtualBox creates<orderedlist>
+          <listitem>
+            <para>the folder <computeroutput>$HOME/VirtualBox VMs/Example
+            VM/</computeroutput> and, in that folder,</para>
+          </listitem>
+
+          <listitem>
+            <para>the settings file <computeroutput>Example
+            VM.vbox</computeroutput> and</para>
+          </listitem>
+
+          <listitem>
+            <para>the virtual disk image <computeroutput>Example
+            VM.vdi</computeroutput>.</para>
+          </listitem>
+        </orderedlist></para>
+
+      <para>This is the default layout if you use the "Create new virtual
+      machine" wizard as described in <xref linkend="gui-createvm" />. Once
+      you start working with the VM, additional files will show up: you will
+      find log files in a subfolder called
+      <computeroutput>Logs</computeroutput>, and once you have taken
+      snapshots, they will appear in a
+      <computeroutput>Snapshots</computeroutput> subfolder. For each VM, you
+      can change the location of its snapsnots folder in the VM
+      settings.</para>
+
+      <para>You can change the default machine folder by selecting
+      "Preferences" from the "File" menu in the VirtualBox main window. Then,
+      in the window that pops up, click on the "General" tab. Alternatively,
+      use <computeroutput>VBoxManage setproperty
+      machinefolder</computeroutput>; see <xref
+      linkend="vboxmanage-setproperty" />.</para>
+    </sect2>
+
+    <sect2>
+      <title>Machines created by VirtualBox versions before 4.0</title>
+
+      <para>If you have upgraded to VirtualBox 4.0 from an earlier version of
+      VirtualBox, you probably have settings files and disks in the earlier
+      file system layout.</para>
+
+      <para>Before version 4.0, VirtualBox separated the machine settings
+      files from virtual disk images. The machine settings files had an
+      <computeroutput>.xml</computeroutput> file extension and resided in a
+      folder called "Machines" under the global VirtualBox configuration
+      directory (see the next section). So, for example, on Linux, this was
+      the hidden <computeroutput>$HOME/.VirtualBox/Machines</computeroutput>
+      directory. The default hard disks folder was called "HardDisks" and
+      resided in the <computeroutput>.VirtualBox</computeroutput> folder as
+      well. Both locations could be changed by the user in the global
+      preferences. (The concept of a "default hard disk folder" has been
+      abandoned with VirtualBox 4.0, since disk images now reside in each
+      machine's folder by default.)</para>
+
+      <para>The old layout had several severe disadvantages.<orderedlist>
+          <listitem>
+            <para>It was very difficult to move a virtual machine from one
+            host to another because the files involved did not reside in the
+            same folder. In addition, the virtual media of all machines were
+            registered with a global registry in the central VirtualBox
+            settings file
+            (<computeroutput>$HOME/.VirtualBox/VirtualBox.xml</computeroutput>).</para>
+
+            <para>To move a machine to another host, it was therefore not
+            enough to move the XML settings file and the disk images (which
+            were in different locations), but the hard disk entries from the
+            global media registry XML had to be meticulously copied as well,
+            which was close to impossible if the machine had snapshots and
+            therefore differencing images.</para>
+          </listitem>
+
+          <listitem>
+            <para>Storing virtual disk images, which can grow very large,
+            under the hidden <computeroutput>.VirtualBox</computeroutput>
+            directory (at least on Linux and Solaris hosts) made many users
+            wonder where their disk space had gone.</para>
+          </listitem>
+        </orderedlist></para>
+
+      <para>Whereas new VMs created with VirtualBox 4.0 or later will conform
+      to the new layout, for maximum compatibility, old VMs are
+      <emphasis>not</emphasis> converted to the new layout. Otherwise machine
+      settings would be irrevocably broken if a user downgraded from 4.0 back
+      to an older version of VirtualBox.</para>
+    </sect2>
+
+    <sect2>
+      <title>Global configuration data</title>
+
+      <para>In addition to the files of the virtual machines, VirtualBox
+      maintains global configuration data. On Windows, Linux and Solaris, this
+      is in <computeroutput>$HOME/.VirtualBox</computeroutput> (which makes it
+      hidden on Linux and Solaris), whereas on a Mac this resides in
+      <computeroutput>$HOME/Library/VirtualBox</computeroutput>.</para>
+
+      <para>VirtualBox creates this configuration directory automatically if
+      necessary. Optionally, you can supply an alternate configuration
+      directory by setting the
+      <computeroutput><literal>VBOX_USER_HOME</literal></computeroutput>
+      environment variable. (Since the global
+      <computeroutput>VirtualBox.xml</computeroutput> settings file points to
+      all other configuration files, this allows for switching between several
+      VirtualBox configurations entirely.)</para>
+
+      <para>Most importantly, in this directory, VirtualBox stores its global
+      settings file, another XML file called
+      <computeroutput>VirtualBox.xml</computeroutput>. This includes global
+      configuration options and the list of registered virtual machines with
+      pointers to their XML settings files. (Neither the location of this file
+      nor its directory has changed with VirtualBox 4.0.)</para>
+
+      <para>Before VirtualBox 4.0, all virtual media (disk image files) were
+      also contained in a global registry in this settings file. For
+      compatibility, this media registry still exists if you upgrade
+      VirtualBox and there are media from machines which were created with a
+      version before 4.0. If you have no such machines, then there will be no
+      global media registry; with VirtualBox 4.0, each machine XML file has
+      its own media registry.</para>
+
+      <para>Also before VirtualBox 4.0, the default "Machines" folder and the
+      default "HardDisks" folder resided under the VirtualBox configuration
+      directory (e.g.
+      <computeroutput>$HOME/.VirtualBox/Machines</computeroutput> on Linux).
+      If you are upgrading from a VirtualBox version before 4.0, files in
+      these directories are not automatically moved in order not to break
+      backwards compatibility.</para>
+    </sect2>
+
+    <sect2>
+      <title>Summary of 4.0 configuration changes</title>
+
+      <table>
+        <title>ignoreme</title>
+
+        <tgroup cols="3">
+          <tbody>
+            <row>
+              <entry></entry>
+
+              <entry><emphasis role="bold">Before 4.0</emphasis></entry>
+
+              <entry><emphasis role="bold">4.0 or above</emphasis></entry>
+            </row>
+
+            <row>
+              <entry>Default machines folder</entry>
+
+              <entry><computeroutput>$HOME/.VirtualBox/Machines</computeroutput></entry>
+
+              <entry><computeroutput>$HOME/VirtualBox
+              VMs</computeroutput></entry>
+            </row>
+
+            <row>
+              <entry>Default disk image location</entry>
+
+              <entry><computeroutput>$HOME/.VirtualBox/HardDisks</computeroutput></entry>
+
+              <entry>In each machine's folder</entry>
+            </row>
+
+            <row>
+              <entry>Machine settings file extension</entry>
+
+              <entry><computeroutput>.xml</computeroutput></entry>
+
+              <entry><computeroutput>.vbox</computeroutput></entry>
+            </row>
+
+            <row>
+              <entry>Media registry</entry>
+
+              <entry>Global <computeroutput>VirtualBox.xml</computeroutput>
+              file</entry>
+
+              <entry>Each machine settings file</entry>
+            </row>
+
+            <row>
+              <entry>Media registration</entry>
+
+              <entry>Explicit open/close required</entry>
+
+              <entry>Automatic on attach</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </sect2>
+
+    <sect2>
+      <title>VirtualBox XML files</title>
+
+      <para>VirtualBox uses XML for both the machine settings files and the
+      global configuration file,
+      <computeroutput>VirtualBox.xml</computeroutput>.</para>
+
+      <para>All VirtualBox XML files are versioned. When a new settings file
+      is created (e.g. because a new virtual machine is created), VirtualBox
+      automatically uses the settings format of the current VirtualBox
+      version. These files may not be readable if you downgrade to an earlier
+      version of VirtualBox. However, when VirtualBox encounters a settings
+      file from an earlier version (e.g. after upgrading VirtualBox), it
+      attempts to preserve the settings format as much as possible. It will
+      only silently upgrade the settings format if the current settings cannot
+      be expressed in the old format, for example because you enabled a
+      feature that was not present in an earlier version of
+      VirtualBox.<footnote>
+          <para>As an example, before VirtualBox 3.1, it was only possible to
+          enable or disable a single DVD drive in a virtual machine. If it was
+          enabled, then it would always be visible as the secondary master of
+          the IDE controller. With VirtualBox 3.1, DVD drives can be attached
+          to arbitrary slots of arbitrary controllers, so they could be the
+          secondary slave of an IDE controller or in a SATA slot. If you have
+          a machine settings file from an earlier version and upgrade
+          VirtualBox to 3.1 and then move the DVD drive from its default
+          position, this cannot be expressed in the old settings format; the
+          XML machine file would get written in the new format, and a backup
+          file of the old format would be kept.</para>
+        </footnote> In such cases, VirtualBox backs up the old settings file
+      in the virtual machine's configuration directory. If you need to go back
+      to the earlier version of VirtualBox, then you will need to manually
+      copy these backup files back.</para>
+
+      <para>We intentionally do not document the specifications of the
+      VirtualBox XML files, as we must reserve the right to modify them in the
+      future. We therefore strongly suggest that you do not edit these files
+      manually. VirtualBox provides complete access to its configuration data
+      through its the <computeroutput>VBoxManage</computeroutput> command line
+      tool (see <xref linkend="vboxmanage" />) and its API (see <xref
+      linkend="VirtualBoxAPI" />).</para>
+    </sect2>
+  </sect1>
+
+  <sect1 id="technical-components">
     <title>VirtualBox executables and components</title>
 
     <para>VirtualBox was designed to be modular and flexible. When the
@@ -39,10 +322,10 @@
           <para>The GUI process, <computeroutput>VirtualBox</computeroutput>,
           a client application based on the cross-platform Qt library. When
           started without the <computeroutput>--startvm</computeroutput>
-          option, this application acts as the VirtualBox main window,
-          displaying the VMs and their settings. It then communicates settings
-          and state changes to <computeroutput>VBoxSVC</computeroutput> and
-          also reflects changes effected through other means, e.g.,
+          option, this application acts as the VirtualBox manager, displaying
+          the VMs and their settings. It then communicates settings and state
+          changes to <computeroutput>VBoxSVC</computeroutput> and also
+          reflects changes effected through other means, e.g.,
           <computeroutput>VBoxManage</computeroutput>.</para>
         </listitem>
 
@@ -63,17 +346,17 @@
     state.</para>
 
     <para>The VirtualBox GUI application is only one of several available
-    front-ends (clients). The complete list shipped with VirtualBox
+    front ends (clients). The complete list shipped with VirtualBox
     is:<orderedlist>
         <listitem>
-          <para><computeroutput>VirtualBox</computeroutput>, the Qt GUI front
-          end mentioned earlier.</para>
+          <para><computeroutput>VirtualBox</computeroutput>, the Qt front end
+          implementing the manager and running VMs;</para>
         </listitem>
 
         <listitem>
           <para><computeroutput>VBoxManage</computeroutput>, a less
-          user-friendly but more powerful alternative to the GUI described in
-          <xref linkend="vboxmanage" />.</para>
+          user-friendly but more powerful alternative, described in <xref
+          linkend="vboxmanage" />.</para>
         </listitem>
 
         <listitem>
@@ -85,8 +368,8 @@
         <listitem>
           <para><computeroutput>VBoxHeadless</computeroutput>, a VM front end
           which does not directly provide any video output and keyboard/mouse
-          input, but allows redirection via VRDP; see <xref
-          linkend="vboxheadless" />.</para>
+          input, but allows redirection via VirtualBox Remote Desktop Extension;
+          see <xref linkend="vboxheadless" />.</para>
         </listitem>
 
         <listitem>
@@ -579,9 +862,10 @@
           performance.</para>
 
           <para>On AMD processors, nested paging has been available starting
-          with the Barcelona (K10) architecture; Intel added support for
-          nested paging, which they call "extended page tables" (EPT), with
-          their Core i7 (Nehalem) processors.</para>
+          with the Barcelona (K10) architecture -- they call it now "rapid
+          virtualization indexing" (RVI). Intel added support for nested
+          paging, which they call "extended page tables" (EPT), with their
+          Core i7 (Nehalem) processors.</para>
 
           <para>If nested paging is enabled, the VirtualBox hypervisor can
           also use <emphasis role="bold">large pages</emphasis> to reduce TLB
@@ -600,7 +884,7 @@
           (TLBs).</para>
 
           <para>To enable these features for a VM, you need to use the
-          <computeroutput>VBoxManage modifyvm --vtxvpids</computeroutput> and
+          <computeroutput>VBoxManage modifyvm --vtxvpid</computeroutput> and
           <computeroutput>--largepages</computeroutput> commands; see <xref
           linkend="vboxmanage-modifyvm" />.</para>
         </listitem>

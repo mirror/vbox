@@ -398,7 +398,7 @@
         l'autre machine virtuelle.</para>
         
         <para>Le support VRDP est décrit en détail au chapitre <xref
-        linkend="vrdp" />.</para>
+        linkend="vrde" />.</para>
 
         <para>En plus de cette fonctionnalité particulière, VirtualBox vous 
         offre d'autres fonctionnalités uniques&nbsp;:<itemizedlist>
@@ -408,7 +408,7 @@
               l'authentification RDP. En outre, il inclut un SDK facile à 
               utiliser qui vous permet de créer des interfaces de votre choix 
               pour d'autres méthodes d'authentification&nbsp;; voir le <xref 
-              linkend="vbox-authenticate-sdk" /> pour des détails.</para>
+              linkend="vbox-auth" /> pour des détails.</para>
             </listitem>
 
             <listitem>
@@ -552,7 +552,7 @@
     </itemizedlist>
   </sect1>
 
-  <sect1>
+  <sect1 id="intro-installing">
     <title>Installer et lancer VirtualBox</title>
 
     <para>VirtualBox est fourni sous différents paquetages avec beaucoup de 
@@ -1051,6 +1051,54 @@
       tout comme il est décrit au <xref linkend="configbasics" />.</para>
     </sect2>
 
+    <sect2 id="intro-resize-window">
+      <title>Resizing the machine's window</title>
+
+      <para>You can resize the virtual machine's window when it is running. In
+      that case, one of three things will happen:<orderedlist>
+          <listitem>
+            <para>If you have <emphasis role="bold">"scale mode"</emphasis>
+            enabled, then the virtual machine's screen will be scaled to the
+            size of the window. This can be useful if you have many machines
+            running and want to have a look at one of them while it is running
+            in the background. Alternatively, it might be useful to enlarge a
+            window if the VM's output screen is very small, for example
+            because you are running an old operating system in it.</para>
+
+            <para>To enable scale mode, press the <emphasis role="bold">host
+            key + C</emphasis>, or select "Scale mode" from the "Machine" menu
+            in the VM window. To leave scale mode, press the host key + C
+            again.</para>
+
+            <para>The aspect ratio of the guest screen is preserved when
+            resizing the window. To ignore the aspect ratio, press Shift
+            during the resize operation.</para>
+
+            <para>Please see <xref linkend="KnownIssues" /> for additional
+            remarks.</para>
+          </listitem>
+
+          <listitem>
+            <para>If you have the Guest Additions installed and they support
+            automatic <emphasis role="bold">resizing</emphasis>, the Guest
+            Additions will automatically adjust the screen resolution of the
+            guest operating system. For example, if you are running a Windows
+            guest with a resolution of 1024x768 pixels and you then resize the
+            VM window to make it 100 pixels wider, the Guest Additions will
+            change the Windows display resolution to 1124x768.</para>
+
+            <para>Please see <xref linkend="guestadditions" /> for more
+            information about the Guest Additions.</para>
+          </listitem>
+
+          <listitem>
+            <para>Otherwise, if the window is bigger than the VM's screen, the
+            screen will be centered. If it is smaller, then scroll bars will
+            be added to the machine window.</para>
+          </listitem>
+        </orderedlist></para>
+    </sect2>
+
     <sect2>
       <title>Sauvegarder l'état de la machine</title>
 
@@ -1117,7 +1165,7 @@
         </listitem>
       </itemizedlist>
 
-      <para>Le bouton <emphasis role="bold">"DDésactiver"</emphasis> de la 
+      <para>Le bouton <emphasis role="bold">"Désactiver"</emphasis> de la 
       fenêtre principale de VirtualBox désactive l'état de sauvegarde de la 
       machine virtuelle. Ceci a le même effet que de l'éteindre, et cela produira
       les mêmes avertissements.</para>
@@ -1415,6 +1463,43 @@
 
     <para>Vous ne pouvez supprimer une machine qui a des instantanés ou qui est
     en état de sauvegardée, donc vous devez d'abord les désactiver.</para>
+  </sect1>
+
+  <sect1 id="clone">
+    <title>Cloning virtual machines</title>
+
+    <para>To experiment with a VM configuration, test different guest OS levels
+    or to simply backup a VM, VirtualBox can create a full copy of an existing
+    VM.<footnote>Cloning support was introduced with VirtualBox
+    4.1.</footnote></para>
+    
+    <para>A wizard will guide you through the clone process:</para>
+
+    <mediaobject>
+      <imageobject>
+        <imagedata align="center" fileref="images/clone-vm.png"
+                   width="10cm" />
+      </imageobject>
+    </mediaobject>
+    
+    <para>This wizard can be invoked from the context menu of the Manager's VM
+    list (select "Clone") or the "Snapshots" view of the selected VM. You have
+    the choice to create a exact copy of the current state without any
+    snapshots or with all snapshots included.<!-- If you
+    invoke the clone VM wizard from the latter place and have selected a
+    specific snapshot you can additional decide if you want to clone that
+    snapshot including all child's, but without any independent snapshots in
+    the tree.--></para>
+
+    <para>The clone operation itself can be a lengthy operation depending on
+    the size and count of the attached disk images. Also keep in mind that
+    every snapshot has differencing disk images attached, which need to be cloned
+    as well.</para>
+
+    <para>The "Clone" menu item is disabled while a machine is running.</para>
+
+    <para>For how to clone a VM at the command line, please see <xref
+    linkend="vboxmanage-clonevm" />.</para>
   </sect1>
 
   <sect1 id="ovf">
