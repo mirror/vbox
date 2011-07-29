@@ -1796,10 +1796,17 @@ static void surface_prepare_system_memory(IWineD3DSurfaceImpl *This)
         ENTER_GL();
 
         GL_EXTCALL(glGenBuffersARB(1, &This->pbo));
+#ifndef VBOX_WITH_WDDM
         error = glGetError();
         if(This->pbo == 0 || error != GL_NO_ERROR) {
             ERR("Failed to bind the PBO with error %s (%#x)\n", debug_glerror(error), error);
         }
+#else
+        if(This->pbo == 0) {
+            error = glGetError();
+            ERR("Failed to bind the PBO with error %s (%#x)\n", debug_glerror(error), error);
+        }
+#endif
 
         TRACE("Attaching pbo=%#x to (%p)\n", This->pbo, This);
 
