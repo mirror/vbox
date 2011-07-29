@@ -15,6 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <memory>
+
 #include "GuestImpl.h"
 #include "GuestCtrlImplPrivate.h"
 
