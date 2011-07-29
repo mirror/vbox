@@ -31,8 +31,7 @@
 GuestProcessStream::GuestProcessStream()
     : m_cbAllocated(0),
       m_cbSize(0),
-      m_cbOffsetBuffer(0),
-      m_cbOffsetParser(0),
+      m_cbOffset(0),
       m_pbBuffer(NULL)
 {
 
@@ -43,7 +42,14 @@ GuestProcessStream::~GuestProcessStream()
     Destroy();
 }
 
-
+/**
+ * Adds data to the internal parser buffer. Useful if there
+ * are multiple rounds of adding data needed.
+ *
+ * @return  IPRT status code.
+ * @param   pbData              Pointer to data to add.
+ * @param   cbData              Size (in bytes) of data to add.
+ */
 int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
 {
     AssertPtrReturn(pbData, VERR_INVALID_POINTER);
@@ -52,10 +58,10 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
     int rc = VINF_SUCCESS;
 
     /* Rewind the buffer if it's empty. */
-    size_t     cbInBuf   = m_cbSize - m_cbOffsetBuffer;
+    size_t     cbInBuf   = m_cbSize - m_cbOffset;
     bool const fAddToSet = cbInBuf == 0;
     if (fAddToSet)
-        m_cbSize = m_cbOffsetBuffer = 0;
+        m_cbSize = m_cbOffset = 0;
 
     /* Try and see if we can simply append the data. */
     if (cbData + m_cbSize <= m_cbAllocated)
@@ -66,14 +72,14 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
     else
     {
         /* Move any buffered data to the front. */
-        cbInBuf = m_cbSize - m_cbOffsetBuffer;
+        cbInBuf = m_cbSize - m_cbOffset;
         if (cbInBuf == 0)
-            m_cbSize = m_cbOffsetBuffer = 0;
-        else if (m_cbOffsetBuffer) /* Do we have something to move? */
+            m_cbSize = m_cbOffset = 0;
+        else if (m_cbOffset) /* Do we have something to move? */
         {
-            memmove(m_pbBuffer, &m_pbBuffer[m_cbOffsetBuffer], cbInBuf);
+            memmove(m_pbBuffer, &m_pbBuffer[m_cbOffset], cbInBuf);
             m_cbSize = cbInBuf;
-            m_cbOffsetBuffer = 0;
+            m_cbOffset = 0;
         }
 
         /* Do we need to grow the buffer? */
@@ -107,6 +113,11 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
     return rc;
 }
 
+/**
+ * Destroys the currently stored stream pairs.
+ *
+ * @return  IPRT status code.
+ */
 void GuestProcessStream::ClearPairs()
 {
     for (GuestCtrlStreamPairsIter it = m_mapPairs.begin(); it != m_mapPairs.end(); it++)
@@ -119,16 +130,31 @@ void GuestProcessStream::ClearPairs()
 }
 
 /**
- * Destroys the stored stream pairs.
+ * Destroys the currently stored stream pairs and the internal
+ * data buffer.
  */
 void GuestProcessStream::Destroy()
 {
     ClearPairs();
 
     if (m_pbBuffer)
+    {
         RTMemFree(m_pbBuffer);
+        m_pbBuffer = NULL;
+    }
+
+    m_cbAllocated = 0;
+    m_cbSize = 0;
+    m_cbOffset = 0;
 }
 
+/**
+ * Returns a 64-bit signed integer of a specified key.
+ *
+ * @return  IPRT status code. VERR_NOT_FOUND if key was not found.
+ * @param  pszKey               Name of key to get the value for.
+ * @param  piVal                Pointer to value to return.
+ */
 int GuestProcessStream::GetInt64Ex(const char *pszKey, int64_t *piVal)
 {
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
@@ -166,20 +192,21 @@ size_t GuestProcessStream::GetNumPairs()
     return m_mapPairs.size();
 }
 
-uint32_t GuestProcessStream::GetOffsetBuffer()
+/**
+ * Returns the current offset of the parser within
+ * the internal data buffer.
+ *
+ * @return  uint32_t            Parser offset.
+ */
+uint32_t GuestProcessStream::GetOffset()
 {
-    return m_cbOffsetBuffer;
-}
-
-uint32_t GuestProcessStream::GetOffsetParser()
-{
-    return m_cbOffsetParser;
+    return m_cbOffset;
 }
 
 /**
- * Returns a 32-bit unsigned integer of a specified key.
+ * Returns a string value of a specified key.
  *
- * @return  uint32_t            Value to return, 0 if not found / on failure.
+ * @return  uint32_t            Pointer to string to return, NULL if not found / on failure.
  * @param   pszKey              Name of key to get the value for.
  */
 const char* GuestProcessStream::GetString(const char *pszKey)
@@ -199,6 +226,13 @@ const char* GuestProcessStream::GetString(const char *pszKey)
     return NULL;
 }
 
+/**
+ * Returns a 32-bit unsigned integer of a specified key.
+ *
+ * @return  IPRT status code. VERR_NOT_FOUND if key was not found.
+ * @param  pszKey               Name of key to get the value for.
+ * @param  puVal                Pointer to value to return.
+ */
 int GuestProcessStream::GetUInt32Ex(const char *pszKey, uint32_t *puVal)
 {
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
@@ -226,15 +260,25 @@ uint32_t GuestProcessStream::GetUInt32(const char *pszKey)
     return 0;
 }
 
-int GuestProcessStream::Parse()
+/**
+ * Try to parse the next upcoming pair block within the internal
+ * buffer. Old pairs from a previously parsed block will be removed first!
+ *
+ * @return  IPRT status code.
+ */
+int GuestProcessStream::ParseBlock()
 {
     AssertPtrReturn(m_pbBuffer, VINF_SUCCESS);
     AssertReturn(m_cbSize, VINF_SUCCESS);
-    AssertReturn(m_cbOffsetParser <= m_cbSize, VERR_INVALID_PARAMETER);
+    AssertReturn(m_cbOffset <= m_cbSize, VERR_INVALID_PARAMETER);
+
+    /* Since we want to (try to) parse another block, clear
+     * all pairs from a previously parsed block. */
+    ClearPairs();
 
     int rc = VINF_SUCCESS;
 
-    size_t uCur = m_cbOffsetParser;
+    size_t uCur = m_cbOffset;
     for (;uCur < m_cbSize;)
     {
         const char *pszStart = (char*)&m_pbBuffer[uCur];
@@ -262,7 +306,7 @@ int GuestProcessStream::Parse()
             if (   pszSep == pszStart
                 || pszSep == pszEnd)
             {
-                m_cbOffsetParser =  uCur - uPairLen - 1;
+                m_cbOffset =  uCur - uPairLen - 1;
                 rc = VERR_MORE_DATA;
             }
 
@@ -303,7 +347,7 @@ int GuestProcessStream::Parse()
 
                 RTMemFree(pszKey);
 
-                m_cbOffsetParser += uCur - m_cbOffsetParser;
+                m_cbOffset += uCur - m_cbOffset;
             }
         }
         else /* No pair detected, check for a new block. */
@@ -312,7 +356,7 @@ int GuestProcessStream::Parse()
             {
                 if (*pszEnd == '\0')
                 {
-                    m_cbOffsetParser = uCur;
+                    m_cbOffset = uCur;
                     rc = VERR_MORE_DATA;
                     break;
                 }
@@ -324,7 +368,7 @@ int GuestProcessStream::Parse()
             break;
     }
 
-    RT_CLAMP(m_cbOffsetParser, 0, m_cbSize);
+    RT_CLAMP(m_cbOffset, 0, m_cbSize);
 
     return rc;
 }

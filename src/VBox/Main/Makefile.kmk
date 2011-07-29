@@ -653,9 +653,11 @@ VBoxC_SOURCES = \
 	src-client/ConsoleImplTeleporter.cpp \
 	src-client/ConsoleVRDPServer.cpp \
 	src-client/DisplayImpl.cpp \
+	src-client/GuestImpl.cpp \
 	src-client/GuestCtrlImpl.cpp \
 	src-client/GuestCtrlIO.cpp \
-	src-client/GuestImpl.cpp \
+	src-client/GuestCtrlImplDir.cpp \
+	src-client/GuestCtrlImplFile.cpp \
 	src-client/KeyboardImpl.cpp \
 	src-client/MachineDebuggerImpl.cpp \
 	src-client/MouseImpl.cpp \
@@ -672,6 +674,10 @@ VBoxC_SOURCES.win = \
 	src-client/win/VBoxC.def \
 	src-client/win/VBoxC.rc
 
+ifdef VBOX_WITH_GUEST_CONTROL
+VBoxC_SOURCES += \
+	src-client/GuestCtrlImplTasks.cpp
+endif
 
 ifdef VBOX_WITH_XPCOM
 VBoxC_SOURCES += \

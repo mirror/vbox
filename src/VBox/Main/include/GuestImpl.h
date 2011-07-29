@@ -23,9 +23,10 @@
 #include <VBox/ostypes.h>
 
 #include "AdditionsFacilityImpl.h"
+#include "GuestCtrlImplPrivate.h"
+#include "HGCM.h"
 #ifdef VBOX_WITH_GUEST_CONTROL
 # include <VBox/HostServices/GuestControlSvc.h>
-# include "HGCM.h"
 using namespace guestControl;
 #endif
 
@@ -114,6 +115,21 @@ public:
     STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress);
 
     // Public methods that are not in IDL (only called internally).
+    void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
+    void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
+    bool facilityIsActive(VBoxGuestFacilityType enmFacility);
+    HRESULT facilityUpdate(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus);
+    void setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus, ULONG aFlags);
+    void setSupportedFeatures(uint32_t aCaps);
+    HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
+    BOOL isPageFusionEnabled();
+    static HRESULT setErrorStatic(HRESULT aResultCode,
+                                  const Utf8Str &aText)
+    {
+        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
+    }
+
+# ifdef VBOX_WITH_GUEST_CONTROL
     HRESULT directoryCreateInternal(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword,
                                     ULONG aMode, ULONG aFlags, int *pRC);
     HRESULT directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
@@ -126,32 +142,21 @@ public:
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
     HRESULT fileExistsInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists, int *pRC);
     HRESULT fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, LONG64 *aSize, int *pRC);
-    void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
-    void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
-    bool facilityIsActive(VBoxGuestFacilityType enmFacility);
-    HRESULT facilityUpdate(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus);
-    void setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus, ULONG aFlags);
-    void setSupportedFeatures(uint32_t aCaps);
-    HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
-    BOOL isPageFusionEnabled();
-# ifdef VBOX_WITH_GUEST_CONTROL
+
+    // Guest control dispatcher.
     /** Static callback for handling guest notifications. */
     static DECLCALLBACK(int) notifyCtrlDispatcher(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
+
+    // Internal tasks.
+    //extern struct GuestTask;
+    HRESULT taskCopyFileToGuest(GuestTask *aTask);
+    HRESULT taskCopyFileFromGuest(GuestTask *aTask);
+    HRESULT taskUpdateGuestAdditions(GuestTask *aTask);
 # endif
-    static HRESULT setErrorStatic(HRESULT aResultCode,
-                                  const Utf8Str &aText)
-    {
-        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
-    }
 
 private:
-#ifdef VBOX_WITH_GUEST_CONTROL
-    // Internal tasks.
-    struct TaskGuest; /* Worker thread helper. */
-    HRESULT taskCopyFileToGuest(TaskGuest *aTask);
-    HRESULT taskCopyFileFromGuest(TaskGuest *aTask);
-    HRESULT taskUpdateGuestAdditions(TaskGuest *aTask);
 
+#ifdef VBOX_WITH_GUEST_CONTROL
     // Internal guest callback representation.
     typedef struct VBOXGUESTCTRL_CALLBACK
     {
@@ -206,7 +211,7 @@ private:
     {
         char    *mpszDirectory;
         char    *mpszFilter;
-        ULONG    uFlags;
+        ULONG    mFlags;
         /** Associated PID of started vbox_ls tool. */
         uint32_t mPID;
         /** Offset within the current retrieved stdout buffer. */
@@ -216,7 +221,7 @@ private:
     typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY >::iterator GuestDirectoryMapIter;
     typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY >::const_iterator GuestDirectoryMapIterConst;
 
-    int directoryCreateHandle(ULONG *puHandle, const char *pszDirectory, const char *pszFilter, ULONG uFlags);
+    int directoryCreateHandle(ULONG *puHandle, ULONG uPID, const char *pszDirectory, const char *pszFilter, ULONG uFlags);
     void directoryDestroyHandle(uint32_t uHandle);
     uint32_t directoryGetPID(uint32_t uHandle);
     bool directoryHandleExists(uint32_t uHandle);
