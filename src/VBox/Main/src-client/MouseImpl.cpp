@@ -508,8 +508,8 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
         int32_t x1, y1, x2, y2;
         /* Takes the display lock */
         pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
-        *pcX = x1 != x2 ? (x - 1 - x1) * MOUSE_RANGE_UPPER / (x2 - x1) : 0;
-        *pcY = y1 != y2 ? (y - 1 - y1) * MOUSE_RANGE_UPPER / (y2 - y1) : 0;
+        *pcX = x1 < x2 ? (x - 1 - x1) * MOUSE_RANGE_UPPER / (x2 - x1 - 1) : 0;
+        *pcY = y1 < y2 ? (y - 1 - y1) * MOUSE_RANGE_UPPER / (y2 - y1 - 1) : 0;
         if (   *pcX < MOUSE_RANGE_LOWER || *pcX > MOUSE_RANGE_UPPER
             || *pcY < MOUSE_RANGE_LOWER || *pcY > MOUSE_RANGE_UPPER)
             if (pfValid)
