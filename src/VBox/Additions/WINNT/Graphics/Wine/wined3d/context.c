@@ -1157,10 +1157,6 @@ void context_release(struct wined3d_context *context)
     if (!--context->level && context->restore_ctx)
     {
         TRACE("Restoring GL context %p on device context %p.\n", context->restore_ctx, context->restore_dc);
-#ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
-        /* should not be here*/
-        ERR("should not be here\n");
-#endif
         if (!pwglMakeCurrent(context->restore_dc, context->restore_ctx))
         {
             DWORD err = GetLastError();
@@ -1211,10 +1207,6 @@ static void context_enter(struct wined3d_context *context)
 
         if (current_gl && (!current_context || current_context->glCtx != current_gl))
         {
-#ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
-            /* should not be here*/
-            ERR("should not be here\n");
-#endif
             TRACE("Another GL context (%p on device context %p) is already current.\n",
                     current_gl, pwglGetCurrentDC());
             context->restore_ctx = current_gl;
