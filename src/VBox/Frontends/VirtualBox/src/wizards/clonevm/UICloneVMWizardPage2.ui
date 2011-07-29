@@ -33,7 +33,7 @@
    <item>
     <widget class="QILabel" name="m_pLabel">
      <property name="text">
-      <string>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</string>
+      <string></string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>

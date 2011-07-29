@@ -236,6 +236,7 @@ public:
     void cannotRestoreSnapshot (const CProgress &aProgress, const QString &aSnapshotName);
     void cannotDeleteSnapshot (const CConsole &aConsole, const QString &aSnapshotName);
     void cannotDeleteSnapshot (const CProgress &aProgress, const QString &aSnapshotName);
+    void cannotFindSnapshotByName(QWidget *pParent, const CMachine &machine, const QString &strMachine) const;
 
     void cannotFindMachineByName (const CVirtualBox &vbox, const QString &name);
 

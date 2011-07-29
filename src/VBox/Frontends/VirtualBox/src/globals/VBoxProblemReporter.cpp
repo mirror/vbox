@@ -1090,6 +1090,17 @@ void VBoxProblemReporter::cannotDeleteSnapshot (const CProgress &aProgress,
         formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
+void VBoxProblemReporter::cannotFindSnapshotByName(QWidget *pParent,
+                                                   const CMachine &machine,
+                                                   const QString &strName) const
+{
+    message (pParent ? pParent : mainWindowShown(), Error,
+             tr ("Can't find snapshot named <b>%1</b>.")
+             .arg(strName),
+             formatErrorInfo(machine)
+    );
+}
+
 void VBoxProblemReporter::cannotFindMachineByName (const CVirtualBox &vbox,
                                                    const QString &name)
 {

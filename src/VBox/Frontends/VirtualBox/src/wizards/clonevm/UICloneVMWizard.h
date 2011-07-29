@@ -54,6 +54,7 @@ private:
 
     /* Private member vars */
     CMachine m_machine;
+    CSnapshot m_snapshot;
 };
 
 /* Base wrapper for the wizard page
@@ -119,7 +120,7 @@ class UICloneVMWizardPage2 : public UICloneVMWizardPage, public Ui::UICloneVMWiz
 public:
 
     /* Constructor: */
-    UICloneVMWizardPage2();
+    UICloneVMWizardPage2(bool fAdditionalInfo);
     int nextId() const;
 
 protected:
@@ -135,6 +136,10 @@ protected:
 private slots:
 
     void buttonClicked(QAbstractButton *pButton);
+
+private:
+
+    bool m_fAdditionalInfo;
 };
 
 /* Page3 of the new clonevm wizard: */
