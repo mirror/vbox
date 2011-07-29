@@ -175,6 +175,18 @@ enum GETOPTDEF_COPYTO
     GETOPTDEF_COPYTO_USERNAME
 };
 
+enum GETOPTDEF_MKDIR
+{
+    GETOPTDEF_MKDIR_PASSWORD = 1000,
+    GETOPTDEF_MKDIR_USERNAME
+};
+
+enum GETOPTDEF_STAT
+{
+    GETOPTDEF_STAT_PASSWORD = 1000,
+    GETOPTDEF_STAT_USERNAME
+};
+
 enum OUTPUTTYPE
 {
     OUTPUTTYPE_UNDEFINED = 0,
@@ -346,7 +358,7 @@ static int ctrlPrintError(com::ErrorInfo &errorInfo)
         }
         return VERR_GENERAL_FAILURE; /** @todo */
     }
-    AssertMsgFailedReturn(("Object has indicated no error!?\n"),
+    AssertMsgFailedReturn(("Object has indicated no error (%Rrc)!?\n", errorInfo.getResultCode()),
                           VERR_INVALID_PARAMETER);
 }
 
@@ -1608,11 +1620,11 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--mode",                'm',         RTGETOPT_REQ_UINT32  },
-        { "--parents",             'P',         RTGETOPT_REQ_NOTHING },
-        { "--password",            'p',         RTGETOPT_REQ_STRING  },
-        { "--username",            'u',         RTGETOPT_REQ_STRING  },
-        { "--verbose",             'v',         RTGETOPT_REQ_NOTHING }
+        { "--mode",                'm',                             RTGETOPT_REQ_UINT32  },
+        { "--parents",             'P',                             RTGETOPT_REQ_NOTHING },
+        { "--password",            GETOPTDEF_MKDIR_PASSWORD,        RTGETOPT_REQ_STRING  },
+        { "--username",            GETOPTDEF_MKDIR_USERNAME,        RTGETOPT_REQ_STRING  },
+        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
@@ -1644,11 +1656,11 @@ static int handleCtrlCreateDirectory(ComPtr<IGuest> guest, HandlerArg *pArg)
                 fFlags |= DirectoryCreateFlag_Parents;
                 break;
 
-            case 'p': /* Password */
+            case GETOPTDEF_MKDIR_PASSWORD: /* Password */
                 Utf8Password = ValueUnion.psz;
                 break;
 
-            case 'u': /* User name */
+            case GETOPTDEF_MKDIR_USERNAME: /* User name */
                 Utf8UserName = ValueUnion.psz;
                 break;
 
@@ -1713,18 +1725,15 @@ static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
 
-    /*
-     * Parse arguments.
-     *
-     * Note! No direct returns here, everyone must go thru the cleanup at the
-     *       end of this function.
-     */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        /** @todo Implement "--dereference/-L", and "--file-system/-f" later! */
-        { "--password",            'p',         RTGETOPT_REQ_STRING  },
-        { "--username",            'u',         RTGETOPT_REQ_STRING  },
-        { "--verbose",             'v',         RTGETOPT_REQ_NOTHING }
+        { "--dereference",         'L',                             RTGETOPT_REQ_NOTHING },
+        { "--file-system",         'f',                             RTGETOPT_REQ_NOTHING },
+        { "--format",              'c',                             RTGETOPT_REQ_STRING },
+        { "--password",            GETOPTDEF_STAT_PASSWORD,         RTGETOPT_REQ_STRING  },
+        { "--terse",               't',                             RTGETOPT_REQ_NOTHING },
+        { "--username",            GETOPTDEF_STAT_USERNAME,         RTGETOPT_REQ_STRING  },
+        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
@@ -1737,7 +1746,7 @@ static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
     Utf8Str Utf8Password;
 
     bool fVerbose = false;
-    DESTDIRMAP mapDirs;
+    DESTDIRMAP mapObjs;
 
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
@@ -1746,13 +1755,21 @@ static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
-            case 'p': /* Password */
+            case GETOPTDEF_STAT_PASSWORD: /* Password */
                 Utf8Password = ValueUnion.psz;
                 break;
 
-            case 'u': /* User name */
+            case GETOPTDEF_STAT_USERNAME: /* User name */
                 Utf8UserName = ValueUnion.psz;
                 break;
+
+            case 'L': /* Dereference */
+            case 'f': /* File-system */
+            case 'c': /* Format */
+            case 't': /* Terse */
+                return errorSyntax(USAGE_GUESTCONTROL, "Command \"%s\" not implemented yet!",
+                                   ValueUnion.psz);
+                break; /* Never reached. */
 
             case 'v': /* Verbose */
                 fVerbose = true;
@@ -1760,19 +1777,19 @@ static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                mapDirs[ValueUnion.psz]; /* Add element to check to map. */
+                mapObjs[ValueUnion.psz]; /* Add element to check to map. */
                 break;
             }
 
             default:
-                rcExit = RTGetOptPrintError(ch, &ValueUnion);
-                break;
+                return RTGetOptPrintError(ch, &ValueUnion);
+                break; /* Never reached. */
         }
     }
 
-    uint32_t cDirs = mapDirs.size();
-    if (rcExit == RTEXITCODE_SUCCESS && !cDirs)
-        rcExit = errorSyntax(USAGE_GUESTCONTROL, "No element to check specified!");
+    uint32_t cObjs = mapObjs.size();
+    if (rcExit == RTEXITCODE_SUCCESS && !cObjs)
+        rcExit = errorSyntax(USAGE_GUESTCONTROL, "No element(s) to check specified!");
 
     if (rcExit == RTEXITCODE_SUCCESS && Utf8UserName.isEmpty())
         rcExit = errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
@@ -1784,8 +1801,8 @@ static int handleCtrlStat(ComPtr<IGuest> guest, HandlerArg *pArg)
          */
         HRESULT hrc = S_OK;
 
-        DESTDIRMAPITER it = mapDirs.begin();
-        while (it != mapDirs.end())
+        DESTDIRMAPITER it = mapObjs.begin();
+        while (it != mapObjs.end())
         {
             if (fVerbose)
                 RTPrintf("Checking for element \"%s\" ...\n", it->first.c_str());

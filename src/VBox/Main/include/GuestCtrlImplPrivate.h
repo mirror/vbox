@@ -1,6 +1,6 @@
 /** @file
  *
- * VirtualBox guest execution control private data definitions
+ * VirtualBox Guest Control - Private data definitions / classes.
  */
 
 /*
@@ -32,13 +32,16 @@ using namespace com;
 using namespace guestControl;
 #endif
 
+class Guest;
+class Progress;
+
 /** Structure representing the "value" side of a "key=value" pair. */
 typedef struct VBOXGUESTCTRL_STREAM_PAIR
 {
     char *pszValue;
 } VBOXGUESTCTRL_STREAM_PAIR, *PVBOXGUESTCTRL_STREAM_PAIR;
 
-/** Map containing "key=value" pairs of a stream object. */
+/** Map containing "key=value" pairs of a guest process stream. */
 typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAM_PAIR > GuestCtrlStreamPairs;
 typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAM_PAIR >::iterator GuestCtrlStreamPairsIter;
 typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAM_PAIR >::const_iterator GuestCtrlStreamPairsIterConst;
@@ -66,9 +69,7 @@ public:
 
     size_t GetNumPairs();
 
-    uint32_t GetOffsetBuffer();
-
-    uint32_t GetOffsetParser();
+    uint32_t GetOffset();
 
     const char* GetString(const char *pszKey);
 
@@ -76,7 +77,7 @@ public:
 
     uint32_t GetUInt32(const char *pszKey);
 
-    int Parse();
+    int ParseBlock();
 
 protected:
 
@@ -87,11 +88,49 @@ protected:
     /** Currently used size of allocated internal stream buffer. */
     uint32_t m_cbSize;
     /** Current offset within the internal stream buffer. */
-    uint32_t m_cbOffsetBuffer;
-    /** Current parser offset. */
-    uint32_t m_cbOffsetParser;
+    uint32_t m_cbOffset;
     /** Internal stream buffer. */
     BYTE *m_pbBuffer;
+};
+
+struct GuestTask
+{
+    enum TaskType
+    {
+        /** Copies a file from host to the guest. */
+        TaskType_CopyFileToGuest   = 50,
+        /** Copies a file from guest to the host. */
+        TaskType_CopyFileFromGuest = 55,
+        /** Update Guest Additions by directly copying the required installer
+         *  off the .ISO file, transfer it to the guest and execute the installer
+         *  with system privileges. */
+        TaskType_UpdateGuestAdditions = 100
+    };
+
+    GuestTask(TaskType aTaskType, Guest *aThat, Progress *aProgress);
+
+    virtual ~GuestTask();
+
+    int startThread();
+
+    static int taskThread(RTTHREAD aThread, void *pvUser);
+    static int uploadProgress(unsigned uPercent, void *pvUser);
+    static HRESULT setProgressErrorInfo(HRESULT hr,
+                                        ComObjPtr<Progress> pProgress, const char * pszText, ...);
+    static HRESULT setProgressErrorInfo(HRESULT hr,
+                                        ComObjPtr<Progress> pProgress, ComObjPtr<Guest> pGuest);
+
+    TaskType taskType;
+    Guest *pGuest;
+    ComObjPtr<Progress> progress;
+    HRESULT rc;
+
+    /* Task data. */
+    Utf8Str strSource;
+    Utf8Str strDest;
+    Utf8Str strUserName;
+    Utf8Str strPassword;
+    ULONG   uFlags;
 };
 #endif // ____H_GUESTIMPLPRIVATE
 

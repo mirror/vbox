@@ -143,7 +143,7 @@ int main()
         int iResult = stream.AddData((BYTE*)aTests[iTest].pbData, aTests[iTest].cbData);
         if (RT_SUCCESS(iResult))
         {
-            iResult = stream.Parse();
+            iResult = stream.ParseBlock();
             if (iResult != aTests[iTest].iResult)
             {
                 RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
@@ -154,10 +154,10 @@ int main()
                 RTTestFailed(hTest, "\tMap has %u elements, expected %u",
                              stream.GetNumPairs(), aTests[iTest].uMapElements);
             }
-            else if (stream.GetOffsetParser() != aTests[iTest].uOffsetAfter)
+            else if (stream.GetOffset() != aTests[iTest].uOffsetAfter)
             {
                 RTTestFailed(hTest, "\tOffset %u wrong, expected %u",
-                             stream.GetOffsetParser(), aTests[iTest].uOffsetAfter);
+                             stream.GetOffset(), aTests[iTest].uOffsetAfter);
             }
             else if (iResult == VERR_MORE_DATA)
             {
@@ -191,7 +191,7 @@ int main()
 
             do
             {
-                iResult = stream.Parse();
+                iResult = stream.ParseBlock();
                 RTTestIPrintf(RTTESTLVL_DEBUG, "\tReturned with %Rrc\n", iResult);
                 if (   iResult == VINF_SUCCESS
  	                || iResult == VERR_MORE_DATA)
