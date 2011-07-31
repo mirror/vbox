@@ -1493,6 +1493,15 @@ ResumeExecution:
     SVM_ASSERT_SEL_GRANULARITY(gs);
 #undef  SVM_ASSERT_SEL_GRANULARITY
 
+    /*
+     * Correct the hidden SS DPL field. It can be wrong on certain CPUs
+     * sometimes (seen it on AMD Fusion APUs with 64bit guests). The CPU
+     * always uses the CPL field in the VMCB instead of the DPL in the hidden
+     * SS (chapter 15.5.1 Basic operation).
+     */
+    Assert(!(pVMCB->guest.u8CPL & ~0x3));
+    pCtx->ssHid.Attr.n.u2Dpl = pVMCB->guest.u8CPL & 0x3;
+
     /* Remaining guest CPU context: TR, IDTR, GDTR, LDTR; must sync everything otherwise we can get out of sync when jumping to ring 3. */
     SVM_READ_SELREG(LDTR, ldtr);
     SVM_READ_SELREG(TR, tr);
