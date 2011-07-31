@@ -162,6 +162,10 @@ BOOL WINAPI wglMakeCurrent_prox( HDC hdc, HGLRC hglrc )
 {
     ContextInfo *context;
     WindowInfo *window;
+    BOOL ret;
+
+    crHashtableLock(stub.windowTable);
+    crHashtableLock(stub.contextTable);
 
     context = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) hglrc);
     window = stubGetWindowInfo(hdc);
@@ -171,7 +175,12 @@ BOOL WINAPI wglMakeCurrent_prox( HDC hdc, HGLRC hglrc )
         crWarning("wglMakeCurrent got unexpected hglrc 0x%x", hglrc);
     }
 
-    return stubMakeCurrent( window, context );
+    ret = stubMakeCurrent( window, context );
+
+    crHashtableUnlock(stub.contextTable);
+    crHashtableUnlock(stub.windowTable);
+
+    return ret;
 }
 
 HGLRC WINAPI wglGetCurrentContext_prox( void )
