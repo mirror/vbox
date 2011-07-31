@@ -148,6 +148,12 @@ crServerDispatchWindowDestroy( GLint window )
     CRClientNode *pNode;
     int found=false;
 
+    if (!window)
+    {
+        crWarning("Unexpected attempt to delete default mural, ignored!");
+        return;
+    }
+
     mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
     if (!mural) {
          crWarning("CRServer: invalid window %d passed to WindowDestroy()", window);
