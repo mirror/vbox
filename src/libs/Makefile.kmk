@@ -50,7 +50,8 @@ endif
 
 # OpenSSL.
 if !defined(VBOX_ONLY_SDK) \
- && "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
+ && (   "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" \
+     || defined(VBOX_WITH_EXTPACK_PUEL))
  include $(PATH_SUB_CURRENT)/openssl-0.9.8p/Makefile.kmk
 endif
 
