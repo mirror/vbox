@@ -636,11 +636,14 @@ ifdef VBOX_WITH_WEBSERVICES
  	MacOS/vboxwebsrv
 endif
 
+VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS = \
+	MacOS/vmstarter \
+	MacOS/vbox-img
+
 VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS = \
 	MacOS/VMMR0.r0 \
 	MacOS/VBoxDDR0.r0 \
-	MacOS/VBoxDD2R0.r0 \
-	MacOS/vmstarter
+	MacOS/VBoxDD2R0.r0
 
 VBOX_DI_VBAPP_OTHER_BINS = \
 	MacOS/VMMGC.gc \
@@ -720,7 +723,7 @@ endif
 $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_DESCRIPTION_PLIST)) \
-		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES)\
+		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES)\
 			,$(call VBOX_DI_FN_DEP_BOTH,VirtualBox.app/Contents/$(f)) ) \
 		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS.x86) $(VBOX_DI_VBAPP_MISC_FILES.x86)\
 			,$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/$(f)) ) \
@@ -791,7 +794,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
                 $(if-expr defined(VBOX_WITH_JXPCOM), \
                         $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/sdk/bindings/xpcom/java,) \
 		$(addprefix $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/,$(dir \
-			$(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES) \
+			$(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES) \
 			$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) || "$(KBUILD_TARGET_ARCH)" == "amd64",$(VBOX_DI_VBAPP_DYLIBS.amd64) $(VBOX_DI_VBAPP_MISC_FILES.amd64),) \
 			$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) || "$(KBUILD_TARGET_ARCH)" == "x86",  $(VBOX_DI_VBAPP_DYLIBS.x86)   $(VBOX_DI_VBAPP_MISC_FILES.x86),) \
 			))\
@@ -859,12 +862,26 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 			$(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin) \
 			$(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin) \
 			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) \
+	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-x86$(NLTAB) \
 		 $(INSTALL) -m 0644 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-amd64$(NLTAB))
 else
 	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-$(KBUILD_TARGET_ARCH)$(NLTAB))
+endif
+	@# Copy the other exec binaries.
+ifdef VBOX_WITH_COMBINED_PACKAGE
+	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) \
+		,$(VBOX_DI_LIPO) -create \
+			$(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin) \
+			$(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin) \
+			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
+	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) \
+		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-x86$(NLTAB) \
+		 $(INSTALL) -m 0755 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-amd64$(NLTAB))
+else
+	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) \
+		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-$(KBUILD_TARGET_ARCH)$(NLTAB))
 endif
 	@# Copy the binaries.
 ifdef VBOX_WITH_COMBINED_PACKAGE
@@ -1033,6 +1050,8 @@ ifdef VBOX_WITH_WEBSERVICES
 endif
 	$(APPEND) $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxBalloonCtrl '#!/bin/bash'
 	$(APPEND) $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxBalloonCtrl 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxBalloonCtrl "$$@"'
+	$(APPEND) $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/vbox-img '#!/bin/bash'
+	$(APPEND) $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/vbox-img 'exec /Applications/VirtualBox.app/Contents/MacOS/vbox-img "$$@"'
 	@# Set the correct owners and file permissions.
 	sudo chmod 0755 $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/*
 	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root
