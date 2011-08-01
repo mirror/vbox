@@ -11237,6 +11237,9 @@ no_serial:
 
 rom_checksum:
   push ax
+#ifdef NO_ROM_CHECKSUM
+  xor  ax, ax
+#endif
   push bx
   push cx
   xor  ax, ax
@@ -11251,6 +11254,7 @@ checksum_loop:
   and  al, #0xff
   pop  cx
   pop  bx
+#endif
   pop  ax
   ret
 
@@ -12218,7 +12222,7 @@ int15_handler32:
 pmode_IDT_info:
 dw 0x0000  ;; limit 15:00
 dw 0x0000  ;; base  15:00
-db 0x0f    ;; base  23:16
+dw 0x0f    ;; base  23:16
 
 ;; Real mode IDT descriptor
 ;;
@@ -12229,7 +12233,7 @@ db 0x0f    ;; base  23:16
 rmode_IDT_info:
 dw 0x03ff  ;; limit 15:00
 dw 0x0000  ;; base  15:00
-db 0x00    ;; base  23:16
+dw 0x00    ;; base  23:16
 
 ;;
 ;; Handler for unexpected hardware interrupts
