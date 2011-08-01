@@ -47,7 +47,9 @@ enum
     /** Lower end */
     MOUSE_RANGE_LOWER = 0,
     /** Higher end */
-    MOUSE_RANGE_UPPER = 0xFFFF
+    MOUSE_RANGE_UPPER = 0xFFFF,
+    /** Full range */
+    MOUSE_RANGE = MOUSE_RANGE_UPPER - MOUSE_RANGE_LOWER
 };
 /** @} */
 
@@ -500,16 +502,16 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
         if (FAILED(rc))
             return rc;
 
-        *pcX = displayWidth ? ((x - 1) * MOUSE_RANGE_UPPER) / (LONG) displayWidth: 0;
-        *pcY = displayHeight ? ((y - 1) * MOUSE_RANGE_UPPER) / (LONG) displayHeight: 0;
+        *pcX = displayWidth ? (x * MOUSE_RANGE - MOUSE_RANGE / 2) / (LONG) displayWidth: 0;
+        *pcY = displayHeight ? (y * MOUSE_RANGE - MOUSE_RANGE / 2) / (LONG) displayHeight: 0;
     }
     else
     {
         int32_t x1, y1, x2, y2;
         /* Takes the display lock */
         pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
-        *pcX = x1 < x2 ? (x - 1 - x1) * MOUSE_RANGE_UPPER / (x2 - x1 - 1) : 0;
-        *pcY = y1 < y2 ? (y - 1 - y1) * MOUSE_RANGE_UPPER / (y2 - y1 - 1) : 0;
+        *pcX = x1 < x2 ? ((x - x1) * MOUSE_RANGE - MOUSE_RANGE / 2) / (x2 - x1) : 0;
+        *pcY = y1 < y2 ? ((y - y1) * MOUSE_RANGE - MOUSE_RANGE / 2) / (y2 - y1) : 0;
         if (   *pcX < MOUSE_RANGE_LOWER || *pcX > MOUSE_RANGE_UPPER
             || *pcY < MOUSE_RANGE_LOWER || *pcY > MOUSE_RANGE_UPPER)
             if (pfValid)
