@@ -2438,7 +2438,7 @@ SDK_VBOX_OPENSSL_LIBS ?= \
 	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 # Build entire openssl library, not just the minimal subset.
-if1of ($(KBUILD_TARGET), linux solaris)
+ifn1of ($(KBUILD_TARGET), win) ## @todo elimiate this stuff, not worth saving 5 seconds of build time.
  VBOX_OPENSSL_ALL = 1
 endif
 
