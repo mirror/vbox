@@ -1093,7 +1093,7 @@ HRESULT Guest::executeProcessResult(const char *pszCommand, const char *pszUser,
 
 STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                   IN_BSTR aUserName, IN_BSTR aPassword,
+                                   IN_BSTR Username, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress)
 {
 /** @todo r=bird: Eventually we should clean up all the timeout parameters
@@ -1108,22 +1108,159 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
     CheckComArgOutPointerValid(aProgress);
 
     /* Do not allow anonymous executions (with system rights). */
-    if (RT_UNLIKELY((aUserName) == NULL || *(aUserName) == '\0'))
+    if (RT_UNLIKELY((Username) == NULL || *(Username) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
 
     LogRel(("Executing guest process \"%s\" as user \"%s\" ...\n",
-            Utf8Str(aCommand).c_str(), Utf8Str(aUserName).c_str()));
+            Utf8Str(aCommand).c_str(), Utf8Str(Username).c_str()));
 
     return executeProcessInternal(aCommand, aFlags, ComSafeArrayInArg(aArguments),
                                   ComSafeArrayInArg(aEnvironment),
-                                  aUserName, aPassword, aTimeoutMS, aPID, aProgress, NULL /* rc */);
+                                  Username, aPassword, aTimeoutMS, aPID, aProgress, NULL /* rc */);
 #endif
 }
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+/**
+ * Executes and waits for an internal tool (that is, a tool which is integrated into
+ * VBoxService, beginning with "vbox_" (e.g. "vbox_ls")).
+ *
+ * @return  HRESULT
+ * @param   aTool                   Name of tool to execute.
+ * @param   aDescription            Friendly description of the operation.
+ * @param   aFlags                  Execution flags.
+ * @param   Username               Username to execute tool under.
+ * @param   aPassword               The user's password.
+ * @param   aProgress               Pointer which receives the tool's progress object. Optional.
+ * @param   aPID                    Pointer which receives the tool's PID. Optional.
+ */
+HRESULT Guest::executeAndWaitForTool(IN_BSTR aTool, IN_BSTR aDescription,
+                                     ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
+                                     IN_BSTR Username, IN_BSTR aPassword,
+                                     IProgress **aProgress, ULONG *aPID)
+{
+    ComPtr<IProgress> progressTool;
+    ULONG uPID;
+
+    HRESULT rc = ExecuteProcess(aTool,
+                                ExecuteProcessFlag_Hidden,
+                                aArguments, aEnvironment,
+                                Username, aPassword,
+                                5 * 1000 /* Wait 5s for getting the process started. */,
+                                &uPID, progressTool.asOutParam());
+    if (SUCCEEDED(rc))
+    {
+        /* Wait for process to exit ... */
+        rc = progressTool->WaitForCompletion(-1);
+        if (FAILED(rc)) return rc;
+
+        BOOL fCompleted = FALSE;
+        BOOL fCanceled = FALSE;
+        progressTool->COMGETTER(Completed)(&fCompleted);
+        if (!fCompleted)
+            progressTool->COMGETTER(Canceled)(&fCanceled);
+
+        if (fCompleted)
+        {
+            ExecuteProcessStatus_T retStatus;
+            ULONG uRetExitCode, uRetFlags;
+            if (SUCCEEDED(rc))
+            {
+                rc = GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
+                if (SUCCEEDED(rc))
+                {
+                    if (!uRetExitCode)
+                    {
+                        rc = setError(VBOX_E_IPRT_ERROR,
+                                      tr("Error %u occurred while %s"),
+                                      uRetExitCode, Utf8Str(aDescription).c_str());
+                    }
+                    else
+                    {
+                        if (aProgress)
+                        {
+                            /* Return the progress to the caller. */
+                            progressTool.queryInterfaceTo(aProgress);
+                        }
+                        if (aPID)
+                            *aPID = uPID;
+                    }
+                }
+            }
+        }
+        else if (fCanceled)
+        {
+            rc = setError(VBOX_E_IPRT_ERROR,
+                          tr("%s was aborted"), aDescription);
+        }
+        else
+            AssertReleaseMsgFailed(("Operation \"%s\" neither completed nor canceled!?\n",
+                                    Utf8Str(aDescription).c_str()));
+    }
+
+    return rc;
+}
+
+HRESULT Guest::executeCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamObjects)
+{
+    SafeArray<BYTE> aOutputData;
+    ULONG cbOutputData = 0;
+
+    int rc = S_OK;
+    GuestProcessStream guestStream;
+
+    for (;;)
+    {
+        rc = this->GetProcessOutput(aPID, ProcessOutputFlag_None,
+                                    10 * 1000 /* Timeout in ms */,
+                                    _64K, ComSafeArrayAsOutParam(aOutputData));
+        if (   SUCCEEDED(rc)
+            && aOutputData.size())
+        {
+            int vrc = guestStream.AddData(aOutputData.raw(), aOutputData.size());
+            if (RT_UNLIKELY(RT_FAILURE(vrc)))
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              tr("Error while adding guest output to stream buffer (%Rrc)"), vrc);
+        }
+        else /* No more output! */
+            break;
+    }
+
+    if (SUCCEEDED(rc))
+    {
+        GuestProcessStreamBlock curPairs;
+        int vrc = guestStream.ParseBlock(curPairs);
+        if (   RT_SUCCESS(vrc)
+            || vrc == VERR_MORE_DATA)
+        {
+            /** @todo Catch exceptions! */
+            if (curPairs.GetCount())
+                streamObjects.push_back(curPairs);
+        }
+        else
+            rc = setError(VBOX_E_IPRT_ERROR,
+                          tr("Error while parsing guest output (%Rrc)"), vrc);
+    }
+
+    return rc;
+}
+
+/**
+ * Does the actual guest process execution, internal function.
+ *
+ * @return  HRESULT
+ * @param   aCommand                Command line to execute.
+ * @param   aFlags                  Execution flags.
+ * @param   Username                Username to execute the process with.
+ * @param   aPassword               The user's password.
+ * @param   aTimeoutMS              Timeout (in ms) to wait for the execution operation.
+ * @param   aPID                    Pointer that receives the guest process' PID.
+ * @param   aProgress               Pointer that receives the guest process' progress object.
+ * @param   pRC                     Pointer that receives the internal IPRT return code. Optional.
+ */
 HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                       ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                      IN_BSTR aUserName, IN_BSTR aPassword,
+                                      IN_BSTR Username, IN_BSTR aPassword,
                                       ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC)
 {
 /** @todo r=bird: Eventually we should clean up all the timeout parameters
@@ -1197,7 +1334,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
             papszArgv[uNumArgs] = NULL;
         }
 
-        Utf8Str Utf8UserName(aUserName);
+        Utf8Str Utf8UserName(Username);
         Utf8Str Utf8Password(aPassword);
         if (RT_SUCCESS(vrc))
         {
@@ -1777,7 +1914,7 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
 }
 
 STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
-                                  IN_BSTR aUserName, IN_BSTR aPassword,
+                                  IN_BSTR Username, IN_BSTR aPassword,
                                   ULONG aFlags, IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -1785,7 +1922,7 @@ STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
 #else /* VBOX_WITH_GUEST_CONTROL */
     CheckComArgStrNotEmptyOrNull(aSource);
     CheckComArgStrNotEmptyOrNull(aDest);
-    CheckComArgStrNotEmptyOrNull(aUserName);
+    CheckComArgStrNotEmptyOrNull(Username);
     CheckComArgStrNotEmptyOrNull(aPassword);
     CheckComArgOutPointerValid(aProgress);
 
@@ -1827,7 +1964,7 @@ STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
          * aDest reflects the full path on the guest. */
         task->strSource   = (Utf8Str(aSource));
         task->strDest     = (Utf8Str(aDest));
-        task->strUserName = (Utf8Str(aUserName));
+        task->strUserName = (Utf8Str(Username));
         task->strPassword = (Utf8Str(aPassword));
         task->uFlags      = aFlags;
 
@@ -1852,7 +1989,7 @@ STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
 }
 
 STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
-                                IN_BSTR aUserName, IN_BSTR aPassword,
+                                IN_BSTR Username, IN_BSTR aPassword,
                                 ULONG aFlags, IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -1860,7 +1997,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 #else /* VBOX_WITH_GUEST_CONTROL */
     CheckComArgStrNotEmptyOrNull(aSource);
     CheckComArgStrNotEmptyOrNull(aDest);
-    CheckComArgStrNotEmptyOrNull(aUserName);
+    CheckComArgStrNotEmptyOrNull(Username);
     CheckComArgStrNotEmptyOrNull(aPassword);
     CheckComArgOutPointerValid(aProgress);
 
@@ -1902,7 +2039,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
          * aDest reflects the full path on the guest. */
         task->strSource   = (Utf8Str(aSource));
         task->strDest     = (Utf8Str(aDest));
-        task->strUserName = (Utf8Str(aUserName));
+        task->strUserName = (Utf8Str(Username));
         task->strPassword = (Utf8Str(aPassword));
         task->uFlags      = aFlags;
 

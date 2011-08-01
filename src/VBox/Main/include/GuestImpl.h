@@ -86,28 +86,28 @@ public:
     // IGuest methods
     STDMETHOD(GetFacilityStatus)(AdditionsFacilityType_T aType, LONG64 *aTimestamp, AdditionsFacilityStatus_T *aStatus);
     STDMETHOD(GetAdditionsStatus)(AdditionsRunLevelType_T aLevel, BOOL *aActive);
-    STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
+    STDMETHOD(SetCredentials)(IN_BSTR aUsername, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
     // Process execution
     STDMETHOD(ExecuteProcess)(IN_BSTR aCommand, ULONG aFlags,
                               ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                              IN_BSTR aUserName, IN_BSTR aPassword,
+                              IN_BSTR aUsername, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
     STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, LONG64 aSize, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(SetProcessInput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ComSafeArrayIn(BYTE, aData), ULONG *aBytesWritten);
     STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ExecuteProcessStatus_T *aStatus);
     // File copying
-    STDMETHOD(CopyFromGuest)(IN_BSTR aSource, IN_BSTR aDest, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aFlags, IProgress **aProgress);
-    STDMETHOD(CopyToGuest)(IN_BSTR aSource, IN_BSTR aDest, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aFlags, IProgress **aProgress);
+    STDMETHOD(CopyFromGuest)(IN_BSTR aSource, IN_BSTR aDest, IN_BSTR aUsername, IN_BSTR aPassword, ULONG aFlags, IProgress **aProgress);
+    STDMETHOD(CopyToGuest)(IN_BSTR aSource, IN_BSTR aDest, IN_BSTR aUsername, IN_BSTR aPassword, ULONG aFlags, IProgress **aProgress);
     // Directory handling
     STDMETHOD(DirectoryClose)(ULONG aHandle);
-    STDMETHOD(DirectoryCreate)(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aMode, ULONG aFlags);
+    STDMETHOD(DirectoryCreate)(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, ULONG aMode, ULONG aFlags);
     STDMETHOD(DirectoryOpen)(IN_BSTR aDirectory, IN_BSTR aFilter,
-                             ULONG aFlags, IN_BSTR aUserName, IN_BSTR aPassword, ULONG *aHandle);
+                             ULONG aFlags, IN_BSTR aUsername, IN_BSTR aPassword, ULONG *aHandle);
     STDMETHOD(DirectoryRead)(ULONG aHandle, IGuestDirEntry **aDirEntry);
     // File handling
-    STDMETHOD(FileExists)(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists);
-    STDMETHOD(FileQuerySize)(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, LONG64 *aSize);
+    STDMETHOD(FileExists)(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists);
+    STDMETHOD(FileQuerySize)(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize);
     // Misc stuff
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
@@ -130,18 +130,23 @@ public:
     }
 
 # ifdef VBOX_WITH_GUEST_CONTROL
-    HRESULT directoryCreateInternal(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword,
+    HRESULT directoryCreateInternal(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword,
                                     ULONG aMode, ULONG aFlags, int *pRC);
     HRESULT directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
                                   ULONG aFlags,
-                                  IN_BSTR aUserName, IN_BSTR aPassword,
+                                  IN_BSTR aUsername, IN_BSTR aPassword,
                                   ULONG *aHandle, int *pRC);
+    HRESULT executeAndWaitForTool(IN_BSTR aTool, IN_BSTR aDescription,
+                                  ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
+                                  IN_BSTR aUsername, IN_BSTR aPassword,
+                                  IProgress **aProgress, ULONG *aPID);
+    HRESULT executeCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamObjects);
     HRESULT executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                   IN_BSTR aUserName, IN_BSTR aPassword,
+                                   IN_BSTR aUsername, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
-    HRESULT fileExistsInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists, int *pRC);
-    HRESULT fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, LONG64 *aSize, int *pRC);
+    HRESULT fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists, int *pRC);
+    HRESULT fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize, int *pRC);
 
     // Guest control dispatcher.
     /** Static callback for handling guest notifications. */

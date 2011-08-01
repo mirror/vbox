@@ -143,16 +143,17 @@ int main()
         int iResult = stream.AddData((BYTE*)aTests[iTest].pbData, aTests[iTest].cbData);
         if (RT_SUCCESS(iResult))
         {
-            iResult = stream.ParseBlock();
+            GuestProcessStreamBlock block;
+            iResult = stream.ParseBlock(block);
             if (iResult != aTests[iTest].iResult)
             {
                 RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
                              iResult, aTests[iTest].iResult);
             }
-            else if (stream.GetNumPairs() != aTests[iTest].uMapElements)
+            else if (block.GetCount() != aTests[iTest].uMapElements)
             {
                 RTTestFailed(hTest, "\tMap has %u elements, expected %u",
-                             stream.GetNumPairs(), aTests[iTest].uMapElements);
+                             block.GetCount(), aTests[iTest].uMapElements);
             }
             else if (stream.GetOffset() != aTests[iTest].uOffsetAfter)
             {
@@ -191,20 +192,19 @@ int main()
 
             do
             {
-                iResult = stream.ParseBlock();
+                GuestProcessStreamBlock block;
+                iResult = stream.ParseBlock(block);
                 RTTestIPrintf(RTTESTLVL_DEBUG, "\tReturned with %Rrc\n", iResult);
                 if (   iResult == VINF_SUCCESS
  	                || iResult == VERR_MORE_DATA)
                 {
                     /* Only count block which have at least one pair. */
-                    if (stream.GetNumPairs())
-                    {
+                    if (block.GetCount())
                         uNumBlocks++;
-                        stream.ClearPairs();
-                    }
                 }
                 if (uNumBlocks > 32)
                     break; /* Give up if unreasonable big. */
+                block.Clear();
             } while (iResult == VERR_MORE_DATA);
 
             if (iResult != aTests2[iTest].iResult)
