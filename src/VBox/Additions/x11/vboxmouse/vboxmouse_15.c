@@ -131,7 +131,9 @@ VBoxInit(DeviceIntPtr device)
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                axis_labels[0],
 # endif
-                               0 /* min X */, 65536 /* max X */,
+/* The X server does (to my mind) incorrect rounding, hence the strange values.
+ */
+                               -32 /* min X */, 65503 /* max X */,
                                10000, 0, 10000
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
                                , Absolute
@@ -142,7 +144,9 @@ VBoxInit(DeviceIntPtr device)
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                axis_labels[1],
 # endif
-                               0 /* min Y */, 65536 /* max Y */,
+/* The X server does (to my mind) incorrect rounding, hence the strange values.
+ */
+                               -32 /* min Y */, 65503 /* max Y */,
                                10000, 0, 10000
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
                                , Absolute
