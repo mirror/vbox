@@ -9,6 +9,10 @@
     <itemizedlist>
 
       <listitem>
+        <para>GUI: added linked clone support</para>
+      </listitem>
+
+      <listitem>
         <para>Guest control execution: implemented copying single files from
           guest to the host (directories and filters not supported yet)</para>
       </listitem>
@@ -25,8 +29,12 @@
       </listitem>
 
       <listitem>
-        <para>Main: made the path comparison OS independent when images are
+        <para>VBoxSVC: made the path comparison OS independent when images are
           registered (bug #9303)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxSVC: several fixes for cloning of VMs</para>
       </listitem>
 
       <listitem>
