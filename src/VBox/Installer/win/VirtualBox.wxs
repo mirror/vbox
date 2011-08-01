@@ -427,7 +427,7 @@
                               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
 
                         <!-- Misc tools -->
-                        <!-- We only ship vbox-img.exe in a 32-bit binary -- a 64-bit one
+                        <!-- We only ship vbox-img.exe in a 32-bit binary: A 64-bit one
                              is not required. -->
                         <File Id="file_VBoxImg.exe" Name="vbox-img.exe" DiskId="$(var.Property_DiskIdCommon)"
                               Source="$(env.PATH_OUT)\bin\vbox-img.exe"/>
