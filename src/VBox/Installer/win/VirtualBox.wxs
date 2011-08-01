@@ -427,10 +427,6 @@
                               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
 
                         <!-- Misc tools -->
-                        <!-- We only ship vbox-img.exe in a 32-bit binary: A 64-bit one
-                             is not required. -->
-                        <File Id="file_VBoxImg.exe" Name="vbox-img.exe" DiskId="$(var.Property_DiskIdCommon)"
-                              Source="$(env.PATH_OUT)\bin\vbox-img.exe"/>
                         <File Id="file_VBoxNetDHCP.exe" Name="VBoxNetDHCP.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.exe"/>
 <?if $(env.VBOX_WITH_EXTPACK) = "yes" ?>
