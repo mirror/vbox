@@ -70,6 +70,7 @@ VBOX_PUEL_MANGLED_NAME := Oracle_VM_VirtualBox_Extension_Pack
 ifndef VBOX_WITH_NEW_LAYOUT
  PATH_INS             = $(PATH_OUT)/dist
  PATH_STAGE           = $(PATH_OUT)
+ INST_DEBUG          := stage/debug/
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
