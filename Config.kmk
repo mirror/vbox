@@ -2372,6 +2372,16 @@ VBOX_EDIT_INF64_FN = $(SED) \
 	$(1)
 
 #
+# Adjust kBuild defaults.
+#
+kBuildGlobalDefaults_DEBUG_NOSTAGE.win = true
+kBuildGlobalDefaults_DEBUG_NOSTAGE.os2 = true
+if1of ($(KBUILD_TARGET), win)
+ kBuildGlobalDefaults_LD_DEBUG = split
+endif
+
+
+#
 # Default prefixes and suffixes.
 #
 VBOX_PREF_LIB =
