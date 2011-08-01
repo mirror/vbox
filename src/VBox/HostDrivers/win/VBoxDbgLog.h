@@ -60,10 +60,20 @@
 /* we can not print paged strings to RT logger, do it this way */
 #define _LOGMSG_STR(_logger, _a, _f) do {\
         int _i = 0; \
+        _logger(("\"")); \
         for (;(_a)[_i];++_i) { \
             _logger(("%"_f, (_a)[_i])); \
         }\
-        _logger(("\n")); \
+        _logger(("\"\n")); \
+    } while (0)
+
+#define _LOGMSG_USTR(_logger, _a) do {\
+        int _i = 0; \
+        _logger(("\"")); \
+        for (;_i<(_a)->Length/2;++_i) { \
+            _logger(("%c", (_a)->Buffer[_i])); \
+        }\
+        _logger(("\"\n")); \
     } while (0)
 
 #define WARN_NOBP(_a)                                                          \
@@ -101,11 +111,17 @@
 #define LOG_STRW(_a) do {\
         _LOGMSG_STR(Log, _a, "c"); \
     } while (0)
+#define LOG_USTR(_a) do {\
+        _LOGMSG_USTR(Log, _a); \
+    } while (0)
 #define LOGREL_STRA(_a) do {\
         _LOGMSG_STR(LogRel, _a, "c"); \
     } while (0)
 #define LOGREL_STRW(_a) do {\
         _LOGMSG_STR(LogRel, _a, "c"); \
+    } while (0)
+#define LOGREL_USTR(_a) do {\
+        _LOGMSG_USTR(LogRel, _a); \
     } while (0)
 
 

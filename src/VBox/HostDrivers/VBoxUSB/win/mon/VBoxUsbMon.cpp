@@ -215,8 +215,8 @@ static PDRIVER_OBJECT vboxUsbMonHookFindHubDrvObj()
     LOG(("Search USB hub\n"));
     for (int i = 0; i < 16; i++)
     {
-        WCHAR           szwHubName[32];
-        char            szHubName[32];
+        WCHAR           szwHubName[32] = {};
+        char            szHubName[32] = {};
         ANSI_STRING     AnsiName;
         UNICODE_STRING  UnicodeName;
         PDEVICE_OBJECT  pHubDevObj;
@@ -245,7 +245,7 @@ static PDRIVER_OBJECT vboxUsbMonHookFindHubDrvObj()
                     && !RtlCompareUnicodeString(&szStandardHubName, &pHubDevObj->DriverObject->DriverName, TRUE /* case insensitive */))
                 {
                     LOG(("Associated driver"));
-                    LOG_STRW(pHubDevObj->DriverObject->DriverName.Buffer);
+                    LOG_USTR(&pHubDevObj->DriverObject->DriverName);
                     LOG(("pnp handler %p\n", pHubDevObj->DriverObject->MajorFunction[IRP_MJ_PNP]));
 
                     pDrvObj = pHubDevObj->DriverObject;
@@ -255,12 +255,12 @@ static PDRIVER_OBJECT vboxUsbMonHookFindHubDrvObj()
             }
             else
             {
-                WARN(("IoGetDeviceObjectPointer returned Status (0x%x) for %S", Status, szwHubName));
+                WARN(("IoGetDeviceObjectPointer returned Status (0x%x) for (%S)", Status, szwHubName));
             }
         }
         else
         {
-            WARN(("RtlAnsiStringToUnicodeString failed, Status (0x%x)", Status));
+            WARN(("RtlAnsiStringToUnicodeString failed, Status (0x%x) for Ansu name (%s)", Status, szHubName));
         }
     }
 
@@ -840,6 +840,9 @@ static NTSTATUS _stdcall VBoxUsbMonClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PFILE_OBJECT pFileObj = pStack->FileObject;
     Assert(pFileObj->FsContext);
     PVBOXUSBMONCTX pCtx = (PVBOXUSBMONCTX)pFileObj->FsContext;
+
+    LOG(("VBoxUsbMonClose"));
+
     NTSTATUS Status = vboxUsbMonContextClose(pCtx);
     if (Status != STATUS_SUCCESS)
     {
@@ -858,6 +861,7 @@ static NTSTATUS _stdcall VBoxUsbMonClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         {
             WARN(("ulPreventUnloadOn already set"));
         }
+        LOG(("success!!"));
         Status = STATUS_SUCCESS;
     }
     pFileObj->FsContext = NULL;
@@ -874,11 +878,11 @@ static NTSTATUS _stdcall VBoxUsbMonCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     PFILE_OBJECT pFileObj = pStack->FileObject;
     NTSTATUS Status;
 
-    LOG(("VBoxUSBMonCreate\n"));
+    LOG(("VBoxUSBMonCreate"));
 
     if (pStack->Parameters.Create.Options & FILE_DIRECTORY_FILE)
     {
-        WARN(("trying to open as a directory\n"));
+        WARN(("trying to open as a directory"));
         pIrp->IoStatus.Status = STATUS_NOT_A_DIRECTORY;
         pIrp->IoStatus.Information = 0;
         IoCompleteRequest(pIrp, IO_NO_INCREMENT);
@@ -895,7 +899,7 @@ static NTSTATUS _stdcall VBoxUsbMonCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     }
     else
     {
-        WARN(("vboxUsbMonContextCreate failed Status (0x%x)\n", Status));
+        WARN(("vboxUsbMonContextCreate failed Status (0x%x)", Status));
     }
 
     pIrp->IoStatus.Status = Status;
@@ -1243,7 +1247,8 @@ RT_C_DECLS_END
 NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 {
 #ifdef DEBUG_misha
-    RTLogGroupSettings(0, "+default.e.l.f.l2.l3");;
+    RTLogGroupSettings(0, "+default.e.l.f.l2.l3");
+    RTLogDestinations(0, "debugger");
 #endif
 
     LOG(("VBoxUSBMon::DriverEntry\n"));
