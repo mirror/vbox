@@ -23,7 +23,7 @@ NTSTATUS VBoxUsbHookInstall(PVBOXUSBHOOK_ENTRY pHook)
     KeAcquireSpinLock(&pHook->Lock, &Irql);
     if (pHook->fIsInstalled)
     {
-        AssertFailed();
+        WARN(("hook is marked installed, returning failure"));
         KeReleaseSpinLock(&pHook->Lock, Irql);
         return STATUS_UNSUCCESSFUL;
     }

@@ -30,6 +30,8 @@
 //#define VBOXUSBMON_DBG_NO_PNPHOOK
 #endif
 
+#define VBOX_DBG_LOG_NAME "USBMon"
+#include "../../../win/VBoxDbgLog.h"
 #include "../cmn/VBoxDrvTool.h"
 #include "../cmn/VBoxUsbTool.h"
 
