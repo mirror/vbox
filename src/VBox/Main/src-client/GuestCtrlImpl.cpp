@@ -1093,7 +1093,7 @@ HRESULT Guest::executeProcessResult(const char *pszCommand, const char *pszUser,
 
 STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                   IN_BSTR Username, IN_BSTR aPassword,
+                                   IN_BSTR aUsername, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress)
 {
 /** @todo r=bird: Eventually we should clean up all the timeout parameters
@@ -1108,46 +1108,47 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
     CheckComArgOutPointerValid(aProgress);
 
     /* Do not allow anonymous executions (with system rights). */
-    if (RT_UNLIKELY((Username) == NULL || *(Username) == '\0'))
+    if (RT_UNLIKELY((aUsername) == NULL || *(aUsername) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
 
     LogRel(("Executing guest process \"%s\" as user \"%s\" ...\n",
-            Utf8Str(aCommand).c_str(), Utf8Str(Username).c_str()));
+            Utf8Str(aCommand).c_str(), Utf8Str(aUsername).c_str()));
 
     return executeProcessInternal(aCommand, aFlags, ComSafeArrayInArg(aArguments),
                                   ComSafeArrayInArg(aEnvironment),
-                                  Username, aPassword, aTimeoutMS, aPID, aProgress, NULL /* rc */);
+                                  aUsername, aPassword, aTimeoutMS, aPID, aProgress, NULL /* rc */);
 #endif
 }
 
 #ifdef VBOX_WITH_GUEST_CONTROL
 /**
  * Executes and waits for an internal tool (that is, a tool which is integrated into
- * VBoxService, beginning with "vbox_" (e.g. "vbox_ls")).
+ * VBoxService, beginning with "vbox_" (e.g. "vbox_ls")) to finish its operation.
  *
  * @return  HRESULT
  * @param   aTool                   Name of tool to execute.
  * @param   aDescription            Friendly description of the operation.
  * @param   aFlags                  Execution flags.
- * @param   Username               Username to execute tool under.
+ * @param   aUsername               Username to execute tool under.
  * @param   aPassword               The user's password.
  * @param   aProgress               Pointer which receives the tool's progress object. Optional.
  * @param   aPID                    Pointer which receives the tool's PID. Optional.
  */
 HRESULT Guest::executeAndWaitForTool(IN_BSTR aTool, IN_BSTR aDescription,
                                      ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                     IN_BSTR Username, IN_BSTR aPassword,
+                                     IN_BSTR aUsername, IN_BSTR aPassword,
                                      IProgress **aProgress, ULONG *aPID)
 {
     ComPtr<IProgress> progressTool;
     ULONG uPID;
 
-    HRESULT rc = ExecuteProcess(aTool,
-                                ExecuteProcessFlag_Hidden,
-                                aArguments, aEnvironment,
-                                Username, aPassword,
-                                5 * 1000 /* Wait 5s for getting the process started. */,
-                                &uPID, progressTool.asOutParam());
+    HRESULT rc = this->ExecuteProcess(aTool,
+                                      ExecuteProcessFlag_Hidden,
+                                      ComSafeArrayInArg(aArguments),
+                                      ComSafeArrayInArg(aEnvironment),
+                                      aUsername, aPassword,
+                                      5 * 1000 /* Wait 5s for getting the process started. */,
+                                      &uPID, progressTool.asOutParam());
     if (SUCCEEDED(rc))
     {
         /* Wait for process to exit ... */
@@ -1260,7 +1261,7 @@ HRESULT Guest::executeCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamOb
  */
 HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                       ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                      IN_BSTR Username, IN_BSTR aPassword,
+                                      IN_BSTR aUsername, IN_BSTR aPassword,
                                       ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC)
 {
 /** @todo r=bird: Eventually we should clean up all the timeout parameters
@@ -1334,7 +1335,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
             papszArgv[uNumArgs] = NULL;
         }
 
-        Utf8Str Utf8UserName(Username);
+        Utf8Str Utf8UserName(aUsername);
         Utf8Str Utf8Password(aPassword);
         if (RT_SUCCESS(vrc))
         {
@@ -1914,7 +1915,7 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
 }
 
 STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
-                                  IN_BSTR Username, IN_BSTR aPassword,
+                                  IN_BSTR aUsername, IN_BSTR aPassword,
                                   ULONG aFlags, IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -1922,7 +1923,7 @@ STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
 #else /* VBOX_WITH_GUEST_CONTROL */
     CheckComArgStrNotEmptyOrNull(aSource);
     CheckComArgStrNotEmptyOrNull(aDest);
-    CheckComArgStrNotEmptyOrNull(Username);
+    CheckComArgStrNotEmptyOrNull(aUsername);
     CheckComArgStrNotEmptyOrNull(aPassword);
     CheckComArgOutPointerValid(aProgress);
 
@@ -1964,7 +1965,7 @@ STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
          * aDest reflects the full path on the guest. */
         task->strSource   = (Utf8Str(aSource));
         task->strDest     = (Utf8Str(aDest));
-        task->strUserName = (Utf8Str(Username));
+        task->strUserName = (Utf8Str(aUsername));
         task->strPassword = (Utf8Str(aPassword));
         task->uFlags      = aFlags;
 
@@ -1989,7 +1990,7 @@ STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
 }
 
 STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
-                                IN_BSTR Username, IN_BSTR aPassword,
+                                IN_BSTR aUsername, IN_BSTR aPassword,
                                 ULONG aFlags, IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -1997,7 +1998,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 #else /* VBOX_WITH_GUEST_CONTROL */
     CheckComArgStrNotEmptyOrNull(aSource);
     CheckComArgStrNotEmptyOrNull(aDest);
-    CheckComArgStrNotEmptyOrNull(Username);
+    CheckComArgStrNotEmptyOrNull(aUsername);
     CheckComArgStrNotEmptyOrNull(aPassword);
     CheckComArgOutPointerValid(aProgress);
 
@@ -2039,7 +2040,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
          * aDest reflects the full path on the guest. */
         task->strSource   = (Utf8Str(aSource));
         task->strDest     = (Utf8Str(aDest));
-        task->strUserName = (Utf8Str(Username));
+        task->strUserName = (Utf8Str(aUsername));
         task->strPassword = (Utf8Str(aPassword));
         task->uFlags      = aFlags;
 
