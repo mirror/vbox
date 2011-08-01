@@ -11239,7 +11239,7 @@ rom_checksum:
   push ax
 #ifdef NO_ROM_CHECKSUM
   xor  ax, ax
-#endif
+#else
   push bx
   push cx
   xor  ax, ax
