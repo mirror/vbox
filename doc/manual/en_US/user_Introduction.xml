@@ -1457,8 +1457,8 @@
     <title>Cloning virtual machines</title>
 
     <para>To experiment with a VM configuration, test different guest OS levels
-    or to simply backup a VM, VirtualBox can create a full copy of an existing
-    VM.<footnote>Cloning support was introduced with VirtualBox
+    or to simply backup a VM, VirtualBox can create a full or a linked copy of
+    an existing VM.<footnote>Cloning support was introduced with VirtualBox
     4.1.</footnote></para>
     
     <para>A wizard will guide you through the clone process:</para>
@@ -1471,13 +1471,43 @@
     </mediaobject>
     
     <para>This wizard can be invoked from the context menu of the Manager's VM
-    list (select "Clone") or the "Snapshots" view of the selected VM. You have
-    the choice to create a exact copy of the current state without any
-    snapshots or with all snapshots included.<!-- If you
-    invoke the clone VM wizard from the latter place and have selected a
-    specific snapshot you can additional decide if you want to clone that
-    snapshot including all child's, but without any independent snapshots in
-    the tree.--></para>
+    list (select "Clone") or the "Snapshots" view of the selected VM. First
+    choose a new name for the clone. When you select <emphasis
+    role="bold">Reinitialize the MAC address of all network cards</emphasis>
+    every network card get a new MAC address assigned. This is useful when
+    both, the source VM and the cloned VM, have to operate on the same network.
+    If you leave this unchanged, all network cards have the same MAC address
+    like the one in the source VM. Depending on how you invoke the wizard you
+    have different choices for the cloning operation. First you need to decide
+    if the clone should be linked to the source VM or a fully independent clone
+    should be created:</para>
+    <itemizedlist>
+      <listitem>
+         <para><emphasis role="bold">Full clone:</emphasis> In this mode all
+             depending disk images are copied to the new VM folder. The clone
+             can fully operate without the source VM.
+         </para>
+      </listitem>
+
+      <listitem>
+         <para><emphasis role="bold">Linked clone:</emphasis> In this mode new
+             differencing disk images are created where the parent disk images
+             are the source disk images. If you selected the current state of
+             the source VM as clone point, a new snapshot will be created
+             implicitly.
+         </para>
+      </listitem>
+    </itemizedlist>
+        
+    <para>After selecting the clone mode, you need to decide about what exactly
+    should be cloned. You can always create a clone of the <emphasis
+        role="italic">current state</emphasis> only or <emphasis
+        role="italic">all</emphasis>. When you select <emphasis
+        role="italic">all</emphasis>, the current state and in addition all
+    snapshots are cloned. Have you started from a snapshot which has additional
+    children, you can also clone the <emphasis role="italic">current state and
+        all children</emphasis>. This creates a clone starting with this
+    snapshot and includes all child snaphots.</para>
 
     <para>The clone operation itself can be a lengthy operation depending on
     the size and count of the attached disk images. Also keep in mind that
