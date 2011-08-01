@@ -69,6 +69,8 @@ test -f /usr/bin/VBoxManage                        && my_files="$my_files /usr/b
 test -f /usr/bin/VBoxVRDP                          && my_files="$my_files /usr/bin/VBoxVRDP"
 test -f /usr/bin/VBoxHeadless                      && my_files="$my_files /usr/bin/VBoxHeadless"
 test -f /usr/bin/vboxwebsrv                        && my_files="$my_files /usr/bin/vboxwebsrv"
+test -f /usr/bin/VBoxBalloonCtrl                   && my_files="$my_files /usr/bin/VBoxBalloonCtrl"
+test -f /usr/bin/vbox-img                          && my_files="$my_files /usr/bin/vbox-img"
 test -d /Library/Receipts/VirtualBoxCLI.pkg/       && my_directories="$my_directories /Library/Receipts/VirtualBoxCLI.pkg/"
 
 test -d /Applications/VirtualBox.app/              && my_directories="$my_directories /Applications/VirtualBox.app/"
