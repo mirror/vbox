@@ -953,6 +953,9 @@ HRESULT MachineCloneVM::run()
 
                 /* Current state is under root snapshot. */
                 trgMCF.uuidCurrentSnapshot = sn.uuid;
+                /* There will be created a new differencing image based on this
+                 * snapshot. So reset the modified state. */
+                trgMCF.fCurrentStateModified = false;
             }
             /* The snapshot will be the root one. */
             trgMCF.llFirstSnapshot.clear();
@@ -971,8 +974,6 @@ HRESULT MachineCloneVM::run()
         if (RTPathStartsWithRoot(trgMCF.machineUserData.strSnapshotFolder.c_str()))
             trgMCF.machineUserData.strSnapshotFolder = "Snapshots";
         trgMCF.strStateFile = "";
-        /* Force writing of setting file. */
-        trgMCF.fCurrentStateModified = true;
         /* Set the new name. */
         const Utf8Str strOldVMName = trgMCF.machineUserData.strName;
         trgMCF.machineUserData.strName = d->pTrgMachine->mUserData->s.strName;
@@ -1288,15 +1289,26 @@ HRESULT MachineCloneVM::run()
             rc = d->pTrgMachine->loadMachineDataFromSettings(trgMCF,
                                                              &d->pTrgMachine->mData->mUuid);
             if (FAILED(rc)) throw rc;
+            /* save all VM data */
+            bool fNeedsGlobalSaveSettings = false;
+            rc = d->pTrgMachine->saveSettings(&fNeedsGlobalSaveSettings, Machine::SaveS_Force);
+            if (FAILED(rc)) throw rc;
+            /* Release all locks */
+            trgLock.release();
+            srcLock.release();
+            if (fNeedsGlobalSaveSettings)
+            {
+                /* save the global settings; for that we should hold only the
+                 * VirtualBox lock */
+                AutoWriteLock vlock(p->mParent COMMA_LOCKVAL_SRC_POS);
+                rc = p->mParent->saveSettings();
+                if (FAILED(rc)) throw rc;
+            }
         }
 
-        /* Now save the new configuration to disk. */
-        rc = d->pTrgMachine->SaveSettings();
-        if (FAILED(rc)) throw rc;
-        trgLock.release();
+        /* Any additional machines need saving? */
         if (!llRegistriesThatNeedSaving.empty())
         {
-            srcLock.release();
             rc = p->mParent->saveRegistries(llRegistriesThatNeedSaving);
             if (FAILED(rc)) throw rc;
         }
