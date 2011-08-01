@@ -404,13 +404,13 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
         Status = VBoxUsbToolGetDescriptor(pDo, pDevDr, sizeof(*pDevDr), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
         if (!NT_SUCCESS(Status))
         {
-            LogRel((__FUNCTION__": getting device descriptor failed\n"));
+            LOGREL((__FUNCTION__": getting device descriptor failed\n"));
             break;
         }
 
         if (vboxUsbFltBlDevMatchLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice))
         {
-            LogRel((__FUNCTION__": found a known black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
+            LOGREL((__FUNCTION__": found a known black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
 #ifdef DEBUG_misha
             AssertFailed();
 #endif
@@ -418,7 +418,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             break;
         }
 
-        Log(("Device pid=%x vid=%x rev=%x\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
+        LOG(("Device pid=%x vid=%x rev=%x\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
         pDevice->idVendor     = pDevDr->idVendor;
         pDevice->idProduct    = pDevDr->idProduct;
         pDevice->bcdDevice    = pDevDr->bcdDevice;
@@ -534,7 +534,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
                 }
             }
 #endif
-            Log((__FUNCTION__": strings: '%s':'%s':'%s' (lang ID %x)\n",
+            LOG((__FUNCTION__": strings: '%s':'%s':'%s' (lang ID %x)\n",
                         pDevice->szMfgName, pDevice->szProduct, pDevice->szSerial, langId));
         }
 
@@ -712,7 +712,7 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
     KIRQL Irql = KeGetCurrentIrql();
     Assert(Irql == PASSIVE_LEVEL);
 
-    Log(("==" __FUNCTION__"\n"));
+    LOG(("==" __FUNCTION__"\n"));
 
     for (int i=0;i<RT_ELEMENTS(lpszStandardControllerName);i++)
     {
@@ -744,7 +744,7 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
         Status = IoGetDeviceObjectPointer(&UnicodeName, FILE_READ_DATA, &pHubFileObj, &pHubDevObj);
         if (Status == STATUS_SUCCESS)
         {
-            Log(("IoGetDeviceObjectPointer for %s returned %p %p\n", szHubName, pHubDevObj, pHubFileObj));
+            LOG(("IoGetDeviceObjectPointer for %s returned %p %p\n", szHubName, pHubDevObj, pHubFileObj));
 
             if (pHubDevObj->DriverObject
                 && pHubDevObj->DriverObject->DriverName.Buffer
@@ -758,9 +758,9 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
                         PDEVICE_RELATIONS pDevRelations = NULL;
 
 #ifdef DEBUG
-                        Log(("Associated driver "));
+                        LOG(("Associated driver "));
                         vboxUsbDbgPrintUnicodeString(&pHubDevObj->DriverObject->DriverName);
-                        Log((" -> related dev obj=0x%p\n", IoGetRelatedDeviceObject(pHubFileObj)));
+                        LOG((" -> related dev obj=0x%p\n", IoGetRelatedDeviceObject(pHubFileObj)));
 #endif
 
                         Status = VBoxUsbMonQueryBusRelations(pHubDevObj, pHubFileObj, &pDevRelations);
@@ -773,7 +773,7 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
                             {
                                 PDEVICE_OBJECT pDevObj = pDevRelations->Objects[k];
 
-                                Log(("Found existing USB PDO 0x%p\n", pDevObj));
+                                LOG(("Found existing USB PDO 0x%p\n", pDevObj));
                                 VBOXUSBFLT_LOCK_ACQUIRE();
                                 PVBOXUSBFLT_DEVICE pDevice = vboxUsbFltDevGetLocked(pDevObj);
                                 if (pDevice)
@@ -930,13 +930,13 @@ NTSTATUS VBoxUsbFltCreate(PVBOXUSBFLTCTX pContext)
 int VBoxUsbFltAdd(PVBOXUSBFLTCTX pContext, PUSBFILTER pFilter, uintptr_t *pId)
 {
     *pId = 0;
-    /* Log the filter details. */
-    Log((__FUNCTION__": %s %s %s\n",
+    /* LOG the filter details. */
+    LOG((__FUNCTION__": %s %s %s\n",
         USBFilterGetString(pFilter, USBFILTERIDX_MANUFACTURER_STR)  ? USBFilterGetString(pFilter, USBFILTERIDX_MANUFACTURER_STR)  : "<null>",
         USBFilterGetString(pFilter, USBFILTERIDX_PRODUCT_STR)       ? USBFilterGetString(pFilter, USBFILTERIDX_PRODUCT_STR)       : "<null>",
         USBFilterGetString(pFilter, USBFILTERIDX_SERIAL_NUMBER_STR) ? USBFilterGetString(pFilter, USBFILTERIDX_SERIAL_NUMBER_STR) : "<null>"));
 #ifdef DEBUG
-    Log(("VBoxUSBClient::addFilter: idVendor=%#x idProduct=%#x bcdDevice=%#x bDeviceClass=%#x bDeviceSubClass=%#x bDeviceProtocol=%#x bBus=%#x bPort=%#x\n",
+    LOG(("VBoxUSBClient::addFilter: idVendor=%#x idProduct=%#x bcdDevice=%#x bDeviceClass=%#x bDeviceSubClass=%#x bDeviceProtocol=%#x bBus=%#x bPort=%#x\n",
               USBFilterGetNum(pFilter, USBFILTERIDX_VENDOR_ID),
               USBFilterGetNum(pFilter, USBFILTERIDX_PRODUCT_ID),
               USBFilterGetNum(pFilter, USBFILTERIDX_DEVICE_REV),
@@ -1299,7 +1299,7 @@ void VBoxUsbFltProxyStopped(HVBOXUSBFLTDEV hDev)
             || pDevice->enmState == VBOXUSBFLT_DEVSTATE_USED_BY_GUEST)
     {
         /* this is due to devie was physically removed */
-        Log(("The proxy notified progy stop for the captured device 0x%x\n", pDevice));
+        LOG(("The proxy notified progy stop for the captured device 0x%x\n", pDevice));
         pDevice->enmState = VBOXUSBFLT_DEVSTATE_CAPTURING;
         vboxUsbFltSignalChangeLocked();
     }
@@ -1315,9 +1315,11 @@ void VBoxUsbFltProxyStopped(HVBOXUSBFLTDEV hDev)
 NTSTATUS VBoxUsbFltInit()
 {
     int rc = VBoxUSBFilterInit();
-    AssertRC(rc);
     if (RT_FAILURE(rc))
+    {
+        WARN(("VBoxUSBFilterInit failed, rc (%d)", rc));
         return STATUS_UNSUCCESSFUL;
+    }
 
     memset(&g_VBoxUsbFltGlobals, 0, sizeof (g_VBoxUsbFltGlobals));
     InitializeListHead(&g_VBoxUsbFltGlobals.DeviceList);
