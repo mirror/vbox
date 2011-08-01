@@ -46,6 +46,51 @@ typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAM_PAIR > GuestCtrlStreamPairs;
 typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAM_PAIR >::iterator GuestCtrlStreamPairsIter;
 typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAM_PAIR >::const_iterator GuestCtrlStreamPairsIterConst;
 
+/**
+ * Class representing a block of stream pairs (key=value). Each block in a raw guest
+ * output stream is separated by "\0\0", each pair is separated by "\0". The overall
+ * end of a guest stream is marked by "\0\0\0\0".
+ */
+class GuestProcessStreamBlock
+{
+public:
+
+    GuestProcessStreamBlock();
+
+    virtual ~GuestProcessStreamBlock();
+
+public:
+
+    int AddKey(const char *pszKey);
+
+    void Clear();
+
+    int GetInt64Ex(const char *pszKey, int64_t *piVal);
+
+    int64_t GetInt64(const char *pszKey);
+
+    size_t GetCount();
+
+    const char* GetString(const char *pszKey);
+
+    int GetUInt32Ex(const char *pszKey, uint32_t *puVal);
+
+    uint32_t GetUInt32(const char *pszKey);
+
+    int SetValue(const char *pszKey, const char *pszValue);
+
+protected:
+
+    GuestCtrlStreamPairs m_mapPairs;
+};
+
+/** Vector containing multiple stream pair objects. */
+typedef std::vector< GuestProcessStreamBlock > GuestCtrlStreamObjects;
+
+/**
+ * Class for parsing machine-readable guest process output by VBoxService'
+ * toolbox commands ("vbox_ls", "vbox_stat" etc).
+ */
 class GuestProcessStream
 {
 
@@ -59,30 +104,14 @@ public:
 
     int AddData(const BYTE *pbData, size_t cbData);
 
-    void ClearPairs();
-
     void Destroy();
-
-    int GetInt64Ex(const char *pszKey, int64_t *piVal);
-
-    int64_t GetInt64(const char *pszKey);
-
-    size_t GetNumPairs();
 
     uint32_t GetOffset();
 
-    const char* GetString(const char *pszKey);
-
-    int GetUInt32Ex(const char *pszKey, uint32_t *puVal);
-
-    uint32_t GetUInt32(const char *pszKey);
-
-    int ParseBlock();
+    int ParseBlock(GuestProcessStreamBlock &streamBlock);
 
 protected:
 
-    /** The map containing one more more stream pairs. */
-    GuestCtrlStreamPairs m_mapPairs;
     /** Currently allocated size of internal stream buffer. */
     uint32_t m_cbAllocated;
     /** Currently used size of allocated internal stream buffer. */

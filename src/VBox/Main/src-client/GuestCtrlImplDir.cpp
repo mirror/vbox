@@ -76,7 +76,7 @@ STDMETHODIMP Guest::DirectoryCreate(IN_BSTR aDirectory,
 
 #ifdef VBOX_WITH_GUEST_CONTROL
 HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
-                                       IN_BSTR aUserName, IN_BSTR aPassword,
+                                       IN_BSTR aUsername, IN_BSTR aPassword,
                                        ULONG aMode, ULONG aFlags, int *pRC)
 {
     using namespace guestControl;
@@ -99,8 +99,6 @@ HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
     try
     {
         Utf8Str Utf8Directory(aDirectory);
-        Utf8Str Utf8UserName(aUserName);
-        Utf8Str Utf8Password(aPassword);
 
         com::SafeArray<IN_BSTR> args;
         com::SafeArray<IN_BSTR> env;
@@ -120,55 +118,11 @@ HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
         }
         args.push_back(Bstr(Utf8Directory).raw());  /* The directory we want to create. */
 
-        /*
-         * Execute guest process.
-         */
-        ComPtr<IProgress> progressExec;
-        ULONG uPID;
-        if (SUCCEEDED(rc))
-        {
-            rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_MKDIR).raw(),
-                                ExecuteProcessFlag_Hidden,
-                                ComSafeArrayAsInParam(args),
-                                ComSafeArrayAsInParam(env),
-                                Bstr(Utf8UserName).raw(),
-                                Bstr(Utf8Password).raw(),
-                                5 * 1000 /* Wait 5s for getting the process started. */,
-                                &uPID, progressExec.asOutParam());
-        }
-
-        if (SUCCEEDED(rc))
-        {
-            /* Wait for process to exit ... */
-            rc = progressExec->WaitForCompletion(-1);
-            if (FAILED(rc)) return rc;
-
-            BOOL fCompleted = FALSE;
-            BOOL fCanceled = FALSE;
-            progressExec->COMGETTER(Completed)(&fCompleted);
-            if (!fCompleted)
-                progressExec->COMGETTER(Canceled)(&fCanceled);
-
-            if (fCompleted)
-            {
-                ExecuteProcessStatus_T retStatus;
-                ULONG uRetExitCode, uRetFlags;
-                if (SUCCEEDED(rc))
-                {
-                    rc = GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
-                    if (SUCCEEDED(rc) && uRetExitCode != 0)
-                    {
-                        rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("Error %u while creating guest directory"), uRetExitCode);
-                    }
-                }
-            }
-            else if (fCanceled)
-                rc = setError(VBOX_E_IPRT_ERROR,
-                              tr("Guest directory creation was aborted"));
-            else
-                AssertReleaseMsgFailed(("Guest directory creation neither completed nor canceled!?\n"));
-        }
+        rc = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_MKDIR).raw(), Bstr("Creating directory").raw(),
+                                   ComSafeArrayAsInParam(args),
+                                   ComSafeArrayAsInParam(env),
+                                   aUsername, aPassword,
+                                   NULL /* Progress */, NULL /* PID */);
     }
     catch (std::bad_alloc &)
     {
@@ -179,7 +133,7 @@ HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
 
 /**
  * Creates a new directory handle ID and returns it. Returns VERR_TOO_MUCH_DATA
- * if no free handles left, otherwise VINF_SUCCESS.
+ * if no free handles left, otherwise VINF_SUCCESS (or some other IPRT error).
  *
  * @return IPRT status code.
  * @param puHandle             Pointer where the handle gets stored to.
@@ -322,7 +276,7 @@ STDMETHODIMP Guest::DirectoryOpen(IN_BSTR aDirectory, IN_BSTR aFilter,
 #ifdef VBOX_WITH_GUEST_CONTROL
 HRESULT Guest::directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
                                      ULONG aFlags,
-                                     IN_BSTR aUserName, IN_BSTR aPassword,
+                                     IN_BSTR aUsername, IN_BSTR aPassword,
                                      ULONG *aHandle, int *pRC)
 {
     using namespace guestControl;
@@ -342,8 +296,6 @@ HRESULT Guest::directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
     {
         Utf8Str Utf8Directory(aDirectory);
         Utf8Str Utf8Filter(aFilter);
-        Utf8Str Utf8UserName(aUserName);
-        Utf8Str Utf8Password(aPassword);
 
         com::SafeArray<IN_BSTR> args;
         com::SafeArray<IN_BSTR> env;
@@ -377,68 +329,22 @@ HRESULT Guest::directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
 
         args.push_back(Bstr(pszDirectoryFinal).raw());  /* The directory we want to open. */
 
-        /*
-         * Execute guest process.
-         */
-        ComPtr<IProgress> progressExec;
         ULONG uPID;
-
-        rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_LS).raw(),
-                            ExecuteProcessFlag_Hidden,
-                            ComSafeArrayAsInParam(args),
-                            ComSafeArrayAsInParam(env),
-                            Bstr(Utf8UserName).raw(),
-                            Bstr(Utf8Password).raw(),
-                            30 * 1000 /* Wait 30s for getting the process started. */,
-                            &uPID, progressExec.asOutParam());
-
-        RTStrFree(pszDirectoryFinal);
-
+        rc = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_LS).raw(), Bstr("Opening directory").raw(),
+                                   ComSafeArrayAsInParam(args),
+                                   ComSafeArrayAsInParam(env),
+                                   aUsername, aPassword,
+                                   NULL /* Progress */, &uPID);
         if (SUCCEEDED(rc))
         {
-            /* Wait for process to exit ... */
-            rc = progressExec->WaitForCompletion(-1);
-            if (FAILED(rc)) return rc;
-
-            BOOL fCompleted = FALSE;
-            BOOL fCanceled = FALSE;
-            progressExec->COMGETTER(Completed)(&fCompleted);
-            if (!fCompleted)
-                progressExec->COMGETTER(Canceled)(&fCanceled);
-
-            if (fCompleted)
-            {
-                ExecuteProcessStatus_T retStatus;
-                ULONG uRetExitCode, uRetFlags;
-                if (SUCCEEDED(rc))
-                {
-                    rc = GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
-                    if (SUCCEEDED(rc) && uRetExitCode != 0)
-                    {
-                        rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("Error %u while opening guest directory"), uRetExitCode);
-                    }
-                }
-            }
-            else if (fCanceled)
+            /* Assign new directory handle ID. */
+            int vrc = directoryCreateHandle(aHandle, uPID,
+                                            Utf8Directory.c_str(),
+                                            Utf8Filter.isEmpty() ? NULL : Utf8Filter.c_str(),
+                                            aFlags);
+            if (RT_FAILURE(vrc))
                 rc = setError(VBOX_E_IPRT_ERROR,
-                              tr("Guest directory opening was aborted"));
-            else
-                AssertReleaseMsgFailed(("Guest directory opening neither completed nor canceled!?\n"));
-
-            if (SUCCEEDED(rc))
-            {
-                /* Assign new directory handle ID. */
-                int vrc = directoryCreateHandle(aHandle, uPID,
-                                                Utf8Directory.c_str(),
-                                                Utf8Filter.isEmpty() ? NULL : Utf8Filter.c_str(),
-                                                aFlags);
-                if (RT_FAILURE(vrc))
-                {
-                    rc = setError(VBOX_E_IPRT_ERROR,
-                                  tr("Unable to create guest directory handle (%Rrc)"), vrc);
-                }
-            }
+                              tr("Unable to create guest directory handle (%Rrc)"), vrc);
         }
     }
     catch (std::bad_alloc &)

@@ -27,6 +27,188 @@
  ******************************************************************************/
 
 /** @todo *NOT* thread safe yet! */
+/** @todo Add exception handling for STL stuff! */
+
+GuestProcessStreamBlock::GuestProcessStreamBlock()
+{
+
+}
+
+GuestProcessStreamBlock::~GuestProcessStreamBlock()
+{
+    Clear();
+}
+
+/**
+ * Adds a key (if not existing yet).
+ *
+ * @return  IPRT status code.
+ * @param   pszKey              Key name to add.
+ */
+int GuestProcessStreamBlock::AddKey(const char *pszKey)
+{
+    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+    /** @todo Add check for already existing keys! (VERR_ALREADY_EXISTS). */
+    m_mapPairs[Utf8Str(pszKey)].pszValue = NULL;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Destroys the currently stored stream pairs.
+ *
+ * @return  IPRT status code.
+ */
+void GuestProcessStreamBlock::Clear()
+{
+    for (GuestCtrlStreamPairsIter it = m_mapPairs.begin(); it != m_mapPairs.end(); it++)
+    {
+        if (it->second.pszValue)
+            RTMemFree(it->second.pszValue);
+    }
+
+    m_mapPairs.clear();
+}
+
+/**
+ * Returns a 64-bit signed integer of a specified key.
+ *
+ * @return  IPRT status code. VERR_NOT_FOUND if key was not found.
+ * @param  pszKey               Name of key to get the value for.
+ * @param  piVal                Pointer to value to return.
+ */
+int GuestProcessStreamBlock::GetInt64Ex(const char *pszKey, int64_t *piVal)
+{
+    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+    AssertPtrReturn(piVal, VERR_INVALID_POINTER);
+    const char *pszValue = GetString(pszKey);
+    if (pszValue)
+    {
+        *piVal = RTStrToInt64(pszValue);
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_FOUND;
+}
+
+/**
+ * Returns a 64-bit integer of a specified key.
+ *
+ * @return  int64_t             Value to return, 0 if not found / on failure.
+ * @param   pszKey              Name of key to get the value for.
+ */
+int64_t GuestProcessStreamBlock::GetInt64(const char *pszKey)
+{
+    int64_t iVal;
+    if (RT_SUCCESS(GetInt64Ex(pszKey, &iVal)))
+        return iVal;
+    return 0;
+}
+
+/**
+ * Returns the current number of stream pairs.
+ *
+ * @return  uint32_t            Current number of stream pairs.
+ */
+size_t GuestProcessStreamBlock::GetCount()
+{
+    return m_mapPairs.size();
+}
+
+
+/**
+ * Returns a string value of a specified key.
+ *
+ * @return  uint32_t            Pointer to string to return, NULL if not found / on failure.
+ * @param   pszKey              Name of key to get the value for.
+ */
+const char* GuestProcessStreamBlock::GetString(const char *pszKey)
+{
+    AssertPtrReturn(pszKey, NULL);
+
+    try
+    {
+        GuestCtrlStreamPairsIterConst itPairs = m_mapPairs.find(Utf8Str(pszKey));
+        if (itPairs != m_mapPairs.end())
+            return itPairs->second.pszValue;
+    }
+    catch (const std::exception &ex)
+    {
+        NOREF(ex);
+    }
+    return NULL;
+}
+
+/**
+ * Returns a 32-bit unsigned integer of a specified key.
+ *
+ * @return  IPRT status code. VERR_NOT_FOUND if key was not found.
+ * @param  pszKey               Name of key to get the value for.
+ * @param  puVal                Pointer to value to return.
+ */
+int GuestProcessStreamBlock::GetUInt32Ex(const char *pszKey, uint32_t *puVal)
+{
+    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+    AssertPtrReturn(puVal, VERR_INVALID_POINTER);
+    const char *pszValue = GetString(pszKey);
+    if (pszValue)
+    {
+        *puVal = RTStrToUInt32(pszValue);
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_FOUND;
+}
+
+/**
+ * Returns a 32-bit unsigned integer of a specified key.
+ *
+ * @return  uint32_t            Value to return, 0 if not found / on failure.
+ * @param   pszKey              Name of key to get the value for.
+ */
+uint32_t GuestProcessStreamBlock::GetUInt32(const char *pszKey)
+{
+    uint32_t uVal;
+    if (RT_SUCCESS(GetUInt32Ex(pszKey, &uVal)))
+        return uVal;
+    return 0;
+}
+
+/**
+ * Sets a value to a key or deletes a key by setting a NULL value.
+ *
+ * @return  IPRT status code.
+ * @param   pszKey              Key name to process.
+ * @param   pszValue            Value to set. Set NULL for deleting the key.
+ */
+int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
+{
+    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+    if (pszValue)
+    {
+        char *pszVal = RTStrDup(pszValue);
+        if (pszVal)
+            m_mapPairs[pszKey].pszValue = pszVal;
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+    {
+        GuestCtrlStreamPairsIter it = m_mapPairs.find(pszKey);
+        if (it != m_mapPairs.end())
+        {
+            if (it->second.pszValue)
+            {
+                RTMemFree(it->second.pszValue);
+                it->second.pszValue = NULL;
+            }
+            m_mapPairs.erase(it);
+        }
+    }
+    return rc;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 GuestProcessStream::GuestProcessStream()
     : m_cbAllocated(0),
@@ -114,29 +296,10 @@ int GuestProcessStream::AddData(const BYTE *pbData, size_t cbData)
 }
 
 /**
- * Destroys the currently stored stream pairs.
- *
- * @return  IPRT status code.
- */
-void GuestProcessStream::ClearPairs()
-{
-    for (GuestCtrlStreamPairsIter it = m_mapPairs.begin(); it != m_mapPairs.end(); it++)
-    {
-        if (it->second.pszValue)
-            RTMemFree(it->second.pszValue);
-    }
-
-    m_mapPairs.clear();
-}
-
-/**
- * Destroys the currently stored stream pairs and the internal
- * data buffer.
+ * Destroys the the internal data buffer.
  */
 void GuestProcessStream::Destroy()
 {
-    ClearPairs();
-
     if (m_pbBuffer)
     {
         RTMemFree(m_pbBuffer);
@@ -146,50 +309,6 @@ void GuestProcessStream::Destroy()
     m_cbAllocated = 0;
     m_cbSize = 0;
     m_cbOffset = 0;
-}
-
-/**
- * Returns a 64-bit signed integer of a specified key.
- *
- * @return  IPRT status code. VERR_NOT_FOUND if key was not found.
- * @param  pszKey               Name of key to get the value for.
- * @param  piVal                Pointer to value to return.
- */
-int GuestProcessStream::GetInt64Ex(const char *pszKey, int64_t *piVal)
-{
-    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
-    AssertPtrReturn(piVal, VERR_INVALID_POINTER);
-    const char *pszValue = GetString(pszKey);
-    if (pszValue)
-    {
-        *piVal = RTStrToInt64(pszValue);
-        return VINF_SUCCESS;
-    }
-    return VERR_NOT_FOUND;
-}
-
-/**
- * Returns a 64-bit integer of a specified key.
- *
- * @return  int64_t             Value to return, 0 if not found / on failure.
- * @param   pszKey              Name of key to get the value for.
- */
-int64_t GuestProcessStream::GetInt64(const char *pszKey)
-{
-    int64_t iVal;
-    if (RT_SUCCESS(GetInt64Ex(pszKey, &iVal)))
-        return iVal;
-    return 0;
-}
-
-/**
- * Returns the current number of stream pairs.
- *
- * @return  uint32_t            Current number of stream pairs.
- */
-size_t GuestProcessStream::GetNumPairs()
-{
-    return m_mapPairs.size();
 }
 
 /**
@@ -204,77 +323,16 @@ uint32_t GuestProcessStream::GetOffset()
 }
 
 /**
- * Returns a string value of a specified key.
- *
- * @return  uint32_t            Pointer to string to return, NULL if not found / on failure.
- * @param   pszKey              Name of key to get the value for.
- */
-const char* GuestProcessStream::GetString(const char *pszKey)
-{
-    AssertPtrReturn(pszKey, NULL);
-
-    try
-    {
-        GuestCtrlStreamPairsIterConst itPairs = m_mapPairs.find(Utf8Str(pszKey));
-        if (itPairs != m_mapPairs.end())
-            return itPairs->second.pszValue;
-    }
-    catch (const std::exception &ex)
-    {
-        NOREF(ex);
-    }
-    return NULL;
-}
-
-/**
- * Returns a 32-bit unsigned integer of a specified key.
- *
- * @return  IPRT status code. VERR_NOT_FOUND if key was not found.
- * @param  pszKey               Name of key to get the value for.
- * @param  puVal                Pointer to value to return.
- */
-int GuestProcessStream::GetUInt32Ex(const char *pszKey, uint32_t *puVal)
-{
-    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
-    AssertPtrReturn(puVal, VERR_INVALID_POINTER);
-    const char *pszValue = GetString(pszKey);
-    if (pszValue)
-    {
-        *puVal = RTStrToUInt32(pszValue);
-        return VINF_SUCCESS;
-    }
-    return VERR_NOT_FOUND;
-}
-
-/**
- * Returns a 32-bit unsigned integer of a specified key.
- *
- * @return  uint32_t            Value to return, 0 if not found / on failure.
- * @param   pszKey              Name of key to get the value for.
- */
-uint32_t GuestProcessStream::GetUInt32(const char *pszKey)
-{
-    uint32_t uVal;
-    if (RT_SUCCESS(GetUInt32Ex(pszKey, &uVal)))
-        return uVal;
-    return 0;
-}
-
-/**
  * Try to parse the next upcoming pair block within the internal
  * buffer. Old pairs from a previously parsed block will be removed first!
  *
  * @return  IPRT status code.
  */
-int GuestProcessStream::ParseBlock()
+int GuestProcessStream::ParseBlock(GuestProcessStreamBlock &streamBlock)
 {
     AssertPtrReturn(m_pbBuffer, VINF_SUCCESS);
     AssertReturn(m_cbSize, VINF_SUCCESS);
     AssertReturn(m_cbOffset <= m_cbSize, VERR_INVALID_PARAMETER);
-
-    /* Since we want to (try to) parse another block, clear
-     * all pairs from a previously parsed block. */
-    ClearPairs();
 
     int rc = VINF_SUCCESS;
 
@@ -328,7 +386,7 @@ int GuestProcessStream::ParseBlock()
                 }
                 memcpy(pszKey, pszStart, uKeyLen);
 
-                m_mapPairs[Utf8Str(pszKey)].pszValue = NULL;
+                streamBlock.AddKey(pszKey);
 
                 /* Get value (if present). */
                 if (uValLen)
@@ -342,7 +400,8 @@ int GuestProcessStream::ParseBlock()
                     }
                     memcpy(pszVal, pszSep + 1, uValLen);
 
-                    m_mapPairs[Utf8Str(pszKey)].pszValue = pszVal;
+                    streamBlock.SetValue(pszKey, pszVal);
+                    RTMemFree(pszVal);
                 }
 
                 RTMemFree(pszKey);

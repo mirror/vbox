@@ -32,7 +32,7 @@
 # include <VBox/com/ErrorInfo.h>
 #endif
 
-STDMETHODIMP Guest::FileExists(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists)
+STDMETHODIMP Guest::FileExists(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -42,17 +42,17 @@ STDMETHODIMP Guest::FileExists(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPasswo
     CheckComArgStrNotEmptyOrNull(aFile);
 
     /* Do not allow anonymous executions (with system rights). */
-    if (RT_UNLIKELY((aUserName) == NULL || *(aUserName) == '\0'))
+    if (RT_UNLIKELY((aUsername) == NULL || *(aUsername) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
 
     return fileExistsInternal(aFile,
-                              aUserName, aPassword, aExists,
+                              aUsername, aPassword, aExists,
                               NULL /* rc */);
 #endif
 }
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, BOOL *aExists, int *pRC)
+HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists, int *pRC)
 {
     using namespace guestControl;
 
@@ -65,7 +65,7 @@ HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPas
     try
     {
         Utf8Str Utf8File(aFile);
-        Utf8Str Utf8UserName(aUserName);
+        Utf8Str Utf8Username(aUsername);
         Utf8Str Utf8Password(aPassword);
 
         com::SafeArray<IN_BSTR> args;
@@ -85,53 +85,14 @@ HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPas
         /*
          * Execute guest process.
          */
-        ComPtr<IProgress> progressExec;
-        ULONG uPID;
+        rc = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Checking for file existence").raw(),
+                                   ComSafeArrayAsInParam(args),
+                                   ComSafeArrayAsInParam(env),
+                                   aUsername, aPassword,
+                                   NULL /* Progress */, NULL /* PID */);
 
-        rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_STAT).raw(),
-                            ExecuteProcessFlag_Hidden,
-                            ComSafeArrayAsInParam(args),
-                            ComSafeArrayAsInParam(env),
-                            Bstr(Utf8UserName).raw(),
-                            Bstr(Utf8Password).raw(),
-                            30 * 1000 /* Wait 30s for getting the process started. */,
-                            &uPID, progressExec.asOutParam());
-
-        if (SUCCEEDED(rc))
-        {
-            /* Wait for process to exit ... */
-            rc = progressExec->WaitForCompletion(-1);
-            if (FAILED(rc)) return rc;
-
-            BOOL fCompleted = FALSE;
-            BOOL fCanceled = FALSE;
-            progressExec->COMGETTER(Completed)(&fCompleted);
-            if (!fCompleted)
-                progressExec->COMGETTER(Canceled)(&fCanceled);
-
-            if (fCompleted)
-            {
-                ExecuteProcessStatus_T retStatus;
-                ULONG uRetExitCode, uRetFlags;
-                if (SUCCEEDED(rc))
-                {
-                    rc = GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
-                    if (SUCCEEDED(rc))
-                    {
-                        *aExists = uRetExitCode == 0 ? TRUE : FALSE;
-                    }
-                    else
-                        rc = setError(VBOX_E_IPRT_ERROR,
-                                      tr("Error %u while checking for existence of file \"%s\""),
-                                      uRetExitCode, Utf8File.c_str());
-                }
-            }
-            else if (fCanceled)
-                rc = setError(VBOX_E_IPRT_ERROR,
-                              tr("Checking for file existence was aborted"));
-            else
-                AssertReleaseMsgFailed(("Checking for file existence neither completed nor canceled!?\n"));
-        }
+        /* If the call succeeded the file exists, otherwise it does not. */
+        *aExists = SUCCEEDED(rc) ? TRUE : FALSE;
     }
     catch (std::bad_alloc &)
     {
@@ -141,7 +102,7 @@ HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPas
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
-STDMETHODIMP Guest::FileQuerySize(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, LONG64 *aSize)
+STDMETHODIMP Guest::FileQuerySize(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -151,17 +112,17 @@ STDMETHODIMP Guest::FileQuerySize(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPas
     CheckComArgStrNotEmptyOrNull(aFile);
 
     /* Do not allow anonymous executions (with system rights). */
-    if (RT_UNLIKELY((aUserName) == NULL || *(aUserName) == '\0'))
+    if (RT_UNLIKELY((aUsername) == NULL || *(aUsername) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
 
     return fileQuerySizeInternal(aFile,
-                                 aUserName, aPassword, aSize,
+                                 aUsername, aPassword, aSize,
                                  NULL /* rc */);
 #endif
 }
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR aPassword, LONG64 *aSize, int *pRC)
+HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize, int *pRC)
 {
     using namespace guestControl;
 
@@ -174,7 +135,7 @@ HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR a
     try
     {
         Utf8Str Utf8File(aFile);
-        Utf8Str Utf8UserName(aUserName);
+        Utf8Str Utf8Username(aUsername);
         Utf8Str Utf8Password(aPassword);
 
         com::SafeArray<IN_BSTR> args;
@@ -194,73 +155,23 @@ HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR a
         /*
          * Execute guest process.
          */
-        ComPtr<IProgress> progressExec;
+        ComPtr<IProgress> progressFileSize;
         ULONG uPID;
 
-        rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_STAT).raw(),
-                            ExecuteProcessFlag_Hidden,
-                            ComSafeArrayAsInParam(args),
-                            ComSafeArrayAsInParam(env),
-                            Bstr(Utf8UserName).raw(),
-                            Bstr(Utf8Password).raw(),
-                            30 * 1000 /* Wait 30s for getting the process started. */,
-                            &uPID, progressExec.asOutParam());
-
+        rc = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Querying file size").raw(),
+                                   ComSafeArrayAsInParam(args),
+                                   ComSafeArrayAsInParam(env),
+                                   aUsername, aPassword,
+                                   progressFileSize.asOutParam(), &uPID);
         if (SUCCEEDED(rc))
         {
-            /* Wait for process to exit ... */
-            rc = progressExec->WaitForCompletion(-1);
-            if (FAILED(rc)) return rc;
-
-            BOOL fCompleted = FALSE;
-            BOOL fCanceled = FALSE;
-            progressExec->COMGETTER(Completed)(&fCompleted);
-            if (!fCompleted)
-                progressExec->COMGETTER(Canceled)(&fCanceled);
-
-            if (fCompleted)
+            GuestCtrlStreamObjects streamObjs;
+            rc = executeCollectOutput(uPID, streamObjs);
+            if (SUCCEEDED(rc))
             {
-                ExecuteProcessStatus_T retStatus;
-                ULONG uRetExitCode, uRetFlags;
-                if (SUCCEEDED(rc))
-                {
-                    rc = GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
-                    if (SUCCEEDED(rc))
-                    {
-                        if (uRetExitCode == 0)
-                        {
-                            /* Get file size from output stream. */
-                            SafeArray<BYTE> aOutputData;
-                            ULONG cbOutputData = 0;
-
-                            GuestProcessStream guestStream;
-                            int vrc = VINF_SUCCESS;
-                            for (;;)
-                            {
-                                rc = this->GetProcessOutput(uPID, ProcessOutputFlag_None,
-                                                            10 * 1000 /* Timeout in ms */,
-                                                            _64K, ComSafeArrayAsOutParam(aOutputData));
-                                /** @todo Do stream header validation! */
-                                if (   SUCCEEDED(rc)
-                                    && aOutputData.size())
-                                {
-                                    vrc = guestStream.AddData(aOutputData.raw(), aOutputData.size());
-                                    if (RT_UNLIKELY(RT_FAILURE(vrc)))
-                                        rc = setError(VBOX_E_IPRT_ERROR,
-                                                      tr("Query file size: Error while adding guest output to stream buffer for file \"%s\" (%Rrc)"),
-                                                      Utf8File.c_str(), vrc);
-                                }
-                                else /* No more output! */
-                                    break;
-                            }
-
-                            if (SUCCEEDED(rc))
-                            {
-                                vrc = guestStream.ParseBlock(); /* We only need one (the first) block. */
-                                if (   RT_SUCCESS(vrc)
-                                    || vrc == VERR_MORE_DATA)
-                                {
-                                    int64_t iVal;
+                /** @todo */
+                #if 0
+                                                    int64_t iVal;
                                     vrc = guestStream.GetInt64Ex("st_size", &iVal);
                                     if (RT_SUCCESS(vrc))
                                         *aSize = iVal;
@@ -268,25 +179,8 @@ HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUserName, IN_BSTR a
                                         rc = setError(VBOX_E_IPRT_ERROR,
                                                       tr("Query file size: Unable to retrieve file size for file \"%s\" (%Rrc)"),
                                                       Utf8File.c_str(), vrc);
-                                }
-                                else
-                                    rc = setError(VBOX_E_IPRT_ERROR,
-                                                  tr("Query file size: Error while parsing guest output for file \"%s\" (%Rrc)"),
-                                                  Utf8File.c_str(), vrc);
-                            }
-                        }
-                        else
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("Query file size: Error querying file size for file \"%s\" (exit code %u)"),
-                                          Utf8File.c_str(), uRetExitCode);
-                    }
-                }
+              #endif
             }
-            else if (fCanceled)
-                rc = setError(VBOX_E_IPRT_ERROR,
-                              tr("Query file size: Checking for file size was aborted"));
-            else
-                AssertReleaseMsgFailed(("Checking for file size neither completed nor canceled!?\n"));
         }
     }
     catch (std::bad_alloc &)
