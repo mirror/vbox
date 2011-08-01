@@ -44,6 +44,9 @@
 
 <?endif ?>
 
+<!-- If we build a combined installer (32- and 64-bit in one installer), we
+     use two installer "disks": One for all platform-specific stuff and one which
+     contains all common (platform independent) stuff (like manuals, bitmaps etc). -->
 <?if $(env.VBOX_WITH_COMBINED_PACKAGE) = "yes" ?>
     <?define Property_DiskIdCommon = "2" ?>
 <?else ?>
@@ -424,7 +427,9 @@
                               Source="$(env.PATH_OUT)\bin\VBoxBalloonCtrl.exe"/>
 
                         <!-- Misc tools -->
-                        <File Id="file_VBoxImg.exe" Name="vbox-img.exe"
+                        <!-- We only ship vbox-img.exe in a 32-bit binary -- a 64-bit one
+                             is not required. -->
+                        <File Id="file_VBoxImg.exe" Name="vbox-img.exe" DiskId="$(var.Property_DiskIdCommon)"
                               Source="$(env.PATH_OUT)\bin\vbox-img.exe"/>
                         <File Id="file_VBoxNetDHCP.exe" Name="VBoxNetDHCP.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.exe"/>
@@ -547,7 +552,7 @@
                         <!-- VBox guest additions -->
 <?if $(env.VBOX_WITH_ADDITIONS_PACKING) = "yes" ?>
     <?if $(env.VBOX_WITH_COMBINED_PACKAGE) = "yes" ?>
-                        <File Id="file_VBoxGuestAdditions.iso" Name="VBoxGuestAdditions.iso" DiskId="2"
+                        <File Id="file_VBoxGuestAdditions.iso" Name="VBoxGuestAdditions.iso" DiskId="$(var.Property_DiskIdCommon)"
                               Source="$(env.PATH_MULTIARCH_GUEST_ADDITIONS_ISO)\VBoxGuestAdditions.iso" />
     <?else ?>
                         <File Id="file_VBoxGuestAdditions.iso" Name="VBoxGuestAdditions.iso"
