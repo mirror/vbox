@@ -214,6 +214,9 @@ VBoxProc(DeviceIntPtr device, int what)
         VbglR3Term();
         xf86Msg(X_INFO, "%s: Close\n", pInfo->name);
         break;
+
+    default:
+        return BadValue;
     }
 
     return Success;
