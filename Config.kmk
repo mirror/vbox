@@ -2448,10 +2448,10 @@ if "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
  SDK_VBOX_OPENSSL2_LIBS = $(NO_SUCH_VARIABLE)
 endif
 
-SDK_VBOX_OPENSSL_EXTPACK         = Internal use only.
-SDK_VBOX_OPENSSL_INCS            = $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
-SDK_VBOX_OPENSSL_ORDERDEPS       = $(crypto-headers_1_TARGET)
-SDK_VBOX_OPENSSL_EXTPACK_LIBS    = \
+SDK_VBoxOpenSslExtPack                 = Internal use only.
+SDK_VBoxOpenSslExtPack_INCS            = $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
+SDK_VBoxOpenSslExtPack_ORDERDEPS       = $(crypto-headers_1_TARGET)
+SDK_VBoxOpenSslExtPack_EXTPACK_LIBS    = \
 	$(PATH_STAGE_LIB)/VBoxExtPack-libssl$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxExtPack-libcrypto$(VBOX_SUFF_LIB)
 
