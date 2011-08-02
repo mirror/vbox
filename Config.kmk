@@ -99,7 +99,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  # other paths
  INST_TESTSUITE       = testsuite/
  INST_LIB             = lib/
- INST_ADDITIONS_LIB   = $(INST_LIB)/additions/
+ INST_ADDITIONS_LIB   = $(INST_LIB)additions/
 
 else
 
