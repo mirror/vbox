@@ -47,7 +47,7 @@ VBoxAuthSimple_SOURCES = simple/VBoxAuthSimple.cpp
 
 # Install the SDK samples.
 INSTALLS += VBoxAuth-samples
-VBoxAuth-samples_INST = $(INST_SDK)/bindings/auth/
+VBoxAuth-samples_INST = $(INST_SDK)bindings/auth/
 VBoxAuth-samples_MODE = a+r,u+w
 VBoxAuth-samples_SOURCES = simple/VBoxAuthSimple.cpp
 VBoxAuth-samples_SOURCES.linux = pam/VBoxAuthPAM.c
@@ -55,7 +55,7 @@ VBoxAuth-samples_SOURCES.win = winlogon/winlogon.cpp
 
 # Install the SDK header.
 INSTALLS += VBoxAuth-sdkhdr
-VBoxAuth-sdkhdr_INST = $(INST_SDK)/bindings/auth/include/
+VBoxAuth-sdkhdr_INST = $(INST_SDK)bindings/auth/include/
 VBoxAuth-sdkhdr_MODE = a+r,u+w
 VBoxAuth-sdkhdr_SOURCES = $(PATH_ROOT)/include/VBox/VBoxAuth.h=>VBoxAuth.h
 
