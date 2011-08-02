@@ -4114,17 +4114,17 @@ static HRESULT IWineD3DSurfaceImpl_BltSys2Vram(IWineD3DSurfaceImpl *This, const 
         return WINED3DERR_INVALIDCALL;
     }
 
-    if((convert != NO_CONVERSION) && (Src->Flags & SFLAG_PBO)) {
-        WARN("conversion not supported here with PBO for src %p\n", Src);
-        return WINED3DERR_INVALIDCALL;
-    }
-
     d3dfmt_get_conv(Src, TRUE /* We need color keying */, TRUE /* We will use textures */,
             &desc, &convert);
 
     if  (desc.convert || convert != NO_CONVERSION)
     {
         WARN("TODO: test if conversion works, rejecting gl blt\n");
+        return WINED3DERR_INVALIDCALL;
+    }
+
+    if((convert != NO_CONVERSION) && (Src->Flags & SFLAG_PBO)) {
+        WARN("conversion not supported here with PBO for src %p\n", Src);
         return WINED3DERR_INVALIDCALL;
     }
 
