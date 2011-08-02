@@ -57,7 +57,7 @@ $$(VBoxUSB.kext_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/Info.plist $(VBOX_VERS
 # Common manual loader script.
 INSTALLS += ScriptsUSB
 ScriptsUSB_INST     = $(INST_DIST)
-ScriptsUSB_SOURCES  = \
+ScriptsUSB_EXEC_SOURCES  = \
 	loadusb.sh
 
 ifdef VBOX_WITH_TESTCASES
