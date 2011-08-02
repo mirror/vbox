@@ -58,6 +58,21 @@
 
 #include "product-generated.h"
 
+enum
+{
+#if ABI_XINPUT_VERSION > SET_ABI_VERSION(2, 0)
+/* The X server does (to my mind) incorrect rounding, so we adjust our range to
+ * compensate. */
+    ADJUST_RANGE = 32,
+#else
+    ADJUST_RANGE = 0,
+#endif
+    /** The minumum value our device can return */
+    RANGE_MIN = ADJUST_RANGE,
+    /** The maximum value our device can return */
+    RANGE_MAX = 0xFFFF + ADJUST_RANGE
+};
+
 static void
 VBoxReadInput(InputInfoPtr pInfo)
 {
@@ -131,9 +146,7 @@ VBoxInit(DeviceIntPtr device)
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                axis_labels[0],
 # endif
-/* The X server does (to my mind) incorrect rounding, hence the strange values.
- */
-                               -32 /* min X */, 65503 /* max X */,
+                               RANGE_MIN /* min X */, RANGE_MAX /* max X */,
                                10000, 0, 10000
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
                                , Absolute
@@ -144,9 +157,7 @@ VBoxInit(DeviceIntPtr device)
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                axis_labels[1],
 # endif
-/* The X server does (to my mind) incorrect rounding, hence the strange values.
- */
-                               -32 /* min Y */, 65503 /* max Y */,
+                               RANGE_MIN /* min Y */, RANGE_MAX /* max Y */,
                                10000, 0, 10000
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
                                , Absolute
