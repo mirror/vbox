@@ -1422,7 +1422,10 @@ USBLIB_DECL(int) USBLibInit(void)
                     }
                     else
                     {
-                        AssertMsgFailed((__FUNCTION__": Monitor driver version mismatch!!\n"));
+                        LogRel((__FUNCTION__": Monitor driver version mismatch!!\n"));
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
+                        AssertFailed();
+#endif
                         rc = VERR_VERSION_MISMATCH;
                     }
                 }
