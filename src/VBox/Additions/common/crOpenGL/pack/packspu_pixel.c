@@ -174,6 +174,93 @@ static GLboolean packspu_CheckTexImageFormatType(GLenum format, GLenum type)
            && packspu_CheckTexImageType(type);
 }
 
+static const CRPixelPackState _defaultPacking = {
+   0, /* rowLength */
+   0, /* skipRows */
+   0, /* skipPixels */
+   1, /* alignment */
+   0, /* imageHeight */
+   0, /* skipImages */
+   GL_FALSE, /* swapBytes */
+   GL_FALSE, /* psLSBFirst */
+};
+
+#define APPLY_IF_NEQ(state, field, enum)        \
+    if (state.field != _defaultPacking.field)   \
+    {                                           \
+        crPackPixelStorei(enum, state.field);   \
+    }
+
+#define RESTORE_IF_NEQ(state, field, enum)              \
+    if (state.field != _defaultPacking.field)           \
+    {                                                   \
+        crPackPixelStorei(enum, _defaultPacking.field); \
+    }
+
+static void packspu_ApplyUnpackState()
+{
+    GET_THREAD(thread);
+    ContextInfo *ctx = thread->currentContext;
+    CRClientState *clientState = &(ctx->clientState->client);
+
+    APPLY_IF_NEQ(clientState->unpack, rowLength, GL_UNPACK_ROW_LENGTH);
+    APPLY_IF_NEQ(clientState->unpack, skipRows, GL_UNPACK_SKIP_ROWS);
+    APPLY_IF_NEQ(clientState->unpack, skipPixels, GL_UNPACK_SKIP_PIXELS);
+    APPLY_IF_NEQ(clientState->unpack, alignment, GL_UNPACK_ALIGNMENT);
+    APPLY_IF_NEQ(clientState->unpack, imageHeight, GL_UNPACK_IMAGE_HEIGHT);
+    APPLY_IF_NEQ(clientState->unpack, skipImages, GL_UNPACK_SKIP_IMAGES);
+    APPLY_IF_NEQ(clientState->unpack, swapBytes, GL_UNPACK_SWAP_BYTES);
+    APPLY_IF_NEQ(clientState->unpack, psLSBFirst, GL_UNPACK_LSB_FIRST);
+}
+
+static void packspu_RestoreUnpackState()
+{
+    GET_THREAD(thread);
+    ContextInfo *ctx = thread->currentContext;
+    CRClientState *clientState = &(ctx->clientState->client);
+
+    RESTORE_IF_NEQ(clientState->unpack, rowLength, GL_UNPACK_ROW_LENGTH);
+    RESTORE_IF_NEQ(clientState->unpack, skipRows, GL_UNPACK_SKIP_ROWS);
+    RESTORE_IF_NEQ(clientState->unpack, skipPixels, GL_UNPACK_SKIP_PIXELS);
+    RESTORE_IF_NEQ(clientState->unpack, alignment, GL_UNPACK_ALIGNMENT);
+    RESTORE_IF_NEQ(clientState->unpack, imageHeight, GL_UNPACK_IMAGE_HEIGHT);
+    RESTORE_IF_NEQ(clientState->unpack, skipImages, GL_UNPACK_SKIP_IMAGES);
+    RESTORE_IF_NEQ(clientState->unpack, swapBytes, GL_UNPACK_SWAP_BYTES);
+    RESTORE_IF_NEQ(clientState->unpack, psLSBFirst, GL_UNPACK_LSB_FIRST);
+}
+
+static void packspu_ApplyPackState()
+{
+    GET_THREAD(thread);
+    ContextInfo *ctx = thread->currentContext;
+    CRClientState *clientState = &(ctx->clientState->client);
+
+    APPLY_IF_NEQ(clientState->pack, rowLength, GL_PACK_ROW_LENGTH);
+    APPLY_IF_NEQ(clientState->pack, skipRows, GL_PACK_SKIP_ROWS);
+    APPLY_IF_NEQ(clientState->pack, skipPixels, GL_PACK_SKIP_PIXELS);
+    APPLY_IF_NEQ(clientState->pack, alignment, GL_PACK_ALIGNMENT);
+    APPLY_IF_NEQ(clientState->pack, imageHeight, GL_PACK_IMAGE_HEIGHT);
+    APPLY_IF_NEQ(clientState->pack, skipImages, GL_PACK_SKIP_IMAGES);
+    APPLY_IF_NEQ(clientState->pack, swapBytes, GL_PACK_SWAP_BYTES);
+    APPLY_IF_NEQ(clientState->pack, psLSBFirst, GL_PACK_LSB_FIRST);
+}
+
+static void packspu_RestorePackState()
+{
+    GET_THREAD(thread);
+    ContextInfo *ctx = thread->currentContext;
+    CRClientState *clientState = &(ctx->clientState->client);
+
+    RESTORE_IF_NEQ(clientState->pack, rowLength, GL_PACK_ROW_LENGTH);
+    RESTORE_IF_NEQ(clientState->pack, skipRows, GL_PACK_SKIP_ROWS);
+    RESTORE_IF_NEQ(clientState->pack, skipPixels, GL_PACK_SKIP_PIXELS);
+    RESTORE_IF_NEQ(clientState->pack, alignment, GL_PACK_ALIGNMENT);
+    RESTORE_IF_NEQ(clientState->pack, imageHeight, GL_PACK_IMAGE_HEIGHT);
+    RESTORE_IF_NEQ(clientState->pack, skipImages, GL_PACK_SKIP_IMAGES);
+    RESTORE_IF_NEQ(clientState->pack, swapBytes, GL_PACK_SWAP_BYTES);
+    RESTORE_IF_NEQ(clientState->pack, psLSBFirst, GL_PACK_LSB_FIRST);
+}
+
 void PACKSPU_APIENTRY packspu_PixelStoref( GLenum pname, GLfloat param )
 {
     /* NOTE: we do not send pixel store parameters to the server!
@@ -194,10 +281,18 @@ void PACKSPU_APIENTRY packspu_DrawPixels( GLsizei width, GLsizei height, GLenum 
     GET_THREAD(thread);
     ContextInfo *ctx = thread->currentContext;
     CRClientState *clientState = &(ctx->clientState->client);
-    if (pack_spu.swap)
-        crPackDrawPixelsSWAP( width, height, format, type, pixels, &(clientState->unpack) );
-    else
-        crPackDrawPixels( width, height, format, type, pixels, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
+    crPackDrawPixels( width, height, format, type, pixels, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
 }
 
 void PACKSPU_APIENTRY packspu_ReadPixels( GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels )
@@ -207,15 +302,16 @@ void PACKSPU_APIENTRY packspu_ReadPixels( GLint x, GLint y, GLsizei width, GLsiz
     CRClientState *clientState = &(ctx->clientState->client);
     int writeback;    
 
-    if (pack_spu.swap)
+    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
     {
-        crPackReadPixelsSWAP(x, y, width, height, format, type, pixels,
-                             &(clientState->pack), &writeback);
+        packspu_ApplyPackState();
     }
-    else
+
+    crPackReadPixels(x, y, width, height, format, type, pixels, &(clientState->pack), &writeback);
+
+    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
     {
-        crPackReadPixels(x, y, width, height, format, type, pixels,
-                         &(clientState->pack), &writeback);
+        packspu_RestorePackState();
     }
 
 #ifdef CR_ARB_pixel_buffer_object
@@ -230,6 +326,7 @@ void PACKSPU_APIENTRY packspu_ReadPixels( GLint x, GLint y, GLsizei width, GLsiz
     }
 }
 
+/*@todo check with pbo's*/
 void PACKSPU_APIENTRY packspu_CopyPixels( GLint x, GLint y, GLsizei width, GLsizei height, GLenum type )
 {
     GET_THREAD(thread);
@@ -245,10 +342,18 @@ void PACKSPU_APIENTRY packspu_Bitmap( GLsizei width, GLsizei height, GLfloat xor
 {
     GET_CONTEXT(ctx);
     CRClientState *clientState = &(ctx->clientState->client);
-    if (pack_spu.swap)
-        crPackBitmapSWAP( width, height, xorig, yorig, xmove, ymove, bitmap, &(clientState->unpack) );
-    else
-        crPackBitmap( width, height, xorig, yorig, xmove, ymove, bitmap, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
+    crPackBitmap(width, height, xorig, yorig, xmove, ymove, bitmap, &(clientState->unpack));
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
 }
 
 void PACKSPU_APIENTRY packspu_TexImage1D( GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels )
@@ -268,10 +373,20 @@ void PACKSPU_APIENTRY packspu_TexImage1D( GLenum target, GLint level, GLint inte
         type = packspu_CheckTexImageType(type) ? type:GL_UNSIGNED_BYTE;
     }
 
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
     if (pack_spu.swap)
         crPackTexImage1DSWAP( target, level, internalformat, width, border, format, type, pixels, &(clientState->unpack) );
     else
         crPackTexImage1D( target, level, internalformat, width, border, format, type, pixels, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
 }
 
 void PACKSPU_APIENTRY packspu_TexImage2D( GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels )
@@ -291,10 +406,20 @@ void PACKSPU_APIENTRY packspu_TexImage2D( GLenum target, GLint level, GLint inte
         type = packspu_CheckTexImageType(type) ? type:GL_UNSIGNED_BYTE;
     }
 
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
     if (pack_spu.swap)
         crPackTexImage2DSWAP( target, level, internalformat, width, height, border, format, type, pixels, &(clientState->unpack) );
     else
         crPackTexImage2D( target, level, internalformat, width, height, border, format, type, pixels, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
 }
 
 #ifdef GL_EXT_texture3D
@@ -303,10 +428,20 @@ void PACKSPU_APIENTRY packspu_TexImage3DEXT( GLenum target, GLint level, GLenum 
     GET_CONTEXT(ctx);
     CRClientState *clientState = &(ctx->clientState->client);
 
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
     if (pack_spu.swap)
         crPackTexImage3DEXTSWAP( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
     else
         crPackTexImage3DEXT( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
 }
 #endif
 
@@ -315,10 +450,21 @@ void PACKSPU_APIENTRY packspu_TexImage3D(GLenum target, GLint level, GLint inter
 {
     GET_CONTEXT(ctx);
     CRClientState *clientState = &(ctx->clientState->client);
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
     if (pack_spu.swap)
         crPackTexImage3DSWAP( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
     else
         crPackTexImage3D( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
 }
 #endif /* CR_OPENGL_VERSION_1_2 */
 
@@ -333,10 +479,20 @@ void PACKSPU_APIENTRY packspu_TexSubImage1D( GLenum target, GLint level, GLint x
         return;
     }
 
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
     if (pack_spu.swap)
         crPackTexSubImage1DSWAP( target, level, xoffset, width, format, type, pixels, &(clientState->unpack) );
     else
         crPackTexSubImage1D( target, level, xoffset, width, format, type, pixels, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
 }
 
 void PACKSPU_APIENTRY packspu_TexSubImage2D( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels )
@@ -350,10 +506,20 @@ void PACKSPU_APIENTRY packspu_TexSubImage2D( GLenum target, GLint level, GLint x
         return;
     }
 
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
     if (pack_spu.swap)
         crPackTexSubImage2DSWAP( target, level, xoffset, yoffset, width, height, format, type, pixels, &(clientState->unpack) );
     else
         crPackTexSubImage2D( target, level, xoffset, yoffset, width, height, format, type, pixels, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
 }
 
 #ifdef CR_OPENGL_VERSION_1_2
@@ -361,10 +527,21 @@ void PACKSPU_APIENTRY packspu_TexSubImage3D( GLenum target, GLint level, GLint x
 {
     GET_CONTEXT(ctx);
     CRClientState *clientState = &(ctx->clientState->client);
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
     if (pack_spu.swap)
         crPackTexSubImage3DSWAP( target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels, &(clientState->unpack) );
     else
         crPackTexSubImage3D( target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels, &(clientState->unpack) );
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
 }
 #endif /* CR_OPENGL_VERSION_1_2 */
 
@@ -384,14 +561,26 @@ void PACKSPU_APIENTRY packspu_GetTexImage (GLenum target, GLint level, GLenum fo
     ContextInfo *ctx = thread->currentContext;
     CRClientState *clientState = &(ctx->clientState->client);
     int writeback = 1;
-    /* XXX note: we're not observing the pixel pack parameters here.
+
+    /* XXX note: we're not observing the pixel pack parameters here unless PACK PBO is bound
      * To do so, we'd have to allocate a temporary image buffer (how large???)
      * and copy the image to the user's buffer using the pixel pack params.
      */
+
+    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    {
+        packspu_ApplyPackState();
+    }
+
     if (pack_spu.swap)
         crPackGetTexImageSWAP( target, level, format, type, pixels, &(clientState->pack), &writeback );
     else
         crPackGetTexImage( target, level, format, type, pixels, &(clientState->pack), &writeback );
+
+    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    {
+        packspu_RestorePackState();
+    }
 
 #ifdef CR_ARB_pixel_buffer_object
     if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
@@ -408,6 +597,11 @@ void PACKSPU_APIENTRY packspu_GetCompressedTexImageARB( GLenum target, GLint lev
     GET_THREAD(thread);
     int writeback = 1;
 
+    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    {
+        packspu_ApplyPackState();
+    }
+
     if (pack_spu.swap)
     {
         crPackGetCompressedTexImageARBSWAP( target, level, img, &writeback );
@@ -415,6 +609,11 @@ void PACKSPU_APIENTRY packspu_GetCompressedTexImageARB( GLenum target, GLint lev
     else
     {
         crPackGetCompressedTexImageARB( target, level, img, &writeback );
+    }
+
+    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    {
+        packspu_RestorePackState();
     }
 
 #ifdef CR_ARB_pixel_buffer_object
