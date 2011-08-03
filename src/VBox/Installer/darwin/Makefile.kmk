@@ -353,7 +353,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
 	@# Copy the common files (Info.plist).
 	$(foreach kext,$(VBOX_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/$(kext).kext/Contents/Info.plist $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents/)
-	@# Copy the binaries, invoking lipo and strip.
+	@# Copy the binaries and invoking lipo.
 ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(foreach kext,$(VBOX_DI_KEXTS_UNIVERSAL), \
 		$(NLTAB)$(VBOX_DI_LIPO) -create \
@@ -363,10 +363,6 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 else
 	$(foreach kext,$(VBOX_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/$(kext).kext/Contents/MacOS/$(kext) $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents/MacOS/)
-endif
-if1of ($(KBUILD_TYPE), release)
-	$(foreach kext,$(VBOX_DI_KEXTS), \
-		$(NLTAB)strip -uX $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents/MacOS/$(kext))
 endif
 	@# Set the correct owners.
 	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/Library
@@ -900,23 +896,6 @@ else
 	$(foreach bin, $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_OTHER_BINS) \
 		 ,$(LN) -s $(bin)-$(KBUILD_TARGET_ARCH)                                         $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin)$(NLTAB))
 endif
-	@# Strip programs and dylibs.
-if1of ($(KBUILD_TYPE), release)
- ifdef VBOX_WITH_COMBINED_PACKAGE
-	strip -SXru \
-		$(foreach dylib, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_DYLIBS.x86) $(VBOX_DI_VBAPP_DYLIBS.amd64) \
-			,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(dylib)) \
-		$(foreach bin,   $(addsuffix -x86, $(VBOX_DI_VBAPP_PROGS)) $(addsuffix -amd64, $(VBOX_DI_VBAPP_PROGS)) \
-			,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin))
- else
-	strip -SXru \
-		$(foreach dylib, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
-			,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(dylib)) \
-		$(foreach bin,   $(addsuffix -$(KBUILD_TARGET_ARCH), $(VBOX_DI_VBAPP_PROGS)) \
-			,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin))
- endif
-endif
-	@## @todo Strip the .r0 and .gc modules as well?
 #ifdef VBOX_WITH_HARDENING - disabled temporarily
 if 1
 	@# We cannot use @executable_path together with setuid binaries, dyld gets upset about it. So, fix Qt libs and users.
