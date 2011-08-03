@@ -249,7 +249,36 @@ static PDRIVER_OBJECT vboxUsbMonHookFindHubDrvObj()
                     LOG(("pnp handler %p\n", pHubDevObj->DriverObject->MajorFunction[IRP_MJ_PNP]));
 
                     pDrvObj = pHubDevObj->DriverObject;
+                    /* ensure the driver object is not destroyed */
+                    ObReferenceObject(pDrvObj);
+                    /* release the file object which will releade the dev objectas well,
+                     * as we do not need those anymore */
+                    ObDereferenceObject(pHubFileObj);
                     break;
+                }
+                else
+                {
+                    LOG(("driver object (0x%p) no match", pHubDevObj->DriverObject));
+                    if (pHubDevObj->DriverObject)
+                    {
+                        if (   pHubDevObj->DriverObject->DriverName.Buffer
+                            && pHubDevObj->DriverObject->DriverName.Length)
+                        {
+                            LOG(("driver name not match, was:"));
+                            LOG_USTR(&pHubDevObj->DriverObject->DriverName);
+                            LOG(("but expected:"));
+                            LOG_USTR(&szStandardHubName);
+                        }
+                        else
+                        {
+                            LOG(("driver name is zero, Length(%d), Buffer(0x%p)",
+                                    pHubDevObj->DriverObject->DriverName.Length, pHubDevObj->DriverObject->DriverName.Buffer));
+                        }
+                    }
+                    else
+                    {
+                        LOG(("driver object is NULL"));
+                    }
                 }
                 ObDereferenceObject(pHubFileObj);
             }
