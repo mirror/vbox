@@ -4898,8 +4898,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="317"/>
-        <source>Defines chipset type used in this VM.</source>
-        <translation>この仮想マシンで使用するチップセットの種類を指定します。</translation>
+        <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
+        <translation type="unfinished">この仮想マシンで使用するチップセットの種類を指定します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="409"/>
