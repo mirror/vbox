@@ -36,6 +36,7 @@
 # include "ExtPackManagerImpl.h"
 #endif
 #include "GuestImpl.h"
+#include "GuestDirEntryImpl.h"
 #include "KeyboardImpl.h"
 #include "MachineDebuggerImpl.h"
 #include "MouseImpl.h"
@@ -55,6 +56,8 @@
 
 NS_DECL_CLASSINFO(Guest)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Guest, IGuest)
+NS_DECL_CLASSINFO(GuestDirEntyr)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestDirEntry, IGuestDirEntry)
 NS_DECL_CLASSINFO(Keyboard)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Keyboard, IKeyboard)
 NS_DECL_CLASSINFO(Mouse)

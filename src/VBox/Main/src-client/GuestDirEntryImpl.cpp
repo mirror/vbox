@@ -1,6 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VirtualBox COM class implementation
+ * VirtualBox Main - interface for guest directory entries, VBoxC.
  */
 
 /*
@@ -15,12 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include "GuestDirEntryImpl.h"
 #include "GuestCtrlImplPrivate.h"
 #include "Global.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
+
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
