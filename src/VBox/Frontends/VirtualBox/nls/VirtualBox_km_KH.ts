@@ -3671,7 +3671,7 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Defines chipset type used in this VM.</source>
+        <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
