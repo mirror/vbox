@@ -30,6 +30,10 @@ VBoxGINA_SOURCES  = \
 VBoxGINA_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)
+ifndef TARGET_NT4
+ VBoxGINA_LIBS   += \
+	WtsApi32.lib
+endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

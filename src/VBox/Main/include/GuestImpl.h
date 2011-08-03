@@ -140,11 +140,15 @@ public:
                                   ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                   IN_BSTR aUsername, IN_BSTR aPassword,
                                   IProgress **aProgress, ULONG *aPID);
-    HRESULT executeCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamObjects);
     HRESULT executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                    IN_BSTR aUsername, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
+    HRESULT executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout, PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID);
+    HRESULT executeStreamCollectBlock(ULONG aPID,
+                                      GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
+    HRESULT executeStreamCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamObjects);
+    HRESULT executeWaitForStatusChange(ULONG uPID, ULONG uTimeoutMS, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode);
     HRESULT fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists, int *pRC);
     HRESULT fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize, int *pRC);
 
@@ -214,13 +218,19 @@ private:
     // Internal guest directory representation.
     typedef struct VBOXGUESTCTRL_DIRECTORY
     {
-        char    *mpszDirectory;
-        char    *mpszFilter;
-        ULONG    mFlags;
+        char                       *mpszDirectory;
+        char                       *mpszFilter;
+        ULONG                       mFlags;
         /** Associated PID of started vbox_ls tool. */
-        uint32_t mPID;
-        /** Offset within the current retrieved stdout buffer. */
-        uint64_t mOffset;
+        uint32_t                    mPID;
+        GuestProcessStream          mStream;
+#if 0
+        /** Next enetry in our stream objects vector
+         *  to process. */
+        uint32_t                    mNextEntry;
+        /** The guest stream object containing all */
+        GuestCtrlStreamObjects      mStream;
+#endif
     } VBOXGUESTCTRL_DIRECTORY, *PVBOXGUESTCTRL_DIRECTORY;
     typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY > GuestDirectoryMap;
     typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY >::iterator GuestDirectoryMapIter;
@@ -229,6 +239,7 @@ private:
     int directoryCreateHandle(ULONG *puHandle, ULONG uPID, const char *pszDirectory, const char *pszFilter, ULONG uFlags);
     void directoryDestroyHandle(uint32_t uHandle);
     uint32_t directoryGetPID(uint32_t uHandle);
+    int directoryGetNextEntry(uint32_t uHandle, GuestProcessStreamBlock &streamBlock);
     bool directoryHandleExists(uint32_t uHandle);
 
     // Utility functions.
@@ -239,9 +250,6 @@ private:
      */
     HRESULT handleErrorCompletion(int rc);
     HRESULT handleErrorHGCM(int rc);
-
-    HRESULT waitForProcessStatusChange(ULONG uPID, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS);
-    HRESULT executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout, PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID);
 # endif
 
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> > FacilityMap;

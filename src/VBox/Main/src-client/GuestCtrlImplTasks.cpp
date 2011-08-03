@@ -355,7 +355,8 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                              */
                             ExecuteProcessStatus_T retStatus;
                             ULONG uRetExitCode;
-                            rc = pGuest->waitForProcessStatusChange(uPID, &retStatus, &uRetExitCode, 10 * 1000 /* 10s timeout. */);
+                            rc = pGuest->executeWaitForStatusChange(uPID, 10 * 1000 /* 10s timeout. */,
+                                                                    &retStatus, &uRetExitCode);
                             if (FAILED(rc))
                             {
                                 rc = GuestTask::setProgressErrorInfo(rc, aTask->progress, pGuest);

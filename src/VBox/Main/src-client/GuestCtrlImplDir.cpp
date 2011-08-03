@@ -17,6 +17,7 @@
 
 #include "GuestImpl.h"
 #include "GuestCtrlImplPrivate.h"
+#include "GuestDirEntryImpl.h"
 
 #include "Global.h"
 #include "ConsoleImpl.h"
@@ -209,6 +210,10 @@ void Guest::directoryDestroyHandle(uint32_t uHandle)
         RTStrFree(it->second.mpszDirectory);
         RTStrFree(it->second.mpszFilter);
 
+        /* Destroy raw guest stream buffer - not used
+         * anymore. */
+        it->second.mStream.Destroy();
+
         /* Remove callback context (not used anymore). */
         mGuestDirectoryMap.erase(it);
     }
@@ -229,6 +234,24 @@ uint32_t Guest::directoryGetPID(uint32_t uHandle)
         return it->second.mPID;
 
     return 0;
+}
+
+int Guest::directoryGetNextEntry(uint32_t uHandle, GuestProcessStreamBlock &streamBlock)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    GuestDirectoryMapIter it = mGuestDirectoryMap.find(uHandle);
+    if (it != mGuestDirectoryMap.end())
+    {
+        HRESULT hr = executeStreamCollectBlock(it->second.mPID,
+                                               it->second.mStream, streamBlock);
+        if (FAILED(hr))
+            return VERR_INVALID_PARAMETER; /** @todo Find better rc! */
+
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_FOUND;
 }
 
 /**
@@ -362,25 +385,40 @@ STDMETHODIMP Guest::DirectoryRead(ULONG aHandle, IGuestDirEntry **aDirEntry)
 #else /* VBOX_WITH_GUEST_CONTROL */
     using namespace guestControl;
 
-    uint32_t uPID = directoryGetPID(aHandle);
-    if (uPID)
+    CheckComArgOutPointerValid(aDirEntry);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT rc = S_OK;
+    try
     {
-        SafeArray<BYTE> aOutputData;
-        ULONG cbOutputData = 0;
-
-        HRESULT rc = this->GetProcessOutput(uPID, ProcessOutputFlag_None,
-                                            30 * 1000 /* Timeout in ms */,
-                                            _64K, ComSafeArrayAsOutParam(aOutputData));
-        if (SUCCEEDED(rc))
+        GuestProcessStreamBlock streamBlock;
+        int vrc = directoryGetNextEntry(aHandle, streamBlock);
+        if (RT_SUCCESS(vrc))
         {
+            ComObjPtr <GuestDirEntry> pDirEntry;
+            rc = pDirEntry.createObject();
+            ComAssertComRC(rc);
 
+            rc = pDirEntry->init(this, streamBlock);
+            if (SUCCEEDED(rc))
+            {
+                pDirEntry.queryInterfaceTo(aDirEntry);
+            }
+            else
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              Guest::tr("Unable to init guest directory entry"));
         }
-
-        return rc;
+        else
+            rc = setError(VBOX_E_IPRT_ERROR,
+                          Guest::tr("Directory handle is invalid"));
     }
-
-    return setError(VBOX_E_IPRT_ERROR,
-                    Guest::tr("Directory handle is invalid"));
+    catch (std::bad_alloc &)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+    return rc;
 #endif
 }
 
