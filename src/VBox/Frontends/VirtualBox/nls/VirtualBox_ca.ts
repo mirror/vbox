@@ -4316,7 +4316,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Defineix el tipus de xip que es fa servir en aquesta màquina virtual.</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>he assignat un tipus de xip ICH9 a aquesta màquina virtual. No funcionarà correctament a menys que la característica IO-APIC estigui habilitada. Això es farà automàticament quan accepteu els paràmetres de la màquina virtual en prémer el botó «D&apos;acord».</translation>
     </message>
     <message>

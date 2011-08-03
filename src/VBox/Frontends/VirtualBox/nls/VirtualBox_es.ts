@@ -4114,7 +4114,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Define el tipo de chipset usado en esta máquina virtual.</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>tiene asignado el tipo de chipset ICH9 para esta máquina virtual. No funcionará adecuadamente a menos que la característica IO APIC este también habilitada. Esto se hará automáticamente cuando acepte las preferencias de la MV presionando el botón Aceptar.</translation>
     </message>
     <message>

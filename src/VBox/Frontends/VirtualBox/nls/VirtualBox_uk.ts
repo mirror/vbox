@@ -4064,7 +4064,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Визначає тип комплекту мікросхем, які використовується у віртуальній машині.</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>ви вказали тип комплекту мікросхем ICH9 для цієї віртуальної машини. Це не буде працювати як слід, допоки IO-APIC увімкнуто. Це буде автоматично здійснено, коли ви дозволите налаштування віртуальної машини, натиснувши кнопку Гаразд.</translation>
     </message>
     <message>

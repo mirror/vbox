@@ -4072,7 +4072,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">이 가상 머신에 사용할 칩셋을 사용합니다.</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>이 가상 머신에 ICH9 칩셋을 사용하기로 선택하였습니다. IO APIC 기능을 활성화하지 않으면 작동하지 않을 것입니다. 확인 단추를 누르면 가상 머신 설정에서 IO APIC를 켤 것입니다.</translation>
     </message>
     <message>

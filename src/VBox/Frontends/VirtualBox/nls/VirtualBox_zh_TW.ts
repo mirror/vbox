@@ -2915,7 +2915,7 @@
         <translation type="unfinished">定義在這部 VM 中使用的晶片組類型。</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>您已指派 ICH9 晶片組類型到此 VM。 除非同時啟用 IO-APIC 功能否則將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值將會自動完成。</translation>
     </message>
     <message>
