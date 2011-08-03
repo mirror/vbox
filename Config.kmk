@@ -1333,7 +1333,7 @@ ifdef L4_DIR
    $(error L4_ARCH=$(L4_ARCH))
   endif
   L4_OBJ := $(L4_DIR)/build-$(L4_ARCH)-$(L4_CPU)-$(L4_API)
-  # support splitted Linux kernels (make O=<build directory>)
+  # support split Linux kernels (make O=<build directory>)
   kernelsrc := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(L4LINUX26_DIR)/Makefile)
   ifneq ($(kernelsrc),)
    kernelpath := $(realpath $(kernelsrc))
