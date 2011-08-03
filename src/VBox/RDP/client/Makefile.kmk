@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -132,31 +132,21 @@ rdesktop-vrdp-keymaps_convert-map_MODE = 755
 #
 # The source tarball (further down).
 #
-INSTALLS += rdesktop-bin
-rdesktop-bin_INSTTYPE = stage
-rdesktop-bin_INST     = misc-staging/$(VBOX_RDESKTOP_SRC_SUBDIR)/
-rdesktop-bin_MODE     = a+rx,u+w
-rdesktop-bin_SOURCES  = \
+INSTALLS += rdesktop-src
+rdesktop-src_INSTTYPE = stage
+rdesktop-src_INST     = misc-staging/$(VBOX_RDESKTOP_SRC_SUBDIR)/
+rdesktop-src_EXEC_SOURCES = \
 	configure \
 	config.sub \
 	config.guess \
 	bootstrap \
 	install-sh \
 	keymaps/convert-map=>keymaps/convert-map
-
-INSTALLS += rdesktop-nonbin
-rdesktop-nonbin_INSTTYPE = stage
-rdesktop-nonbin_INST     = $(rdesktop-bin_INST)
-rdesktop-nonbin_MODE     = a+r,u+w
-rdesktop-nonbin_SOURCES = \
+rdesktop-src_SOURCES = \
 	bitmap.c=>bitmap.c \
-	bootstrap=>bootstrap \
 	cache.c=>cache.c \
 	channels.c=>channels.c \
 	cliprdr.c=>cliprdr.c \
-	config.guess=>config.guess \
-	config.sub=>config.sub \
-	configure=>configure \
 	configure.ac=>configure.ac \
 	constants.h=>constants.h \
 	COPYING=>COPYING \
@@ -174,7 +164,6 @@ rdesktop-nonbin_SOURCES = \
 	doc/licensing.txt=>doc/licensing.txt \
 	doc/redirection.txt=>doc/redirection.txt \
 	ewmhints.c=>ewmhints.c \
-	install-sh=>install-sh \
 	iso.c=>iso.c \
 	keymaps/fr-ch=>keymaps/fr-ch \
 	keymaps/lv=>keymaps/lv \
@@ -371,11 +360,10 @@ rdesktop-tarball_MODE    = a+r,u+w
 rdesktop-tarball_SOURCES = $(rdesktop-tarball_0_OUTDIR)/rdesktop-vrdp.tar.gz
 rdesktop-tarball_CLEAN   = $(rdesktop-tarball_0_OUTDIR)/rdesktop-vrdp.tar.gz
 $$(rdesktop-tarball_0_OUTDIR)/rdesktop-vrdp.tar.gz: \
-		$$(rdesktop-bin_1_TARGET) \
-		$$(rdesktop-nonbin_1_TARGET) \
+		$$(rdesktop-src_1_TARGET) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,tar/gzip,,$@)
-	$(QUIET)cd $(PATH_STAGE)/$(rdesktop-bin_INST).. && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR)/ | gzip - > $@
+	$(QUIET)cd $(PATH_STAGE)/$(rdesktop-src_INST).. && tar -cf - $(VBOX_RDESKTOP_SRC_SUBDIR)/ | gzip - > $@
 
 
 include $(KBUILD_PATH)/subfooter.kmk
