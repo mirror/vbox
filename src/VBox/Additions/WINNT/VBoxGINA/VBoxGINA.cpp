@@ -106,9 +106,9 @@ BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
 {
     HINSTANCE hDll;
 
-#ifdef DEBUG
-    /* enable full log output */
-    RTLogGroupSettings(RTLogDefaultInstance(), "all=~0");
+#ifdef DEBUG_andy
+    /* Enable full log output. */
+    RTLogGroupSettings(RTLogRelDefaultInstance(), "+default.e.l.f.l2.l3");
 #endif
 
     Log(("VBoxGINA::WlxNegotiate: dwWinlogonVersion: %ld\n", dwWinlogonVersion));

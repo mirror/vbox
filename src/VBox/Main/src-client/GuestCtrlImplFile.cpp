@@ -166,7 +166,7 @@ HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR a
         if (SUCCEEDED(rc))
         {
             GuestCtrlStreamObjects streamObjs;
-            rc = executeCollectOutput(uPID, streamObjs);
+            rc = executeStreamCollectOutput(uPID, streamObjs);
             if (SUCCEEDED(rc))
             {
                 /** @todo */

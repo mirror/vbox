@@ -676,7 +676,8 @@ VBoxC_SOURCES.win = \
 
 ifdef VBOX_WITH_GUEST_CONTROL
 VBoxC_SOURCES += \
-	src-client/GuestCtrlImplTasks.cpp
+	src-client/GuestCtrlImplTasks.cpp \
+	src-client/GuestDirEntryImpl.cpp
 endif
 
 ifdef VBOX_WITH_XPCOM

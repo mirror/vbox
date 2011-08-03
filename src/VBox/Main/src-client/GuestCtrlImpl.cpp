@@ -971,124 +971,6 @@ HRESULT Guest::handleErrorHGCM(int rc)
                             tr("The HGCM call failed with error %Rrc"), rc);
     return hRC;
 }
-
-HRESULT Guest::waitForProcessStatusChange(ULONG uPID, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode, ULONG uTimeoutMS)
-{
-    AssertPtr(pRetStatus);
-    AssertPtr(puRetExitCode);
-
-    if (uTimeoutMS == 0)
-        uTimeoutMS = UINT32_MAX;
-
-    uint64_t u64StartMS = RTTimeMilliTS();
-
-    HRESULT hRC;
-    ULONG uRetFlagsIgnored;
-    do
-    {
-        /*
-         * Do some busy waiting within the specified time period (if any).
-         */
-        if (   uTimeoutMS != UINT32_MAX
-            && RTTimeMilliTS() - u64StartMS > uTimeoutMS)
-        {
-            hRC = setError(VBOX_E_IPRT_ERROR,
-                           tr("The process (PID %u) did not change its status within time (%ums)"),
-                           uPID, uTimeoutMS);
-            break;
-        }
-        hRC = GetProcessStatus(uPID, puRetExitCode, &uRetFlagsIgnored, pRetStatus);
-        if (FAILED(hRC))
-            break;
-        RTThreadSleep(100);
-    } while(*pRetStatus == ExecuteProcessStatus_Started && SUCCEEDED(hRC));
-    return hRC;
-}
-
-HRESULT Guest::executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout,
-                                    PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID)
-{
-    AssertPtrReturn(pExecStatus, E_INVALIDARG);
-    AssertPtrReturn(puPID, E_INVALIDARG);
-
-    HRESULT rc = S_OK;
-
-    /* Did we get some status? */
-    switch (pExecStatus->u32Status)
-    {
-        case PROC_STS_STARTED:
-            /* Process is (still) running; get PID. */
-            *puPID = pExecStatus->u32PID;
-            break;
-
-        /* In any other case the process either already
-         * terminated or something else went wrong, so no PID ... */
-        case PROC_STS_TEN: /* Terminated normally. */
-        case PROC_STS_TEA: /* Terminated abnormally. */
-        case PROC_STS_TES: /* Terminated through signal. */
-        case PROC_STS_TOK:
-        case PROC_STS_TOA:
-        case PROC_STS_DWN:
-            /*
-             * Process (already) ended, but we want to get the
-             * PID anyway to retrieve the output in a later call.
-             */
-            *puPID = pExecStatus->u32PID;
-            break;
-
-        case PROC_STS_ERROR:
-            {
-                int vrc = pExecStatus->u32Flags; /* u32Flags member contains IPRT error code. */
-                if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
-                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                       tr("The file '%s' was not found on guest"), pszCommand);
-                else if (vrc == VERR_PATH_NOT_FOUND)
-                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                       tr("The path to file '%s' was not found on guest"), pszCommand);
-                else if (vrc == VERR_BAD_EXE_FORMAT)
-                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                       tr("The file '%s' is not an executable format on guest"), pszCommand);
-                else if (vrc == VERR_AUTHENTICATION_FAILURE)
-                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                       tr("The specified user '%s' was not able to logon on guest"), pszUser);
-                else if (vrc == VERR_TIMEOUT)
-                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                       tr("The guest did not respond within time (%ums)"), ulTimeout);
-                else if (vrc == VERR_CANCELLED)
-                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                       tr("The execution operation was canceled"));
-                else if (vrc == VERR_PERMISSION_DENIED)
-                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                       tr("Invalid user/password credentials"));
-                else if (vrc == VERR_MAX_PROCS_REACHED)
-                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                       tr("Concurrent guest process limit is reached"));
-                else
-                {
-                    if (pExecStatus && pExecStatus->u32Status == PROC_STS_ERROR)
-                        rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                           tr("Process could not be started: %Rrc"), pExecStatus->u32Flags);
-                    else
-                        rc = setErrorNoLog(E_UNEXPECTED,
-                                           tr("The service call failed with error %Rrc"), vrc);
-                }
-            }
-            break;
-
-        case PROC_STS_UNDEFINED: /* . */
-            rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                               tr("The operation did not complete within time"));
-            break;
-
-        default:
-            AssertReleaseMsgFailed(("Process (PID %u) reported back an undefined state!\n",
-                                    pExecStatus->u32PID));
-            rc = E_UNEXPECTED;
-            break;
-    }
-
-    return rc;
-}
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
 STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
@@ -1202,12 +1084,171 @@ HRESULT Guest::executeAndWaitForTool(IN_BSTR aTool, IN_BSTR aDescription,
     return rc;
 }
 
-HRESULT Guest::executeCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamObjects)
+HRESULT Guest::executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout,
+                                    PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID)
 {
+    AssertPtrReturn(pExecStatus, E_INVALIDARG);
+    AssertPtrReturn(puPID, E_INVALIDARG);
+
+    HRESULT rc = S_OK;
+
+    /* Did we get some status? */
+    switch (pExecStatus->u32Status)
+    {
+        case PROC_STS_STARTED:
+            /* Process is (still) running; get PID. */
+            *puPID = pExecStatus->u32PID;
+            break;
+
+        /* In any other case the process either already
+         * terminated or something else went wrong, so no PID ... */
+        case PROC_STS_TEN: /* Terminated normally. */
+        case PROC_STS_TEA: /* Terminated abnormally. */
+        case PROC_STS_TES: /* Terminated through signal. */
+        case PROC_STS_TOK:
+        case PROC_STS_TOA:
+        case PROC_STS_DWN:
+            /*
+             * Process (already) ended, but we want to get the
+             * PID anyway to retrieve the output in a later call.
+             */
+            *puPID = pExecStatus->u32PID;
+            break;
+
+        case PROC_STS_ERROR:
+            {
+                int vrc = pExecStatus->u32Flags; /* u32Flags member contains IPRT error code. */
+                if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("The file '%s' was not found on guest"), pszCommand);
+                else if (vrc == VERR_PATH_NOT_FOUND)
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("The path to file '%s' was not found on guest"), pszCommand);
+                else if (vrc == VERR_BAD_EXE_FORMAT)
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("The file '%s' is not an executable format on guest"), pszCommand);
+                else if (vrc == VERR_AUTHENTICATION_FAILURE)
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("The specified user '%s' was not able to logon on guest"), pszUser);
+                else if (vrc == VERR_TIMEOUT)
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("The guest did not respond within time (%ums)"), ulTimeout);
+                else if (vrc == VERR_CANCELLED)
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("The execution operation was canceled"));
+                else if (vrc == VERR_PERMISSION_DENIED)
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("Invalid user/password credentials"));
+                else if (vrc == VERR_MAX_PROCS_REACHED)
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("Concurrent guest process limit is reached"));
+                else
+                {
+                    if (pExecStatus && pExecStatus->u32Status == PROC_STS_ERROR)
+                        rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                           tr("Process could not be started: %Rrc"), pExecStatus->u32Flags);
+                    else
+                        rc = setErrorNoLog(E_UNEXPECTED,
+                                           tr("The service call failed with error %Rrc"), vrc);
+                }
+            }
+            break;
+
+        case PROC_STS_UNDEFINED: /* . */
+            rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                               tr("The operation did not complete within time"));
+            break;
+
+        default:
+            AssertReleaseMsgFailed(("Process (PID %u) reported back an undefined state!\n",
+                                    pExecStatus->u32PID));
+            rc = E_UNEXPECTED;
+            break;
+    }
+
+    return rc;
+}
+
+/**
+ * Gets the next stream block from a formerly processed guest stream. Will return
+ * E_PENDING if not enough guest stream data was read yet, otherwise S_OK or an appropriate
+ * error.
+ *
+ * @return  HRESULT
+ * @param   aPID                    PID of process to get the next stream block from.
+ * @param   stream                  Reference to an already filled guest process stream.
+ * @param   streamBlock             Reference to a stream block which receives the parsed data.
+ */
+HRESULT Guest::executeStreamCollectBlock(ULONG aPID,
+                                         GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock)
+{
+    HRESULT rc = S_OK;
+
     SafeArray<BYTE> aOutputData;
     ULONG cbOutputData = 0;
+    int vrc = VINF_SUCCESS;
+    for (;;)
+    {
+        rc = this->GetProcessOutput(aPID, ProcessOutputFlag_None,
+                                    10 * 1000 /* Timeout in ms */,
+                                    _64K, ComSafeArrayAsOutParam(aOutputData));
+        if (   SUCCEEDED(rc)
+            && aOutputData.size())
+        {
+            int vrc = stream.AddData(aOutputData.raw(), aOutputData.size());
+            if (RT_UNLIKELY(RT_FAILURE(vrc)))
+            {
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              tr("Error while adding guest output to stream buffer (%Rrc)"), vrc);
+                break;
+            }
+            else
+            {
+                /* Try to parse the stream output we gathered until now. If we still need more
+                 * data the parsing routine will tell us and we just do another poll round. */
+                vrc = stream.ParseBlock(streamBlock);
+                if (RT_SUCCESS(vrc))
+                {
+                    /* Yay, we're done! */
+                    break;
+                }
+                else if (vrc == VERR_MORE_DATA)
+                {
+                    /* We need another poll round. */
+                    continue;
+                }
+                else
+                    rc = setError(VBOX_E_IPRT_ERROR,
+                                  tr("Error while parsing guest output (%Rrc)"), vrc);
+            }
+        }
+        else /* No more output! */
+        {
+            if (vrc == VERR_MORE_DATA)
+                rc = E_PENDING; /** @todo Find a better rc! */
+            break;
+        }
+    }
 
-    int rc = S_OK;
+    return rc;
+}
+
+/**
+ * Gets output from a formerly started guest process, tries to parse all of its guest
+ * stream (as long as data is available) and returns a stream object which can contain
+ * multiple stream blocks (which in turn then can contain key=value pairs).
+ *
+ * @return  HRESULT
+ * @param   aPID                    PID of process to get/parse the output from.
+ * @param   streamObjects           Reference to a guest stream object structure for
+ *                                  storing the parsed data.
+ */
+HRESULT Guest::executeStreamCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamObjects)
+{
+    HRESULT rc = S_OK;
+
+    SafeArray<BYTE> aOutputData;
+    ULONG cbOutputData = 0;
     GuestProcessStream guestStream;
 
     for (;;)
@@ -1220,8 +1261,11 @@ HRESULT Guest::executeCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamOb
         {
             int vrc = guestStream.AddData(aOutputData.raw(), aOutputData.size());
             if (RT_UNLIKELY(RT_FAILURE(vrc)))
+            {
                 rc = setError(VBOX_E_IPRT_ERROR,
                               tr("Error while adding guest output to stream buffer (%Rrc)"), vrc);
+                break;
+            }
         }
         else /* No more output! */
             break;
@@ -1229,21 +1273,81 @@ HRESULT Guest::executeCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamOb
 
     if (SUCCEEDED(rc))
     {
-        GuestProcessStreamBlock curPairs;
-        int vrc = guestStream.ParseBlock(curPairs);
-        if (   RT_SUCCESS(vrc)
-            || vrc == VERR_MORE_DATA)
+        for (;;)
         {
-            /** @todo Catch exceptions! */
-            if (curPairs.GetCount())
-                streamObjects.push_back(curPairs);
+            GuestProcessStreamBlock curBlock;
+            rc = executeStreamCollectBlock(aPID,
+                                           guestStream, curBlock);
+            if (SUCCEEDED(rc))
+
+            {
+                if (curBlock.GetCount())
+                    streamObjects.push_back(curBlock);
+                else
+                    break; /* No more data. */
+            }
+            else
+            {
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              tr("Error while parsing guest stream block"));
+                break;
+            }
         }
-        else
-            rc = setError(VBOX_E_IPRT_ERROR,
-                          tr("Error while parsing guest output (%Rrc)"), vrc);
     }
 
     return rc;
+}
+
+/**
+ * Does busy waiting on a formerly started guest process.
+ *
+ * @return  HRESULT
+ * @param   uPID                    PID of guest process to wait for.
+ * @param   uTimeoutMS              Waiting timeout (in ms). Specify 0 for an infinite timeout.
+ * @param   pRetStatus              Pointer which receives current process status after the change.
+ *                                  Optional.
+ * @param   puRetExitCode           Pointer which receives the final exit code in case of guest process
+ *                                  termination. Optional.
+ */
+HRESULT Guest::executeWaitForStatusChange(ULONG uPID, ULONG uTimeoutMS,
+                                          ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode)
+{
+    if (uTimeoutMS == 0)
+        uTimeoutMS = UINT32_MAX;
+
+    uint64_t u64StartMS = RTTimeMilliTS();
+
+    HRESULT hRC;
+    ULONG uExitCode, uRetFlags;
+    ExecuteProcessStatus_T curStatus;
+    hRC = GetProcessStatus(uPID, &uExitCode, &uRetFlags, &curStatus);
+    if (FAILED(hRC))
+        return hRC;
+
+    do
+    {
+        if (   uTimeoutMS != UINT32_MAX
+            && RTTimeMilliTS() - u64StartMS > uTimeoutMS)
+        {
+            hRC = setError(VBOX_E_IPRT_ERROR,
+                           tr("The process (PID %u) did not change its status within time (%ums)"),
+                           uPID, uTimeoutMS);
+            break;
+        }
+        hRC = GetProcessStatus(uPID, &uExitCode, &uRetFlags, &curStatus);
+        if (FAILED(hRC))
+            break;
+        RTThreadSleep(100);
+    } while(*pRetStatus == curStatus);
+
+    if (SUCCEEDED(hRC))
+    {
+        if (pRetStatus)
+            *pRetStatus = curStatus;
+        if (puRetExitCode)
+            *puRetExitCode = uExitCode;
+    }
+    return hRC;
 }
 
 /**

@@ -36,15 +36,15 @@ class Guest;
 class Progress;
 
 /** Structure representing the "value" side of a "key=value" pair. */
-typedef struct VBOXGUESTCTRL_STREAM_PAIR
+typedef struct VBOXGUESTCTRL_STREAMPAIR
 {
     char *pszValue;
-} VBOXGUESTCTRL_STREAM_PAIR, *PVBOXGUESTCTRL_STREAM_PAIR;
+} VBOXGUESTCTRL_STREAMPAIR, *PVBOXGUESTCTRL_STREAM_PAIR;
 
 /** Map containing "key=value" pairs of a guest process stream. */
-typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAM_PAIR > GuestCtrlStreamPairs;
-typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAM_PAIR >::iterator GuestCtrlStreamPairsIter;
-typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAM_PAIR >::const_iterator GuestCtrlStreamPairsIterConst;
+typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAMPAIR > GuestCtrlStreamPairs;
+typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAMPAIR >::iterator GuestCtrlStreamPairsIter;
+typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAMPAIR >::const_iterator GuestCtrlStreamPairsIterConst;
 
 /**
  * Class representing a block of stream pairs (key=value). Each block in a raw guest
@@ -89,7 +89,7 @@ typedef std::vector< GuestProcessStreamBlock > GuestCtrlStreamObjects;
 
 /**
  * Class for parsing machine-readable guest process output by VBoxService'
- * toolbox commands ("vbox_ls", "vbox_stat" etc).
+ * toolbox commands ("vbox_ls", "vbox_stat" etc), aka "guest stream".
  */
 class GuestProcessStream
 {

@@ -1203,6 +1203,9 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
     if (RT_SUCCESS(rc) && pszSubDir)
         rc = RTPathAppend(szCurDir, sizeof(szCurDir), pszSubDir);
 
+    if (RT_FAILURE(rc))
+        return rc;
+
     /* Flag indicating whether the current directory was created on the
      * target or not. */
     bool fDirCreated = false;
