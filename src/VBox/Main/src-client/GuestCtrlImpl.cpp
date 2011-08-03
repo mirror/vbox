@@ -1171,7 +1171,7 @@ HRESULT Guest::executeProcessResult(const char *pszCommand, const char *pszUser,
 
 /**
  * Gets the next stream block from a formerly processed guest stream. Will return
- * E_PENDING if not enough guest stream data was read yet, otherwise S_OK or an appropriate
+ * E_UNEXPECTED if not enough guest stream data was read yet, otherwise S_OK or an appropriate
  * error.
  *
  * @return  HRESULT
@@ -1186,7 +1186,6 @@ HRESULT Guest::executeStreamCollectBlock(ULONG aPID,
 
     SafeArray<BYTE> aOutputData;
     ULONG cbOutputData = 0;
-    int vrc = VINF_SUCCESS;
     for (;;)
     {
         rc = this->GetProcessOutput(aPID, ProcessOutputFlag_None,
@@ -1225,7 +1224,7 @@ HRESULT Guest::executeStreamCollectBlock(ULONG aPID,
         else /* No more output! */
         {
             if (vrc == VERR_MORE_DATA)
-                rc = E_PENDING; /** @todo Find a better rc! */
+                rc = E_UNEXPECTED; /** @todo Find a better rc! */
             break;
         }
     }
