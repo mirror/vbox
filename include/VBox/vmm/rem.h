@@ -70,7 +70,6 @@ REMR3DECL(int)  REMR3BreakpointClear(PVM pVM, RTGCUINTPTR Address);
 REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu);
 REMR3DECL(int)  REMR3StateBack(PVM pVM, PVMCPU pVCpu);
 REMR3DECL(void) REMR3StateUpdate(PVM pVM, PVMCPU pVCpu);
-REMR3DECL(void) REMR3A20Set(PVM pVM, PVMCPU pVCpu, bool fEnable);
 REMR3DECL(int)  REMR3DisasEnableStepping(PVM pVM, bool fEnable);
 REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM);
 REMR3DECL(int)  REMR3NotifyCodePageChanged(PVM pVM, PVMCPU pVCpu, RTGCPTR pvCodePage);

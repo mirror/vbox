@@ -2159,6 +2159,17 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 #endif
 
     /*
+     * Sync the A20 gate.
+     */
+    bool fA20State = PGMPhysIsA20Enabled(pVCpu);
+    if (fA20State != RT_BOOL(pVM->rem.s.Env.a20_mask & RT_BIT(20)))
+    {
+        ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
+        cpu_x86_set_a20(&pVM->rem.s.Env, fA20State);
+        ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
+    }
+
+    /*
      * Registers which are rarely changed and require special handling / order when changed.
      */
     if (fFlags & (  CPUM_CHANGED_GLOBAL_TLB_FLUSH
@@ -2940,29 +2951,6 @@ REMR3DECL(void) REMR3StateUpdate(PVM pVM, PVMCPU pVCpu)
 
 #undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_REM
-
-
-/**
- * Notify the recompiler about Address Gate 20 state change.
- *
- * This notification is required since A20 gate changes are
- * initialized from a device driver and the VM might just as
- * well be in REM mode as in RAW mode.
- *
- * @param   pVM         VM handle.
- * @param   pVCpu       VMCPU handle.
- * @param   fEnable     True if the gate should be enabled.
- *                      False if the gate should be disabled.
- */
-REMR3DECL(void) REMR3A20Set(PVM pVM, PVMCPU pVCpu, bool fEnable)
-{
-    LogFlow(("REMR3A20Set: fEnable=%d\n", fEnable));
-    VM_ASSERT_EMT(pVM);
-
-    ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
-    cpu_x86_set_a20(&pVM->rem.s.Env, fEnable);
-    ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
-}
 
 
 /**

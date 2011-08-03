@@ -360,7 +360,6 @@ static DECLCALLBACKPTR(int, pfnREMR3Run)(PVM, PVMCPU);
 static DECLCALLBACKPTR(int, pfnREMR3State)(PVM, PVMCPU);
 static DECLCALLBACKPTR(int, pfnREMR3StateBack)(PVM, PVMCPU);
 static DECLCALLBACKPTR(void, pfnREMR3StateUpdate)(PVM, PVMCPU);
-static DECLCALLBACKPTR(void, pfnREMR3A20Set)(PVM, PVMCPU, bool);
 static DECLCALLBACKPTR(void, pfnREMR3ReplayHandlerNotifications)(PVM pVM);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamRegister)(PVM, RTGCPHYS, RTGCPHYS, unsigned);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamDeregister)(PVM, RTGCPHYS, RTUINT);
@@ -1147,7 +1146,6 @@ static const REMFNDESC g_aExports[] =
     { "REMR3State",                             (void *)&pfnREMR3State,                             &g_aArgsVMandVMCPU[0],                      RT_ELEMENTS(g_aArgsVMandVMCPU),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),    NULL },
     { "REMR3StateBack",                         (void *)&pfnREMR3StateBack,                         &g_aArgsVMandVMCPU[0],                      RT_ELEMENTS(g_aArgsVMandVMCPU),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),    NULL },
     { "REMR3StateUpdate",                       (void *)&pfnREMR3StateUpdate,                       &g_aArgsVMandVMCPU[0],                      RT_ELEMENTS(g_aArgsVMandVMCPU),                        REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
-    { "REMR3A20Set",                            (void *)&pfnREMR3A20Set,                            &g_aArgsA20Set[0],                          RT_ELEMENTS(g_aArgsA20Set),                            REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3ReplayHandlerNotifications",        (void *)&pfnREMR3ReplayHandlerNotifications,        &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyPhysRamRegister",             (void *)&pfnREMR3NotifyPhysRamRegister,             &g_aArgsNotifyPhysRamRegister[0],           RT_ELEMENTS(g_aArgsNotifyPhysRamRegister),             REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
     { "REMR3NotifyPhysRamDeregister",           (void *)&pfnREMR3NotifyPhysRamDeregister,           &g_aArgsNotifyPhysRamDeregister[0],         RT_ELEMENTS(g_aArgsNotifyPhysRamDeregister),           REMFNDESC_FLAGS_RET_VOID,   0,              NULL },
@@ -2305,14 +2303,6 @@ REMR3DECL(void) REMR3StateUpdate(PVM pVM, PVMCPU pVCpu)
 #ifndef USE_REM_STUBS
     Assert(VALID_PTR(pfnREMR3StateUpdate));
     pfnREMR3StateUpdate(pVM, pVCpu);
-#endif
-}
-
-REMR3DECL(void) REMR3A20Set(PVM pVM, PVMCPU pVCpu, bool fEnable)
-{
-#ifndef USE_REM_STUBS
-    Assert(VALID_PTR(pfnREMR3A20Set));
-    pfnREMR3A20Set(pVM, pVCpu, fEnable);
 #endif
 }
 
