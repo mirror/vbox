@@ -4291,7 +4291,7 @@ serial ports</comment>
         <translation type="unfinished">Definierar typ av chipset som används för denna värd.</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>du har tilldelat chipset-typen ICH9 till denna virtuella maskin. Den kommer inte att fungera korrekt såvida inte IO-APIC-funktionen även aktiveras. Detta kommer att göras automatiskt när du accepterar inställningarna för den virtuella maskinen genom att trycka på OK-knappen.</translation>
     </message>
     <message>

@@ -3339,7 +3339,7 @@
         <translation type="unfinished">Définit le chipset utilisé dans cette machine.</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>Vous avez affecté un chipset de type ICH9 à cette machine. Ceci nécessite l&apos;activation d&apos;un contrôleur APIC, qui sera activée automatiquement en cliquant sur OK pour accepter les.paramètres actuels.</translation>
     </message>
     <message>

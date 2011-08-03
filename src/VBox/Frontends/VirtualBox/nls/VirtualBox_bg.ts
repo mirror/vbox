@@ -3990,7 +3990,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Указва тип на чипсета, който да се използва в тази ВМ.</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>избрали сте чипсет тип ICH9 за тази ВМ. Той няма да работи коректно, докато IO-APIC също е позволен. Това ще бъде променено автоматично, когато потвърдите настройките на ВМ с натискането на бутона Добре.</translation>
     </message>
     <message>

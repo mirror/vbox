@@ -4187,7 +4187,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Определяет набор микросхем (чипсет), используемый материнской платой данной виртуальной машины.</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>Вы задали тип чипсета ICH9 для данной машины. Машина не сможет функционировать если функция IO-APIC будет отключена, поэтому данная функция будет включена автоматически при закрытии диалога настроек.</translation>
     </message>
     <message>

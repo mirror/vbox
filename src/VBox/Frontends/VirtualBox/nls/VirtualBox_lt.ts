@@ -3360,7 +3360,7 @@
         <translation>šiai virtualiai mašinai priskyrėte daugiau kaip vieną virtualų procesorių. Ši funkcija neveiktų, jei neįgalinsite procesoriaus virtualizavimo aparatiniame lygyje (VT-x/AMD-V). Todėl šią savybė bus automatiškai įgalinta patvirtinant VM nuostatas nuspausdžiant mygtuką „Gerai“.</translation>
     </message>
     <message>
-        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>šiai VM priskyrėte ICH9 lustų rinkinį. Ši savybė neveiktų, jei neįgalinsite IO-ACPI. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
     </message>
     <message>
