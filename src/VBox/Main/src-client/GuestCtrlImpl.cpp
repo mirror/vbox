@@ -1186,6 +1186,7 @@ HRESULT Guest::executeStreamCollectBlock(ULONG aPID,
 
     SafeArray<BYTE> aOutputData;
     ULONG cbOutputData = 0;
+    int vrc;
     for (;;)
     {
         rc = this->GetProcessOutput(aPID, ProcessOutputFlag_None,
@@ -1194,7 +1195,7 @@ HRESULT Guest::executeStreamCollectBlock(ULONG aPID,
         if (   SUCCEEDED(rc)
             && aOutputData.size())
         {
-            int vrc = stream.AddData(aOutputData.raw(), aOutputData.size());
+            vrc = stream.AddData(aOutputData.raw(), aOutputData.size());
             if (RT_UNLIKELY(RT_FAILURE(vrc)))
             {
                 rc = setError(VBOX_E_IPRT_ERROR,
