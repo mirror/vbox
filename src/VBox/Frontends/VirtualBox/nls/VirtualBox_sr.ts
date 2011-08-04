@@ -3676,7 +3676,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished">Када одабрано, брише демонтирање медијума када га гостов ОС избаци.</translation>
+        <translation>Када одабрано, виртуални диск неже бити уклоњен када га гост избаци.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
@@ -3684,7 +3684,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked the guest system will see the virtual disk as a solid state device.</source>
-        <translation type="unfinished">Када унето, поставља медијум као не SSD.</translation>
+        <translation>Када унето, гост ће видети виртуални диск као SSD.</translation>
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
@@ -3726,7 +3726,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished">Одабере број порта од SATA контролера који је одабран у дрво стоваришта. Вредност не може да буде мање од максималниј број порта + 1.</translation>
+        <translation>Одабере број порта од SATA контролера који је одабран у дрво стоваришта. Вредност мора да буде макар један више него број порта који Вам треба.</translation>
     </message>
 </context>
 <context>
@@ -3916,7 +3916,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>поставили сте ICH9 чипсет за ову машину. Неће коректно радити док IO-APIC способност није омогућена. То ће се аутоматско урадити када прихватите поставке после стискања дугмета У реду.</translation>
+        <translation type="unfinished">поставили сте ICH9 чипсет за ову машину. Неће коректно радити док IO-APIC способност није омогућена. То ће се аутоматско урадити када прихватите поставке после стискања дугмета У реду.</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
@@ -4463,7 +4463,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished">Стиснути &lt;b&gt;Одабери&lt;/b&gt; за одабирање смештаја датотеке која садржава податке виртуалног диска, или унети име у уносно поље.</translation>
+        <translation>Унети име новог виртуалног диска или кликните на икону фасцикле за одабирање друге фасцикле где да се креира датотека.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -4842,11 +4842,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Start-up &amp;Disk</source>
-        <translation type="unfinished">Диск бута харда</translation>
+        <translation>Бут диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Одаберите виртуални диск који ће да се употреби као „бут“ за машину. Можете или да креирате нов диск или да одаберете постојећи са списка.&lt;/p&gt;&lt;p&gt;Ако Вам треба сложенији хард диск, можете да прескочите овај корак и да касније прикачите хард диск пребо подешавања VM.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Одаберите виртуални диск који ће да се употреби као „бут“ за машину. Можете или да креирате нов диск или да одаберете постојећи са списка или са другог места преко иконе фасцикле.&lt;/p&gt;&lt;p&gt;Ако Вам треба сложенији хард диск, можете да прескочите овај корак и да касније промените подешавања, наком креације машине.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -4854,7 +4854,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Препоручена величина диска бута је &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Препоручена величина диска бута је &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -4890,7 +4890,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished">Хард диск бута</translation>
+        <translation>Бут диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
@@ -9122,7 +9122,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished">Статус машине које уређујете је промењен. Само поставке које су променљиве су сачуване када стиснете У реду. Остале промене ће бити изгубљене.</translation>
+        <translation>Машину које мењате је покренута. Само неке поставке могу да се промене. Остале промене ће бити изгубљене ако сада затворите овај прозор.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
