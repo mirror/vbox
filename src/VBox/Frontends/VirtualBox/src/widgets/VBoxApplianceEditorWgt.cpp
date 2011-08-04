@@ -20,7 +20,7 @@
 /* VBox includes */
 #include "VBoxApplianceEditorWgt.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "VBoxOSTypeSelectorButton.h"
 #include "VBoxLineTextEdit.h"
 

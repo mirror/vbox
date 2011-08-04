@@ -23,7 +23,7 @@
 #include "VBoxLicenseViewer.h"
 #include "QIDialogButtonBox.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 /* Qt includes */
 #include <QTextBrowser>
@@ -79,7 +79,7 @@ int VBoxLicenseViewer::showLicenseFromFile(const QString &strLicenseFileName)
     }
     else
     {
-        vboxProblem().cannotOpenLicenseFile(this, strLicenseFileName);
+        msgCenter().cannotOpenLicenseFile(this, strLicenseFileName);
         return QDialog::Rejected;
     }
 }

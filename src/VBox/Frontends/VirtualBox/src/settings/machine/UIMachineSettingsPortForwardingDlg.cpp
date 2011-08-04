@@ -31,7 +31,7 @@
 /* Local includes */
 #include "UIMachineSettingsPortForwardingDlg.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "UIToolBar.h"
 #include "QITableView.h"
 #include "QIDialogButtonBox.h"
@@ -642,7 +642,7 @@ void UIMachineSettingsPortForwardingDlg::accept()
         if (m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostPort), Qt::EditRole).value<PortData>().value() == 0 ||
             m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_GuestPort), Qt::EditRole).value<PortData>().value() == 0)
         {
-            vboxProblem().warnAboutIncorrectPort(this);
+            msgCenter().warnAboutIncorrectPort(this);
             return;
         }
     }
@@ -653,7 +653,7 @@ void UIMachineSettingsPortForwardingDlg::accept()
 void UIMachineSettingsPortForwardingDlg::reject()
 {
     /* Check if table data was changed: */
-    if (fIsTableDataChanged && !vboxProblem().confirmCancelingPortForwardingDialog(this))
+    if (fIsTableDataChanged && !msgCenter().confirmCancelingPortForwardingDialog(this))
         return;
     /* Base class reject() slot: */
     QIWithRetranslateUI<QIDialog>::reject();

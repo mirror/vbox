@@ -53,9 +53,9 @@
     </message>
 </context>
 <context>
-    <name>VBoxProblemReporter</name>
+    <name>UIMessageCenter</name>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxProblemReporter.cpp" line="2063"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2063"/>
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation>
             <numerusform>&lt;p&gt;The virtual machine &lt;b&gt;%1&lt;/b&gt; is currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine will be discarded. Note that the existing machine is not changed.&lt;/p&gt;</numerusform>

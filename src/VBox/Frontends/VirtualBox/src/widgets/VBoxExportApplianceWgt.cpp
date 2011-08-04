@@ -20,7 +20,7 @@
 /* VBox includes */
 #include "VBoxExportApplianceWgt.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // ExportSortProxyModel

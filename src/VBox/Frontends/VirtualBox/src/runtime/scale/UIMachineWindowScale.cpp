@@ -25,7 +25,7 @@
 
 /* Local includes */
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "VBoxUtils.h"
 
 #include "UISession.h"

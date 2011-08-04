@@ -9771,7 +9771,7 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
     </message>
 </context>
 <context>
-    <name>VBoxProblemReporter</name>
+    <name>UIMessageCenter</name>
     <message>
         <source>Callee: </source>
         <comment>error info</comment>

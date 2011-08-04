@@ -25,7 +25,7 @@
 /* Local includes */
 #include "VBoxUpdateDlg.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "UIIconPool.h"
 #include "VBoxUtils.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -403,7 +403,7 @@ void VBoxUpdateDlg::sltHandleReply()
             /* For background update: */
             if (isHidden())
             {
-                vboxProblem().showUpdateSuccess(vboxGlobal().mainWindow(), response[0], response[1]);
+                msgCenter().showUpdateSuccess(vboxGlobal().mainWindow(), response[0], response[1]);
                 acceptLater();
             }
             /* For wizard update: */
@@ -421,7 +421,7 @@ void VBoxUpdateDlg::sltHandleReply()
             if (isHidden())
             {
                 if (m_fForceRun)
-                    vboxProblem().showUpdateNotFound(vboxGlobal().mainWindow());
+                    msgCenter().showUpdateNotFound(vboxGlobal().mainWindow());
                 acceptLater();
             }
             /* For wizard update: */
@@ -450,7 +450,7 @@ void VBoxUpdateDlg::sltHandleReply()
         if (isHidden())
         {
             if (m_fForceRun)
-                vboxProblem().showUpdateFailure(vboxGlobal().mainWindow(), pReply->errorString());
+                msgCenter().showUpdateFailure(vboxGlobal().mainWindow(), pReply->errorString());
             acceptLater();
         }
         /* For wizard update: */

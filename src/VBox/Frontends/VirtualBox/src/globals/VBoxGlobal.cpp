@@ -24,7 +24,7 @@
 #include "VBoxUtils.h"
 #include "VBoxDefs.h"
 #include "VBoxSelectorWnd.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
@@ -383,7 +383,7 @@ bool VBoxGlobal::setSettings (VBoxGlobalSettings &gs)
 
     if (!mVBox.isOk())
     {
-        vboxProblem().cannotSaveGlobalConfig (mVBox);
+        msgCenter().cannotSaveGlobalConfig (mVBox);
         return false;
     }
 
@@ -2177,7 +2177,7 @@ bool VBoxGlobal::showVirtualBoxLicense()
     /* Check the version again. */
     if (!versionNumber)
     {
-        vboxProblem().cannotFindLicenseFiles (path);
+        msgCenter().cannotFindLicenseFiles (path);
         return false;
     }
 
@@ -2217,7 +2217,7 @@ CSession VBoxGlobal::openSession(const QString &aId, bool aExisting /* = false *
     session.createInstance(CLSID_Session);
     if (session.isNull())
     {
-        vboxProblem().cannotOpenSession (session);
+        msgCenter().cannotOpenSession (session);
         return session;
     }
 
@@ -2239,7 +2239,7 @@ CSession VBoxGlobal::openSession(const QString &aId, bool aExisting /* = false *
 
     if (!mVBox.isOk())
     {
-        vboxProblem().cannotOpenSession(mVBox, foundMachine);
+        msgCenter().cannotOpenSession(mVBox, foundMachine);
         session.detach();
     }
 
@@ -2794,7 +2794,7 @@ QString VBoxGlobal::openMedium(VBoxDefs::MediumType mediumType, QString strMediu
         return vboxMedium.id();
     }
     else
-        vboxProblem().cannotOpenMedium(pParent, vbox, mediumType, strMediumLocation);
+        msgCenter().cannotOpenMedium(pParent, vbox, mediumType, strMediumLocation);
 
     return QString();
 }
@@ -3208,7 +3208,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
              * case, if no explicit language file exists, we will simply
              * fall-back to English (built-in). */
             if (!aLangId.isNull() && langId != "en")
-                vboxProblem().cannotFindLanguage (langId, nlsPath);
+                msgCenter().cannotFindLanguage (langId, nlsPath);
             /* selectedLangId remains built-in here */
             AssertReturnVoid (selectedLangId == gVBoxBuiltInLangName);
         }
@@ -3246,7 +3246,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
         sLoadedLangId = selectedLangId;
     else
     {
-        vboxProblem().cannotLoadLanguage (languageFileName);
+        msgCenter().cannotLoadLanguage (languageFileName);
         sLoadedLangId = gVBoxBuiltInLangName;
     }
 
@@ -3283,7 +3283,7 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
          * but the load failure is so rare here that it's not worth a separate
          * message (but still, having something is better than having none) */
         if (!loadOk && !aLangId.isNull())
-            vboxProblem().cannotLoadLanguage (languageFileName);
+            msgCenter().cannotLoadLanguage (languageFileName);
     }
     if (fResetToC)
         sLoadedLangId = "C";
@@ -4556,7 +4556,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
     bool result = client.result();
 
     if (!result)
-        vboxProblem().cannotOpenURL (aURL);
+        msgCenter().cannotOpenURL (aURL);
 
     return result;
 }
@@ -4564,8 +4564,8 @@ bool VBoxGlobal::openURL (const QString &aURL)
 /**
  * Shows the VirtualBox registration dialog.
  *
- * @note that this method is not part of VBoxProblemReporter (like e.g.
- *       VBoxProblemReporter::showHelpAboutDialog()) because it is tied to
+ * @note that this method is not part of UIMessageCenter (like e.g.
+ *       UIMessageCenter::sltShowHelpAboutDialog()) because it is tied to
  *       VBoxCallback::OnExtraDataChange() handling performed by VBoxGlobal.
  *
  * @param aForce
@@ -4610,8 +4610,8 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
 /**
  * Shows the VirtualBox version check & update dialog.
  *
- * @note that this method is not part of VBoxProblemReporter (like e.g.
- *       VBoxProblemReporter::showHelpAboutDialog()) because it is tied to
+ * @note that this method is not part of UIMessageCenter (like e.g.
+ *       UIMessageCenter::sltShowHelpAboutDialog()) because it is tied to
  *       VBoxCallback::OnExtraDataChange() handling performed by VBoxGlobal.
  *
  * @param aForce
@@ -4694,7 +4694,7 @@ bool VBoxGlobal::event (QEvent *e)
             {
                 if (ev->mMedium.state() == KMediumState_Inaccessible &&
                     !ev->mMedium.result().isOk())
-                    vboxProblem().cannotGetMediaAccessibility (ev->mMedium);
+                    msgCenter().cannotGetMediaAccessibility (ev->mMedium);
                 Assert (ev->mIterator != mMediaList.end());
                 *(ev->mIterator) = ev->mMedium;
                 emit mediumEnumerated (*ev->mIterator);
@@ -4823,14 +4823,14 @@ void VBoxGlobal::init()
     HRESULT rc = COMBase::InitializeCOM(true);
     if (FAILED (rc))
     {
-        vboxProblem().cannotInitCOM (rc);
+        msgCenter().cannotInitCOM (rc);
         return;
     }
 
     mVBox.createInstance (CLSID_VirtualBox);
     if (!mVBox.isOk())
     {
-        vboxProblem().cannotCreateVirtualBox (mVBox);
+        msgCenter().cannotCreateVirtualBox (mVBox);
         return;
     }
 
@@ -4841,7 +4841,7 @@ void VBoxGlobal::init()
     gset.load (mVBox);
     if (!mVBox.isOk() || !gset)
     {
-        vboxProblem().cannotLoadGlobalConfig (mVBox, gset.lastError());
+        msgCenter().cannotLoadGlobalConfig (mVBox, gset.lastError());
         return;
     }
 
@@ -5184,7 +5184,7 @@ void VBoxGlobal::init()
             if (m.isNull())
             {
                 if (showStartVMErrors())
-                    vboxProblem().cannotFindMachineByName (mVBox, vmNameOrUuid);
+                    msgCenter().cannotFindMachineByName (mVBox, vmNameOrUuid);
                 return;
             }
             vmUuid = m.GetId();
@@ -5668,7 +5668,7 @@ bool VBoxGlobal::launchMachine(CMachine &machine)
     session.createInstance(CLSID_Session);
     if (session.isNull())
     {
-        vboxProblem().cannotOpenSession(session);
+        msgCenter().cannotOpenSession(session);
         return false;
     }
 
@@ -5692,16 +5692,16 @@ bool VBoxGlobal::launchMachine(CMachine &machine)
     if (   !vbox.isOk()
         || progress.isNull())
     {
-        vboxProblem().cannotOpenSession(vbox, machine);
+        msgCenter().cannotOpenSession(vbox, machine);
         return false;
     }
 
     /* Hide the "VM spawning" progress dialog */
     /* I hope 1 minute will be enough to spawn any running VM silently, isn't it? */
     int iSpawningDuration = 60000;
-    vboxProblem().showModalProgressDialog(progress, machine.GetName(), "", 0, false, iSpawningDuration);
+    msgCenter().showModalProgressDialog(progress, machine.GetName(), "", 0, false, iSpawningDuration);
     if (progress.GetResultCode() != 0)
-        vboxProblem().cannotOpenSession(vbox, machine, progress);
+        msgCenter().cannotOpenSession(vbox, machine, progress);
 
     session.UnlockMachine();
 

@@ -29,7 +29,7 @@
 /* Local includes */
 #include "COMDefs.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 #include "UIActionsPool.h"
 #include "UIKeyboardHandler.h"
@@ -311,13 +311,13 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                         CProgress progress = console.SaveState();
 
                         if (!console.isOk())
-                            vboxProblem().cannotSaveMachineState(console);
+                            msgCenter().cannotSaveMachineState(console);
                         else
                         {
                             /* Show the "VM saving" progress dialog: */
-                            vboxProblem().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png", 0, true);
+                            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png", 0, true);
                             if (progress.GetResultCode() != 0)
-                                vboxProblem().cannotSaveMachineState(progress);
+                                msgCenter().cannotSaveMachineState(progress);
                             else
                                 success = true;
                         }
@@ -334,7 +334,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                         /* Signal ACPI shutdown (if there is no ACPI device, the operation will fail): */
                         console.PowerButton();
                         if (!console.isOk())
-                            vboxProblem().cannotACPIShutdownMachine(console);
+                            msgCenter().cannotACPIShutdownMachine(console);
                         else
                             success = true;
                     }
@@ -343,13 +343,13 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                         CProgress progress = console.PowerDown();
 
                         if (!console.isOk())
-                            vboxProblem().cannotStopMachine(console);
+                            msgCenter().cannotStopMachine(console);
                         else
                         {
                             /* Show the power down progress dialog: */
-                            vboxProblem().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png", 0, true);
+                            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png", 0, true);
                             if (progress.GetResultCode() != 0)
-                                vboxProblem().cannotStopMachine(progress);
+                                msgCenter().cannotStopMachine(progress);
                             else
                                 success = true;
                         }
@@ -362,13 +362,13 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                                 CSnapshot snapshot = machine.GetCurrentSnapshot();
                                 CProgress progress = console.RestoreSnapshot(snapshot);
                                 if (!console.isOk())
-                                    vboxProblem().cannotRestoreSnapshot(console, snapshot.GetName());
+                                    msgCenter().cannotRestoreSnapshot(console, snapshot.GetName());
                                 else
                                 {
                                     /* Show the progress dialog: */
-                                    vboxProblem().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png", 0, true);
+                                    msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png", 0, true);
                                     if (progress.GetResultCode() != 0)
-                                        vboxProblem().cannotRestoreSnapshot(progress, snapshot.GetName());
+                                        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
                                 }
                             }
                         }

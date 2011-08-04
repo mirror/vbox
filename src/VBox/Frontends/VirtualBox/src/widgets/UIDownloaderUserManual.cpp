@@ -26,7 +26,7 @@
 /* Local includes: */
 #include "UIDownloaderUserManual.h"
 #include "QIFileDialog.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 UIDownloaderUserManual *UIDownloaderUserManual::m_pInstance = 0;
 
@@ -103,7 +103,7 @@ UIMiniProgressWidget* UIDownloaderUserManual::createProgressWidgetFor(QWidget *p
 
 bool UIDownloaderUserManual::askForDownloadingConfirmation(QNetworkReply *pReply)
 {
-    return vboxProblem().confirmUserManualDownload(source(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    return msgCenter().confirmUserManualDownload(source(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
 void UIDownloaderUserManual::handleDownloadedObject(QNetworkReply *pReply)
@@ -121,7 +121,7 @@ void UIDownloaderUserManual::handleDownloadedObject(QNetworkReply *pReply)
             file.write(receivedData);
             file.close();
             /* Warn user about User Manual document loaded and saved: */
-            vboxProblem().warnAboutUserManualDownloaded(source(), QDir::toNativeSeparators(target()));
+            msgCenter().warnAboutUserManualDownloaded(source(), QDir::toNativeSeparators(target()));
             /* Warn listener about User Manual was downloaded: */
             emit sigDownloadFinished(target());
             break;
@@ -129,7 +129,7 @@ void UIDownloaderUserManual::handleDownloadedObject(QNetworkReply *pReply)
         else
         {
             /* Warn user about User Manual document loaded but was not saved: */
-            vboxProblem().warnAboutUserManualCantBeSaved(source(), QDir::toNativeSeparators(target()));
+            msgCenter().warnAboutUserManualCantBeSaved(source(), QDir::toNativeSeparators(target()));
         }
 
         /* Ask the user about User Manual file save location: */
@@ -146,6 +146,6 @@ void UIDownloaderUserManual::handleDownloadedObject(QNetworkReply *pReply)
 
 void UIDownloaderUserManual::warnAboutNetworkError(const QString &strError)
 {
-    return vboxProblem().warnAboutUserManualCantBeDownloaded(source(), strError);
+    return msgCenter().warnAboutUserManualCantBeDownloaded(source(), strError);
 }
 

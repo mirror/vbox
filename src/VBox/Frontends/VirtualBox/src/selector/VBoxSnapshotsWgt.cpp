@@ -22,7 +22,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Local includes */
 #include "UIIconPool.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "VBoxSnapshotDetailsDlg.h"
 #include "VBoxSnapshotsWgt.h"
 #include "VBoxTakeSnapshotDlg.h"
@@ -577,7 +577,7 @@ void VBoxSnapshotsWgt::sltRestoreSnapshot()
     CSnapshot snapshot = mMachine.FindSnapshot(strSnapshotId);
 
     /* Ask the user if he really wants to restore the snapshot: */
-    int iResultCode = vboxProblem().askAboutSnapshotRestoring(snapshot.GetName(), mMachine.GetCurrentStateModified());
+    int iResultCode = msgCenter().askAboutSnapshotRestoring(snapshot.GetName(), mMachine.GetCurrentStateModified());
 
     /* If user confirmed other snapshot restoring: */
     if (iResultCode & QIMessageBox::Ok)
@@ -601,13 +601,13 @@ void VBoxSnapshotsWgt::sltRestoreSnapshot()
         CProgress progress = console.RestoreSnapshot(snapshot);
         if (console.isOk())
         {
-            vboxProblem().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_restore_90px.png",
-                                                  vboxProblem().mainWindowShown(), true);
+            msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_restore_90px.png",
+                                                  msgCenter().mainWindowShown(), true);
             if (progress.GetResultCode() != 0)
-                vboxProblem().cannotRestoreSnapshot(progress, snapshot.GetName());
+                msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
         }
         else
-            vboxProblem().cannotRestoreSnapshot(progress, snapshot.GetName());
+            msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
 
         /* Unlock machine finally: */
         session.UnlockMachine();
@@ -624,12 +624,12 @@ void VBoxSnapshotsWgt::sltDeleteSnapshot()
     AssertReturn (!snapId.isNull(), (void) 0);
     CSnapshot snapshot = mMachine.FindSnapshot(snapId);
 
-    if (!vboxProblem().askAboutSnapshotDeleting (snapshot.GetName()))
+    if (!msgCenter().askAboutSnapshotDeleting (snapshot.GetName()))
         return;
 
     /** @todo check available space on the target filesystem etc etc. */
 #if 0
-    if (!vboxProblem().askAboutSnapshotDeletingFreeSpace (snapshot.GetName(),
+    if (!msgCenter().askAboutSnapshotDeletingFreeSpace (snapshot.GetName(),
                                                           "/home/juser/.VirtualBox/Machines/SampleVM/Snapshots/{01020304-0102-0102-0102-010203040506}.vdi",
                                                           "59 GiB",
                                                           "15 GiB"))
@@ -648,14 +648,14 @@ void VBoxSnapshotsWgt::sltDeleteSnapshot()
     if (console.isOk())
     {
         /* Show the progress dialog */
-        vboxProblem().showModalProgressDialog (progress, mMachine.GetName(), ":/progress_snapshot_discard_90px.png",
-                                               vboxProblem().mainWindowShown(), true);
+        msgCenter().showModalProgressDialog (progress, mMachine.GetName(), ":/progress_snapshot_discard_90px.png",
+                                               msgCenter().mainWindowShown(), true);
 
         if (progress.GetResultCode() != 0)
-            vboxProblem().cannotDeleteSnapshot (progress,  snapshot.GetName());
+            msgCenter().cannotDeleteSnapshot (progress,  snapshot.GetName());
     }
     else
-        vboxProblem().cannotDeleteSnapshot (console,  snapshot.GetName());
+        msgCenter().cannotDeleteSnapshot (console,  snapshot.GetName());
 
     session.UnlockMachine();
 }
@@ -802,13 +802,13 @@ bool VBoxSnapshotsWgt::takeSnapshot()
         if (console.isOk())
         {
             /* Show the progress dialog */
-            vboxProblem().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_create_90px.png",
-                                                  vboxProblem().mainWindowShown(), true);
+            msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_create_90px.png",
+                                                  msgCenter().mainWindowShown(), true);
             if (progress.GetResultCode() != 0)
-                vboxProblem().cannotTakeSnapshot(progress);
+                msgCenter().cannotTakeSnapshot(progress);
         }
         else
-            vboxProblem().cannotTakeSnapshot(console);
+            msgCenter().cannotTakeSnapshot(console);
 
         /* Unlock machine finally: */
         session.UnlockMachine();

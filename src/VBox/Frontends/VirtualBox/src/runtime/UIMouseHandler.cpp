@@ -23,7 +23,7 @@
 
 /* Local includes */
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
 #include "UISession.h"
@@ -349,7 +349,7 @@ void UIMouseHandler::sltMouseCapabilityChanged()
 
     /* Notify user about mouse supports or not absolute pointing if that method was called by signal: */
     if (sender())
-        vboxProblem().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
+        msgCenter().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
 
     /* Notify all listeners: */
     emit mouseStateChanged(mouseState());
@@ -840,7 +840,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             {
                 if (uisession()->isPaused())
                 {
-                    vboxProblem().remindAboutPausedVMInput();
+                    msgCenter().remindAboutPausedVMInput();
                 }
                 else if (uisession()->isRunning())
                 {
@@ -848,7 +848,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                      * the capture state is to be defined by the dialog result itself: */
                     uisession()->setAutoCaptureDisabled(true);
                     bool autoConfirmed = false;
-                    bool ok = vboxProblem().confirmInputCapture(&autoConfirmed);
+                    bool ok = msgCenter().confirmInputCapture(&autoConfirmed);
                     if (autoConfirmed)
                         uisession()->setAutoCaptureDisabled(false);
                     /* Otherwise, the disable flag will be reset in the next console view's focus in event (since

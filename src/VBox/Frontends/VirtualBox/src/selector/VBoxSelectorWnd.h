@@ -24,7 +24,7 @@
 #include "QIWithRetranslateUI.h"
 #include "VBoxGlobal.h"
 #include "VBoxHelpActions.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 /* Global includes */
 #include <QMainWindow>

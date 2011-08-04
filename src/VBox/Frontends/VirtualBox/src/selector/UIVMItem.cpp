@@ -245,7 +245,7 @@ bool UIVMItem::recache()
         m_accessError = m_machine.GetAccessError();
 
         /* this should be in sync with
-         * VBoxProblemReporter::confirm_machineDeletion() */
+         * UIMessageCenter::confirm_machineDeletion() */
         QFileInfo fi(m_strSettingsFile);
         QString name = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxDefs::VBoxFileExts) ?
                        fi.completeBaseName() : fi.fileName();

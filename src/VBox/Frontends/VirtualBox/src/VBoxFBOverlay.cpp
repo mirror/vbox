@@ -23,7 +23,7 @@
 
 #include "VBoxFBOverlay.h"
 
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "VBoxGlobal.h"
 
 #include <VBox/VBoxGL2D.h>
@@ -3918,7 +3918,7 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
 //    }
 
     if (remind)
-        vboxProblem().remindAboutWrongColorDepth(size.bitsPerPixel(), 32);
+        msgCenter().remindAboutWrongColorDepth(size.bitsPerPixel(), 32);
 }
 
 VBoxVHWAColorFormat::VBoxVHWAColorFormat (uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b) :

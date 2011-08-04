@@ -23,7 +23,7 @@
 /* Local includes */
 #include "COMDefs.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 #include "UISession.h"
 #include "UIActionsPool.h"
@@ -74,7 +74,7 @@ bool UIMachineLogicSeamless::checkAvailability()
     /* Check that there are enough physical screens are connected: */
     if (cHostScreens < cGuestScreens)
     {
-        vboxProblem().cannotEnterSeamlessMode();
+        msgCenter().cannotEnterSeamlessMode();
         return false;
     }
 
@@ -89,7 +89,7 @@ bool UIMachineLogicSeamless::checkAvailability()
         quint64 usedBits = m_pScreenLayout->memoryRequirements();
         if (availBits < usedBits)
         {
-            vboxProblem().cannotEnterSeamlessMode(0, 0, 0,
+            msgCenter().cannotEnterSeamlessMode(0, 0, 0,
                                                   (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             return false;
         }
@@ -103,7 +103,7 @@ bool UIMachineLogicSeamless::checkAvailability()
     Assert(!hotKey.isEmpty());
 
     /* Show the info message. */
-    if (!vboxProblem().confirmGoingSeamless(hotKey))
+    if (!msgCenter().confirmGoingSeamless(hotKey))
         return false;
 
     return true;

@@ -23,7 +23,7 @@
 /* Local includes */
 #include "COMDefs.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 #include "UISession.h"
 #include "UIActionsPool.h"
@@ -76,7 +76,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
     /* Check that there are enough physical screens are connected: */
     if (cHostScreens < cGuestScreens)
     {
-        vboxProblem().cannotEnterFullscreenMode();
+        msgCenter().cannotEnterFullscreenMode();
         return false;
     }
 
@@ -91,7 +91,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
         quint64 usedBits = m_pScreenLayout->memoryRequirements();
         if (availBits < usedBits)
         {
-            int result = vboxProblem().cannotEnterFullscreenMode(0, 0, 0,
+            int result = msgCenter().cannotEnterFullscreenMode(0, 0, 0,
                                                                  (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             if (result == QIMessageBox::Cancel)
                 return false;
@@ -106,7 +106,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
     Assert(!hotKey.isEmpty());
 
     /* Show the info message. */
-    if (!vboxProblem().confirmGoingFullscreen(hotKey))
+    if (!msgCenter().confirmGoingFullscreen(hotKey))
         return false;
 
     return true;

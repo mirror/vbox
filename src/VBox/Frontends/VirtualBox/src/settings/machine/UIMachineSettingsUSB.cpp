@@ -21,7 +21,7 @@
 #include "QIWidgetValidator.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "UIToolBar.h"
 #include "UIMachineSettingsUSB.h"
 #include "UIMachineSettingsUSBFilterDetails.h"
@@ -476,7 +476,7 @@ bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTi
                             "After this you will be able to re-enable USB 2.0. "
                             "It will be disabled in the meantime unless you cancel the current settings changes.")
                             .arg(strExtPackName);
-        vboxProblem().remindAboutUnsupportedUSB2(strExtPackName, this);
+        msgCenter().remindAboutUnsupportedUSB2(strExtPackName, this);
         return true;
     }
     return true;

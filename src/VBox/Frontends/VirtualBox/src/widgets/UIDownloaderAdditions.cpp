@@ -26,7 +26,7 @@
 /* Local includes: */
 #include "UIDownloaderAdditions.h"
 #include "QIFileDialog.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 UIDownloaderAdditions *UIDownloaderAdditions::m_pInstance = 0;
 
@@ -74,7 +74,7 @@ UIMiniProgressWidget* UIDownloaderAdditions::createProgressWidgetFor(QWidget *pP
 
 bool UIDownloaderAdditions::askForDownloadingConfirmation(QNetworkReply *pReply)
 {
-    return vboxProblem().confirmDownloadAdditions(source(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    return msgCenter().confirmDownloadAdditions(source(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
 void UIDownloaderAdditions::handleDownloadedObject(QNetworkReply *pReply)
@@ -92,14 +92,14 @@ void UIDownloaderAdditions::handleDownloadedObject(QNetworkReply *pReply)
             file.write(receivedData);
             file.close();
             /* Warn user about additions image loaded and saved, propose to mount it: */
-            if (vboxProblem().confirmMountAdditions(source(), QDir::toNativeSeparators(target())))
+            if (msgCenter().confirmMountAdditions(source(), QDir::toNativeSeparators(target())))
                 emit sigDownloadFinished(target());
             break;
         }
         else
         {
             /* Warn user about additions image loaded but was not saved: */
-            vboxProblem().warnAboutAdditionsCantBeSaved(target());
+            msgCenter().warnAboutAdditionsCantBeSaved(target());
         }
 
         /* Ask the user about additions image file save location: */
@@ -116,6 +116,6 @@ void UIDownloaderAdditions::handleDownloadedObject(QNetworkReply *pReply)
 
 void UIDownloaderAdditions::warnAboutNetworkError(const QString &strError)
 {
-    return vboxProblem().cannotDownloadGuestAdditions(source(), strError);
+    return msgCenter().cannotDownloadGuestAdditions(source(), strError);
 }
 

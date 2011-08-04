@@ -24,7 +24,7 @@
 
 /* Local includes: */
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "QIFileDialog.h"
 #include "UIIconPool.h"
 #include "UINewHDWizard.h"
@@ -724,7 +724,7 @@ bool UINewHDWizardPageOptions::validatePage()
 {
     if (QFileInfo(m_strMediumPath).exists())
     {
-        vboxProblem().sayCannotOverwriteHardDiskStorage(this, m_strMediumPath);
+        msgCenter().sayCannotOverwriteHardDiskStorage(this, m_strMediumPath);
         return false;
     }
     return true;
@@ -1016,7 +1016,7 @@ bool UINewHDWizardPageSummary::createHardDisk()
     CProgress progress;
     if (!vbox.isOk())
     {
-        vboxProblem().cannotCreateHardDiskStorage(this, vbox, strMediumPath, hardDisk, progress);
+        msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, hardDisk, progress);
         return false;
     }
 
@@ -1043,15 +1043,15 @@ bool UINewHDWizardPageSummary::createHardDisk()
     /* Check for errors: */
     if (!hardDisk.isOk())
     {
-        vboxProblem().cannotCreateHardDiskStorage(this, vbox, strMediumPath, hardDisk, progress);
+        msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, hardDisk, progress);
         return false;
     }
-    vboxProblem().showModalProgressDialog(progress, windowTitle(), ":/progress_media_create_90px.png", this, true);
+    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_create_90px.png", this, true);
     if (progress.GetCanceled())
         return false;
     if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        vboxProblem().cannotCreateHardDiskStorage(this, vbox, strMediumPath, hardDisk, progress);
+        msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, hardDisk, progress);
         return false;
     }
 

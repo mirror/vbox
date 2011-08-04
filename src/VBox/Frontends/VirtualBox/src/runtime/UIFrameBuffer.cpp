@@ -24,7 +24,7 @@
 /* Local includes */
 # include "UIMachineView.h"
 # include "UIFrameBuffer.h"
-# include "VBoxProblemReporter.h"
+# include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */

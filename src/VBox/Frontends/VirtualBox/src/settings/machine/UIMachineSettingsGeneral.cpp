@@ -19,7 +19,7 @@
 
 #include "UIMachineSettingsGeneral.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "QIWidgetValidator.h"
 
 #include <QDir>

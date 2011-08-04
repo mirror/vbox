@@ -37,7 +37,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
 #include "UINewHDWizard.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "UIToolBar.h"
 #include "QIFileDialog.h"
 #include "QILabel.h"
@@ -400,7 +400,7 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     /* Connects for the button box */
     connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
     connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));
-    connect (mButtonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
+    connect (mButtonBox, SIGNAL (helpRequested()), &msgCenter(), SLOT (sltShowHelpHelpDialog()));
 }
 
 VBoxMediaManagerDlg::~VBoxMediaManagerDlg()
@@ -1093,7 +1093,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
     AssertReturnVoid (!id.isNull());
     VBoxDefs::MediumType type = item->type();
 
-    if (!vboxProblem().confirmRemoveMedium (this, item->medium()))
+    if (!msgCenter().confirmRemoveMedium (this, item->medium()))
         return;
 
     COMResult result;
@@ -1106,13 +1106,13 @@ void VBoxMediaManagerDlg::doRemoveMedium()
 
             /* We don't want to try to delete inaccessible storage as it will
              * most likely fail. Note that
-             * VBoxProblemReporter::confirmRemoveMedium() is aware of that and
+             * UIMessageCenter::confirmRemoveMedium() is aware of that and
              * will give a corresponding hint. Therefore, once the code is
              * changed below, the hint should be re-checked for validity. */
             if (item->state() != KMediumState_Inaccessible &&
                 item->medium().medium().GetMediumFormat().GetCapabilities() & MediumFormatCapabilities_File)
             {
-                int rc = vboxProblem().
+                int rc = msgCenter().
                     confirmDeleteHardDiskStorage (this, item->location());
                 if (rc == QIMessageBox::Cancel)
                     return;
@@ -1126,10 +1126,10 @@ void VBoxMediaManagerDlg::doRemoveMedium()
                 CProgress progress = hardDisk.DeleteStorage();
                 if (hardDisk.isOk())
                 {
-                    vboxProblem().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this, true);
+                    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this, true);
                     if (!(progress.isOk() && progress.GetResultCode() == S_OK))
                     {
-                        vboxProblem().cannotDeleteHardDiskStorage(this, hardDisk, progress);
+                        msgCenter().cannotDeleteHardDiskStorage(this, hardDisk, progress);
                         return;
                     }
                 }
@@ -1160,7 +1160,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
     if (result.isOk())
         vboxGlobal().removeMedium (type, id);
     else
-        vboxProblem().cannotCloseMedium (this, item->medium(), result);
+        msgCenter().cannotCloseMedium (this, item->medium(), result);
 }
 
 void VBoxMediaManagerDlg::doReleaseMedium()
@@ -1201,7 +1201,7 @@ void VBoxMediaManagerDlg::doReleaseMedium()
 
     AssertReturnVoid (machines.size() > 0);
 
-    if (!vboxProblem().confirmReleaseMedium (this, item->medium(), usage))
+    if (!msgCenter().confirmReleaseMedium (this, item->medium(), usage))
         return;
 
     for (QList <QString>::const_iterator it = machineIds.begin(); it != machineIds.end(); ++ it)
@@ -1254,7 +1254,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                     if (!machine.isOk())
                     {
                         CStorageController controller = machine.GetStorageControllerByName (attachment.GetController());
-                        vboxProblem().cannotDetachDevice (this, machine, VBoxDefs::MediumType_HardDisk, aMedium.location(),
+                        msgCenter().cannotDetachDevice (this, machine, VBoxDefs::MediumType_HardDisk, aMedium.location(),
                                                           StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice()));
                         success = false;
                         break;
@@ -1276,7 +1276,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                     machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
                     if (!machine.isOk())
                     {
-                        vboxProblem().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);
+                        msgCenter().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);
                         success = false;
                         break;
                     }
@@ -1297,7 +1297,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                     machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
                     if (!machine.isOk())
                     {
-                        vboxProblem().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);
+                        msgCenter().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);
                         success = false;
                         break;
                     }
@@ -1314,7 +1314,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
         machine.SaveSettings();
         if (!machine.isOk())
         {
-            vboxProblem().cannotSaveMachineSettings (machine);
+            msgCenter().cannotSaveMachineSettings (machine);
             success = false;
         }
     }
@@ -1599,7 +1599,7 @@ void VBoxMediaManagerDlg::addMediumToList(const QString &aLocation, VBoxDefs::Me
         medium = VBoxMedium(CMedium(med), aType, KMediumState_Created);
 
     if (!mVBox.isOk())
-        vboxProblem().cannotOpenMedium(this, mVBox, aType, aLocation);
+        msgCenter().cannotOpenMedium(this, mVBox, aType, aLocation);
     else
         vboxGlobal().addMedium(medium);
 }

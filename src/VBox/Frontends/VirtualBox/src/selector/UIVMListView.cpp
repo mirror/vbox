@@ -23,7 +23,7 @@
 
 /* Local includes */
 #include "UIVMListView.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "VBoxSelectorWnd.h"
 
 /* Global includes */
