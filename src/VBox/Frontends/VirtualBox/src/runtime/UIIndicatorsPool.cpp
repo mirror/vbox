@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIActionsPool class implementation
+ * UIIndicatorsPool class implementation
  */
 
 /*
