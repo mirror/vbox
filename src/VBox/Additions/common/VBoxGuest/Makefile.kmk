@@ -49,7 +49,7 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
  VBoxGuest_DEPS.freebsd += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
  VBoxGuest_INCS          = .
- VBoxGuest_INCS.freebsd  = $(PATH_VBoxGuest) $(PATH_STAGE)/gen-sys-hdrs
+ VBoxGuest_INCS.freebsd  = $(VBoxGuest_0_OUTDIR) $(PATH_STAGE)/gen-sys-hdrs
  VBoxGuest_INCS.linux    = ../../../Runtime/r0drv/linux
  VBoxGuest_LDFLAGS.solaris += -N misc/ctf
  ifneq ($(KBUILD_TARGET),os2)
