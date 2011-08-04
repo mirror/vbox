@@ -19,7 +19,7 @@
 SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-INSTALLS += vboxvideo_drm vboxvideo-mod
+INSTALLS += vboxvideo-mod
 
 ifdef VBOX_WITH_ADDITION_DRIVERS
  SYSMODS  += vboxvideo_drm
@@ -40,6 +40,8 @@ vboxvideo-mod_SOURCES     = $(subst ",,$(FILES_VBOXVIDEO_DRM_NOBIN))
 
 #
 # vboxvideo - The Video DRM (Direct Rendering Module) kernel module
+#
+# Note! Syntax checking only.
 #
 vboxvideo_drm_TEMPLATE      = VBOXGUESTR0
 vboxvideo_drm_NAME          = vboxvideo
