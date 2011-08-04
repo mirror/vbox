@@ -262,6 +262,10 @@ public:
                        const ComObjPtr<Medium> &aParent,
                        const ComObjPtr<Progress> &aProgress);
 
+    HRESULT cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
+                      const ComObjPtr<Medium> &aParent, const ComObjPtr<Progress> &aProgress,
+                      uint32_t idxSrcImageSame, uint32_t idxDstImageSame);
+
 private:
 
     HRESULT queryInfo(bool fSetImageId, bool fSetParentId);
