@@ -108,7 +108,7 @@ BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
 
 #ifdef DEBUG_andy
     /* Enable full log output. */
-    RTLogGroupSettings(RTLogRelDefaultInstance(), "+default.e.l.f.l2.l3");
+    RTLogGroupSettings(0, "+autologon.e.l.f.l2.l3");
 #endif
 
     Log(("VBoxGINA::WlxNegotiate: dwWinlogonVersion: %ld\n", dwWinlogonVersion));
@@ -230,8 +230,11 @@ BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
 
     wlxVersion = dwWinlogonVersion;
 
-    /* forward call */
-    return GWlxNegotiate(dwWinlogonVersion, pdwDllVersion);
+    /* Acknowledge interface version. */
+    if (pdwDllVersion)
+        *pdwDllVersion = dwWinlogonVersion;
+
+    return TRUE; /* We're ready to rumble! */
 }
 
 
@@ -240,26 +243,16 @@ BOOL WINAPI WlxInitialize(LPWSTR lpWinsta, HANDLE hWlx, PVOID pvReserved,
 {
     Log(("VBoxGINA::WlxInitialize\n"));
 
-    /* store Winlogon function table */
+    /* Store Winlogon function table */
     pWlxFuncs = (PWLX_DISPATCH_VERSION_1_1)pWinlogonFunctions;
 
-    /* store handle to Winlogon service*/
+    /* Store handle to Winlogon service*/
     hGinaWlx = hWlx;
 
-    /* Load global configuration from registry. */
-    DWORD dwRet = loadConfiguration();
-    if (ERROR_SUCCESS != dwRet)
-        LogRel(("VBoxGINA: Error loading global configuration, error=%ld\n", dwRet));
-
-    /* If we have a remote session (that is, a connection via remote desktop /
-     * terminal services) deny it if not specified explicitly. */
-    if (!handleCurrentSession())
-        LogRel(("VBoxGINA: Handling of remote desktop sessions is disabled.\n"));
-
-    /* hook the dialogs */
+    /* Hook the dialogs */
     hookDialogBoxes(pWlxFuncs, wlxVersion);
 
-    /* forward call */
+    /* Forward call */
     return GWlxInitialize(lpWinsta, hWlx, pvReserved, pWinlogonFunctions, pWlxContext);
 }
 
@@ -268,11 +261,11 @@ VOID WINAPI WlxDisplaySASNotice(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxDisplaySASNotice\n"));
 
-    /* check if there are credentials for us, if so simulate C-A-D */
+    /* Check if there are credentials for us, if so simulate C-A-D */
     if (credentialsAvailable())
     {
         Log(("VBoxGINA::WlxDisplaySASNotice: simulating C-A-D\n"));
-        /* automatic C-A-D */
+        /* Wutomatic C-A-D */
         pWlxFuncs->WlxSasNotify(hGinaWlx, WLX_SAS_TYPE_CTRL_ALT_DEL);
     }
     else
@@ -292,7 +285,7 @@ int WINAPI WlxLoggedOutSAS(PVOID pWlxContext, DWORD dwSasType, PLUID pAuthentica
 {
     Log(("VBoxGINA::WlxLoggedOutSAS\n"));
 
-    /* when performing a direct logon without C-A-D, our poller might not be running */
+    /* When performing a direct logon without C-A-D, our poller might not be running */
     if (!credentialsAvailable())
         credentialsPollerCreate();
 
@@ -303,7 +296,7 @@ int WINAPI WlxLoggedOutSAS(PVOID pWlxContext, DWORD dwSasType, PLUID pAuthentica
     if (iRet == WLX_SAS_ACTION_LOGON)
     {
         //
-        // copy pMprNotifyInfo and pLogonSid for later use
+        // Copy pMprNotifyInfo and pLogonSid for later use
         //
 
         // pMprNotifyInfo->pszUserName
@@ -345,11 +338,11 @@ VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxDisplayLockedNotice\n"));
 
-    /* check if there are credentials for us, if so simulate C-A-D */
+    /* Check if there are credentials for us, if so simulate C-A-D */
     if (credentialsAvailable())
     {
         Log(("VBoxGINA::WlxDisplayLockedNotice: simulating C-A-D\n"));
-        /* automatic C-A-D */
+        /* Automatic C-A-D */
         pWlxFuncs->WlxSasNotify(hGinaWlx, WLX_SAS_TYPE_CTRL_ALT_DEL);
     }
     else
@@ -374,7 +367,7 @@ int WINAPI WlxWkstaLockedSAS(PVOID pWlxContext, DWORD dwSasType)
 {
     Log(("VBoxGINA::WlxWkstaLockedSAS\n"));
 
-    /* when performing a direct logon without C-A-D, our poller might not be running */
+    /* When performing a direct logon without C-A-D, our poller might not be running */
     if (!credentialsAvailable())
         credentialsPollerCreate();
 
@@ -384,12 +377,9 @@ int WINAPI WlxWkstaLockedSAS(PVOID pWlxContext, DWORD dwSasType)
 
 BOOL WINAPI WlxIsLogoffOk(PVOID pWlxContext)
 {
-    BOOL bSuccess;
-
     Log(("VBoxGINA::WlxIsLogoffOk\n"));
 
-    bSuccess = GWlxIsLogoffOk(pWlxContext);
-
+    BOOL bSuccess = GWlxIsLogoffOk(pWlxContext);
     if (bSuccess)
     {
         //
@@ -431,7 +421,7 @@ BOOL WINAPI WlxScreenSaverNotify(PVOID pWlxContext, BOOL *pSecure)
     /* Forward to MSGINA if present. */
     if (GWlxScreenSaverNotify)
         return GWlxScreenSaverNotify(pWlxContext, pSecure);
-    /* return something intelligent */
+    /* Return something intelligent */
     *pSecure = TRUE;
     return TRUE;
 }
@@ -441,7 +431,7 @@ BOOL WINAPI WlxStartApplication(PVOID pWlxContext, PWSTR pszDesktopName,
                                 PVOID pEnvironment, PWSTR pszCmdLine)
 {
     Log(("VBoxGINA::WlxStartApplication: pWlxCtx=%p, pszDesktopName=%ls, pEnvironment=%p, pszCmdLine=%ls\n",
-        pWlxContext, pszDesktopName, pEnvironment, pszCmdLine));
+         pWlxContext, pszDesktopName, pEnvironment, pszCmdLine));
 
     /* Forward to MSGINA if present. */
     if (GWlxStartApplication)
@@ -506,7 +496,7 @@ BOOL WINAPI WlxGetConsoleSwitchCredentials(PVOID pWlxContext,PVOID pCredInfo)
 {
     Log(("VBoxGINA::WlxGetConsoleSwitchCredentials\n"));
 
-    /* forward call to MSGINA if present */
+    /* Forward call to MSGINA if present */
     if (GWlxGetConsoleSwitchCredentials)
         return GWlxGetConsoleSwitchCredentials(pWlxContext,pCredInfo);
     return FALSE;
