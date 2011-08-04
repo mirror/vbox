@@ -343,7 +343,11 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
  *        error instead of an errno.h one. Alternatively, extend/redefine the
  *        header with an error code return field (much better alternative
  *        actually). */
+#ifdef VBOX_VBGLR3_XFREE86
+    int rc = xf86ioctl(g_File, iFunction, &Hdr);
+#else
     int rc = ioctl(RTFileToNative(g_File), iFunction, &Hdr);
+#endif
     if (rc == -1)
     {
         rc = errno;
