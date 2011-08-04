@@ -340,6 +340,8 @@ public:
               Medium *aTarget,
               MediumVariant_T aVariant,
               Medium *aParent,
+              uint32_t idxSrcImageSame,
+              uint32_t idxDstImageSame,
               MediumLockList *aSourceMediumLockList,
               MediumLockList *aTargetMediumLockList,
               bool fKeepSourceMediumLockList = false,
@@ -350,6 +352,8 @@ public:
           mpSourceMediumLockList(aSourceMediumLockList),
           mpTargetMediumLockList(aTargetMediumLockList),
           mVariant(aVariant),
+          midxSrcImageSame(idxSrcImageSame),
+          midxDstImageSame(idxDstImageSame),
           mTargetCaller(aTarget),
           mParentCaller(aParent),
           mfKeepSourceMediumLockList(fKeepSourceMediumLockList),
@@ -380,6 +384,8 @@ public:
     MediumLockList *mpSourceMediumLockList;
     MediumLockList *mpTargetMediumLockList;
     MediumVariant_T mVariant;
+    uint32_t midxSrcImageSame;
+    uint32_t midxDstImageSame;
 
 private:
     virtual HRESULT handler();
@@ -2696,8 +2702,8 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::CloneTask(this, pProgress, pTarget,
                                       (MediumVariant_T)aVariant,
-                                      pParent, pSourceMediumLockList,
-                                      pTargetMediumLockList);
+                                      pParent, UINT32_MAX, UINT32_MAX,
+                                      pSourceMediumLockList, pTargetMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -5071,6 +5077,129 @@ HRESULT Medium::importFile(const char *aFilename,
     return rc;
 }
 
+/**
+ * Internal version of the public CloneTo API which allows to enable certain
+ * optimizations to improve speed during VM cloning.
+ *
+ * @param aTarget            Target medium
+ * @param aVariant           Which exact image format variant to use
+ *                           for the destination image.
+ * @param aParent            Parent medium. May be NULL.
+ * @param aProgress          Progress object to use.
+ * @param idxSrcImageSame    The last image in the source chain which has the
+ *                           same content as the given image in the destination
+ *                           chain. Use UINT32_MAX to disable this optimization.
+ * @param idxDstImageSame    The last image in the destination chain which has the
+ *                           same content as the given image in the source chain.
+ *                           Use UINT32_MAX to disable this optimization.
+ * @return
+ */
+HRESULT Medium::cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
+                          const ComObjPtr<Medium> &aParent, const ComObjPtr<Progress> &aProgress,
+                          uint32_t idxSrcImageSame, uint32_t idxDstImageSame)
+{
+    CheckComArgNotNull(aTarget);
+    AssertReturn(!aProgress.isNull(), E_INVALIDARG);
+    ComAssertRet(aTarget != this, E_INVALIDARG);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT rc = S_OK;
+    ComObjPtr<Progress> pProgress;
+    Medium::Task *pTask = NULL;
+
+    try
+    {
+        // locking: we need the tree lock first because we access parent pointers
+        AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        // and we need to write-lock the media involved
+        AutoMultiWriteLock3 alock(this, aTarget, aParent COMMA_LOCKVAL_SRC_POS);
+
+        if (    aTarget->m->state != MediumState_NotCreated
+            &&  aTarget->m->state != MediumState_Created)
+            throw aTarget->setStateError();
+
+        /* Build the source lock list. */
+        MediumLockList *pSourceMediumLockList(new MediumLockList());
+        rc = createMediumLockList(true /* fFailIfInaccessible */,
+                                  false /* fMediumLockWrite */,
+                                  NULL,
+                                  *pSourceMediumLockList);
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            throw rc;
+        }
+
+        /* Build the target lock list (including the to-be parent chain). */
+        MediumLockList *pTargetMediumLockList(new MediumLockList());
+        rc = aTarget->createMediumLockList(true /* fFailIfInaccessible */,
+                                           true /* fMediumLockWrite */,
+                                           aParent,
+                                           *pTargetMediumLockList);
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw rc;
+        }
+
+        rc = pSourceMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock source media '%s'"),
+                           getLocationFull().c_str());
+        }
+        rc = pTargetMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock target media '%s'"),
+                           aTarget->getLocationFull().c_str());
+        }
+
+        pProgress.createObject();
+        rc = pProgress->init(m->pVirtualBox,
+                             static_cast <IMedium *>(this),
+                             BstrFmt(tr("Creating clone medium '%s'"), aTarget->m->strLocationFull.c_str()).raw(),
+                             TRUE /* aCancelable */);
+        if (FAILED(rc))
+        {
+            delete pSourceMediumLockList;
+            delete pTargetMediumLockList;
+            throw rc;
+        }
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::CloneTask(this, aProgress, aTarget,
+                                      (MediumVariant_T)aVariant,
+                                      aParent, idxSrcImageSame,
+                                      idxDstImageSame, pSourceMediumLockList,
+                                      pTargetMediumLockList);
+        rc = pTask->rc();
+        AssertComRC(rc);
+        if (FAILED(rc))
+            throw rc;
+
+        if (aTarget->m->state == MediumState_NotCreated)
+            aTarget->m->state = MediumState_Creating;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+        rc = startThread(pTask);
+    else if (pTask != NULL)
+        delete pTask;
+
+    return rc;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Private methods
@@ -6970,19 +7099,40 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                 }
 
                 /** @todo r=klaus target isn't locked, race getting the state */
-                vrc = VDCopy(hdd,
-                             VD_LAST_IMAGE,
-                             targetHdd,
-                             targetFormat.c_str(),
-                             (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
-                             false /* fMoveByRename */,
-                             0 /* cbSize */,
-                             task.mVariant,
-                             targetId.raw(),
-                             VD_OPEN_FLAGS_NORMAL,
-                             NULL /* pVDIfsOperation */,
-                             pTarget->m->vdImageIfaces,
-                             task.mVDOperationIfaces);
+                if (task.midxSrcImageSame == UINT32_MAX)
+                {
+                    vrc = VDCopy(hdd,
+                                 VD_LAST_IMAGE,
+                                 targetHdd,
+                                 targetFormat.c_str(),
+                                 (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
+                                 false /* fMoveByRename */,
+                                 0 /* cbSize */,
+                                 task.mVariant,
+                                 targetId.raw(),
+                                 VD_OPEN_FLAGS_NORMAL,
+                                 NULL /* pVDIfsOperation */,
+                                 pTarget->m->vdImageIfaces,
+                                 task.mVDOperationIfaces);
+                }
+                else
+                {
+                    vrc = VDCopyEx(hdd,
+                                   VD_LAST_IMAGE,
+                                   targetHdd,
+                                   targetFormat.c_str(),
+                                   (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
+                                   false /* fMoveByRename */,
+                                   0 /* cbSize */,
+                                   task.midxSrcImageSame,
+                                   task.midxDstImageSame,
+                                   task.mVariant,
+                                   targetId.raw(),
+                                   VD_OPEN_FLAGS_NORMAL,
+                                   NULL /* pVDIfsOperation */,
+                                   pTarget->m->vdImageIfaces,
+                                   task.mVDOperationIfaces);
+                }
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Could not create the clone medium '%s'%s"),
