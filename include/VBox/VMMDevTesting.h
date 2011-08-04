@@ -106,6 +106,7 @@
 #define VMMDEV_TESTING_UNIT_NS_PER_ROUND_TRIP   UINT8_C(0x18)   /**< Nanoseconds per round trip. */
 #define VMMDEV_TESTING_UNIT_INSTRS              UINT8_C(0x19)   /**< Instructions. */
 #define VMMDEV_TESTING_UNIT_INSTRS_PER_SEC      UINT8_C(0x1a)   /**< Instructions per second. */
+#define VMMDEV_TESTING_UNIT_NONE                UINT8_C(0x1b)   /**< No unit. */
 /** @}  */
 
 
