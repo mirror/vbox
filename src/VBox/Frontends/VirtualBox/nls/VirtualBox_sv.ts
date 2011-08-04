@@ -544,88 +544,88 @@
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation type="unfinished">&amp;Inställningar...</translation>
+        <translation>&amp;Inställningar...</translation>
     </message>
     <message>
         <source>Manage the virtual machine settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Hantera inställningar för virtuella maskiner</translation>
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation type="unfinished"></translation>
+        <translation>Sessionsi&amp;nformation...</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Klona en virtuell maskin</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Klona</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage1</name>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a clone of your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Denna guide hjälper dig att skapa en klon av din virtuella maskin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Välj ett namn för den nya virtuella maskinen:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>När kryssad kommer en ny unik MAC-adress att tilldelas till alla konfigurerade nätverkskort.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>Åt&amp;erinitiera MAC-adressen för alla nätverkskort</translation>
     </message>
     <message>
         <source>Welcome to the virtual machine clone wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Välkommen till kloningsguiden för virtuella maskiner</translation>
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>%1-klon</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktuellt maskintillstånd</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished"></translation>
+        <translation>Tillstånd för aktuell maskin och alla barn</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished"></translation>
+        <translation>Alla tillstånd</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Kloningskonfiguration</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj vilka delar av den virtuella maskinen som ska klonas.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Om du väljer &lt;b&gt;Aktuellt maskintillstånd&lt;/b&gt; kommer endast det aktuella tillståndet för den virtuella maskinen att klonas.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Om du väljer &lt;b&gt;Tillstånd för aktuell maskin och alla barn&lt;/b&gt; kommer det aktuella tillståndet för den virtuella maskinen och alla tillstånd för barnögonblicksbilder att klonas.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Om du väljer &lt;b&gt;Alla tillstånd&lt;/b&gt; kommer tillståndet för den aktuella maskinen och alla ögonblicksbilder att klonas.</translation>
     </message>
 </context>
 <context>
@@ -921,22 +921,22 @@
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Exekveringsgräns</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Allmän drivrutin, &quot;%1&quot;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Allmän drivrutin, &quot;%1&quot; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
 </context>
 <context>
@@ -1148,7 +1148,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportera</translation>
     </message>
 </context>
 <context>
@@ -1487,7 +1487,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Starta</translation>
     </message>
 </context>
 <context>
@@ -2005,51 +2005,51 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalSettingsProxy</name>
     <message>
         <source>When checked, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>När kryssad kommer VirtualBox att använda proxyinställningarna som angivits för funktioner som hämtning av gästtillägg från nätverket eller kontroll av uppdateringar.</translation>
     </message>
     <message>
         <source>&amp;Enable proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>A&amp;ktivera proxyserver</translation>
     </message>
     <message>
         <source>Ho&amp;st:</source>
-        <translation type="unfinished"></translation>
+        <translation>Vä&amp;rd:</translation>
     </message>
     <message>
         <source>Changes the proxy host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändrar proxyvärden.</translation>
     </message>
     <message>
         <source>&amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Port:</translation>
     </message>
     <message>
         <source>Changes the proxy port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändrar proxyporten.</translation>
     </message>
     <message>
         <source>When checked the authentication supplied will be used with the proxy server.</source>
-        <translation type="unfinished"></translation>
+        <translation>När kryssad kommer angiven autentisering att användas med proxyservern.</translation>
     </message>
     <message>
         <source>&amp;Use authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>Använ&amp;d autentisering</translation>
     </message>
     <message>
         <source>User &amp;name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Användar&amp;namn:</translation>
     </message>
     <message>
         <source>Changes the user name used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändrar användarnamnet som används för autentisering.</translation>
     </message>
     <message>
         <source>Pass&amp;word:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lösen&amp;ord:</translation>
     </message>
     <message>
         <source>Changes the password used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändrar lösenordet som används för autentisering.</translation>
     </message>
 </context>
 <context>
@@ -2357,7 +2357,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importera</translation>
     </message>
 </context>
 <context>
@@ -2529,7 +2529,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>Indikerar status för olika funktioner som används av denna virtuella maskin:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -2734,11 +2734,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>du har 3D-acceleration aktiverat för ett operativsystem som använder grafikdrivrutinen WDDM. För maximal prestanda bör gästens VRAM ställas in till minst &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished">du har 2D-grafikacceleration aktiverat. Eftersom 2D-grafikacceleration endast stöds för Windows-gäster så kommer denna funktion att inaktiveras.</translation>
+        <translation>du har 2D-grafikacceleration aktiverat. Eftersom 2D-grafikacceleration endast stöds för Windows-gäster så kommer denna funktion att inaktiveras.</translation>
     </message>
 </context>
 <context>
@@ -2985,7 +2985,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="unfinished">du har valt en 64-bitars operativsystemstyp för denna virtuella maskin. Eftersom sådana gästoperativsystem kräver maskinvirtualisering (VT-x/AMD-V) så kommer denna funktion att vara automatiskt aktiverad.</translation>
+        <translation>du har valt en 64-bitars operativsystemstyp för denna virtuella maskin. Eftersom sådana gästoperativsystem kräver maskinvirtualisering (VT-x/AMD-V) så kommer denna funktion att vara automatiskt aktiverad.</translation>
     </message>
 </context>
 <context>
@@ -3196,39 +3196,39 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Promiscuous Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Promiskuöst läge:</translation>
     </message>
     <message>
         <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation type="unfinished"></translation>
+        <translation>Väljer policyn för promiskuöst läge för nätverksadaptern när ansluten till ett internt nätverk, endast-värd-nätverk eller en brygga.</translation>
     </message>
     <message>
         <source>Generic Properties:</source>
-        <translation type="unfinished"></translation>
+        <translation>Allmänna egenskaper:</translation>
     </message>
     <message>
         <source>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange konfigurationsinställningar här för nätverksdrivrutinen som du ska använda. Inställningarna ska vara i formatet &lt;b&gt;namn=värde&lt;/b&gt; och är beroende av drivrutinen. Använd &lt;b&gt;shift-enter&lt;/b&gt; för att lägga till en ny post.</translation>
     </message>
     <message>
         <source>no generic driver is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>ingen allmän drivrutin har valts</translation>
     </message>
     <message>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation type="unfinished"></translation>
+        <translation>Väljer nätverksadaptern på värdsystemet som trafik till och från detta nätverkskort kommer att gå igenom.</translation>
     </message>
     <message>
         <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange namnet för det interna nätverket som detta nätverkskort kommer att vara anslutet till. Du kan skapa ett nytt internt nätverk genom att välja ett namn som inte används av något annat nätverkskort i denna virtuella maskin eller andra maskiner.</translation>
     </message>
     <message>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Väljer den virtuella nätverksadaptern på värdsystemet som trafik till och från detta nätverkskort kommer att gå igenom. Du kan skapa och ta bort adaptrar i de allmänna nätverksinställningarna för den virtuella maskinen.</translation>
     </message>
     <message>
         <source>Selects the driver to be used with this network card.</source>
-        <translation type="unfinished"></translation>
+        <translation>Väljer den drivrutin som ska användas för detta nätverkskort.</translation>
     </message>
 </context>
 <context>
@@ -4051,58 +4051,50 @@ serial ports</comment>
         <translation>Välj en virtuell diskettfil...</translation>
     </message>
     <message>
-        <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished"></translation>
+        <source>When checked, it suppresses unmounting the medium when the guest OS ejects it.</source>
+        <translation>När kryssad kommer detta att undertrycka avmontering av media när gästens operativsystem matar ut det.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Live-CD/DVD</translation>
     </message>
     <message>
-        <source>When checked the guest system will see the virtual disk as a solid state device.</source>
-        <translation type="unfinished"></translation>
+        <source>When checked, this marks the medium as non-rotational storage (SSD).</source>
+        <translation>När kryssad kommer detta att markera detta media som icke-roterande lagring (SSD).</translation>
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Solid-State Drive</translation>
     </message>
     <message>
         <source>Details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Detaljer:</translation>
     </message>
     <message>
         <source>no name specified for controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>inget namn angivet för styrkortet på position &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>controller at position &lt;b&gt;%1&lt;/b&gt; uses the name that is already used by controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>styrkortet på position &lt;b&gt;%1&lt;/b&gt; använder ett namn som redan används av styrkortet på position &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>no hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>ingen hårddisk har valts för &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>at most one supported</source>
         <comment>controller</comment>
-        <translation type="unfinished">minst en stöds</translation>
+        <translation>minst en stöds</translation>
     </message>
     <message>
         <source>up to %1 supported</source>
         <comment>controllers</comment>
-        <translation type="unfinished">upp till %1 stöds</translation>
+        <translation>upp till %1 stöds</translation>
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation type="unfinished">du använder för närvarande fler lagringsstyrkort än vad ett %1-chipset har stöd för. Ändra typ av chipset i systeminställningarna eller minska antalet av följande lagringsstyrkort i lagringsinställningarna: %2.</translation>
-    </message>
-    <message>
-        <source>&amp;Port Count:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>du använder för närvarande fler lagringsstyrkort än vad ett %1-chipset har stöd för. Ändra typ av chipset i systeminställningarna eller minska antalet av följande lagringsstyrkort i lagringsinställningarna: %2.</translation>
     </message>
 </context>
 <context>
@@ -4292,33 +4284,33 @@ serial ports</comment>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>du har tilldelat chipset-typen ICH9 till denna virtuella maskin. Den kommer inte att fungera korrekt såvida inte IO-APIC-funktionen även aktiveras. Detta kommer att göras automatiskt när du accepterar inställningarna för den virtuella maskinen genom att trycka på OK-knappen.</translation>
+        <translation type="unfinished">du har tilldelat chipset-typen ICH9 till denna virtuella maskin. Den kommer inte att fungera korrekt såvida inte IO-APIC-funktionen även aktiveras. Detta kommer att göras automatiskt när du accepterar inställningarna för den virtuella maskinen genom att trycka på OK-knappen.</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Exekveringsgräns:</translation>
     </message>
     <message>
         <source>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>Begränsar mängden tid som varje virtuell processor tillåts att köra. Varje virtuell processor tillåts att använda upp till denna procentandel av behandlingstiden tillgänglig på en fysisk processor. Exekveringsgränsen kan inaktiveras genom att ställa in den till 100%. Ställs värdet in för lågt kan det göra att maskinen känns långsam att svara.</translation>
     </message>
     <message>
         <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>du har ställt in processorns exekveringsgräns till ett lågt värde. Detta kan göra att maskinen känns långsam att svara.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished">du har aktiverat en USB HID (Human Interface Device). Detta kommer inte att fungera såvida inte USB-emulering även aktiveras. Detta sker automatiskt när du accepterar inställningarna för virtuella maskinen genom att trycka på OK-knappen.</translation>
+        <translation>du har aktiverat en USB HID (Human Interface Device). Detta kommer inte att fungera såvida inte USB-emulering även aktiveras. Detta sker automatiskt när du accepterar inställningarna för virtuella maskinen genom att trycka på OK-knappen.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Min CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -4450,7 +4442,7 @@ serial ports</comment>
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0 är för närvarande aktiverat för denna virtuella maskin. Dock kräver detta att &lt;b&gt;%1&lt;/b&gt; installeras. Installera Extension Pack (tilläggspaket) från VirtualBox webbplats. Efter det kommer du att kunna återaktivera USB 2.0. Det kommer att vara inaktiverat under tiden såvida inte du avbryter de aktuella inställningsändringarna.</translation>
     </message>
 </context>
 <context>
@@ -4566,15 +4558,15 @@ serial ports</comment>
     <name>UIMediumTypeChangeDialog</name>
     <message>
         <source>Modify medium attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändra mediaattribut</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Du är på väg att ändra attribut för den virtuella disken i &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Välj en av följande mediatyper och tryck på &lt;b&gt;%2&lt;/b&gt; för att fortsätta eller &lt;b&gt;%3&lt;/b&gt; om inte.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose medium type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj mediatyp:</translation>
     </message>
 </context>
 <context>
@@ -4666,7 +4658,7 @@ serial ports</comment>
     </message>
     <message>
         <source>Summary</source>
-        <translation type="unfinished">Sammandrag</translation>
+        <translation>Sammandrag</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
@@ -4678,7 +4670,7 @@ serial ports</comment>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
-        <translation type="unfinished">Välj en fil för den nya hårddiskavbildningsfilen</translation>
+        <translation>Välj en fil för den nya hårddiskavbildningsfilen</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
@@ -4720,12 +4712,12 @@ serial ports</comment>
     <message>
         <source>Location</source>
         <comment>summary</comment>
-        <translation type="unfinished">Plats</translation>
+        <translation>Plats</translation>
     </message>
     <message>
         <source>Size</source>
         <comment>summary</comment>
-        <translation type="unfinished">Storlek</translation>
+        <translation>Storlek</translation>
     </message>
     <message>
         <source>Bytes</source>
@@ -4787,166 +4779,166 @@ serial ports</comment>
     <message>
         <source>%1_copy</source>
         <comment>copied virtual disk name</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1_kopia</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa</translation>
     </message>
     <message>
         <source>Copy Virtual Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiera virtuell disk</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiera</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk copying wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Välkommen till guiden för kopiering av virtuell disk</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to copy a virtual disk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Denna guide hjälper dig att kopiera en virtuell disk.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Please select the virtual disk which you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select a virtual disk file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj den virtuella disk som du vill kopiera om den inte redan har valts. Du kan antingen välja en från listan eller använda mappikonen bredvid listan för att välja en virtuell diskfil.</translation>
     </message>
     <message>
         <source>&amp;VDI (VirtualBox Disk Image)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VDI (VirtualBox-diskavbildning)</translation>
     </message>
     <message>
         <source>V&amp;MDK (Virtual Machine Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;MDK (disk för virtuell maskin)</translation>
     </message>
     <message>
         <source>V&amp;HD (Virtual Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;HD (virtuell hårddisk)</translation>
     </message>
     <message>
         <source>Welcome to the virtual disk creation wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Välkommen till guiden för att skapa en virtuell disk</translation>
     </message>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a new virtual disk for your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Denna guide hjälper dig att skapa en ny virtuell disk för din virtuella maskin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Välj den typ av fil som du vill använda för den nya virtuella disken. Om du inte behöver använda den med andra program för virtualisering så kan du lämna denna inställning oförändrad.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Virtual disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ av virtuell diskfil</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj den typ av fil som du vill använda för den nya virtuella disken. Om du inte behöver använda den med andra program för virtualisering så kan du lämna denna inställning oförändrad.</translation>
     </message>
     <message>
         <source>Virtual disk storage details</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagringsinformation för virtuell disk</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj huruvida den nya virtuella diskfilen ska allokeras när den används eller om den ska skapas fullständigt allokerad.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;En &lt;b&gt;dynamiskt allokerad&lt;/b&gt; virtuell diskfil kommer endast att använda utrymme på din fysiska hårddisk när den fylls upp, dock kommer den inte att minska automatiskt när utrymme frigörs.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;En &lt;b&gt;fast storlek&lt;/b&gt; på virtuella diskfilen kan ta längre tid att skapa på vissa system men är oftast snabbare att använda.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the virtual disk into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Du kan även välja att &lt;b&gt;dela upp&lt;/b&gt; den virtuella disken i flera filer där varje fil är upp till två gigabyte. Detta är oftast användbart om du vill lagra den virtuella maskinen på flyttbara USB-enheter eller äldre system som inte kan hantera stora filer.</translation>
     </message>
     <message>
         <source>&amp;Dynamically allocated</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dynamiskt allokerad</translation>
     </message>
     <message>
         <source>&amp;Fixed size</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fast storlek</translation>
     </message>
     <message>
         <source>&amp;Split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dela upp i filer mindre än 2 GB</translation>
     </message>
     <message>
         <source>Virtual disk file location and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Plats och storlek för virtuell diskfil</translation>
     </message>
     <message>
         <source>Select the size of the virtual disk in megabytes. This size will be reported to the Guest OS as the maximum size of this virtual disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj storleken för den virtuella disken i megabyte. Denna storlek kommer att rapporteras till gästens operativsystem som den maximala storleken för denna virtuella disk.</translation>
     </message>
     <message>
         <source>Virtual disk file location</source>
-        <translation type="unfinished"></translation>
+        <translation>Plats för virtuell diskfil</translation>
     </message>
     <message>
-        <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <source>Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the virtual disk data or type a file name in the entry field.</source>
+        <translation>Tryck på knappen &lt;b&gt;Välj&lt;/b&gt; för att välja platsen för en fil att lagra den virtuella diskens data till eller ange ett filnamn i inmatningsfältet.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>You are going to create a new virtual disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Du är på väg att skapa en ny virtuell disk med följande parametrar:</translation>
     </message>
     <message>
         <source>You are going to create a copied virtual disk with the following parameters:</source>
-        <translation type="unfinished"></translation>
+        <translation>Du är på väg att skapa en kopierad virtuell disk med följande parametrar:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it the new virtual disk file will be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tryck på knappen &lt;b&gt;%1&lt;/b&gt; om ovanstående inställningar är korrekta. Den nya virtuella diskfilen kommer att skapas när du trycker på den.</translation>
     </message>
     <message>
         <source>%1 B</source>
-        <translation type="unfinished">%1 B</translation>
+        <translation>%1 B</translation>
     </message>
     <message>
         <source>File type</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Filtyp</translation>
     </message>
     <message>
         <source>Details</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Detaljer</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageFormat</name>
     <message>
         <source>File type</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtyp</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageOptions</name>
     <message>
         <source>&amp;Location</source>
-        <translation type="unfinished">&amp;Plats</translation>
+        <translation>&amp;Plats</translation>
     </message>
     <message>
         <source>&amp;Size</source>
-        <translation type="unfinished">&amp;Storlek</translation>
+        <translation>&amp;Storlek</translation>
     </message>
 </context>
 <context>
     <name>UINewHDWizardPageVariant</name>
     <message>
         <source>Storage details</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagringsinformation</translation>
     </message>
 </context>
 <context>
@@ -4961,11 +4953,11 @@ serial ports</comment>
     </message>
     <message>
         <source>Virtual disk to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuell disk att kopiera</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished">Välj en virtuell hårddiskfil...</translation>
+        <translation>Välj en virtuell hårddiskfil...</translation>
     </message>
 </context>
 <context>
@@ -5123,7 +5115,7 @@ serial ports</comment>
         <translation type="obsolete">Den rekommenderade storleken på basminnet är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Den rekommenderade storleken på uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
@@ -5143,7 +5135,7 @@ serial ports</comment>
         <translation type="obsolete">&lt;p&gt;Ange ett namn för den nya virtuella maskinen och välj vilken typ av gästoperativsystem som du planerar att installera på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Namnet på den virtuella maskinen brukar ofta indikera dess programvara och maskinvarukonfiguration. Det kommer att användas av alla VirtualBox-komponenter för att identifiera din virtuella maskin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning som ska användas som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt;  (för att anropa Virtuella diskhanteraren).&lt;/p&gt;&lt;p&gt;Om du behöver en mer avancerat hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningsdialogrutan.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5179,7 +5171,7 @@ serial ports</comment>
         <translation type="obsolete">Basminne</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation type="obsolete">Uppstartshårddisk</translation>
     </message>
@@ -5188,11 +5180,11 @@ serial ports</comment>
         <translation type="obsolete">Avbryt</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hantera för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Uppstartshård&amp;disk (Primär master)</translation>
     </message>
     <message>
@@ -5205,7 +5197,7 @@ serial ports</comment>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa</translation>
     </message>
 </context>
 <context>
@@ -5269,11 +5261,11 @@ serial ports</comment>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hanterare för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk (Primary Master)</source>
+        <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation type="obsolete">Uppstartshård&amp;disk (Primär master)</translation>
     </message>
     <message>
@@ -5289,24 +5281,24 @@ serial ports</comment>
         <translation>Virtuell hårddisk</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation type="obsolete">Rekommenderad storlek för uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt; MB.</translation>
     </message>
     <message>
-        <source>Start-up &amp;Disk</source>
-        <translation type="unfinished">Uppstartshård&amp;disk</translation>
+        <source>Boot Hard &amp;Disk</source>
+        <translation>Uppstartshård&amp;disk</translation>
     </message>
     <message>
-        <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Välj en virtuell hårddisk att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk eller välja en befintlig hårddisk från rullgardinslistan, eller genom att trycka på motsvarade knapp (för att visa filväljarfönstret).&lt;/p&gt;&lt;p&gt;Om du behöver en mer avancerad hårddiskkonfiguration så kan du även hoppa över detta steg och ansluta hårddiskar senare genom inställningsdialogen för den virtuella maskinen.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Välj en virtuell hårddisk att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk eller välja en befintlig hårddisk från rullgardinslistan, eller genom att trycka på motsvarade knapp (för att visa filväljarfönstret).&lt;/p&gt;&lt;p&gt;Om du behöver en mer avancerad hårddiskkonfiguration så kan du även hoppa över detta steg och ansluta hårddiskar senare genom inställningsdialogen för den virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
         <translation>Välj en virtuell hårddiskfil...</translation>
     </message>
     <message>
-        <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Rekommenderad storlek för uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Rekommenderad storlek för uppstartshårddisken är &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -5340,9 +5332,9 @@ serial ports</comment>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <source>Start-up Disk</source>
+        <source>Boot Hard Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished">Uppstartshårddisk</translation>
+        <translation>Uppstartshårddisk</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
@@ -5527,7 +5519,7 @@ serial ports</comment>
     </message>
     <message>
         <source>Proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxy</translation>
     </message>
 </context>
 <context>
@@ -5920,11 +5912,11 @@ Version %1</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>När kryssad kommer en ny unik MAC-adress att tilldelas till alla konfigurerade nätverkskort.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>Ominiti&amp;era MAC-adressen för alla nätverkskort</translation>
     </message>
 </context>
 <context>
@@ -8238,58 +8230,58 @@ Version %1</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Dynamiskt allokerad lagring</translation>
     </message>
     <message>
         <source>Fixed size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagring med fast storlek</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>Dynamiskt allokerad lagring delad i filer mindre än 2 GB</translation>
     </message>
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagring med fast storlek delad i filer mindre än 2 GB</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Exekveringsgräns</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Allmän, &quot;%1&quot;</translation>
     </message>
     <message>
         <source>Generic Driver</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Allmän drivrutin</translation>
     </message>
     <message>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Neka</translation>
     </message>
     <message>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tillåt virtuella maskiner</translation>
     </message>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tillåt alla</translation>
     </message>
     <message>
         <source>Adapter %1</source>
-        <translation type="unfinished">Adapter %1</translation>
+        <translation>Adapter %1</translation>
     </message>
 </context>
 <context>
@@ -8581,43 +8573,43 @@ Version %1</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished">Typ:</translation>
+        <translation>Typ:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished">Plats:</translation>
+        <translation>Plats:</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished"></translation>
+        <translation>Format:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagringsinformation:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ansluten till:</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopiera...</translation>
     </message>
     <message>
         <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
+        <translation>Än&amp;dra...</translation>
     </message>
     <message>
         <source>Copy an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiera ett befintligt media</translation>
     </message>
     <message>
         <source>Modify the attributes of the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändra attribut för valt media</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation type="unfinished"></translation>
+        <translation>S&amp;täng</translation>
     </message>
 </context>
 <context>
@@ -9858,8 +9850,8 @@ Version %1</translation>
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation>
-            <numerusform>&lt;p&gt;Virtuella maskinen/maskinerna &lt;b&gt;%1&lt;/b&gt; befinner sig i ett sparat tillstånd.&lt;/p&gt;&lt;p&gt;Om du fortsätter så kommer körtidstillståndet för de exporterade maskinerna att förkastas. Observera att de befintliga maskinerna inte kommer att ändras.&lt;/p&gt;</numerusform>
-            <numerusform></numerusform>
+            <numerusform>&lt;p&gt;Virtuella maskinen &lt;b&gt;%1&lt;/b&gt; befinner sig i ett sparat tillstånd.&lt;/p&gt;&lt;p&gt;Om du fortsätter så kommer körtidstillståndet för de exporterade maskinerna att förkastas. Observera att de befintliga maskinerna inte kommer att ändras.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;Virtuella maskinerna &lt;b&gt;%1&lt;/b&gt; befinner sig i ett sparat tillstånd.&lt;/p&gt;&lt;p&gt;Om du fortsätter så kommer körtidstillståndet för de exporterade maskinerna att förkastas. Observera att de befintliga maskinerna inte kommer att ändras.&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
@@ -9888,7 +9880,7 @@ Version %1</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished">Beklagar, ett allmänt fel inträffade.</translation>
+        <translation>Beklagar, ett allmänt fel inträffade.</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9989,67 +9981,67 @@ Version %1</translation>
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att registrera den virtuella maskinen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Maskininställningarna ändrades under tiden du redigerade dem. Du har för närvarande osparade ändringar.&lt;/p&gt;&lt;p&gt;Vill du läsa om de ändrade inställningarna eller behålla dina egna ändringar?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Läs om inställningar</translation>
     </message>
     <message>
         <source>Keep changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Behåll ändringar</translation>
     </message>
     <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished"></translation>
+        <source>The state of the virtual machine you currently edit has changed. Only settings which are editable at runtime are saved when you press OK. All changes to other settings will be lost.</source>
+        <translation>Tillståndet för den virtuella maskinen som du för närvarande redigerar har ändrats. Endast inställningar som är redigerbara vid körtid sparas när du trycker OK. Alla ändringar i andra inställningar kommer att förloras.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misslyckades med att klona den virtuella maskinen &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Du är på väg att återställa ögonblicksbilden &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Du kan skapa en ögonblicksbild av det aktuella tillståndet för den virtuella maskinen först genom att kryssa i rutan nedan. Om du inte gör det kommer det aktuella tillståndet att förloras permanent. Vill du fortsätta?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Skapa en ögonblicksbild av aktuellt maskintillstånd</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Är du säker på att du vill återställa ögonblicksbilden &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Fel vid byte av mediatyp från &lt;b&gt;%1&lt;/b&gt; till &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;USB 2.0 är för närvarande aktiverat för denna virtuella maskin. Dock kräver detta att &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; installeras.&lt;/p&gt;&lt;p&gt;Installera Extension Pack (tilläggspaket) från VirtualBox webbplats. Efter det kommer du att kunna återaktivera USB 2.0. Det kommer att vara inaktiverat under tiden såvida inte du avbryter de aktuella inställningsändringarna.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte läsa in USB-proxytjänsten för värden (VERR_FILE_NOT_FOUND). Tjänsten kanske inte är installerad på värddatorn</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox tillåts för närvarande inte att komma åt USB-enheter.  Du kan ändra detta genom att lägga till din användare till gruppen &quot;vboxusers&quot;.  Se användarhandboken för ytterligare information</translation>
     </message>
     <message>
         <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox tillåts för närvarande inte att komma åt USB-enheter.  Du kan ändra detta genom att tillåta din användare att komma åt &quot;usbfs&quot;-mappen och filer.  Se användarhandboken för ytterligare information</translation>
     </message>
     <message>
         <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="unfinished"></translation>
+        <translation>USB-proxytjänsten har ännu inte porterats till denna värd</translation>
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunde inte läsa in USB-proxytjänsten för värden</translation>
     </message>
 </context>
 <context>
@@ -10458,19 +10450,19 @@ Version %1</translation>
     </message>
     <message>
         <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kl&amp;ona...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Klona den markerade virtuella maskinen</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Förkasta</translation>
+        <translation>Förkasta</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State</source>
-        <translation type="unfinished"></translation>
+        <translation>För&amp;kasta sparat tillstånd</translation>
     </message>
 </context>
 <context>
@@ -10707,11 +10699,11 @@ Version %1</translation>
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Klona...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Klona den markerade virtuella maskinen</translation>
     </message>
 </context>
 <context>
