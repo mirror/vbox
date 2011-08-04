@@ -26,7 +26,7 @@
 
 /* Local includes */
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "UIFrameBuffer.h"
 #include "UIFrameBufferQGL.h"
 #include "UIFrameBufferQImage.h"

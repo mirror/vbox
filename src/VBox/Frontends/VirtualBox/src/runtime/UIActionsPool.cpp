@@ -930,8 +930,8 @@ protected:
     void retranslateUi()
     {
         setShortcut(gMS->shortcut(UIMachineShortcuts::HelpShortcut));
-        setText(QApplication::translate("VBoxProblemReporter", "&Contents..."));
-        setStatusTip(QApplication::translate("VBoxProblemReporter", "Show the online help contents"));
+        setText(QApplication::translate("UIMessageCenter", "&Contents..."));
+        setStatusTip(QApplication::translate("UIMessageCenter", "Show the online help contents"));
     }
 };
 
@@ -952,8 +952,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("VBoxProblemReporter", "&VirtualBox Web Site..."), gMS->shortcut(UIMachineShortcuts::WebShortcut)));
-        setStatusTip(QApplication::translate("VBoxProblemReporter", "Open the browser and go to the VirtualBox product web site"));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIMessageCenter", "&VirtualBox Web Site..."), gMS->shortcut(UIMachineShortcuts::WebShortcut)));
+        setStatusTip(QApplication::translate("UIMessageCenter", "Open the browser and go to the VirtualBox product web site"));
     }
 };
 
@@ -974,8 +974,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("VBoxProblemReporter", "&Reset All Warnings"), gMS->shortcut(UIMachineShortcuts::ResetWarningsShortcut)));
-        setStatusTip(QApplication::translate("VBoxProblemReporter", "Go back to showing all suppressed warnings and messages"));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIMessageCenter", "&Reset All Warnings"), gMS->shortcut(UIMachineShortcuts::ResetWarningsShortcut)));
+        setStatusTip(QApplication::translate("UIMessageCenter", "Go back to showing all suppressed warnings and messages"));
     }
 };
 
@@ -999,8 +999,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("VBoxProblemReporter", "R&egister VirtualBox..."), gMS->shortcut(UIMachineShortcuts::RegisterShortcut)));
-        setStatusTip(QApplication::translate("VBoxProblemReporter", "Open VirtualBox registration form"));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIMessageCenter", "R&egister VirtualBox..."), gMS->shortcut(UIMachineShortcuts::RegisterShortcut)));
+        setStatusTip(QApplication::translate("UIMessageCenter", "Open VirtualBox registration form"));
     }
 };
 #endif /* VBOX_WITH_REGISTRATION */
@@ -1023,8 +1023,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("VBoxProblemReporter", "C&heck for Updates..."), gMS->shortcut(UIMachineShortcuts::UpdateShortcut)));
-        setStatusTip(QApplication::translate("VBoxProblemReporter", "Check for a new VirtualBox version"));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIMessageCenter", "C&heck for Updates..."), gMS->shortcut(UIMachineShortcuts::UpdateShortcut)));
+        setStatusTip(QApplication::translate("UIMessageCenter", "Check for a new VirtualBox version"));
     }
 };
 
@@ -1046,8 +1046,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("VBoxProblemReporter", "&About VirtualBox..."), gMS->shortcut(UIMachineShortcuts::AboutShortcut)));
-        setStatusTip(QApplication::translate("VBoxProblemReporter", "Show a dialog with product information"));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIMessageCenter", "&About VirtualBox..."), gMS->shortcut(UIMachineShortcuts::AboutShortcut)));
+        setStatusTip(QApplication::translate("UIMessageCenter", "Show a dialog with product information"));
     }
 };
 

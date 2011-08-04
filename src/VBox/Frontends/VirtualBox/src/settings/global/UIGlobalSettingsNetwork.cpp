@@ -27,7 +27,7 @@
 #include "UIGlobalSettingsNetwork.h"
 #include "UIGlobalSettingsNetworkDetails.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 /* Host-network item constructor: */
 UIHostInterfaceItem::UIHostInterfaceItem()
@@ -417,7 +417,7 @@ void UIGlobalSettingsNetwork::sltAddInterface()
     CProgress progress = host.CreateHostOnlyNetworkInterface(iface);
     if (host.isOk())
     {
-        vboxProblem().showModalProgressDialog(progress, tr("Networking"),
+        msgCenter().showModalProgressDialog(progress, tr("Networking"),
                                               ":/nw_32px.png", this, true, 0);
         if (progress.GetResultCode() == 0)
         {
@@ -436,10 +436,10 @@ void UIGlobalSettingsNetwork::sltAddInterface()
             appendListItem(m_cache.m_items.last(), true);
         }
         else
-            vboxProblem().cannotCreateHostInterface(progress, this);
+            msgCenter().cannotCreateHostInterface(progress, this);
     }
     else
-        vboxProblem().cannotCreateHostInterface(host, this);
+        msgCenter().cannotCreateHostInterface(host, this);
 }
 
 /* Removes selected network interface: */
@@ -451,7 +451,7 @@ void UIGlobalSettingsNetwork::sltDelInterface()
     /* Get interface name: */
     QString strInterfaceName(pItem->name());
     /* Asking user about deleting selected network interface: */
-    if (vboxProblem().confirmDeletingHostInterface(strInterfaceName, this) == QIMessageBox::Cancel)
+    if (msgCenter().confirmDeletingHostInterface(strInterfaceName, this) == QIMessageBox::Cancel)
         return;
 
     /* Prepare useful variables: */
@@ -470,7 +470,7 @@ void UIGlobalSettingsNetwork::sltDelInterface()
     CProgress progress = host.RemoveHostOnlyNetworkInterface(iface.GetId());
     if (host.isOk())
     {
-        vboxProblem().showModalProgressDialog(progress, tr("Networking"),
+        msgCenter().showModalProgressDialog(progress, tr("Networking"),
                                               ":/nw_32px.png", this, true, 0);
         if (progress.GetResultCode() == 0)
         {
@@ -480,10 +480,10 @@ void UIGlobalSettingsNetwork::sltDelInterface()
             removeCacheItem(strInterfaceName);
         }
         else
-            vboxProblem().cannotRemoveHostInterface(progress, iface, this);
+            msgCenter().cannotRemoveHostInterface(progress, iface, this);
     }
     else
-        vboxProblem().cannotRemoveHostInterface(host, iface, this);
+        msgCenter().cannotRemoveHostInterface(host, iface, this);
 }
 
 /* Edits selected network interface: */

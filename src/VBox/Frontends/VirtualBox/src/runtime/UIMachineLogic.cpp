@@ -34,7 +34,7 @@
 #include "UIMachineWindow.h"
 #include "UISession.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMInformationDlg.h"
 #include "UISettingsDialogSpecific.h"
@@ -610,11 +610,11 @@ void UIMachineLogic::sltMachineStateChanged()
             }
 
             /* Warn the user about GURU: */
-            if (vboxProblem().remindAboutGuruMeditation(console, QDir::toNativeSeparators(strLogFolder)))
+            if (msgCenter().remindAboutGuruMeditation(console, QDir::toNativeSeparators(strLogFolder)))
             {
                 console.PowerDown();
                 if (!console.isOk())
-                    vboxProblem().cannotStopMachine(console);
+                    msgCenter().cannotStopMachine(console);
             }
             break;
         }
@@ -715,15 +715,15 @@ void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsA
     if (!fSuccess)
     {
         if (fIsAttached)
-            vboxProblem().cannotAttachUSBDevice(session().GetConsole(), vboxGlobal().details(device), error);
+            msgCenter().cannotAttachUSBDevice(session().GetConsole(), vboxGlobal().details(device), error);
         else
-            vboxProblem().cannotDetachUSBDevice(session().GetConsole(), vboxGlobal().details(device), error);
+            msgCenter().cannotDetachUSBDevice(session().GetConsole(), vboxGlobal().details(device), error);
     }
 }
 
 void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, const QString &strMessage)
 {
-    vboxProblem().showRuntimeError(session().GetConsole(), fIsFatal, strErrorId, strMessage);
+    msgCenter().showRuntimeError(session().GetConsole(), fIsFatal, strErrorId, strMessage);
 }
 
 #ifdef Q_WS_MAC
@@ -874,13 +874,13 @@ void UIMachineLogic::sltTakeSnapshot()
         if (console.isOk())
         {
             /* Show the "Taking Snapshot" progress dialog */
-            vboxProblem().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_create_90px.png", 0, true);
+            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_create_90px.png", 0, true);
 
             if (progress.GetResultCode() != 0)
-                vboxProblem().cannotTakeSnapshot(progress);
+                msgCenter().cannotTakeSnapshot(progress);
         }
         else
-            vboxProblem().cannotTakeSnapshot(console);
+            msgCenter().cannotTakeSnapshot(console);
     }
 
     /* Restore the running state if needed. */
@@ -905,7 +905,7 @@ void UIMachineLogic::sltShowInformationDialog()
 void UIMachineLogic::sltReset()
 {
     /* Confirm/Reset current console: */
-    if (vboxProblem().confirmVMReset(0))
+    if (msgCenter().confirmVMReset(0))
         session().GetConsole().Reset();
 
     /* TODO_NEW_CORE: On reset the additional screens didn't get a display
@@ -927,12 +927,12 @@ void UIMachineLogic::sltACPIShutdown()
 
     /* Warn the user about ACPI is not available if so: */
     if (!console.GetGuestEnteredACPIMode())
-        return vboxProblem().cannotSendACPIToMachine();
+        return msgCenter().cannotSendACPIToMachine();
 
     /* Send ACPI shutdown signal, warn if failed: */
     console.PowerButton();
     if (!console.isOk())
-        vboxProblem().cannotACPIShutdownMachine(console);
+        msgCenter().cannotACPIShutdownMachine(console);
 }
 
 void UIMachineLogic::sltClose()
@@ -967,7 +967,7 @@ void UIMachineLogic::sltOpenSharedFoldersDialog()
 {
     /* Do not process if additions are not loaded! */
     if (!uisession()->isGuestAdditionsActive())
-        vboxProblem().remindAboutGuestAdditionsAreNotActive(defaultMachineWindow()->machineWindow());
+        msgCenter().remindAboutGuestAdditionsAreNotActive(defaultMachineWindow()->machineWindow());
 
     /* Open VM settings : Shared folders page: */
     sltOpenVMSettingsDialog("#sfolders");
@@ -1242,14 +1242,14 @@ void UIMachineLogic::sltMountStorageMedium()
     else
     {
         /* Ask for force remounting: */
-        if (vboxProblem().cannotRemountMedium(0, machine, vboxGlobal().findMedium (fMount ? newId : currentId), fMount, true /* retry? */) == QIMessageBox::Ok)
+        if (msgCenter().cannotRemountMedium(0, machine, vboxGlobal().findMedium (fMount ? newId : currentId), fMount, true /* retry? */) == QIMessageBox::Ok)
         {
             /* Force remount medium to the predefined port/device: */
             machine.MountMedium(target.name, target.port, target.device, medium, true /* force */);
             if (machine.isOk())
                 fWasMounted = true;
             else
-                vboxProblem().cannotRemountMedium(0, machine, vboxGlobal().findMedium (fMount ? newId : currentId), fMount, false /* retry? */);
+                msgCenter().cannotRemountMedium(0, machine, vboxGlobal().findMedium (fMount ? newId : currentId), fMount, false /* retry? */);
         }
     }
 
@@ -1258,7 +1258,7 @@ void UIMachineLogic::sltMountStorageMedium()
     {
         machine.SaveSettings();
         if (!machine.isOk())
-            vboxProblem().cannotSaveMachineSettings(machine);
+            msgCenter().cannotSaveMachineSettings(machine);
     }
 }
 
@@ -1301,14 +1301,14 @@ void UIMachineLogic::sltMountRecentStorageMedium()
         else
         {
             /* Ask for force remounting: */
-            if (vboxProblem().cannotRemountMedium(0, machine, vboxGlobal().findMedium(fMount ? strNewId : strCurrentId), fMount, true /* retry? */) == QIMessageBox::Ok)
+            if (msgCenter().cannotRemountMedium(0, machine, vboxGlobal().findMedium(fMount ? strNewId : strCurrentId), fMount, true /* retry? */) == QIMessageBox::Ok)
             {
                 /* Force remount medium to the predefined port/device: */
                 machine.MountMedium(target.name, target.port, target.device, comMedium, true /* force? */);
                 if (machine.isOk())
                     fWasMounted = true;
                 else
-                    vboxProblem().cannotRemountMedium(0, machine, vboxGlobal().findMedium(fMount ? strNewId : strCurrentId), fMount, false /* retry? */);
+                    msgCenter().cannotRemountMedium(0, machine, vboxGlobal().findMedium(fMount ? strNewId : strCurrentId), fMount, false /* retry? */);
             }
         }
 
@@ -1317,7 +1317,7 @@ void UIMachineLogic::sltMountRecentStorageMedium()
         {
             machine.SaveSettings();
             if (!machine.isOk())
-                vboxProblem().cannotSaveMachineSettings(machine);
+                msgCenter().cannotSaveMachineSettings(machine);
         }
     }
 }
@@ -1393,13 +1393,13 @@ void UIMachineLogic::sltAttachUSBDevice()
     {
         console.AttachUSBDevice(target.id);
         if (!console.isOk())
-            vboxProblem().cannotAttachUSBDevice(console, vboxGlobal().details(device));
+            msgCenter().cannotAttachUSBDevice(console, vboxGlobal().details(device));
     }
     else
     {
         console.DetachUSBDevice(target.id);
         if (!console.isOk())
-            vboxProblem().cannotDetachUSBDevice(console, vboxGlobal().details(device));
+            msgCenter().cannotDetachUSBDevice(console, vboxGlobal().details(device));
     }
 }
 
@@ -1445,7 +1445,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
     }
 
     /* Download the required image */
-    int result = vboxProblem().cannotFindGuestAdditions(QDir::toNativeSeparators(strSrc1), QDir::toNativeSeparators(strSrc2));
+    int result = msgCenter().cannotFindGuestAdditions(QDir::toNativeSeparators(strSrc1), QDir::toNativeSeparators(strSrc2));
     if (result == QIMessageBox::Yes)
     {
         QString source = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vbox.GetVersion().remove("_OSE")) + name;

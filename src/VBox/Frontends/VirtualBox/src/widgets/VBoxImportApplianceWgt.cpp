@@ -20,7 +20,7 @@
 /* VBox includes */
 #include "VBoxImportApplianceWgt.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // ImportSortProxyModel
@@ -63,7 +63,7 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
             if (fResult)
             {
                 /* Show some progress, so the user know whats going on */
-                vboxProblem().showModalProgressDialog (progress, tr ("Reading Appliance ..."), "", this);
+                msgCenter().showModalProgressDialog (progress, tr ("Reading Appliance ..."), "", this);
                 if (!progress.isOk() || progress.GetResultCode() != 0)
                     fResult = false;
                 else
@@ -112,9 +112,9 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
         if (!fResult)
         {
             if (progress.isNull())
-                vboxProblem().cannotImportAppliance(mAppliance, this);
+                msgCenter().cannotImportAppliance(mAppliance, this);
             else
-                vboxProblem().cannotImportAppliance(progress, mAppliance, this);
+                msgCenter().cannotImportAppliance(progress, mAppliance, this);
             /* Delete the appliance in a case of an error */
             delete mAppliance;
             mAppliance = NULL;
@@ -143,19 +143,19 @@ bool VBoxImportApplianceWgt::import()
         if (fResult)
         {
             /* Show some progress, so the user know whats going on */
-            vboxProblem().showModalProgressDialog (progress, tr ("Importing Appliance ..."), ":/progress_import_90px.png", this, true);
+            msgCenter().showModalProgressDialog (progress, tr ("Importing Appliance ..."), ":/progress_import_90px.png", this, true);
             if (progress.GetCanceled())
                 return false;
             if (!progress.isOk() || progress.GetResultCode() != 0)
             {
-                vboxProblem().cannotImportAppliance (progress, mAppliance, this);
+                msgCenter().cannotImportAppliance (progress, mAppliance, this);
                 return false;
             }
             else
                 return true;
         }
         if (!fResult)
-            vboxProblem().cannotImportAppliance (mAppliance, this);
+            msgCenter().cannotImportAppliance (mAppliance, this);
     }
     return false;
 }

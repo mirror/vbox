@@ -23,7 +23,7 @@
 /* Local includes */
 #include "UIExportApplianceWzd.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 class VMListWidgetItems : public QListWidgetItem
 {
@@ -173,7 +173,7 @@ bool UIExportApplianceWzdPage1::validatePage()
     }
 
     if (!savedMachines.isEmpty())
-        return vboxProblem().confirmExportMachinesInSaveState(savedMachines, this);
+        return msgCenter().confirmExportMachinesInSaveState(savedMachines, this);
 
     return true;
 }
@@ -544,7 +544,7 @@ bool UIExportApplianceWzdPage4::prepareSettingsWidget()
                 fResult = m.isOk();
                 if (!fResult)
                 {
-                    vboxProblem().cannotExportAppliance(m, appliance, this);
+                    msgCenter().cannotExportAppliance(m, appliance, this);
                     return false;
                 }
                 /* Now add some new fields the user may change */
@@ -562,7 +562,7 @@ bool UIExportApplianceWzdPage4::prepareSettingsWidget()
         m_pSettingsCnt->populate();
     }
     if (!fResult)
-        vboxProblem().cannotExportAppliance(appliance, this);
+        msgCenter().cannotExportAppliance(appliance, this);
     return fResult;
 }
 
@@ -600,18 +600,18 @@ bool UIExportApplianceWzdPage4::exportAppliance()
     if (fResult)
     {
         /* Show some progress, so the user know whats going on */
-        vboxProblem().showModalProgressDialog(progress, tr("Checking files ..."), "", this);
+        msgCenter().showModalProgressDialog(progress, tr("Checking files ..."), "", this);
         if (progress.GetCanceled())
             return false;
         if (!progress.isOk() || progress.GetResultCode() != 0)
         {
-            vboxProblem().cannotCheckFiles(progress, this);
+            msgCenter().cannotCheckFiles(progress, this);
             return false;
         }
     }
     QVector<QString> exists = explorer.Exists(files);
     /* Check if the file exists already, if yes get confirmation for overwriting from the user. */
-    if (!vboxProblem().askForOverridingFiles(exists, this))
+    if (!msgCenter().askForOverridingFiles(exists, this))
         return false;
     /* Ok all is confirmed so delete all the files which exists */
     if (!exists.isEmpty())
@@ -621,12 +621,12 @@ bool UIExportApplianceWzdPage4::exportAppliance()
         if (fResult)
         {
             /* Show some progress, so the user know whats going on */
-            vboxProblem().showModalProgressDialog(progress1, tr("Removing files ..."), "", this);
+            msgCenter().showModalProgressDialog(progress1, tr("Removing files ..."), "", this);
             if (progress1.GetCanceled())
                 return false;
             if (!progress1.isOk() || progress1.GetResultCode() != 0)
             {
-                vboxProblem().cannotRemoveFiles(progress1, this);
+                msgCenter().cannotRemoveFiles(progress1, this);
                 return false;
             }
         }
@@ -657,19 +657,19 @@ bool UIExportApplianceWzdPage4::exportVMs(CAppliance &appliance)
     if (fResult)
     {
         /* Show some progress, so the user know whats going on */
-        vboxProblem().showModalProgressDialog(progress, tr("Exporting Appliance ..."), ":/progress_export_90px.png", this, true);
+        msgCenter().showModalProgressDialog(progress, tr("Exporting Appliance ..."), ":/progress_export_90px.png", this, true);
         if (progress.GetCanceled())
             return false;
         if (!progress.isOk() || progress.GetResultCode() != 0)
         {
-            vboxProblem().cannotExportAppliance(progress, &appliance, this);
+            msgCenter().cannotExportAppliance(progress, &appliance, this);
             return false;
         }
         else
             return true;
     }
     if (!fResult)
-        vboxProblem().cannotExportAppliance(&appliance, this);
+        msgCenter().cannotExportAppliance(&appliance, this);
     return false;
 }
 

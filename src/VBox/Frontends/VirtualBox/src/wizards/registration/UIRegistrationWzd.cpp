@@ -24,7 +24,7 @@
 /* Local includes */
 #include "UIRegistrationWzd.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "QIHttp.h"
 
 /**
@@ -320,7 +320,7 @@ private slots:
         m_strData = m_pHttp->readAll();
 
         /* Show registration result */
-        vboxProblem().showRegisterResult(qobject_cast<QWidget*>(parent()), m_strData);
+        msgCenter().showRegisterResult(qobject_cast<QWidget*>(parent()), m_strData);
 
         /* Set result */
         m_bResult = m_strData == "OK";
@@ -353,7 +353,7 @@ private:
     {
         /* Show reason if present */
         if (!strReason.isNull())
-            vboxProblem().cannotConnectRegister(qobject_cast<QWidget*>(parent()), m_Url.toString(), strReason);
+            msgCenter().cannotConnectRegister(qobject_cast<QWidget*>(parent()), m_Url.toString(), strReason);
 
         /* Result = FAILED */
         m_bResult = false;

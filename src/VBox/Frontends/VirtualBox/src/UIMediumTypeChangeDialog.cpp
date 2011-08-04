@@ -26,7 +26,7 @@
 /* Local includes: */
 #include "UIMediumTypeChangeDialog.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "QILabel.h"
 #include "QIDialogButtonBox.h"
 
@@ -90,7 +90,7 @@ void UIMediumTypeChangeDialog::sltAccept()
     if (!m_medium.isOk())
     {
         /* Show error message: */
-        vboxProblem().cannotChangeMediumType(this, m_medium, m_oldMediumType, m_newMediumType);
+        msgCenter().cannotChangeMediumType(this, m_medium, m_oldMediumType, m_newMediumType);
         return;
     }
     /* Accept dialog with parent class method: */

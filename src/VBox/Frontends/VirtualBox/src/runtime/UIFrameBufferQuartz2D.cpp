@@ -436,7 +436,7 @@ void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
 #endif
 
 //    if (remind)
-//        vboxProblem().remindAboutWrongColorDepth(aEvent->bitsPerPixel(), 32);
+//        msgCenter().remindAboutWrongColorDepth(aEvent->bitsPerPixel(), 32);
 }
 
 void UIFrameBufferQuartz2D::clean()

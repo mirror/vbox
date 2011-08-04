@@ -23,7 +23,7 @@
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UISession.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 /* Global includes */
 #include <QApplication>
@@ -225,9 +225,9 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
             /* We have to little video memory for the new layout, so say it to the
              * user and revert all changes. */
             if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
-                vboxProblem().cannotSwitchScreenInSeamless((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
+                msgCenter().cannotSwitchScreenInSeamless((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             else
-                fSuccess = vboxProblem().cannotSwitchScreenInFullscreen((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M) != QIMessageBox::Cancel;
+                fSuccess = msgCenter().cannotSwitchScreenInFullscreen((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M) != QIMessageBox::Cancel;
         }
     }
     if (fSuccess)

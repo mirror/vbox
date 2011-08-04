@@ -26,7 +26,7 @@
 /* Local includes */
 #include "VBoxMedium.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 QString VBoxMedium::mTable = QString ("<table>%1</table>");
@@ -270,7 +270,7 @@ void VBoxMedium::refresh()
                 {
                     /* Accessibility check (eg GetState()) itself failed */
                     mToolTip += mRow.arg ("<hr>") + mRow.arg (VBoxGlobal::tr ("Failed to check media accessibility.", "medium")) +
-                                mRow.arg (VBoxProblemReporter::formatErrorInfo (mResult) + ".");
+                                mRow.arg (UIMessageCenter::formatErrorInfo (mResult) + ".");
                 }
                 break;
             }

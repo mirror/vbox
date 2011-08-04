@@ -24,7 +24,7 @@
 
 /* Local includes: */
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "QIFileDialog.h"
 #include "UIIconPool.h"
 #include "UICloneVMWizard.h"
@@ -97,17 +97,17 @@ bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode, bool 
         if (console.isOk())
         {
             /* Show the "Taking Snapshot" progress dialog */
-            vboxProblem().showModalProgressDialog(progress, m_machine.GetName(), ":/progress_snapshot_create_90px.png", this, true);
+            msgCenter().showModalProgressDialog(progress, m_machine.GetName(), ":/progress_snapshot_create_90px.png", this, true);
 
             if (!progress.isOk() || progress.GetResultCode() != 0)
             {
-                vboxProblem().cannotTakeSnapshot(progress);
+                msgCenter().cannotTakeSnapshot(progress);
                 return false;
             }
         }
         else
         {
-            vboxProblem().cannotTakeSnapshot(console);
+            msgCenter().cannotTakeSnapshot(console);
             return false;
         }
 
@@ -118,7 +118,7 @@ bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode, bool 
         const CSnapshot &newSnapshot = m_machine.FindSnapshot(strSnapshotName);
         if (newSnapshot.isNull())
         {
-            vboxProblem().cannotFindSnapshotByName(this, m_machine, strSnapshotName);
+            msgCenter().cannotFindSnapshotByName(this, m_machine, strSnapshotName);
             return false;
         }
         srcMachine = newSnapshot.GetMachine();
@@ -128,7 +128,7 @@ bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode, bool 
     CMachine cloneMachine = vbox.CreateMachine(strSettingsFile, strName, QString::null, QString::null, false);
     if (!vbox.isOk())
     {
-        vboxProblem().cannotCreateMachine(vbox, this);
+        msgCenter().cannotCreateMachine(vbox, this);
         return false;
     }
 
@@ -144,17 +144,17 @@ bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode, bool 
     CProgress progress = srcMachine.CloneTo(cloneMachine, mode, options);
     if (!srcMachine.isOk())
     {
-        vboxProblem().cannotCreateClone(srcMachine, this);
+        msgCenter().cannotCreateClone(srcMachine, this);
         return false;
     }
 
     /* Wait until done. */
-    vboxProblem().showModalProgressDialog(progress, windowTitle(), ":/progress_clone_90px.png", this, true);
+    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_clone_90px.png", this, true);
     if (progress.GetCanceled())
         return false;
     if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        vboxProblem().cannotCreateClone(srcMachine, progress, this);
+        msgCenter().cannotCreateClone(srcMachine, progress, this);
         return false;
     }
 
@@ -162,7 +162,7 @@ bool UICloneVMWizard::createClone(const QString &strName, KCloneMode mode, bool 
     vbox.RegisterMachine(cloneMachine);
     if (!vbox.isOk())
     {
-        vboxProblem().cannotRegisterMachine(vbox, cloneMachine, this);
+        msgCenter().cannotRegisterMachine(vbox, cloneMachine, this);
         return false;
     }
 

@@ -274,7 +274,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/VBoxVMLogViewer.h \
 	src/VBoxLicenseViewer.h \
 	src/globals/VBoxGlobal.h \
-	src/globals/VBoxProblemReporter.h \
+	src/globals/UIMessageCenter.h \
 	src/globals/VBoxUtils.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIExtraDataEventHandler.h \
@@ -442,7 +442,7 @@ VirtualBox_SOURCES = \
 	src/globals/COMDefs.cpp \
 	src/globals/VBoxDefs.cpp \
 	src/globals/VBoxGlobal.cpp \
-	src/globals/VBoxProblemReporter.cpp \
+	src/globals/UIMessageCenter.cpp \
 	src/globals/UIIconPool.cpp \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \

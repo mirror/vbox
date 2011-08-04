@@ -28,7 +28,7 @@
 #include "UISettingsDialog.h"
 #include "VBoxWarningPane.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxSettingsSelector.h"
 #include "UISettingsPage.h"
@@ -138,7 +138,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 
     /* Setup connections: */
     connect(m_pSelector, SIGNAL(categoryChanged(int)), this, SLOT(sltCategoryChanged(int)));
-    connect(m_pButtonBox, SIGNAL(helpRequested()), &vboxProblem(), SLOT(showHelpHelpDialog()));
+    connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
 
     /* Translate UI: */
     retranslateUi();

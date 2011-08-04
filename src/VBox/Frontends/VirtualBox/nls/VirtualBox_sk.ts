@@ -8841,7 +8841,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
 </context>
 <context>
-    <name>VBoxProblemReporter</name>
+    <name>UIMessageCenter</name>
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>

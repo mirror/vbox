@@ -9832,7 +9832,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxProblemReporter</name>
+    <name>UIMessageCenter</name>
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>

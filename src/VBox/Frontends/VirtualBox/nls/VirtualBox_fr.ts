@@ -6380,7 +6380,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
 </context>
 <context>
-    <name>VBoxProblemReporter</name>
+    <name>UIMessageCenter</name>
     <message>
         <source>VirtualBox - Information</source>
         <comment>msg box title</comment>

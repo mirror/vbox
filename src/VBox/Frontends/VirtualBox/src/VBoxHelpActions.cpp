@@ -25,7 +25,7 @@
 #include "UIIconPool.h"
 #include "UISelectorShortcuts.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 /* Qt includes */
 #include <QMenu>
@@ -56,17 +56,17 @@ void VBoxHelpActions::setup (QObject *aParent)
     aboutAction->setIcon (UIIconPool::iconSet (":/about_16px.png"));
 
     QObject::connect (contentsAction, SIGNAL (triggered()),
-                      &vboxProblem(), SLOT (showHelpHelpDialog()));
+                      &msgCenter(), SLOT (sltShowHelpHelpDialog()));
     QObject::connect (webAction, SIGNAL (triggered()),
-                      &vboxProblem(), SLOT (showHelpWebDialog()));
+                      &msgCenter(), SLOT (sltShowHelpWebDialog()));
     QObject::connect (resetMessagesAction, SIGNAL (triggered()),
-                      &vboxProblem(), SLOT (resetSuppressedMessages()));
+                      &msgCenter(), SLOT (sltResetSuppressedMessages()));
     QObject::connect (registerAction, SIGNAL (triggered()),
                       &vboxGlobal(), SLOT (showRegistrationDialog()));
     QObject::connect (updateAction, SIGNAL (triggered()),
                       &vboxGlobal(), SLOT (showUpdateDialog()));
     QObject::connect (aboutAction, SIGNAL (triggered()),
-                      &vboxProblem(), SLOT (showHelpAboutDialog()));
+                      &msgCenter(), SLOT (sltShowHelpAboutDialog()));
 
     QObject::connect (gEDataEvents, SIGNAL(sigCanShowRegistrationDlg(bool)),
                       registerAction, SLOT(setEnabled(bool)));
@@ -105,36 +105,36 @@ void VBoxHelpActions::retranslateUi()
 {
     AssertReturnVoid (contentsAction != NULL);
 
-    contentsAction->setText (VBoxProblemReporter::tr ("&Contents..."));
+    contentsAction->setText (UIMessageCenter::tr ("&Contents..."));
     contentsAction->setShortcut (gSS->keySequence(UISelectorShortcuts::HelpShortcut));
-    contentsAction->setStatusTip (VBoxProblemReporter::tr (
+    contentsAction->setStatusTip (UIMessageCenter::tr (
         "Show the online help contents"));
 
-    webAction->setText (VBoxProblemReporter::tr ("&VirtualBox Web Site..."));
+    webAction->setText (UIMessageCenter::tr ("&VirtualBox Web Site..."));
     webAction->setShortcut (gSS->keySequence(UISelectorShortcuts::WebShortcut));
-    webAction->setStatusTip (VBoxProblemReporter::tr (
+    webAction->setStatusTip (UIMessageCenter::tr (
         "Open the browser and go to the VirtualBox product web site"));
 
-    resetMessagesAction->setText (VBoxProblemReporter::tr ("&Reset All Warnings"));
+    resetMessagesAction->setText (UIMessageCenter::tr ("&Reset All Warnings"));
     resetMessagesAction->setShortcut (gSS->keySequence(UISelectorShortcuts::ResetWarningsShortcut));
-    resetMessagesAction->setStatusTip (VBoxProblemReporter::tr (
+    resetMessagesAction->setStatusTip (UIMessageCenter::tr (
         "Go back to showing all suppressed warnings and messages"));
 
 #ifdef VBOX_WITH_REGISTRATION
-    registerAction->setText (VBoxProblemReporter::tr ("R&egister VirtualBox..."));
+    registerAction->setText (UIMessageCenter::tr ("R&egister VirtualBox..."));
     registerAction->setShortcut (gSS->keySequence(UISelectorShortcuts::RegisterShortcut));
-    registerAction->setStatusTip (VBoxProblemReporter::tr (
+    registerAction->setStatusTip (UIMessageCenter::tr (
         "Open VirtualBox registration form"));
 #endif /* VBOX_WITH_REGISTRATION */
 
-    updateAction->setText (VBoxProblemReporter::tr ("C&heck for Updates..."));
+    updateAction->setText (UIMessageCenter::tr ("C&heck for Updates..."));
     updateAction->setShortcut (gSS->keySequence(UISelectorShortcuts::UpdateShortcut));
-    updateAction->setStatusTip (VBoxProblemReporter::tr (
+    updateAction->setStatusTip (UIMessageCenter::tr (
         "Check for a new VirtualBox version"));
 
-    aboutAction->setText (VBoxProblemReporter::tr ("&About VirtualBox..."));
+    aboutAction->setText (UIMessageCenter::tr ("&About VirtualBox..."));
     aboutAction->setShortcut (gSS->keySequence(UISelectorShortcuts::AboutShortcut));
-    aboutAction->setStatusTip (VBoxProblemReporter::tr (
+    aboutAction->setStatusTip (UIMessageCenter::tr (
         "Show a dialog with product information"));
 }
 

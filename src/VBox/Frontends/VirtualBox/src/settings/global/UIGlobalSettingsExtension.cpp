@@ -25,7 +25,7 @@
 #include "UIIconPool.h"
 #include "QIFileDialog.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "VBoxLicenseViewer.h"
 
 /* Extension package item: */
@@ -123,13 +123,13 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     CExtPackFile extPackFile = manager.OpenExtPackFile(strFilePath);
     if (!manager.isOk())
     {
-        vboxProblem().cannotOpenExtPack(strFilePath, manager, pParent);
+        msgCenter().cannotOpenExtPack(strFilePath, manager, pParent);
         return;
     }
 
     if (!extPackFile.GetUsable())
     {
-        vboxProblem().badExtPackFile(strFilePath, extPackFile, pParent);
+        msgCenter().badExtPackFile(strFilePath, extPackFile, pParent);
         return;
     }
 
@@ -147,7 +147,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     if (fReplaceIt)
     {
         QString strPackVersionCur = QString("%1r%2").arg(extPackCur.GetVersion()).arg(extPackCur.GetRevision());
-        if (!vboxProblem().confirmReplacePackage(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
+        if (!msgCenter().confirmReplacePackage(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
             return;
     }
     /*
@@ -155,7 +155,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
      */
     else
     {
-        if (!vboxProblem().confirmInstallingPackage(strPackName, strPackVersion, strPackDescription, pParent))
+        if (!msgCenter().confirmInstallingPackage(strPackName, strPackVersion, strPackDescription, pParent))
             return;
     }
 
@@ -185,21 +185,21 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     if (extPackFile.isOk())
     {
         if (progress.isNull())
-            vboxProblem().notifyAboutExtPackInstalled(strPackName, pParent);
+            msgCenter().notifyAboutExtPackInstalled(strPackName, pParent);
         else
         {
-            vboxProblem().showModalProgressDialog(progress, tr("Extensions"));
+            msgCenter().showModalProgressDialog(progress, tr("Extensions"));
             if (!progress.GetCanceled())
             {
                 if (progress.isOk() && progress.GetResultCode() == 0)
-                    vboxProblem().notifyAboutExtPackInstalled(strPackName, pParent);
+                    msgCenter().notifyAboutExtPackInstalled(strPackName, pParent);
                 else
-                    vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, progress, pParent);
+                    msgCenter().cannotInstallExtPack(strFilePath, extPackFile, progress, pParent);
             }
         }
     }
     else
-        vboxProblem().cannotInstallExtPack(strFilePath, extPackFile, progress, pParent);
+        msgCenter().cannotInstallExtPack(strFilePath, extPackFile, progress, pParent);
 
     if (pstrExtPackName)
         *pstrExtPackName = strPackName;
@@ -390,7 +390,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
         /* Get name of current package: */
         QString strSelectedPackageName = pItem->name();
         /* Ask the user about package removing: */
-        if (vboxProblem().confirmRemovingPackage(strSelectedPackageName, this))
+        if (msgCenter().confirmRemovingPackage(strSelectedPackageName, this))
         {
             /*
              * Uninstall the package.
@@ -407,7 +407,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                 bool fOk = true;
                 if (!progress.isNull())
                 {
-                    vboxProblem().showModalProgressDialog(progress, tr("Extensions"));
+                    msgCenter().showModalProgressDialog(progress, tr("Extensions"));
                     fOk = progress.isOk() && progress.GetResultCode() == 0;
                 }
                 if (fOk)
@@ -426,10 +426,10 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                     delete pItem;
                 }
                 else
-                    vboxProblem().cannotUninstallExtPack(strSelectedPackageName, manager, progress, this);
+                    msgCenter().cannotUninstallExtPack(strSelectedPackageName, manager, progress, this);
             }
             else
-                vboxProblem().cannotUninstallExtPack(strSelectedPackageName, manager, progress, this);
+                msgCenter().cannotUninstallExtPack(strSelectedPackageName, manager, progress, this);
         }
     }
 }

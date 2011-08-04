@@ -20,7 +20,7 @@
 #include "QIWidgetValidator.h"
 #include "UIMachineSettingsDisplay.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 
 #include <QDesktopWidget>
 

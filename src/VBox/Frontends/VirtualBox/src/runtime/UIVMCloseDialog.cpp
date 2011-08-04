@@ -21,7 +21,7 @@
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "UIVMCloseDialog.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "UIMachineWindowNormal.h"
 
 #ifdef Q_WS_MAC
@@ -56,7 +56,7 @@ UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent)
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     connect(mButtonBox, SIGNAL(helpRequested()),
-            &vboxProblem(), SLOT(showHelpHelpDialog()));
+            &msgCenter(), SLOT(sltShowHelpHelpDialog()));
 }
 
 void UIVMCloseDialog::retranslateUi()

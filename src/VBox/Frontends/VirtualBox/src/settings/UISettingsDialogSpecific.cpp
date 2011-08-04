@@ -28,7 +28,7 @@
 #include "UISettingsDialogSpecific.h"
 #include "UISettingsDefs.h"
 #include "VBoxGlobal.h"
-#include "VBoxProblemReporter.h"
+#include "UIMessageCenter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxSettingsSelector.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -458,7 +458,7 @@ void UISettingsDialogGlobal::saveData()
     VBoxGlobalSettings newSettings = pGlobalSettingsSaver->data().value<UISettingsDataGlobal>().m_settings;
     /* If properties are not OK => show the error: */
     if (!newProperties.isOk())
-        vboxProblem().cannotSetSystemProperties(newProperties);
+        msgCenter().cannotSetSystemProperties(newProperties);
     /* Else save the new settings if they were changed: */
     else if (!(newSettings == settings))
         vboxGlobal().setSettings(newSettings);
@@ -522,7 +522,7 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId)
             CHost host = vboxGlobal().virtualBox().GetHost();
             /* Show the host error message if any: */
             if (!host.isReallyOk())
-                vboxProblem().cannotAccessUSB(host);
+                msgCenter().cannotAccessUSB(host);
             /* Check if USB is implemented: */
             CHostUSBDeviceFilterVector filters = host.GetUSBDeviceFilters();
             Q_UNUSED(filters);
@@ -845,7 +845,7 @@ void UISettingsDialogMachine::saveData()
 
     /* If machine is NOT ok => show the error message: */
     if (!m_machine.isOk())
-        vboxProblem().cannotSaveMachineSettings(m_machine);
+        msgCenter().cannotSaveMachineSettings(m_machine);
 
     /* Mark page processed: */
     sltMarkSaved();
@@ -1022,7 +1022,7 @@ void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMach
 
     /* Show a warning about leaving 'offline' state if we should: */
     if (isSettingsChanged() && fShouldWe)
-        vboxProblem().warnAboutStateChange(this);
+        msgCenter().warnAboutStateChange(this);
 }
 
 void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
@@ -1032,7 +1032,7 @@ void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
         return;
 
     /* Check if user had changed something and warn him about he will loose settings on reloading: */
-    if (isSettingsChanged() && !vboxProblem().confirmedSettingsReloading(this))
+    if (isSettingsChanged() && !msgCenter().confirmedSettingsReloading(this))
         return;
 
     /* Reload data: */
@@ -1097,7 +1097,7 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId)
             CUSBController controller = m_machine.GetUSBController();
             /* Show the machine error message if any: */
             if (!m_machine.isReallyOk() && !controller.isNull() && controller.GetEnabled())
-                vboxProblem().cannotAccessUSB(m_machine);
+                msgCenter().cannotAccessUSB(m_machine);
             /* Check if USB is implemented: */
             if (controller.isNull() || !controller.GetProxyAvailable())
                 return false;
