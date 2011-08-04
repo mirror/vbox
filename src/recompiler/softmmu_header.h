@@ -86,11 +86,7 @@ static inline RES_TYPE glue(glue(ld, USUFFIX), MEMSUFFIX)(target_ulong ptr)
     int page_index;
     RES_TYPE res;
     target_ulong addr;
-#ifdef VBOX
-    uintptr_t physaddr;
-#else
     unsigned long physaddr;
-#endif
     int mmu_idx;
 
     addr = ptr;
@@ -111,11 +107,7 @@ static inline int glue(glue(lds, SUFFIX), MEMSUFFIX)(target_ulong ptr)
 {
     int res, page_index;
     target_ulong addr;
-#ifdef VBOX
-    uintptr_t physaddr;
-#else
     unsigned long physaddr;
-#endif
     int mmu_idx;
 
     addr = ptr;
@@ -140,11 +132,7 @@ static inline void glue(glue(st, SUFFIX), MEMSUFFIX)(target_ulong ptr, RES_TYPE 
 {
     int page_index;
     target_ulong addr;
-#ifdef VBOX
-    uintptr_t physaddr;
-#else
     unsigned long physaddr;
-#endif
     int mmu_idx;
 
     addr = ptr;
@@ -218,9 +206,3 @@ static inline void glue(stfl, MEMSUFFIX)(target_ulong ptr, float32 v)
 #undef CPU_MMU_INDEX
 #undef MMUSUFFIX
 #undef ADDR_READ
-
-#include <iprt/assert.h>
-AssertCompileSize(uint64_t,8);
-AssertCompileSize(uint32_t,4);
-AssertCompileSize(uint16_t,2);
-AssertCompileSize(uint8_t,1);

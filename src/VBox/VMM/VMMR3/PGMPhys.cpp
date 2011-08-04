@@ -3680,6 +3680,7 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
     {
         pVCpu->pgm.s.fA20Enabled = fEnable;
         pVCpu->pgm.s.GCPhysA20Mask = ~(RTGCPHYS)(!fEnable << 20);
+        REMR3A20Set(pVCpu->pVMR3, pVCpu, fEnable);
         /** @todo we're not handling this correctly for VT-x / AMD-V. See #2911 */
     }
 }
