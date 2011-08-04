@@ -16,9 +16,6 @@
  */
 
 #include <windows.h>
-#ifndef TARGET_NT4
-# include <Wtsapi32.h>
-#endif
 #include "winwlx.h"
 #include "Helper.h"
 #include "VBoxGINA.h"
@@ -61,91 +58,7 @@ HANDLE getVBoxDriver(void)
  */
 bool isRemoteSession(void)
 {
-    bool fIsRemote = false;
-
-#if 0
-#ifndef TARGET_NT4
-    WTS_SESSION_INFO *pSessionInfo = NULL;
-    DWORD dwSessions;
-    if (WTSEnumerateSessions(WTS_CURRENT_SERVER_HANDLE,
-                             0 /* Reserved */,
-                             1 /* Version */,
-                             &pSessionInfo,
-                             &dwSessions))
-    {
-        DWORD dwRemoteSessions = 0;
-        for (DWORD i = 0; i < dwSessions; i++)
-        {
-            switch (pSessionInfo[i].State)
-            {
-                case WTSConnected:
-                case WTSActive:
-                {
-                    LPTSTR pBuffer;
-                    DWORD cbBuffer;
-                    if (  WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
-                                                     pSessionInfo[i].SessionId,
-                                                     WTSClientProtocolType,
-                                                     &pBuffer, &cbBuffer)
-                        && pBuffer
-                        && cbBuffer)
-                    {
-                        USHORT uProto = (USHORT)(pBuffer);
-                        /* Only count RDP sessions -- these are the ones we're
-                         * interested in here. */
-                        if (uProto == WTS_PROTOCOL_TYPE_RDP)
-                            dwRemoteSessions++;
-                        WTSFreeMemory(pBuffer);
-#ifndef DEBUG
-                        if (dwRemoteSessions) /* Bail out as soon as possible. */
-                            break;
-#endif
-                    }
-                    break;
-                }
-
-                default:
-                    break;
-            }
-        }
-
-#ifdef DEBUG
-        Log(("VBoxGINA: %s connections detected\n",
-             dwRemoteSessions ? "RDP" : "No RDP"));
-#endif
-        if (pSessionInfo)
-            WTSFreeMemory(pSessionInfo);
-
-        if (dwSessions)
-            fIsRemote = true;
-    }
-#endif
-#else
-    LPTSTR pBuffer;
-    DWORD cbBuffer;
-    if (  WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
-                                     WTS_CURRENT_SESSION,
-                                     WTSClientProtocolType,
-                                     &pBuffer, &cbBuffer)
-        && pBuffer
-        && cbBuffer)
-    {
-        USHORT uProto = (USHORT)(pBuffer);
-        /* Only count RDP sessions -- these are the ones we're
-         * interested in here. */
-        fIsRemote = uProto == WTS_PROTOCOL_TYPE_RDP;
-        WTSFreeMemory(pBuffer);
-    }
-    else
-        Log(("VBoxGINA: Error %ld querying session information\n",
-             GetLastError()));
-#endif
-
-#ifdef DEBUG
-    Log(("VBoxGINA: Is remote session: %s\n",
-         fIsRemote ? "Yes" : "No"));
-#endif
-    return fIsRemote;
+    return (0 != GetSystemMetrics(SM_REMOTESESSION)) ? true : false;
 }
 
 /**
