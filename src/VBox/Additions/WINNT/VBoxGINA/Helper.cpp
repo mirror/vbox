@@ -98,6 +98,11 @@ DWORD loadConfiguration(void)
  */
 bool handleCurrentSession(void)
 {
+    /* Load global configuration from registry. */
+    DWORD dwRet = loadConfiguration();
+    if (ERROR_SUCCESS != dwRet)
+        LogRel(("VBoxGINA::handleCurrentSession: Error loading global configuration, error=%ld\n", dwRet));
+
     bool fHandle = false;
     if (isRemoteSession())
     {
@@ -106,6 +111,10 @@ bool handleCurrentSession(void)
     }
     else /* No remote session. */
         fHandle = true;
+
+    if (!fHandle)
+        LogRel(("VBoxGINA::handleCurrentSession: Handling of remote desktop sessions is disabled.\n"));
+
     return fHandle;
 }
 
