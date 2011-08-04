@@ -59,6 +59,8 @@ typedef enum LOGGROUP
 {
     /** The default VBox group. */
     LOG_GROUP_DEFAULT = RTLOGGROUP_FIRST_USER,
+    /** Auto-logon group. */
+    LOG_GROUP_AUTOLOGON,
     /** CFGM group. */
     LOG_GROUP_CFGM,
     /** CPUM group. */
@@ -378,6 +380,7 @@ typedef enum LOGGROUP
 {                   \
     RT_LOGGROUP_NAMES, \
     "DEFAULT",      \
+    "AUTOLOGON",    \
     "CFGM",         \
     "CPUM",         \
     "CSAM",         \
