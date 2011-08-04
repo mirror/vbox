@@ -819,7 +819,13 @@ static void *crVBoxHGCMAlloc(CRConnection *conn)
 {
     void *pvBuff;
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
     pvBuff = _crVBoxHGCMAlloc(conn);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
     return pvBuff;
 }
@@ -876,7 +882,13 @@ static void _crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned 
 static void crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned int len)
 {
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
     _crVBoxHGCMWriteExact(conn, buf, len);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
@@ -1068,6 +1080,10 @@ static void crVBoxHGCMSend(CRConnection *conn, void **bufp,
     CRVBOXHGCMBUFFER *hgcm_buffer;
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
+
     if (!bufp) /* We're sending a user-allocated buffer. */
     {
 #ifndef IN_GUEST
@@ -1078,6 +1094,9 @@ static void crVBoxHGCMSend(CRConnection *conn, void **bufp,
             CRASSERT(!conn->u32InjectClientID);
             crDebug("SHCRGL: sending userbuf with %d bytes\n", len);
             crVBoxHGCMWriteReadExact(conn, start, len, CR_VBOXHGCM_USERALLOCATED);
+#endif
+#ifdef CHROMIUM_THREADSAFE
+            crUnlockMutex(&g_crvboxhgcm.mutex);
 #endif
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
         return;
@@ -1117,6 +1136,10 @@ static void crVBoxHGCMSend(CRConnection *conn, void **bufp,
      * doesn't try to re-use the buffer.
      */
     *bufp = NULL;
+
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
 
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
@@ -1158,7 +1181,13 @@ static void crVBoxHGCMPollHost(CRConnection *conn)
 static void crVBoxHGCMSingleRecv(CRConnection *conn, void *buf, unsigned int len)
 {
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
     crVBoxHGCMReadExact(conn, buf, len);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
@@ -1204,7 +1233,13 @@ static void _crVBoxHGCMFree(CRConnection *conn, void *buf)
 static void crVBoxHGCMFree(CRConnection *conn, void *buf)
 {
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
     _crVBoxHGCMFree(conn, buf);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
@@ -1289,7 +1324,13 @@ static void _crVBoxHGCMReceiveMessage(CRConnection *conn)
 static void crVBoxHGCMReceiveMessage(CRConnection *conn)
 {
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
     _crVBoxHGCMReceiveMessage(conn);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
@@ -1591,8 +1632,14 @@ static void crVBoxHGCMDoDisconnect( CRConnection *conn )
 static void crVBoxHGCMInstantReclaim(CRConnection *conn, CRMessage *mess)
 {
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
     _crVBoxHGCMFree(conn, mess);
     CRASSERT(FALSE);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
@@ -1700,6 +1747,10 @@ static void *crVBoxHGSMIAlloc(CRConnection *conn)
 
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
+
     pClient = _crVBoxHGSMIClientGet(conn);
     if (pClient)
     {
@@ -1711,6 +1762,10 @@ static void *crVBoxHGSMIAlloc(CRConnection *conn)
         pvBuf = _crVBoxHGCMAlloc(conn);
     }
 
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
+
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 
     return pvBuf;
@@ -1719,7 +1774,13 @@ static void *crVBoxHGSMIAlloc(CRConnection *conn)
 static void crVBoxHGSMIFree(CRConnection *conn, void *buf)
 {
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
     _crVBoxHGSMIFree(conn, buf);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
@@ -2076,6 +2137,10 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
 
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
+
     if (!bufp) /* We're sending a user-allocated buffer. */
     {
         pClient = _crVBoxHGSMIClientGet(conn);
@@ -2090,12 +2155,18 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
             crDebug("SHCRGL: sending userbuf with %d bytes\n", len);
             _crVBoxHGSMIWriteReadExact(conn, pClient, (void*)start, 0, len, false);
 #endif
+#ifdef CHROMIUM_THREADSAFE
+            crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return;
         }
 
         /* fallback */
         crVBoxHGCMSend(conn, bufp, start, len);
+#ifdef CHROMIUM_THREADSAFE
+        crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
         VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
         return;
     }
@@ -2112,6 +2183,9 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
     {
         /* fallback */
         crVBoxHGCMSend(conn, bufp, start, len);
+#ifdef CHROMIUM_THREADSAFE
+        crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
         VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
         return;
     }
@@ -2126,6 +2200,9 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
     if (!pBuf)
     {
         crVBoxHGCMSend(conn, bufp, start, len);
+#ifdef CHROMIUM_THREADSAFE
+        crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
         VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
         return;
     }
@@ -2158,6 +2235,10 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
      */
     *bufp = NULL;
 
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
+
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
@@ -2166,31 +2247,16 @@ static void crVBoxHGSMIWriteExact(CRConnection *conn, const void *buf, unsigned 
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
     CRASSERT(0);
-//    PCRVBOXHGSMI_CLIENT pClient;
-//    PVBOXUHGSMI_BUFFER pBuf = _crVBoxHGSMIBufFromMemPtr(buf);
-//    if (!pBuf)
-//        return;
-//    pClient = (PCRVBOXHGSMI_CLIENT)pBuf->pvUserData;
-//    _crVBoxHGSMIWriteExact(conn, pClient, pBuf, 0, len);
-//    _crVBoxHGSMIBufFree(pClient, pBuf);
+
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
 static void crVBoxHGSMISingleRecv(CRConnection *conn, void *buf, unsigned int len)
 {
-//    PCRVBOXHGSMI_CLIENT pClient;
-//    PVBOXUHGSMI_BUFFER pBuf;
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
-//    pBuf = _crVBoxHGSMIBufFromMemPtr(buf);
-//    Assert(pBuf);
+
     CRASSERT(0);
-//    if (!pBuf)
-//    {
-//        VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
-//        return;
-//    }
-//    pClient = (PCRVBOXHGSMI_CLIENT)pBuf->pvUserData;
-//    _crVBoxHGSMIReadExact(conn, pClient);
+
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
@@ -2198,9 +2264,18 @@ static void crVBoxHGSMIReceiveMessage(CRConnection *conn)
 {
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
+
     CRASSERT(0);
 
     _crVBoxHGCMReceiveMessage(conn);
+
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
+
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
@@ -2226,6 +2301,9 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
 
 static void crVBoxHGSMIDoDisconnect( CRConnection *conn )
 {
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
 #ifndef VBOX_CRHGSMI_WITH_D3DDEV
     if (conn->HgsmiClient.pHgsmi)
     {
@@ -2234,19 +2312,26 @@ static void crVBoxHGSMIDoDisconnect( CRConnection *conn )
         CRASSERT(pHgsmi);
         VBoxCrHgsmiDestroy(pHgsmi);
     }
-
 #endif
     crVBoxHGCMDoDisconnect(conn);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
 }
 
 static void crVBoxHGSMIInstantReclaim(CRConnection *conn, CRMessage *mess)
 {
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&g_crvboxhgcm.mutex);
+#endif
     CRASSERT(0);
 
     _crVBoxHGSMIFree(conn, mess);
-    CRASSERT(FALSE);
 
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&g_crvboxhgcm.mutex);
+#endif
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
