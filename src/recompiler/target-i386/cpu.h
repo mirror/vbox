@@ -785,8 +785,8 @@ typedef struct CPUX86State {
 # if HC_ARCH_BITS == 64 \
   || (   HC_ARCH_BITS == 32 \
       && !defined(RT_OS_WINDOWS) \
-      && (   (!defined(VBOX_ENABLE_VBOXREM64) && !defined(RT_OS_SOLARIS)) \
-          || (defined(VBOX_ENABLE_VBOXREM64) && defined(RT_OS_SOLARIS)) ) )
+      && (   (!defined(VBOX_ENABLE_VBOXREM64) && !defined(RT_OS_SOLARIS) && !defined(RT_OS_FREEBSD)) \
+          || (defined(VBOX_ENABLE_VBOXREM64) && (defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))) ) )
     uint32_t alignment2[1];
 # endif
 
