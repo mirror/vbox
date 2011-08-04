@@ -769,10 +769,17 @@ static HRGN stubMakeRegionFromRects(PVBOXVIDEOCM_CMD_RECTS pRegions, uint32_t st
     return hRgn;
 }
 
+typedef struct VBOXCR_UPDATEWNDCB
+{
+    VBOXDISPMP_REGIONS Regions;
+    bool fSendUpdateMsg;
+} VBOXCR_UPDATEWNDCB, *PVBOXCR_UPDATEWNDCB;
+
 static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2)
 {
     WindowInfo *pWindow = (WindowInfo *) data1;
-    VBOXDISPMP_REGIONS *pRegions = (VBOXDISPMP_REGIONS*) data2;
+    PVBOXCR_UPDATEWNDCB pCbData = (PVBOXCR_UPDATEWNDCB) data2;
+    VBOXDISPMP_REGIONS *pRegions = &pCbData->Regions;
     bool bChanged = false;
     HRGN hNewRgn = INVALID_HANDLE_VALUE;
 
@@ -865,7 +872,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
             {
                 if (pWindow->hVisibleRegion==INVALID_HANDLE_VALUE || EqualRgn(pWindow->hVisibleRegion, hEmptyRgn))
                 {
-                    SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, 0, SMTO_NORMAL, 1000, NULL);
+                    pCbData->fSendUpdateMsg = true;
                 }
 
                 DeleteObject(hEmptyRgn);
@@ -950,7 +957,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
 # ifdef VBOX_WITH_WDDM
     static VBOXDISPMP_CALLBACKS VBoxDispMpTstCallbacks = {NULL, NULL, NULL};
     HMODULE hVBoxD3D = NULL;
-    VBOXDISPMP_REGIONS Regions;
+    VBOXCR_UPDATEWNDCB RegionsData;
     HRESULT hr;
 # endif
 #endif
@@ -1015,22 +1022,27 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
 # ifdef VBOX_WITH_WDDM
             if (VBoxDispMpTstCallbacks.pfnGetRegions)
             {
-                hr = VBoxDispMpTstCallbacks.pfnGetRegions(&Regions, 50);
+                hr = VBoxDispMpTstCallbacks.pfnGetRegions(&RegionsData.Regions, 50);
                 if (S_OK==hr)
                 {
+                    RegionsData.fSendUpdateMsg = false;
 #  if 0
                     uint32_t i;
-                    crDebug(">>>Regions for HWND(0x%x)>>>", Regions.hWnd);
-                    crDebug("Flags(0x%x)", Regions.pRegions->fFlags.Value);
-                    for (i = 0; i < Regions.pRegions->RectsInfo.cRects; ++i)
+                    crDebug(">>>Regions for HWND(0x%x)>>>", RegionsData.Regions.hWnd);
+                    crDebug("Flags(0x%x)", RegionsData.Regions.pRegions->fFlags.Value);
+                    for (i = 0; i < RegionsData.Regions.pRegions->RectsInfo.cRects; ++i)
                     {
-                        RECT *pRect = &Regions.pRegions->RectsInfo.aRects[i];
+                        RECT *pRect = &RegionsData.Regions.pRegions->RectsInfo.aRects[i];
                         crDebug("Rect(%d): left(%d), top(%d), right(%d), bottom(%d)", i, pRect->left, pRect->top, pRect->right, pRect->bottom);
                     }
                     crDebug("<<<<<");
 #  endif
                     /*hacky way to make sure window wouldn't be deleted in another thread as we hold hashtable lock here*/
-                    crHashtableWalk(stub.windowTable, stubSyncTrUpdateWindowCB, &Regions);
+                    crHashtableWalk(stub.windowTable, stubSyncTrUpdateWindowCB, &RegionsData);
+                    if (RegionsData.fSendUpdateMsg)
+                    {
+                        SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, 0, SMTO_NORMAL, 1000, NULL);
+                    }
                 }
                 else
                 {
