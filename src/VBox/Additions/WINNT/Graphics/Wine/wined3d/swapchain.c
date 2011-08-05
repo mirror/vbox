@@ -298,7 +298,11 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
         IWineD3DSurface_BltFast(This->backBuffer[0], 0, 0, This->device->logo_surface, NULL, WINEDDBLTFAST_SRCCOLORKEY);
     }
 
+#ifdef VBOX_WITH_WDDM
+    TRACE("Presenting HDC %p.\n", context->currentSwapchain->hDC);
+#else
     TRACE("Presenting HDC %p.\n", context->hdc);
+#endif
 
     render_to_fbo = This->render_to_fbo;
 
@@ -372,11 +376,8 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
 
 #if defined(VBOX_WITH_WDDM) && defined(DEBUG)
     {
-        HWND wnd = WindowFromDC(context->hdc);
-        Assert(context->currentSwapchain && context->win_handle==context->currentSwapchain->win_handle);
-        Assert(wnd==context->win_handle);
-        Assert(IsWindow(context->win_handle));
-        Assert(wnd == context->win_handle);
+        HWND wnd = WindowFromDC(context->currentSwapchain->hDC);
+        Assert(wnd == context->currentSwapchain->win_handle);
     }
 #endif
 
@@ -384,7 +385,7 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
     /* We're directly using wglMakeCurrent calls skipping GDI layer, which causes GDI SwapBuffers to fail trying to
      * call glFinish, which doesn't have any context set. So we use wglSwapLayerBuffers directly as well.
      */
-    pwglSwapLayerBuffers(context->hdc, WGL_SWAP_MAIN_PLANE);
+    pwglSwapLayerBuffers(context->currentSwapchain->hDC, WGL_SWAP_MAIN_PLANE);
 #else
     SwapBuffers(context->hdc); /* TODO: cycle through the swapchain buffers */
 #endif

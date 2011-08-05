@@ -173,7 +173,7 @@ static HRESULT vboxExtWorkerSubmit(VBOXEXT_WORKER *pWorker, UINT Msg, LPARAM lPa
 {
     HRESULT hr = E_FAIL;
     BOOL bResult;
-    /* need to serialize since vboxDispWorkerThread is using one pWorker->hEvent
+    /* need to serialize since vboxExtWorkerThread is using one pWorker->hEvent
      * to signal job completion */
     EnterCriticalSection(&pWorker->CritSect);
     bResult = PostThreadMessage(pWorker->idThread, Msg, 0, lParam);
@@ -327,3 +327,157 @@ int VBoxExtReleaseDC(HWND hWnd, HDC hDC)
 #endif
 }
 
+/* window creation API */
+static LRESULT CALLBACK vboxExtWndProc(HWND hwnd,
+    UINT uMsg,
+    WPARAM wParam,
+    LPARAM lParam
+)
+{
+    switch(uMsg)
+    {
+        case WM_CLOSE:
+            TRACE("got WM_CLOSE for hwnd(0x%x)", hwnd);
+            return 0;
+        case WM_DESTROY:
+            TRACE("got WM_DESTROY for hwnd(0x%x)", hwnd);
+            return 0;
+        case WM_NCHITTEST:
+            TRACE("got WM_NCHITTEST for hwnd(0x%x)\n", hwnd);
+            return HTNOWHERE;
+    }
+
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+#define VBOXEXTWND_NAME "VboxDispD3DWineWnd"
+
+HRESULT vboxExtWndDoCreate(DWORD w, DWORD h, HWND *phWnd)
+{
+    HRESULT hr = S_OK;
+    HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
+    /* Register the Window Class. */
+    WNDCLASS wc;
+    if (!GetClassInfo(hInstance, VBOXEXTWND_NAME, &wc))
+    {
+        wc.style = 0;//CS_OWNDC;
+        wc.lpfnWndProc = vboxExtWndProc;
+        wc.cbClsExtra = 0;
+        wc.cbWndExtra = 0;
+        wc.hInstance = hInstance;
+        wc.hIcon = NULL;
+        wc.hCursor = NULL;
+        wc.hbrBackground = NULL;
+        wc.lpszMenuName = NULL;
+        wc.lpszClassName = VBOXEXTWND_NAME;
+        if (!RegisterClass(&wc))
+        {
+            DWORD winErr = GetLastError();
+            ERR("RegisterClass failed, winErr(%d)\n", winErr);
+            hr = E_FAIL;
+        }
+    }
+
+    if (hr == S_OK)
+    {
+        HWND hWnd = CreateWindowEx (WS_EX_TOOLWINDOW,
+                                        VBOXEXTWND_NAME, VBOXEXTWND_NAME,
+                                        WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_DISABLED,
+                                        0, 0,
+                                        w, h,
+                                        NULL, //GetDesktopWindow() /* hWndParent */,
+                                        NULL /* hMenu */,
+                                        hInstance,
+                                        NULL /* lpParam */);
+        Assert(hWnd);
+        if (hWnd)
+        {
+            *phWnd = hWnd;
+        }
+        else
+        {
+            DWORD winErr = GetLastError();
+            ERR("CreateWindowEx failed, winErr(%d)\n", winErr);
+            hr = E_FAIL;
+        }
+    }
+
+    return hr;
+}
+
+static HRESULT vboxExtWndDoDestroy(HWND hWnd)
+{
+    BOOL bResult = DestroyWindow(hWnd);
+    DWORD winErr;
+    Assert(bResult);
+    if (bResult)
+        return S_OK;
+
+    winErr = GetLastError();
+    ERR("DestroyWindow failed, winErr(%d) for hWnd(0x%x)\n", winErr, hWnd);
+
+    return E_FAIL;
+}
+
+typedef struct VBOXEXTWND_CREATE_INFO
+{
+    int hr;
+    HWND hWnd;
+    DWORD width;
+    DWORD height;
+} VBOXEXTWND_CREATE_INFO;
+
+typedef struct VBOXEXTWND_DESTROY_INFO
+{
+    int hr;
+    HWND hWnd;
+} VBOXEXTWND_DESTROY_INFO;
+
+DECLCALLBACK(void) vboxExtWndDestroyWorker(void *pvUser)
+{
+    VBOXEXTWND_DESTROY_INFO *pInfo = (VBOXEXTWND_DESTROY_INFO*)pvUser;
+    pInfo->hr = vboxExtWndDoDestroy(pInfo->hWnd);
+    Assert(pInfo->hr == S_OK);
+}
+
+DECLCALLBACK(void) vboxExtWndCreateWorker(void *pvUser)
+{
+    VBOXEXTWND_CREATE_INFO *pInfo = (VBOXEXTWND_CREATE_INFO*)pvUser;
+    pInfo->hr = vboxExtWndDoCreate(pInfo->width, pInfo->height, &pInfo->hWnd);
+    Assert(pInfo->hr == S_OK);
+}
+
+HRESULT VBoxExtWndDestroy(HWND hWnd)
+{
+    HRESULT hr;
+    VBOXEXTWND_DESTROY_INFO Info;
+    Info.hr = E_FAIL;
+    Info.hWnd = hWnd;
+    hr = VBoxExtDwSubmitProc(vboxExtWndDestroyWorker, &Info);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        Assert(Info.hr == S_OK);
+        return Info.hr;
+    }
+    return hr;
+}
+
+HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd)
+{
+    HRESULT hr;
+    VBOXEXTWND_CREATE_INFO Info;
+    Info.hr = E_FAIL;
+    Info.width = width;
+    Info.height = height;
+    hr = VBoxExtDwSubmitProc(vboxExtWndCreateWorker, &Info);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        Assert(Info.hr == S_OK);
+        if (Info.hr == S_OK)
+            *phWnd = Info.hWnd;
+        return Info.hr;
+    }
+    return hr;
+}

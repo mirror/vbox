@@ -6966,8 +6966,14 @@ HRESULT arbfp_blit_surface(IWineD3DDeviceImpl *device, IWineD3DSurfaceImpl *src_
         RECT windowsize;
         POINT offset = {0,0};
         UINT h;
+#ifdef VBOX_WITH_WDDM
+        HWND hWnd = context->currentSwapchain->win_handle;
+        ClientToScreen(hWnd, &offset);
+        GetClientRect(hWnd, &windowsize);
+#else
         ClientToScreen(context->win_handle, &offset);
         GetClientRect(context->win_handle, &windowsize);
+#endif
         h = windowsize.bottom - windowsize.top;
         dst_rect.left -= offset.x; dst_rect.right -=offset.x;
         dst_rect.top -= offset.y; dst_rect.bottom -=offset.y;
