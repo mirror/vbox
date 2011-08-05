@@ -767,42 +767,51 @@ static void context_update_window(struct wined3d_context *context
         )
 {
 #ifdef VBOX_WITH_WDDM
-    TRACE("Updating context %p window from %p to %p.\n",
-            context, context->win_handle, swapchain->win_handle);
-#else
-    TRACE("Updating context %p window from %p to %p.\n",
-            context, context->win_handle, context->swapchain->win_handle);
-#endif
+    TRACE("Updating context %p swapchain from %p to %p.\n",
+            context, context->currentSwapchain, swapchain);
 
-    if (context->valid)
-    {
-#ifndef VBOX_WITH_WDDM
-        if (!ReleaseDC(context->win_handle, context->hdc))
-        {
-            ERR("Failed to release device context %p, last error %#x.\n",
-                    context->hdc, GetLastError());
-        }
-#endif
-    }
-    else context->valid = 1;
+    context->valid = 1;
 
-#ifdef VBOX_WITH_WDDM
     if (!swapchain_validate(swapchain))
     {
         ERR("invalid swapchain %p\n", swapchain);
         goto err;
     }
-    context->win_handle = swapchain->win_handle;
     context->currentSwapchain = swapchain;
-    context->hdc = swapchain->hDC;
+
+    if (!context_set_pixel_format(context->gl_info, swapchain->hDC, context->pixel_format))
+    {
+        ERR("Failed to set pixel format %d on device context %p.\n",
+                context->pixel_format, swapchain->hDC);
+        goto err;
+    }
+
+    if (!pwglMakeCurrent(swapchain->hDC, context->glCtx))
+    {
+        ERR("Failed to make GL context %p current on device context %p, last error %#x.\n",
+                context->glCtx, swapchain->hDC, GetLastError());
+        goto err;
+    }
 #else
+    TRACE("Updating context %p window from %p to %p.\n",
+            context, context->win_handle, context->swapchain->win_handle);
+
+    if (context->valid)
+    {
+        if (!ReleaseDC(context->win_handle, context->hdc))
+        {
+            ERR("Failed to release device context %p, last error %#x.\n",
+                    context->hdc, GetLastError());
+        }
+    }
+    else context->valid = 1;
+
     context->win_handle = context->swapchain->win_handle;
     if (!(context->hdc = GetDC(context->win_handle)))
     {
         ERR("Failed to get a device context for window %p.\n", context->win_handle);
         goto err;
     }
-#endif
 
     if (!context_set_pixel_format(context->gl_info, context->hdc, context->pixel_format))
     {
@@ -817,9 +826,9 @@ static void context_update_window(struct wined3d_context *context
                 context->glCtx, context->hdc, GetLastError());
         goto err;
     }
+#endif
 
     return;
-
 err:
     context->valid = 0;
 }
@@ -830,6 +839,13 @@ static void context_validate(struct wined3d_context *context
 #endif
         )
 {
+#ifdef VBOX_WITH_WDDM
+    if (!swapchain || context->currentSwapchain == swapchain)
+    {
+        context->valid = swapchain_validate(context->currentSwapchain);
+    }
+    else
+#else
     HWND wnd = WindowFromDC(context->hdc);
 
     if (wnd != context->win_handle)
@@ -837,23 +853,11 @@ static void context_validate(struct wined3d_context *context
         DWORD winEr = GetLastError();
         WARN("DC %p belongs to window %p instead of %p., winEr(%d)\n",
                 context->hdc, wnd, context->win_handle, winEr);
-#ifdef VBOX_WITH_WDDM
-        if (!swapchain || context->win_handle == swapchain->win_handle)
-        {
-            ERR("!!!unexpected equal HWND!!!: DC %p belongs to window %p instead of %p., winEr(%d)\n",
-                            context->hdc, wnd, context->win_handle, winEr);
-        }
-#endif
         context->valid = 0;
     }
 
-    if (
-#ifdef VBOX_WITH_WDDM
-            swapchain && context->win_handle != swapchain->win_handle
-#else
-            context->win_handle != context->swapchain->win_handle
+    if (context->win_handle != context->swapchain->win_handle)
 #endif
-            )
     {
         context_update_window(context
 #ifdef VBOX_WITH_WDDM
@@ -903,11 +907,13 @@ static void context_destroy_gl_resources(struct wined3d_context *context)
 
 #ifdef VBOX_WITH_WDDM
     context_validate_adjust_wnd(context);
+    if (context->valid && restore_ctx != context->glCtx) pwglMakeCurrent(context->currentSwapchain->hDC, context->glCtx);
+    else restore_ctx = NULL;
 #else
     context_validate(context);
-#endif
     if (context->valid && restore_ctx != context->glCtx) pwglMakeCurrent(context->hdc, context->glCtx);
     else restore_ctx = NULL;
+#endif
 
     ENTER_GL();
 
@@ -1099,6 +1105,17 @@ BOOL context_set_current(struct wined3d_context *ctx)
 
     if (ctx)
     {
+#ifdef VBOX_WITH_WDDM
+        TRACE("Switching to D3D context %p, GL context %p, device context %p.\n", ctx, ctx->glCtx, ctx->currentSwapchain->hDC);
+        if (!pwglMakeCurrent(ctx->currentSwapchain->hDC, ctx->glCtx))
+        {
+            DWORD err = GetLastError();
+            ERR("Failed to make GL context %p current on device context %p, last error %#x.\n",
+                    ctx->glCtx, ctx->currentSwapchain->hDC, err);
+            TlsSetValue(wined3d_context_tls_idx, NULL);
+            return FALSE;
+        }
+#else
         TRACE("Switching to D3D context %p, GL context %p, device context %p.\n", ctx, ctx->glCtx, ctx->hdc);
         if (!pwglMakeCurrent(ctx->hdc, ctx->glCtx))
         {
@@ -1108,6 +1125,7 @@ BOOL context_set_current(struct wined3d_context *ctx)
             TlsSetValue(wined3d_context_tls_idx, NULL);
             return FALSE;
         }
+#endif
         ctx->current = 1;
     }
     else if(pwglGetCurrentContext())
@@ -1172,10 +1190,10 @@ void context_release(struct wined3d_context *context)
             if (current_context && current_context->glCtx != context->restore_ctx)
             {
                 IWineD3DDeviceImpl *device = context->device;
-                int i = 0;
+                UINT i = 0;
                 for (; i < device->numContexts; ++i)
                 {
-                    const struct wined3d_context *ctx = device->contexts[i];
+                    struct wined3d_context *ctx = device->contexts[i];
                     if (ctx->glCtx == context->restore_ctx)
                     {
                         context_set_current(ctx);
@@ -1587,11 +1605,10 @@ struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3
     ret->valid = 1;
 
     ret->glCtx = ctx;
+#ifndef VBOX_WITH_WDDM
     ret->win_handle = swapchain->win_handle;
-#ifdef VBOX_WITH_WDDM
-    Assert(WindowFromDC(hdc) == ret->win_handle);
-#endif
     ret->hdc = hdc;
+#endif
     ret->pixel_format = pixel_format;
 
     if (device->shader_backend->shader_dirtifyable_constants((IWineD3DDevice *)device))
@@ -1795,11 +1812,11 @@ BOOL context_acquire_context(struct wined3d_context * context, IWineD3DSurface *
     }
     else if (context->restore_ctx)
     {
-        if (!pwglMakeCurrent(context->hdc, context->glCtx))
+        if (!pwglMakeCurrent(context->currentSwapchain->hDC, context->glCtx))
         {
             DWORD err = GetLastError();
             ERR("Failed to make GL context %p current on device context %p, last error %#x.\n",
-                    context->hdc, context->glCtx, err);
+                    context->currentSwapchain->hDC, context->glCtx, err);
         }
     }
 
@@ -2347,7 +2364,7 @@ static struct wined3d_context *FindContext(IWineD3DDeviceImpl *This, IWineD3DSur
             IWineD3DSwapChainImpl *swapchain = swapchain_find_valid(This);
             if (!swapchain)
                 swapchain = (IWineD3DSwapChainImpl *)This->swapchains[This->NumberOfSwapChains-1]; /* just fallback to anything to avoid NPE */
-            context = findThreadContextForSwapChain(swapchain);
+            context = findThreadContextForSwapChain((IWineD3DSwapChain*)swapchain);
             context_validate(context, swapchain);
         }
 
@@ -2697,12 +2714,21 @@ struct wined3d_context *context_acquire(IWineD3DDeviceImpl *device, IWineD3DSurf
     }
     else if (context->restore_ctx)
     {
+#ifdef VBOX_WITH_WDDM
+        if (!pwglMakeCurrent(context->currentSwapchain->hDC, context->glCtx))
+        {
+            DWORD err = GetLastError();
+            ERR("Failed to make GL context %p current on device context %p, last error %#x.\n",
+                    context->currentSwapchain->hDC, context->glCtx, err);
+        }
+#else
         if (!pwglMakeCurrent(context->hdc, context->glCtx))
         {
             DWORD err = GetLastError();
             ERR("Failed to make GL context %p current on device context %p, last error %#x.\n",
                     context->hdc, context->glCtx, err);
         }
+#endif
     }
 
     context_apply_state(context, device, usage);

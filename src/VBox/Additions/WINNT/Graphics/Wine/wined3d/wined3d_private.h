@@ -1137,8 +1137,10 @@ struct wined3d_context
     HGLRC restore_ctx;
     HDC restore_dc;
     HGLRC                   glCtx;
+#ifndef VBOX_WITH_WDDM
     HWND                    win_handle;
     HDC                     hdc;
+#endif
     int pixel_format;
     GLint                   aux_buffers;
 

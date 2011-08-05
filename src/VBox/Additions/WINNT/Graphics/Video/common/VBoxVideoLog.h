@@ -57,6 +57,15 @@
         _logger((VBOX_VIDEO_LOG_SUFFIX_FMT  VBOX_VIDEO_LOG_SUFFIX_PARMS));  \
     } while (0)
 
+/* we can not print paged strings to RT logger, do it this way */
+#define _LOGMSG_STR(_logger, _a, _f) do {\
+        int _i = 0; \
+        for (;(_a)[_i];++_i) { \
+            _logger(("%"_f, (_a)[_i])); \
+        }\
+        _logger(("\n")); \
+    } while (0)
+
 #define WARN_NOBP(_a)                                                          \
     do                                                                            \
     {                                                                             \
@@ -77,6 +86,21 @@
 #define LOGF(_a) _LOGMSG(LogFlow, _a)
 #define LOGF_ENTER() LOGF(("ENTER"))
 #define LOGF_LEAVE() LOGF(("LEAVE"))
-#define LOGREL_EXACT(_a) _LOGMSG_EXACT(Log, _a)
+#define LOG_EXACT(_a) _LOGMSG_EXACT(Log, _a)
+#define LOGREL_EXACT(_a) _LOGMSG_EXACT(LogRel, _a)
+/* we can not print paged strings to RT logger, do it this way */
+#define LOG_STRA(_a) do {\
+        _LOGMSG_STR(Log, _a, "c"); \
+    } while (0)
+#define LOG_STRW(_a) do {\
+        _LOGMSG_STR(Log, _a, "c"); \
+    } while (0)
+#define LOGREL_STRA(_a) do {\
+        _LOGMSG_STR(LogRel, _a, "c"); \
+    } while (0)
+#define LOGREL_STRW(_a) do {\
+        _LOGMSG_STR(LogRel, _a, "c"); \
+    } while (0)
+
 
 #endif /*VBOXVIDEOLOG_H*/

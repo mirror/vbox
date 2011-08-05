@@ -29,4 +29,8 @@ HRESULT VBoxExtCheckTerm();
 HDC VBoxExtGetDC(HWND hWnd);
 int VBoxExtReleaseDC(HWND hWnd, HDC hDC);
 
+/* API for creating & destroying windows */
+HRESULT VBoxExtWndDestroy(HWND hWnd);
+HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd);
+
 #endif /* #ifndef ___VBOXEXT_H__*/
