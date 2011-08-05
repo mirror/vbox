@@ -177,6 +177,11 @@ public:
 
     const QRect availableGeometry(int iScreen = 0) const;
 
+    bool isPatmDisabled() const { return mDisablePatm; }
+    bool isCsamDisabled() const { return mDisableCsam; }
+    bool isSupervisorCodeExecedRecompiled() const { return mRecompileSupervisor; }
+    bool isUserCodeExecedRecompiled()       const { return mRecompileUser; }
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     bool isDebuggerEnabled(CMachine &aMachine);
     bool isDebuggerAutoShowEnabled(CMachine &aMachine);
@@ -819,6 +824,15 @@ private:
     VBoxDefs::RenderMode vm_render_mode;
     const char * vm_render_mode_str;
     bool mIsKWinManaged;
+
+    /** The --disable-patm option. */
+    bool mDisablePatm;
+    /** The --disable-csam option. */
+    bool mDisableCsam;
+    /** The --recompile-supervisor option. */
+    bool mRecompileSupervisor;
+    /** The --recompile-user option. */
+    bool mRecompileUser;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Whether the debugger should be accessible or not.

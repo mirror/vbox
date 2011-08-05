@@ -276,6 +276,10 @@ VBoxGlobal::VBoxGlobal()
 #endif
     , mMediaEnumThread (NULL)
     , mIsKWinManaged (false)
+    , mDisablePatm(false)
+    , mDisableCsam(false)
+    , mRecompileSupervisor(false)
+    , mRecompileUser(false)
     , mVerString ("1.0")
 {
 }
@@ -5123,11 +5127,19 @@ void VBoxGlobal::init()
         {
             mShowStartVMErrors = false;
         }
+        else if (!::strcmp(arg, "--disable-patm"))
+            mDisablePatm = true;
+        else if (!::strcmp(arg, "--disable-csam"))
+            mDisableCsam = true;
+        else if (!::strcmp(arg, "--recompile-supervisor"))
+            mRecompileSupervisor = true;
+        else if (!::strcmp(arg, "--recompile-user"))
+            mRecompileUser = true;
+        else if (!::strcmp(arg, "--recompile-all"))
+            mDisablePatm = mDisableCsam = mRecompileSupervisor = mRecompileUser = true;
 #ifdef VBOX_WITH_DEBUGGER_GUI
         else if (!::strcmp (arg, "-dbg") || !::strcmp (arg, "--dbg"))
-        {
             setDebuggerVar(&mDbgEnabled, true);
-        }
         else if (!::strcmp( arg, "-debug") || !::strcmp (arg, "--debug"))
         {
             setDebuggerVar(&mDbgEnabled, true);
@@ -5159,13 +5171,9 @@ void VBoxGlobal::init()
         }
         /* Not quite debug options, but they're only useful with the debugger bits. */
         else if (!::strcmp (arg, "--start-paused"))
-        {
             mStartPaused = true;
-        }
         else if (!::strcmp (arg, "--start-running"))
-        {
             mStartPaused = false;
-        }
 #endif
         /** @todo add an else { msgbox(syntax error); exit(1); } here, pretty please... */
         i++;

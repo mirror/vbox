@@ -127,18 +127,11 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL enable)
         }
     }
     if (!gpVM)
-    {
         return E_FAIL;
-    }
 
-    EMRAWMODE rawModeFlag = enable ? EMRAW_RING3_DISABLE : EMRAW_RING3_ENABLE;
-    int rcVBox = VMR3ReqCallWait(gpVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, gpVM, rawModeFlag);
-    if (RT_SUCCESS(rcVBox))
-        return S_OK;
-
-    AssertMsgFailed(("Could not set raw mode flags to %d, rcVBox = %Rrc\n",
-                     rawModeFlag, rcVBox));
-    return E_FAIL;
+    int rcVBox = EMR3SetExecutionPolicy(gpVM, EMEXECPOLICY_RECOMPILE_RING3, enable);
+    AssertRCReturn(rcVBox, E_FAIL);
+    return S_OK;
 }
 
 /**
@@ -179,18 +172,11 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor)(BOOL enable)
         }
     }
     if (!gpVM)
-    {
         return E_FAIL;
-    }
 
-    EMRAWMODE rawModeFlag = enable ? EMRAW_RING0_DISABLE : EMRAW_RING0_ENABLE;
-    int rcVBox = VMR3ReqCallWait(gpVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, gpVM, rawModeFlag);
-    if (RT_SUCCESS(rcVBox))
-        return S_OK;
-
-    AssertMsgFailed(("Could not set raw mode flags to %d, rcVBox = %Rrc\n",
-                     rawModeFlag, rcVBox));
-    return E_FAIL;
+    int rcVBox = EMR3SetExecutionPolicy(gpVM, EMEXECPOLICY_RECOMPILE_RING0, enable);
+    AssertRCReturn(rcVBox, E_FAIL);
+    return S_OK;
 }
 
 /**

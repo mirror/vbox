@@ -202,6 +202,20 @@ void UISession::powerUp()
     CMachine machine = session().GetMachine();
     CConsole console = session().GetConsole();
 
+    /* Apply debug settings from the command line. */
+    CMachineDebugger debugger = console.GetDebugger();
+    if (debugger.isOk())
+    {
+        if (vboxGlobal().isPatmDisabled())
+            debugger.SetPATMEnabled(false);
+        if (vboxGlobal().isCsamDisabled())
+            debugger.SetCSAMEnabled(false);
+        if (vboxGlobal().isSupervisorCodeExecedRecompiled())
+            debugger.SetRecompileSupervisor(true);
+        if (vboxGlobal().isUserCodeExecedRecompiled())
+            debugger.SetRecompileUser(true);
+    }
+
     /* Power UP machine: */
     CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled(machine) ?
                          console.PowerUpPaused() : console.PowerUp();
@@ -289,8 +303,8 @@ void UISession::powerUp()
             QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
             return;
         }
-        else
-            setPause(false);
+
+        setPause(false);
     }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL

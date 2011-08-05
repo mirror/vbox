@@ -50,8 +50,6 @@ typedef enum EMSTATE
     EMSTATE_RAW,
     /** Hardware accelerated raw-mode execution. */
     EMSTATE_HWACC,
-    /** PARAV function. */
-    EMSTATE_PARAV,
     /** Recompiled mode execution. */
     EMSTATE_REM,
     /** Execution is halted. (waiting for interrupt) */
@@ -211,22 +209,21 @@ VMMR3DECL(int)      EMR3Interpret(PVM pVM);
  * It's possible to extend this interface to change several
  * execution modes at once should the need arise.
  */
-typedef enum EMRAWMODE
+typedef enum EMEXECPOLICY
 {
-    /** No raw execution. */
-    EMRAW_NONE = 0,
-    /** Enable Only ring-3 raw execution. */
-    EMRAW_RING3_ENABLE,
-    /** Only ring-3 raw execution. */
-    EMRAW_RING3_DISABLE,
-    /** Enable raw ring-0 execution. */
-    EMRAW_RING0_ENABLE,
-    /** Disable raw ring-0 execution. */
-    EMRAW_RING0_DISABLE,
-    EMRAW_END
-} EMRAWMODE;
+    /** The customary invalid zero entry. */
+    EMEXECPOLICY_INVALID = 0,
+    /** Whether to recompile ring-0 code or execute it in raw/hm. */
+    EMEXECPOLICY_RECOMPILE_RING0,
+    /** Whether to recompile ring-3 code or execute it in raw/hm. */
+    EMEXECPOLICY_RECOMPILE_RING3,
+    /** End of valid value (not included). */
+    EMEXECPOLICY_END,
+    /** The customary 32-bit type blowup. */
+    EMEXECPOLICY_32BIT_HACK = 0x7fffffff
+} EMEXECPOLICY;
 
-VMMR3DECL(int)      EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode);
+VMMR3DECL(int)      EMR3SetExecutionPolicy(PVM pVM, EMEXECPOLICY enmPolicy, bool fEnforce);
 /** @} */
 #endif /* IN_RING3 */
 

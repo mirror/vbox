@@ -67,10 +67,6 @@
 #include <iprt/stream.h>
 
 
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -86,46 +82,6 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu);
 
 #define EMHANDLERC_WITH_PATM
 #include "EMHandleRCTmpl.h"
-
-/**
- * Enables or disables a set of raw-mode execution modes.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VINF_RESCHEDULE if a rescheduling might be required.
- * @returns VERR_INVALID_PARAMETER on an invalid enmMode value.
- *
- * @param   pVM         The VM to operate on.
- * @param   enmMode     The execution mode change.
- * @thread  The emulation thread.
- */
-VMMR3DECL(int) EMR3RawSetMode(PVM pVM, EMRAWMODE enmMode)
-{
-    switch (enmMode)
-    {
-        case EMRAW_NONE:
-            pVM->fRawR3Enabled = false;
-            pVM->fRawR0Enabled = false;
-            break;
-        case EMRAW_RING3_ENABLE:
-            pVM->fRawR3Enabled = true;
-            break;
-        case EMRAW_RING3_DISABLE:
-            pVM->fRawR3Enabled = false;
-            break;
-        case EMRAW_RING0_ENABLE:
-            pVM->fRawR0Enabled = true;
-            break;
-        case EMRAW_RING0_DISABLE:
-            pVM->fRawR0Enabled = false;
-            break;
-        default:
-            AssertMsgFailed(("Invalid enmMode=%d\n", enmMode));
-            return VERR_INVALID_PARAMETER;
-    }
-    Log(("EMR3SetRawMode: fRawR3Enabled=%RTbool fRawR0Enabled=%RTbool\n",
-          pVM->fRawR3Enabled, pVM->fRawR0Enabled));
-    return pVM->aCpus[0].em.s.enmState == EMSTATE_RAW ? VINF_EM_RESCHEDULE : VINF_SUCCESS;
-}
 
 
 
