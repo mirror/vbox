@@ -1042,7 +1042,7 @@ static int PortCmdIssue_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
     uCIValue = ASMAtomicXchgU32(&pAhciPort->u32TasksFinished, 0);
     pAhciPort->regCI &= ~uCIValue;
 
-    if (   (pAhciPort->regCMD & AHCI_PORT_CMD_ST)
+    if (   (pAhciPort->regCMD & AHCI_PORT_CMD_CR)
         && u32Value > 0)
     {
         uint32_t u32Tasks;
@@ -1311,15 +1311,16 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
         {
             ahciLog(("%s: Engine starts\n", __FUNCTION__));
 
-            /** Set engine state to running. */
-            u32Value |= AHCI_PORT_CMD_CR;
+            /* Set engine state to running if there is a device attached. */
+            if (pAhciPort->pDrvBase)
+                u32Value |= AHCI_PORT_CMD_CR;
         }
         else
         {
             ahciLog(("%s: Engine stops\n", __FUNCTION__));
             /* Clear command issue register. */
             pAhciPort->regCI = 0;
-            /** Clear current command slot. */
+            /* Clear current command slot. */
             pAhciPort->u32CurrentCommandSlot = 0;
             u32Value &= ~AHCI_PORT_CMD_CR;
         }
@@ -8060,7 +8061,11 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
          * Inform the guest about the removed device.
          */
         pAhciPort->regSSTS = 0;
-        ASMAtomicAndU32(&pAhciPort->regCMD, ~AHCI_PORT_CMD_CPS);
+        /*
+         * Clear CR bit too to prevent submission of new commands when CI is written
+         * (AHCI Spec 1.2: 7.4 Interaction of the Command List and Port Change Status).
+         */
+        ASMAtomicAndU32(&pAhciPort->regCMD, ~(AHCI_PORT_CMD_CPS | AHCI_PORT_CMD_CR));
         ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS);
         ASMAtomicOrU32(&pAhciPort->regSERR, AHCI_PORT_SERR_N);
         if (   (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
