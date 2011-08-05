@@ -56,8 +56,8 @@ extern "C" DECLIMPORT(int) SomeImportFunction(void);
 
 extern "C" DECLEXPORT(int) Entrypoint(void)
 {
-    g_VM.fRawR0Enabled = true;
-    g_VM.fRawR3Enabled = true;
+    g_VM.fRecompileSupervisor = false;
+    g_VM.fRecompileUser       = false;
     g_VM.fGlobalForcedActions = 0;
     strcpy(achBss, szStr2);
     memcpy(achBss, szStr1, sizeof(szStr1));

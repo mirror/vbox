@@ -20,6 +20,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/em.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
 #include "PGMInline.h"
@@ -760,7 +761,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
             unsigned iPT = pCur->cPTs;
             while (iPT-- > 0)
                 if (    pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */
-                    &&  (pVM->fRawR0Enabled || pPD->a[iPDE + iPT].n.u1User))
+                    &&  (EMIsRawRing0Enabled(pVM) || pPD->a[iPDE + iPT].n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 
@@ -792,7 +793,7 @@ VMMDECL(bool) PGMMapHasConflicts(PVM pVM)
                 X86PDEPAE Pde = pgmGstGetPaePDE(pVCpu, GCPtr);
 
                 if (   Pde.n.u1Present
-                    && (pVM->fRawR0Enabled || Pde.n.u1User))
+                    && (EMIsRawRing0Enabled(pVM) || Pde.n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 #ifdef IN_RING3
@@ -854,7 +855,7 @@ int pgmMapResolveConflicts(PVM pVM)
             while (iPT-- > 0)
             {
                 if (    pPD->a[iPDE + iPT].n.u1Present /** @todo PGMGstGetPDE. */
-                    &&  (   pVM->fRawR0Enabled
+                    &&  (   EMIsRawRing0Enabled(pVM)
                          || pPD->a[iPDE + iPT].n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
@@ -895,7 +896,7 @@ int pgmMapResolveConflicts(PVM pVM)
                 X86PDEPAE Pde = pgmGstGetPaePDE(pVCpu, GCPtr);
 
                 if (   Pde.n.u1Present
-                    && (pVM->fRawR0Enabled || Pde.n.u1User))
+                    && (EMIsRawRing0Enabled(pVM) || Pde.n.u1User))
                 {
                     STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatR3DetectedConflicts);
 #ifdef IN_RING3

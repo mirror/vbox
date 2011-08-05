@@ -827,10 +827,10 @@ typedef struct VM
 
     /** @name Various items that are frequently accessed.
      * @{ */
-    /** Raw ring-3 indicator.  */
-    bool                        fRawR3Enabled;
-    /** Raw ring-0 indicator. */
-    bool                        fRawR0Enabled;
+    /** Whether to recompile user mode code or run it raw/hm. */
+    bool                        fRecompileUser;
+    /** Whether to recompile supervisor mode code or run it raw/hm. */
+    bool                        fRecompileSupervisor;
     /** PATM enabled flag.
      * This is placed here for performance reasons. */
     bool                        fPATMEnabled;
