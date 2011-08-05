@@ -607,7 +607,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
         switch (pArgs->enmPolicy)
         {
             case EMEXECPOLICY_RECOMPILE_RING0:
-                pVM->fRecompileSupervisor = !pArgs->fEnforce;
+                pVM->fRecompileSupervisor = pArgs->fEnforce;
                 break;
             case EMEXECPOLICY_RECOMPILE_RING3:
                 pVM->fRecompileUser = pArgs->fEnforce;
@@ -1151,15 +1151,20 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     X86EFLAGS EFlags = pCtx->eflags;
     if (HWACCMIsEnabled(pVM))
     {
-        /* Hardware accelerated raw-mode:
+        /*
+         * Hardware accelerated raw-mode:
          *
-         * Typically only 32-bits protected mode, with paging enabled, code is allowed here.
+         * Typically only 32-bits protected mode, with paging enabled, code is
+         * allowed here.
          */
-        if (HWACCMR3CanExecuteGuest(pVM, pCtx) == true)
+        if (   EMIsHwVirtExecutionEnabled(pVM)
+            && HWACCMR3CanExecuteGuest(pVM, pCtx))
             return EMSTATE_HWACC;
 
-        /* Note: Raw mode and hw accelerated mode are incompatible. The latter turns
-         * off monitoring features essential for raw mode! */
+        /*
+         * Note! Raw mode and hw accelerated mode are incompatible. The latter
+         *       turns off monitoring features essential for raw mode!
+         */
         return EMSTATE_REM;
     }
 

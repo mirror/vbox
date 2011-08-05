@@ -128,6 +128,15 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
  */
 #define EMIsRawRing0Enabled(pVM) (!(pVM)->fRecompileSupervisor)
 
+/**
+ * Checks if execution with hardware assisted virtualization is enabled.
+ *
+ * @returns true if enabled.
+ * @returns false if disabled.
+ * @param   pVM         The VM to operate on.
+ */
+#define EMIsHwVirtExecutionEnabled(pVM) (!(pVM)->fRecompileSupervisor && !(pVM)->fRecompileSupervisor)
+
 VMMDECL(void)           EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC);
 VMMDECL(RTGCUINTPTR)    EMGetInhibitInterruptsPC(PVMCPU pVCpu);
 VMMDECL(int)            EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr);
