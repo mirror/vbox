@@ -381,8 +381,6 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     }
     uImageFlags |= VD_IMAGE_FLAGS_FIXED;
 
-    pImage->uImageFlags = uImageFlags;
-
     pImage->uOpenFlags = uOpenFlags & ~VD_OPEN_FLAGS_READONLY;
 
     pImage->uImageFlags = uImageFlags;
