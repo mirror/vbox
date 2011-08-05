@@ -117,7 +117,7 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
  * @returns false if disabled.
  * @param   pVM         The VM to operate on.
  */
-#define EMIsRawRing3Enabled(pVM) ((pVM)->fRawR3Enabled)
+#define EMIsRawRing3Enabled(pVM) (!(pVM)->fRecompileUser)
 
 /**
  * Checks if raw ring-0 execute mode is enabled.
@@ -126,7 +126,7 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
  * @returns false if disabled.
  * @param   pVM         The VM to operate on.
  */
-#define EMIsRawRing0Enabled(pVM) ((pVM)->fRawR0Enabled)
+#define EMIsRawRing0Enabled(pVM) (!(pVM)->fRecompileSupervisor)
 
 VMMDECL(void)           EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC);
 VMMDECL(RTGCUINTPTR)    EMGetInhibitInterruptsPC(PVMCPU pVCpu);

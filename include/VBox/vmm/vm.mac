@@ -63,8 +63,8 @@ struc VM
     .uPadding1              RTHCPTR_RES 1
     .uPadding2              RTHCPTR_RES 1
 
-    .fRawR3Enabled          resb 1
-    .fRawR0Enabled          resb 1
+    .fRecompileUser         resb 1
+    .fRecompileSupervisor   resb 1
     .fPATMEnabled           resb 1
     .fCSAMEnabled           resb 1
     .fHWACCMEnabled         resb 1

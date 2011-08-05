@@ -111,13 +111,12 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
      * Init the structure.
      */
     pVM->em.s.offVM = RT_OFFSETOF(VM, em.s);
-    int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR3Enabled", &pVM->fRawR3Enabled);
-    if (RT_FAILURE(rc))
-        pVM->fRawR3Enabled = true;
-    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR0Enabled", &pVM->fRawR0Enabled);
-    if (RT_FAILURE(rc))
-        pVM->fRawR0Enabled = true;
-    Log(("EMR3Init: fRawR3Enabled=%d fRawR0Enabled=%d\n", pVM->fRawR3Enabled, pVM->fRawR0Enabled));
+    bool fEnabled;
+    int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR3Enabled", &fEnabled);
+    pVM->fRecompileUser = RT_SUCCESS(rc) ? fEnabled : true;
+    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR0Enabled", &fEnabled);
+    pVM->fRecompileSupervisor = RT_SUCCESS(rc) ? fEnabled : true;
+    Log(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool\n", pVM->fRecompileUser, pVM->fRecompileSupervisor));
 
     /*
      * Initialize the REM critical section.
@@ -608,16 +607,16 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
         switch (pArgs->enmPolicy)
         {
             case EMEXECPOLICY_RECOMPILE_RING0:
-                pVM->fRawR0Enabled = !pArgs->fEnforce;
+                pVM->fRecompileSupervisor = !pArgs->fEnforce;
                 break;
             case EMEXECPOLICY_RECOMPILE_RING3:
-                pVM->fRawR3Enabled = !pArgs->fEnforce;
+                pVM->fRecompileUser = pArgs->fEnforce;
                 break;
             default:
                 AssertFailedReturn(VERR_INVALID_PARAMETER);
         }
-        Log(("emR3SetExecutionPolicy: fRawR3Enabled=%RTbool fRawR0Enabled=%RTbool\n",
-              pVM->fRawR3Enabled, pVM->fRawR0Enabled));
+        Log(("emR3SetExecutionPolicy: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool\n",
+              pVM->fRecompileUser, pVM->fRecompileSupervisor));
     }
 
     /*
