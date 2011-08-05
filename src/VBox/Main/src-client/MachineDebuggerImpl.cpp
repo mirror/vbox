@@ -183,33 +183,30 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileUser) (BOOL *aEnabled)
  * @returns COM status
  * @param   aEnable new user mode code recompile flag.
  */
-STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser) (BOOL aEnable)
+STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL aEnable)
 {
     LogFlowThisFunc(("enable=%d\n", aEnable));
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (queueSettings())
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
     {
-        // queue the request
-        mRecompileUserQueued = aEnable;
-        return S_OK;
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (queueSettings())
+            mRecompileUserQueued = aEnable; // queue the request
+        else
+        {
+            Console::SafeVMPtr ptrVM(mParent);
+            hrc = ptrVM.rc();
+            if (SUCCEEDED(hrc))
+            {
+                int vrc = EMR3SetExecutionPolicy(ptrVM.raw(), EMEXECPOLICY_RECOMPILE_RING3, RT_BOOL(aEnable));
+                if (RT_FAILURE(vrc))
+                    hrc = setError(VBOX_E_VM_ERROR, tr("EMR3SetExecutionPolicy failed with %Rrc"), vrc);
+            }
+        }
     }
-
-    Console::SafeVMPtr pVM (mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
-
-    EMRAWMODE rawModeFlag = aEnable ? EMRAW_RING3_DISABLE : EMRAW_RING3_ENABLE;
-    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, pVM.raw(), rawModeFlag);
-    if (RT_SUCCESS(rcVBox))
-        return S_OK;
-
-    AssertMsgFailed (("Could not set raw mode flags to %d, rcVBox = %Rrc\n",
-                      rawModeFlag, rcVBox));
-    return E_FAIL;
+    return hrc;
 }
 
 /**
@@ -243,33 +240,30 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileSupervisor) (BOOL *aEnabled)
  * @returns COM status code
  * @param   aEnable new recompile supervisor code flag
  */
-STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor) (BOOL aEnable)
+STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor)(BOOL aEnable)
 {
     LogFlowThisFunc(("enable=%d\n", aEnable));
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (queueSettings())
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
     {
-        // queue the request
-        mRecompileSupervisorQueued = aEnable;
-        return S_OK;
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (queueSettings())
+            mRecompileSupervisorQueued = aEnable; // queue the request
+        else
+        {
+            Console::SafeVMPtr ptrVM(mParent);
+            hrc = ptrVM.rc();
+            if (SUCCEEDED(hrc))
+            {
+                int vrc = EMR3SetExecutionPolicy(ptrVM.raw(), EMEXECPOLICY_RECOMPILE_RING0, RT_BOOL(aEnable));
+                if (RT_FAILURE(vrc))
+                    hrc = setError(VBOX_E_VM_ERROR, tr("EMR3SetExecutionPolicy failed with %Rrc"), vrc);
+            }
+        }
     }
-
-    Console::SafeVMPtr pVM (mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
-
-    EMRAWMODE rawModeFlag = aEnable ? EMRAW_RING0_DISABLE : EMRAW_RING0_ENABLE;
-    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, pVM.raw(), rawModeFlag);
-    if (RT_SUCCESS(rcVBox))
-        return S_OK;
-
-    AssertMsgFailed (("Could not set raw mode flags to %d, rcVBox = %Rrc\n",
-                      rawModeFlag, rcVBox));
-    return E_FAIL;
+    return hrc;
 }
 
 /**

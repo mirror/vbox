@@ -585,6 +585,77 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 
 
 /**
+ * Argument packet for emR3SetExecutionPolicy.
+ */
+struct EMR3SETEXECPOLICYARGS
+{
+    EMEXECPOLICY    enmPolicy;
+    bool            fEnforce;
+};
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS, Rendezvous callback for EMR3SetExecutionPolicy.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    /*
+     * Only the first CPU changes the variables.
+     */
+    if (pVCpu->idCpu == 0)
+    {
+        struct EMR3SETEXECPOLICYARGS *pArgs = (struct EMR3SETEXECPOLICYARGS *)pvUser;
+        switch (pArgs->enmPolicy)
+        {
+            case EMEXECPOLICY_RECOMPILE_RING0:
+                pVM->fRawR0Enabled = !pArgs->fEnforce;
+                break;
+            case EMEXECPOLICY_RECOMPILE_RING3:
+                pVM->fRawR3Enabled = !pArgs->fEnforce;
+                break;
+            default:
+                AssertFailedReturn(VERR_INVALID_PARAMETER);
+        }
+        Log(("emR3SetExecutionPolicy: fRawR3Enabled=%RTbool fRawR0Enabled=%RTbool\n",
+              pVM->fRawR3Enabled, pVM->fRawR0Enabled));
+    }
+
+    /*
+     * Force rescheduling if in RAW, HWACCM or REM.
+     */
+    return    pVCpu->em.s.enmState == EMSTATE_RAW
+           || pVCpu->em.s.enmState == EMSTATE_HWACC
+           || pVCpu->em.s.enmState == EMSTATE_REM
+         ? VINF_EM_RESCHEDULE
+         : VINF_SUCCESS;
+}
+
+
+/**
+ * Changes a the execution scheduling policy.
+ *
+ * This is used to enable or disable raw-mode / hardware-virtualization
+ * execution of user and supervisor code.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VINF_RESCHEDULE if a rescheduling might be required.
+ * @returns VERR_INVALID_PARAMETER on an invalid enmMode value.
+ *
+ * @param   pVM             The VM to operate on.
+ * @param   enmPolicy       The scheduling policy to change.
+ * @param   fEnforce        Whether to enforce the policy or not.
+ */
+VMMR3DECL(int) EMR3SetExecutionPolicy(PVM pVM, EMEXECPOLICY enmPolicy, bool fEnforce)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(enmPolicy > EMEXECPOLICY_INVALID && enmPolicy < EMEXECPOLICY_END, VERR_INVALID_PARAMETER);
+
+    struct EMR3SETEXECPOLICYARGS Args = { enmPolicy, fEnforce };
+    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING, emR3SetExecutionPolicy, &Args);
+}
+
+
+/**
  * Raise a fatal error.
  *
  * Safely terminate the VM with full state report and stuff. This function
@@ -615,7 +686,6 @@ static const char *emR3GetStateName(EMSTATE enmState)
         case EMSTATE_RAW:               return "EMSTATE_RAW";
         case EMSTATE_HWACC:             return "EMSTATE_HWACC";
         case EMSTATE_REM:               return "EMSTATE_REM";
-        case EMSTATE_PARAV:             return "EMSTATE_PARAV";
         case EMSTATE_HALTED:            return "EMSTATE_HALTED";
         case EMSTATE_WAIT_SIPI:         return "EMSTATE_WAIT_SIPI";
         case EMSTATE_SUSPENDED:         return "EMSTATE_SUSPENDED";

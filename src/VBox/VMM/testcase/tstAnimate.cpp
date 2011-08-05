@@ -865,8 +865,8 @@ int main(int argc, char **argv)
                     rc = REMR3DisasEnableStepping(pVM, true);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, pVM, EMRAW_NONE);
-                        AssertReleaseRC(rc);
+                        rc = EMR3SetExecutionPolicy(pVM, EMEXECPOLICY_RECOMPILE_RING0, true); AssertReleaseRC(rc);
+                        rc = EMR3SetExecutionPolicy(pVM, EMEXECPOLICY_RECOMPILE_RING3, true); AssertReleaseRC(rc);
                         DBGFR3Info(pVM, "cpumguest", "verbose", NULL);
                         if (fPowerOn)
                             rc = VMR3PowerOn(pVM);

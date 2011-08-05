@@ -169,8 +169,8 @@ static void ShutUpAppKit(void)
     /* Check for Snow Leopard or higher */
     char szInfo[64];
     int rc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
-    if (RT_SUCCESS (rc) &&
-        szInfo[0] == '1') /* higher than 1x.x.x */
+    if (   RT_SUCCESS (rc)
+        && szInfo[0] == '1') /* higher than 1x.x.x */
     {
         /*
          * Find issetguid() and make it always return 0 by modifying the code.
@@ -271,6 +271,17 @@ static void showHelp()
             "  --start-paused             start the VM in the paused state\n"
             "  --start-running            start the VM running (for overriding --debug*)\n"
             "\n"
+# endif
+            "Expert options:\n"
+            "  --disable-patm             disable code patching (ignored by AMD-V/VT-x)\n"
+            "  --disable-csam             disable code scanning (ignored by AMD-V/VT-x)\n"
+            "  --recompile-supervisor     recompiled execution of supervisor code (*)\n"
+            "  --recompile-user           recompiled execution of user code (*)\n"
+            "  --recompile-all            recompiled execution of all code, with disabled\n"
+            "                             code patching and scanning\n"
+            "  (*) For AMD-V/VT-x setups the effect is --recompile-all.\n"
+            "\n"
+# ifdef VBOX_WITH_DEBUGGER_GUI
             "The following environment variables are evaluated:\n"
             "  VBOX_GUI_DBG_ENABLED       enable the GUI debug menu if set\n"
             "  VBOX_GUI_DBG_AUTO_SHOW     show debug windows at VM startup\n"
