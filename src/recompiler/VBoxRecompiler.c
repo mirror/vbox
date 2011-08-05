@@ -1431,6 +1431,12 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
         env->state |= CPU_RAW_HWACC;
 
         /*
+         * The simple check first...
+         */
+        if (!EMIsHwVirtExecutionEnabled(env->pVM))
+            return false;
+
+        /*
          * Create partial context for HWACCMR3CanExecuteGuest
          */
         Ctx.cr0            = env->cr[0];
