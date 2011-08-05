@@ -231,7 +231,7 @@ void _stdcall VBoxDrvNtUnload(PDRIVER_OBJECT pDrvObj)
  */
 NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-    Log(("VBoxDrvNtCreate\n"));
+    Log(("VBoxDrvNtCreate: RequestorMode=%d\n", pIrp->RequestorMode));
     PIO_STACK_LOCATION  pStack = IoGetCurrentIrpStackLocation(pIrp);
     PFILE_OBJECT        pFileObj = pStack->FileObject;
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pDevObj->DeviceExtension;
@@ -249,20 +249,27 @@ NTSTATUS _stdcall VBoxDrvNtCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     }
 
     /*
-     * Call common code for the rest.
+     * Don't create a session for kernel clients, they'll close the handle 
+     * immediately and work with the file object via 
+     * VBoxDrvNtInternalDeviceControl.  The first request will there be one 
+     * to create a session. 
      */
-    pFileObj->FsContext = NULL;
-    PSUPDRVSESSION pSession;
-//#if 0 /** @todo check if this works, consider OBJ_KERNEL_HANDLE too. */
-    bool fUser = pIrp->RequestorMode != KernelMode;
-//#else
- //   bool fUser = true;
-//#endif
-    int rc = supdrvCreateSession(pDevExt, fUser, &pSession);
-    if (!rc)
-        pFileObj->FsContext = pSession;
+    NTSTATUS rcNt;
+    if (pIrp->RequestorMode == KernelMode)
+        rcNt = STATUS_SUCCESS;
+    else
+    {
+        /*
+         * Call common code for the rest.
+         */
+        pFileObj->FsContext = NULL;
+        PSUPDRVSESSION pSession;
+        int rc = supdrvCreateSession(pDevExt, true /*fUser*/, &pSession);
+        if (!rc)
+            pFileObj->FsContext = pSession;
+        rcNt = pIrp->IoStatus.Status = VBoxDrvNtErr2NtStatus(rc);
+    }
 
-    NTSTATUS    rcNt = pIrp->IoStatus.Status = VBoxDrvNtErr2NtStatus(rc);
     pIrp->IoStatus.Information  = 0;
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
@@ -495,21 +502,29 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
                 &&  pStack->Parameters.DeviceIoControl.OutputBufferLength == pHdr->cb)
             {
                 /*
-                 * Do the job.
+                 * Call the generic code. 
+                 *  
+                 * Note! Connect and disconnect requires some extra attention 
+                 *       in order to get the session handling right.
                  */
+                if (pStack->Parameters.DeviceIoControl.IoControlCode == SUPDRV_IDC_REQ_DISCONNECT)
+                    pFileObj->FsContext = NULL;
+
                 rc = supdrvIDC(pStack->Parameters.DeviceIoControl.IoControlCode, pDevExt, pSession, pHdr);
                 if (!rc)
                 {
                     if (pStack->Parameters.DeviceIoControl.IoControlCode == SUPDRV_IDC_REQ_CONNECT)
                         pFileObj->FsContext = ((PSUPDRVIDCREQCONNECT)pHdr)->u.Out.pSession;
-                    /** @todo Handle SUPDRV_IDC_REQ_DISCONNECT and drop the
-                     *        windows hack in the generic code. */
 
                     rcNt = STATUS_SUCCESS;
                     cbOut = pHdr->cb;
                 }
                 else
+                {
                     rcNt = STATUS_INVALID_PARAMETER;
+                    if (pStack->Parameters.DeviceIoControl.IoControlCode == SUPDRV_IDC_REQ_DISCONNECT)
+                        pFileObj->FsContext = pSession;
+                }
                 Log2(("VBoxDrvNtInternalDeviceControl: returns %#x/rc=%#x\n", rcNt, rc));
             }
             else
