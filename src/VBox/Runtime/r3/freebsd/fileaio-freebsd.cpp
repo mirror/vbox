@@ -416,7 +416,8 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                 {
                     pReqInt = pahReqs[i];
                     rcBSD = aio_error(&pReqInt->AioCB);
-                    if (rcBSD == EINVAL || rcBSD == EAGAIN)
+                    if (   rcBSD == -1
+                        && errno == EINVAL)
                     {
                         /* Was not submitted. */
                         RTFILEAIOREQ_SET_STATE(pReqInt, PREPARED);
