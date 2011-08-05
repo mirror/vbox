@@ -118,7 +118,7 @@ int VBOXCALL supR0IdcNativeOpen(PSUPDRVIDCHANDLE pHandle, PSUPDRVIDCREQCONNECT p
         if (RT_SUCCESS(rc))
         {
             pHandle->s.pDeviceObject = pDeviceObject;
-            pHandle->s.pFileObject = pFileObject;
+            pHandle->s.pFileObject   = pFileObject;
             return rc;
         }
 
