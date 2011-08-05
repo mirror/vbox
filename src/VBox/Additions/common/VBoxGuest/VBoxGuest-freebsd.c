@@ -177,7 +177,7 @@ static void VBoxGuestFreeBSDClone(void *pvArg, struct ucred *pCred, char *pszNam
                           iUnit,
                           UID_ROOT,
                           GID_WHEEL,
-                          0644,
+                          0664,
                           "vboxguest%d", iUnit);
         if (*ppDev)
         {
