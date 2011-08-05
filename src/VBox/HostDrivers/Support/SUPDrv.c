@@ -1851,7 +1851,7 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
              */
             if (pReq->Hdr.pSession != NULL)
             {
-                OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: pSession=%p expected NULL!\n", pReq->Hdr.pSession));
+                OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: Hdr.pSession=%p expected NULL!\n", pReq->Hdr.pSession));
                 return pReqHdr->rc = VERR_INVALID_PARAMETER;
             }
             if (pReq->u.In.u32MagicCookie != SUPDRVIDCREQ_CONNECT_MAGIC_COOKIE)
@@ -1865,6 +1865,11 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
             {
                 OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: uMinVersion=%#x uMaxVersion=%#x doesn't match!\n",
                             pReq->u.In.uMinVersion, pReq->u.In.uReqVersion));
+                return pReqHdr->rc = VERR_INVALID_PARAMETER;
+            }
+            if (pSession != NULL)
+            {
+                OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: pSession=%p expected NULL!\n", pSession));
                 return pReqHdr->rc = VERR_INVALID_PARAMETER;
             }
 
@@ -1890,22 +1895,12 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
             pReq->u.Out.uDriverVersion  = SUPDRV_IDC_VERSION;
             pReq->u.Out.uDriverRevision = VBOX_SVN_REV;
 
-            /*
-             * On NT we will already have a session associated with the
-             * client, just like with the SUP_IOCTL_COOKIE request, while
-             * the other doesn't.
-             */
-#ifdef RT_OS_WINDOWS
-            pReq->Hdr.rc = VINF_SUCCESS;
-#else
-            AssertReturn(!pSession, VERR_INTERNAL_ERROR);
             pReq->Hdr.rc = supdrvCreateSession(pDevExt, false /* fUser */, &pSession);
             if (RT_FAILURE(pReq->Hdr.rc))
             {
                 OSDBGPRINT(("SUPDRV_IDC_REQ_CONNECT: failed to create session, rc=%d\n", pReq->Hdr.rc));
                 return VINF_SUCCESS;
             }
-#endif
 
             pReq->u.Out.pSession = pSession;
             pReq->Hdr.pSession = pSession;

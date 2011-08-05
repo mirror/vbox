@@ -483,10 +483,10 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
     if ((pStack->Parameters.DeviceIoControl.IoControlCode & 0x3) == METHOD_BUFFERED)
     {
         /* Verify the pDevExt in the session. */
-        if (    (   !pSession
-                 && pStack->Parameters.DeviceIoControl.IoControlCode == SUPDRV_IDC_REQ_CONNECT)
-            ||  (   VALID_PTR(pSession)
-                 && pSession->pDevExt == pDevExt))
+        if (  pStack->Parameters.DeviceIoControl.IoControlCode != SUPDRV_IDC_REQ_CONNECT
+            ? VALID_PTR(pSession) && pSession->pDevExt == pDevExt
+            : !pSession
+           )
         {
             /* Verify that the size in the request header is correct. */
             PSUPDRVIDCREQHDR pHdr = (PSUPDRVIDCREQHDR)pIrp->AssociatedIrp.SystemBuffer;
@@ -500,6 +500,11 @@ NTSTATUS _stdcall VBoxDrvNtInternalDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pI
                 rc = supdrvIDC(pStack->Parameters.DeviceIoControl.IoControlCode, pDevExt, pSession, pHdr);
                 if (!rc)
                 {
+                    if (pStack->Parameters.DeviceIoControl.IoControlCode == SUPDRV_IDC_REQ_CONNECT)
+                        pFileObj->FsContext = ((PSUPDRVIDCREQCONNECT)pHdr)->u.Out.pSession;
+                    /** @todo Handle SUPDRV_IDC_REQ_DISCONNECT and drop the
+                     *        windows hack in the generic code. */
+
                     rcNt = STATUS_SUCCESS;
                     cbOut = pHdr->cb;
                 }
