@@ -131,6 +131,13 @@ protected:
     UIMenuAction(QObject *pParent, const QIcon &icon);
 };
 
+/* Action pool types: */
+enum UIActionPoolType
+{
+    UIActionPoolType_Offline,
+    UIActionPoolType_Runtime
+};
+
 /* Singleton action pool: */
 class UIActionPool : public QObject
 {
@@ -142,7 +149,7 @@ public:
     static UIActionPool* instance();
 
     /* Constructor/destructor: */
-    UIActionPool();
+    UIActionPool(UIActionPoolType type);
     ~UIActionPool();
 
     /* Prepare/cleanup: */
@@ -156,6 +163,9 @@ public:
     void recreateMenus() { createMenus(); }
     bool processHotKey(const QKeySequence &key);
 
+    /* Action pool type: */
+    UIActionPoolType type() const { return m_type; }
+
 protected:
 
     /* Virtual helping stuff: */
@@ -168,6 +178,9 @@ protected:
 
     /* Instance: */
     static UIActionPool *m_pInstance;
+
+    /* Action pool type: */
+    UIActionPoolType m_type;
 
     /* Actions pool itself: */
     QMap<int, UIActionInterface*> m_pool;

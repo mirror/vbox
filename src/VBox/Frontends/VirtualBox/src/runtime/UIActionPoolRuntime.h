@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIActionsPoolRuntime_h__
-#define __UIActionsPoolRuntime_h__
+#ifndef __UIActionPoolRuntime_h__
+#define __UIActionPoolRuntime_h__
 
 /* Local includes: */
 #include "UIActionPool.h"
@@ -94,10 +94,13 @@ public:
 
 private:
 
+    /* Constructor: */
+    UIActionPoolRuntime() : UIActionPool(UIActionPoolType_Runtime) {}
+
     /* Virtual helping stuff: */
     void createActions();
     void createMenus();
 };
 
-#endif // __UIActionsPoolRuntime_h__
+#endif // __UIActionPoolRuntime_h__
 

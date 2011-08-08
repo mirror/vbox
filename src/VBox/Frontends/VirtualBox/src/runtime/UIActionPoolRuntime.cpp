@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
+/* Local includes: */
 #include "UIActionPoolRuntime.h"
 #include "UIMachineShortcuts.h"
 #include "VBoxGlobal.h"
