@@ -91,6 +91,10 @@
           some applications (bugs #9276, #9315)</para>
       </listitem>
 
+      <listitem>
+        <para>NAT: Changed TCP connection establisment according Winsock API requirements (bug #8919)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
