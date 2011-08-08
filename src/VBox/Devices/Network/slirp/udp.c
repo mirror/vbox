@@ -492,15 +492,21 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
     struct socket *so;
     socklen_t addrlen = sizeof(struct sockaddr_in);
     int opt = 1;
+    LogFlowFunc(("ENTER: bind_addr:%RTnaipv4, port:%d, laddr:%RTnaipv4, lport:%d, flags:%x\n",
+                 bind_addr, RT_N2H_U16(port), laddr, RT_N2H_U16(lport), flags));
 
     if ((so = socreate()) == NULL)
+    {
+        LogFlowFunc(("LEAVE: NULL\n"));
         return NULL;
+    }
 
     so->s = socket(AF_INET, SOCK_DGRAM, 0);
     if (so->s == -1)
     {
         LogRel(("NAT: can't create datagram socket\n"));
         RTMemFree(so);
+        LogFlowFunc(("LEAVE: NULL\n"));
         return NULL;
     }
     so->so_expire = curtime + SO_EXPIRE;
@@ -523,6 +529,7 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
     {
         LogRel(("NAT: bind to %RTnaipv4 has been failed\n", addr.sin_addr));
         udp_detach(pData, so);
+        LogFlowFunc(("LEAVE: NULL\n"));
         return NULL;
     }
     setsockopt(so->s, SOL_SOCKET, SO_REUSEADDR,(char *)&opt, sizeof(int));
@@ -545,5 +552,6 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
 
     so->so_state = SS_ISFCONNECTED;
 
+    LogFlowFunc(("LEAVE: %R[natsock]\n", so));
     return so;
 }
