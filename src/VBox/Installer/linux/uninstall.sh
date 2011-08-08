@@ -91,6 +91,7 @@ rm -f \
   /usr/bin/VBoxSDL \
   /usr/bin/VBoxVRDP \
   /usr/bin/VBoxHeadless \
+  /usr/bin/VBoxBalloonCtrl \
   /usr/bin/VBoxNetDHCP \
   /usr/bin/vboxwebsrv \
   /usr/bin/VBoxAddIF \
