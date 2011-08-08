@@ -21,6 +21,8 @@
 #include <iprt/assert.h>
 #include <VBox/log.h>
 
+#include "../../../win/VBoxDbgLog.h"
+
 #define VBOXUSBTOOL_MEMTAG 'TUBV'
 
 static PVOID vboxUsbToolMemAlloc(SIZE_T cbBytes)
@@ -96,9 +98,9 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDescriptor(PDEVICE_OBJECT pDevObj, void
     NTSTATUS Status;
     USHORT cbUrb = sizeof (struct _URB_CONTROL_DESCRIPTOR_REQUEST);
     PURB pUrb = VBoxUsbToolUrbAllocZ(URB_FUNCTION_GET_DESCRIPTOR_FROM_DEVICE, cbUrb);
-    Assert(pUrb);
     if(!pUrb)
     {
+        WARN(("allocating URB failed"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -115,9 +117,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolGetDescriptor(PDEVICE_OBJECT pDevObj, void
     pUrb->UrbControlDescriptorRequest.LanguageId           = (USHORT)LangId;
 
     Status = VBoxUsbToolUrbPost(pDevObj, pUrb, dwTimeoutMs);
-#ifdef DEBUG_misha
-    Assert(Status == STATUS_SUCCESS);
-#endif
+    ASSERT_WARN(Status == STATUS_SUCCESS, ("VBoxUsbToolUrbPost failed Status (0x%x)", Status));
 
     VBoxUsbToolUrbFree(pUrb);
 
@@ -348,6 +348,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolIoInternalCtlSendSyncWithTimeout(PDEVICE_O
     PIRP pIrp = VBoxUsbToolIoBuildAsyncInternalCtl(pDevObj, uCtl, pvArg1, pvArg2);
     if (!pIrp)
     {
+        WARN(("VBoxUsbToolIoBuildAsyncInternalCtl failed"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
@@ -370,7 +371,7 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolIoInternalCtlSendAsync(PDEVICE_OBJECT pDev
     pIrp = IoBuildDeviceIoControlRequest(uCtl, pDevObj, NULL, 0, NULL, 0, TRUE, pEvent, pIoStatus);
     if (!pIrp)
     {
-        AssertMsgFailed(("IoBuildDeviceIoControlRequest failed!!\n"));
+        WARN(("IoBuildDeviceIoControlRequest failed!!\n"));
         pIoStatus->Status = STATUS_INSUFFICIENT_RESOURCES;
         pIoStatus->Information = 0;
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -394,12 +395,20 @@ VBOXUSBTOOL_DECL(NTSTATUS) VBoxUsbToolIoInternalCtlSendSync(PDEVICE_OBJECT pDevO
 
     KeInitializeEvent(&Event, NotificationEvent, FALSE);
 
+    LOG(("Sending sync Ctl pDevObj(0x%p), uCtl(0x%x), pvArg1(0x%p), pvArg2(0x%p)", pDevObj, uCtl, pvArg1, pvArg2));
+
     Status = VBoxUsbToolIoInternalCtlSendAsync(pDevObj, uCtl, pvArg1, pvArg2, &Event, &IoStatus);
 
     if (Status == STATUS_PENDING)
     {
+        LOG(("VBoxUsbToolIoInternalCtlSendAsync returned pending for pDevObj(0x%x)", pDevObj));
         KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
         Status = IoStatus.Status;
+        LOG(("Pending VBoxUsbToolIoInternalCtlSendAsync completed with Status (0x%x) for pDevObj(0x%x)", Status, pDevObj));
+    }
+    else
+    {
+        LOG(("VBoxUsbToolIoInternalCtlSendAsync completed with Status (0x%x) for pDevObj(0x%x)", Status, pDevObj));
     }
 
     return Status;
