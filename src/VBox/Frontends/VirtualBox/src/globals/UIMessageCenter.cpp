@@ -2176,8 +2176,8 @@ void UIMessageCenter::warnAboutCannotCreateMachineFolder(QWidget *pParent, const
 {
     QFileInfo fi(strFolderName);
     message(pParent ? pParent : mainWindowShown(), Critical,
-            tr("<p>Cannot create the machine folder <b>%1</b> in the pParent folder <nobr><b>%2</b>.</nobr></p>"
-               "<p>Please check that the pParent really exists and that you have permissions to create the machine folder.</p>")
+            tr("<p>Cannot create the machine folder <b>%1</b> in the parent folder <nobr><b>%2</b>.</nobr></p>"
+               "<p>Please check that the parent really exists and that you have permissions to create the machine folder.</p>")
                .arg(fi.fileName()).arg(fi.absolutePath()));
 }
 
@@ -2532,7 +2532,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal,
             console1.Pause();
         type = Critical;
         severity = tr("<nobr>Fatal Error</nobr>", "runtime error info");
-        autoConfimId += "fFatal.";
+        autoConfimId += "fatal.";
     }
     else if (state == KMachineState_Paused)
     {
@@ -2573,7 +2573,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal,
     if (type == Critical)
     {
         rc = message(mainMachineWindowShown(), type,
-            tr("<p>A fFatal error has occurred during virtual machine execution! "
+            tr("<p>A fatal error has occurred during virtual machine execution! "
                "The virtual machine will be powered off. Please copy the "
                "following error message using the clipboard to help diagnose "
                "the problem:</p>"),
