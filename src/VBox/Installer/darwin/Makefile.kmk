@@ -633,8 +633,7 @@ ifdef VBOX_WITH_WEBSERVICES
 endif
 
 VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS = \
-	MacOS/vmstarter \
-	MacOS/vbox-img
+	MacOS/vmstarter
 
 VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS = \
 	MacOS/VMMR0.r0 \
@@ -1029,8 +1028,6 @@ ifdef VBOX_WITH_WEBSERVICES
 endif
 	$(APPEND) $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxBalloonCtrl '#!/bin/bash'
 	$(APPEND) $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxBalloonCtrl 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxBalloonCtrl "$$@"'
-	$(APPEND) $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/vbox-img '#!/bin/bash'
-	$(APPEND) $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/vbox-img 'exec /Applications/VirtualBox.app/Contents/MacOS/vbox-img "$$@"'
 	@# Set the correct owners and file permissions.
 	sudo chmod 0755 $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/*
 	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root
