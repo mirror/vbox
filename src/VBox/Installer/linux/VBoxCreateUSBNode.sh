@@ -18,7 +18,7 @@
 #
 
 # Constant, from the USB specifications
-usb_class_hub=9
+usb_class_hub=09
 
 do_remove=0
 case "$1" in "--remove")
@@ -32,7 +32,10 @@ devdir="`printf "/dev/vboxusb/%.3d" $bus`"
 devpath="`printf "/dev/vboxusb/%.3d/%.3d" $bus $device`"
 case "$do_remove" in
   0)
-  case "$class" in "$usb_class_hub") exit 0;; esac
+  if test -n "$class" -a "$class" -eq "$usb_class_hub"
+  then
+      exit 0
+  fi
   case "$group" in "") group="vboxusers";; esac
   mkdir /dev/vboxusb -m 0750 2>/dev/null
   chown root:$group /dev/vboxusb 2>/dev/null
