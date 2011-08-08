@@ -91,9 +91,9 @@ static int PrintDone(int rc)
     return rc;
 }
 
-static int NewImage(const char *pszFilename, uint32_t cMBs)
+static int NewImage(const char *pszFilename, uint64_t cMBs)
 {
-    RTPrintf("Creating VDI: file=\"%s\" size=%u MB...\n",
+    RTPrintf("Creating VDI: file=\"%s\" size=%RU64MB...\n",
             pszFilename, cMBs);
 
     /* translate argv[] to UTF8 */
@@ -407,14 +407,13 @@ int main(int argc, char **argv)
         if (argc != 4)
             return SyntaxError("Invalid argument count!");
 
-        uint32_t cMBs;
-        rc = RTStrToUInt32Ex(argv[3], NULL, 10, &cMBs);
+        uint64_t cMBs;
+        rc = RTStrToUInt64Ex(argv[3], NULL, 10, &cMBs);
         if (RT_FAILURE(rc))
             return SyntaxError("Invalid number!");
-        if (cMBs < 2 || cMBs > _1M)
+        if (cMBs < 2)
         {
-            RTPrintf("error: Disk size %RU32 (MB) is not within the range %u-%u!\n",
-                     cMBs, 2, _1M);
+            RTPrintf("error: Disk size %RU64MB must be at least 2MB!\n", cMBs);
             return 1;
         }
 
