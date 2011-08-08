@@ -76,7 +76,7 @@ DECLINLINE(float) inline_sqrtf(float rf)
 
 DECLINLINE(double) inline_sqrt(double rd)
 {
-    return (double)inline_sqrt(rd);
+    return (double)inline_sqrtl(rd);
 }
 
 
