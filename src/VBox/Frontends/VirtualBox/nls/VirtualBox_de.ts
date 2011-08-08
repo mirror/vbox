@@ -1720,7 +1720,7 @@
     <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
-        <translation>&lt;b&gt;Das virtuelle System &quot;%1&quot; verlangt, dass Sie die Bedingungen der unten gezeigten Software-Lizenz anerkennen.&lt;b&gt;&lt;br/&gt;&lt;br/&gt;Wählen Sie &lt;b&gt;Zustimmen&lt;/b&gt;, um fortzufahren oder &lt;b&gt;Ablehnen&lt;/b&gt;, um den Import abzubrechen.</translation>
+        <translation>&lt;b&gt;Das virtuelle System &quot;%1&quot; verlangt, dass Sie die Bedingungen der unten gezeigten Software-Lizenz anerkennen.&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;Wählen Sie &lt;b&gt;Zustimmen&lt;/b&gt;, um fortzufahren oder &lt;b&gt;Ablehnen&lt;/b&gt;, um den Import abzubrechen.</translation>
     </message>
     <message>
         <source>Software License Agreement</source>
