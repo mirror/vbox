@@ -215,7 +215,6 @@
 #include "VBoxGlobal.h"
 #include "VBoxGlobalSettings.h"
 #include "VBoxGuestRAMSlider.h"
-#include "VBoxHelpActions.h"
 #ifdef Q_WS_MAC
 # include "VBoxIChatTheaterWrapper.h"
 #endif

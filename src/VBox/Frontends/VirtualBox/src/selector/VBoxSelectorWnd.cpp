@@ -41,6 +41,7 @@
 #include "UISelectorShortcuts.h"
 #include "UIDesktopServices.h"
 #include "UIGlobalSettingsExtension.h" /* extension pack installation */
+#include "UIActionPoolOffline.h"
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include "VBoxTrayIcon.h"
@@ -92,6 +93,9 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     : QIWithRetranslateUI2<QMainWindow>(aParent, aFlags)
     , mDoneInaccessibleWarningOnce(false)
 {
+    /* Create offline action pool: */
+    UIActionPoolOffline::create();
+
     VBoxGlobalSettings settings = vboxGlobal().settings();
 
     if (aSelf)
@@ -181,8 +185,6 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVmCreateShortcut = new QAction(this);
     mVmCreateShortcut->setIcon(UIIconPool::iconSet(
         ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png"));
-
-    mHelpActions.setup(this);
 
     /* VM list toolbar */
     mVMToolBar = new UIToolBar(this);
@@ -328,8 +330,10 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect(mVMCtxtMenu, SIGNAL(aboutToHide()),
             statusBar(), SLOT(clearMessage()));
 
-    mHelpMenu = menuBar()->addMenu(QString::null);
-    mHelpActions.addTo(mHelpMenu);
+    /* Prepare help menu: */
+    QMenu *pHelpMenu = gActionPool->action(UIActionIndex_Menu_Help)->menu();
+    prepareMenuHelp(pHelpMenu);
+    menuBar()->addMenu(pHelpMenu);
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     mTrayIcon = new VBoxTrayIcon(this, mVMModel);
@@ -558,6 +562,9 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
     /* Delete the items from our model */
     mVMModel->clear();
+
+    /* Delete offline action pool: */
+    UIActionPoolOffline::destroy();
 }
 
 //
@@ -1289,15 +1296,12 @@ void VBoxSelectorWnd::retranslateUi()
     mVmOpenInFileManagerAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ShowVMInFileManagerShortcut));
     mVmCreateShortcut->setShortcut(gSS->keySequence(UISelectorShortcuts::CreateVMAliasShortcut));
 
-    mHelpActions.retranslateUi();
-
 #ifdef Q_WS_MAC
     mFileMenu->setTitle(tr("&File", "Mac OS X version"));
 #else /* Q_WS_MAC */
     mFileMenu->setTitle(tr("&File", "Non Mac OS X version"));
 #endif /* !Q_WS_MAC */
     mVMMenu->setTitle(tr("&Machine"));
-    mHelpMenu->setTitle(tr("&Help"));
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     if (vboxGlobal().isTrayMenu())
@@ -1721,5 +1725,52 @@ void VBoxSelectorWnd::showViewContextMenu(const QPoint &pos)
             vbox.SetExtraData(VBoxDefs::GUI_Statusbar, "false");
         }
     }
+}
+
+void VBoxSelectorWnd::prepareMenuHelp(QMenu *pMenu)
+{
+    /* Do not touch if filled already: */
+    if (!pMenu->isEmpty())
+        return;
+
+    /* Help submenu: */
+    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Help));
+    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Web));
+
+    pMenu->addSeparator();
+
+    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_ResetWarnings));
+
+    pMenu->addSeparator();
+
+#ifdef VBOX_WITH_REGISTRATION
+    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Register));
+#endif /* VBOX_WITH_REGISTRATION */
+
+    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_Update));
+
+#ifndef Q_WS_MAC
+    pMenu->addSeparator();
+#endif /* !Q_WS_MAC */
+
+    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_About));
+
+    /* Configure connections: */
+    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Help), SIGNAL(triggered()),
+                        &msgCenter(), SLOT(sltShowHelpHelpDialog()));
+    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Web), SIGNAL(triggered()),
+                        &msgCenter(), SLOT(sltShowHelpWebDialog()));
+    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
+                        &msgCenter(), SLOT(sltResetSuppressedMessages()));
+#ifdef VBOX_WITH_REGISTRATION
+    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Register), SIGNAL(triggered()),
+                        &vboxGlobal(), SLOT(showRegistrationDialog()));
+    VBoxGlobal::connect(gEDataEvents, SIGNAL(sigCanShowRegistrationDlg(bool)),
+                        gActionPool->action(UIActionIndex_Simple_Register), SLOT(setEnabled(bool)));
+#endif /* VBOX_WITH_REGISTRATION */
+    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Update), SIGNAL(triggered()),
+                        &vboxGlobal(), SLOT(showUpdateDialog()));
+    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
+                        &msgCenter(), SLOT(sltShowHelpAboutDialog()));
 }
 

@@ -25,6 +25,7 @@
 #include "UIActionPool.h"
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
+#include "UISelectorShortcuts.h"
 #include "UIMachineShortcuts.h"
 
 /* Action activation event: */
@@ -178,9 +179,17 @@ class ShowHelpAction : public UISimpleAction
 public:
 
     ShowHelpAction(QObject *pParent)
-        : UISimpleAction(pParent,
-                         UIIconPool::defaultIcon(UIIconPool::DialogHelpIcon))
+        : UISimpleAction(pParent, UIIconPool::defaultIcon(UIIconPool::DialogHelpIcon))
     {
+        switch (gActionPool->type())
+        {
+            case UIActionPoolType_Offline:
+                setShortcut(gSS->keySequence(UISelectorShortcuts::HelpShortcut));
+                break;
+            case UIActionPoolType_Runtime:
+                setShortcut(gMS->keySequence(UIMachineShortcuts::HelpShortcut));
+                break;
+        }
         retranslateUi();
     }
 
@@ -188,7 +197,6 @@ protected:
 
     void retranslateUi()
     {
-        setShortcut(gMS->shortcut(UIMachineShortcuts::HelpShortcut));
         setText(QApplication::translate("UIMessageCenter", "&Contents..."));
         setStatusTip(QApplication::translate("UIMessageCenter", "Show the online help contents"));
     }
@@ -201,9 +209,17 @@ class ShowWebAction : public UISimpleAction
 public:
 
     ShowWebAction(QObject *pParent)
-        : UISimpleAction(pParent,
-                         ":/site_16px.png")
+        : UISimpleAction(pParent, ":/site_16px.png")
     {
+        switch (gActionPool->type())
+        {
+            case UIActionPoolType_Offline:
+                setShortcut(gSS->keySequence(UISelectorShortcuts::WebShortcut));
+                break;
+            case UIActionPoolType_Runtime:
+                setShortcut(gMS->keySequence(UIMachineShortcuts::WebShortcut));
+                break;
+        }
         retranslateUi();
     }
 
@@ -223,9 +239,17 @@ class PerformResetWarningsAction : public UISimpleAction
 public:
 
     PerformResetWarningsAction(QObject *pParent)
-        : UISimpleAction(pParent,
-                         ":/reset_16px.png")
+        : UISimpleAction(pParent, ":/reset_16px.png")
     {
+        switch (gActionPool->type())
+        {
+            case UIActionPoolType_Offline:
+                setShortcut(gSS->keySequence(UISelectorShortcuts::ResetWarningsShortcut));
+                break;
+            case UIActionPoolType_Runtime:
+                setShortcut(gMS->keySequence(UIMachineShortcuts::ResetWarningsShortcut));
+                break;
+        }
         retranslateUi();
     }
 
@@ -246,11 +270,19 @@ class PerformRegisterAction : public UISimpleAction
 public:
 
     PerformRegisterAction(QObject *pParent)
-        : UISimpleAction(pParent,
-                         ":/register_16px.png", ":/register_disabled_16px.png")
+        : UISimpleAction(pParent, ":/register_16px.png", ":/register_disabled_16px.png")
     {
         setEnabled(vboxGlobal().virtualBox().
                    GetExtraData(VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
+        switch (gActionPool->type())
+        {
+            case UIActionPoolType_Offline:
+                setShortcut(gSS->keySequence(UISelectorShortcuts::RegisterShortcut));
+                break;
+            case UIActionPoolType_Runtime:
+                setShortcut(gMS->keySequence(UIMachineShortcuts::RegisterShortcut));
+                break;
+        }
         retranslateUi();
     }
 
@@ -271,10 +303,18 @@ class PerformUpdateAction : public UISimpleAction
 public:
 
     PerformUpdateAction(QObject *pParent)
-        : UISimpleAction(pParent,
-                         ":/refresh_16px.png", ":/refresh_disabled_16px.png")
+        : UISimpleAction(pParent, ":/refresh_16px.png", ":/refresh_disabled_16px.png")
     {
         setMenuRole(QAction::ApplicationSpecificRole);
+        switch (gActionPool->type())
+        {
+            case UIActionPoolType_Offline:
+                setShortcut(gSS->keySequence(UISelectorShortcuts::UpdateShortcut));
+                break;
+            case UIActionPoolType_Runtime:
+                setShortcut(gMS->keySequence(UIMachineShortcuts::UpdateShortcut));
+                break;
+        }
         retranslateUi();
     }
 
@@ -294,10 +334,18 @@ class ShowAboutAction : public UISimpleAction
 public:
 
     ShowAboutAction(QObject *pParent)
-        : UISimpleAction(pParent,
-                         ":/about_16px.png")
+        : UISimpleAction(pParent, ":/about_16px.png")
     {
         setMenuRole(QAction::AboutRole);
+        switch (gActionPool->type())
+        {
+            case UIActionPoolType_Offline:
+                setShortcut(gSS->keySequence(UISelectorShortcuts::AboutShortcut));
+                break;
+            case UIActionPoolType_Runtime:
+                setShortcut(gMS->keySequence(UIMachineShortcuts::AboutShortcut));
+                break;
+        }
         retranslateUi();
     }
 
@@ -319,7 +367,8 @@ UIActionPool* UIActionPool::instance()
     return m_pInstance;
 }
 
-UIActionPool::UIActionPool()
+UIActionPool::UIActionPool(UIActionPoolType type)
+    : m_type(type)
 {
     /* Prepare instance: */
     if (!m_pInstance)
