@@ -47,6 +47,11 @@
       </listitem>
 
       <listitem>
+        <para>Snapshots: fix "Solid-State drive" flag survival on snapshot
+          creation (bug #9379)</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: implemented <emphasis>copyfrom</emphasis> and <emphasis>stat</emphasis>
           guest control tools to copy files from guest to host and to check for
           existence of files on the guest</para>
