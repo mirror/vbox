@@ -52,28 +52,4 @@ typedef struct VBOXDISPD3D
 HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D);
 void VBoxDispD3DClose(VBOXDISPD3D *pD3D);
 
-
-typedef struct VBOXDISPWORKER
-{
-    RTCRITSECT CritSect;
-
-    RTSEMEVENT hEvent;
-
-    HANDLE hThread;
-    DWORD  idThread;
-} VBOXDISPWORKER;
-
-HRESULT VBoxDispWorkerCreate(VBOXDISPWORKER *pWorker);
-HRESULT VBoxDispWorkerDestroy(VBOXDISPWORKER *pWorker);
-
-typedef DECLCALLBACK(void) FNVBOXDISPWORKERCB(void *pvUser);
-typedef FNVBOXDISPWORKERCB *PFNVBOXDISPWORKERCB;
-
-HRESULT VBoxDispWorkerSubmitProc(VBOXDISPWORKER *pWorker, PFNVBOXDISPWORKERCB pfnCb, void *pvCb);
-
-typedef struct VBOXWDDMDISP_ADAPTER *PVBOXWDDMDISP_ADAPTER;
-
-HRESULT VBoxDispWndDestroy(PVBOXWDDMDISP_ADAPTER pAdapter, HWND hWnd);
-HRESULT VBoxDispWndCreate(PVBOXWDDMDISP_ADAPTER pAdapter, DWORD width, DWORD height, HWND *phWnd);
-
 #endif /* ifndef ___VBoxDispD3DIf_h___ */

@@ -25,6 +25,11 @@ typedef FNVBOXEXTWORKERCB *PFNVBOXEXTWORKERCB;
 HRESULT VBoxExtDwSubmitProc(PFNVBOXEXTWORKERCB pfnCb, void *pvCb);
 
 /*******************************/
+#if defined(VBOX_WDDM_WOW64)
+# define VBOXEXT_WINE_MODULE_NAME "wined3dwddm-x86.dll"
+#else
+# define VBOXEXT_WINE_MODULE_NAME "wined3dwddm.dll"
+#endif
 
 typedef struct VBOXEXT_WORKER
 {
@@ -34,6 +39,10 @@ typedef struct VBOXEXT_WORKER
 
     HANDLE hThread;
     DWORD  idThread;
+    /* wine does not seem to guarantie the dll is not unloaded in case FreeLibrary is used
+     * while d3d object is not terminated, keep an extra reference to ensure we're not unloaded
+     * while we are active */
+    HMODULE hSelf;
 } VBOXEXT_WORKER, *PVBOXEXT_WORKER;
 
 
@@ -44,7 +53,6 @@ HRESULT VBoxExtWorkerSubmitProc(PVBOXEXT_WORKER pWorker, PFNVBOXEXTWORKERCB pfnC
 
 
 /*******************************/
-
 typedef struct VBOXEXT_GLOBAL
 {
     VBOXEXT_WORKER Worker;
@@ -106,6 +114,13 @@ static DWORD WINAPI vboxExtWorkerThread(void *pvUser)
 
 HRESULT VBoxExtWorkerCreate(PVBOXEXT_WORKER pWorker)
 {
+    if(!GetModuleHandleEx(0, VBOXEXT_WINE_MODULE_NAME, &pWorker->hSelf))
+    {
+        DWORD dwEr = GetLastError();
+        ERR("GetModuleHandleEx failed, %d", dwEr);
+        return E_FAIL;
+    }
+
     InitializeCriticalSection(&pWorker->CritSect);
     pWorker->hEvent = CreateEvent(NULL, /* LPSECURITY_ATTRIBUTES lpEventAttributes */
             FALSE, /* BOOL bManualReset */
@@ -142,6 +157,8 @@ HRESULT VBoxExtWorkerCreate(PVBOXEXT_WORKER pWorker)
         ERR("CreateEvent failed, winErr = (%d)", winErr);
     }
 
+    FreeLibrary(pWorker->hSelf);
+
     return E_FAIL;
 }
 
@@ -165,6 +182,8 @@ HRESULT VBoxExtWorkerDestroy(PVBOXEXT_WORKER pWorker)
 
     CloseHandle(pWorker->hEvent);
     DeleteCriticalSection(&pWorker->CritSect);
+
+    FreeLibrary(pWorker->hSelf);
 
     return S_OK;
 }
@@ -283,7 +302,7 @@ static DECLCALLBACK(void) vboxExtReleaseDCWorker(void *pvUser)
     PVBOXEXT_RELEASEDC_CB pData = (PVBOXEXT_RELEASEDC_CB)pvUser;
     pData->ret = ReleaseDC(pData->hWnd, pData->hDC);
 }
-
+#if 0
 HDC VBoxExtGetDC(HWND hWnd)
 {
 #ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
@@ -326,6 +345,7 @@ int VBoxExtReleaseDC(HWND hWnd, HDC hDC)
     return ReleaseDC(hWnd, hDC);
 #endif
 }
+#endif
 
 /* window creation API */
 static LRESULT CALLBACK vboxExtWndProc(HWND hwnd,
@@ -352,7 +372,7 @@ static LRESULT CALLBACK vboxExtWndProc(HWND hwnd,
 
 #define VBOXEXTWND_NAME "VboxDispD3DWineWnd"
 
-HRESULT vboxExtWndDoCreate(DWORD w, DWORD h, HWND *phWnd)
+HRESULT vboxExtWndDoCreate(DWORD w, DWORD h, HWND *phWnd, HDC *phDC)
 {
     HRESULT hr = S_OK;
     HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
@@ -393,6 +413,7 @@ HRESULT vboxExtWndDoCreate(DWORD w, DWORD h, HWND *phWnd)
         if (hWnd)
         {
             *phWnd = hWnd;
+            *phDC = GetDC(hWnd);
         }
         else
         {
@@ -405,10 +426,12 @@ HRESULT vboxExtWndDoCreate(DWORD w, DWORD h, HWND *phWnd)
     return hr;
 }
 
-static HRESULT vboxExtWndDoDestroy(HWND hWnd)
+static HRESULT vboxExtWndDoDestroy(HWND hWnd, HDC hDC)
 {
-    BOOL bResult = DestroyWindow(hWnd);
+    BOOL bResult;
     DWORD winErr;
+    ReleaseDC(hWnd, hDC);
+    bResult = DestroyWindow(hWnd);
     Assert(bResult);
     if (bResult)
         return S_OK;
@@ -423,6 +446,7 @@ typedef struct VBOXEXTWND_CREATE_INFO
 {
     int hr;
     HWND hWnd;
+    HDC hDC;
     DWORD width;
     DWORD height;
 } VBOXEXTWND_CREATE_INFO;
@@ -431,28 +455,30 @@ typedef struct VBOXEXTWND_DESTROY_INFO
 {
     int hr;
     HWND hWnd;
+    HDC hDC;
 } VBOXEXTWND_DESTROY_INFO;
 
 DECLCALLBACK(void) vboxExtWndDestroyWorker(void *pvUser)
 {
     VBOXEXTWND_DESTROY_INFO *pInfo = (VBOXEXTWND_DESTROY_INFO*)pvUser;
-    pInfo->hr = vboxExtWndDoDestroy(pInfo->hWnd);
+    pInfo->hr = vboxExtWndDoDestroy(pInfo->hWnd, pInfo->hDC);
     Assert(pInfo->hr == S_OK);
 }
 
 DECLCALLBACK(void) vboxExtWndCreateWorker(void *pvUser)
 {
     VBOXEXTWND_CREATE_INFO *pInfo = (VBOXEXTWND_CREATE_INFO*)pvUser;
-    pInfo->hr = vboxExtWndDoCreate(pInfo->width, pInfo->height, &pInfo->hWnd);
+    pInfo->hr = vboxExtWndDoCreate(pInfo->width, pInfo->height, &pInfo->hWnd, &pInfo->hDC);
     Assert(pInfo->hr == S_OK);
 }
 
-HRESULT VBoxExtWndDestroy(HWND hWnd)
+HRESULT VBoxExtWndDestroy(HWND hWnd, HDC hDC)
 {
     HRESULT hr;
     VBOXEXTWND_DESTROY_INFO Info;
     Info.hr = E_FAIL;
     Info.hWnd = hWnd;
+    Info.hDC = hDC;
     hr = VBoxExtDwSubmitProc(vboxExtWndDestroyWorker, &Info);
     Assert(hr == S_OK);
     if (hr == S_OK)
@@ -463,7 +489,7 @@ HRESULT VBoxExtWndDestroy(HWND hWnd)
     return hr;
 }
 
-HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd)
+HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd, HDC *phDC)
 {
     HRESULT hr;
     VBOXEXTWND_CREATE_INFO Info;
@@ -476,7 +502,10 @@ HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd)
     {
         Assert(Info.hr == S_OK);
         if (Info.hr == S_OK)
+        {
             *phWnd = Info.hWnd;
+            *phDC = Info.hDC;
+        }
         return Info.hr;
     }
     return hr;

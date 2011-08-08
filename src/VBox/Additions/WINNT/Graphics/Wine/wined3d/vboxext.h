@@ -22,15 +22,17 @@
 
 HRESULT VBoxExtCheckInit();
 HRESULT VBoxExtCheckTerm();
+#if 0
 /* Windows destroys HDC created by a given thread when the thread is terminated
  * this leads to a mess-up in Wine & Chromium code in some situations, e.g.
  * D3D device is created in one thread, then the thread is terminated,
  * then device is started to be used in another thread */
 HDC VBoxExtGetDC(HWND hWnd);
 int VBoxExtReleaseDC(HWND hWnd, HDC hDC);
+#endif
 
 /* API for creating & destroying windows */
-HRESULT VBoxExtWndDestroy(HWND hWnd);
-HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd);
+HRESULT VBoxExtWndDestroy(HWND hWnd, HDC hDC);
+HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd, HDC *phDC);
 
 #endif /* #ifndef ___VBOXEXT_H__*/

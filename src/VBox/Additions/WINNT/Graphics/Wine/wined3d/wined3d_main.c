@@ -402,6 +402,7 @@ void WINAPI wined3d_mutex_unlock(void)
     LeaveCriticalSection(&wined3d_cs);
 }
 
+#ifndef VBOX_WITH_WDDM
 static struct wined3d_wndproc *wined3d_find_wndproc(HWND window)
 {
     unsigned int i;
@@ -499,7 +500,7 @@ void wined3d_unregister_window(HWND window)
 
     ERR("Window %p is not registered with wined3d.\n", window);
 }
-
+#endif
 /* At process attach */
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 {
