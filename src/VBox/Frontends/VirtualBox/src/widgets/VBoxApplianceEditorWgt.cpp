@@ -754,6 +754,12 @@ VirtualSystemModel::VirtualSystemModel (QVector<CVirtualSystemDescription>& aVSD
     }
 }
 
+VirtualSystemModel::~VirtualSystemModel()
+{
+    if (mRootItem)
+        delete mRootItem;
+}
+
 QModelIndex VirtualSystemModel::index (int aRow, int aColumn, const QModelIndex &aParent /* = QModelIndex() */) const
 {
     if (!hasIndex (aRow, aColumn, aParent))
