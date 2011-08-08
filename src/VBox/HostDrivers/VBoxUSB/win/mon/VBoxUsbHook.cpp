@@ -179,7 +179,7 @@ VOID VBoxUsbHookVerifyCompletion(PVBOXUSBHOOK_ENTRY pHook, PVBOXUSBHOOK_REQUEST 
             continue;
         if (pCur->pIrp != pIrp)
             continue;
-        AssertFailed();
+        WARN(("found pending IRP(0x%p) when it should not be", pIrp));
     }
     KeReleaseSpinLock(&pHook->Lock, oldIrql);
 
