@@ -60,6 +60,10 @@
         <para>VBoxManage: allow to start multiple VMs with
           <emphasis>startvm</emphasis></para>
       </listitem>
+      
+      <listitem>
+        <para>VBoxManage: experimental support for SATA CD/DVD hotplugging</para>
+      </listitem>
 
       <listitem>
         <para>Mouse support: fix an off-by-one pointer position error 
