@@ -52,6 +52,11 @@
       </listitem>
 
       <listitem>
+        <para>Mouse support: fix an off-by-one pointer position error 
+           affecting Windows guests (bugs #7566, #9321)</para>
+       </listitem>
+
+      <listitem>
         <para>VRDP: fixed a case when the screen was not redrawn correctly
           (bug #9242)</para>
       </listitem>
