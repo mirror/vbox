@@ -773,38 +773,34 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
     sock_addr.sin_len = sizeof(struct sockaddr_in);
 #endif
 
+
     err = bind(sock,
         (struct sockaddr *)&sock_addr,
         sizeof(sock_addr));
     if (err == 0) {
         la->sockCount++;
 #ifdef VBOX
-            so->so_expire = la->curtime + SO_EXPIRE;
-            setsockopt(so->s, SOL_SOCKET, SO_BROADCAST,
-                (const char *)&opt, sizeof(opt));
-            status = getsockname(so->s, &sa_addr, &socklen);
-            if (status != 0 || sa_addr.sa_family != AF_INET)
-            {
-                closesocket(so->s);
-                RTMemFree(so);
-                return 0;
-            }
-            so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
-            so->so_hladdr.s_addr =
-                ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
-            NSOCK_INC_EX(la);
+        so->so_expire = la->curtime + SO_EXPIRE;
+        setsockopt(so->s, SOL_SOCKET, SO_BROADCAST,
+            (const char *)&opt, sizeof(opt));
+        status = getsockname(so->s, &sa_addr, &socklen);
+        if (status != 0 || sa_addr.sa_family != AF_INET)
+        {
+            closesocket(so->s);
+            RTMemFree(so);
+            return 0;
+        }
+        so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
+        so->so_hladdr.s_addr =
+            ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
+        NSOCK_INC_EX(la);
         if (link_type == LINK_TCP)
-            {
-                insque(la->pData, so, &la->tcb);
-            }
+            insque(la->pData, so, &la->tcb);
         else if (link_type == LINK_UDP)
-            {
-                insque(la->pData, so, &la->udb);
-            }
-            else {
-                Assert(!"Shouldn't be here");
-            }
-
+            insque(la->pData, so, &la->udb);
+        else
+            Assert(!"Shouldn't be here");
+        LogFunc(("bind called for socket: %R[natsock]\n", so));
 #else
         *sockfd = sock;
 #endif
