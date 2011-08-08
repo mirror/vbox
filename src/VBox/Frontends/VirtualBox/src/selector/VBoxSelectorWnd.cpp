@@ -197,7 +197,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 #endif /* Q_WS_MAC */
 
     /* VM list view */
-    mVMModel = new UIVMItemModel();
+    mVMModel = new UIVMItemModel(this);
     mVMListView = new UIVMListView(mVMModel);
     mVMListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     connect(mVMListView, SIGNAL(sigUrlsDropped(QList<QUrl>)),

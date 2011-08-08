@@ -163,6 +163,7 @@ class VirtualSystemModel: public QAbstractItemModel
 
 public:
     VirtualSystemModel (QVector<CVirtualSystemDescription>& aVSDs, QObject *aParent = NULL);
+    ~VirtualSystemModel();
 
     QModelIndex index (int aRow, int aColumn, const QModelIndex &aParent = QModelIndex()) const;
     QModelIndex parent (const QModelIndex &aIndex) const;
