@@ -25,7 +25,7 @@
 /* Local includes */
 #include "UISession.h"
 #include "UIMachine.h"
-#include "UIActionsPool.h"
+#include "UIActionPoolRuntime.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineMenuBar.h"
@@ -322,11 +322,6 @@ void UISession::powerUp()
     emit sigMachineStarted();
 }
 
-UIActionsPool* UISession::actionsPool() const
-{
-    return m_pMachine->actionsPool();
-}
-
 QWidget* UISession::mainMachineWindow() const
 {
     return uimachine()->machineLogic()->mainMachineWindow()->machineWindow();
@@ -340,7 +335,7 @@ UIMachineLogic* UISession::machineLogic() const
 QMenu* UISession::newMenu(UIMainMenuType fOptions /* = UIMainMenuType_ALL */)
 {
     /* Create new menu: */
-    QMenu *pMenu = m_pMenuPool->createMenu(actionsPool(), fOptions);
+    QMenu *pMenu = m_pMenuPool->createMenu(fOptions);
 
     /* Re-init menu pool for the case menu were recreated: */
     reinitMenuPool();
@@ -352,7 +347,7 @@ QMenu* UISession::newMenu(UIMainMenuType fOptions /* = UIMainMenuType_ALL */)
 QMenuBar* UISession::newMenuBar(UIMainMenuType fOptions /* = UIMainMenuType_ALL */)
 {
     /* Create new menubar: */
-    QMenuBar *pMenuBar = m_pMenuPool->createMenuBar(actionsPool(), fOptions);
+    QMenuBar *pMenuBar = m_pMenuPool->createMenuBar(fOptions);
 
     /* Re-init menu pool for the case menu were recreated: */
     reinitMenuPool();
@@ -630,10 +625,10 @@ void UISession::sltVRDEChange()
     const CVRDEServer &server = machine.GetVRDEServer();
     bool fIsVRDEServerAvailable = !server.isNull();
     /* Show/Hide VRDE action depending on VRDE server availability status: */
-    uimachine()->actionsPool()->action(UIActionIndex_Toggle_VRDEServer)->setVisible(fIsVRDEServerAvailable);
+    gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer)->setVisible(fIsVRDEServerAvailable);
     /* Check/Uncheck VRDE action depending on VRDE server activity status: */
     if (fIsVRDEServerAvailable)
-        uimachine()->actionsPool()->action(UIActionIndex_Toggle_VRDEServer)->setChecked(server.GetEnabled());
+        gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer)->setChecked(server.GetEnabled());
     /* Notify listeners about VRDE change: */
     emit sigVRDEChange();
 }
@@ -692,7 +687,7 @@ void UISession::loadSessionSettings()
 
         /* Should guest autoresize? */
         strSettings = machine.GetExtraData(VBoxDefs::GUI_AutoresizeGuest);
-        QAction *pGuestAutoresizeSwitch = uimachine()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize);
+        QAction *pGuestAutoresizeSwitch = gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(strSettings != "off");
 
 #if 0 /* Disabled for now! */
@@ -717,7 +712,7 @@ void UISession::saveSessionSettings()
 
         /* Remember if guest should autoresize: */
         machine.SetExtraData(VBoxDefs::GUI_AutoresizeGuest,
-                             uimachine()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked() ?
+                             gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked() ?
                              QString() : "off");
 
 #if 0 /* Disabled for now! */
@@ -994,8 +989,8 @@ void UISession::reinitMenuPool()
             if (attachment.GetType() == KDeviceType_Floppy)
                 ++iDevicesCountFD;
         }
-        QAction *pOpticalDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices);
-        QAction *pFloppyDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices);
+        QAction *pOpticalDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices);
+        QAction *pFloppyDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices);
         pOpticalDevicesMenu->setData(iDevicesCountCD);
         pOpticalDevicesMenu->setVisible(iDevicesCountCD);
         pFloppyDevicesMenu->setData(iDevicesCountFD);
@@ -1016,7 +1011,7 @@ void UISession::reinitMenuPool()
             }
         }
         /* Show/Hide Network Adapters action depending on overall adapters activity status: */
-        uimachine()->actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog)->setVisible(fAtLeastOneAdapterActive);
+        gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog)->setVisible(fAtLeastOneAdapterActive);
     }
 
     /* USB stuff: */
@@ -1025,7 +1020,7 @@ void UISession::reinitMenuPool()
         const CUSBController &usbController = machine.GetUSBController();
         bool fUSBControllerEnabled = !usbController.isNull() && usbController.GetEnabled() && usbController.GetProxyAvailable();
         /* Show/Hide USB menu depending on controller availability, activity and USB-proxy presence: */
-        uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setVisible(fUSBControllerEnabled);
+        gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->setVisible(fUSBControllerEnabled);
     }
 }
 

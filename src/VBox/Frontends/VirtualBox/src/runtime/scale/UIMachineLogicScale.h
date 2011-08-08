@@ -22,9 +22,6 @@
 /* Local includes */
 #include "UIMachineLogic.h"
 
-/* Local forwards */
-class UIActionsPool;
-
 class UIMachineLogicScale : public UIMachineLogic
 {
     Q_OBJECT;
@@ -33,8 +30,7 @@ protected:
 
     /* Scale machine logic constructor/destructor: */
     UIMachineLogicScale(QObject *pParent,
-                        UISession *pSession,
-                        UIActionsPool *pActionsPool);
+                        UISession *pSession);
     virtual ~UIMachineLogicScale();
 
     bool checkAvailability();

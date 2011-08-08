@@ -24,7 +24,7 @@
 #include "VBoxGlobal.h"
 #include "UIMachine.h"
 #include "UISession.h"
-#include "UIActionsPool.h"
+#include "UIActionPoolRuntime.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 
@@ -39,10 +39,9 @@ class UIVisualState : public QObject
 public:
 
     /* Visual state holder constructor: */
-    UIVisualState(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
+    UIVisualState(QObject *pParent, UISession *pSession)
         : QObject(pParent)
         , m_pSession(pSession)
-        , m_pActionsPool(pActionsPool)
         , m_pMachineLogic(0)
 #ifdef Q_WS_MAC
         , m_fadeToken(kCGDisplayFadeReservationInvalidToken)
@@ -58,7 +57,7 @@ public:
 
     virtual bool prepareChange(UIVisualStateType previousVisualStateType)
     {
-        m_pMachineLogic = UIMachineLogic::create(this, m_pSession, m_pActionsPool, visualStateType());
+        m_pMachineLogic = UIMachineLogic::create(this, m_pSession, visualStateType());
         bool fResult = m_pMachineLogic->checkAvailability();
 #ifdef Q_WS_MAC
         /* If the new is or the old type was fullscreen we add the blending
@@ -105,7 +104,6 @@ protected:
 
     /* Protected members: */
     UISession *m_pSession;
-    UIActionsPool *m_pActionsPool;
     UIMachineLogic *m_pMachineLogic;
 #ifdef Q_WS_MAC
     CGDisplayFadeReservationToken m_fadeToken;
@@ -119,19 +117,19 @@ class UIVisualStateNormal : public UIVisualState
 public:
 
     /* Normal visual state holder constructor: */
-    UIVisualStateNormal(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent, pSession, pActionsPool) {}
+    UIVisualStateNormal(QObject *pParent, UISession *pSession)
+        : UIVisualState(pParent, pSession) {}
 
     UIVisualStateType visualStateType() const { return UIVisualStateType_Normal; }
 
     void change()
     {
         /* Connect action handlers: */
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToFullscreenMode()), Qt::QueuedConnection);
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToSeamlessMode()), Qt::QueuedConnection);
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Scale), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToScaleMode()), Qt::QueuedConnection);
 
         /* Initialize the logic object: */
@@ -166,11 +164,11 @@ class UIVisualStateFullscreen : public UIVisualState
 public:
 
     /* Fullscreen visual state holder constructor: */
-    UIVisualStateFullscreen(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent, pSession, pActionsPool)
+    UIVisualStateFullscreen(QObject *pParent, UISession *pSession)
+        : UIVisualState(pParent, pSession)
     {
         /* This visual state should take care of own action: */
-        QAction *pActionFullscreen = m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen);
+        QAction *pActionFullscreen = gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen);
         if (!pActionFullscreen->isChecked())
         {
             pActionFullscreen->blockSignals(true);
@@ -184,7 +182,7 @@ public:
     virtual ~UIVisualStateFullscreen()
     {
         /* This visual state should take care of own action: */
-        QAction *pActionFullscreen = m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen);
+        QAction *pActionFullscreen = gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen);
         if (pActionFullscreen->isChecked())
         {
             pActionFullscreen->blockSignals(true);
@@ -199,11 +197,11 @@ public:
     void change()
     {
         /* Connect action handlers: */
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToNormalMode()), Qt::QueuedConnection);
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToSeamlessMode()), Qt::QueuedConnection);
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Scale), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToScaleMode()), Qt::QueuedConnection);
 
         /* Initialize the logic object: */
@@ -238,11 +236,11 @@ class UIVisualStateSeamless : public UIVisualState
 public:
 
     /* Seamless visual state holder constructor: */
-    UIVisualStateSeamless(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent, pSession, pActionsPool)
+    UIVisualStateSeamless(QObject *pParent, UISession *pSession)
+        : UIVisualState(pParent, pSession)
     {
         /* This visual state should take care of own action: */
-        QAction *pActionSeamless = m_pActionsPool->action(UIActionIndex_Toggle_Seamless);
+        QAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
         if (!pActionSeamless->isChecked())
         {
             pActionSeamless->blockSignals(true);
@@ -256,7 +254,7 @@ public:
     virtual ~UIVisualStateSeamless()
     {
         /* This visual state should take care of own action: */
-        QAction *pActionSeamless = m_pActionsPool->action(UIActionIndex_Toggle_Seamless);
+        QAction *pActionSeamless = gActionPool->action(UIActionIndexRuntime_Toggle_Seamless);
         if (pActionSeamless->isChecked())
         {
             pActionSeamless->blockSignals(true);
@@ -271,11 +269,11 @@ public:
     void change()
     {
         /* Connect action handlers: */
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToNormalMode()), Qt::QueuedConnection);
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToFullscreenMode()), Qt::QueuedConnection);
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Scale), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToScaleMode()), Qt::QueuedConnection);
 
         /* Initialize the logic object: */
@@ -310,11 +308,11 @@ class UIVisualStateScale : public UIVisualState
 public:
 
     /* Scale visual state holder constructor: */
-    UIVisualStateScale(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent, pSession, pActionsPool)
+    UIVisualStateScale(QObject *pParent, UISession *pSession)
+        : UIVisualState(pParent, pSession)
     {
         /* This visual state should take care of own action: */
-        QAction *pActionScale = m_pActionsPool->action(UIActionIndex_Toggle_Scale);
+        QAction *pActionScale = gActionPool->action(UIActionIndexRuntime_Toggle_Scale);
         if (!pActionScale->isChecked())
         {
             pActionScale->blockSignals(true);
@@ -328,7 +326,7 @@ public:
     virtual ~UIVisualStateScale()
     {
         /* This visual state should take care of own action: */
-        QAction *pActionScale = m_pActionsPool->action(UIActionIndex_Toggle_Scale);
+        QAction *pActionScale = gActionPool->action(UIActionIndexRuntime_Toggle_Scale);
         if (pActionScale->isChecked())
         {
             pActionScale->blockSignals(true);
@@ -343,11 +341,11 @@ public:
     void change()
     {
         /* Connect action handlers: */
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Scale), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Scale), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToNormalMode()), Qt::QueuedConnection);
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToFullscreenMode()), Qt::QueuedConnection);
-        connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
+        connect(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToSeamlessMode()), Qt::QueuedConnection);
 
         /* Initialize the logic object: */
@@ -380,22 +378,24 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     , m_ppThis(ppSelf)
     , initialStateType(UIVisualStateType_Normal)
     , m_session(session)
-    , m_pActionsPool(new UIActionsPool(this))
-    , m_pSession(new UISession(this, m_session))
+    , m_pSession(0)
     , m_pVisualState(0)
 {
-#ifdef DEBUG_poetzsch
-    printf("New code path\n");
-#endif /* DEBUG_poetzsch */
+    /* Storing self: */
+    if (m_ppThis)
+        *m_ppThis = this;
+
+    /* Create action pool: */
+    UIActionPoolRuntime::create();
+
+    /* Create UISession object: */
+    m_pSession = new UISession(this, m_session);
+
     /* Preventing application from closing in case of window(s) closed: */
     qApp->setQuitOnLastWindowClosed(false);
 
     /* Cache IMedium data: */
     vboxGlobal().startEnumeratingMedia();
-
-    /* Storing self: */
-    if (m_ppThis)
-        *m_ppThis = this;
 
     /* Load machine settings: */
     loadMachineSettings();
@@ -415,10 +415,11 @@ UIMachine::~UIMachine()
     m_pVisualState = 0;
     delete m_pSession;
     m_pSession = 0;
-    delete m_pActionsPool;
-    m_pActionsPool = 0;
     m_session.UnlockMachine();
     m_session.detach();
+    /* Destroy action pool: */
+    UIActionPoolRuntime::destroy();
+    /* Quit application: */
     QApplication::quit();
 }
 
@@ -441,25 +442,25 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualStateType)
         case UIVisualStateType_Normal:
         {
             /* Create normal visual state: */
-            pNewVisualState = new UIVisualStateNormal(this, m_pSession, m_pActionsPool);
+            pNewVisualState = new UIVisualStateNormal(this, m_pSession);
             break;
         }
         case UIVisualStateType_Fullscreen:
         {
             /* Create fullscreen visual state: */
-            pNewVisualState = new UIVisualStateFullscreen(this, m_pSession, m_pActionsPool);
+            pNewVisualState = new UIVisualStateFullscreen(this, m_pSession);
             break;
         }
         case UIVisualStateType_Seamless:
         {
             /* Create seamless visual state: */
-            pNewVisualState = new UIVisualStateSeamless(this, m_pSession, m_pActionsPool);
+            pNewVisualState = new UIVisualStateSeamless(this, m_pSession);
             break;
         }
         case UIVisualStateType_Scale:
         {
             /* Create scale visual state: */
-            pNewVisualState = new UIVisualStateScale(this, m_pSession, m_pActionsPool);
+            pNewVisualState = new UIVisualStateScale(this, m_pSession);
             break;
         }
         default:

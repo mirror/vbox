@@ -22,9 +22,6 @@
 /* Local includes */
 #include "UIMachineLogic.h"
 
-/* Local forwards */
-class UIActionsPool;
-
 class UIMachineLogicNormal : public UIMachineLogic
 {
     Q_OBJECT;
@@ -33,8 +30,7 @@ protected:
 
     /* Normal machine logic constructor/destructor: */
     UIMachineLogicNormal(QObject *pParent,
-                         UISession *pSession,
-                         UIActionsPool *pActionsPool);
+                         UISession *pSession);
     virtual ~UIMachineLogicNormal();
 
     void initialize();

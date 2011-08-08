@@ -29,7 +29,6 @@
 #include "VBoxUtils.h"
 
 #include "UISession.h"
-#include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowScale.h"

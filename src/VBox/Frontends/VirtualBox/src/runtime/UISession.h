@@ -41,7 +41,6 @@ typedef struct siginfo siginfo_t;
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
 
 /* Local forwards */
-class UIActionsPool;
 class UIFrameBuffer;
 class UIMachine;
 class UIMachineLogic;
@@ -88,7 +87,6 @@ public:
     /* Common getters: */
     CSession& session() { return m_session; }
     KMachineState machineState() const { return m_machineState; }
-    UIActionsPool* actionsPool() const;
     QWidget* mainMachineWindow() const;
     UIMachineLogic* machineLogic() const;
     QMenu* newMenu(UIMainMenuType fOptions = UIMainMenuType_All);

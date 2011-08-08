@@ -31,7 +31,6 @@ class QWidget;
 
 /* Local forwards */
 class UISession;
-class UIActionsPool;
 class UIVisualState;
 class UIMachineLogic;
 
@@ -64,7 +63,6 @@ private:
 
     /* Private getters: */
     UIMachineLogic* machineLogic() const;
-    UIActionsPool* actionsPool() const { return m_pActionsPool; }
 
     /* Prepare helpers: */
     void loadMachineSettings();
@@ -76,7 +74,6 @@ private:
     UIMachine **m_ppThis;
     UIVisualStateType initialStateType;
     CSession m_session;
-    UIActionsPool *m_pActionsPool;
     UISession *m_pSession;
     UIVisualState *m_pVisualState;
 

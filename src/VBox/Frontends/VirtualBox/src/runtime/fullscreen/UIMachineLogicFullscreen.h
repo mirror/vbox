@@ -23,7 +23,6 @@
 #include "UIMachineLogic.h"
 
 /* Local forwards */
-class UIActionsPool;
 class UIMultiScreenLayout;
 
 class UIMachineLogicFullscreen : public UIMachineLogic
@@ -34,8 +33,7 @@ protected:
 
     /* Fullscreen machine logic constructor/destructor: */
     UIMachineLogicFullscreen(QObject *pParent,
-                             UISession *pSession,
-                             UIActionsPool *pActionsPool);
+                             UISession *pSession);
     virtual ~UIMachineLogicFullscreen();
 
     bool checkAvailability();
