@@ -88,7 +88,7 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         context_destroy(This->device, This->context[i]);
     }
 #else
-    IWineD3DDevice_RemoveSwapChain(This->device, This);
+    IWineD3DDevice_RemoveSwapChain((IWineD3DDevice*)This->device, (IWineD3DSwapChain*)This);
     if (!This->device->NumberOfSwapChains)
 #endif
     {
@@ -108,7 +108,11 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
 #ifdef VBOX_WITH_WDDM
     if(This->device_window) {
         /* see VBoxExtGet/ReleaseDC for comments */
-        VBoxExtReleaseDC(This->device_window, This->hDC);
+        VBoxExtWndDestroy(This->device_window, This->hDC);
+    }
+    else
+    {
+        ERR("null device window");
     }
 #else
     HeapFree(GetProcessHeap(), 0, This->context);
@@ -691,7 +695,10 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
     BOOL displaymode_set = FALSE;
     WINED3DDISPLAYMODE mode;
     RECT client_rect;
-    HWND window;
+    HWND window = NULL;
+#ifdef VBOX_WITH_WDDM
+    HDC hDC = NULL;
+#endif
     HRESULT hr;
     UINT i;
 
@@ -723,7 +730,24 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
             return WINED3DERR_INVALIDCALL;
     }
 
+#ifdef VBOX_WITH_WDDM
+    if (present_parameters->hDeviceWindow)
+    {
+        ERR("non-null device window");
+        return E_FAIL;
+    }
+    hr = VBoxExtWndCreate(present_parameters->BackBufferWidth, present_parameters->BackBufferHeight, &window, &hDC);
+    if (FAILED(hr))
+    {
+        ERR("VBoxExtWndCreate failed, hr 0x%x", hr);
+        return hr;
+    }
+    Assert(window);
+    Assert(hDC);
+    present_parameters->hDeviceWindow = window;
+#else
     window = present_parameters->hDeviceWindow ? present_parameters->hDeviceWindow : device->createParms.hFocusWindow;
+#endif
 
     swapchain->device = device;
     swapchain->parent = parent;
@@ -732,15 +756,7 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
     swapchain->device_window = window;
 #ifdef VBOX_WITH_WDDM
     Assert(window);
-    /* see VBoxExtGet/ReleaseDC for comments */
-    swapchain->hDC = VBoxExtGetDC(window);
-    if (!swapchain->hDC)
-    {
-        DWORD winEr = GetLastError();
-        WARN("Failed to get a window DC, winEr %d.\n", winEr);
-        Assert(0);
-        goto err;
-    }
+    swapchain->hDC = hDC;
 #endif
 
     if (!present_parameters->Windowed && window)
@@ -847,7 +863,9 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
 
     if (surface_type == SURFACE_OPENGL)
     {
+#ifdef VBOX_WITH_WDDM
         struct wined3d_context * swapchainContext;
+#endif
         const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
 
         /* In WGL both color, depth and stencil are features of a pixel format. In case of D3D they are separate.
@@ -997,6 +1015,13 @@ err:
 #endif
 
     if (swapchain->frontBuffer) IWineD3DSurface_Release(swapchain->frontBuffer);
+
+#ifdef VBOX_WITH_WDDM
+    if (swapchain->device_window)
+    {
+        VBoxExtWndDestroy(swapchain->device_window, swapchain->hDC);
+    }
+#endif
 
     return hr;
 }

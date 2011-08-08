@@ -55,7 +55,6 @@ typedef struct VBOXWDDMDISP_ADAPTER
     UINT uIfVersion;
     UINT uRtVersion;
     VBOXDISPD3D D3D;
-    VBOXDISPWORKER WndWorker;
     IDirect3D9Ex * pD3D9If;
     D3DDDI_ADAPTERCALLBACKS RtCallbacks;
     uint32_t cFormstOps;
@@ -147,6 +146,10 @@ typedef struct VBOXWDDMDISP_SWAPCHAIN
     BOOL bRTFbCopyUpToDate;
 #endif
     IDirect3DSwapChain9 *pSwapChainIf;
+    /* a read-only hWnd we receive from wine
+     * we use it for visible region notifications only,
+     * it MUST NOT be destroyed on swapchain destruction,
+     * wine will handle that for us */
     HWND hWnd;
     VBOXDISP_KMHANDLE hSwapchainKm;
     VBOXWDDMDISP_RENDERTGT aRTs[VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE];
