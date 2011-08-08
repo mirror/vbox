@@ -690,7 +690,7 @@ protected:
 };
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
 class DockMenuAction : public UIMenuAction
 {
     Q_OBJECT;
