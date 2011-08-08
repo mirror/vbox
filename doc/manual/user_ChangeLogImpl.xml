@@ -105,6 +105,10 @@
           some applications (bugs #9276, #9315)</para>
       </listitem>
 
+      <listitem>
+        <para>Windows host: fixed icon for .VDI files (bug #9393)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
