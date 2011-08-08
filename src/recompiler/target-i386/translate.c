@@ -56,6 +56,9 @@
 #define CODE64(s) ((s)->code64)
 #define REX_X(s) ((s)->rex_x)
 #define REX_B(s) ((s)->rex_b)
+# ifdef VBOX
+#  define IS_LONG_MODE(s)   ((s)->lma)
+# endif
 /* XXX: gcc generates push/pop in some opcodes, so we cannot use them */
 #if 1
 #define BUGGY_64(x) NULL
@@ -66,6 +69,9 @@
 #define CODE64(s) 0
 #define REX_X(s) 0
 #define REX_B(s) 0
+# ifdef VBOX
+#  define IS_LONG_MODE(s)   0
+# endif
 #endif
 
 //#define MACRO_TEST   1
@@ -7289,8 +7295,9 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         /* For Intel SYSENTER is valid on 64-bit */
         if (CODE64(s) && cpu_single_env->cpuid_vendor1 != CPUID_VENDOR_INTEL_1)
 #else
-            /** @todo: make things right */
-        if (CODE64(s))
+        if (   !(cpu_single_env->cpuid_features & CPUID_SEP)
+            || (   IS_LONG_MODE(s)
+                && CPUMGetGuestCpuVendor(cpu_single_env->pVM) != CPUMCPUVENDOR_INTEL))
 #endif
             goto illegal_op;
         if (!s->pe) {
@@ -7307,8 +7314,9 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         /* For Intel SYSEXIT is valid on 64-bit */
         if (CODE64(s) && cpu_single_env->cpuid_vendor1 != CPUID_VENDOR_INTEL_1)
 #else
-        /** @todo: make things right */
-        if (CODE64(s))
+        if (   !(cpu_single_env->cpuid_features & CPUID_SEP)
+            || (   IS_LONG_MODE(s)
+                && CPUMGetGuestCpuVendor(cpu_single_env->pVM) != CPUMCPUVENDOR_INTEL))
 #endif
             goto illegal_op;
         if (!s->pe) {
