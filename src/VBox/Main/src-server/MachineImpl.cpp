@@ -9428,7 +9428,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                   true /* aImplicit */,
                                   false /* aPassthrough */,
                                   false /* aTempEject */,
-                                  false /* aNonRotational */,
+                                  pAtt->getNonRotational(),
                                   pAtt->getBandwidthGroup());
             if (FAILED(rc)) throw rc;
 
