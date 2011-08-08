@@ -29,27 +29,24 @@
 class QMenu;
 class QMenuBar;
 
-/* Local forwards */
-class UIActionsPool;
-
 class UIMachineMenuBar
 {
 public:
     UIMachineMenuBar();
 
-    QMenu* createMenu(UIActionsPool *pActionsPool, UIMainMenuType fOptions = UIMainMenuType_All);
-    QMenuBar* createMenuBar(UIActionsPool *pActionsPool, UIMainMenuType fOptions = UIMainMenuType_All);
+    QMenu* createMenu(UIMainMenuType fOptions = UIMainMenuType_All);
+    QMenuBar* createMenuBar(UIMainMenuType fOptions = UIMainMenuType_All);
 
 protected:
 
-    QList<QMenu*> prepareSubMenus(UIActionsPool *pActionsPool, UIMainMenuType fOptions = UIMainMenuType_All);
-    void prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsPool);
-    void prepareMenuView(QMenu *pMenu, UIActionsPool *pActionsPool);
-    void prepareMenuDevices(QMenu *pMenu, UIActionsPool *pActionsPool);
+    QList<QMenu*> prepareSubMenus(UIMainMenuType fOptions = UIMainMenuType_All);
+    void prepareMenuMachine(QMenu *pMenu);
+    void prepareMenuView(QMenu *pMenu);
+    void prepareMenuDevices(QMenu *pMenu);
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    void prepareMenuDebug(QMenu *pMenu, UIActionsPool *pActionsPool);
+    void prepareMenuDebug(QMenu *pMenu);
 #endif
-    void prepareMenuHelp(QMenu *pMenu, UIActionsPool *pActionsPool);
+    void prepareMenuHelp(QMenu *pMenu);
 
     bool m_fIsFirstTime;
 };

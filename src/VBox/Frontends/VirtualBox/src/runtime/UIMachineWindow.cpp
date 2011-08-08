@@ -31,7 +31,6 @@
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
-#include "UIActionsPool.h"
 #include "UIKeyboardHandler.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"

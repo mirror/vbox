@@ -23,7 +23,6 @@
 #include "UIMachineLogic.h"
 
 /* Local forwards */
-class UIActionsPool;
 class UIMultiScreenLayout;
 
 class UIMachineLogicSeamless : public UIMachineLogic
@@ -34,8 +33,7 @@ protected:
 
     /* Seamless machine logic constructor/destructor: */
     UIMachineLogicSeamless(QObject *pParent,
-                           UISession *pSession,
-                           UIActionsPool *pActionsPool);
+                           UISession *pSession);
     virtual ~UIMachineLogicSeamless();
 
     bool checkAvailability();

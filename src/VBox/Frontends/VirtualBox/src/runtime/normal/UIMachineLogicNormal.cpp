@@ -26,7 +26,7 @@
 #include "UIMessageCenter.h"
 
 #include "UISession.h"
-#include "UIActionsPool.h"
+#include "UIActionPoolRuntime.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineWindow.h"
 #include "UIDownloaderAdditions.h"
@@ -35,8 +35,8 @@
 #include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
 
-UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-    : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Normal)
+UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession)
+    : UIMachineLogic(pParent, pSession, UIVisualStateType_Normal)
 {
 }
 
@@ -107,7 +107,7 @@ void UIMachineLogicNormal::sltPrepareNetworkAdaptersMenu()
     QMenu *menu = qobject_cast<QMenu*>(sender());
     AssertMsg(menu, ("This slot should be called only on Network Adapters menu show!\n"));
     menu->clear();
-    menu->addAction(actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog));
+    menu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog));
 }
 
 void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
@@ -115,7 +115,7 @@ void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
     QMenu *menu = qobject_cast<QMenu*>(sender());
     AssertMsg(menu, ("This slot should be called only on Shared Folders menu show!\n"));
     menu->clear();
-    menu->addAction(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
+    menu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog));
 }
 
 void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
@@ -123,7 +123,7 @@ void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
     QMenu *menu = qobject_cast<QMenu*>(sender());
     AssertMsg(menu, ("This slot should be called only on Mouse Integration Menu show!\n"));
     menu->clear();
-    menu->addAction(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
+    menu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration));
 }
 
 void UIMachineLogicNormal::prepareActionConnections()
@@ -132,11 +132,11 @@ void UIMachineLogicNormal::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* This class connections: */
-    connect(actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->menu(), SIGNAL(aboutToShow()),
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_NetworkAdapters)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareNetworkAdaptersMenu()));
-    connect(actionsPool()->action(UIActionIndex_Menu_SharedFolders)->menu(), SIGNAL(aboutToShow()),
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareSharedFoldersMenu()));
-    connect(actionsPool()->action(UIActionIndex_Menu_MouseIntegration)->menu(), SIGNAL(aboutToShow()),
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_MouseIntegration)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareMouseIntegrationMenu()));
 }
 

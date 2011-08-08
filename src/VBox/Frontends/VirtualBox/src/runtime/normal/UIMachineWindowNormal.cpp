@@ -29,7 +29,7 @@
 #include "VBoxUtils.h"
 
 #include "UISession.h"
-#include "UIActionsPool.h"
+#include "UIActionPoolRuntime.h"
 #include "UIIndicatorsPool.h"
 #include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
@@ -234,33 +234,33 @@ void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndi
 {
     if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->isEnabled())
-            machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu()->exec(pEvent->globalPos());
+        if (gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices)->menu()->exec(pEvent->globalPos());
     }
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->isEnabled())
-            machineLogic()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->menu()->exec(pEvent->globalPos());
+        if (gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices)->menu()->exec(pEvent->globalPos());
     }
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_USBDevices))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->isEnabled())
-            machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu()->exec(pEvent->globalPos());
+        if (gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->menu()->exec(pEvent->globalPos());
     }
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->isEnabled())
-            machineLogic()->actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->menu()->exec(pEvent->globalPos());
+        if (gActionPool->action(UIActionIndexRuntime_Menu_NetworkAdapters)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_NetworkAdapters)->menu()->exec(pEvent->globalPos());
     }
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_SharedFolders)->isEnabled())
-            machineLogic()->actionsPool()->action(UIActionIndex_Menu_SharedFolders)->menu()->exec(pEvent->globalPos());
+        if (gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders)->menu()->exec(pEvent->globalPos());
     }
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_Mouse))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_MouseIntegration)->isEnabled())
-            machineLogic()->actionsPool()->action(UIActionIndex_Menu_MouseIntegration)->menu()->exec(pEvent->globalPos());
+        if (gActionPool->action(UIActionIndexRuntime_Menu_MouseIntegration)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_MouseIntegration)->menu()->exec(pEvent->globalPos());
     }
 }
 

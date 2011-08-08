@@ -26,7 +26,7 @@
 #include "UIMessageCenter.h"
 
 #include "UISession.h"
-#include "UIActionsPool.h"
+#include "UIActionPoolRuntime.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineWindowSeamless.h"
 #include "UIMultiScreenLayout.h"
@@ -35,8 +35,8 @@
 # include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
 
-UIMachineLogicSeamless::UIMachineLogicSeamless(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-    : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Seamless)
+UIMachineLogicSeamless::UIMachineLogicSeamless(QObject *pParent, UISession *pSession)
+    : UIMachineLogic(pParent, pSession, UIVisualStateType_Seamless)
 {
     m_pScreenLayout = new UIMultiScreenLayout(this);
 }
@@ -99,7 +99,7 @@ bool UIMachineLogicSeamless::checkAvailability()
      * VBoxGlobal::extractKeyFromActionText gets exactly the
      * linked key without the 'Host+' part we are adding it here. */
     QString hotKey = QString("Host+%1")
-        .arg(VBoxGlobal::extractKeyFromActionText(actionsPool()->action(UIActionIndex_Toggle_Seamless)->text()));
+        .arg(VBoxGlobal::extractKeyFromActionText(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless)->text()));
     Assert(!hotKey.isEmpty());
 
     /* Show the info message. */
@@ -163,16 +163,16 @@ void UIMachineLogicSeamless::prepareActionGroups()
     UIMachineLogic::prepareActionGroups();
 
     /* Guest auto-resize isn't allowed in seamless: */
-    actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setVisible(false);
+    gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setVisible(false);
 
     /* Adjust-window isn't allowed in seamless: */
-    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setVisible(false);
+    gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(false);
 
     /* Disable mouse-integration isn't allowed in seamless: */
-    actionsPool()->action(UIActionIndex_Toggle_MouseIntegration)->setVisible(false);
+    gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(false);
 
     /* Add the view menu: */
-    QMenu *pMenu = actionsPool()->action(UIActionIndex_Menu_View)->menu();
+    QMenu *pMenu = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
     m_pScreenLayout->initialize(pMenu);
     pMenu->setVisible(true);
 }
@@ -219,12 +219,12 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
 void UIMachineLogicSeamless::cleanupActionGroups()
 {
     /* Reenable guest-autoresize action: */
-    actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setVisible(true);
+    gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setVisible(true);
 
     /* Reenable adjust-window action: */
-    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setVisible(true);
+    gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow)->setVisible(true);
 
     /* Reenable mouse-integration action: */
-    actionsPool()->action(UIActionIndex_Toggle_MouseIntegration)->setVisible(true);
+    gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration)->setVisible(true);
 }
 

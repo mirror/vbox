@@ -278,6 +278,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/VBoxUtils.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIExtraDataEventHandler.h \
+	src/globals/UIActionPool.h \
 	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
@@ -359,7 +360,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/selector/VBoxSelectorWnd.h \
 	src/selector/VBoxSnapshotsWgt.h \
-	src/runtime/UIActionsPool.h \
+	src/runtime/UIActionPoolRuntime.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIIndicatorsPool.h \
 	src/runtime/UIKeyboardHandler.h \
@@ -394,12 +395,13 @@ VirtualBox_QT_MOCHDRS.darwin += \
 VirtualBox_QT_MOCSRCS = \
 	src/VBoxMediaManagerDlg.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
+	src/globals/UIActionPool.cpp \
 	src/extensions/QISplitter.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
-	src/runtime/UIActionsPool.cpp \
+	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineMenuBar.cpp \
@@ -447,6 +449,7 @@ VirtualBox_SOURCES = \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
 	src/globals/UIImageTools.cpp \
+	src/globals/UIActionPool.cpp \
 	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
@@ -530,7 +533,7 @@ VirtualBox_SOURCES = \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/selector/VBoxSelectorWnd.cpp \
 	src/selector/VBoxSnapshotsWgt.cpp \
-	src/runtime/UIActionsPool.cpp \
+	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIFrameBufferQGL.cpp \

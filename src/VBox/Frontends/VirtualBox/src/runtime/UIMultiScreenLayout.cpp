@@ -20,7 +20,7 @@
 /* Local includes */
 #include "UIMultiScreenLayout.h"
 #include "COMDefs.h"
-#include "UIActionsPool.h"
+#include "UIActionPoolRuntime.h"
 #include "UIMachineLogic.h"
 #include "UISession.h"
 #include "UIMessageCenter.h"
@@ -134,7 +134,7 @@ void UIMultiScreenLayout::update()
     }
 
     /* Get the list of all view-menu actions: */
-    QList<QAction*> viewMenuActions = m_pMachineLogic->actionsPool()->action(UIActionIndex_Menu_View)->menu()->actions();
+    QList<QAction*> viewMenuActions = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu()->actions();
     /* Get the list of all view related actions: */
     QList<QAction*> viewActions;
     for (int i = 0; i < viewMenuActions.size(); ++i)
@@ -238,7 +238,7 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
     }
 
     /* Get the list of all view-menu actions: */
-    QList<QAction*> viewMenuActions = m_pMachineLogic->actionsPool()->action(UIActionIndex_Menu_View)->menu()->actions();
+    QList<QAction*> viewMenuActions = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu()->actions();
     /* Get the list of all view related actions: */
     QList<QAction*> viewActions;
     for (int i = 0; i < viewMenuActions.size(); ++i)
