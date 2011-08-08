@@ -72,6 +72,11 @@
       </listitem>
 
       <listitem>
+        <para>NAT: changed TCP connection establisment according to Winsock API
+          requirements (Windows hosts only; bug #8919)</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxService: keep logged in user count in out-of-memory situations and
           warn about it</para>
       </listitem>
@@ -89,10 +94,6 @@
       <listitem>
         <para>Windows Additions: fixed file truncation on a shared folder with
           some applications (bugs #9276, #9315)</para>
-      </listitem>
-
-      <listitem>
-        <para>NAT: Changed TCP connection establisment according Winsock API requirements (bug #8919)</para>
       </listitem>
 
     </itemizedlist>
