@@ -9,6 +9,10 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: fixed 64-bit guests on AMD Fusion CPUs (bug #8824)</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: added linked clone support</para>
       </listitem>
 
