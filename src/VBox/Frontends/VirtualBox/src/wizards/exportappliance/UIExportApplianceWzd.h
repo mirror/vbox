@@ -192,7 +192,6 @@ private:
 
     ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
     void setApplianceWidget(const ExportAppliancePointer &pApplianceWidget) { m_pApplianceWidget = pApplianceWidget; }
-    ExportAppliancePointer m_pApplianceWidget;
 };
 
 

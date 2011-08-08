@@ -453,9 +453,6 @@ void UIExportApplianceWzdPage3::initializePage()
             strName = QDir::toNativeSeparators(QString("%1/%2").arg(vboxGlobal().documentsPath()).arg(strName));
         m_pFileSelector->setPath(strName);
     }
-    AssertMsg(!field("applianceWidget").value<ExportAppliancePointer>().isNull(),
-              ("Appliance Widget Pointer is not set!\n"));
-    field("applianceWidget").value<ExportAppliancePointer>()->prepareExport();
 }
 
 bool UIExportApplianceWzdPage3::isComplete() const
@@ -489,7 +486,6 @@ UIExportApplianceWzdPage4::UIExportApplianceWzdPage4()
 
     /* Register 'applianceWidget' field! */
     registerField("applianceWidget", this, "applianceWidget");
-    m_pApplianceWidget = m_pSettingsCnt;
 }
 
 void UIExportApplianceWzdPage4::retranslateUi()
@@ -526,7 +522,7 @@ bool UIExportApplianceWzdPage4::validatePage()
 bool UIExportApplianceWzdPage4::prepareSettingsWidget()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    CAppliance *appliance = m_pSettingsCnt->init();
+    CAppliance *appliance = m_pApplianceWidget->init();
     bool fResult = appliance->isOk();
     if (fResult)
     {
@@ -559,7 +555,7 @@ bool UIExportApplianceWzdPage4::prepareSettingsWidget()
                 break;
         }
         /* Make sure the settings widget get the new descriptions */
-        m_pSettingsCnt->populate();
+        m_pApplianceWidget->populate();
     }
     if (!fResult)
         msgCenter().cannotExportAppliance(appliance, this);
@@ -568,9 +564,10 @@ bool UIExportApplianceWzdPage4::prepareSettingsWidget()
 
 bool UIExportApplianceWzdPage4::exportAppliance()
 {
-    AssertMsg(!field("applianceWidget").value<ExportAppliancePointer>().isNull(),
-              ("Appliance Widget Pointer is not set!\n"));
-    CAppliance *appliance = field("applianceWidget").value<ExportAppliancePointer>()->appliance();
+    /* Fetch all settings from the appliance editor. */
+    m_pApplianceWidget->prepareExport();
+    /* Get the appliance. */
+    CAppliance *appliance = m_pApplianceWidget->appliance();
     /* We need to know every filename which will be created, so that we can
      * ask the user for confirmation of overwriting. For that we iterating
      * over all virtual systems & fetch all descriptions of the type

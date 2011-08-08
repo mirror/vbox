@@ -44,7 +44,7 @@
     </widget>
    </item>
    <item>
-    <widget class="VBoxExportApplianceWgt" name="m_pSettingsCnt" native="true">
+    <widget class="VBoxExportApplianceWgt" name="m_pApplianceWidget" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
