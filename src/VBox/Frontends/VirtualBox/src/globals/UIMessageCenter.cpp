@@ -2205,7 +2205,7 @@ void UIMessageCenter::cannotRunInSelectorMode()
 {
     message(mainWindowShown(), Critical,
         tr("<p>Cannot run VirtualBox in <i>VM Selector</i> "
-           "mode due to local refStrictions.</p>"
+           "mode due to local restrictions.</p>"
            "<p>The application will now terminate.</p>"));
 }
 
