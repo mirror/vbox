@@ -41,6 +41,8 @@ RT_C_DECLS_BEGIN
 
 /**
  * The Execution Manager State.
+ *
+ * @remarks This is used in the saved state!
  */
 typedef enum EMSTATE
 {
@@ -50,6 +52,8 @@ typedef enum EMSTATE
     EMSTATE_RAW,
     /** Hardware accelerated raw-mode execution. */
     EMSTATE_HWACC,
+    /** Value reserved for future use (used to be PARAV). */
+    EMSTATE_RESERVED,
     /** Recompiled mode execution. */
     EMSTATE_REM,
     /** Execution is halted. (waiting for interrupt) */
