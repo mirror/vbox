@@ -33,8 +33,13 @@
 
       <listitem>
         <para>Main: implemented new API calls <emphasis>IGuest::CopyFromGuest</emphasis>,
-        <emphasis>IGuest::FileExists</emphasis> and
-        <emphasis>IGuest::FileQuerySize</emphasis>.</para>
+          <emphasis>IGuest::FileExists</emphasis> and
+          <emphasis>IGuest::FileQuerySize</emphasis>.</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: return the correct RDP default port fixing settings
+          warnings in the GUI if the remote display was enabled at runtime (bug #9368)</para>
       </listitem>
 
       <listitem>
