@@ -192,7 +192,7 @@
 # include "DockIconPreview.h"
 #endif
 #include "VBoxAboutDlg.h"
-#include "VBoxApplianceEditorWgt.h"
+#include "UIApplianceEditorWidget.h"
 #include "VBoxCloseVMDlg.h"
 #ifdef Q_WS_MAC
 # include "VBoxCocoaHelper.h"

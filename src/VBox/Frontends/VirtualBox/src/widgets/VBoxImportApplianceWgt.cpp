@@ -31,7 +31,7 @@ public:
     ImportSortProxyModel (QObject *aParent = NULL)
       : VirtualSystemSortProxyModel (aParent)
     {
-        mFilterList << KVirtualSystemDescriptionType_License;
+        m_filterList << KVirtualSystemDescriptionType_License;
     }
 };
 
@@ -39,10 +39,10 @@ public:
 // VBoxImportApplianceWgt
 
 VBoxImportApplianceWgt::VBoxImportApplianceWgt (QWidget *aParent)
-    : VBoxApplianceEditorWgt (aParent)
+    : UIApplianceEditorWidget (aParent)
 {
     /* Show the MAC check box */
-    mReinitMACsCheckBox->setHidden(false);
+    m_pReinitMACsCheckBox->setHidden(false);
 }
 
 bool VBoxImportApplianceWgt::setFile (const QString& aFile)
@@ -53,13 +53,13 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
         CProgress progress;
         CVirtualBox vbox = vboxGlobal().virtualBox();
         /* Create a appliance object */
-        mAppliance = new CAppliance(vbox.CreateAppliance());
-        fResult = mAppliance->isOk();
+        m_pAppliance = new CAppliance(vbox.CreateAppliance());
+        fResult = m_pAppliance->isOk();
         if (fResult)
         {
             /* Read the appliance */
-            progress = mAppliance->Read (aFile);
-            fResult = mAppliance->isOk();
+            progress = m_pAppliance->Read (aFile);
+            fResult = m_pAppliance->isOk();
             if (fResult)
             {
                 /* Show some progress, so the user know whats going on */
@@ -69,42 +69,42 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
                 else
                 {
                     /* Now we have to interpret that stuff */
-                    mAppliance->Interpret();
-                    fResult = mAppliance->isOk();
+                    m_pAppliance->Interpret();
+                    fResult = m_pAppliance->isOk();
                     if (fResult)
                     {
-                        if (mModel)
-                            delete mModel;
+                        if (m_pModel)
+                            delete m_pModel;
 
-                        QVector<CVirtualSystemDescription> vsds = mAppliance->GetVirtualSystemDescriptions();
+                        QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
 
-                        mModel = new VirtualSystemModel (vsds, this);
+                        m_pModel = new VirtualSystemModel (vsds, this);
 
                         ImportSortProxyModel *proxy = new ImportSortProxyModel (this);
-                        proxy->setSourceModel (mModel);
+                        proxy->setSourceModel (m_pModel);
                         proxy->sort (DescriptionSection, Qt::DescendingOrder);
 
                         VirtualSystemDelegate *delegate = new VirtualSystemDelegate (proxy, this);
 
                         /* Set our own model */
-                        mTvSettings->setModel (proxy);
+                        m_pTvSettings->setModel (proxy);
                         /* Set our own delegate */
-                        mTvSettings->setItemDelegate (delegate);
+                        m_pTvSettings->setItemDelegate (delegate);
                         /* For now we hide the original column. This data is displayed as tooltip
                            also. */
-                        mTvSettings->setColumnHidden (OriginalValueSection, true);
-                        mTvSettings->expandAll();
+                        m_pTvSettings->setColumnHidden (OriginalValueSection, true);
+                        m_pTvSettings->expandAll();
 
                         /* Check for warnings & if there are one display them. */
                         bool fWarningsEnabled = false;
-                        QVector<QString> warnings = mAppliance->GetWarnings();
+                        QVector<QString> warnings = m_pAppliance->GetWarnings();
                         if (warnings.size() > 0)
                         {
                             foreach (const QString& text, warnings)
                                 mWarningTextEdit->append ("- " + text);
                             fWarningsEnabled = true;
                         }
-                        mWarningWidget->setShown (fWarningsEnabled);
+                        m_pWarningWidget->setShown (fWarningsEnabled);
                     }
                 }
             }
@@ -112,12 +112,12 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
         if (!fResult)
         {
             if (progress.isNull())
-                msgCenter().cannotImportAppliance(mAppliance, this);
+                msgCenter().cannotImportAppliance(m_pAppliance, this);
             else
-                msgCenter().cannotImportAppliance(progress, mAppliance, this);
+                msgCenter().cannotImportAppliance(progress, m_pAppliance, this);
             /* Delete the appliance in a case of an error */
-            delete mAppliance;
-            mAppliance = NULL;
+            delete m_pAppliance;
+            m_pAppliance = NULL;
         }
     }
     return fResult;
@@ -125,21 +125,21 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
 
 void VBoxImportApplianceWgt::prepareImport()
 {
-    if (mAppliance)
-        mModel->putBack();
+    if (m_pAppliance)
+        m_pModel->putBack();
 }
 
 bool VBoxImportApplianceWgt::import()
 {
-    if (mAppliance)
+    if (m_pAppliance)
     {
         /* Start the import asynchronously */
         CProgress progress;
         QVector<KImportOptions> options;
-        if (!mReinitMACsCheckBox->isChecked())
+        if (!m_pReinitMACsCheckBox->isChecked())
             options.append(KImportOptions_KeepAllMACs);
-        progress = mAppliance->ImportMachines(options);
-        bool fResult = mAppliance->isOk();
+        progress = m_pAppliance->ImportMachines(options);
+        bool fResult = m_pAppliance->isOk();
         if (fResult)
         {
             /* Show some progress, so the user know whats going on */
@@ -148,14 +148,14 @@ bool VBoxImportApplianceWgt::import()
                 return false;
             if (!progress.isOk() || progress.GetResultCode() != 0)
             {
-                msgCenter().cannotImportAppliance (progress, mAppliance, this);
+                msgCenter().cannotImportAppliance (progress, m_pAppliance, this);
                 return false;
             }
             else
                 return true;
         }
         if (!fResult)
-            msgCenter().cannotImportAppliance (mAppliance, this);
+            msgCenter().cannotImportAppliance (m_pAppliance, this);
     }
     return false;
 }
@@ -164,7 +164,7 @@ QList < QPair<QString, QString> > VBoxImportApplianceWgt::licenseAgreements() co
 {
     QList < QPair<QString, QString> > list;
 
-    CVirtualSystemDescriptionVector vsds = mAppliance->GetVirtualSystemDescriptions();
+    CVirtualSystemDescriptionVector vsds = m_pAppliance->GetVirtualSystemDescriptions();
     for (int i=0; i < vsds.size(); ++i)
     {
         QVector<QString> license;

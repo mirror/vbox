@@ -19,9 +19,9 @@
 #ifndef __VBoxExportApplianceWgt_h__
 #define __VBoxExportApplianceWgt_h__
 
-#include "VBoxApplianceEditorWgt.h"
+#include "UIApplianceEditorWidget.h"
 
-class VBoxExportApplianceWgt : public VBoxApplianceEditorWgt
+class VBoxExportApplianceWgt : public UIApplianceEditorWidget
 {
     Q_OBJECT;
 

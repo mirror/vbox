@@ -5447,7 +5447,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxApplianceEditorWgt</name>
+    <name>UIApplianceEditorWidget</name>
     <message>
         <source>Virtual System %1</source>
         <translation>가상 시스템 %1</translation>

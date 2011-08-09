@@ -5336,7 +5336,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxApplianceEditorWgt</name>
+    <name>UIApplianceEditorWidget</name>
     <message>
         <source>Virtual System %1</source>
         <translation>Sistema Virtual %1</translation>
