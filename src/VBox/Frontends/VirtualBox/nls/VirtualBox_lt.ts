@@ -7538,7 +7538,7 @@ IPv6.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>&amp;Keisti</translation>
@@ -9782,7 +9782,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Redaguoti tekstą</translation>

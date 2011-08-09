@@ -7120,7 +7120,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>&amp;Editar</translation>
@@ -9222,7 +9222,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Editar texto</translation>

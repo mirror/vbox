@@ -9464,7 +9464,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>&amp;Modifica</translation>
@@ -12337,7 +12337,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Modifica testo</translation>

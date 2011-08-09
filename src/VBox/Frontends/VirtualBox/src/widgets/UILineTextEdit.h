@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxLineTextEdit class declaration
+ * UILineTextEdit class declaration
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxLineTextEdit_h__
-#define __VBoxLineTextEdit_h__
+#ifndef __UILineTextEdit_h__
+#define __UILineTextEdit_h__
 
 /* VBox includes */
 #include "QIDialog.h"
@@ -31,16 +31,16 @@ class QTextEdit;
 class QDialogButtonBox;
 
 ////////////////////////////////////////////////////////////////////////////////
-// VBoxTextEditor
+// UITextEditor
 
-class VBoxTextEditor: public QIWithRetranslateUI<QIDialog>
+class UITextEditor: public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 
 public:
-    VBoxTextEditor (QWidget *aParent = NULL);
+    UITextEditor(QWidget *pParent = NULL);
 
-    void setText (const QString& aText);
+    void setText(const QString& strText);
     QString text() const;
 
 protected:
@@ -51,23 +51,23 @@ private slots:
 
 private:
     /* Private member vars */
-    QTextEdit *mTextEdit;
-    QDialogButtonBox *mButtonBox;
-    QPushButton *mOpenBtn;
+    QTextEdit        *m_pTextEdit;
+    QDialogButtonBox *m_pButtonBox;
+    QPushButton      *m_pOpenButton;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// VBoxLineTextEdit
+// UILineTextEdit
 
-class VBoxLineTextEdit: public QIWithRetranslateUI<QPushButton>
+class UILineTextEdit: public QIWithRetranslateUI<QPushButton>
 {
     Q_OBJECT;
 
 public:
-    VBoxLineTextEdit (QWidget *aParent = NULL);
+    UILineTextEdit(QWidget *pParent = NULL);
 
-    void setText (const QString& aText) { mText = aText; }
-    QString text() const { return mText; }
+    void setText(const QString& strText) { m_strText = strText; }
+    QString text() const { return m_strText; }
 
 protected:
     void retranslateUi();
@@ -77,8 +77,8 @@ private slots:
 
 private:
     /* Private member vars */
-    QString mText;
+    QString m_strText;
 };
 
-#endif /* __VBoxLineTextEdit_h__ */
+#endif /* __UILineTextEdit_h__ */
 

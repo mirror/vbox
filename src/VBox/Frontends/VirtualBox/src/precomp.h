@@ -221,7 +221,7 @@
 #include "VBoxImportApplianceWgt.h"
 #include "VBoxImportApplianceWzd.h"
 #include "VBoxLicenseViewer.h"
-#include "VBoxLineTextEdit.h"
+#include "UILineTextEdit.h"
 //#include "VBoxMediaComboBox.h"
 #include "VBoxMediaManagerDlg.h"
 //#include "VBoxMedium.h"               /* Expensive? Or what? */

@@ -9372,7 +9372,7 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>&amp;Editar</translation>
@@ -12211,7 +12211,7 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Editar texto</translation>

@@ -7507,7 +7507,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>B&amp;ewerken</translation>
@@ -9703,7 +9703,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Tekst wijzigen</translation>

@@ -8337,7 +8337,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>R&amp;edigera</translation>
@@ -10740,7 +10740,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Redigera text</translation>

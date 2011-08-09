@@ -9210,7 +9210,7 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>Mo&amp;difică</translation>
@@ -11988,7 +11988,7 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Modifică text</translation>

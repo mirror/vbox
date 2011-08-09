@@ -9411,7 +9411,7 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>&amp;Edita</translation>
@@ -12214,7 +12214,7 @@ per accedir a ella des d&apos;un sistema Linux. Aquesta característica requerei
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Edita el text</translation>

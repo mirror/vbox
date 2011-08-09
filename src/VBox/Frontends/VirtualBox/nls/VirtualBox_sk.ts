@@ -8473,7 +8473,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>&amp;Upraviť</translation>
@@ -10982,7 +10982,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Upraviť text</translation>

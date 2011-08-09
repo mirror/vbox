@@ -9594,7 +9594,7 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>&amp;Editar</translation>
@@ -12450,7 +12450,7 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Editar texto</translation>

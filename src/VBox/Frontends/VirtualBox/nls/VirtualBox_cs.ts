@@ -8897,7 +8897,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>&amp;Upravit</translation>
@@ -11575,7 +11575,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Upravit text</translation>

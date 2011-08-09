@@ -9312,7 +9312,7 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>&amp;Edycja</translation>
@@ -12016,7 +12016,7 @@ Uwaga: funkcja ta wymaga zainstalowania Dodatków (Guest Additions).&lt;/qt&gt;<
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Edycja tekstu</translation>

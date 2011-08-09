@@ -22,7 +22,7 @@
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "VBoxOSTypeSelectorButton.h"
-#include "VBoxLineTextEdit.h"
+#include "UILineTextEdit.h"
 
 /* Qt includes */
 #include <QItemDelegate>
@@ -409,7 +409,7 @@ QWidget * HardwareItem::createEditor (QWidget *aParent, const QStyleOptionViewIt
             case KVirtualSystemDescriptionType_Description:
             case KVirtualSystemDescriptionType_License:
                 {
-                    VBoxLineTextEdit *e = new VBoxLineTextEdit (aParent);
+                    UILineTextEdit *e = new UILineTextEdit (aParent);
                     editor = e;
                     break;
                 }
@@ -531,7 +531,7 @@ bool HardwareItem::setEditorData (QWidget *aEditor, const QModelIndex & /* aInde
         case KVirtualSystemDescriptionType_Description:
         case KVirtualSystemDescriptionType_License:
             {
-                if (VBoxLineTextEdit *e = qobject_cast<VBoxLineTextEdit*> (aEditor))
+                if (UILineTextEdit *e = qobject_cast<UILineTextEdit*> (aEditor))
                 {
                     e->setText (mConfigValue);
                     fDone = true;
@@ -648,7 +648,7 @@ bool HardwareItem::setModelData (QWidget *aEditor, QAbstractItemModel *aModel, c
         case KVirtualSystemDescriptionType_Description:
         case KVirtualSystemDescriptionType_License:
             {
-                if (VBoxLineTextEdit *e = qobject_cast<VBoxLineTextEdit*> (aEditor))
+                if (UILineTextEdit *e = qobject_cast<UILineTextEdit*> (aEditor))
                 {
                     mConfigValue = e->text();
                     fDone = true;
@@ -976,7 +976,7 @@ bool VirtualSystemDelegate::eventFilter (QObject *aObject, QEvent *aEvent)
             return false;
         /* The same counts for the text edit buttons of the license or
          * description fields. */
-        else if (qobject_cast<VBoxLineTextEdit*> (aObject))
+        else if (qobject_cast<UILineTextEdit*> (aObject))
             return false;
     }
 
