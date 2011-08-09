@@ -353,7 +353,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxOSTypeSelectorButton.h \
 	src/widgets/VBoxOSTypeSelectorWidget.h \
 	src/widgets/VBoxWarningPane.h \
-	src/selector/UIActionPoolOffline.h \
+	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVMDesktop.h \
 	src/selector/UIVMListView.h \
 	src/selector/UIVMPreviewWindow.h \
@@ -398,7 +398,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIExtraDataEventHandler.cpp \
 	src/globals/UIActionPool.cpp \
 	src/extensions/QISplitter.cpp \
-	src/selector/UIActionPoolOffline.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
@@ -526,7 +525,7 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
 	src/widgets/VBoxOSTypeSelectorWidget.cpp \
 	src/widgets/VBoxWarningPane.cpp \
-	src/selector/UIActionPoolOffline.cpp \
+	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UISelectorShortcuts.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/selector/UIVMItem.cpp \
