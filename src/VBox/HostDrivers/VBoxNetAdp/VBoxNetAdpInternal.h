@@ -127,8 +127,9 @@ struct VBoxNetAdapter
 # endif
         } s;
 #endif
-        /** Padding + union alignment to a pointer. */
+        /** Union alignment to a pointer. */
         void *pvAlign;
+        /** Padding. */
 #if defined(RT_OS_WINDOWS)
 # if defined(VBOX_NETFLT_ONDEMAND_BIND)
         uint8_t abPadding[192];
