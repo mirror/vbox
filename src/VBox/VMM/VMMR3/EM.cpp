@@ -1577,21 +1577,26 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
         /*
          * The instruction following an emulated STI should *always* be executed!
+         * 
+         * Note! We intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if
+         *       the eip is the same as the inhibited instr address.  Before we
+         *       are able to execute this instruction in raw mode (iret to
+         *       guest code) an external interrupt might force a world switch
+         *       again.  Possibly allowing a guest interrupt to be dispatched
+         *       in the process.  This could break the guest.  Sounds very
+         *       unlikely, but such timing sensitive problem are not as rare as
+         *       you might think.
          */
         if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
             Log(("VMCPU_FF_INHIBIT_INTERRUPTS at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVCpu)));
             if (CPUMGetGuestRIP(pVCpu) != EMGetInhibitInterruptsPC(pVCpu))
-            {
-                /* Note: we intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if the eip is the same as the inhibited instr address.
-                 *  Before we are able to execute this instruction in raw mode (iret to guest code) an external interrupt might
-                 *  force a world switch again. Possibly allowing a guest interrupt to be dispatched in the process. This could
-                 *  break the guest. Sounds very unlikely, but such timing sensitive problem are not as rare as you might think.
-                 */
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-            }
-            if (HWACCMR3IsActive(pVCpu))
+
+            if (EMIsSupervisorCodeRecompiled(pVM))
+                rc2 = VINF_EM_RESCHEDULE_REM;
+            else if (HWACCMR3IsActive(pVCpu))
                 rc2 = VINF_EM_RESCHEDULE_HWACC;
             else
                 rc2 = PATMAreInterruptsEnabled(pVM) ? VINF_EM_RESCHEDULE_RAW : VINF_EM_RESCHEDULE_REM;
@@ -1841,9 +1846,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK)))
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
-                if (    (   rc == VINF_EM_RESCHEDULE_REM
-                         || rc == VINF_EM_RESCHEDULE_HWACC)
-                    &&  pVCpu->em.s.fForceRAW)
+                if (   (   rc == VINF_EM_RESCHEDULE_REM
+                        || rc == VINF_EM_RESCHEDULE_HWACC)
+                    && pVCpu->em.s.fForceRAW)
                     rc = VINF_EM_RESCHEDULE_RAW;
             }
             else if (fFFDone)

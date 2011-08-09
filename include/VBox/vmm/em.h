@@ -139,7 +139,17 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
  * @returns false if disabled.
  * @param   pVM         The VM to operate on.
  */
-#define EMIsHwVirtExecutionEnabled(pVM) (!(pVM)->fRecompileSupervisor && !(pVM)->fRecompileSupervisor)
+#define EMIsHwVirtExecutionEnabled(pVM) (!(pVM)->fRecompileSupervisor && !(pVM)->fRecompileUser)
+
+/**
+ * Checks if execution of supervisor code should be done in the 
+ * recompiler or not. 
+ *
+ * @returns true if enabled.
+ * @returns false if disabled.
+ * @param   pVM         The VM to operate on.
+ */
+#define EMIsSupervisorCodeRecompiled(pVM) ((pVM)->fRecompileSupervisor)
 
 VMMDECL(void)           EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC);
 VMMDECL(RTGCUINTPTR)    EMGetInhibitInterruptsPC(PVMCPU pVCpu);
