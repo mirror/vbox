@@ -85,4 +85,50 @@ esac
 
 cleanup_test_input_install_udev
 
+echo "Testing device node setup"
+
+unset INSTALL_NO_GROUP
+unset INSTALL_NO_UDEV
+setup_test_input_install_device_node_setup vboxusers 0660 /opt/VirtualBox \
+                                           vboxusb
+
+command="install_device_node_setup vboxusers 0660 /opt/VirtualBox vboxusb"
+err="`${command} 2>&1`"
+test -n "${err}" && {
+    echo "${command} failed."
+    echo "Error: ${err}"
+    CERRS="`expr "$CERRS" + 1`"
+}
+
+cleanup_test_input_install_device_node_setup
+
+INSTALL_NO_GROUP=1
+unset INSTALL_NO_UDEV
+setup_test_input_install_device_node_setup root 0660 /opt/VirtualBox root
+
+command="install_device_node_setup vboxusers 0660 /opt/VirtualBox vboxusb"
+err="`${command} 2>&1`"
+test -n "${err}" && {
+    echo "${command} failed."
+    echo "Error: ${err}"
+    CERRS="`expr "$CERRS" + 1`"
+}
+
+cleanup_test_input_install_device_node_setup
+
+unset INSTALL_NO_GROUP
+INSTALL_NO_UDEV=1
+setup_test_input_install_device_node_setup vboxusers 0660 /opt/VirtualBox \
+                                           vboxusb
+
+command="install_device_node_setup vboxusers 0660 /opt/VirtualBox vboxusb"
+err="`${command} 2>&1`"
+test -n "${err}" && {
+    echo "${command} failed."
+    echo "Error: ${err}"
+    CERRS="`expr "$CERRS" + 1`"
+}
+
+cleanup_test_input_install_device_node_setup
+
 echo "Done.  Error count $CERRS."

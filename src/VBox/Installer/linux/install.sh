@@ -441,20 +441,7 @@ if [ "$ACTION" = "install" ]; then
       maybe_run_python_bindings_installer $INSTALLATION_DIR
     fi
 
-    # Create udev description file
-    install_udev "$VBOXDRV_GRP" "$VBOXDRV_MODE" "$INSTALLATION_DIR" \
-        > /etc/udev/rules.d/10-vboxdrv.rules
-
-    # Build our device tree
-    for i in /sys/bus/usb/devices/*; do
-        if test -r "$i/dev"; then
-            dev="`cat "$i/dev" 2> /dev/null`"
-            major="`expr "$dev" : '\(.*\):' 2> /dev/null`"
-            minor="`expr "$dev" : '.*:\(.*\)' 2> /dev/null`"
-            class="`cat $i/bDeviceClass 2> /dev/null`"
-            sh "$INSTALLATION_DIR/VBoxCreateUSBNode.sh" "$major" "$minor" "$class" 2>/dev/null
-        fi
-    done
+    install_device_node_setup "$VBOXDRV_GRP" "$VBOXDRV_MODE" "$INSTALLATION_DIR"
 
     # Write the configuration. Do this before we call /etc/init.d/vboxdrv setup!
     echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
