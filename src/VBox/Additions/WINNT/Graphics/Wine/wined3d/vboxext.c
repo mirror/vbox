@@ -240,11 +240,30 @@ static HRESULT vboxExtTerm()
     return hr;
 }
 
+/* wine serializes all calls to us, so no need for any synchronization here */
 static DWORD g_cVBoxExtInits = 0;
+
+static DWORD vboxExtAddRef()
+{
+    return ++g_cVBoxExtInits;
+}
+
+static DWORD vboxExtRelease()
+{
+    DWORD cVBoxExtInits = --g_cVBoxExtInits;
+    Assert(cVBoxExtInits < UINT32_MAX/2);
+    return cVBoxExtInits;
+}
+
+static DWORD vboxExtGetRef()
+{
+    return g_cVBoxExtInits;
+}
+
 HRESULT VBoxExtCheckInit()
 {
     HRESULT hr = S_OK;
-    if (!g_cVBoxExtInits)
+    if (!vboxExtGetRef())
     {
         hr = vboxExtInit();
         if (FAILED(hr))
@@ -253,14 +272,14 @@ HRESULT VBoxExtCheckInit()
             return hr;
         }
     }
-    ++g_cVBoxExtInits;
+    vboxExtAddRef();
     return S_OK;
 }
 
 HRESULT VBoxExtCheckTerm()
 {
     HRESULT hr = S_OK;
-    if (g_cVBoxExtInits == 1)
+    if (vboxExtGetRef() == 1)
     {
         hr = vboxExtTerm();
         if (FAILED(hr))
@@ -269,7 +288,7 @@ HRESULT VBoxExtCheckTerm()
             return hr;
         }
     }
-    --g_cVBoxExtInits;
+    vboxExtRelease();
     return S_OK;
 }
 
@@ -414,6 +433,8 @@ HRESULT vboxExtWndDoCreate(DWORD w, DWORD h, HWND *phWnd, HDC *phDC)
         {
             *phWnd = hWnd;
             *phDC = GetDC(hWnd);
+            /* make sure we keep inited until the window is active */
+            vboxExtAddRef();
         }
         else
         {
@@ -434,7 +455,11 @@ static HRESULT vboxExtWndDoDestroy(HWND hWnd, HDC hDC)
     bResult = DestroyWindow(hWnd);
     Assert(bResult);
     if (bResult)
+    {
+        /* release the reference we previously acquired on window creation */
+        vboxExtRelease();
         return S_OK;
+    }
 
     winErr = GetLastError();
     ERR("DestroyWindow failed, winErr(%d) for hWnd(0x%x)\n", winErr, hWnd);
