@@ -469,7 +469,7 @@ void QIMessageBox::copy() const
 {
     /* Create the error string with all errors. First the html version. */
     QString strError = "<html><body><p>" + mText + "</p>";
-    for (size_t i = 0; i < mDetailsList.size(); ++i)
+    for (int i = 0; i < mDetailsList.size(); ++i)
         strError += mDetailsList.at(i).first + mDetailsList.at(i).second + "<br>";
     strError += "</body></html>";
     strError.remove(QRegExp("</+qt>"));
