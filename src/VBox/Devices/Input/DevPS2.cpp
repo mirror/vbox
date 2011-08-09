@@ -198,6 +198,7 @@ typedef struct KBDState {
     uint8_t write_cmd; /* if non zero, write data to port 60 is expected */
     uint8_t status;
     uint8_t mode;
+    uint8_t dbbout;    /* data buffer byte */
     /* keyboard state */
     int32_t kbd_write_cmd;
     int32_t scan_enabled;
@@ -310,13 +311,31 @@ static void kbd_update_irq(KBDState *s)
     if (!(s->status & KBD_STAT_OBF)) {
         s->status &= ~KBD_STAT_MOUSE_OBF;
         /* Keyboard data has priority if both kbd and aux data is available. */
-        if (q->count != 0)
+        if (q->count && !(s->mode & KBD_MODE_DISABLE_KBD))
         {
             s->status |= KBD_STAT_OBF;
+            s->dbbout = q->data[q->rptr];
+            if (++q->rptr == KBD_QUEUE_SIZE)
+                q->rptr = 0;
+            q->count--;
         }
-        else if (mcq->count != 0 || meq->count != 0)
+        else if ((mcq->count || meq->count) /*&& !(s->mode & KBD_MODE_DISABLE_MOUSE)*/)
         {
             s->status |= KBD_STAT_OBF | KBD_STAT_MOUSE_OBF;
+            if (mcq->count)
+            {
+                s->dbbout = mcq->data[mcq->rptr];
+                if (++mcq->rptr == MOUSE_CMD_QUEUE_SIZE)
+                    mcq->rptr = 0;
+                mcq->count--;
+            }
+            else
+            {
+                s->dbbout = meq->data[meq->rptr];
+                if (++meq->rptr == MOUSE_EVENT_QUEUE_SIZE)
+                    meq->rptr = 0;
+                meq->count--;
+            }
         }
     }
     /* Determine new IRQ state. */
@@ -403,6 +422,17 @@ static void pc_kbd_put_keycode(void *opaque, int keycode)
 }
 #endif /* IN_RING3 */
 
+static void kbc_dbb_out(void *opaque, uint8_t val)
+{
+    KBDState *s = (KBDState*)opaque;
+
+    s->dbbout = val;
+    /* Set the OBF and raise IRQ. */
+    s->status |= KBD_STAT_OBF;
+    if (s->mode & KBD_MODE_KBD_INT)
+        PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 1, 1);
+}
+
 static uint32_t kbd_read_status(void *opaque, uint32_t addr)
 {
     KBDState *s = (KBDState*)opaque;
@@ -424,7 +454,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 #endif
     switch(val) {
     case KBD_CCMD_READ_MODE:
-        kbd_queue(s, s->mode, 0);
+        kbc_dbb_out(s, s->mode);
         break;
     case KBD_CCMD_WRITE_MODE:
     case KBD_CCMD_WRITE_OBUF:
@@ -438,27 +468,40 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         break;
     case KBD_CCMD_MOUSE_ENABLE:
         s->mode &= ~KBD_MODE_DISABLE_MOUSE;
+        /* Check for queued input. */
+        kbd_update_irq(s);
         break;
     case KBD_CCMD_TEST_MOUSE:
-        kbd_queue(s, 0x00, 0);
+        kbc_dbb_out(s, 0x00);
         break;
     case KBD_CCMD_SELF_TEST:
+        /* Enable the A20 line - that is the power-on state(!). */
+# ifndef IN_RING3
+        if (!PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
+        {
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+            break;
+        }
+# else /* IN_RING3 */
+        PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), true);
+# endif /* IN_RING3 */
         s->status |= KBD_STAT_SELFTEST;
-        kbd_queue(s, 0x55, 0);
+        s->mode |= KBD_MODE_DISABLE_KBD;
+        kbc_dbb_out(s, 0x55);
         break;
     case KBD_CCMD_KBD_TEST:
-        kbd_queue(s, 0x00, 0);
+        kbc_dbb_out(s, 0x00);
         break;
     case KBD_CCMD_KBD_DISABLE:
         s->mode |= KBD_MODE_DISABLE_KBD;
-        kbd_update_irq(s);
         break;
     case KBD_CCMD_KBD_ENABLE:
         s->mode &= ~KBD_MODE_DISABLE_KBD;
+        /* Check for queued input. */
         kbd_update_irq(s);
         break;
     case KBD_CCMD_READ_INPORT:
-        kbd_queue(s, 0x00, 0);
+        kbc_dbb_out(s, 0x00);
         break;
     case KBD_CCMD_READ_OUTPORT:
         /* XXX: check that */
@@ -471,7 +514,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
             val |= 0x10;
         if (s->status & KBD_STAT_MOUSE_OBF)
             val |= 0x20;
-        kbd_queue(s, val, 0);
+        kbc_dbb_out(s, val);
         break;
 #ifdef TARGET_I386
     case KBD_CCMD_ENABLE_A20:
@@ -494,7 +537,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
     case KBD_CCMD_READ_TSTINP:
         /* Keyboard clock line is zero IFF keyboard is disabled */
         val = (s->mode & KBD_MODE_DISABLE_KBD) ? 0 : 1;
-        kbd_queue(s, val, 0);
+        kbc_dbb_out(s, val);
         break;
     case KBD_CCMD_RESET:
 #ifndef IN_RING3
@@ -515,7 +558,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
     case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
     case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37:
     case 0x38: case 0x39: case 0x3a: case 0x3b: case 0x3c: case 0x3d: case 0x3e: case 0x3f:
-        kbd_queue(s, 0, 0);
+        kbc_dbb_out(s, 0);
         Log(("kbd: reading non-standard RAM addr %#x\n", val & 0x1f));
         break;
     default:
@@ -528,57 +571,20 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 static uint32_t kbd_read_data(void *opaque, uint32_t addr)
 {
     KBDState *s = (KBDState*)opaque;
-    KBDQueue *q;
-    MouseCmdQueue *mcq;
-    MouseEventQueue *meq;
-    int val, index, aux;
+    uint32_t val;
 
-    q = &s->queue;
-    mcq = &s->mouse_command_queue;
-    meq = &s->mouse_event_queue;
-    if (q->count == 0 && mcq->count == 0 && meq->count == 0) {
-        /* NOTE: if no data left, we return the last keyboard one
-           (needed for EMM386) */
-        /* XXX: need a timer to do things correctly */
-        index = q->rptr - 1;
-        if (index < 0)
-            index = KBD_QUEUE_SIZE - 1;
-        val = q->data[index];
-    } else {
-        aux = (s->status & KBD_STAT_MOUSE_OBF);
-        if (!aux)
-        {
-            val = q->data[q->rptr];
-            if (++q->rptr == KBD_QUEUE_SIZE)
-                q->rptr = 0;
-            q->count--;
-        }
-        else
-        {
-            if (mcq->count)
-            {
-                val = mcq->data[mcq->rptr];
-                if (++mcq->rptr == MOUSE_CMD_QUEUE_SIZE)
-                    mcq->rptr = 0;
-                mcq->count--;
-            }
-            else
-            {
-                val = meq->data[meq->rptr];
-                if (++meq->rptr == MOUSE_EVENT_QUEUE_SIZE)
-                    meq->rptr = 0;
-                meq->count--;
-            }
-        }
-        /* reading deasserts IRQ */
-        if (aux)
-            PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, 0);
-        else
-            PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 1, 0);
-        /* Reading data clears the OBF bits, too. */
-        s->status &= ~(KBD_STAT_OBF | KBD_STAT_MOUSE_OBF);
-    }
-    /* reassert IRQs if data left */
+    /* Return the current DBB contents. */
+    val = s->dbbout;
+
+    /* Reading the DBB deasserts IRQs... */
+    if (s->status & KBD_STAT_MOUSE_OBF)
+        PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 12, 0);
+    else
+        PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), 1, 0);
+    /* ...and clears the OBF bits. */
+    s->status &= ~(KBD_STAT_OBF | KBD_STAT_MOUSE_OBF);
+
+    /* Check if more data is available. */
     kbd_update_irq(s);
 #ifdef DEBUG_KBD
     Log(("kbd: read data=0x%02x\n", val));
@@ -590,6 +596,10 @@ static void kbd_reset_keyboard(KBDState *s)
 {
     s->scan_enabled = 1;
     s->scancode_set = 2;
+    /* Flush the keyboard queue. */
+    s->queue.count = 0;
+    s->queue.rptr = 0;
+    s->queue.wptr = 0;
 }
 
 static int  kbd_write_keyboard(KBDState *s, int val)
@@ -1054,6 +1064,8 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
 
     switch(s->write_cmd) {
     case 0:
+        /* Automatically enables keyboard interface. */
+        s->mode &= ~KBD_MODE_DISABLE_KBD;
         rc = kbd_write_keyboard(s, val);
         break;
     case KBD_CCMD_WRITE_MODE:
