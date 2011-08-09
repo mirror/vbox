@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -127,7 +127,8 @@ struct VBoxNetAdapter
 # endif
         } s;
 #endif
-        /** Padding. */
+        /** Padding + union alignment to a pointer. */
+        void *pvAlign;
 #if defined(RT_OS_WINDOWS)
 # if defined(VBOX_NETFLT_ONDEMAND_BIND)
         uint8_t abPadding[192];
@@ -145,6 +146,10 @@ struct VBoxNetAdapter
 };
 typedef struct VBoxNetAdapter VBOXNETADP;
 typedef VBOXNETADP *PVBOXNETADP;
+/* Paranoia checks for alignment and padding. */
+AssertCompileMemberAlignment(VBOXNETADP, u, ARCH_BITS/8);
+AssertCompileMemberAlignment(VBOXNETADP, szName, ARCH_BITS/8);
+AssertCompileMembersSameSize(VBOXNETADP, u, VBOXNETADP, u.abPadding);
 
 DECLHIDDEN(int) vboxNetAdpInit(void);
 DECLHIDDEN(void) vboxNetAdpShutdown(void);
