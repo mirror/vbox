@@ -101,8 +101,17 @@
       </listitem>
 
       <listitem>
+        <para>Windows host: fixed icon for .VDI files (bug #9393)</para>
+      </listitem>
+
+      <listitem>
         <para>Solaris hosts: fixed a bug preventing parallel usage of multiple host NICs
           with Crossbow based bridged networking</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fixed random kernel panics on host suspend / shutdown
+          (bug #9305)</para>
       </listitem>
 
       <listitem>
@@ -113,10 +122,6 @@
       <listitem>
         <para>Windows Additions: fixed file truncation on a shared folder with
           some applications (bugs #9276, #9315)</para>
-      </listitem>
-
-      <listitem>
-        <para>Windows host: fixed icon for .VDI files (bug #9393)</para>
       </listitem>
 
     </itemizedlist>
