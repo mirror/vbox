@@ -68,7 +68,8 @@
       </listitem>
 
       <listitem>
-        <para>VBoxManage: fixed <emphasis>extpack install --replace</emphasis></para>
+        <para>VBoxManage: fixed <emphasis>extpack install --replace</emphasis>
+          (bug #9308)</para>
       </listitem>
 
       <listitem>
