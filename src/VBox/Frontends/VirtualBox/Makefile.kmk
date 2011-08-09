@@ -347,7 +347,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxExportApplianceWgt.h \
 	src/widgets/VBoxFilePathSelectorWidget.h \
 	src/widgets/VBoxImportApplianceWgt.h \
-	src/widgets/VBoxLineTextEdit.h \
+	src/widgets/UILineTextEdit.h \
 	src/widgets/VBoxMediaComboBox.h \
 	src/widgets/VBoxMiniToolBar.h \
 	src/widgets/VBoxOSTypeSelectorButton.h \
@@ -519,7 +519,7 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxFilePathSelectorWidget.cpp \
 	src/widgets/VBoxGuestRAMSlider.cpp \
 	src/widgets/VBoxImportApplianceWgt.cpp \
-	src/widgets/VBoxLineTextEdit.cpp \
+	src/widgets/UILineTextEdit.cpp \
 	src/widgets/VBoxMediaComboBox.cpp \
 	src/widgets/VBoxMiniToolBar.cpp \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \

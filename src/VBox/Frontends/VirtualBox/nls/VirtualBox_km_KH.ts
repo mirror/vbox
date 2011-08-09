@@ -7564,7 +7564,7 @@ medium</comment>
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>កែសម្រួល​</translation>
@@ -9688,7 +9688,7 @@ medium</comment>
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>កែសម្រួល​អត្ថបទ​</translation>

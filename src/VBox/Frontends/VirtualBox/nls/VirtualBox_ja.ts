@@ -10459,9 +10459,9 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
-        <location filename="../src/widgets/VBoxLineTextEdit.cpp" line="109"/>
+        <location filename="../src/widgets/UILineTextEdit.cpp" line="109"/>
         <source>&amp;Edit</source>
         <translation>編集(&amp;E)</translation>
     </message>
@@ -13654,29 +13654,29 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
-        <location filename="../src/widgets/VBoxLineTextEdit.cpp" line="74"/>
+        <location filename="../src/widgets/UILineTextEdit.cpp" line="74"/>
         <source>Edit text</source>
         <translation>テキストを編集</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxLineTextEdit.cpp" line="75"/>
+        <location filename="../src/widgets/UILineTextEdit.cpp" line="75"/>
         <source>&amp;Replace...</source>
         <translation>置換(&amp;R)...</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxLineTextEdit.cpp" line="76"/>
+        <location filename="../src/widgets/UILineTextEdit.cpp" line="76"/>
         <source>Replaces the current text with the content of a file.</source>
         <translation>現在のテキストを指定のファイルの内容で置き換えます。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxLineTextEdit.cpp" line="81"/>
+        <location filename="../src/widgets/UILineTextEdit.cpp" line="81"/>
         <source>Text (*.txt);;All (*.*)</source>
         <translation>テキストファイル(*.txt);;すべてのファイル(*.*)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxLineTextEdit.cpp" line="81"/>
+        <location filename="../src/widgets/UILineTextEdit.cpp" line="81"/>
         <source>Select a file to open...</source>
         <translation>開くファイルを選択...</translation>
     </message>

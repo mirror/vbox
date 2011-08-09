@@ -9068,7 +9068,7 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLineTextEdit</name>
+    <name>UILineTextEdit</name>
     <message>
         <source>&amp;Edit</source>
         <translation>Sz&amp;erkesztés</translation>
@@ -11731,7 +11731,7 @@ parancsot Linux-alapú OS-ekből. Integrációs szolgáltatások szükségesek h
     </message>
 </context>
 <context>
-    <name>VBoxTextEditor</name>
+    <name>UITextEditor</name>
     <message>
         <source>Edit text</source>
         <translation>Szöveg módosítása</translation>
