@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -632,7 +632,7 @@ ifdef VBOX_WITH_WEBSERVICES
  	MacOS/vboxwebsrv
 endif
 
-VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS = \
+VBOX_DI_VBAPP_UNIVERSAL_PROGS = \
 	MacOS/vmstarter
 
 VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS = \
@@ -718,7 +718,7 @@ endif
 $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_DESCRIPTION_PLIST)) \
-		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES)\
+		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES)\
 			,$(call VBOX_DI_FN_DEP_BOTH,VirtualBox.app/Contents/$(f)) ) \
 		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS.x86) $(VBOX_DI_VBAPP_MISC_FILES.x86)\
 			,$(call VBOX_DI_FN_DEP_32,VirtualBox.app/Contents/$(f)) ) \
@@ -789,7 +789,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
                 $(if-expr defined(VBOX_WITH_JXPCOM), \
                         $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/sdk/bindings/xpcom/java,) \
 		$(addprefix $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/,$(dir \
-			$(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES) \
+			$(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES) \
 			$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) || "$(KBUILD_TARGET_ARCH)" == "amd64",$(VBOX_DI_VBAPP_DYLIBS.amd64) $(VBOX_DI_VBAPP_MISC_FILES.amd64),) \
 			$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) || "$(KBUILD_TARGET_ARCH)" == "x86",  $(VBOX_DI_VBAPP_DYLIBS.x86)   $(VBOX_DI_VBAPP_MISC_FILES.x86),) \
 			))\
@@ -857,25 +857,22 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 			$(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin) \
 			$(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin) \
 			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
+	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-x86$(NLTAB) \
 		 $(INSTALL) -m 0644 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-amd64$(NLTAB))
 else
 	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-$(KBUILD_TARGET_ARCH)$(NLTAB))
 endif
-	@# Copy the other exec binaries.
+	@# Create/copy the universal executable binaries.
 ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) \
+	$(foreach otherbin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 		,$(VBOX_DI_LIPO) -create \
 			$(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin) \
 			$(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin) \
 			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) \
-		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-x86$(NLTAB) \
-		 $(INSTALL) -m 0755 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-amd64$(NLTAB))
 else
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_OTHER_EXEC_UNIVERSAL_BINS) \
+	$(foreach otherbin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-$(KBUILD_TARGET_ARCH)$(NLTAB))
 endif
 	@# Copy the binaries.
