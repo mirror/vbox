@@ -20,9 +20,9 @@
 #define __VBoxImportApplianceWgt_h__
 
 /* VBox includes */
-#include "VBoxApplianceEditorWgt.h"
+#include "UIApplianceEditorWidget.h"
 
-class VBoxImportApplianceWgt : public VBoxApplianceEditorWgt
+class VBoxImportApplianceWgt : public UIApplianceEditorWidget
 {
     Q_OBJECT;
 

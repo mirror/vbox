@@ -6908,120 +6908,120 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxApplianceEditorWgt</name>
+    <name>UIApplianceEditorWidget</name>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="97"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="97"/>
         <source>Virtual System %1</source>
         <translation>仮想システム %1</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="194"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="194"/>
         <source>Name</source>
         <translation>名前</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="195"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="195"/>
         <source>Product</source>
         <translation>製品</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="196"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="196"/>
         <source>Product-URL</source>
         <translation>製品-URL</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="197"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="197"/>
         <source>Vendor</source>
         <translation>ベンダ</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="198"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="198"/>
         <source>Vendor-URL</source>
         <translation>ベンダ-URL</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="199"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="199"/>
         <source>Version</source>
         <translation>バージョン</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="200"/>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="851"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="200"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="851"/>
         <source>Description</source>
         <translation>説明</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="201"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="201"/>
         <source>License</source>
         <translation>ライセンス</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="202"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="202"/>
         <source>Guest OS Type</source>
         <translation>ゲストOSのタイプ</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="203"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="203"/>
         <source>CPU</source>
         <translation>CPU</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="204"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="204"/>
         <source>RAM</source>
         <translation>RAM</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="205"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="205"/>
         <source>Hard Disk Controller (IDE)</source>
         <translation>ハードディスク コントローラ (IDE)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="206"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="206"/>
         <source>Hard Disk Controller (SATA)</source>
         <translation>ハードディスク コントローラ (SATA)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="207"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="207"/>
         <source>Hard Disk Controller (SCSI)</source>
         <translation>ハードディスク コントローラ (SCSI)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="208"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="208"/>
         <source>Hard Disk Controller (SAS)</source>
         <translation>ハードディスク コントローラ (SAS)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="209"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="209"/>
         <source>DVD</source>
         <translation>DVD</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="210"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="210"/>
         <source>Floppy</source>
         <translation>フロッピー</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="211"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="211"/>
         <source>Network Adapter</source>
         <translation>ネットワーク アダプタ</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="212"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="212"/>
         <source>USB Controller</source>
         <translation>USB コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="213"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="213"/>
         <source>Sound Card</source>
         <translation>サウンドカード</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="214"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="214"/>
         <source>Virtual Disk Image</source>
         <translation>仮想ディスクイメージ</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="215"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="215"/>
         <source>Unknown Hardware Item</source>
         <translation>不明なハードウェア項目</translation>
     </message>
@@ -7035,7 +7035,7 @@ Version %1</source>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="249"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="249"/>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
         <translation>&lt;b&gt;元の値:&lt;/b&gt; %1</translation>
     </message>
@@ -7045,22 +7045,22 @@ Version %1</source>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="852"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="852"/>
         <source>Configuration</source>
         <translation>構成</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.ui" line="43"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.ui" line="43"/>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.ui" line="46"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.ui" line="46"/>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.ui" line="65"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.ui" line="65"/>
         <source>Warnings:</source>
         <translation>警告:</translation>
     </message>
@@ -9750,8 +9750,8 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3739"/>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="359"/>
         <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="360"/>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="236"/>
-        <location filename="../src/widgets/VBoxApplianceEditorWgt.cpp" line="427"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="236"/>
+        <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="427"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
         <translation>MB</translation>

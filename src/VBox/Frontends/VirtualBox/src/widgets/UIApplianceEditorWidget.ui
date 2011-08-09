@@ -13,8 +13,8 @@
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <class>VBoxApplianceEditorWgt</class>
- <widget class="QWidget" name="VBoxApplianceEditorWgt">
+ <class>UIApplianceEditorWidget</class>
+ <widget class="QWidget" name="UIApplianceEditorWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -28,7 +28,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QTreeView" name="mTvSettings">
+    <widget class="QTreeView" name="m_pTvSettings">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
@@ -38,7 +38,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="mReinitMACsCheckBox">
+    <widget class="QCheckBox" name="m_pReinitMACsCheckBox">
      <property name="toolTip">
       <string>When checked a new unique MAC address will assigned to all configured network cards.</string>
      </property>
@@ -48,7 +48,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="mWarningWidget" native="true">
+    <widget class="QWidget" name="m_pWarningWidget" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
        <horstretch>0</horstretch>

@@ -3870,7 +3870,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxApplianceEditorWgt</name>
+    <name>UIApplianceEditorWidget</name>
     <message>
         <source>Virtual System %1</source>
         <translation>虛擬系統 %1</translation>

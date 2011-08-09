@@ -4969,7 +4969,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxApplianceEditorWgt</name>
+    <name>UIApplianceEditorWidget</name>
     <message>
         <source>Virtual System %1</source>
         <translation>Virtuelles System %1</translation>

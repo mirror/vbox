@@ -5003,7 +5003,7 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
 </context>
 <context>
-    <name>VBoxApplianceEditorWgt</name>
+    <name>UIApplianceEditorWidget</name>
     <message>
         <source>Virtual System %1</source>
         <translation>ប្រ​ព័ន្ធ​​និម្មិត​ %1</translation>
