@@ -1196,6 +1196,7 @@ int  vboxNetAdpInit(void)
     memset(g_aAdapters, 0, sizeof(g_aAdapters));
     for (i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
     {
+        g_aAdapters[i].uMagic   = VBOXNETADP_MAGIC;
         g_aAdapters[i].enmState = kVBoxNetAdpState_Invalid;
         g_aAdapters[i].iUnit    = -1;
         vboxNetAdpOsInit(&g_aAdapters[i]);

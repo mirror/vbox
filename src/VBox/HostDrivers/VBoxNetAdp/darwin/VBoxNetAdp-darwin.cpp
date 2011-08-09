@@ -54,6 +54,9 @@ RT_C_DECLS_END
 #include <sys/param.h>
 #include <sys/conf.h>
 #include <miscfs/devfs/devfs.h>
+extern "C" {
+#include <net/bpf.h>
+}
 
 #define VBOXNETADP_OS_SPECFIC 1
 #include "../VBoxNetAdpInternal.h"
@@ -141,6 +144,13 @@ static void vboxNetAdpDarwinComposeUUID(PVBOXNETADP pThis, PRTUUID pUuid)
 
 static errno_t vboxNetAdpDarwinOutput(ifnet_t pIface, mbuf_t pMBuf)
 {
+    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
+    Assert(pThis);
+    if (pThis->u.s.nTapMode & BPF_MODE_OUTPUT)
+    {
+        Log2(("vboxnetadp: out len=%d\n%.*Rhxd\n", mbuf_len(pMBuf), 14, mbuf_data(pMBuf)));
+        bpf_tap_out(pIface, DLT_EN10MB, pMBuf, NULL, 0);
+    }
     mbuf_freem_list(pMBuf);
     return 0;
 }
@@ -191,7 +201,36 @@ static void vboxNetAdpDarwinDetach(ifnet_t pIface)
     RTSemEventSignal(pThis->u.s.hEvtDetached);
 }
 
+static errno_t vboxNetAdpDarwinDemux(ifnet_t pIface, mbuf_t pMBuf,
+                                     char *pFrameHeader,
+                                     protocol_family_t *pProtocolFamily)
+{
+    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
+    Assert(pThis);
+    Log2(("vboxNetAdpDarwinDemux: mode=%d\n", nMode));
+    if (pThis->u.s.nTapMode & BPF_MODE_INPUT)
+    {
+        Log2(("vboxnetadp: in len=%d\n%.*Rhxd\n", mbuf_len(pMBuf), 14, pFrameHeader));
+        bpf_tap_in(pIface, DLT_EN10MB, pMBuf, pFrameHeader, ETHER_HDR_LEN);
+    }
+    return ether_demux(pIface, pMBuf, pFrameHeader, pProtocolFamily);
+}
 
+static errno_t vboxNetAdpDarwinBpfTap(ifnet_t pIface, u_int32_t uLinkType, bpf_tap_mode nMode)
+{
+    PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
+    Assert(pThis);
+    Log2(("vboxNetAdpDarwinBpfTap: mode=%d\n", nMode));
+    pThis->u.s.nTapMode = nMode;
+    return 0;
+}
+
+static errno_t vboxNetAdpDarwinBpfSend(ifnet_t pIface, u_int32_t uLinkType, mbuf_t pMBuf)
+{
+    LogRel(("vboxnetadp: BPF send function is not implemented (dlt=%d)\n", uLinkType));
+    mbuf_freem_list(pMBuf);
+    return 0;
+}
 
 int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
 {
@@ -207,6 +246,8 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
         printf("vboxNetAdpOsCreate: failed to create semaphore (rc=%d).\n", rc);
         return rc;
     }
+
+    pThis->u.s.nTapMode = BPF_MODE_DISABLED;
 
     mac.sdl_len = sizeof(mac);
     mac.sdl_family = AF_LINK;
@@ -224,7 +265,7 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
     Params.family = IFNET_FAMILY_ETHERNET;
     Params.type = IFT_ETHER;
     Params.output = vboxNetAdpDarwinOutput;
-    Params.demux = ether_demux;
+    Params.demux = vboxNetAdpDarwinDemux;
     Params.add_proto = vboxNetAdpDarwinAddProto;
     Params.del_proto = vboxNetAdpDarwinDelProto;
     Params.check_multi = ether_check_multi;
@@ -243,10 +284,18 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
         err = ifnet_attach(pThis->u.s.pIface, &mac);
         if (!err)
         {
+            err = bpf_attach(pThis->u.s.pIface, DLT_EN10MB, ETHER_HDR_LEN,
+                      vboxNetAdpDarwinBpfSend, vboxNetAdpDarwinBpfTap);
+            if (err)
+            {
+                LogRel(("vboxnetadp: bpf_attach failed with %d\n", err));
+            }
             err = ifnet_set_flags(pThis->u.s.pIface, IFF_RUNNING | IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST, 0xFFFF);
             if (!err)
             {
                 ifnet_set_mtu(pThis->u.s.pIface, VBOXNETADP_MTU);
+                Log2(("vboxnetadp: created interface %s (%p), pThis=%p, pMagic=%p, *pMagic=%x(%x)\n",
+                        pThis->szName, pThis->u.s.pIface, pThis, ifnet_softc(pThis->u.s.pIface), *(uint32_t*)ifnet_softc(pThis->u.s.pIface), pThis->uMagic));
                 return VINF_SUCCESS;
             }
             else

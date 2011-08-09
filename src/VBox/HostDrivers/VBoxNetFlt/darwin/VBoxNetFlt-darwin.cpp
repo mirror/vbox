@@ -786,9 +786,11 @@ static void vboxNetFltDarwinIffEvent(void *pvThis, ifnet_t pIfNet, protocol_fami
  * @param   pvFrame         The start of the frame, optional.
  * @param   fSrc            Where the packet (allegedly) comes from, one INTNETTRUNKDIR_* value.
  * @param   eProtocol       The protocol.
+ * @param   pIfNet          The network interface.
  */
 static errno_t vboxNetFltDarwinIffInputOutputWorker(PVBOXNETFLTINS pThis, mbuf_t pMBuf, void *pvFrame,
-                                                    uint32_t fSrc, protocol_family_t eProtocol)
+                                                    uint32_t fSrc, protocol_family_t eProtocol,
+                                                    ifnet_t pIfNet)
 {
     /*
      * Drop it immediately?
@@ -837,7 +839,19 @@ static errno_t vboxNetFltDarwinIffInputOutputWorker(PVBOXNETFLTINS pThis, mbuf_t
 
         fDropIt = pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL /* pvIf */, pSG, fSrc);
         if (fDropIt)
-            mbuf_freem(pMBuf);
+        {
+            /*
+             * Check is this interface belongs to vboxnetadp. We should not drop
+             * any packets before they get to vboxnetadp as it passes them to tap
+             * callbacks in order for BPF to work properly.
+             */
+            uint32_t *pMagic = (uint32_t *)ifnet_softc(pIfNet);
+            Log2(("vboxnetflt: pMagic=%p *pMagic=%x\n", pMagic, pMagic ? *pMagic : -1));
+            if (pMagic && *pMagic == VBOXNETADP_MAGIC)
+                fDropIt = false;
+            else
+                mbuf_freem(pMBuf);
+        }
     }
 
     vboxNetFltRelease(pThis, true /* fBusy */);
@@ -856,8 +870,7 @@ static errno_t vboxNetFltDarwinIffOutput(void *pvThis, ifnet_t pIfNet, protocol_
     /** @todo there was some note about the ethernet header here or something like that... */
 
     NOREF(eProtocol);
-    NOREF(pIfNet);
-    return vboxNetFltDarwinIffInputOutputWorker((PVBOXNETFLTINS)pvThis, *ppMBuf, NULL, INTNETTRUNKDIR_HOST, eProtocol);
+    return vboxNetFltDarwinIffInputOutputWorker((PVBOXNETFLTINS)pvThis, *ppMBuf, NULL, INTNETTRUNKDIR_HOST, eProtocol, pIfNet);
 }
 
 
@@ -869,8 +882,7 @@ static errno_t vboxNetFltDarwinIffOutput(void *pvThis, ifnet_t pIfNet, protocol_
 static errno_t vboxNetFltDarwinIffInput(void *pvThis, ifnet_t pIfNet, protocol_family_t eProtocol, mbuf_t *ppMBuf, char **ppchFrame)
 {
     NOREF(eProtocol);
-    NOREF(pIfNet);
-    return vboxNetFltDarwinIffInputOutputWorker((PVBOXNETFLTINS)pvThis, *ppMBuf, *ppchFrame, INTNETTRUNKDIR_WIRE, eProtocol);
+    return vboxNetFltDarwinIffInputOutputWorker((PVBOXNETFLTINS)pvThis, *ppMBuf, *ppchFrame, INTNETTRUNKDIR_WIRE, eProtocol, pIfNet);
 }
 
 
