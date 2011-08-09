@@ -574,9 +574,12 @@ int VBoxUSBSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                                     rc = VBoxUSBMonSolarisRegisterClient(pState->pDip, &pState->ClientInfo);
                                                     if (RT_SUCCESS(rc))
                                                     {
-                                                        LogRel((DEVICE_NAME ": Captured %s %s\n",
+                                                        LogRel((DEVICE_NAME ": Captured %s %#x:%#x:%d:%s\n",
                                                                 pState->pDevDesc->dev_product ? pState->pDevDesc->dev_product : "<Unnamed USB device>",
-                                                                pState->ClientInfo.szDeviceIdent));
+                                                                pState->pDevDesc->dev_descr->idVendor,
+                                                                pState->pDevDesc->dev_descr->idProduct,
+                                                                pState->pDevDesc->dev_descr->bcdDevice,
+                                                                pState->ClientInfo.szClientPath));
 
                                                         return DDI_SUCCESS;
                                                     }
