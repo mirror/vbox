@@ -1840,12 +1840,12 @@ keyboard_init()
     while ( (inb(0x64) & 0x02) && (--max>0)) outb(0x80, 0x00);
 
     /* flush incoming keys */
-    max=4;
+    max=8;
     while (--max > 0) {
         outb(0x80, 0x00);
         if (inb(0x64) & 0x01) {
             inb(0x60);
-            max = 4;
+            max = 8;
             }
         }
 
