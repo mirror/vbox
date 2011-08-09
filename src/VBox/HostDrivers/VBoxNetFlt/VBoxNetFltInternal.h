@@ -23,6 +23,8 @@
 #include <iprt/semaphore.h>
 #include <iprt/assert.h>
 
+/* Copied from VBoxNetAdp/VBoxNetAdpInternal.h */
+#define VBOXNETADP_MAGIC           0x56424e41
 
 RT_C_DECLS_BEGIN
 
