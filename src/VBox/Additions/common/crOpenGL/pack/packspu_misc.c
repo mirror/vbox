@@ -103,12 +103,10 @@ void PACKSPU_APIENTRY packspu_Finish( void )
     }
 }
 
-#define PACK_FORCED_SYNC
-
 void PACKSPU_APIENTRY packspu_Flush( void )
 {
     GET_THREAD(thread);
-    int writeback = 1;
+    int writeback=1;
     int found=0;
 
     if (!thread->bInjectThread)
@@ -135,17 +133,6 @@ void PACKSPU_APIENTRY packspu_Flush( void )
                 && (thread != &pack_spu.thread[i]) && pack_spu.thread[i].netServer.conn
                 && pack_spu.thread[i].packer && pack_spu.thread[i].packer->currentBuffer)
             {
-#ifdef PACK_FORCED_SYNC
-            	CRPackContext *pc = pack_spu.thread[i].packer;
-            	unsigned char *data_ptr;
-
-            	CR_GET_BUFFERED_POINTER( pc, 16 );
-            	WRITE_DATA( 0, GLint, 16 );
-            	WRITE_DATA( 4, GLenum, CR_WRITEBACK_EXTEND_OPCODE );
-            	WRITE_NETWORK_POINTER( 8, (void *) &writeback );
-            	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
-            	CR_UNLOCK_PACKER_CONTEXT(pc);
-#endif
                 packspuFlush((void *) &pack_spu.thread[i]);
 
                 if (pack_spu.thread[i].netServer.conn->u32ClientID == thread->netServer.conn->u32InjectClientID)
@@ -153,10 +140,6 @@ void PACKSPU_APIENTRY packspu_Flush( void )
                     found=1;
                 }
 
-#ifdef PACK_FORCED_SYNC
-                while (writeback)
-                    crNetRecv();
-#endif
             }
         }
 
@@ -168,16 +151,8 @@ void PACKSPU_APIENTRY packspu_Flush( void )
             thread->netServer.conn->u32InjectClientID=0;
         }
 
-#ifdef PACK_FORCED_SYNC
-        writeback = 1;
-        crPackWriteback(&writeback);
-#endif
         packspuFlush((void *) thread);
 
-#ifdef PACK_FORCED_SYNC
-        while (writeback)
-            crNetRecv();
-#endif
         crUnlockMutex(&_PackMutex);
     }
 }
