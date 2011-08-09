@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIActionPoolOffline class implementation
+ * UIActionPoolSelector class implementation
  */
 
 /*
@@ -18,23 +18,23 @@
  */
 
 /* Local includes: */
-#include "UIActionPoolOffline.h"
+#include "UIActionPoolSelector.h"
 
 /* static */
-void UIActionPoolOffline::create()
+void UIActionPoolSelector::create()
 {
     /* Check that instance do NOT exists: */
     if (m_pInstance)
         return;
 
     /* Create instance: */
-    UIActionPoolOffline *pPool = new UIActionPoolOffline;
+    UIActionPoolSelector *pPool = new UIActionPoolSelector;
     /* Prepare instance: */
     pPool->prepare();
 }
 
 /* static */
-void UIActionPoolOffline::destroy()
+void UIActionPoolSelector::destroy()
 {
     /* Check that instance exists: */
     if (!m_pInstance)
@@ -46,17 +46,15 @@ void UIActionPoolOffline::destroy()
     delete m_pInstance;
 }
 
-void UIActionPoolOffline::createActions()
+void UIActionPoolSelector::createActions()
 {
     /* Global actions creation: */
     UIActionPool::createActions();
 }
 
-void UIActionPoolOffline::createMenus()
+void UIActionPoolSelector::createMenus()
 {
     /* Global menus creation: */
     UIActionPool::createMenus();
 }
-
-#include "UIActionPoolOffline.moc"
 

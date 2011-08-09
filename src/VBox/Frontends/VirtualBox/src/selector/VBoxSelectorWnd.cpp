@@ -41,7 +41,7 @@
 #include "UISelectorShortcuts.h"
 #include "UIDesktopServices.h"
 #include "UIGlobalSettingsExtension.h" /* extension pack installation */
-#include "UIActionPoolOffline.h"
+#include "UIActionPoolSelector.h"
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include "VBoxTrayIcon.h"
@@ -94,7 +94,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     , mDoneInaccessibleWarningOnce(false)
 {
     /* Create offline action pool: */
-    UIActionPoolOffline::create();
+    UIActionPoolSelector::create();
 
     VBoxGlobalSettings settings = vboxGlobal().settings();
 
@@ -564,7 +564,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
     mVMModel->clear();
 
     /* Delete offline action pool: */
-    UIActionPoolOffline::destroy();
+    UIActionPoolSelector::destroy();
 }
 
 //

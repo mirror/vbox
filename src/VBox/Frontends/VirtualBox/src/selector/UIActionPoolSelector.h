@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIActionPoolOffline class declaration
+ * UIActionPoolSelector class declaration
  */
 
 /*
@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIActionPoolOffline_h__
-#define __UIActionPoolOffline_h__
+#ifndef __UIActionPoolSelector_h__
+#define __UIActionPoolSelector_h__
 
 /* Local includes: */
 #include "UIActionPool.h"
@@ -30,7 +30,7 @@ enum UIActionIndexOffline
 };
 
 /* Singleton runtime action pool: */
-class UIActionPoolOffline : public UIActionPool
+class UIActionPoolSelector : public UIActionPool
 {
     Q_OBJECT;
 
@@ -43,12 +43,12 @@ public:
 private:
 
     /* Constructor: */
-    UIActionPoolOffline() : UIActionPool(UIActionPoolType_Offline) {}
+    UIActionPoolSelector() : UIActionPool(UIActionPoolType_Offline) {}
 
     /* Virtual helping stuff: */
     void createActions();
     void createMenus();
 };
 
-#endif // __UIActionPoolOffline_h__
+#endif // __UIActionPoolSelector_h__
 
