@@ -1074,7 +1074,7 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
         kbd_update_irq(s);
         break;
     case KBD_CCMD_WRITE_OBUF:
-        kbd_queue(s, val, 0);
+        kbc_dbb_out(s, val);
         break;
     case KBD_CCMD_WRITE_AUX_OBUF:
         kbd_queue(s, val, 1);
