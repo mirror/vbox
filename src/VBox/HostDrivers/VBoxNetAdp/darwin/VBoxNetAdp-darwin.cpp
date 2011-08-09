@@ -207,7 +207,7 @@ static errno_t vboxNetAdpDarwinDemux(ifnet_t pIface, mbuf_t pMBuf,
 {
     PVBOXNETADP pThis = VBOXNETADP_FROM_IFACE(pIface);
     Assert(pThis);
-    Log2(("vboxNetAdpDarwinDemux: mode=%d\n", nMode));
+    Log2(("vboxNetAdpDarwinDemux: mode=%d\n", pThis->u.s.nTapMode));
     if (pThis->u.s.nTapMode & BPF_MODE_INPUT)
     {
         Log2(("vboxnetadp: in len=%d\n%.*Rhxd\n", mbuf_len(pMBuf), 14, pFrameHeader));
