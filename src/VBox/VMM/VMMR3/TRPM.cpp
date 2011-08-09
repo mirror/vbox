@@ -78,6 +78,7 @@
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/pgm.h>
 #include "internal/pgm.h"
 #include <VBox/vmm/dbgf.h>
@@ -1453,7 +1454,8 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     /* Currently only useful for external hardware interrupts. */
     Assert(enmEvent == TRPM_HARDWARE_INT);
 
-    if (REMR3QueryPendingInterrupt(pVM, pVCpu) == REM_NO_PENDING_IRQ)
+    if (   REMR3QueryPendingInterrupt(pVM, pVCpu) == REM_NO_PENDING_IRQ
+        && !EMIsSupervisorCodeRecompiled(pVM))
     {
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
 
