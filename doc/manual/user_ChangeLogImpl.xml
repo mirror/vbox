@@ -112,7 +112,7 @@
 
       <listitem>
         <para>Linux hosts: fixed random kernel panics on host suspend / shutdown
-          (bug #9305)</para>
+          (4.1.0 regression; bug #9305)</para>
       </listitem>
 
       <listitem>
