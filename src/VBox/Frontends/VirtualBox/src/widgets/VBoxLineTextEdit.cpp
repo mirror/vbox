@@ -100,6 +100,10 @@ VBoxLineTextEdit::VBoxLineTextEdit (QWidget *aParent /* = NULL */)
     connect (this, SIGNAL (clicked()),
              this, SLOT (edit()));
 
+    /* Don't interpret the Enter Key. */
+    setAutoDefault(false);
+    setDefault(false);
+
     setFocusPolicy (Qt::StrongFocus);
     retranslateUi();
 }
