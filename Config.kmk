@@ -597,8 +597,10 @@ endif
 ## @{
 # Enables the extension pack feature.
 VBOX_WITH_EXTPACK = 1
-# Enables building of the Oracle VM VirtualBox Extension Pack, dubbed PUEL.
+# Enables separating code into the Oracle VM VirtualBox Extension Pack, dubbed PUEL.
 VBOX_WITH_EXTPACK_PUEL = 1
+# Enables building+packing the Oracle VM VirtualBox Extension Pack, includes VBOX_WITH_EXTPACK_PUEL
+VBOX_WITH_EXTPACK_PUEL_BUILD = 1
 ## @}
 
 ## @name Misc
@@ -953,7 +955,7 @@ endif
 ifdef VBOX_OSE
  VBOX_WITH_VRDP=
  VBOX_WITH_EHCI_IMPL=
- VBOX_WITH_EXTPACK_PUEL=
+ VBOX_WITH_EXTPACK_PUEL_BUILD=
  VBOX_WITH_PCI_PASSTHROUGH_IMPL=
  VBOX_WITH_OS2_ADDITIONS_BIN=
  VBOX_WITH_SECURELABEL=
@@ -1077,6 +1079,10 @@ endif
 
 ifndef VBOX_WITH_QTGUI
  VBOX_WITH_KCHMVIEWER=
+endif
+
+ifdef VBOX_WITH_EXTPACK_PUEL_BUILD
+ VBOX_WITH_EXTPACK_PUEL = 1
 endif
 
 #
