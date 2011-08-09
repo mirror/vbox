@@ -22,6 +22,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI: fixed the inclusion of additional information (license,
+          vendor, ...) on OVF export</para>
+      </listitem>
+
+      <listitem>
         <para>Guest control execution: implemented copying single files from
           guest to the host (directories and filters not supported yet)</para>
       </listitem>
@@ -86,7 +91,7 @@
       </listitem>
 
       <listitem>
-        <para>NAT: changed TCP connection establisment according to Winsock API
+        <para>NAT: changed TCP connection establishment according to Winsock API
           requirements (Windows hosts only; bug #8919)</para>
       </listitem>
 
@@ -472,7 +477,7 @@
 
       <listitem>
         <para>Storage: fixed possible data corruption under certain circumstances
-          whith VHD and Parallels images (bug #9150)</para>
+          with VHD and Parallels images (bug #9150)</para>
       </listitem>
 
       <listitem>
