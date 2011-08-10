@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIActionsPool_h__
-#define __UIActionsPool_h__
+#ifndef __UIActionPool_h__
+#define __UIActionPool_h__
 
 /* Global includes: */
 #include <QAction>
@@ -188,5 +188,5 @@ protected:
 
 #define gActionPool UIActionPool::instance()
 
-#endif // __UIActionsPool_h__
+#endif // __UIActionPool_h__
 
