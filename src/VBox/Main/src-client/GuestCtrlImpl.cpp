@@ -270,12 +270,21 @@ int Guest::callbackInit(PVBOXGUESTCTRL_CALLBACK pCallback, eVBoxGuestCtrlCallbac
 
         case VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT:
         {
+            PCALLBACKDATAEXECOUT pData = (PCALLBACKDATAEXECOUT)RTMemAlloc(sizeof(CALLBACKDATAEXECOUT));
+            AssertPtrReturn(pData, VERR_NO_MEMORY);
+            RT_BZERO(pData, sizeof(CALLBACKDATAEXECOUT));
+            pCallback->cbData = sizeof(CALLBACKDATAEXECOUT);
+            pCallback->pvData = pData;
             break;
         }
 
         case VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS:
         {
-
+            PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECINSTATUS));
+            AssertPtrReturn(pData, VERR_NO_MEMORY);
+            RT_BZERO(pData, sizeof(PCALLBACKDATAEXECINSTATUS));
+            pCallback->cbData = sizeof(PCALLBACKDATAEXECINSTATUS);
+            pCallback->pvData = pData;
             break;
         }
 
@@ -1768,11 +1777,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
             vrc = callbackInit(&callback, VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS, pProgress);
             if (RT_SUCCESS(vrc))
             {
-                callback.cbData = sizeof(CALLBACKDATAEXECINSTATUS);
-                PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(callback.cbData);
-                AssertReturn(pData, E_OUTOFMEMORY);
-                RT_BZERO(pData, callback.cbData);
-                callback.pvData = pData;
+                PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)callback.pvData;
 
                 /* Save PID + output flags for later use. */
                 pData->u32PID = aPID;
@@ -1956,11 +1961,7 @@ STDMETHODIMP Guest::GetProcessOutput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
             vrc = callbackInit(&callback, VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT, pProgress);
             if (RT_SUCCESS(vrc))
             {
-                callback.cbData = sizeof(CALLBACKDATAEXECOUT);
-                PCALLBACKDATAEXECOUT pData = (PCALLBACKDATAEXECOUT)RTMemAlloc(callback.cbData);
-                AssertReturn(pData, E_OUTOFMEMORY);
-                RT_BZERO(pData, callback.cbData);
-                callback.pvData = pData;
+                PCALLBACKDATAEXECOUT pData = (PCALLBACKDATAEXECOUT)callback.pvData;
 
                 /* Save PID + output flags for later use. */
                 pData->u32PID = aPID;
