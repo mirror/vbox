@@ -337,15 +337,16 @@ endif
 	    -e 's|%DEBREL%|$(subst _,~,$(debrel))|g' \
 	    -e 's|%VERPKG%|$(verpkg)|g' \
 	    debian/changelog.in > debian/changelog
-	cat debian/preinst.in | sed -e 's|%VER%|$(ver)|g' > debian/preinst
-	cat debian/prerm.in | sed -e 's|%VER%|$(ver)|g' > debian/prerm
-	cat debian/postinst.in | \
-	    sed -e 's|%VER%|$(ver)|g' \
+	sed -e 's|%VER%|$(ver)|g' \
+	    debian/preinst.in > debian/preinst
+	sed -e 's|%VER%|$(ver)|g' \
+	    debian/prerm.in > debian/prerm
+	sed -e 's|%VER%|$(ver)|g' \
 	    -e '/#include installer-utils.sh/ {' \
 	    -e "r $(vboxroot)/src/VBox/Installer/linux/installer-utils.sh" \
 	    -e 'd' \
 	    -e '}' \
-	    > debian/postinst
+	    debian/postinst.in > debian/postinst
 	dh_installdebconf
 	dh_installchangelogs
 	dh_installmenu

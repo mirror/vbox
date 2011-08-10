@@ -30,6 +30,11 @@ if [ "$1" = "purge" -a ! -f /etc/init.d/vboxweb-service ] ; then
   update-rc.d vboxweb-service remove >/dev/null || exit $?
 fi
 
+# remove installed extension packs
+if [ "$1" = "purge" ]; then
+  rm -rf /usr/lib/virtualbox/ExtensionPacks/*
+fi
+
 #DEBHELPER#
 
 exit 0

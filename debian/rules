@@ -305,9 +305,12 @@ endif
 	    -e 's|%PACKAGE%|virtualbox|g' \
 	    $(vboxroot)/src/VBox/Installer/linux/vboxweb-service.sh.in > debian/vboxweb-service.init
 	dh_installinit --name=vboxweb-service --noscripts
-	cat debian/preinst.in | sed -e 's|%VER%|$(ver)|g' > debian/preinst
-	cat debian/prerm.in | sed -e 's|%VER%|$(ver)|g' > debian/prerm
-	cat debian/postinst.in | sed -e 's|%VER%|$(ver)|g' > debian/postinst
+	sed -e 's|%VER%|$(ver)|g' \
+	    debian/preinst.in > debian/preinst
+	sed -e 's|%VER%|$(ver)|g' \
+	    debian/prerm.in > debian/prerm
+	sed -e 's|%VER%|$(ver)|g' \
+	    debian/postinst.in > debian/postinst
 	dh_installdebconf
 	dh_installchangelogs
 	dh_installmenu
