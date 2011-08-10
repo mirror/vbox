@@ -27,6 +27,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI: when taking a snaphot from the VM selector, don't do
+          a live snapshot</para>
+      </listitem>
+
+      <listitem>
         <para>Guest control execution: implemented copying single files from
           guest to the host (directories and filters not supported yet)</para>
       </listitem>
