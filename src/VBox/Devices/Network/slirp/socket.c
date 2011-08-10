@@ -1418,6 +1418,15 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 icp->icmp_id = so->so_icmp_id;
                 icp->icmp_seq = so->so_icmp_seq;
 
+                icm = icmp_find_original_mbuf(pData, ip);
+                if (icm)
+                {
+                    /* on this branch we don't need stored variant */
+                    m_freem(icm->im_m);
+                    LIST_REMOVE(icm, im_list);
+                    RTMemFree(icm);
+                }
+
                 data_len += ICMP_MINLEN;
 
                 hlen = (ip->ip_hl << 2);
@@ -1457,6 +1466,9 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 m->m_pkthdr.header = mtod(m, void *);
                 m_copyback(pData, m, ip->ip_hl >> 2, icr[i].DataSize, icr[i].Data);
                 icmp_reflect(pData, m);
+                /* Here is different situation from Unix world, where we can receive icmp in response on TCP/UDP */
+                LIST_REMOVE(icm, im_list);
+                RTMemFree(icm);
                 break;
             default:
                 Log(("ICMP(default): message with Status: %x was received from %x\n", icr[i].Status, icr[i].Address));
