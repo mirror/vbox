@@ -939,12 +939,14 @@ static int ctrlCopyDirExists(PCOPYCONTEXT pContext, bool bGuest,
     if (bGuest)
     {
         BOOL fDirExists = FALSE;
+#if 0
         HRESULT hr = pContext->pGuest->DirectoryExists(Bstr(pszDir).raw(),
                                                        Bstr(pContext->pszUsername).raw(),
                                                        Bstr(pContext->pszPassword).raw(), &fDirExists);
         if (FAILED(hr))
             rc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
         else
+#endif
             *fExists = fDirExists ? true : false;
     }
     else
@@ -1591,6 +1593,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
                 }
                 else
                 {
+#if 0
                     if (   (RT_SUCCESS(ctrlCopyDirExistsOnSource(pContext, pszSource, &fExists))
                             && fExists)
                         || (   RT_SUCCESS(ctrlCopyDirExistsOnSource(pContext, pszSourceRoot, &fExists))
@@ -1602,6 +1605,10 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
                         vrc = ctrlCopyDirToTarget(pContext, pszSource, pszFilter,
                                                   Utf8Dest.c_str(), fFlags, NULL /* Subdir */);
                     }
+#else
+                    RTMsgError("Copying of guest directories to the host is not supported yet!\n");
+                    vrc = VERR_NOT_IMPLEMENTED;
+#endif
                 }
             }
 

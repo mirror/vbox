@@ -103,7 +103,9 @@ public:
     // Directory handling
     STDMETHOD(DirectoryClose)(ULONG aHandle);
     STDMETHOD(DirectoryCreate)(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, ULONG aMode, ULONG aFlags);
+#if 0
     STDMETHOD(DirectoryExists)(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists);
+#endif
     STDMETHOD(DirectoryOpen)(IN_BSTR aDirectory, IN_BSTR aFilter,
                              ULONG aFlags, IN_BSTR aUsername, IN_BSTR aPassword, ULONG *aHandle);
     STDMETHOD(DirectoryRead)(ULONG aHandle, IGuestDirEntry **aDirEntry);

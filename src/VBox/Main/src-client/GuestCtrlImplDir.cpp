@@ -202,6 +202,7 @@ void Guest::directoryDestroyHandle(uint32_t uHandle)
     }
 }
 
+#if 0
 STDMETHODIMP Guest::DirectoryExists(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -219,6 +220,7 @@ STDMETHODIMP Guest::DirectoryExists(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BS
                                    aUsername, aPassword, aExists);
 #endif
 }
+#endif
 
 #ifdef VBOX_WITH_GUEST_CONTROL
 HRESULT Guest::directoryExistsInternal(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists)
