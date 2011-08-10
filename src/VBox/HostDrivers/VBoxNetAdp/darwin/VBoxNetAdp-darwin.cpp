@@ -294,8 +294,6 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
             if (!err)
             {
                 ifnet_set_mtu(pThis->u.s.pIface, VBOXNETADP_MTU);
-                Log2(("vboxnetadp: created interface %s (%p), pThis=%p, pMagic=%p, *pMagic=%x(%x)\n",
-                        pThis->szName, pThis->u.s.pIface, pThis, ifnet_softc(pThis->u.s.pIface), *(uint32_t*)ifnet_softc(pThis->u.s.pIface), pThis->uMagic));
                 return VINF_SUCCESS;
             }
             else
