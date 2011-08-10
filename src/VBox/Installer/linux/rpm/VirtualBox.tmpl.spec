@@ -411,6 +411,7 @@ update-mime-database /usr/share/mime &> /dev/null || :
 update-desktop-database -q > /dev/null 2>&1 || :
 touch --no-create /usr/share/icons/hicolor
 gtk-update-icon-cache -q /usr/share/icons/hicolor 2> /dev/null || :
+rm -rf /usr/lib/virtualbox/ExtensionPacks
 
 
 %clean
