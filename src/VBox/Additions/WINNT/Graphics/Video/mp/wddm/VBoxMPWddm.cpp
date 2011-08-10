@@ -5499,6 +5499,11 @@ DxgkDdiDestroyContext(
         Assert(cContexts < UINT32_MAX/2);
     }
 
+    /* first terminate the swapchain, this will also ensure
+     * all currently pending driver->user Cm commands
+     * (i.e. visible regions commands) are completed */
+    vboxWddmSwapchainCtxTerm(pDevExt, pContext);
+
     NTSTATUS Status = vboxVideoAMgrCtxDestroy(&pContext->AllocContext);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
@@ -5507,7 +5512,6 @@ DxgkDdiDestroyContext(
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
-            vboxWddmSwapchainCtxTerm(pDevExt, pContext);
             vboxWddmMemFree(pContext);
         }
     }
