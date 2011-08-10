@@ -235,7 +235,7 @@
     </message>
 </context>
 <context>
-    <name>UIActionsPool</name>
+    <name>UIActionPool</name>
     <message>
         <source>&amp;Machine</source>
         <translation></translation>

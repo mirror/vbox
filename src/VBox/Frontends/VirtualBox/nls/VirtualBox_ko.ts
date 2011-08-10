@@ -221,7 +221,7 @@
     </message>
 </context>
 <context>
-    <name>UIActionsPool</name>
+    <name>UIActionPool</name>
     <message>
         <source>&amp;Machine</source>
         <translation>머신(&amp;M)</translation>

@@ -308,9 +308,9 @@
     </message>
 </context>
 <context>
-    <name>UIActionsPool</name>
+    <name>UIActionPool</name>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="221"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="221"/>
         <source>&amp;Machine</source>
         <translation>仮想マシン(&amp;M)</translation>
     </message>
@@ -331,7 +331,7 @@
         <translation type="obsolete">シームレスモードに切り替える</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="575"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="575"/>
         <source>Auto-resize &amp;Guest Display</source>
         <translation>ゲストOSの画面を自動リサイズ(&amp;G)</translation>
     </message>
@@ -360,7 +360,7 @@
         <translation type="obsolete">ゲストOS画面の自動リサイズを有効化(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="576"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="576"/>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
         <translation>ウィンドウをリサイズしたとき、ゲストOS画面を自動的にリサイズする(Guest Additions のインストールが必要)</translation>
     </message>
@@ -373,37 +373,37 @@
         <translation type="obsolete">ゲストOS画面の自動リサイズを無効にする</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="597"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="597"/>
         <source>&amp;Adjust Window Size</source>
         <translation>ウィンドウのサイズを調整(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="598"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="598"/>
         <source>Adjust window size and position to best fit the guest display</source>
         <translation>ゲストOS画面に合わせてウィンドウのサイズと位置を調整する</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="328"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="328"/>
         <source>Disable &amp;Mouse Integration</source>
         <translation>マウス統合を無効化(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="242"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="242"/>
         <source>&amp;Settings...</source>
         <translation type="unfinished">設定(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="243"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="243"/>
         <source>Manage the virtual machine settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="286"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="286"/>
         <source>Session I&amp;nformation...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="329"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="329"/>
         <source>Temporarily disable host mouse pointer integration</source>
         <translation>一時的にホスト マウスポインタの統合機能を無効化</translation>
     </message>
@@ -416,32 +416,32 @@
         <translation type="obsolete">一時的に無効化したホスト マウスポインタの統合機能を有効化</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="350"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="350"/>
         <source>&amp;Insert Ctrl-Alt-Del</source>
         <translation>Ctrl-Alt-Delを送信(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="351"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="351"/>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
         <translation>仮想マシンにCtrl-Alt-Delシーケンスを送信する</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="373"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="373"/>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
         <translation>Ctrl-Alt-Backspaceを送信(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="374"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="374"/>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
         <translation>仮想マシンにCtrl-Alt-Backspaceシーケンスを送信する</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="264"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="264"/>
         <source>Take &amp;Snapshot...</source>
         <translation>スナップショット作成(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="265"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="265"/>
         <source>Take a snapshot of the virtual machine</source>
         <translation>仮想マシンのスナップショットを作成する</translation>
     </message>
@@ -450,17 +450,17 @@
         <translation type="obsolete">セッション情報ダイアログ(&amp;N)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="287"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="287"/>
         <source>Show Session Information Dialog</source>
         <translation>セッション情報ダイアログを表示</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="396"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="396"/>
         <source>&amp;Pause</source>
         <translation>一時停止(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="397"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="397"/>
         <source>Suspend the execution of the virtual machine</source>
         <translation>仮想マシンの実行を一時停止する</translation>
     </message>
@@ -473,32 +473,32 @@
         <translation type="obsolete">仮想マシンの実行を再開する</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="506"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="506"/>
         <source>Switch to &amp;Fullscreen</source>
         <translation>フルスクリーンモードに切り替える(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="507"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="507"/>
         <source>Switch between normal and fullscreen mode</source>
         <translation>標準のウィンドウモードとフルスクリーンモードを切り換える</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="529"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="529"/>
         <source>Switch to Seam&amp;less Mode</source>
         <translation>シームレスモードに切り換える(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="530"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="530"/>
         <source>Switch between normal and seamless desktop integration mode</source>
         <translation>標準のウィンドウモードとシームレスモードを切り換える</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="552"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="552"/>
         <source>Switch to &amp;Scale Mode</source>
         <translation>スケールモードに切り換える(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="553"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="553"/>
         <source>Switch between normal and scale mode</source>
         <translation>標準のウィンドウモードとスケールモードを切り換える</translation>
     </message>
@@ -507,17 +507,17 @@
         <translation type="obsolete">セッション情報(&amp;N)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="418"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="418"/>
         <source>&amp;Reset</source>
         <translation>リセット(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="419"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="419"/>
         <source>Reset the virtual machine</source>
         <translation>仮想マシンをリセットする</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="440"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="440"/>
         <source>ACPI Sh&amp;utdown</source>
         <translation>ACPI シャットダウン(&amp;U)</translation>
     </message>
@@ -526,67 +526,67 @@
         <translation type="obsolete">ACPI シャットダウン(&amp;H)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="441"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="441"/>
         <source>Send the ACPI Power Button press event to the virtual machine</source>
         <translation>仮想マシンに電源ボタン オフのACPIイベントを送信する</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="463"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="463"/>
         <source>&amp;Close...</source>
         <translation>閉じる(&amp;C)...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="464"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="464"/>
         <source>Close the virtual machine</source>
         <translation>仮想マシンを閉じる</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="484"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="484"/>
         <source>&amp;View</source>
         <translation>ビュー(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="618"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="618"/>
         <source>&amp;Devices</source>
         <translation>デバイス(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="639"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="639"/>
         <source>&amp;CD/DVD Devices</source>
         <translation>CD/DVD デバイス(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="660"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="660"/>
         <source>&amp;Floppy Devices</source>
         <translation>フロッピー デバイス(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="682"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="682"/>
         <source>&amp;USB Devices</source>
         <translation>USB デバイス(&amp;U)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="722"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="722"/>
         <source>&amp;Network Adapters...</source>
         <translation>ネットワーク アダプタ(&amp;N)...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="723"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="723"/>
         <source>Change the settings of network adapters</source>
         <translation>ネットワーク アダプタの設定変更</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="763"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="763"/>
         <source>&amp;Shared Folders...</source>
         <translation>共有フォルダ(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="764"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="764"/>
         <source>Create or modify shared folders</source>
         <translation>共有フォルダ設定ダイアログを開く</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="786"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="786"/>
         <source>Enable R&amp;emote Display</source>
         <translation>リモートディスプレイを有効化(&amp;E)</translation>
     </message>
@@ -595,7 +595,7 @@
         <translation type="obsolete">リモートディスプレイを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="787"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="787"/>
         <source>Enable remote desktop (RDP) connections to this machine</source>
         <translation>この仮想マシンへのリモートデスクトップ(RDP)接続を有効化</translation>
     </message>
@@ -608,7 +608,7 @@
         <translation type="obsolete">この仮想マシンへのリモートデスクトップ(RDP)接続を無効化</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="890"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="890"/>
         <source>Enable &amp;Logging...</source>
         <comment>debug action</comment>
         <translation>ログ出力を有効化(&amp;L)...</translation>
@@ -627,28 +627,28 @@
         <translation type="obsolete">この仮想マシンへのリモートデスクトップ(RDP)接続を有効化または無効化</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="808"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="808"/>
         <source>&amp;Install Guest Additions...</source>
         <translation>Guest Additions のインストール(&amp;I)...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="809"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="809"/>
         <source>Mount the Guest Additions installation image</source>
         <translation>Guest Additions インストールイメージをマウントする</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="830"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="830"/>
         <source>De&amp;bug</source>
         <translation>デバッグ(&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="850"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="850"/>
         <source>&amp;Statistics...</source>
         <comment>debug action</comment>
         <translation>統計(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="870"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="870"/>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
         <translation>コマンドライン(&amp;C)...</translation>
@@ -659,22 +659,22 @@
         <translation type="obsolete">ログ取得(&amp;L)...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="911"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="911"/>
         <source>&amp;Help</source>
         <translation>ヘルプ(&amp;H)</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1088"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="1088"/>
         <source>Dock Icon</source>
         <translation>ドック アイコン</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1108"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="1108"/>
         <source>Show Monitor Preview</source>
         <translation>ディスプレイのプレビューを表示</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1128"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="1128"/>
         <source>Show Application Icon</source>
         <translation>アプリケーション アイコンを表示</translation>
     </message>
@@ -11680,73 +11680,73 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="108"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="933"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="933"/>
         <source>&amp;Contents...</source>
         <translation>ヘルプを表示(&amp;C)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="110"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="934"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="934"/>
         <source>Show the online help contents</source>
         <translation>オンラインヘルプを表示</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="113"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="955"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="955"/>
         <source>&amp;VirtualBox Web Site...</source>
         <translation>VirtualBox Webサイト(&amp;V)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="115"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="956"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="956"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation>WebブラウザでVirtualBox製品のWebサイトを開く</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="118"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="977"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="977"/>
         <source>&amp;Reset All Warnings</source>
         <translation>すべての警告をリセット(&amp;R)</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="120"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="978"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="978"/>
         <source>Go back to showing all suppressed warnings and messages</source>
         <translation>すべての抑止された警告とメッセージを再度表示させる</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="124"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1002"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="1002"/>
         <source>R&amp;egister VirtualBox...</source>
         <translation>VirtualBox を登録(&amp;E)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="126"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1003"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="1003"/>
         <source>Open VirtualBox registration form</source>
         <translation>VirtualBox 登録フォームを開く</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="130"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1026"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="1026"/>
         <source>C&amp;heck for Updates...</source>
         <translation>アップデートを確認(&amp;H)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="132"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1027"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="1027"/>
         <source>Check for a new VirtualBox version</source>
         <translation>VirtualBoxの最新バージョンを確認</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="135"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1049"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="1049"/>
         <source>&amp;About VirtualBox...</source>
         <translation>VirtualBox について(&amp;A)...</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="137"/>
-        <location filename="../src/runtime/UIActionsPool.cpp" line="1050"/>
+        <location filename="../src/runtime/UIActionPool.cpp" line="1050"/>
         <source>Show a dialog with product information</source>
         <translation>製品情報ダイアログを表示</translation>
     </message>

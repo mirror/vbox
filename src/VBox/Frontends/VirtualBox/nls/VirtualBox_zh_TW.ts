@@ -188,7 +188,7 @@
     </message>
 </context>
 <context>
-    <name>UIActionsPool</name>
+    <name>UIActionPool</name>
     <message>
         <source>&amp;Machine</source>
         <translation>機器(&amp;M)</translation>
