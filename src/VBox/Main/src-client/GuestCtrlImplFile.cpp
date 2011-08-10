@@ -46,13 +46,12 @@ STDMETHODIMP Guest::FileExists(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPasswo
         return setError(E_INVALIDARG, tr("No user name specified"));
 
     return fileExistsInternal(aFile,
-                              aUsername, aPassword, aExists,
-                              NULL /* rc */);
+                              aUsername, aPassword, aExists);
 #endif
 }
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists, int *pRC)
+HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists)
 {
     using namespace guestControl;
 
@@ -61,7 +60,48 @@ HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPas
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT rc = S_OK;
+    RTFSOBJINFO objInfo;
+    int rc;
+    HRESULT hr = fileQueryInfoInternal(aFile,
+                                       aUsername, aPassword,
+                                       &objInfo, RTFSOBJATTRADD_NOTHING, &rc);
+    if (SUCCEEDED(hr))
+    {
+        switch (rc)
+        {
+            case VINF_SUCCESS:
+                *aExists = TRUE;
+                break;
+
+            case VERR_FILE_NOT_FOUND:
+                *aExists = FALSE;
+                break;
+
+            case VERR_NOT_FOUND:
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              Guest::tr("Unable to query file existence"));
+                break;
+
+            default:
+                AssertReleaseMsgFailed(("fileExistsInternal: Unknown return value (%Rrc)\n", rc));
+                break;
+        }
+    }
+    return hr;
+}
+
+HRESULT Guest::fileQueryInfoInternal(IN_BSTR aFile,
+                                     IN_BSTR aUsername, IN_BSTR aPassword,
+                                     PRTFSOBJINFO aObjInfo, RTFSOBJATTRADD enmAddAttribs,
+                                     int *pRC)
+{
+    using namespace guestControl;
+
+    /* aUsername is optional. */
+    /* aPassword is optional. */
+    /* aObjInfo is optional. */
+
+    HRESULT hr;
     try
     {
         Utf8Str Utf8File(aFile);
@@ -85,20 +125,50 @@ HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPas
         /*
          * Execute guest process.
          */
-        rc = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Checking for file existence").raw(),
+        ULONG uPID;
+        hr = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Querying file information").raw(),
                                    ComSafeArrayAsInParam(args),
                                    ComSafeArrayAsInParam(env),
                                    aUsername, aPassword,
-                                   NULL /* Progress */, NULL /* PID */);
+                                   NULL /* Progress */, &uPID);
+        if (SUCCEEDED(hr))
+        {
+            GuestCtrlStreamObjects streamObjs;
+            hr = executeStreamParse(uPID, streamObjs);
+            if (SUCCEEDED(hr))
+            {
+                int rc = VINF_SUCCESS;
 
-        /* If the call succeeded the file exists, otherwise it does not. */
-        *aExists = SUCCEEDED(rc) ? TRUE : FALSE;
+                GuestProcessStreamBlock *pBlock = streamObjs[0];
+                AssertPtr(pBlock);
+                const char *pszFsType = pBlock->GetString("ftype");
+                if (!pszFsType) /* Attribute missing? */
+                     rc = VERR_NOT_FOUND;
+                if (   RT_SUCCESS(rc)
+                    && strcmp(pszFsType, "-")) /* Regular file? */
+                {
+                     rc = VERR_FILE_NOT_FOUND;
+                }
+                if (   RT_SUCCESS(rc)
+                    && aObjInfo) /* Do we want object details? */
+                {
+                    hr = executeStreamQueryFsObjInfo(aFile, pBlock,
+                                                     aObjInfo, enmAddAttribs);
+                }
+
+                executeStreamFree(streamObjs);
+
+                if (pRC)
+                    *pRC = rc;
+            }
+        }
     }
     catch (std::bad_alloc &)
     {
-        rc = E_OUTOFMEMORY;
+        hr = E_OUTOFMEMORY;
     }
-    return rc;
+
+    return hr;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
@@ -115,77 +185,48 @@ STDMETHODIMP Guest::FileQuerySize(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPas
     if (RT_UNLIKELY((aUsername) == NULL || *(aUsername) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
 
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     return fileQuerySizeInternal(aFile,
-                                 aUsername, aPassword, aSize,
-                                 NULL /* rc */);
+                                 aUsername, aPassword, aSize);
 #endif
 }
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize, int *pRC)
+HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize)
 {
     using namespace guestControl;
 
     CheckComArgStrNotEmptyOrNull(aFile);
 
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc = S_OK;
-    try
+    int rc;
+    RTFSOBJINFO objInfo;
+    HRESULT hr = fileQueryInfoInternal(aFile,
+                                       aUsername, aPassword,
+                                       &objInfo, RTFSOBJATTRADD_NOTHING, &rc);
+    if (SUCCEEDED(hr))
     {
-        Utf8Str Utf8File(aFile);
-        Utf8Str Utf8Username(aUsername);
-        Utf8Str Utf8Password(aPassword);
-
-        com::SafeArray<IN_BSTR> args;
-        com::SafeArray<IN_BSTR> env;
-
-        /*
-         * Prepare tool command line.
-         */
-
-        /* We need to get output which is machine-readable in form
-         * of "key=value\0..key=value\0\0". */
-        args.push_back(Bstr("--machinereadable").raw());
-
-        /* Only the actual file name to chekc is needed for now. */
-        args.push_back(Bstr(Utf8File).raw());
-
-        /*
-         * Execute guest process.
-         */
-        ComPtr<IProgress> progressFileSize;
-        ULONG uPID;
-
-        rc = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Querying file size").raw(),
-                                   ComSafeArrayAsInParam(args),
-                                   ComSafeArrayAsInParam(env),
-                                   aUsername, aPassword,
-                                   progressFileSize.asOutParam(), &uPID);
-        if (SUCCEEDED(rc))
+        switch (rc)
         {
-            GuestCtrlStreamObjects streamObjs;
-            rc = executeStreamCollectOutput(uPID, streamObjs);
-            if (SUCCEEDED(rc))
-            {
-                /** @todo */
-                #if 0
-                                                    int64_t iVal;
-                                    vrc = guestStream.GetInt64Ex("st_size", &iVal);
-                                    if (RT_SUCCESS(vrc))
-                                        *aSize = iVal;
-                                    else
-                                        rc = setError(VBOX_E_IPRT_ERROR,
-                                                      tr("Query file size: Unable to retrieve file size for file \"%s\" (%Rrc)"),
-                                                      Utf8File.c_str(), vrc);
-              #endif
-            }
+            case VINF_SUCCESS:
+                *aSize = objInfo.cbObject;
+                break;
+
+            case VERR_FILE_NOT_FOUND:
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              Guest::tr("File not found"));
+                break;
+
+            case VERR_NOT_FOUND:
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              Guest::tr("Unable to query file size"));
+                break;
+
+            default:
+                AssertReleaseMsgFailed(("fileExistsInternal: Unknown return value (%Rrc)\n", rc));
+                break;
         }
-    }
-    catch (std::bad_alloc &)
-    {
-        rc = E_OUTOFMEMORY;
     }
     return rc;
 }

@@ -58,7 +58,9 @@ HRESULT GuestDirEntry::init(Guest *aParent, GuestProcessStreamBlock &streamBlock
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     mData.mNodeId = streamBlock.GetInt64("node_id");
-    mData.mName =  BstrFmt("%s", streamBlock.GetString("name"));
+    const char *pszName = streamBlock.GetString("name");
+    if (pszName)
+        mData.mName =  BstrFmt("%s", pszName);
     mData.mType = GuestDirEntry::fileTypeToEntryType(streamBlock.GetString("ftype"));
 
     /* Confirm a successful initialization when it's the case. */

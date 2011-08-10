@@ -26,6 +26,7 @@
 #include "GuestCtrlImplPrivate.h"
 #include "HGCM.h"
 #ifdef VBOX_WITH_GUEST_CONTROL
+# include <iprt/fs.h>
 # include <VBox/HostServices/GuestControlSvc.h>
 using namespace guestControl;
 #endif
@@ -102,6 +103,7 @@ public:
     // Directory handling
     STDMETHOD(DirectoryClose)(ULONG aHandle);
     STDMETHOD(DirectoryCreate)(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, ULONG aMode, ULONG aFlags);
+    STDMETHOD(DirectoryExists)(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists);
     STDMETHOD(DirectoryOpen)(IN_BSTR aDirectory, IN_BSTR aFilter,
                              ULONG aFlags, IN_BSTR aUsername, IN_BSTR aPassword, ULONG *aHandle);
     STDMETHOD(DirectoryRead)(ULONG aHandle, IGuestDirEntry **aDirEntry);
@@ -130,12 +132,21 @@ public:
     }
 
 # ifdef VBOX_WITH_GUEST_CONTROL
+    // Internal guest directory functions
+    int directoryCreateHandle(ULONG *puHandle, ULONG uPID, IN_BSTR aDirectory, IN_BSTR aFilter, ULONG uFlags);
     HRESULT directoryCreateInternal(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword,
                                     ULONG aMode, ULONG aFlags, int *pRC);
+    void directoryDestroyHandle(uint32_t uHandle);
+    HRESULT directoryExistsInternal(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists);
+    uint32_t directoryGetPID(uint32_t uHandle);
+    int directoryGetNextEntry(uint32_t uHandle, GuestProcessStreamBlock &streamBlock);
+    bool directoryHandleExists(uint32_t uHandle);
     HRESULT directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
                                   ULONG aFlags,
                                   IN_BSTR aUsername, IN_BSTR aPassword,
                                   ULONG *aHandle, int *pRC);
+    HRESULT directoryQueryInfoInternal(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, PRTFSOBJINFO aObjInfo, RTFSOBJATTRADD enmAddAttribs, int *pRC);
+    // Internal guest execution functions
     HRESULT executeAndWaitForTool(IN_BSTR aTool, IN_BSTR aDescription,
                                   ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                   IN_BSTR aUsername, IN_BSTR aPassword,
@@ -145,12 +156,17 @@ public:
                                    IN_BSTR aUsername, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
     HRESULT executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout, PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID);
-    HRESULT executeStreamCollectBlock(ULONG aPID,
-                                      GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
-    HRESULT executeStreamCollectOutput(ULONG aPID, GuestCtrlStreamObjects &streamObjects);
+    HRESULT executeStreamQueryFsObjInfo(IN_BSTR aObjName,GuestProcessStreamBlock *pStreamBlock, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttribs);
+    int     executeStreamDrain(ULONG aPID, GuestProcessStream &stream);
+    void    executeStreamFree(GuestCtrlStreamObjects &streamObjects);
+    void    executeStreamFreeBlock(GuestProcessStreamBlock *pBlock);
+    int     executeStreamGetNextBlock(ULONG aPID, GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
+    HRESULT executeStreamParse(ULONG aPID, GuestCtrlStreamObjects &streamObjects);
     HRESULT executeWaitForStatusChange(ULONG uPID, ULONG uTimeoutMS, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode);
-    HRESULT fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists, int *pRC);
-    HRESULT fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize, int *pRC);
+    // Internal guest file functions
+    HRESULT fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists);
+    HRESULT fileQueryInfoInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, PRTFSOBJINFO aObjInfo, RTFSOBJATTRADD enmAddAttribs, int *pRC);
+    HRESULT fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize);
 
     // Guest control dispatcher.
     /** Static callback for handling guest notifications. */
@@ -187,6 +203,7 @@ private:
     void callbackFreeUserData(void *pvData);
     int callbackGetUserData(uint32_t uContextID, eVBoxGuestCtrlCallbackType *pEnmType, void **ppvData, size_t *pcbData);
     void* callbackGetUserDataMutableRaw(uint32_t uContextID, size_t *pcbData);
+    int callbackInit(PVBOXGUESTCTRL_CALLBACK pCallback, eVBoxGuestCtrlCallbackType enmType, ComPtr<Progress> pProgress);
     bool callbackIsCanceled(uint32_t uContextID);
     bool callbackIsComplete(uint32_t uContextID);
     int callbackMoveForward(uint32_t uContextID, const char *pszMessage);
@@ -218,11 +235,11 @@ private:
     // Internal guest directory representation.
     typedef struct VBOXGUESTCTRL_DIRECTORY
     {
-        char                       *mpszDirectory;
-        char                       *mpszFilter;
+        Bstr                        mDirectory;
+        Bstr                        mFilter;
         ULONG                       mFlags;
         /** Associated PID of started vbox_ls tool. */
-        uint32_t                    mPID;
+        ULONG                       mPID;
         GuestProcessStream          mStream;
 #if 0
         /** Next enetry in our stream objects vector
@@ -235,12 +252,6 @@ private:
     typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY > GuestDirectoryMap;
     typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY >::iterator GuestDirectoryMapIter;
     typedef std::map< uint32_t, VBOXGUESTCTRL_DIRECTORY >::const_iterator GuestDirectoryMapIterConst;
-
-    int directoryCreateHandle(ULONG *puHandle, ULONG uPID, const char *pszDirectory, const char *pszFilter, ULONG uFlags);
-    void directoryDestroyHandle(uint32_t uHandle);
-    uint32_t directoryGetPID(uint32_t uHandle);
-    int directoryGetNextEntry(uint32_t uHandle, GuestProcessStreamBlock &streamBlock);
-    bool directoryHandleExists(uint32_t uHandle);
 
     // Utility functions.
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);

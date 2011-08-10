@@ -57,6 +57,13 @@ static struct
     int         iResult;
 } aTests[] =
 {
+    /*
+     * Single object parsing.
+     * An object is represented by one or multiple key=value pairs which are
+     * separated by a single "\0". If this termination is missing it will be assumed
+     * that we need to collect more data to do a successful parsing.
+     */
+
     /* Invalid stuff. */
     { NULL,                             0,                                                 0,  0,                                         0, VERR_INVALID_POINTER },
     { NULL,                             512,                                               0,  0,                                         0, VERR_INVALID_POINTER },
@@ -65,26 +72,24 @@ static struct
     { "foo=bar1",                       0,                                                 0,  0,                                         0, VERR_INVALID_PARAMETER },
     { "foo=bar2",                       0,                                                 50, 50,                                        0, VERR_INVALID_PARAMETER },
     /* Empty buffers. */
-    { "",                               1,                                                 0,  1,                                         0, VERR_MORE_DATA },
-    { "\0",                             1,                                                 0,  1,                                         0, VERR_MORE_DATA },
-    /* Incomplete buffer (missing components). */
-    { szUnterm1,                        5,                                                 0,  0,                                         0, VERR_MORE_DATA },
-    { "foo1",                           sizeof("foo1"),                                    0,  0,                                         0, VERR_MORE_DATA },
-    { "=bar\0",                         sizeof("=bar"),                                    0,  0,                                         0, VERR_MORE_DATA },
-    /* Last sequence is incomplete -- new offset should point to it. */
-    { "hug=sub\0incomplete",            sizeof("hug=sub\0incomplete"),                     0,  sizeof("hug=sub"),                         1, VERR_MORE_DATA },
-    { "boo=hoo\0baz=boo\0qwer",         sizeof("boo=hoo\0baz=boo\0qwer"),                  0,  sizeof("boo=hoo\0baz=boo"),                2, VERR_MORE_DATA },
-    /* Parsing good stuff. */
-    { "novalue=",                       sizeof("novalue="),                                0,  sizeof("novalue="),                        1, VINF_SUCCESS },
-    { szUnterm2,                        8,                                                 0,  sizeof(szUnterm2),                         1, VINF_SUCCESS },
-    { "foo2=",                          sizeof("foo2="),                                   0,  sizeof("foo2="),                           1, VINF_SUCCESS },
-    { "har=hor",                        sizeof("har=hor"),                                 0,  sizeof("har=hor"),                         1, VINF_SUCCESS },
-    { "foo=bar\0baz=boo",               sizeof("foo=bar\0baz=boo"),                        0,  sizeof("foo=bar\0baz=boo"),                2, VINF_SUCCESS },
-    /* Parsing until a different block (two terminations, returning offset to next block). */
-    { "off=rab\0a=b\0\0\0\0",           sizeof("off=rab\0a=b\0\0\0"),                      0,  13,                                        2, VERR_MORE_DATA },
-    { "off=rab\0\0zab=oob",             sizeof("off=rab\0\0zab=oob"),                      0,  9,                                         1, VERR_MORE_DATA },
-    { "\0\0\0\0off=rab\0zab=oob\0\0",   sizeof("\0\0\0\0off=rab\0zab=oob\0\0"),            0,  1,                                         0, VERR_MORE_DATA },
-    { "o2=r2\0z3=o3\0\0f3=g3",          sizeof("o2=r2\0z3=o3\0\0f3=g3"),                   0,  13,                                        2, VERR_MORE_DATA }
+    { "",                               1,                                                 0,  1,                                         0, VINF_SUCCESS },
+    { "\0",                             1,                                                 0,  1,                                         0, VINF_SUCCESS },
+    /* Unterminated values (missing "\0"). */
+    { "test1",                          sizeof("test1"),                                   0,  0,                                         0, VERR_MORE_DATA },
+    { "test2=",                         sizeof("test2="),                                  0,  0,                                         0, VERR_MORE_DATA },
+    { "test3=test3",                    sizeof("test3=test3"),                             0,  0,                                         0, VERR_MORE_DATA },
+    { "test4=test4\0t41",               sizeof("test4=test4\0t41"),                        0,  sizeof("test4=test4\0") - 1,               1, VERR_MORE_DATA },
+    { "test5=test5\0t51=t51",           sizeof("test5=test5\0t51=t51"),                    0,  sizeof("test5=test5\0") - 1,               1, VERR_MORE_DATA },
+    /* Next block unterminated. */
+    { "t51=t51\0t52=t52\0\0t53=t53",    sizeof("t51=t51\0t52=t52\0\0t53=t53"),             0,  sizeof("t51=t51\0t52=t52\0") - 1,          2, VINF_SUCCESS },
+    { "test6=test6\0\0t61=t61",         sizeof("test6=test6\0\0t61=t61"),                  0,  sizeof("test6=test6\0") - 1,               1, VINF_SUCCESS },
+    /* Good stuff. */
+    { "test61=\0test611=test611\0",     sizeof("test61=\0test611=test611\0"),              0,  sizeof("test61=\0test611=test611\0") - 1,  2, VINF_SUCCESS },
+    { "test7=test7\0\0",                sizeof("test7=test7\0\0"),                         0,  sizeof("test7=test7\0") - 1,               1, VINF_SUCCESS },
+    { "test8=test8\0t81=t81\0\0",       sizeof("test8=test8\0t81=t81\0\0"),                0,  sizeof("test8=test8\0t81=t81\0") - 1,      2, VINF_SUCCESS },
+    /* Good stuff, but with a second block -- should be *not* taken into account since
+     * we're only interested in parsing/handling the first object. */
+    { "t9=t9\0t91=t91\0\0t92=t92\0\0",  sizeof("t9=t9\0t91=t91\0\0t92=t92\0\0"),           0,  sizeof("t9=t9\0t91=t91\0") - 1,            2, VINF_SUCCESS }
 };
 
 static struct
@@ -97,12 +102,13 @@ static struct
     int         iResult;
 } aTests2[] =
 {
-    { "\0\0\0\0",                                      sizeof("\0\0\0\0"),                                0, VINF_SUCCESS },
-    { "off=rab\0\0zab=oob",                            sizeof("off=rab\0\0zab=oob"),                      2, VINF_SUCCESS },
-    { "\0\0\0soo=foo\0goo=loo\0\0zab=oob",             sizeof("\0\0\0soo=foo\0goo=loo\0\0zab=oob"),       2, VINF_SUCCESS },
-    { "qoo=uoo\0\0\0\0asdf=\0\0",                      sizeof("qoo=uoo\0\0\0\0asdf=\0\0"),                2, VINF_SUCCESS },
-    { "foo=bar\0\0\0\0\0\0",                           sizeof("foo=bar\0\0\0\0\0\0"),                     1, VINF_SUCCESS },
-    { "qwer=cvbnr\0\0\0gui=uig\0\0\0",                 sizeof("qwer=cvbnr\0\0\0gui=uig\0\0\0"),           2, VINF_SUCCESS }
+    /* No blocks. */
+    { "\0\0\0\0",                                      sizeof("\0\0\0\0"),                                0, VERR_NO_DATA },
+    /* Good stuff. */
+    { "\0b1=b1\0\0",                                   sizeof("\0b1=b1\0\0"),                             1, VERR_NO_DATA },
+    { "b1=b1\0\0",                                     sizeof("b1=b1\0\0"),                               1, VERR_NO_DATA },
+    { "b1=b1\0b2=b2\0\0",                              sizeof("b1=b1\0b2=b2\0\0"),                        1, VERR_NO_DATA },
+    { "b1=b1\0b2=b2\0\0\0",                            sizeof("b1=b1\0b2=b2\0\0\0"),                      1, VERR_NO_DATA }
 };
 
 int main()
@@ -135,25 +141,18 @@ int main()
     unsigned iTest = 0;
     for (iTest; iTest < RT_ELEMENTS(aTests); iTest++)
     {
-        uint32_t uOffset = aTests[iTest].uOffsetStart;
-
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Test #%u\n", iTest);
 
         GuestProcessStream stream;
         int iResult = stream.AddData((BYTE*)aTests[iTest].pbData, aTests[iTest].cbData);
         if (RT_SUCCESS(iResult))
         {
-            GuestProcessStreamBlock block;
-            iResult = stream.ParseBlock(block);
+            GuestProcessStreamBlock curBlock;
+            iResult = stream.ParseBlock(curBlock);
             if (iResult != aTests[iTest].iResult)
             {
                 RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
                              iResult, aTests[iTest].iResult);
-            }
-            else if (block.GetCount() != aTests[iTest].uMapElements)
-            {
-                RTTestFailed(hTest, "\tMap has %u elements, expected %u",
-                             block.GetCount(), aTests[iTest].uMapElements);
             }
             else if (stream.GetOffset() != aTests[iTest].uOffsetAfter)
             {
@@ -162,25 +161,36 @@ int main()
             }
             else if (iResult == VERR_MORE_DATA)
             {
-                RTTestIPrintf(RTTESTLVL_DEBUG, "\tMore data (Offset: %u)\n", uOffset);
+                RTTestIPrintf(RTTESTLVL_DEBUG, "\tMore data (Offset: %u)\n", stream.GetOffset());
+            }
 
-                /* There is remaining data left in the buffer (which needs to be merged
-                 * with a following buffer) -- print it. */
-                size_t uToWrite = aTests[iTest].cbData - uOffset;
-                if (uToWrite)
+            if (  (   RT_SUCCESS(iResult)
+                   || iResult == VERR_MORE_DATA))
+            {
+                if (curBlock.GetCount() != aTests[iTest].uMapElements)
                 {
-                    const char *pszRemaining = aTests[iTest].pbData;
-                    RTTestIPrintf(RTTESTLVL_DEBUG, "\tRemaining (%u):\n", uToWrite);
-                    RTStrmWriteEx(g_pStdOut, &aTests[iTest].pbData[uOffset], uToWrite - 1, NULL);
-                    RTTestIPrintf(RTTESTLVL_DEBUG, "\n");
+                    RTTestFailed(hTest, "\tMap has %u elements, expected %u",
+                                 curBlock.GetCount(), aTests[iTest].uMapElements);
                 }
+            }
+
+            /* There is remaining data left in the buffer (which needs to be merged
+             * with a following buffer) -- print it. */
+            uint32_t uOffset = stream.GetOffset();
+            size_t uToWrite = aTests[iTest].cbData - uOffset;
+            if (uToWrite)
+            {
+                const char *pszRemaining = aTests[iTest].pbData;
+                RTTestIPrintf(RTTESTLVL_DEBUG, "\tRemaining (%u):\n", uToWrite);
+                RTStrmWriteEx(g_pStdOut, &aTests[iTest].pbData[uOffset], uToWrite - 1, NULL);
             }
         }
     }
 
     RTTestIPrintf(RTTESTLVL_INFO, "Doing block tests ...\n");
 
-    for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests2); iTest++)
+    iTest = 0;
+    for (iTest; iTest < RT_ELEMENTS(aTests2); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u\n", iTest);
 
@@ -189,23 +199,21 @@ int main()
         if (RT_SUCCESS(iResult))
         {
             uint32_t uNumBlocks = 0;
-
+            uint8_t uSafeCouunter = 0;
             do
             {
-                GuestProcessStreamBlock block;
-                iResult = stream.ParseBlock(block);
+                GuestProcessStreamBlock curBlock;
+                iResult = stream.ParseBlock(curBlock);
                 RTTestIPrintf(RTTESTLVL_DEBUG, "\tReturned with %Rrc\n", iResult);
-                if (   iResult == VINF_SUCCESS
- 	                || iResult == VERR_MORE_DATA)
+                if (RT_SUCCESS(iResult))
                 {
                     /* Only count block which have at least one pair. */
-                    if (block.GetCount())
+                    if (curBlock.GetCount())
                         uNumBlocks++;
                 }
-                if (uNumBlocks > 32)
-                    break; /* Give up if unreasonable big. */
-                block.Clear();
-            } while (iResult == VERR_MORE_DATA);
+                if (uSafeCouunter++ > 32)
+                    break;
+            } while (RT_SUCCESS(iResult));
 
             if (iResult != aTests2[iTest].iResult)
             {

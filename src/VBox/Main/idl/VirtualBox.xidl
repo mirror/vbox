@@ -8565,7 +8565,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="ed109b6e-0578-4b17-8ace-52646789f1a0"
+    uuid="35f75ed7-df96-4988-b246-2c103555c95d"
     wsmap="managed"
     >
     <desc>
@@ -9008,6 +9008,39 @@
       <param name="flags" type="unsigned long" dir="in">
         <desc>
           <link to="DirectoryCreateFlag"/> flags.
+        </desc>
+      </param>
+    </method>
+
+    <method name="directoryExists">
+      <desc>
+        Checks if the specified directory exists and is a directory.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while looking up information.
+        </result>
+
+      </desc>
+      <param name="directory" type="wstring" dir="in">
+        <desc>
+          Full path of directory to check.
+        </desc>
+      </param>
+      <param name="userName" type="wstring" dir="in">
+        <desc>
+          User name under which the lookup will be performed; the
+          user has to exist and have the appropriate rights to access / read the
+          desired directory.
+        </desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>
+          Password of the user account specified.
+        </desc>
+      </param>
+      <param name="exists" type="boolean" dir="return">
+        <desc>
+          True if it's a directory, false if it isn't (or doesn't exist).
         </desc>
       </param>
     </method>

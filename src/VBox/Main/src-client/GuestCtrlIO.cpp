@@ -34,24 +34,24 @@ GuestProcessStreamBlock::GuestProcessStreamBlock()
 
 }
 
+/*
+GuestProcessStreamBlock::GuestProcessStreamBlock(const GuestProcessStreamBlock &otherBlock)
+{
+    for (GuestCtrlStreamPairsIter it = otherBlock.m_mapPairs.begin();
+         it != otherBlock.end(); it++)
+    {
+        m_mapPairs[it->first] = new
+        if (it->second.pszValue)
+        {
+            RTMemFree(it->second.pszValue);
+            it->second.pszValue = NULL;
+        }
+    }
+}*/
+
 GuestProcessStreamBlock::~GuestProcessStreamBlock()
 {
     Clear();
-}
-
-/**
- * Adds a key (if not existing yet).
- *
- * @return  IPRT status code.
- * @param   pszKey              Key name to add.
- */
-int GuestProcessStreamBlock::AddKey(const char *pszKey)
-{
-    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
-    /** @todo Add check for already existing keys! (VERR_ALREADY_EXISTS). */
-    m_mapPairs[Utf8Str(pszKey)].pszValue = NULL;
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -61,12 +61,6 @@ int GuestProcessStreamBlock::AddKey(const char *pszKey)
  */
 void GuestProcessStreamBlock::Clear()
 {
-    for (GuestCtrlStreamPairsIter it = m_mapPairs.begin(); it != m_mapPairs.end(); it++)
-    {
-        if (it->second.pszValue)
-            RTMemFree(it->second.pszValue);
-    }
-
     m_mapPairs.clear();
 }
 
@@ -114,7 +108,6 @@ size_t GuestProcessStreamBlock::GetCount()
     return m_mapPairs.size();
 }
 
-
 /**
  * Returns a string value of a specified key.
  *
@@ -129,7 +122,7 @@ const char* GuestProcessStreamBlock::GetString(const char *pszKey)
     {
         GuestCtrlStreamPairsIterConst itPairs = m_mapPairs.find(Utf8Str(pszKey));
         if (itPairs != m_mapPairs.end())
-            return itPairs->second.pszValue;
+            return itPairs->second.mValue.c_str();
     }
     catch (const std::exception &ex)
     {
@@ -184,26 +177,28 @@ int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
-    if (pszValue)
+    try
     {
-        char *pszVal = RTStrDup(pszValue);
-        if (pszVal)
-            m_mapPairs[pszKey].pszValue = pszVal;
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    else
-    {
-        GuestCtrlStreamPairsIter it = m_mapPairs.find(pszKey);
-        if (it != m_mapPairs.end())
+        Utf8Str Utf8Key(pszKey);
+
+        /* Take a shortcut and prevent crashes on some funny versions
+         * of STL if map is empty initially. */
+        if (!m_mapPairs.empty())
         {
-            if (it->second.pszValue)
-            {
-                RTMemFree(it->second.pszValue);
-                it->second.pszValue = NULL;
-            }
-            m_mapPairs.erase(it);
+            GuestCtrlStreamPairsIter it = m_mapPairs.find(Utf8Key);
+            if (it != m_mapPairs.end())
+                 m_mapPairs.erase(it);
         }
+
+        if (pszValue)
+        {
+            m_mapPairs.insert(
+                std::pair<Utf8Str, VBOXGUESTCTRL_STREAMPAIR>(Utf8Key, VBOXGUESTCTRL_STREAMPAIR(pszValue)));
+        }
+    }
+    catch (const std::exception &ex)
+    {
+        NOREF(ex);
     }
     return rc;
 }
@@ -323,112 +318,94 @@ uint32_t GuestProcessStream::GetOffset()
 }
 
 /**
- * Try to parse the next upcoming pair block within the internal
- * buffer. Old pairs from a previously parsed block will be removed first!
+ * Tries to parse the next upcoming pair block within the internal
+ * buffer.
  *
- * @return  IPRT status code.
+ * Returns VERR_NO_DATA is no data is in internal buffer or buffer has been
+ * completely parsed already.
+ *
+ * Returns VERR_MORE_DATA if current block was parsed (with zero or more pairs
+ * stored in stream block) but still contains incomplete (unterminated)
+ * data.
+ *
+ * Returns VINF_SUCCESS if current block was parsed until the next upcoming
+ * block (with zero or more pairs stored in stream block).
+ *
+ * @return IPRT status code.
+ * @param streamBlock               Reference to guest stream block to fill.
+ *
  */
 int GuestProcessStream::ParseBlock(GuestProcessStreamBlock &streamBlock)
 {
-    AssertPtrReturn(m_pbBuffer, VINF_SUCCESS);
-    AssertReturn(m_cbSize, VINF_SUCCESS);
+    if (   !m_pbBuffer
+        || !m_cbSize)
+    {
+        return VERR_NO_DATA;
+    }
+
     AssertReturn(m_cbOffset <= m_cbSize, VERR_INVALID_PARAMETER);
+    if (m_cbOffset == m_cbSize)
+        return VERR_NO_DATA;
 
     int rc = VINF_SUCCESS;
 
-    size_t uCur = m_cbOffset;
-    for (;uCur < m_cbSize;)
+    char *pszOff   = (char*)&m_pbBuffer[m_cbOffset];
+    char *pszStart = pszOff;
+    while (*pszStart)
     {
-        const char *pszStart = (char*)&m_pbBuffer[uCur];
-        const char *pszEnd = pszStart;
-
-        /* Search end of current pair (key=value\0). */
-        while (uCur++ < m_cbSize)
+        size_t pairLen = strlen(pszStart);
+        if ((pszStart - pszOff) + pairLen + 1 >= m_cbSize)
         {
-            if (*pszEnd == '\0')
-                break;
-            pszEnd++;
-        }
-
-        size_t uPairLen = pszEnd - pszStart;
-        if (uPairLen)
-        {
-            const char *pszSep = pszStart;
-            while (   *pszSep != '='
-                   &&  pszSep != pszEnd)
-            {
-                pszSep++;
-            }
-
-            /* No separator found (or incomplete key=value pair)? */
-            if (   pszSep == pszStart
-                || pszSep == pszEnd)
-            {
-                m_cbOffset =  uCur - uPairLen - 1;
-                rc = VERR_MORE_DATA;
-            }
-
-            if (RT_FAILURE(rc))
-                break;
-
-            size_t uKeyLen = pszSep - pszStart;
-            size_t uValLen = pszEnd - (pszSep + 1);
-
-            /* Get key (if present). */
-            if (uKeyLen)
-            {
-                Assert(pszSep > pszStart);
-                char *pszKey = (char*)RTMemAllocZ(uKeyLen + 1);
-                if (!pszKey)
-                {
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
-                memcpy(pszKey, pszStart, uKeyLen);
-
-                streamBlock.AddKey(pszKey);
-
-                /* Get value (if present). */
-                if (uValLen)
-                {
-                    Assert(pszEnd > pszSep);
-                    char *pszVal = (char*)RTMemAllocZ(uValLen + 1);
-                    if (!pszVal)
-                    {
-                        rc = VERR_NO_MEMORY;
-                        break;
-                    }
-                    memcpy(pszVal, pszSep + 1, uValLen);
-
-                    streamBlock.SetValue(pszKey, pszVal);
-                    RTMemFree(pszVal);
-                }
-
-                RTMemFree(pszKey);
-
-                m_cbOffset += uCur - m_cbOffset;
-            }
-        }
-        else /* No pair detected, check for a new block. */
-        {
-            do
-            {
-                if (*pszEnd == '\0')
-                {
-                    m_cbOffset = uCur;
-                    rc = VERR_MORE_DATA;
-                    break;
-                }
-                pszEnd++;
-            } while (++uCur < m_cbSize);
-        }
-
-        if (RT_FAILURE(rc))
+            rc = VERR_MORE_DATA;
             break;
+        }
+        else
+        {
+            char *pszSep = strchr(pszStart, '=');
+            char *pszVal = NULL;
+            if (pszSep)
+                pszVal = pszSep + 1;
+            if (!pszSep || !pszVal)
+            {
+                rc = VERR_MORE_DATA;
+                break;
+            }
+
+            /* Terminate the separator so that we can
+             * use pszStart as our key from now on. */
+            *pszSep = '\0';
+
+            rc = streamBlock.SetValue(pszStart, pszVal);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        /* Next pair. */
+        pszStart += pairLen + 1;
     }
 
-    RT_CLAMP(m_cbOffset, 0, m_cbSize);
+    /* If we did not do any movement but we have stuff left
+     * in our buffer just skip the current termination so that
+     * we can try next time. */
+    uint32_t uDistance = (pszStart - pszOff);
+    if (   !uDistance
+        && *pszStart == '\0'
+        && m_cbOffset < m_cbSize)
+    {
+        uDistance++;
+    }
+    m_cbOffset += uDistance;
 
     return rc;
+}
+
+void GuestProcessStream::FreeBlock(GuestProcessStreamBlock *pStreamBlock)
+{
+    if (pStreamBlock)
+    {
+        pStreamBlock->Clear();
+        delete pStreamBlock;
+        pStreamBlock = NULL;
+    }
 }
 

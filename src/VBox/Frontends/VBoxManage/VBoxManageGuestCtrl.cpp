@@ -78,7 +78,7 @@ typedef struct COPYCONTEXT
 } COPYCONTEXT, *PCOPYCONTEXT;
 
 /**
- * An entry for a source element, including an optional filter.
+ * An entry for a source element, including an optional DOS-like wildcard (*,?).
  */
 typedef struct SOURCEFILEENTRY
 {
@@ -92,7 +92,9 @@ typedef struct SOURCEFILEENTRY
             && !RTDirExists(pszSource))
         {
             /* No file and no directory -- maybe a filter? */
-            if (NULL != strpbrk(RTPathFilename(pszSource), "*?"))
+            char *pszFilename = RTPathFilename(pszSource);
+            if (   pszFilename
+                && strpbrk(pszFilename, "*?"))
             {
                 /* Yep, get the actual filter part. */
                 mFilter = RTPathFilename(pszSource);
@@ -937,9 +939,9 @@ static int ctrlCopyDirExists(PCOPYCONTEXT pContext, bool bGuest,
     if (bGuest)
     {
         BOOL fDirExists = FALSE;
-        HRESULT hr = pContext->pGuest->FileExists(Bstr(pszDir).raw(),
-                                                  Bstr(pContext->pszUsername).raw(),
-                                                  Bstr(pContext->pszPassword).raw(), &fDirExists);
+        HRESULT hr = pContext->pGuest->DirectoryExists(Bstr(pszDir).raw(),
+                                                       Bstr(pContext->pszUsername).raw(),
+                                                       Bstr(pContext->pszPassword).raw(), &fDirExists);
         if (FAILED(hr))
             rc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
         else
@@ -1270,9 +1272,9 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
 
                 case GuestDirEntryType_File:
                 {
-                    const char *pszName = Utf8Str(strName).c_str();
+                    Utf8Str strFile(strName);
                     if (   !pszFilter
-                        || RTStrSimplePatternMatch(pszFilter, pszName))
+                        || RTStrSimplePatternMatch(pszFilter, strFile.c_str()))
                     {
                         if (!fDirCreated)
                         {
@@ -1290,10 +1292,9 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
 
                         if (RT_SUCCESS(rc))
                         {
-                            Utf8Str strDir(strName);
                             char *pszFileSource;
                             if (RTStrAPrintf(&pszFileSource, "%s/%s",
-                                             szCurDir, strDir.c_str()))
+                                             szCurDir, strFile.c_str()))
                             {
                                 char *pszFileDest;
                                 rc = ctrlCopyTranslatePath(pContext, pszSource, pszFileSource,
@@ -1306,6 +1307,8 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                                 }
                                 RTStrFree(pszFileSource);
                             }
+                            else
+                                rc = VERR_NO_MEMORY;
                         }
                     }
                     break;
@@ -1314,11 +1317,26 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                 default:
                     break;
             }
+
+            if (RT_FAILURE(rc))
+                break;
         }
 
-        hr = pContext->pGuest->DirectoryClose(uDirHandle);
-        if (FAILED(rc))
-            rc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
+        if (FAILED(hr))
+        {
+            if (hr != E_ABORT)
+                rc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
+        }
+
+        HRESULT hr2 = pContext->pGuest->DirectoryClose(uDirHandle);
+        if (FAILED(hr2))
+        {
+            int rc2 = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+        else if (SUCCEEDED(hr))
+            hr = hr2;
     }
 
     return rc;
@@ -1548,7 +1566,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
             if (fVerbose)
                 RTPrintf("Source: %s\n", pszSource);
 
-            /* @todo Files with filter?? */
+            /** @todo Files with filter?? */
             bool fExists;
             vrc = ctrlCopyFileExistsOnSource(pContext, pszSource, &fExists);
             if (RT_SUCCESS(vrc))

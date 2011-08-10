@@ -1358,8 +1358,8 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
     }
     Assert(uStatus > INPUT_STS_UNDEFINED);
 
-    VBoxServiceVerbose(3, "ControlExec: [PID %u]: Input processed, uStatus=%u, uFlags=0x%x, cbWritten=%u\n",
-                       uPID, uStatus, uFlags, cbWritten);
+    VBoxServiceVerbose(3, "ControlExec: [PID %u]: Input processed, CID=%u, uStatus=%u, uFlags=0x%x, cbWritten=%u\n",
+                       uPID, uContextID, uStatus, uFlags, cbWritten);
 
     /* Note: Since the context ID is unique the request *has* to be completed here,
      *       regardless whether we got data or not! Otherwise the progress object
@@ -1400,11 +1400,11 @@ int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNum
             rc = VBoxServiceControlExecThreadGetOutput(uPID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
                                                        pBuf, _64K /* cbSize */, &cbRead);
             if (RT_SUCCESS(rc))
-                VBoxServiceVerbose(3, "ControlExec: [PID %u]: Got output, cbRead=%u, uHandle=%u, uFlags=%u\n",
-                                   uPID, cbRead, uHandleID, uFlags);
+                VBoxServiceVerbose(3, "ControlExec: [PID %u]: Got output, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
+                                   uPID, uContextID, cbRead, uHandleID, uFlags);
             else
-                VBoxServiceError("ControlExec: [PID %u]: Failed to retrieve output, uHandle=%u, rc=%Rrc\n",
-                                 uPID, uHandleID, rc);
+                VBoxServiceError("ControlExec: [PID %u]: Failed to retrieve output, CID=%u, uHandle=%u, rc=%Rrc\n",
+                                 uPID, uContextID, uHandleID, rc);
 
             /* Note: Since the context ID is unique the request *has* to be completed here,
              *       regardless whether we got data or not! Otherwise the progress object
