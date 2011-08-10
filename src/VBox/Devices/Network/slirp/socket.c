@@ -1422,7 +1422,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 if (icm)
                 {
                     /* on this branch we don't need stored variant */
-                    m_freem(icm->im_m);
+                    m_freem(pData, icm->im_m);
                     LIST_REMOVE(icm, im_list);
                     RTMemFree(icm);
                 }
