@@ -137,19 +137,20 @@ HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
  * if no free handles left, otherwise VINF_SUCCESS (or some other IPRT error).
  *
  * @return IPRT status code.
- * @param puHandle             Pointer where the handle gets stored to.
+ * @param puHandle             Pointer where the handle gets stored to. Optional.
  * @param uPID                 PID of guest process running the associated "vbox_ls".
- * @param pszDirectory         Directory the handle is assigned to.
- * @param pszFilter            Directory filter.  Optional.
+ * @param aDirectory           Directory the handle is assigned to.
+ * @param aFilter              Directory filter.  Optional.
  * @param uFlags               Directory open flags.
  *
  */
 int Guest::directoryCreateHandle(ULONG *puHandle, ULONG uPID,
-                                 const char *pszDirectory, const char *pszFilter, ULONG uFlags)
+                                 IN_BSTR aDirectory, IN_BSTR aFilter, ULONG uFlags)
 {
-    AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszDirectory, VERR_INVALID_POINTER);
-    /* pszFilter is optional. */
+    AssertReturn(uPID, VERR_INVALID_PARAMETER);
+    CheckComArgStrNotEmptyOrNull(aDirectory);
+    /* aFilter is optional. */
+    /* uFlags are optional. */
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -159,34 +160,19 @@ int Guest::directoryCreateHandle(ULONG *puHandle, ULONG uPID,
         /* Create a new context ID ... */
         uint32_t uHandleTry = ASMAtomicIncU32(&mNextDirectoryID);
         GuestDirectoryMapIter it = mGuestDirectoryMap.find(uHandleTry);
-        if (it == mGuestDirectoryMap.end())
+        if (it == mGuestDirectoryMap.end()) /* We found a free slot ... */
         {
-            rc = VINF_SUCCESS;
-            if (!RTStrAPrintf(&mGuestDirectoryMap[uHandleTry].mpszDirectory, pszDirectory))
-                rc = VERR_NO_MEMORY;
-            else
-            {
-                /* Filter is optional. */
-                if (pszFilter)
-                {
-                    if (!RTStrAPrintf(&mGuestDirectoryMap[uHandleTry].mpszFilter, pszFilter))
-                        rc = VERR_NO_MEMORY;
-                }
-
-                if (RT_SUCCESS(rc))
-                {
-                    mGuestDirectoryMap[uHandleTry].mPID = uPID;
-                    mGuestDirectoryMap[uHandleTry].mFlags = uFlags;
-                    *puHandle = uHandleTry;
-
-                    break;
-                }
-            }
-
-            if (RT_FAILURE(rc))
-                break;
-
+            mGuestDirectoryMap[uHandleTry].mDirectory = aDirectory;
+            mGuestDirectoryMap[uHandleTry].mFilter = aFilter;
+            mGuestDirectoryMap[uHandleTry].mPID = uPID;
+            mGuestDirectoryMap[uHandleTry].mFlags = uFlags;
             Assert(mGuestDirectoryMap.size());
+
+            rc = VINF_SUCCESS;
+
+            if (puHandle)
+                *puHandle = uHandleTry;
+            break;
         }
     }
 
@@ -207,9 +193,6 @@ void Guest::directoryDestroyHandle(uint32_t uHandle)
     GuestDirectoryMapIter it = mGuestDirectoryMap.find(uHandle);
     if (it != mGuestDirectoryMap.end())
     {
-        RTStrFree(it->second.mpszDirectory);
-        RTStrFree(it->second.mpszFilter);
-
         /* Destroy raw guest stream buffer - not used
          * anymore. */
         it->second.mStream.Destroy();
@@ -219,11 +202,70 @@ void Guest::directoryDestroyHandle(uint32_t uHandle)
     }
 }
 
+STDMETHODIMP Guest::DirectoryExists(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    CheckComArgStrNotEmptyOrNull(aDirectory);
+
+    /* Do not allow anonymous executions (with system rights). */
+    if (RT_UNLIKELY((aUsername) == NULL || *(aUsername) == '\0'))
+        return setError(E_INVALIDARG, tr("No user name specified"));
+
+    return directoryExistsInternal(aDirectory,
+                                   aUsername, aPassword, aExists);
+#endif
+}
+
+#ifdef VBOX_WITH_GUEST_CONTROL
+HRESULT Guest::directoryExistsInternal(IN_BSTR aDirectory, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists)
+{
+    using namespace guestControl;
+
+    CheckComArgStrNotEmptyOrNull(aDirectory);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    RTFSOBJINFO objInfo;
+    int rc;
+    HRESULT hr = directoryQueryInfoInternal(aDirectory,
+                                            aUsername, aPassword,
+                                            &objInfo, RTFSOBJATTRADD_NOTHING, &rc);
+    if (SUCCEEDED(hr))
+    {
+        switch (rc)
+        {
+            case VINF_SUCCESS:
+                *aExists = TRUE;
+                break;
+
+            case VERR_FILE_NOT_FOUND:
+                *aExists = FALSE;
+                break;
+
+            case VERR_NOT_FOUND:
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              Guest::tr("Unable to query directory existence"));
+                break;
+
+            default:
+                AssertReleaseMsgFailed(("directoryExistsInternal: Unknown return value (%Rrc)\n", rc));
+                break;
+        }
+    }
+    return hr;
+}
+#endif
+
 /**
  * Gets the associated PID from a directory handle.
  *
- * @return  uint32_t            Associated PID, 0 if handle not found/invalid.
- * @param   uHandle             Directory handle to get PID for.
+ * @return  uint32_t                Associated PID, 0 if handle not found/invalid.
+ * @param   uHandle                 Directory handle to get PID for.
  */
 uint32_t Guest::directoryGetPID(uint32_t uHandle)
 {
@@ -236,19 +278,24 @@ uint32_t Guest::directoryGetPID(uint32_t uHandle)
     return 0;
 }
 
+/**
+ * Returns the next directory entry of an open guest directory.
+ * Returns VERR_NO_MORE_FILES if no more entries available.
+ *
+ * @return  IPRT status code.
+ * @param   uHandle                 Directory handle to get entry for.
+ * @param   streamBlock             Reference that receives the next stream block data.
+ */
 int Guest::directoryGetNextEntry(uint32_t uHandle, GuestProcessStreamBlock &streamBlock)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    // LOCK DOES NOT WORK HERE!?
+    //AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     GuestDirectoryMapIter it = mGuestDirectoryMap.find(uHandle);
     if (it != mGuestDirectoryMap.end())
     {
-        HRESULT hr = executeStreamCollectBlock(it->second.mPID,
-                                               it->second.mStream, streamBlock);
-        if (FAILED(hr))
-            return VERR_INVALID_PARAMETER; /** @todo Find better rc! */
-
-        return VINF_SUCCESS;
+        return executeStreamGetNextBlock(it->second.mPID,
+                                         it->second.mStream, streamBlock);
     }
 
     return VERR_NOT_FOUND;
@@ -258,8 +305,8 @@ int Guest::directoryGetNextEntry(uint32_t uHandle, GuestProcessStreamBlock &stre
  * Checks whether a specified directory handle exists (is valid)
  * or not.
  *
- * @return  bool                True if handle exists, false if not.
- * @param   uHandle             Directory handle to check.
+ * @return  bool                    True if handle exists, false if not.
+ * @param   uHandle                 Directory handle to check.
  */
 bool Guest::directoryHandleExists(uint32_t uHandle)
 {
@@ -314,7 +361,7 @@ HRESULT Guest::directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
     if (aFlags != DirectoryOpenFlag_None)
         return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
 
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
     try
     {
         Utf8Str Utf8Directory(aDirectory);
@@ -353,28 +400,118 @@ HRESULT Guest::directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
         args.push_back(Bstr(pszDirectoryFinal).raw());  /* The directory we want to open. */
 
         ULONG uPID;
-        rc = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_LS).raw(), Bstr("Opening directory").raw(),
+        /** @todo Don't wait for tool to finish! Might take a lot of time! */
+        hr = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_LS).raw(), Bstr("Opening directory").raw(),
                                    ComSafeArrayAsInParam(args),
                                    ComSafeArrayAsInParam(env),
                                    aUsername, aPassword,
                                    NULL /* Progress */, &uPID);
-        if (SUCCEEDED(rc))
+        if (SUCCEEDED(hr))
         {
             /* Assign new directory handle ID. */
-            int vrc = directoryCreateHandle(aHandle, uPID,
-                                            Utf8Directory.c_str(),
-                                            Utf8Filter.isEmpty() ? NULL : Utf8Filter.c_str(),
-                                            aFlags);
-            if (RT_FAILURE(vrc))
-                rc = setError(VBOX_E_IPRT_ERROR,
+            ULONG uHandleNew;
+            int vrc = directoryCreateHandle(&uHandleNew, uPID,
+                                            aDirectory, aFilter, aFlags);
+            if (RT_SUCCESS(vrc))
+            {
+                *aHandle = uHandleNew;
+            }
+            else
+                hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Unable to create guest directory handle (%Rrc)"), vrc);
         }
     }
     catch (std::bad_alloc &)
     {
-        rc = E_OUTOFMEMORY;
+        hr = E_OUTOFMEMORY;
     }
-    return rc;
+    return hr;
+}
+
+HRESULT Guest::directoryQueryInfoInternal(IN_BSTR aDirectory,
+                                          IN_BSTR aUsername, IN_BSTR aPassword,
+                                          PRTFSOBJINFO aObjInfo, RTFSOBJATTRADD enmAddAttribs,
+                                          int *pRC)
+{
+    using namespace guestControl;
+
+    /** @todo Search directory cache first? */
+
+    CheckComArgStrNotEmptyOrNull(aDirectory);
+    /* aUsername is optional. */
+    /* aPassword is optional. */
+    /* aObjInfo is optional. */
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT hr = S_OK;
+    try
+    {
+        Utf8Str Utf8Dir(aDirectory);
+        Utf8Str Utf8Username(aUsername);
+        Utf8Str Utf8Password(aPassword);
+
+        com::SafeArray<IN_BSTR> args;
+        com::SafeArray<IN_BSTR> env;
+
+        /*
+         * Prepare tool command line.
+         */
+
+        /* We need to get output which is machine-readable in form
+         * of "key=value\0..key=value\0\0". */
+        args.push_back(Bstr("--machinereadable").raw());
+
+        /* Only the actual file name to chekc is needed for now. */
+        args.push_back(Bstr(Utf8Dir).raw());
+
+        /*
+         * Execute guest process.
+         */
+        ULONG uPID;
+        hr = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Querying directory information").raw(),
+                                   ComSafeArrayAsInParam(args),
+                                   ComSafeArrayAsInParam(env),
+                                   aUsername, aPassword,
+                                   NULL /* Progress */, &uPID);
+        if (SUCCEEDED(hr))
+        {
+            GuestCtrlStreamObjects streamObjs;
+            hr = executeStreamParse(uPID, streamObjs);
+            if (SUCCEEDED(hr))
+            {
+                int rc = VINF_SUCCESS;
+
+                GuestProcessStreamBlock *pBlock = streamObjs[0];
+                AssertPtr(pBlock);
+                const char *pszFsType = pBlock->GetString("ftype");
+                if (!pszFsType) /* Attribute missing? */
+                     rc = VERR_NOT_FOUND;
+                if (   RT_SUCCESS(rc)
+                    && strcmp(pszFsType, "d")) /* Directory? */
+                {
+                     rc = VERR_FILE_NOT_FOUND;
+                }
+                if (   RT_SUCCESS(rc)
+                    && aObjInfo) /* Do we want object details? */
+                {
+                    hr = executeStreamQueryFsObjInfo(aDirectory, pBlock,
+                                                     aObjInfo, enmAddAttribs);
+                }
+
+                executeStreamFree(streamObjs);
+
+                if (pRC)
+                    *pRC = rc;
+            }
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        hr = E_OUTOFMEMORY;
+    }
+    return hr;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
@@ -390,35 +527,40 @@ STDMETHODIMP Guest::DirectoryRead(ULONG aHandle, IGuestDirEntry **aDirEntry)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT rc = S_OK;
+    HRESULT hr = S_OK;
     try
     {
         GuestProcessStreamBlock streamBlock;
-        int vrc = directoryGetNextEntry(aHandle, streamBlock);
-        if (RT_SUCCESS(vrc))
+        int rc = directoryGetNextEntry(aHandle, streamBlock);
+        if (RT_SUCCESS(rc))
         {
             ComObjPtr <GuestDirEntry> pDirEntry;
-            rc = pDirEntry.createObject();
-            ComAssertComRC(rc);
+            hr = pDirEntry.createObject();
+            ComAssertComRC(hr);
 
-            rc = pDirEntry->init(this, streamBlock);
-            if (SUCCEEDED(rc))
+            hr = pDirEntry->init(this, streamBlock);
+            if (SUCCEEDED(hr))
             {
                 pDirEntry.queryInterfaceTo(aDirEntry);
             }
             else
-                rc = setError(VBOX_E_IPRT_ERROR,
+                hr = setError(VBOX_E_IPRT_ERROR,
                               Guest::tr("Unable to init guest directory entry"));
         }
+        else if (rc == VERR_NO_MORE_FILES)
+        {
+            /* No more directory entries to read. */
+            hr = E_ABORT; /** @todo Find/define a better rc! */
+        }
         else
-            rc = setError(VBOX_E_IPRT_ERROR,
-                          Guest::tr("Directory handle is invalid"));
+            hr = setError(VBOX_E_IPRT_ERROR,
+                          Guest::tr("Failed getting next directory entry (%Rrc)"), rc);
     }
     catch (std::bad_alloc &)
     {
-        rc = E_OUTOFMEMORY;
+        hr = E_OUTOFMEMORY;
     }
-    return rc;
+    return hr;
 #endif
 }
 

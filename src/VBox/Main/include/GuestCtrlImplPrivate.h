@@ -38,7 +38,10 @@ class Progress;
 /** Structure representing the "value" side of a "key=value" pair. */
 typedef struct VBOXGUESTCTRL_STREAMPAIR
 {
-    char *pszValue;
+    VBOXGUESTCTRL_STREAMPAIR(const char *pszValue)
+        : mValue(pszValue) {}
+
+    Utf8Str mValue;
 } VBOXGUESTCTRL_STREAMPAIR, *PVBOXGUESTCTRL_STREAM_PAIR;
 
 /** Map containing "key=value" pairs of a guest process stream. */
@@ -57,11 +60,11 @@ public:
 
     GuestProcessStreamBlock();
 
+    //GuestProcessStreamBlock(GuestProcessStreamBlock &);
+
     virtual ~GuestProcessStreamBlock();
 
 public:
-
-    int AddKey(const char *pszKey);
 
     void Clear();
 
@@ -84,8 +87,10 @@ protected:
     GuestCtrlStreamPairs m_mapPairs;
 };
 
-/** Vector containing multiple stream pair objects. */
-typedef std::vector< GuestProcessStreamBlock > GuestCtrlStreamObjects;
+/** Vector containing multiple allocated stream pair objects. */
+typedef std::vector< GuestProcessStreamBlock* > GuestCtrlStreamObjects;
+typedef std::vector< GuestProcessStreamBlock* >::iterator GuestCtrlStreamObjectsIter;
+typedef std::vector< GuestProcessStreamBlock* >::const_iterator GuestCtrlStreamObjectsIterConst;
 
 /**
  * Class for parsing machine-readable guest process output by VBoxService'
@@ -109,6 +114,10 @@ public:
     uint32_t GetOffset();
 
     int ParseBlock(GuestProcessStreamBlock &streamBlock);
+
+public:
+
+    static void FreeBlock(GuestProcessStreamBlock *pStreamBlock);
 
 protected:
 
