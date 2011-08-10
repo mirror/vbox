@@ -125,8 +125,16 @@ extern VBGLDATA g_vbgldata;
  *
  * ASSUMES that vbglR0Enter has been called already.
  */
+#if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
+/* Disable the PageList feature for 64 bit Windows, because shared folders do not work,
+ * if this is enabled. This should be reenabled again when the problem is fixed.
+ */
+#define VBGLR0_CAN_USE_PHYS_PAGE_LIST() \
+    ( 0 )
+#else
 #define VBGLR0_CAN_USE_PHYS_PAGE_LIST() \
     ( !!(g_vbgldata.hostVersion.features & VMMDEV_HVF_HGCM_PHYS_PAGE_LIST) )
+#endif
 
 int vbglR0Enter (void);
 
