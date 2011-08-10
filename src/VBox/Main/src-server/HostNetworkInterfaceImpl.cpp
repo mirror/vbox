@@ -563,29 +563,11 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
         HRESULT hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(), tmpAddr.asOutParam());
         hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()).raw(), tmpMask.asOutParam());
         if (tmpAddr.isEmpty())
-        {
             tmpAddr = getDefaultIPv4Address(mInterfaceName);
-            /*
-             * We need to write the default IP address and mask to extra data now,
-             * so the interface gets re-created after vboxnetadp.ko reload.
-             * Note that we avoid calling EnableStaticIpConfig since it would
-             * change the address on host's interface as well and we want to
-             * postpone the change until VM actually starts.
-             */
-            hrc = mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress",
-                                              mInterfaceName.raw()).raw(),
-                                      tmpAddr.raw());
-            ComAssertComRCRet(hrc, hrc);
-        }
 
         if (tmpMask.isEmpty())
-        {
             tmpMask = Bstr(VBOXNET_IPV4MASK_DEFAULT);
-            hrc = mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask",
-                                              mInterfaceName.raw()).raw(),
-                                      Bstr(VBOXNET_IPV4MASK_DEFAULT).raw());
-            ComAssertComRCRet(hrc, hrc);
-        }
+
         m.IPAddress = inet_addr(Utf8Str(tmpAddr).c_str());
         m.networkMask = inet_addr(Utf8Str(tmpMask).c_str());
     }
