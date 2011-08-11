@@ -18,20 +18,23 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += VBoxManage
-ifdef VBOX_ONLY_DOCS
- VBoxManage_TEMPLATE   = VBOXR3NPEXE
- VBoxManage_DEFS      += VBOX_ONLY_DOCS
- VBoxManage_SOURCES = \
+ifdef VBOX_WITH_DOCS
+ PROGRAMS += VBoxManageHelp
+endif
+VBoxManageHelp_TEMPLATE   = VBoxAdvBldProg
+VBoxManageHelp_DEFS      += VBOX_ONLY_DOCS
+VBoxManageHelp_SOURCES = \
 	VBoxManage.cpp \
 	VBoxManageHelp.cpp \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxManageGuestCtrl.cpp)
- VBoxManage_LIBS      += $(LIB_RUNTIME)
-else # !VBOX_ONLY_DOCS
- VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
- VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
- VBoxManage_SOURCES = \
+
+ifndef VBOX_ONLY_DOCS
+ PROGRAMS += VBoxManage
+endif
+VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
+VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
+VBoxManage_SOURCES = \
 	VBoxManage.cpp \
 	VBoxInternalManage.cpp \
 	VBoxManageAppliance.cpp \
@@ -52,7 +55,7 @@ else # !VBOX_ONLY_DOCS
 	VBoxManageSnapshot.cpp \
 	VBoxManageStorageController.cpp \
 	VBoxManageUSB.cpp
-endif # !VBOX_ONLY_DOCS
+VBoxManage_LIBS      += $(LIB_DDU)
 
 VBoxManage_DEFS      += \
 	$(if $(VBOX_WITH_AHCI), VBOX_WITH_AHCI) \
@@ -82,10 +85,7 @@ ifneq ($(KBUILD_TARGET),win)
  # that version 4.3.2 or later has this bug definitely fixed.
  VBoxManage_CXXFLAGS.release += \
 	$(if $(VBOX_GCC_VERSION_CXX),$(if-expr $(VBOX_GCC_VERSION_CXX) < 40300 || $(VBOX_GCC_VERSION_CXX) > 40301,,--param max-fields-for-field-sensitive=0),)
+ VBoxManageHelp_CXXFLAGS.release = $(VBoxManage_CXXFLAGS.release)
 endif
-ifndef VBOX_ONLY_DOCS
- VBoxManage_LIBS      += $(LIB_DDU)
-endif # !VBOX_ONLY_DOCS
 
 include $(KBUILD_PATH)/subfooter.kmk
-
