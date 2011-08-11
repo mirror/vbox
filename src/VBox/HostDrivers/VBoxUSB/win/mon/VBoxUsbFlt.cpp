@@ -251,7 +251,7 @@ DECLINLINE(void) vboxUsbFltDevRelease(PVBOXUSBFLT_DEVICE pDevice)
 
 static void vboxUsbFltDevOwnerSetLocked(PVBOXUSBFLT_DEVICE pDevice, PVBOXUSBFLTCTX pContext, uintptr_t uFltId, bool fIsOneShot)
 {
-    Assert(!pDevice->pOwner);
+    ASSERT_WARN(!pDevice->pOwner, ("device 0x%p has an owner(0x%p)", pDevice, pDevice->pOwner));
     ++pContext->cActiveFilters;
     pDevice->pOwner = pContext;
     pDevice->uFltId = uFltId;
@@ -260,9 +260,9 @@ static void vboxUsbFltDevOwnerSetLocked(PVBOXUSBFLT_DEVICE pDevice, PVBOXUSBFLTC
 
 static void vboxUsbFltDevOwnerClearLocked(PVBOXUSBFLT_DEVICE pDevice)
 {
-    Assert(pDevice->pOwner);
+    ASSERT_WARN(pDevice->pOwner, ("no owner for device 0x%p", pDevice));
     --pDevice->pOwner->cActiveFilters;
-    Assert(pDevice->pOwner->cActiveFilters < UINT32_MAX/2);
+    ASSERT_WARN(pDevice->pOwner->cActiveFilters < UINT32_MAX/2, ("cActiveFilters (%d)", pDevice->pOwner->cActiveFilters));
     pDevice->pOwner = NULL;
     pDevice->uFltId = 0;
 }
@@ -904,7 +904,20 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
                                     pHubDevObj, Status, pDevRelations));
                         }
                     }
+                    else
+                    {
+                        LOG(("driver name not match, was:"));
+                        LOG_USTR(&pHubDevObj->DriverObject->DriverName);
+                        LOG(("but expected:"));
+                        LOG_USTR(&szStandardControllerName[j]);
+                    }
                 }
+            }
+            else
+            {
+                LOG(("null driver object (0x%p) or name buffer (0x%p), length(%d)", pHubDevObj->DriverObject,
+                        pHubDevObj->DriverObject ? pHubDevObj->DriverObject->DriverName.Buffer : NULL,
+                        pHubDevObj->DriverObject ? pHubDevObj->DriverObject->DriverName.Length : 0));
             }
             ObDereferenceObject(pHubFileObj);
         }
@@ -917,31 +930,39 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
 
 NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext)
 {
+    LOG(("Closing context(0x%p)", pContext));
     LIST_ENTRY ReplugDevList;
     InitializeListHead(&ReplugDevList);
 
-    Assert(pContext);
+    ASSERT_WARN(pContext, ("null context"));
 
     KIRQL Irql = KeGetCurrentIrql();
-    Assert(Irql == PASSIVE_LEVEL);
+    ASSERT_WARN(Irql == PASSIVE_LEVEL, ("irql==(%d)", Irql));
 
     VBOXUSBFLT_LOCK_ACQUIRE();
     uint32_t cActiveFilters = pContext->cActiveFilters;
     pContext->bRemoved = TRUE;
     if (pContext->pChangeEvent)
     {
+        LOG(("seting & closing change event (0x%p)", pContext->pChangeEvent));
         KeSetEvent(pContext->pChangeEvent,
                 0, /* increment*/
                 FALSE /* wait */);
         ObDereferenceObject(pContext->pChangeEvent);
         pContext->pChangeEvent = NULL;
     }
+    else
+    {
+        LOG(("no change event"));
+    }
     RemoveEntryList(&pContext->ListEntry);
 
+    LOG(("removing owner filters"));
     /* now re-arrange the filters */
     /* 1. remove filters */
     VBoxUSBFilterRemoveOwner(pContext);
 
+    LOG(("enumerating devices.."));
     /* 2. check if there are devices owned */
     for (PLIST_ENTRY pEntry = g_VBoxUsbFltGlobals.DeviceList.Flink;
             pEntry != &g_VBoxUsbFltGlobals.DeviceList;
@@ -951,18 +972,25 @@ NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext)
         if (pDevice->pOwner != pContext)
             continue;
 
-        Assert(pDevice->enmState != VBOXUSBFLT_DEVSTATE_ADDED);
-        Assert(pDevice->enmState != VBOXUSBFLT_DEVSTATE_REMOVED);
+        LOG(("found device(0x%p), pdo(0x%p), state(%d), filter id(0x%p), oneshot(%d)",
+                pDevice, pDevice->Pdo, pDevice->enmState, pDevice->uFltId, (int)pDevice->fIsFilterOneShot));
+        ASSERT_WARN(pDevice->enmState != VBOXUSBFLT_DEVSTATE_ADDED, ("VBOXUSBFLT_DEVSTATE_ADDED state for device(0x%p)", pDevice));
+        ASSERT_WARN(pDevice->enmState != VBOXUSBFLT_DEVSTATE_REMOVED, ("VBOXUSBFLT_DEVSTATE_REMOVED state for device(0x%p)", pDevice));
 
         vboxUsbFltDevOwnerClearLocked(pDevice);
 
         if (vboxUsbFltDevCheckReplugLocked(pDevice, pContext))
         {
+            LOG(("device needs replug"));
             InsertHeadList(&ReplugDevList, &pDevice->RepluggingLe);
             /* retain to ensure the device is not removed before we issue a replug */
             vboxUsbFltDevRetain(pDevice);
             /* keep the PDO alive */
             ObReferenceObject(pDevice->Pdo);
+        }
+        else
+        {
+            LOG(("device does NOT need replug"));
         }
     }
     VBOXUSBFLT_LOCK_RELEASE();
@@ -970,21 +998,25 @@ NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext)
     /* this should replug all devices that were either skipped or grabbed due to the context's */
     vboxUsbFltReplugList(&ReplugDevList);
 
+    LOG(("SUCCESS done context(0x%p)", pContext));
     return STATUS_SUCCESS;
 }
 
 NTSTATUS VBoxUsbFltCreate(PVBOXUSBFLTCTX pContext)
 {
+    LOG(("Creating context(0x%p)", pContext));
     memset(pContext, 0, sizeof (*pContext));
     pContext->Process = RTProcSelf();
     VBOXUSBFLT_LOCK_ACQUIRE();
     InsertHeadList(&g_VBoxUsbFltGlobals.ContextList, &pContext->ListEntry);
     VBOXUSBFLT_LOCK_RELEASE();
+    LOG(("SUCCESS context(0x%p)", pContext));
     return STATUS_SUCCESS;
 }
 
 int VBoxUsbFltAdd(PVBOXUSBFLTCTX pContext, PUSBFILTER pFilter, uintptr_t *pId)
 {
+    LOG(("adding filter, Context (0x%p)..", pContext));
     *pId = 0;
     /* LOG the filter details. */
     LOG((__FUNCTION__": %s %s %s\n",
@@ -1033,6 +1065,7 @@ int VBoxUsbFltAdd(PVBOXUSBFLTCTX pContext, PUSBFILTER pFilter, uintptr_t *pId)
 
 int VBoxUsbFltRemove(PVBOXUSBFLTCTX pContext, uintptr_t uId)
 {
+    LOG(("removing filter id(0x%p), Context (0x%p)..", pContext, uId));
     Assert(uId);
 
     VBOXUSBFLT_LOCK_ACQUIRE();
@@ -1044,6 +1077,7 @@ int VBoxUsbFltRemove(PVBOXUSBFLTCTX pContext, uintptr_t uId)
         return rc;
     }
 
+    LOG(("enumerating devices.."));
     for (PLIST_ENTRY pEntry = g_VBoxUsbFltGlobals.DeviceList.Flink;
             pEntry != &g_VBoxUsbFltGlobals.DeviceList;
             pEntry = pEntry->Flink)
@@ -1061,12 +1095,16 @@ int VBoxUsbFltRemove(PVBOXUSBFLTCTX pContext, uintptr_t uId)
         if (pDevice->pOwner != pContext)
             continue;
 
+        LOG(("found device(0x%p), pdo(0x%p), state(%d), filter id(0x%p), oneshot(%d)",
+                pDevice, pDevice->Pdo, pDevice->enmState, pDevice->uFltId, (int)pDevice->fIsFilterOneShot));
         ASSERT_WARN(!pDevice->fIsFilterOneShot, ("device(0x%p) is filtered with a oneshot filter", pDevice));
         pDevice->uFltId = 0;
         /* clear the fIsFilterOneShot flag to ensure the device is replugged on the next VBoxUsbFltFilterCheck call */
         pDevice->fIsFilterOneShot = false;
     }
     VBOXUSBFLT_LOCK_RELEASE();
+
+    LOG(("done enumerating devices"));
 
     if (RT_SUCCESS(rc))
     {

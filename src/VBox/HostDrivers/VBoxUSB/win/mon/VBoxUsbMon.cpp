@@ -1338,7 +1338,7 @@ NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     RTLogDestinations(0, "debugger");
 #endif
 
-    LOG(("VBoxUSBMon::DriverEntry\n"));
+    LOGREL(("Built %s %s", __DATE__, __TIME__));
 
     memset (&g_VBoxUsbMonGlobals, 0, sizeof (g_VBoxUsbMonGlobals));
     KeInitializeEvent(&g_VBoxUsbMonGlobals.OpenSynchEvent, SynchronizationEvent, TRUE /* signaled */);
