@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -567,11 +567,22 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
         ZwQuerySystemInformation = (PFNZWQUERYSYSTEMINFORMATION)GetProcAddress(hNtdll, "ZwQuerySystemInformation");
 
     rc =  VbglR3GetSessionId(&g_idSession);
-    AssertRCReturn(rc, rc);
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_IO_GEN_FAILURE)
+            VBoxServiceVerbose(0, "PageSharing: Page sharing support is not available by the host\n");
+        else
+            VBoxServiceError("VBoxServicePageSharingInit: Failed with rc=%Rrc\n", rc);
+
+        rc = VERR_SERVICE_DISABLED;
+
+        RTSemEventMultiDestroy(g_PageSharingEvent);
+        g_PageSharingEvent = NIL_RTSEMEVENTMULTI;
+
+    }
 #endif
 
-    /* Never fail here. */
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /** @copydoc VBOXSERVICE::pfnWorker */
