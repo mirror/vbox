@@ -4280,11 +4280,11 @@ serial ports</comment>
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation type="unfinished">Definierar typ av chipset som används för denna värd.</translation>
+        <translation>Väljer typ av chipset som ska emuleras i denna virtuella maskin. Observera att emulering av ICH9-chipset är experimentellt och rekommenderas inte förutom för gästsystem (såsom Mac OS X) som kräver det.</translation>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished">du har tilldelat chipset-typen ICH9 till denna virtuella maskin. Den kommer inte att fungera korrekt såvida inte IO-APIC-funktionen även aktiveras. Detta kommer att göras automatiskt när du accepterar inställningarna för den virtuella maskinen genom att trycka på OK-knappen.</translation>
+        <translation>du har valt emulering av ICH9-chipset i denna maskin. Detta kräver att IO-APIC-funktionen aktiveras. Detta kommer att göras automatiskt när du accepterar inställningarna för den virtuella maskinen genom att trycka på OK-knappen.</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
