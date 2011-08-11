@@ -51,7 +51,7 @@ else ifdef VBOX_ONLY_DOCS
  #
  # Build docs only - need just regular R3 runtime.
  #
- LIBRARIES += RuntimeR3
+ LIBRARIES += RuntimeR3 RuntimeBldProg
  DLLS += VBoxRT
 
 else ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
@@ -101,7 +101,7 @@ endif
 # Always build the ntdll import libraries on windows.
 LIBRARIES.win += RuntimeR3NtDll-x86
 if1of (amd64, $(KBUILD_TARGET_ARCH) $(KBUILD_HOST_ARCH))
- LIBRARIES.win += RuntimeR3NtDll-amd64
+# LIBRARIES.win += RuntimeR3NtDll-amd64
 endif
 
 
