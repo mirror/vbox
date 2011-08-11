@@ -1892,10 +1892,6 @@ keyboard_init()
         keyboard_panic(992);
     }
 
-    /* Enable Keyboard clock */
-    outb(0x64,0xae);
-    outb(0x64,0xa8);
-
     /* ------------------- keyboard side ------------------------*/
     /* reset keyboard and self test  (keyboard side) */
     outb(0x60, 0xff);
@@ -1975,6 +1971,10 @@ keyboard_init()
     if ((inb(0x60) != 0xfa)) {
         keyboard_panic(996);
     }
+
+    /* Enable Keyboard clock */
+    outb(0x64,0xae);
+    outb(0x64,0xa8);
 
     outb(0x80, 0x77);
 }
