@@ -130,6 +130,11 @@
           some applications (bugs #9276, #9315)</para>
       </listitem>
 
+      <listitem>
+        <para>Windows Additions: fixed shared folder issues with antivirus software
+          and 64 bit Windows guests (bug #9318)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
