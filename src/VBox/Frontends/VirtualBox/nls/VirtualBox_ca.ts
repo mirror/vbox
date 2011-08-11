@@ -9385,7 +9385,7 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>S&apos;està important l&apos;aplicació virtual...</translation>

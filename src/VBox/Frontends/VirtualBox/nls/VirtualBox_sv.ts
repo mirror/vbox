@@ -8311,7 +8311,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>Importerar appliance ...</translation>

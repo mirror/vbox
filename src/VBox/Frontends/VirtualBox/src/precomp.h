@@ -218,7 +218,7 @@
 #ifdef Q_WS_MAC
 # include "VBoxIChatTheaterWrapper.h"
 #endif
-#include "VBoxImportApplianceWgt.h"
+#include "UIApplianceImportEditorWidget.h"
 #include "VBoxImportApplianceWzd.h"
 #include "VBoxLicenseViewer.h"
 #include "UILineTextEdit.h"

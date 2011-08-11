@@ -10428,14 +10428,14 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
-        <location filename="../src/widgets/VBoxImportApplianceWgt.cpp" line="146"/>
+        <location filename="../src/widgets/UIApplianceImportEditorWidget.cpp" line="146"/>
         <source>Importing Appliance ...</source>
         <translation>仮想アプライアンスのインポート...</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxImportApplianceWgt.cpp" line="66"/>
+        <location filename="../src/widgets/UIApplianceImportEditorWidget.cpp" line="66"/>
         <source>Reading Appliance ...</source>
         <translation>仮想アプライアンスの読み込み...</translation>
     </message>

@@ -5243,7 +5243,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>正在匯入應用裝置 ...</translation>

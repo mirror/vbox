@@ -6048,7 +6048,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>Importation d&apos;application virtuelle...</translation>

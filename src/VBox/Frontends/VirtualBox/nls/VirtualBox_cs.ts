@@ -8871,7 +8871,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>Importuji applianci...</translation>

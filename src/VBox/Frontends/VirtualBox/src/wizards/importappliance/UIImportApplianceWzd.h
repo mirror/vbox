@@ -33,7 +33,7 @@
 /* Global forwards */
 class QDialogButtonBox;
 
-typedef QPointer<VBoxImportApplianceWgt> ImportAppliancePointer;
+typedef QPointer<UIApplianceImportEditorWidget> ImportAppliancePointer;
 Q_DECLARE_METATYPE(ImportAppliancePointer);
 
 class UIImportLicenseViewer : public QIDialog

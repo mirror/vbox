@@ -7538,7 +7538,7 @@ medium</comment>
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Reading Appliance ...</source>
         <translation>កំពុង​អាន​ឧបករណ៍​...</translation>

@@ -2,11 +2,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxImportApplianceWgt class implementation
+ * UIApplianceImportEditorWidget class implementation
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,7 +18,7 @@
  */
 
 /* VBox includes */
-#include "VBoxImportApplianceWgt.h"
+#include "UIApplianceImportEditorWidget.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
@@ -28,27 +28,27 @@
 class ImportSortProxyModel: public VirtualSystemSortProxyModel
 {
 public:
-    ImportSortProxyModel (QObject *aParent = NULL)
-      : VirtualSystemSortProxyModel (aParent)
+    ImportSortProxyModel(QObject *pParent = NULL)
+      : VirtualSystemSortProxyModel(pParent)
     {
         m_filterList << KVirtualSystemDescriptionType_License;
     }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// VBoxImportApplianceWgt
+// UIApplianceImportEditorWidget
 
-VBoxImportApplianceWgt::VBoxImportApplianceWgt (QWidget *aParent)
-    : UIApplianceEditorWidget (aParent)
+UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
+    : UIApplianceEditorWidget(pParent)
 {
     /* Show the MAC check box */
     m_pReinitMACsCheckBox->setHidden(false);
 }
 
-bool VBoxImportApplianceWgt::setFile (const QString& aFile)
+bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
 {
     bool fResult = false;
-    if (!aFile.isEmpty())
+    if (!strFile.isEmpty())
     {
         CProgress progress;
         CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -58,12 +58,12 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
         if (fResult)
         {
             /* Read the appliance */
-            progress = m_pAppliance->Read (aFile);
+            progress = m_pAppliance->Read(strFile);
             fResult = m_pAppliance->isOk();
             if (fResult)
             {
                 /* Show some progress, so the user know whats going on */
-                msgCenter().showModalProgressDialog (progress, tr ("Reading Appliance ..."), "", this);
+                msgCenter().showModalProgressDialog(progress, tr("Reading Appliance ..."), "", this);
                 if (!progress.isOk() || progress.GetResultCode() != 0)
                     fResult = false;
                 else
@@ -78,21 +78,21 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
 
                         QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
 
-                        m_pModel = new VirtualSystemModel (vsds, this);
+                        m_pModel = new VirtualSystemModel(vsds, this);
 
-                        ImportSortProxyModel *proxy = new ImportSortProxyModel (this);
-                        proxy->setSourceModel (m_pModel);
-                        proxy->sort (DescriptionSection, Qt::DescendingOrder);
+                        ImportSortProxyModel *pProxy = new ImportSortProxyModel(this);
+                        pProxy->setSourceModel(m_pModel);
+                        pProxy->sort(DescriptionSection, Qt::DescendingOrder);
 
-                        VirtualSystemDelegate *delegate = new VirtualSystemDelegate (proxy, this);
+                        VirtualSystemDelegate *pDelegate = new VirtualSystemDelegate(pProxy, this);
 
                         /* Set our own model */
-                        m_pTvSettings->setModel (proxy);
+                        m_pTvSettings->setModel(pProxy);
                         /* Set our own delegate */
-                        m_pTvSettings->setItemDelegate (delegate);
+                        m_pTvSettings->setItemDelegate(pDelegate);
                         /* For now we hide the original column. This data is displayed as tooltip
                            also. */
-                        m_pTvSettings->setColumnHidden (OriginalValueSection, true);
+                        m_pTvSettings->setColumnHidden(OriginalValueSection, true);
                         m_pTvSettings->expandAll();
 
                         /* Check for warnings & if there are one display them. */
@@ -101,10 +101,10 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
                         if (warnings.size() > 0)
                         {
                             foreach (const QString& text, warnings)
-                                mWarningTextEdit->append ("- " + text);
+                                mWarningTextEdit->append("- " + text);
                             fWarningsEnabled = true;
                         }
-                        m_pWarningWidget->setShown (fWarningsEnabled);
+                        m_pWarningWidget->setShown(fWarningsEnabled);
                     }
                 }
             }
@@ -123,13 +123,13 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
     return fResult;
 }
 
-void VBoxImportApplianceWgt::prepareImport()
+void UIApplianceImportEditorWidget::prepareImport()
 {
     if (m_pAppliance)
         m_pModel->putBack();
 }
 
-bool VBoxImportApplianceWgt::import()
+bool UIApplianceImportEditorWidget::import()
 {
     if (m_pAppliance)
     {
@@ -143,39 +143,39 @@ bool VBoxImportApplianceWgt::import()
         if (fResult)
         {
             /* Show some progress, so the user know whats going on */
-            msgCenter().showModalProgressDialog (progress, tr ("Importing Appliance ..."), ":/progress_import_90px.png", this, true);
+            msgCenter().showModalProgressDialog(progress, tr("Importing Appliance ..."), ":/progress_import_90px.png", this, true);
             if (progress.GetCanceled())
                 return false;
             if (!progress.isOk() || progress.GetResultCode() != 0)
             {
-                msgCenter().cannotImportAppliance (progress, m_pAppliance, this);
+                msgCenter().cannotImportAppliance(progress, m_pAppliance, this);
                 return false;
             }
             else
                 return true;
         }
         if (!fResult)
-            msgCenter().cannotImportAppliance (m_pAppliance, this);
+            msgCenter().cannotImportAppliance(m_pAppliance, this);
     }
     return false;
 }
 
-QList < QPair<QString, QString> > VBoxImportApplianceWgt::licenseAgreements() const
+QList<QPair<QString, QString> > UIApplianceImportEditorWidget::licenseAgreements() const
 {
-    QList < QPair<QString, QString> > list;
+    QList<QPair<QString, QString> > list;
 
     CVirtualSystemDescriptionVector vsds = m_pAppliance->GetVirtualSystemDescriptions();
-    for (int i=0; i < vsds.size(); ++i)
+    for (int i = 0; i < vsds.size(); ++i)
     {
-        QVector<QString> license;
-        license = vsds[i].GetValuesByType (KVirtualSystemDescriptionType_License,
-                                           KVirtualSystemDescriptionValueType_Original);
-        if (!license.isEmpty())
+        QVector<QString> strLicense;
+        strLicense = vsds[i].GetValuesByType(KVirtualSystemDescriptionType_License,
+                                             KVirtualSystemDescriptionValueType_Original);
+        if (!strLicense.isEmpty())
         {
-            QVector<QString> name;
-            name = vsds[i].GetValuesByType (KVirtualSystemDescriptionType_Name,
-                                            KVirtualSystemDescriptionValueType_Auto);
-            list << QPair<QString, QString> (name.first(), license.first());
+            QVector<QString> strName;
+            strName = vsds[i].GetValuesByType(KVirtualSystemDescriptionType_Name,
+                                              KVirtualSystemDescriptionValueType_Auto);
+            list << QPair<QString, QString>(strName.first(), strLicense.first());
         }
     }
 
