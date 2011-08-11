@@ -229,12 +229,12 @@ HRESULT showProgress(ComPtr<IProgress> progress)
     return hrc;
 }
 
-#endif /* !VBOX_ONLY_DOCS */
-
 #ifdef RT_OS_WINDOWS
 // Required for ATL
 static CComModule _Module;
 #endif
+
+#endif /* !VBOX_ONLY_DOCS */
 
 
 int main(int argc, char *argv[])
