@@ -233,7 +233,7 @@ else
  # use docbook of the build host
  DOCBOOKPATH         ?= http://docbook.sourceforge.net/release/xsl/current/
 endif
-VBOXMANAGEPATH       ?= $(PATH_STAGE_BIN)/VBoxManage$(SUFF_EXE)
+VBOXMANAGEPATH       ?= $(PATH_STAGE_BIN)/VBoxManageHelp$(SUFF_EXE)
 
  # PDFLATEX_INTERACTION = errorstopmode - Use this when you wants to figure out build failures
  #                                        without catting the log a million times.
