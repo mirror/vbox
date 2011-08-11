@@ -2762,6 +2762,8 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
     PVBOXHDD pDisk = pIoCtx->pDisk;
     int rc = VINF_SUCCESS;
 
+    VD_THREAD_IS_CRITSECT_OWNER(pDisk);
+
     if (RT_FAILURE(rcReq))
         ASMAtomicCmpXchgS32(&pIoCtx->rcReq, rcReq, VINF_SUCCESS);
 
@@ -2819,8 +2821,6 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                 }
 
                 /* Process any pending writes if the current request didn't caused another growing. */
-                RTCritSectEnter(&pDisk->CritSect);
-
                 if (   !RTListIsEmpty(&pDisk->ListWriteLocked)
                     && !vdIoCtxIsDiskLockOwner(pDisk, pIoCtx))
                 {
@@ -2856,19 +2856,17 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                         if (   rc == VINF_VD_ASYNC_IO_FINISHED
                             && ASMAtomicCmpXchgBool(&pIoCtxWait->fComplete, true, false))
                         {
-                            RTCritSectLeave(&pDisk->CritSect);
                             LogFlowFunc(("Waiting I/O context completed pIoCtxWait=%#p\n", pIoCtxWait));
                             vdThreadFinishWrite(pDisk);
                             pIoCtxWait->Type.Root.pfnComplete(pIoCtxWait->Type.Root.pvUser1,
                                                               pIoCtxWait->Type.Root.pvUser2,
                                                               pIoCtxWait->rcReq);
                             vdIoCtxFree(pDisk, pIoCtxWait);
-                            RTCritSectEnter(&pDisk->CritSect);
                         }
                     } while (!RTListIsEmpty(&ListTmp));
+
+                    RTCritSectEnter(&pDisk->CritSect);
                 }
-                else
-                    RTCritSectLeave(&pDisk->CritSect);
             }
             else
             {
