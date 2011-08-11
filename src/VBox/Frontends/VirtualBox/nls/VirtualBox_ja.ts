@@ -1177,7 +1177,7 @@
         <translation type="obsolete">ダウンロード処理がユーザーによってキャンセルされました。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIDownloader.cpp" line="262"/>
+        <location filename="../src/net/UIDownloader.cpp" line="262"/>
         <source>The download process has been canceled by the user.</source>
         <translation>ダウンロード処理がユーザーによってキャンセルされました。</translation>
     </message>
@@ -1197,12 +1197,12 @@
         <translation type="obsolete">VirtualBox Guest Additions CDイメージのダウンロードをキャンセル</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIDownloaderAdditions.cpp" line="120"/>
+        <location filename="../src/net/UIDownloaderAdditions.cpp" line="120"/>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;ダウンロードしたファイル(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)の保存に失敗しました。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIDownloaderAdditions.cpp" line="126"/>
+        <location filename="../src/net/UIDownloaderAdditions.cpp" line="107"/>
         <source>Select folder to save Guest Additions image to</source>
         <translation>Guest Additionsイメージを保存するフォルダを選択</translation>
     </message>
@@ -1210,7 +1210,7 @@
 <context>
     <name>UIDownloaderUserManual</name>
     <message>
-        <location filename="../src/widgets/UIDownloaderUserManual.cpp" line="151"/>
+        <location filename="../src/net/UIDownloaderUserManual.cpp" line="137"/>
         <source>Select folder to save User Manual to</source>
         <translation>ユーザーマニュアルを保存するフォルダを選択</translation>
     </message>
@@ -5359,17 +5359,17 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
     <message>
-        <location filename="../src/widgets/UIDownloaderAdditions.h" line="46"/>
+        <location filename="../src/net/UIDownloaderAdditions.h" line="46"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIDownloaderAdditions.h" line="47"/>
+        <location filename="../src/net/UIDownloaderAdditions.h" line="47"/>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
         <translation>VirtualBox Guest Additions CDイメージのダウンロードをキャンセル</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIDownloaderAdditions.h" line="49"/>
+        <location filename="../src/net/UIDownloaderAdditions.h" line="49"/>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;からダウンロード...&lt;/nobr&gt;</translation>
     </message>
@@ -5377,22 +5377,22 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
-        <location filename="../src/widgets/UIDownloaderUserManual.h" line="53"/>
+        <location filename="../src/net/UIDownloaderUserManual.h" line="53"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIDownloaderUserManual.h" line="54"/>
+        <location filename="../src/net/UIDownloaderUserManual.h" line="54"/>
         <source>Cancel the VirtualBox User Manual download</source>
         <translation>VirtualBox ユーザーマニュアルのダウンロードをキャンセル</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIDownloaderUserManual.h" line="55"/>
+        <location filename="../src/net/UIDownloaderUserManual.h" line="55"/>
         <source>Downloading the VirtualBox User Manual</source>
         <translation>VirtualBox ユーザーマニュアルのダウンロード</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIDownloaderUserManual.h" line="56"/>
+        <location filename="../src/net/UIDownloaderUserManual.h" line="56"/>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>VirtualBox ユーザーマニュアルを&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;からダウンロード...&lt;/nobr&gt;</translation>
     </message>

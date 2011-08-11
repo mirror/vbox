@@ -23,6 +23,7 @@
 
 /* Local includes: */
 #include "UIDownloader.h"
+#include "UINetworkManager.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UISpecialControls.h"
@@ -122,7 +123,6 @@ void UIDownloader::start()
 }
 
 UIDownloader::UIDownloader()
-    : m_pNetworkManager(new QNetworkAccessManager(this))
 {
     connect(this, SIGNAL(sigToStartAcknowledging()), this, SLOT(sltStartAcknowledging()), Qt::QueuedConnection);
     connect(this, SIGNAL(sigToStartDownloading()), this, SLOT(sltStartDownloading()), Qt::QueuedConnection);
@@ -134,7 +134,7 @@ void UIDownloader::sltStartAcknowledging()
     /* Setup HEAD request: */
     QNetworkRequest request;
     request.setUrl(m_source);
-    QNetworkReply *pReply = m_pNetworkManager->head(request);
+    QNetworkReply *pReply = gNetworkManager->head(request);
     connect(pReply, SIGNAL(sslErrors(QList<QSslError>)), pReply, SLOT(ignoreSslErrors()));
     connect(pReply, SIGNAL(finished()), this, SLOT(sltFinishAcknowledging()));
 }
@@ -187,7 +187,7 @@ void UIDownloader::sltStartDownloading()
     /* Setup GET request: */
     QNetworkRequest request;
     request.setUrl(m_source);
-    QNetworkReply *pReply = m_pNetworkManager->get(request);
+    QNetworkReply *pReply = gNetworkManager->get(request);
     connect(pReply, SIGNAL(sslErrors(QList<QSslError>)), pReply, SLOT(ignoreSslErrors()));
     connect(pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SIGNAL(sigDownloadProgress(qint64, qint64)));
     connect(pReply, SIGNAL(finished()), this, SLOT(sltFinishDownloading()));

@@ -184,6 +184,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/exportappliance \
 	./src/wizards/importappliance \
 	./src/widgets \
+	./src/net \
 	./src/selector \
 	./src/runtime \
 	./src/runtime/fullscreen \
@@ -335,9 +336,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIImportApplianceWzd.h \
 	src/widgets/UIBar.h \
 	src/widgets/UIBootTable.h \
-	src/widgets/UIDownloader.h \
-	src/widgets/UIDownloaderAdditions.h \
-	src/widgets/UIDownloaderUserManual.h \
 	src/widgets/UIHotKeyEditor.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIProgressDialog.h \
@@ -353,6 +351,10 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxOSTypeSelectorButton.h \
 	src/widgets/VBoxOSTypeSelectorWidget.h \
 	src/widgets/VBoxWarningPane.h \
+	src/net/UINetworkManager.h \
+	src/net/UIDownloader.h \
+	src/net/UIDownloaderAdditions.h \
+	src/net/UIDownloaderUserManual.h \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVMDesktop.h \
 	src/selector/UIVMListView.h \
@@ -506,9 +508,6 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIImportApplianceWzd.cpp \
 	src/widgets/UIBar.cpp \
 	src/widgets/UIBootTable.cpp \
-	src/widgets/UIDownloader.cpp \
-	src/widgets/UIDownloaderAdditions.cpp \
-	src/widgets/UIDownloaderUserManual.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIProgressDialog.cpp \
@@ -525,6 +524,10 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
 	src/widgets/VBoxOSTypeSelectorWidget.cpp \
 	src/widgets/VBoxWarningPane.cpp \
+	src/net/UINetworkManager.cpp \
+	src/net/UIDownloader.cpp \
+	src/net/UIDownloaderAdditions.cpp \
+	src/net/UIDownloaderUserManual.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UISelectorShortcuts.cpp \
 	src/selector/UIVMDesktop.cpp \
