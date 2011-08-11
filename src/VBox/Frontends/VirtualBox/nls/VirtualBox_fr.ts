@@ -3125,7 +3125,7 @@
     </message>
     <message>
         <source>When checked the guest system will see the virtual disk as a solid state device.</source>
-        <translation type="unfinished">Si cette case est cochée l&apos;invité verra le média comme stockage solid-state.</translation>
+        <translation>Si cette case est cochée l&apos;invité verra le média comme un stockage solid-state.</translation>
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
@@ -3159,7 +3159,7 @@
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation>Vou utilisez plus de contrôleurs de stockage qu&apos;un chipset %1 ne supporte. Veuillez changer le type du chipset sur la page Système des paramètres de la machine ou bien reduire en nombre les contrôleurs de stockage suivants sur la page Stockage: %2.</translation>
+        <translation>Vous utilisez plus de contrôleurs de stockage qu&apos;un chipset %1 ne supporte. Veuillez changer le type du chipset sur la page Système des paramètres de la machine ou bien reduire en nombre les contrôleurs de stockage suivants sur la page Stockage: %2.</translation>
     </message>
     <message>
         <source>&amp;Port Count:</source>
@@ -3167,7 +3167,7 @@
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished">Choisit le nombre de ports du contrôleur de stockage SATA actuellement sélectionné dans l&apos;arborescence. Cette valeur doit être strictement supérieur au plus grand numéro de port utilisé.</translation>
+        <translation>Choisit le nombre de ports du contrôleur de stockage SATA actuellement sélectionné dans l&apos;arborescence. Cette valeur doit être strictement supérieur au plus grand numéro de port utilisé.</translation>
     </message>
 </context>
 <context>
@@ -3336,7 +3336,7 @@
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation type="unfinished">Définit le chipset utilisé dans cette machine.</translation>
+        <translation>Définit le chipset émulé dans cette machine virtuelle. Notez que l&apos;émulation du chipset ICH9 est expérimentale et n&apos;est pas recommandée, sauf pour les invités (tel que Mac OS X) qui le requiert.</translation>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -3784,7 +3784,7 @@
     </message>
     <message>
         <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished">Entrez le chemin du fichier qui contiendra les données du disque dur ou cliquez sur le bouton pour choisir son emplacement.</translation>
+        <translation>Entrez le chemin du nouveau fichier qui contiendra les données du disque virtuel ou cliquez sur le bouton pour choisir un autre emplacement pour ce fichier.</translation>
     </message>
     <message>
         <source>Select a file for the new hard disk image file</source>
@@ -4068,11 +4068,11 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>Start-up &amp;Disk</source>
-        <translation type="unfinished">&amp;Disque dur d&apos;amorçage</translation>
+        <translation>&amp;Disque d&apos;amorçage</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Choisissez un disque dur virtuel à utiliser pour l&apos;amorçage de la machine virtuelle. Vous pouvez soit créer un nouveau disque, soit choisir un disque existant dans la liste ou en cliquant sur le bouton correspondant.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la Configuration de la machine.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez un disque virtuel à utiliser pour l&apos;amorçage de la machine virtuelle. Vous pouvez soit créer un nouveau disque, soit choisir un disque existant dans la liste ou choisir un autre emplacement en cliquant sur le bouton correspondant.&lt;/p&gt;&lt;p&gt;Si vous avez besoin d&apos;une configuration de disques plus complexe, vous pouvez sauter cette étape et allouer des disques plus tard dans la configuration de la machine.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -4080,7 +4080,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">La taille recommandée pour le disque dur d&apos;amorçage est de &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>La taille recommandée pour le disque d&apos;amorçage est de &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -4116,7 +4116,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished">Disque dur d&apos;amorçage</translation>
+        <translation>Disque d&apos;amorçage</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
@@ -4320,7 +4320,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation type="obsolete">Vou utilisez plus de contrôleurs de stockage qu&apos;un chipset %1 ne supporte. Veuillez changer le type du chipset sur la page Système des paramètres de la machine ou bien reduire en nombre les contrôleurs de stockage suivants sur la page Stockage: %2.</translation>
+        <translation type="obsolete">Vous utilisez plus de contrôleurs de stockage qu&apos;un chipset %1 ne supporte. Veuillez changer le type du chipset sur la page Système des paramètres de la machine ou bien reduire en nombre les contrôleurs de stockage suivants sur la page Stockage: %2.</translation>
     </message>
 </context>
 <context>
@@ -7481,7 +7481,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished">L&apos;état de la machine virtuelle que vous êtes en train de modifier a changé. Seuls les paramètres modifiables pendant l&apos;exécution seront sauvegardés si vous actionnez le bouton &lt;b&gt;OK&lt;/b&gt;. Les autres modifications seront perdus.</translation>
+        <translation>L&apos;état de la machine virtuelle que vous êtes en train de modifier a changé. Seuls les paramètres modifiables pendant l&apos;exécution seront sauvegardés si vous sélectionnez le bouton &lt;b&gt;OK&lt;/b&gt;. Les autres modifications seront perdus.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
