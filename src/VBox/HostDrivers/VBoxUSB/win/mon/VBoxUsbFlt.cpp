@@ -853,27 +853,26 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
                                             &fFilter, &fIsOneShot);
                                     VBOXUSBFLT_LOCK_RELEASE();
                                     LOG(("Matching Info: Filter (0x%p), pCtx(0x%p), fFilter(%d), fIsOneShot(%d)", uId, pCtx, (int)fFilter, (int)fIsOneShot));
-                                    if (!fFilter)
+                                    if (fFilter)
                                     {
-                                        LOG(("Matching: This device should NOT be filtered"));
-                                        /* this device should not be filtered, and it's not */
-                                        ObDereferenceObject(pDevObj);
-                                        pDevRelations->Objects[k] = NULL;
-                                        --cReplugPdos;
-                                        Assert((uint32_t)cReplugPdos < UINT32_MAX/2);
+                                        LOG(("Matching: This device SHOULD be filtered"));
+                                        /* this device needs to be filtered, but it's not,
+                                         * leave the PDO in array to issue a replug request for it
+                                         * later on */
                                         continue;
                                     }
-
-                                    LOG(("Matching: This device SHOULD be filtered"));
-                                    /* this device needs to be filtered, but it's not,
-                                     * leave the PDO in array to issue a replug request for it
-                                     * later on */
-
                                 }
                                 else
                                 {
                                     WARN(("vboxUsbFltDevPopulate for PDO 0x%p failed with Status 0x%x", pDevObj, Status));
                                 }
+
+                                LOG(("Matching: This device should NOT be filtered"));
+                                /* this device should not be filtered, and it's not */
+                                ObDereferenceObject(pDevObj);
+                                pDevRelations->Objects[k] = NULL;
+                                --cReplugPdos;
+                                ASSERT_WARN((uint32_t)cReplugPdos < UINT32_MAX/2, ("cReplugPdos is %d", cReplugPdos));
                             }
 
                             LOG(("(%d) non-matched PDOs to be replugged", cReplugPdos));
