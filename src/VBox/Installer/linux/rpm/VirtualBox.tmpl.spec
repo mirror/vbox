@@ -236,21 +236,6 @@ if [ -f /etc/vbox/vbox.cfg ]; then
 fi
 rm -f /etc/vbox/module_not_compiled
 
-# install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox)
-install_udev root 0600 /usr/share/virtualbox vboxusers "$INSTALL_NO_UDEV" \
-             > /etc/udev/rules.d/10-vboxdrv.rules
-
-# Build our device tree
-for i in /sys/bus/usb/devices/*; do
-  if test -r "$i/dev"; then
-    dev="`cat "$i/dev" 2> /dev/null`"
-    major="`expr "$dev" : '\(.*\):' 2> /dev/null`"
-    minor="`expr "$dev" : '.*:\(.*\)' 2> /dev/null`"
-    class="`cat $i/bDeviceClass 2> /dev/null`"
-    sh ${usb_createnode} "$major" "$minor" "$class" ${usb_group} 2>/dev/null
-  fi
-done
-
 # XXX SELinux: allow text relocation entries
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
 if [ -x /usr/bin/chcon ]; then
@@ -274,6 +259,10 @@ if [ "$INSTALL_NO_GROUP" != "1" ]; then
   echo
   groupadd -f vboxusers 2> /dev/null
 fi
+
+# install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox)
+# and /dev/vboxdrv and /dev/vboxusb/*/* device nodes
+install_device_node_setup root 0600 /usr/share/virtualbox "${usb_group}"
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
 /sbin/chkconfig --add vboxdrv
 /sbin/chkconfig --add vboxballoonctrl-service
