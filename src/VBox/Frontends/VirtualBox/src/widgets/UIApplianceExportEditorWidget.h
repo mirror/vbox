@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxExportApplianceWgt class declaration
+ * UIApplianceExportEditorWidget class declaration
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,23 +16,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxExportApplianceWgt_h__
-#define __VBoxExportApplianceWgt_h__
+#ifndef __UIApplianceExportEditorWidget_h__
+#define __UIApplianceExportEditorWidget_h__
 
 #include "UIApplianceEditorWidget.h"
 
-class VBoxExportApplianceWgt : public UIApplianceEditorWidget
+class UIApplianceExportEditorWidget: public UIApplianceEditorWidget
 {
     Q_OBJECT;
 
 public:
-    VBoxExportApplianceWgt (QWidget *aParent = NULL);
+    UIApplianceExportEditorWidget(QWidget *pParent = NULL);
 
-    CAppliance* init();
+    CAppliance *init();
 
     void populate();
     void prepareExport();
 };
 
-#endif /* __VBoxExportApplianceWgt_h__ */
+#endif /* __UIApplianceExportEditorWidget_h__ */
 

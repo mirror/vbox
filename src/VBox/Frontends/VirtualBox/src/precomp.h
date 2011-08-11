@@ -200,7 +200,7 @@
 #endif
 #include "VBoxDefs.h"
 #include "VBoxDownloaderWgt.h"
-#include "VBoxExportApplianceWgt.h"
+#include "UIApplianceExportEditorWidget.h"
 #include "VBoxExportApplianceWzd.h"
 #include "VBoxFBOverlay.h"
 #include "VBoxFBOverlayCommon.h"
