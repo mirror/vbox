@@ -2,11 +2,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxExportApplianceWgt class implementation
+ * UIApplianceExportEditorWidget class implementation
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,7 +18,7 @@
  */
 
 /* VBox includes */
-#include "VBoxExportApplianceWgt.h"
+#include "UIApplianceExportEditorWidget.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
@@ -28,8 +28,8 @@
 class ExportSortProxyModel: public VirtualSystemSortProxyModel
 {
 public:
-    ExportSortProxyModel (QObject *aParent = NULL)
-      : VirtualSystemSortProxyModel (aParent)
+    ExportSortProxyModel(QObject *pParent = NULL)
+      : VirtualSystemSortProxyModel(pParent)
     {
         m_filterList
             << KVirtualSystemDescriptionType_OS
@@ -48,14 +48,14 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// VBoxExportApplianceWgt
+// UIApplianceExportEditorWidget
 
-VBoxExportApplianceWgt::VBoxExportApplianceWgt (QWidget *aParent /* = NULL */)
-  : UIApplianceEditorWidget (aParent)
+UIApplianceExportEditorWidget::UIApplianceExportEditorWidget(QWidget *pParent /* = NULL */)
+  : UIApplianceEditorWidget(pParent)
 {
 }
 
-CAppliance* VBoxExportApplianceWgt::init()
+CAppliance* UIApplianceExportEditorWidget::init()
 {
     if (m_pAppliance)
         delete m_pAppliance;
@@ -66,28 +66,28 @@ CAppliance* VBoxExportApplianceWgt::init()
     return m_pAppliance;
 }
 
-void VBoxExportApplianceWgt::populate()
+void UIApplianceExportEditorWidget::populate()
 {
     if (m_pModel)
         delete m_pModel;
 
     QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
 
-    m_pModel = new VirtualSystemModel (vsds, this);
+    m_pModel = new VirtualSystemModel(vsds, this);
 
-    ExportSortProxyModel *proxy = new ExportSortProxyModel (this);
-    proxy->setSourceModel (m_pModel);
-    proxy->sort (DescriptionSection, Qt::DescendingOrder);
+    ExportSortProxyModel *pProxy = new ExportSortProxyModel(this);
+    pProxy->setSourceModel(m_pModel);
+    pProxy->sort(DescriptionSection, Qt::DescendingOrder);
 
-    VirtualSystemDelegate *delegate = new VirtualSystemDelegate (proxy, this);
+    VirtualSystemDelegate *pDelegate = new VirtualSystemDelegate(pProxy, this);
 
     /* Set our own model */
-    m_pTvSettings->setModel (proxy);
+    m_pTvSettings->setModel(pProxy);
     /* Set our own delegate */
-    m_pTvSettings->setItemDelegate (delegate);
+    m_pTvSettings->setItemDelegate(pDelegate);
     /* For now we hide the original column. This data is displayed as tooltip
        also. */
-    m_pTvSettings->setColumnHidden (OriginalValueSection, true);
+    m_pTvSettings->setColumnHidden(OriginalValueSection, true);
     m_pTvSettings->expandAll();
 
     /* Check for warnings & if there are one display them. */
@@ -96,13 +96,13 @@ void VBoxExportApplianceWgt::populate()
     if (warnings.size() > 0)
     {
         foreach (const QString& text, warnings)
-            mWarningTextEdit->append ("- " + text);
+            mWarningTextEdit->append("- " + text);
         fWarningsEnabled = true;
     }
-    m_pWarningWidget->setShown (fWarningsEnabled);
+    m_pWarningWidget->setShown(fWarningsEnabled);
 }
 
-void VBoxExportApplianceWgt::prepareExport()
+void UIApplianceExportEditorWidget::prepareExport()
 {
     if (m_pAppliance)
         m_pModel->putBack();
