@@ -27,7 +27,6 @@
 /* Forward declarations: */
 class QProgressBar;
 class UIMiniCancelButton;
-class QNetworkAccessManager;
 class QNetworkReply;
 
 /**
@@ -166,7 +165,6 @@ private slots:
 private:
 
     /* Private variables: */
-    QNetworkAccessManager *m_pNetworkManager;
     QUrl m_source;
     QString m_strTarget;
     QPointer<QWidget> m_pParent;

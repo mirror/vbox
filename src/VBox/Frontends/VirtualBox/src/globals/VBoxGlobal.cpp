@@ -30,6 +30,7 @@
 #include "UIIconPool.h"
 #include "UIExtraDataEventHandler.h"
 #include "QIFileDialog.h"
+#include "UINetworkManager.h"
 
 #include "UIMachine.h"
 #include "UISession.h"
@@ -5241,6 +5242,9 @@ void VBoxGlobal::init()
             this, SLOT(sltProcessGlobalSettingChange()));
     /* Handle global settings change for the first time: */
     sltProcessGlobalSettingChange();
+
+    /* Create network manager: */
+    UINetworkManager::create();
 }
 
 
@@ -5251,6 +5255,9 @@ void VBoxGlobal::init()
  */
 void VBoxGlobal::cleanup()
 {
+    /* Destroy network manager: */
+    UINetworkManager::destroy();
+
     /* sanity check */
     if (!sVBoxGlobalInCleanup)
     {
