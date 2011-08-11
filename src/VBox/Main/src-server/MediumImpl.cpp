@@ -5108,11 +5108,11 @@ HRESULT Medium::importFile(const char *aFilename,
  * @return
  */
 HRESULT Medium::cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
-                          const ComObjPtr<Medium> &aParent, const ComObjPtr<Progress> &aProgress,
+                          const ComObjPtr<Medium> &aParent, IProgress **aProgress,
                           uint32_t idxSrcImageSame, uint32_t idxDstImageSame)
 {
     CheckComArgNotNull(aTarget);
-    AssertReturn(!aProgress.isNull(), E_INVALIDARG);
+    CheckComArgOutPointerValid(aProgress);
     ComAssertRet(aTarget != this, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
@@ -5190,7 +5190,7 @@ HRESULT Medium::cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
         }
 
         /* setup task object to carry out the operation asynchronously */
-        pTask = new Medium::CloneTask(this, aProgress, aTarget,
+        pTask = new Medium::CloneTask(this, pProgress, aTarget,
                                       (MediumVariant_T)aVariant,
                                       aParent, idxSrcImageSame,
                                       idxDstImageSame, pSourceMediumLockList,
@@ -5206,7 +5206,12 @@ HRESULT Medium::cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
     catch (HRESULT aRC) { rc = aRC; }
 
     if (SUCCEEDED(rc))
+    {
         rc = startThread(pTask);
+
+        if (SUCCEEDED(rc))
+            pProgress.queryInterfaceTo(aProgress);
+    }
     else if (pTask != NULL)
         delete pTask;
 

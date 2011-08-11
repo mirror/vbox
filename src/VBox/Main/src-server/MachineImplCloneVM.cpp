@@ -38,6 +38,7 @@ typedef struct
 {
     Utf8Str                 strBaseName;
     ComPtr<IMedium>         pMedium;
+    uint32_t                uIdx;
     ULONG                   uWeight;
 } MEDIUMTASK;
 
@@ -277,6 +278,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
             if (FAILED(rc)) return rc;
 
             MEDIUMTASK mt;
+            mt.uIdx = UINT32_MAX; /* No read/write optimization possible. */
 
             /* Save the base name. */
             rc = queryBaseName(pSrcMedium, mt.strBaseName);
@@ -385,6 +387,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
                 if (FAILED(rc)) return rc;
 
                 MEDIUMTASK mt;
+                mt.uIdx    = UINT32_MAX;
                 mt.pMedium = pSrcMedium;
                 mt.uWeight = (lSize + _1M - 1) / _1M;
                 mtc.chain.append(mt);
@@ -399,6 +402,16 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
         /* Add the save state files of this machine if there is one. */
         rc = addSaveState(machine, uCount, uTotalWeight);
         if (FAILED(rc)) return rc;
+    }
+    /* Build up the index list of the image chain. Unfortunately we can't do
+     * that in the previous loop, cause there we go from child -> parent and
+     * didn't know how many are between. */
+    for (size_t i = 0; i < llMedias.size(); ++i)
+    {
+        uint32_t uIdx = 0;
+        MEDIUMTASKCHAIN &mtc = llMedias.at(i);
+        for (size_t a = mtc.chain.size(); a > 0; --a)
+            mtc.chain[a - 1].uIdx = ++uIdx;
     }
 #ifdef DEBUG_poetzsch
     /* Print the histogram */
@@ -508,6 +521,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
 
                 /* Save the current medium, for later cloning. */
                 MEDIUMTASK mt;
+                mt.uIdx    = UINT32_MAX;
                 mt.pMedium = pSrcMedium;
                 mt.uWeight = (lSize + _1M - 1) / _1M;
                 mtc.chain.append(mt);
@@ -524,6 +538,16 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
         /* Add the save state files of this machine if there is one. */
         rc = addSaveState(machine, uCount, uTotalWeight);
         if (FAILED(rc)) return rc;
+    }
+    /* Build up the index list of the image chain. Unfortunately we can't do
+     * that in the previous loop, cause there we go from child -> parent and
+     * didn't know how many are between. */
+    for (size_t i = 0; i < llMedias.size(); ++i)
+    {
+        uint32_t uIdx = 0;
+        MEDIUMTASKCHAIN &mtc = llMedias.at(i);
+        for (size_t a = mtc.chain.size(); a > 0; --a)
+            mtc.chain[a - 1].uIdx = ++uIdx;
     }
 
     return rc;
@@ -1001,6 +1025,8 @@ HRESULT MachineCloneVM::run()
         {
             const MEDIUMTASKCHAIN &mtc = d->llMedias.at(i);
             ComObjPtr<Medium> pNewParent;
+            uint32_t uSrcParentIdx = UINT32_MAX;
+            uint32_t uTrgParentIdx = UINT32_MAX;
             for (size_t a = mtc.chain.size(); a > 0; --a)
             {
                 const MEDIUMTASK &mt = mtc.chain.at(a - 1);
@@ -1133,10 +1159,14 @@ HRESULT MachineCloneVM::run()
                         srcLock.release();
                         /* Do the disk cloning. */
                         ComPtr<IProgress> progress2;
-                        rc = pMedium->CloneTo(pTarget,
-                                              srcVar,
-                                              pNewParent,
-                                              progress2.asOutParam());
+
+                        ComObjPtr<Medium> pLMedium = static_cast<Medium*>((IMedium*)pMedium);
+                        rc = pLMedium->cloneToEx(pTarget,
+                                                 srcVar,
+                                                 pNewParent,
+                                                 progress2.asOutParam(),
+                                                 uSrcParentIdx,
+                                                 uTrgParentIdx);
                         if (FAILED(rc)) throw rc;
 
                         /* Wait until the async process has finished. */
@@ -1176,6 +1206,11 @@ HRESULT MachineCloneVM::run()
                         pNewParent = pTarget;
                     }
                 }
+                /* Save the current source medium index as the new parent
+                 * medium index. */
+                uSrcParentIdx = mt.uIdx;
+                /* Simply increase the target index. */
+                ++uTrgParentIdx;
             }
 
             Bstr bstrSrcId;
