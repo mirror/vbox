@@ -9568,7 +9568,7 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>Importando Appliance ...</translation>

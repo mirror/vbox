@@ -9286,7 +9286,7 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>Import urządzenia programowego ...</translation>

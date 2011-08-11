@@ -44,7 +44,7 @@
     </widget>
    </item>
    <item>
-    <widget class="VBoxImportApplianceWgt" name="m_pSettingsCnt" native="true">
+    <widget class="UIApplianceImportEditorWidget" name="m_pSettingsCnt" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
@@ -62,9 +62,9 @@
    <header>QILabel.h</header>
   </customwidget>
   <customwidget>
-   <class>VBoxImportApplianceWgt</class>
+   <class>UIApplianceImportEditorWidget</class>
    <extends>QWidget</extends>
-   <header>VBoxImportApplianceWgt.h</header>
+   <header>UIApplianceImportEditorWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

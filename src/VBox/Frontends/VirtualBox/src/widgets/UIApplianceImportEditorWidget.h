@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxImportApplianceWgt class declaration
+ * UIApplianceImportEditorWidget class declaration
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,25 +16,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxImportApplianceWgt_h__
-#define __VBoxImportApplianceWgt_h__
+#ifndef __UIApplianceImportEditorWidget_h__
+#define __UIApplianceImportEditorWidget_h__
 
 /* VBox includes */
 #include "UIApplianceEditorWidget.h"
 
-class VBoxImportApplianceWgt : public UIApplianceEditorWidget
+class UIApplianceImportEditorWidget: public UIApplianceEditorWidget
 {
     Q_OBJECT;
 
 public:
-    VBoxImportApplianceWgt (QWidget *aParent);
+    UIApplianceImportEditorWidget(QWidget *pParent);
 
-    bool setFile (const QString& aFile);
+    bool setFile(const QString &strFile);
     void prepareImport();
     bool import();
 
-    QList < QPair <QString, QString> > licenseAgreements() const;
+    QList<QPair<QString, QString> > licenseAgreements() const;
 };
 
-#endif /* __VBoxImportApplianceWgt_h__ */
+#endif /* __UIApplianceImportEditorWidget_h__ */
 

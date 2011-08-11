@@ -8534,7 +8534,7 @@ para ligar ao encaixe actualmente destacado.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWgt</name>
+    <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Importing Appliance ...</source>
         <translation>A importar aplicação...</translation>
