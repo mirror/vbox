@@ -262,6 +262,12 @@ UICloneVMWizardPage2::UICloneVMWizardPage2(bool fAdditionalInfo)
 void UICloneVMWizardPage2::buttonClicked(QAbstractButton *pButton)
 {
     setFinalPage(pButton != m_pFullCloneRadio);
+    /* On older Qt versions the content of the current page isn't updated when
+     * using setFinalPage. So switch back and for to simulate it. */
+#if QT_VERSION < 0x040700
+    wizard()->back();
+    wizard()->next();
+#endif
 }
 
 void UICloneVMWizardPage2::retranslateUi()
@@ -271,7 +277,6 @@ void UICloneVMWizardPage2::retranslateUi()
 
     /* Set 'Page2' page title: */
     setTitle(tr("Cloning Configuration"));
-
 
     QString strLabel = tr("<p>Please select the type of the clone.</p><p>If you choose <b>Full Clone</b> an exact copy (including all virtual disk images) of the original VM will be created. If you select <b>Linked Clone</b>, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.</p>");
     if (m_fAdditionalInfo)
