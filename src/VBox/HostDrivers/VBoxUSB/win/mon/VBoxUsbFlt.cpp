@@ -457,13 +457,16 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
                 if (!NT_SUCCESS(Status))
                 {
                     WARN(("reading serial number failed\n"));
+                    ASSERT_WARN(pDevice->szSerial[0] == '\0', ("serial is not zero!!"));
                     if (Status == STATUS_CANCELLED)
                     {
                         WARN(("found a new black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
                         vboxUsbFltBlDevAddLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice);
                         Status = STATUS_UNSUCCESSFUL;
+                        break;
                     }
-                    break;
+                    LOG(("pretending success.."));
+                    Status = STATUS_SUCCESS;
                 }
             }
 
@@ -473,13 +476,16 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
                 if (!NT_SUCCESS(Status))
                 {
                     WARN(("reading manufacturer name failed\n"));
+                    ASSERT_WARN(pDevice->szMfgName[0] == '\0', ("szMfgName is not zero!!"));
                     if (Status == STATUS_CANCELLED)
                     {
                         WARN(("found a new black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
                         vboxUsbFltBlDevAddLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice);
                         Status = STATUS_UNSUCCESSFUL;
+                        break;
                     }
-                    break;
+                    LOG(("pretending success.."));
+                    Status = STATUS_SUCCESS;
                 }
             }
 
@@ -489,13 +495,16 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
                 if (!NT_SUCCESS(Status))
                 {
                     WARN(("reading product name failed\n"));
+                    ASSERT_WARN(pDevice->szProduct[0] == '\0', ("szProduct is not zero!!"));
                     if (Status == STATUS_CANCELLED)
                     {
                         WARN(("found a new black list device, vid(0x%x), pid(0x%x), rev(0x%x)\n", pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice));
                         vboxUsbFltBlDevAddLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice);
                         Status = STATUS_UNSUCCESSFUL;
+                        break;
                     }
-                    break;
+                    LOG(("pretending success.."));
+                    Status = STATUS_SUCCESS;
                 }
             }
 
