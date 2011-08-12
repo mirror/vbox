@@ -9060,6 +9060,10 @@
       <desc>
         Reads the next directory entry of an opened guest directory.
 
+        <result name="E_ABORT">
+          When the end of the directory has been reached.
+        </result>
+
         <result name="VBOX_E_IPRT_ERROR">
           Error while opening / reading directory.
         </result>
@@ -9080,6 +9084,10 @@
     <method name="fileExists">
       <desc>
         Checks if the specified file name exists and is a regular file.
+
+        If the file name ends with a slash or backslash, the function assumes
+        it's a directory and will check if the specified directory exists and
+        is a regular directory.
 
         <result name="VBOX_E_IPRT_ERROR">
           Error while looking up information.

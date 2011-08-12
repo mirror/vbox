@@ -36,18 +36,25 @@ class Guest;
 class Progress;
 
 /** Structure representing the "value" side of a "key=value" pair. */
-typedef struct VBOXGUESTCTRL_STREAMPAIR
+class VBOXGUESTCTRL_STREAMVALUE
 {
-    VBOXGUESTCTRL_STREAMPAIR(const char *pszValue)
+public:
+
+    VBOXGUESTCTRL_STREAMVALUE() { }
+    VBOXGUESTCTRL_STREAMVALUE(const char *pszValue)
         : mValue(pszValue) {}
 
+    VBOXGUESTCTRL_STREAMVALUE(const VBOXGUESTCTRL_STREAMVALUE& aThat)
+           : mValue(aThat.mValue) {}
+
     Utf8Str mValue;
-} VBOXGUESTCTRL_STREAMPAIR, *PVBOXGUESTCTRL_STREAM_PAIR;
+};
 
 /** Map containing "key=value" pairs of a guest process stream. */
-typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAMPAIR > GuestCtrlStreamPairs;
-typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAMPAIR >::iterator GuestCtrlStreamPairsIter;
-typedef std::map< Utf8Str, VBOXGUESTCTRL_STREAMPAIR >::const_iterator GuestCtrlStreamPairsIterConst;
+typedef std::pair< Utf8Str, VBOXGUESTCTRL_STREAMVALUE > GuestCtrlStreamPair;
+typedef std::map < Utf8Str, VBOXGUESTCTRL_STREAMVALUE > GuestCtrlStreamPairMap;
+typedef std::map < Utf8Str, VBOXGUESTCTRL_STREAMVALUE >::iterator GuestCtrlStreamPairMapIter;
+typedef std::map < Utf8Str, VBOXGUESTCTRL_STREAMVALUE >::const_iterator GuestCtrlStreamPairMapIterConst;
 
 /**
  * Class representing a block of stream pairs (key=value). Each block in a raw guest
@@ -84,13 +91,13 @@ public:
 
 protected:
 
-    GuestCtrlStreamPairs m_mapPairs;
+    GuestCtrlStreamPairMap m_mapPairs;
 };
 
 /** Vector containing multiple allocated stream pair objects. */
-typedef std::vector< GuestProcessStreamBlock* > GuestCtrlStreamObjects;
-typedef std::vector< GuestProcessStreamBlock* >::iterator GuestCtrlStreamObjectsIter;
-typedef std::vector< GuestProcessStreamBlock* >::const_iterator GuestCtrlStreamObjectsIterConst;
+typedef std::vector< GuestProcessStreamBlock > GuestCtrlStreamObjects;
+typedef std::vector< GuestProcessStreamBlock >::iterator GuestCtrlStreamObjectsIter;
+typedef std::vector< GuestProcessStreamBlock >::const_iterator GuestCtrlStreamObjectsIterConst;
 
 /**
  * Class for parsing machine-readable guest process output by VBoxService'
@@ -131,8 +138,11 @@ protected:
     BYTE *m_pbBuffer;
 };
 
-struct GuestTask
+class GuestTask
 {
+
+public:
+
     enum TaskType
     {
         /** Copies a file from host to the guest. */

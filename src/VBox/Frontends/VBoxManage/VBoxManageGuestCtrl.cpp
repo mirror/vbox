@@ -939,14 +939,13 @@ static int ctrlCopyDirExists(PCOPYCONTEXT pContext, bool bGuest,
     if (bGuest)
     {
         BOOL fDirExists = FALSE;
-#if 0
-        HRESULT hr = pContext->pGuest->DirectoryExists(Bstr(pszDir).raw(),
-                                                       Bstr(pContext->pszUsername).raw(),
-                                                       Bstr(pContext->pszPassword).raw(), &fDirExists);
+        /** @todo Replace with DirectoryExists as soon as API is in place. */
+        HRESULT hr = pContext->pGuest->FileExists(Bstr(pszDir).raw(),
+                                                  Bstr(pContext->pszUsername).raw(),
+                                                  Bstr(pContext->pszPassword).raw(), &fDirExists);
         if (FAILED(hr))
             rc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
         else
-#endif
             *fExists = fDirExists ? true : false;
     }
     else
@@ -1556,6 +1555,8 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
         {
             const char *pszSource = vecSources[s].mSource.c_str();
             const char *pszFilter = vecSources[s].mFilter.c_str();
+            if (!strlen(pszFilter))
+                pszFilter = NULL; /* If empty filter then there's no filter :-) */
 
             char *pszSourceRoot;
             vrc = ctrlCopyCreateSourceRoot(pszSource, &pszSourceRoot);
@@ -1569,11 +1570,28 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
                 RTPrintf("Source: %s\n", pszSource);
 
             /** @todo Files with filter?? */
+            bool fIsFile = false;
             bool fExists;
-            vrc = ctrlCopyFileExistsOnSource(pContext, pszSource, &fExists);
+            Utf8Str Utf8CurSource(pszSource);
+            if (   Utf8CurSource.endsWith("/")
+                || Utf8CurSource.endsWith("\\"))
+            {
+                if (pszFilter) /* Directory with filter. */
+                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSourceRoot, &fExists);
+                else /* Regular directory without filter. */
+                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSource, &fExists);
+            }
+            else
+            {
+                vrc = ctrlCopyFileExistsOnSource(pContext, pszSource, &fExists);
+                if (   RT_SUCCESS(vrc)
+                    && fExists)
+                    fIsFile = true;
+            }
+
             if (RT_SUCCESS(vrc))
             {
-                if (fExists)
+                if (fIsFile)
                 {
                     /* Single file. */
                     char *pszDest;
@@ -1593,25 +1611,9 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
                 }
                 else
                 {
-                    if (!pContext->fHostToGuest)
-                    {
-                        RTMsgError("Copying of guest directories to the host is not supported yet!\n");
-                        vrc = VERR_NOT_IMPLEMENTED;
-                    }
-                    else
-                    {
-                        if (   (RT_SUCCESS(ctrlCopyDirExistsOnSource(pContext, pszSource, &fExists))
-                                && fExists)
-                            || (   RT_SUCCESS(ctrlCopyDirExistsOnSource(pContext, pszSourceRoot, &fExists))
-                                && fExists
-                                && pszFilter)
-                           )
-                        {
-                            /* Directory (with filter?). */
-                            vrc = ctrlCopyDirToTarget(pContext, pszSource, pszFilter,
-                                                      Utf8Dest.c_str(), fFlags, NULL /* Subdir */);
-                        }
-                    }
+                    /* Directory (with filter?). */
+                    vrc = ctrlCopyDirToTarget(pContext, pszSource, pszFilter,
+                                              Utf8Dest.c_str(), fFlags, NULL /* Subdir */);
                 }
             }
 

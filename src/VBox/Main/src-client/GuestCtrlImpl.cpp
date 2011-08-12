@@ -1246,17 +1246,15 @@ HRESULT Guest::executeProcessResult(const char *pszCommand, const char *pszUser,
  * @param   enmAddAttribs
  */
 HRESULT Guest::executeStreamQueryFsObjInfo(IN_BSTR aObjName,
-                                           GuestProcessStreamBlock *pStreamBlock,
+                                           GuestProcessStreamBlock &streamBlock,
                                            PRTFSOBJINFO pObjInfo,
                                            RTFSOBJATTRADD enmAddAttribs)
 {
-    AssertPtrReturn(pStreamBlock, E_INVALIDARG);
-
     HRESULT rc = S_OK;
     Utf8Str Utf8ObjName(aObjName);
 
     int64_t iVal;
-    int vrc = pStreamBlock->GetInt64Ex("st_size", &iVal);
+    int vrc = streamBlock.GetInt64Ex("st_size", &iVal);
     if (RT_SUCCESS(vrc))
         pObjInfo->cbObject = iVal;
     else
@@ -1309,11 +1307,11 @@ int Guest::executeStreamDrain(ULONG aPID, GuestProcessStream &stream)
  */
 void Guest::executeStreamFree(GuestCtrlStreamObjects &streamObjects)
 {
-    for (GuestCtrlStreamObjectsIter it = streamObjects.begin();
+    /*for (GuestCtrlStreamObjectsIter it = streamObjects.begin();
          it != streamObjects.end(); it++)
     {
         executeStreamFreeBlock(*it);
-    }
+    }*/
     streamObjects.clear();
 }
 
@@ -1344,7 +1342,22 @@ int Guest::executeStreamGetNextBlock(ULONG aPID, GuestProcessStream &stream,
 {
     int rc = executeStreamDrain(aPID, stream);
     if (RT_SUCCESS(rc))
-        rc = stream.ParseBlock(streamBlock);
+    {
+        do
+        {
+            rc = stream.ParseBlock(streamBlock);
+            if (streamBlock.GetCount())
+                break; /* We got a block, bail out! */
+        } while (RT_SUCCESS(rc));
+
+        /* In case this was the last block, VERR_NO_DATA is returned.
+         * Overwrite this to get a proper return value for the last block. */
+        if(    streamBlock.GetCount()
+            && rc == VERR_NO_DATA)
+        {
+            rc = VINF_SUCCESS;
+        }
+    }
 
     return rc;
 }
@@ -1369,26 +1382,16 @@ HRESULT Guest::executeStreamParse(ULONG aPID, GuestCtrlStreamObjects &streamObje
         {
             /* Try to parse the stream output we gathered until now. If we still need more
              * data the parsing routine will tell us and we just do another poll round. */
-            GuestProcessStreamBlock *pCurBlock = (GuestProcessStreamBlock*)
-                                            RTMemAlloc(sizeof(GuestProcessStreamBlock));
-            if (!pCurBlock)
-            {
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("No memory for allocating stream block"));
-                break;
-            }
-            int vrc = guestStream.ParseBlock(*pCurBlock);
+            GuestProcessStreamBlock curBlock;
+            int vrc = guestStream.ParseBlock(curBlock);
             if (RT_SUCCESS(vrc))
             {
-                if (pCurBlock->GetCount())
+                if (curBlock.GetCount())
                 {
-                    streamObjects.push_back(pCurBlock);
+                    streamObjects.push_back(curBlock);
                 }
                 else
-                {
-                    GuestProcessStream::FreeBlock(pCurBlock);
                     break; /* No more data. */
-                }
             }
             else /* Everything else would be an error! */
                 hr = setError(VBOX_E_IPRT_ERROR,

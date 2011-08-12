@@ -504,6 +504,8 @@ public:
         return *this;
     }
 
+    bool operator<(const RTCString &that) const { return RTCString::operator<(that); }
+
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 
 #if defined(VBOX_WITH_XPCOM)
@@ -562,7 +564,6 @@ public:
      *  Static immutable empty-string object. May be used for comparison purposes.
      */
     static const Utf8Str Empty;
-
 protected:
 
     void copyFrom(CBSTR a_pbstr);

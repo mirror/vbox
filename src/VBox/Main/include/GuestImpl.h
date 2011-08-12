@@ -158,7 +158,7 @@ public:
                                    IN_BSTR aUsername, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
     HRESULT executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout, PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID);
-    HRESULT executeStreamQueryFsObjInfo(IN_BSTR aObjName,GuestProcessStreamBlock *pStreamBlock, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttribs);
+    HRESULT executeStreamQueryFsObjInfo(IN_BSTR aObjName,GuestProcessStreamBlock &streamBlock, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttribs);
     int     executeStreamDrain(ULONG aPID, GuestProcessStream &stream);
     void    executeStreamFree(GuestCtrlStreamObjects &streamObjects);
     void    executeStreamFreeBlock(GuestProcessStreamBlock *pBlock);
