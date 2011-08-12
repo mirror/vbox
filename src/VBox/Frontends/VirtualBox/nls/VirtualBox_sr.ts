@@ -3912,11 +3912,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation>Дефиниши тип чипсета за машину. ICH9 чипсет је пробни и није препоручен осим за систему којим су потребни (нпр Mac OS X).</translation>
+        <translation>Дефиниши тип чипсета за емулирање Емулација ICH9 ћипсета је пробно и није препоручено осим ако је потребно госту (као за OS X).</translation>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>поставили сте ICH9 чипсет за ову машину. Неће коректно радити док IO-APIC способност није омогућена. То ће се аутоматско урадити када прихватите поставке после стискања дугмета У реду.</translation>
+        <translation>поставили сте ICH9 чипсет за ову машину. Да би радило, потребна је IO-APIC способност. То ће се аутоматско урадити када прихватите поставке после стискања дугмета У реду.</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
