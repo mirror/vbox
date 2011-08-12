@@ -1321,82 +1321,107 @@ void UIMachineLogic::sltMountRecentStorageMedium()
 
 void UIMachineLogic::sltPrepareUSBMenu()
 {
-    /* Get the sender() menu: */
+    /* Get and check the sender menu object: */
     QMenu *pMenu = qobject_cast<QMenu*>(sender());
-#ifdef RT_STRICT
     QMenu *pUSBDevicesMenu = gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->menu();
-#endif
     AssertMsg(pMenu == pUSBDevicesMenu, ("This slot should only be called on hovering USB menu!\n"));
+    Q_UNUSED(pUSBDevicesMenu);
+
+    /* Clear menu initially: */
     pMenu->clear();
 
-    /* Get HOST: */
+    /* Get current host: */
     CHost host = vboxGlobal().virtualBox().GetHost();
 
-    /* Get USB devices list: */
+    /* Get host USB device list: */
     CHostUSBDeviceVector devices = host.GetUSBDevices();
 
-    /* Fill USB devices menu: */
+    /* Fill USB device menu: */
     bool fIsUSBListEmpty = devices.size() == 0;
+    /* If device list is empty: */
     if (fIsUSBListEmpty)
     {
-        /* Fill USB devices menu: */
+        /* Add only one - "empty" action: */
         QAction *pEmptyMenuAction = new QAction(pMenu);
         pEmptyMenuAction->setEnabled(false);
-        pEmptyMenuAction->setText(QApplication::translate("UIMachineLogic", "No USB Devices Connected"));
+        pEmptyMenuAction->setText(tr("No USB Devices Connected"));
+        pEmptyMenuAction->setToolTip(tr("No supported devices connected to the host PC"));
         pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/delete_16px.png", ":/delete_dis_16px.png"));
-        pEmptyMenuAction->setToolTip(QApplication::translate("UIMachineLogic", "No supported devices connected to the host PC"));
+        pMenu->addAction(pEmptyMenuAction);
     }
+    /* If device list is NOT empty: */
     else
     {
-        foreach (const CHostUSBDevice hostDevice, devices)
+        /* Populate menu with host USB devices: */
+        for (int i = 0; i < devices.size(); ++i)
         {
-            /* Get common USB device: */
+            /* Get current host USB device: */
+            const CHostUSBDevice& hostDevice = devices[i];
+            /* Get USB device from current host USB device: */
             CUSBDevice device(hostDevice);
 
             /* Create USB device action: */
-            QAction *attachUSBAction = new QAction(vboxGlobal().details(device), pMenu);
-            attachUSBAction->setCheckable(true);
-            connect(attachUSBAction, SIGNAL(triggered(bool)), this, SLOT(sltAttachUSBDevice()));
-            pMenu->addAction(attachUSBAction);
+            QAction *pAttachUSBAction = new QAction(vboxGlobal().details(device), pMenu);
+            pAttachUSBAction->setCheckable(true);
+            connect(pAttachUSBAction, SIGNAL(triggered(bool)), this, SLOT(sltAttachUSBDevice()));
+            pMenu->addAction(pAttachUSBAction);
 
             /* Check if that USB device was already attached to this session: */
             CConsole console = session().GetConsole();
             CUSBDevice attachedDevice = console.FindUSBDeviceById(device.GetId());
-            attachUSBAction->setChecked(!attachedDevice.isNull());
-            attachUSBAction->setEnabled(hostDevice.GetState() != KUSBDeviceState_Unavailable);
+            pAttachUSBAction->setChecked(!attachedDevice.isNull());
+            pAttachUSBAction->setEnabled(hostDevice.GetState() != KUSBDeviceState_Unavailable);
 
             /* Set USB attach data: */
-            attachUSBAction->setData(QVariant::fromValue(USBTarget(!attachUSBAction->isChecked(), device.GetId())));
-            attachUSBAction->setToolTip(vboxGlobal().toolTip(device));
+            pAttachUSBAction->setData(QVariant::fromValue(USBTarget(!pAttachUSBAction->isChecked(), device.GetId())));
+            pAttachUSBAction->setToolTip(vboxGlobal().toolTip(device));
         }
     }
 }
 
 void UIMachineLogic::sltAttachUSBDevice()
 {
-    /* Get sender action: */
-    QAction *action = qobject_cast<QAction*>(sender());
-    AssertMsg(action, ("This slot should only be called on selecting USB menu item!\n"));
+    /* Get and check sender action object: */
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    AssertMsg(pAction, ("This slot should only be called on selecting USB menu item!\n"));
+
+    /* Get operation target: */
+    USBTarget target = pAction->data().value<USBTarget>();
 
     /* Get current console: */
     CConsole console = session().GetConsole();
 
-    /* Get USB target: */
-    USBTarget target = action->data().value<USBTarget>();
-    CUSBDevice device = console.FindUSBDeviceById(target.id);
-
     /* Attach USB device: */
     if (target.attach)
     {
+        /* Try to attach corresponding device: */
         console.AttachUSBDevice(target.id);
+        /* Check if console is OK: */
         if (!console.isOk())
+        {
+            /* Get current host: */
+            CHost host = vboxGlobal().virtualBox().GetHost();
+            /* Search the host for the corresponding USB device: */
+            CHostUSBDevice hostDevice = host.FindUSBDeviceById(target.id);
+            /* Get USB device from host USB device: */
+            CUSBDevice device(hostDevice);
+            /* Show a message about procedure failure: */
             msgCenter().cannotAttachUSBDevice(console, vboxGlobal().details(device));
+        }
     }
+    /* Detach USB device: */
     else
     {
+        /* Search the console for the corresponding USB device: */
+        CUSBDevice device = console.FindUSBDeviceById(target.id);
+        /* Try to detach corresponding device: */
         console.DetachUSBDevice(target.id);
+        /* Check if console is OK: */
         if (!console.isOk())
+        {
+            /* Show a message about procedure failure: */
             msgCenter().cannotDetachUSBDevice(console, vboxGlobal().details(device));
+        }
     }
 }
 

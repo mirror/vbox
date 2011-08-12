@@ -2512,7 +2512,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation></translation>
+        <translation>Нет поддерживаемых USB устройств, подсоединенных к хосту</translation>
     </message>
 </context>
 <context>
