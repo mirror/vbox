@@ -141,6 +141,16 @@
           and 64 bit Windows guests (bug #9318)</para>
       </listitem>
 
+      <listitem>
+        <para>USB: fixed device recognition issues (bugs #9299) for Windows hosts, 
+          fixed several device capturing issues for Windows hosts,
+          fixed issues with remote filters being applied to local USB devices</para>
+      </listitem>
+      
+      <listitem>
+        <para>Windows Vista & 7 guests: WDDM driver fixes & performance enhancements, 
+          fixed WinSAT crashes (#9267)</para>
+      </listitem>
     </itemizedlist>
   </sect1>
 
