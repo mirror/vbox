@@ -1594,14 +1594,14 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
                 if (fIsFile)
                 {
                     /* Single file. */
-                    char *pszDest;
+                    char *pszDestFile;
                     vrc = ctrlCopyTranslatePath(pContext, pszSourceRoot, pszSource,
-                                                Utf8Dest.c_str(), &pszDest);
+                                                Utf8Dest.c_str(), &pszDestFile);
                     if (RT_SUCCESS(vrc))
                     {
                         vrc = ctrlCopyFileToTarget(pContext, pszSource,
-                                                   pszDest, fFlags);
-                        RTStrFree(pszDest);
+                                                   pszDestFile, fFlags);
+                        RTStrFree(pszDestFile);
                     }
                     else
                     {
