@@ -163,8 +163,6 @@ HRESULT Guest::fileQueryInfoInternal(IN_BSTR aFile,
                                                      aObjInfo, enmAddAttribs);
                 }
 
-                executeStreamFree(streamObjs);
-
                 if (pRC)
                     *pRC = rc;
             }

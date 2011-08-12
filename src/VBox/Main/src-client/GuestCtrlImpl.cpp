@@ -1301,33 +1301,6 @@ int Guest::executeStreamDrain(ULONG aPID, GuestProcessStream &stream)
 }
 
 /**
- * Frees a guest stream objects vector.
- *
- * @param   streamObjects           Vector to free.
- */
-void Guest::executeStreamFree(GuestCtrlStreamObjects &streamObjects)
-{
-    /*for (GuestCtrlStreamObjectsIter it = streamObjects.begin();
-         it != streamObjects.end(); it++)
-    {
-        executeStreamFreeBlock(*it);
-    }*/
-    streamObjects.clear();
-}
-
-/**
- * Frees a guest stream block. Pure convenience function for
- * GuestProcessStream::FreeBlock().
- *
- * @return  IPRT status code.
- * @param   pBlock
- */
-void Guest::executeStreamFreeBlock(GuestProcessStreamBlock *pBlock)
-{
-    GuestProcessStream::FreeBlock(pBlock);
-}
-
-/**
  * Tries to get the next upcoming value block from a started guest process
  * by first draining its output and then processing the received guest stream.
  *
