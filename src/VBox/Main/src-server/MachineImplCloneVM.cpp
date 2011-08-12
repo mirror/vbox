@@ -411,7 +411,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
         uint32_t uIdx = 0;
         MEDIUMTASKCHAIN &mtc = llMedias.at(i);
         for (size_t a = mtc.chain.size(); a > 0; --a)
-            mtc.chain[a - 1].uIdx = ++uIdx;
+            mtc.chain[a - 1].uIdx = uIdx++;
     }
 #ifdef DEBUG_poetzsch
     /* Print the histogram */
@@ -547,7 +547,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
         uint32_t uIdx = 0;
         MEDIUMTASKCHAIN &mtc = llMedias.at(i);
         for (size_t a = mtc.chain.size(); a > 0; --a)
-            mtc.chain[a - 1].uIdx = ++uIdx;
+            mtc.chain[a - 1].uIdx = uIdx++;
     }
 
     return rc;
