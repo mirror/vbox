@@ -160,8 +160,6 @@ public:
     HRESULT executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout, PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID);
     HRESULT executeStreamQueryFsObjInfo(IN_BSTR aObjName,GuestProcessStreamBlock &streamBlock, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttribs);
     int     executeStreamDrain(ULONG aPID, GuestProcessStream &stream);
-    void    executeStreamFree(GuestCtrlStreamObjects &streamObjects);
-    void    executeStreamFreeBlock(GuestProcessStreamBlock *pBlock);
     int     executeStreamGetNextBlock(ULONG aPID, GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
     HRESULT executeStreamParse(ULONG aPID, GuestCtrlStreamObjects &streamObjects);
     HRESULT executeWaitForStatusChange(ULONG uPID, ULONG uTimeoutMS, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode);

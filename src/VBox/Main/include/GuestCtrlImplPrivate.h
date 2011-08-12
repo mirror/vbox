@@ -122,10 +122,6 @@ public:
 
     int ParseBlock(GuestProcessStreamBlock &streamBlock);
 
-public:
-
-    static void FreeBlock(GuestProcessStreamBlock *pStreamBlock);
-
 protected:
 
     /** Currently allocated size of internal stream buffer. */

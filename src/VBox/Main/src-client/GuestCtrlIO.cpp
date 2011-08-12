@@ -399,13 +399,3 @@ int GuestProcessStream::ParseBlock(GuestProcessStreamBlock &streamBlock)
     return rc;
 }
 
-void GuestProcessStream::FreeBlock(GuestProcessStreamBlock *pStreamBlock)
-{
-    if (pStreamBlock)
-    {
-        pStreamBlock->Clear();
-        delete pStreamBlock;
-        pStreamBlock = NULL;
-    }
-}
-

@@ -504,8 +504,6 @@ HRESULT Guest::directoryQueryInfoInternal(IN_BSTR aDirectory,
                                                      aObjInfo, enmAddAttribs);
                 }
 
-                executeStreamFree(streamObjs);
-
                 if (pRC)
                     *pRC = rc;
             }
