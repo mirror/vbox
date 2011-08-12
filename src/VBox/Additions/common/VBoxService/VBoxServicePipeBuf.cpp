@@ -110,16 +110,16 @@ int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
             memcpy(pbBuffer, &pBuf->pbData[pBuf->cbOffset], cbToRead);
             pBuf->cbOffset += cbToRead;
 
+#ifdef DEBUG_andy
+            VBoxServiceVerbose(4, "Pipe [%u %u 0x%p %s] read pcbToRead=%u, cbSize=%u, cbAlloc=%u, cbOff=%u\n",
+                               pBuf->uPID, pBuf->uPipeId, pBuf, pBuf->fEnabled ? "EN" : "DIS", cbToRead, pBuf->cbSize, pBuf->cbAllocated, pBuf->cbOffset);
+#endif
             if (pBuf->hEventSem != NIL_RTSEMEVENT)
             {
                 rc = RTSemEventSignal(pBuf->hEventSem);
                 AssertRC(rc);
             }
 
-#ifdef DEBUG_andy
-            VBoxServiceVerbose(4, "Pipe [%u %u 0x%p %s] read pcbToRead=%u, cbSize=%u, cbAlloc=%u, cbOff=%u\n",
-                               pBuf->uPID, pBuf->uPipeId, pBuf, pBuf->fEnabled ? "EN" : "DIS", cbToRead, pBuf->cbSize, pBuf->cbAllocated, pBuf->cbOffset);
-#endif
             *pcbToRead = cbToRead;
         }
         else

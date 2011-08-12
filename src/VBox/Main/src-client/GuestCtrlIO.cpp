@@ -120,7 +120,7 @@ const char* GuestProcessStreamBlock::GetString(const char *pszKey)
 
     try
     {
-        GuestCtrlStreamPairsIterConst itPairs = m_mapPairs.find(Utf8Str(pszKey));
+        GuestCtrlStreamPairMapIterConst itPairs = m_mapPairs.find(Utf8Str(pszKey));
         if (itPairs != m_mapPairs.end())
             return itPairs->second.mValue.c_str();
     }
@@ -185,15 +185,15 @@ int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
          * of STL if map is empty initially. */
         if (!m_mapPairs.empty())
         {
-            GuestCtrlStreamPairsIter it = m_mapPairs.find(Utf8Key);
+            GuestCtrlStreamPairMapIter it = m_mapPairs.find(Utf8Key);
             if (it != m_mapPairs.end())
                  m_mapPairs.erase(it);
         }
 
         if (pszValue)
         {
-            m_mapPairs.insert(
-                std::pair<Utf8Str, VBOXGUESTCTRL_STREAMPAIR>(Utf8Key, VBOXGUESTCTRL_STREAMPAIR(pszValue)));
+            VBOXGUESTCTRL_STREAMVALUE val(pszValue);
+            m_mapPairs[Utf8Key] = val;
         }
     }
     catch (const std::exception &ex)

@@ -45,6 +45,14 @@ STDMETHODIMP Guest::FileExists(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPasswo
     if (RT_UNLIKELY((aUsername) == NULL || *(aUsername) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
 
+    /* If filename ends with a slash or backslash we assume it's a directory and
+     * call the appropriate function instead the regular one just for files. */
+    Utf8Str Utf8File(aFile);
+    if (   Utf8File.endsWith("/")
+        || Utf8File.endsWith("\\"))
+    {
+        return directoryExistsInternal(aFile, aUsername, aPassword, aExists);
+    }
     return fileExistsInternal(aFile,
                               aUsername, aPassword, aExists);
 #endif
@@ -60,11 +68,11 @@ HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPas
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    RTFSOBJINFO objInfo;
     int rc;
     HRESULT hr = fileQueryInfoInternal(aFile,
                                        aUsername, aPassword,
-                                       &objInfo, RTFSOBJATTRADD_NOTHING, &rc);
+                                       NULL /* No RTFSOBJINFO needed */,
+                                       RTFSOBJATTRADD_NOTHING, &rc);
     if (SUCCEEDED(hr))
     {
         switch (rc)
@@ -138,21 +146,20 @@ HRESULT Guest::fileQueryInfoInternal(IN_BSTR aFile,
             if (SUCCEEDED(hr))
             {
                 int rc = VINF_SUCCESS;
-
-                GuestProcessStreamBlock *pBlock = streamObjs[0];
-                AssertPtr(pBlock);
-                const char *pszFsType = pBlock->GetString("ftype");
+                const char *pszFsType = streamObjs[0].GetString("ftype");
                 if (!pszFsType) /* Attribute missing? */
                      rc = VERR_NOT_FOUND;
                 if (   RT_SUCCESS(rc)
                     && strcmp(pszFsType, "-")) /* Regular file? */
                 {
                      rc = VERR_FILE_NOT_FOUND;
+                     /* This is not critical for Main, so don't set hr --
+                      * we will take care of rc then. */
                 }
                 if (   RT_SUCCESS(rc)
                     && aObjInfo) /* Do we want object details? */
                 {
-                    hr = executeStreamQueryFsObjInfo(aFile, pBlock,
+                    hr = executeStreamQueryFsObjInfo(aFile, streamObjs[0],
                                                      aObjInfo, enmAddAttribs);
                 }
 

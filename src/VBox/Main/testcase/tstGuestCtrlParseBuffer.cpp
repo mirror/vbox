@@ -89,7 +89,12 @@ static struct
     { "test8=test8\0t81=t81\0\0",       sizeof("test8=test8\0t81=t81\0\0"),                0,  sizeof("test8=test8\0t81=t81\0") - 1,      2, VINF_SUCCESS },
     /* Good stuff, but with a second block -- should be *not* taken into account since
      * we're only interested in parsing/handling the first object. */
-    { "t9=t9\0t91=t91\0\0t92=t92\0\0",  sizeof("t9=t9\0t91=t91\0\0t92=t92\0\0"),           0,  sizeof("t9=t9\0t91=t91\0") - 1,            2, VINF_SUCCESS }
+    { "t9=t9\0t91=t91\0\0t92=t92\0\0",  sizeof("t9=t9\0t91=t91\0\0t92=t92\0\0"),           0,  sizeof("t9=t9\0t91=t91\0") - 1,            2, VINF_SUCCESS },
+    /* Some "real world" examples. */
+    { "hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0\0",
+                                        sizeof("hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0\0"),
+                                                                                           0,  sizeof("hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0\0") - 1,
+                                                                                                                                          3, VINF_SUCCESS }
 };
 
 static struct

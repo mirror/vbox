@@ -232,11 +232,11 @@ HRESULT Guest::directoryExistsInternal(IN_BSTR aDirectory, IN_BSTR aUsername, IN
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    RTFSOBJINFO objInfo;
     int rc;
     HRESULT hr = directoryQueryInfoInternal(aDirectory,
                                             aUsername, aPassword,
-                                            &objInfo, RTFSOBJATTRADD_NOTHING, &rc);
+                                            NULL /* No RTFSOBJINFO needed */,
+                                            RTFSOBJATTRADD_NOTHING, &rc);
     if (SUCCEEDED(hr))
     {
         switch (rc)
@@ -282,7 +282,8 @@ uint32_t Guest::directoryGetPID(uint32_t uHandle)
 
 /**
  * Returns the next directory entry of an open guest directory.
- * Returns VERR_NO_MORE_FILES if no more entries available.
+ * Returns VERR_NO_DATA if no more entries available or VERR_NOT_FOUND
+ * if directory handle is invalid.
  *
  * @return  IPRT status code.
  * @param   uHandle                 Directory handle to get entry for.
@@ -485,20 +486,21 @@ HRESULT Guest::directoryQueryInfoInternal(IN_BSTR aDirectory,
             {
                 int rc = VINF_SUCCESS;
 
-                GuestProcessStreamBlock *pBlock = streamObjs[0];
-                AssertPtr(pBlock);
-                const char *pszFsType = pBlock->GetString("ftype");
+                Assert(streamObjs.size());
+                const char *pszFsType = streamObjs[0].GetString("ftype");
                 if (!pszFsType) /* Attribute missing? */
                      rc = VERR_NOT_FOUND;
                 if (   RT_SUCCESS(rc)
                     && strcmp(pszFsType, "d")) /* Directory? */
                 {
                      rc = VERR_FILE_NOT_FOUND;
+                     /* This is not critical for Main, so don't set hr --
+                      * we will take care of rc then. */
                 }
                 if (   RT_SUCCESS(rc)
                     && aObjInfo) /* Do we want object details? */
                 {
-                    hr = executeStreamQueryFsObjInfo(aDirectory, pBlock,
+                    hr = executeStreamQueryFsObjInfo(aDirectory, streamObjs[0],
                                                      aObjInfo, enmAddAttribs);
                 }
 
@@ -540,6 +542,7 @@ STDMETHODIMP Guest::DirectoryRead(ULONG aHandle, IGuestDirEntry **aDirEntry)
             hr = pDirEntry.createObject();
             ComAssertComRC(hr);
 
+            Assert(streamBlock.GetCount());
             hr = pDirEntry->init(this, streamBlock);
             if (SUCCEEDED(hr))
             {
@@ -547,11 +550,11 @@ STDMETHODIMP Guest::DirectoryRead(ULONG aHandle, IGuestDirEntry **aDirEntry)
             }
             else
                 hr = setError(VBOX_E_IPRT_ERROR,
-                              Guest::tr("Unable to init guest directory entry"));
+                              Guest::tr("Failed to init guest directory entry"));
         }
-        else if (rc == VERR_NO_MORE_FILES)
+        else if (rc == VERR_NO_DATA)
         {
-            /* No more directory entries to read. */
+            /* No more directory entries to read. That's fine. */
             hr = E_ABORT; /** @todo Find/define a better rc! */
         }
         else
