@@ -71,7 +71,7 @@ public:
 protected:
 
     /* Returns parent wizard object: */
-    UICloneVMWizard* wizard() { return qobject_cast<UICloneVMWizard*>(QIWizardPage::wizard()); }
+    UICloneVMWizard* wizard() const { return qobject_cast<UICloneVMWizard*>(QIWizardPage::wizard()); }
 };
 
 /* Page1 of the new clonevm wizard: */
