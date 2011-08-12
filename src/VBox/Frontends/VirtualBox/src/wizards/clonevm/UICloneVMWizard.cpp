@@ -292,7 +292,7 @@ void UICloneVMWizardPage2::initializePage()
 
 int UICloneVMWizardPage2::nextId() const
 {
-    return m_pFullCloneRadio->isChecked() ? UICloneVMWizard::PageMode : -1;
+    return m_pFullCloneRadio->isChecked() && wizard()->page(UICloneVMWizard::PageMode) ? UICloneVMWizard::PageMode : -1;
 }
 
 bool UICloneVMWizardPage2::validatePage()
@@ -304,7 +304,7 @@ bool UICloneVMWizardPage2::validatePage()
         /* Try to create the clone: */
         QString strName = field("cloneName").toString();
         bool fReinitMACs = field("reinitMACs").toBool();
-        bool fResult = static_cast<UICloneVMWizard*>(wizard())->createClone(strName, KCloneMode_MachineState, fReinitMACs, true);
+        bool fResult = static_cast<UICloneVMWizard*>(wizard())->createClone(strName, KCloneMode_MachineState, fReinitMACs, m_pLinkedCloneRadio->isChecked());
         /* Finish performing long-time operation: */
         endProcessing();
         /* Return operation result: */
