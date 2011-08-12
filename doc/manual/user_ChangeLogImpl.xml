@@ -13,6 +13,11 @@
       </listitem>
 
       <listitem>
+        <para>VMM: fixed handling of the <emphasis>sysenter/sysexit</emphasis>
+          machine instructions in 64-bit guests on Intel hosts</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: added linked clone support</para>
       </listitem>
 
@@ -29,6 +34,11 @@
       <listitem>
         <para>GUI: when taking a snaphot from the VM selector, don't do
           a live snapshot</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed immediate crash during start on certain environments
+          due to a library version conflict</para>
       </listitem>
 
       <listitem>
@@ -56,7 +66,7 @@
       </listitem>
 
       <listitem>
-        <para>Snapshots: fix "Solid-State drive" flag survival on snapshot
+        <para>Snapshots: fixed "Solid-State drive" flag survival on snapshot
           creation (bug #9379)</para>
       </listitem>
 
@@ -81,7 +91,7 @@
       </listitem>
 
       <listitem>
-        <para>Mouse support: fix an off-by-one pointer position error
+        <para>Mouse support: fixed an off-by-one pointer position error
            affecting Windows guests (bugs #7566, #9321)</para>
        </listitem>
 
