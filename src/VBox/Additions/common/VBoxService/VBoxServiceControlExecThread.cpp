@@ -36,7 +36,7 @@ extern uint32_t g_GuestControlProcsMaxKept;
 extern RTLISTNODE g_GuestControlThreads;
 extern RTCRITSECT g_GuestControlThreadsCritSect;
 
-const PVBOXSERVICECTRLTHREAD vboxServiceControlExecThreadGetByPID(uint32_t uPID);
+PVBOXSERVICECTRLTHREAD vboxServiceControlExecThreadGetByPID(uint32_t uPID);
 int VBoxServiceControlExecThreadShutdown(const PVBOXSERVICECTRLTHREAD pThread);
 
 /**
@@ -253,7 +253,7 @@ void VBoxServiceControlExecThreadDataDestroy(PVBOXSERVICECTRLTHREADDATAEXEC pDat
  * @return  PVBOXSERVICECTRLTHREAD      Process structure if found, otherwise NULL.
  * @param   uPID                        PID to search for.
  */
-const PVBOXSERVICECTRLTHREAD vboxServiceControlExecThreadGetByPID(uint32_t uPID)
+PVBOXSERVICECTRLTHREAD vboxServiceControlExecThreadGetByPID(uint32_t uPID)
 {
     PVBOXSERVICECTRLTHREAD pNode = NULL;
     RTListForEach(&g_GuestControlThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
@@ -470,7 +470,7 @@ int VBoxServiceControlExecThreadStartAllowed(bool *pbAllowed)
                 VBoxServiceVerbose(3, "ControlExec: Maximum running guest processes reached\n");
                 fLimitReached = true;
             }
-            else if (uProcsStopped > iProcsLeft)
+            else if (uProcsStopped > (uint32_t)iProcsLeft)
             {
                 uint32_t uProcsToKill = uProcsStopped - iProcsLeft;
                 Assert(uProcsToKill);
