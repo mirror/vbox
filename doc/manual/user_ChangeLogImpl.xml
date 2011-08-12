@@ -148,7 +148,7 @@
       </listitem>
       
       <listitem>
-        <para>Windows Vista & 7 guests: WDDM driver fixes & performance enhancements, 
+        <para>Windows Vista and 7 guests: WDDM driver fixes & performance enhancements, 
           fixed WinSAT crashes (#9267)</para>
       </listitem>
     </itemizedlist>
