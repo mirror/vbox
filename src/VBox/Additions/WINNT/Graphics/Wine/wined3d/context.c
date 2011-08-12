@@ -1388,7 +1388,7 @@ static int WineD3D_ChoosePixelFormat(IWineD3DDeviceImpl *This, HDC hdc,
     if(!iPixelFormat && !findCompatible) {
 #ifdef DEBUG_misha
         WARN("Can't find a suitable iPixelFormat\n");
-#else
+#elif !defined(VBOX_WITH_WDDM)
         ERR("Can't find a suitable iPixelFormat\n");
 #endif
         return FALSE;
