@@ -221,6 +221,14 @@
         <source>&amp;Details (%1 of %2)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Copy all errors to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIRichLabel</name>
@@ -521,6 +529,146 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Nama</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished">Tipe Sistem Operasi Guest</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation type="unfinished">Floppy</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translation type="unfinished">Image Disk Virtual</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -528,6 +676,10 @@
     </message>
     <message>
         <source>Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Base for %1 and %2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -542,10 +694,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
         <translation type="unfinished"></translation>
     </message>
@@ -557,9 +705,36 @@
         <source>%1 Clone</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
         <translation type="unfinished"></translation>
@@ -933,10 +1108,6 @@
         <source>The download process has been cancelled by the user.</source>
         <translation type="obsolete">Proses download telah dibatalkan oleh pengguna.</translation>
     </message>
-    <message>
-        <source>The download process has been canceled by the user.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIDownloaderAdditions</name>
@@ -954,7 +1125,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Gagal menyimpan file terdownload sebagai &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Gagal menyimpan file terdownload sebagai &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
@@ -1820,23 +1991,23 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="obsolete">Shift Kiri</translation>
+        <translation type="unfinished">Shift Kiri</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="obsolete">Shift Kanan</translation>
+        <translation type="unfinished">Shift Kanan</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="obsolete">Ctrl Kiri</translation>
+        <translation type="unfinished">Ctrl Kiri</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="obsolete">Ctrl Kanan</translation>
+        <translation type="unfinished">Ctrl Kanan</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="obsolete">Alt Kiri</translation>
+        <translation type="unfinished">Alt Kiri</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2170,6 +2341,13 @@
     <message>
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3530,10 +3708,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Execution Cap:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3557,6 +3731,10 @@
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3813,25 +3991,1315 @@
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
+    <name>UIMessageCenter</name>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Informasi</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Pertanyaan</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Peringatan</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Kesalahan</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Kesalahan Kritikal</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag</comment>
+        <translation>Jangan tampilkan pesan ini lagi</translation>
+    </message>
+    <message>
+        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
+        <translation>Gagal membuka &lt;tt&gt;%1&lt;/tt&gt;. Pastikan lingkungan desktop anda mampu meng-handle tipr URL seperti ini.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Gagal menginisialisasi COM atau untuk menemukan server COM VirtualBox. Besar kemungkinan, server VirtualBox tidak berjalan atau gagal memulai.&lt;/p&gt;&lt;p&gt;Aplikasi sekarang akan ditutup.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Gagal menciptakan obyek COM VirtualBox.&lt;/p&gt;&lt;p&gt;Aplikasi sekarang akan ditutup.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Gagal memuat konfigurasi global GUI.&lt;/p&gt;&lt;p&gt;Aplikasi sekarang akan ditutup.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Gagal menyimpan konfigurasi global GUI.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to set global VirtualBox properties.</source>
+        <translation>Gagal menetapkan properti global VirtualBox.</translation>
+    </message>
+    <message>
+        <source>Failed to access the USB subsystem.</source>
+        <translation>Gagal mengakses subsistem USB.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine.</source>
+        <translation>Gagal menciptakan mesin virtual baru.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal menciptakan mesin virtual baru &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal menambahkan setting pada mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal menyimpan setting pada mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal memuat setting mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal memulai mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal mem-pause eksekusi mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal melanjutkan eksekusi mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal menyimpan keadaan mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal menciptakan snapshot mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal menghentikan mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal menghapus mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal mengabaikan keadaan tersimpan pada mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal mengabaikan snapshot &lt;b&gt;%1&lt;/b&gt; pada mesin virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal mengabaikan keadaan saat ini pada mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal mengabaikan snapshot dan keadaan saat ini dari mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Tidak ada mesin virtual dengan nama &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Anda yakin anda ingin menghapus mesin virtual&lt;b&gt;%1&lt;/b&gt; secara permanen?&lt;/p&gt;&lt;p&gt;Tindakan ini tidak bisa dibatalkan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Apakah anda yakin anda ingin meng-unregister mesin virtual &lt;b&gt;%1&lt;/b&gt; yang tidak dapat diakses?&lt;/p&gt;&lt;p&gt;Anda tidak dapat meregisterkannya kembali melalui GUI.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Apakah anda yakin anda ingin mengabaikan keadaan tersimpan dari mesin virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Tindakan ini setara dengan me-reset atau mematikan power pada mesin tanpa melakukan shutdown yang seharusnya pada Sistem Operasi guest.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Melepaskan image media ini akan melepaskannya dari mesin virtual berikut: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Lanjutkan?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;File image &lt;b&gt;%1&lt;/b&gt; sudah ada. Anda tidak dapat menciptakan mesin virtual baru yang menggunakan file ini, karena ia sudah digunakan oleh hard disk virtual yang lain.&lt;/p&gt;&lt;p&gt;Silahkan memberikan nama file image yang berbeda.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Apakah anda ingin menghapus file image hard disk ini &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Tidak&lt;/b&gt; maka hard disk virtual akan ter-unregister dan menghapusnya dari koleksi, namun file imagenya akan tetap ada pada disk fisik anda.&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Ya&lt;/b&gt; maka file image akan dihapus secara permanen setelah meng-unregister hard disk. Tindakan ini tidak bisa dibatalkan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal menghapus image hard disk virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Apakah anda ingin menghapus (meng-unregister)  hard disk virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation type="obsolete">Gagal menciptakan image hard disk virtual  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal menyambung sebuah image hard disk dengan UUID %1 pada slot device %2 dari kontroler %3 pada mesin &lt;b&gt;%4&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal melepas sebuah image hard disk dari slot device %1 pada kontroler %2 pada mesin &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">hard disk</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <translation type="obsolete">image CD/DVD</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <translation type="obsolete">image floppy</translation>
+    </message>
+    <message>
+        <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Gagal me-register %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Gagal meng-unregister %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new session.</source>
+        <translation>Gagal menciptakan sesi baru.</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal membuka sebuah sesi untuk mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
+        <translation type="obsolete">Gagal memperoleh keadaan akesibilitas media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Beberapa media yang ter-register mungkin menjadi tidak dapat diakses.</translation>
+    </message>
+    <message>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal menciptakan antarmuka jaringan pada host &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal menghapus antar muka jaringan pada host &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Gagal menghubungkan device USB &lt;b&gt;%1&lt;/b&gt; pada mesin virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Gagal melepas device USB &lt;b&gt;%1&lt;/b&gt; dari mesin virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Gagal menciptakan sebuah folder yang dishare &lt;b&gt;%1&lt;/b&gt; (menunjuk pada &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) bagi mesin virtual &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Gagal menghapus sebuah folder yang dishare &lt;b&gt;%1&lt;/b&gt; (menunjuk pada &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) bagi mesin virtual &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Anda telah &lt;b&gt;meng-klik mouse&lt;/b&gt; dalam tampilan Mesin Virtual Machine atau menekan &lt;b&gt; tombol host &lt;/b&gt;. Hal ini akan menyebabkan Mesin Virtual Machine untuk &lt;b&gt;menangkap&lt;/b&gt; pointer mouse host (hanya bila integrasi pointer mouse tidak sedang didukung oleh Sistem Operasi guest saat ini) dan keyboard, yang akan membuat mereka tidak tersedia pada aplikasi lain yang berjalan pada mesin host.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapanpun untuk &lt;b&gt;membebaskan&lt;/b&gt; keyboard dan mouse (bila tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang ditugaskan saat ini ditunjukkan pada status bar di bawah window Mesin Virtual, disebelah ikon&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Ikon ini, bersama dengan ikon mouse yang ditempatkan didekatnya, menunjukkan keadaan tangkapan keyboard dan mouse saat ini.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Anda telah menyalakan tombol pilihan &lt;b&gt;Auto capture keyboard&lt;/b&gt;. Hal ini akan menyebabkan mesin virtual untuk secara otomatis &lt;b&gt;meng-capture&lt;/b&gt; keyboard setiap kali jendela Mesin Virtual diaktifkan dan membuatnya tidak tersedia bagi aplikasi lain yang berjalan pada mesin host anda: Saat keyboard di-capture, semua tombol yang ditekan (termasuk sistem seperti Alt+Tab) akan ditujukan pada Mesin Virtual.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapan saja untuk &lt;b&gt;membebaskan&lt;/b&gt; keyboard dan mouse (bila mereka tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang sedang ditugaskan saat ini ditunjukkan pada status bar di bawah jendela Mesin Virtual, disebelah ikon&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Ikon ini, bersama dengan ikon mouse yang terletak didekatnya, menunjukkan keadaan capture keyboard dan mouse saat ini.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Mesin Virtual melaporkan bahwa OS guest mendukung &lt;b&gt;integrasi pointer mouse&lt;/b&gt;. Hal ini menunjukkan bahwa anda tidak perlu &lt;i&gt;meng-capture&lt;/i&gt; pointer mouse untuk dapat menggunakannya pada OS guest -- semua tindakan mouse yang anda lakukan saat pointer mouse berada pada tampilan Mesin Virtual akan langsung dikirim pada OS guest. Bila mouse sedang ter-capture, ia akan secara otomatis terbebas.&lt;/p&gt;&lt;p&gt;Ikon mouse pada status bar akan terlihat seperti&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;untuk menunjukkan anda bahwa integrasi pointer mouse didukung oleh OS  guest dan saat ini sedang menyala.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan&lt;/b&gt;: Beberapa aplikasi mungkin berperilaku tidak semestinya pada mode integrasi pointer mouse. Anda dapat selalu mematikannya pada sesi tersebut  (dan menyalakannya lagi) dengan memilih tindakan yang sesuai dari menu bar.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Mesin Virtual melaporkan bahwa OS guest tidak mendukung &lt;b&gt;integrasi pointer mouse&lt;/b&gt; dalam mode video saat ini. Anda perlu meng-capture mouse (dengan meng-klik di atas tampilan Mesin Virtual atau menekan tombol host) dengan tujuan untuk menggunakan mouse didalam OS guest.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Mesin Virtual sedang berada dalam keadaan &lt;b&gt;Pause&lt;/b&gt; dan oleh karena itu tidak menerima masukan keyboard atau mouse. Bila anda ingin melanjutkan bekerja didalam Mesin Virtual, Anda harus melanjutkannya dengan memilih tindakan yang sesuai dari menu bar.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Satu atau lebih dari hard disk virtual , CD/DVD ata floppy media yang terdaftar tidak dapat diakses. Oleh karena itu, anda akan tidak mampu mengoperasikan Mesin VIrtual yang menggunakan media ini sampai mereka menjadi dapat diakses nantinya.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;OK&lt;/b&gt; untuk membuka jendela Virtual Disk Manager dan melihat media apa saja yang tidak dapat diakses, atau tekan &lt;b&gt;Abaikan&lt;/b&gt; untuk mengabaikan pesan ini.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tidak dapat menjalankan VirtualBox pada mode &lt;i&gt;Pemilih Mesin Virtual&lt;/i&gt; dikarenakan restriksi lokal.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan sekarang.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Kesalahan Fatal&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Kesalahan Tidak-Fatal&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Peringatan&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;ID Kesalahan: &lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info</comment>
+        <translation>Tingkatan: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sebuah kesalahan fatal telah terjadi selama eksekusi mesin virtual! Mesin virtual akan dimatikan. Anda disarankan menggunakan clipboard untuk meng-copy pesan kesalahan berikut untuk pemeriksaan lebih lanjut:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sebuah kesalahan telah terjadi selama eksekusi mesin virtual! Detail dari kesalahan ditunjukkan di bawah ini. Anda dapat mencoba membenahi kesalahan yang tertulis dan melanjutkan eksekusi mesin virtual.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Eksekusi mesin virtual mungkin menemui suatu kondisi kesalahan seperti tertulis dibawah ini. Anda dapat mengabaikan pesan ini, tetapi disarankan untuk melakukan tindakan yang sesuai untuk memastikan bahwa kesalahan yang tertulis tidak akan terjadi.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation>Kode&amp;nbsp;Hasil: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation>Komponen: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation>Antar Muka: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation>Pemanggil: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation>RC&amp;nbsp;Pemanggil: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tidak dapat menemukan file bahasa untuk bahasa &lt;b&gt;%1&lt;/b&gt; dalam direktori &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Bahasa akan sementara di-reset pada nilai awal bahasa sistem. Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tidak dapat memuat file bahasa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Bahasa akan sementara di-reset pada bahasa Inggris (built-in). Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman, &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions terinstall pada Sistem Operasi Guest terlalu tua: versi terinstall adalah %1, versi yang diharapkan adalah %2. Beberapa fitur yang membutuhkan Guest Additions (integrasi mouse, auto-resize tampilan guest) sangat mungkin tidak bekerja dengan semestinya.&lt;/p&gt;&lt;p&gt;Silahkan update the Guest Additions pada versi saat ini dengan memilih &lt;b&gt;Install Guest Additions&lt;/b&gt; dari menu &lt;b&gt;Device&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions terinstall pada Sistem Operasi Guest terlalu tua: versi terinstall adalah %1, versi yang diharapkan adalah %2. Beberapa fitur yang membutuhkan Guest Additions (integrasi mouse, auto-resize tampilan guest) sangat mungkin tidak bekerja dengan semestinya.&lt;/p&gt;&lt;p&gt;Anda dianjurkan meng-update the Guest Additions pada versi saat ini  dengan memilih &lt;b&gt;Install Guest Additions&lt;/b&gt; dari menu &lt;b&gt;Device&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions terinstall pada Sistem Operasi Guest terlalu baru: versi terinstall adalah %1, versi yang diharapkan adalah %2.&lt;/p&gt;&lt;p&gt;Menggunakan versi Additions pada versi lebih lama tidak didukung. Anda dianjurkan meng-update the Guest Additions pada versi saat ini  dengan memilih &lt;b&gt;Install Guest Additions&lt;/b&gt; dari menu &lt;b&gt;Device&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Gagal mengubah path folder snapshot pada mesin virtual&lt;b&gt;%1&lt;b&gt; ke &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tidak dapat memasuki mode seamless dikarenakan video memori guest tidak mencukupi.&lt;/p&gt;&lt;p&gt;Anda harus meng-konfigurasi Mesin VIrtual untuk memiliki setidaknya &lt;b&gt;%1&lt;/b&gt; memori video.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Gagal menghapus folder yang di-share &lt;b&gt;%1&lt;/b&gt; (mengarah pada &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) dari mesin virtual &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Silahkan tutup semua program dalam Sistem Operasi guest yang mungkin menggunakan folder yang di-share ini dan coba kembali.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tidak dapat menemukan file image CD VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; atau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Apa anda ingin men-download image CD ini dari Internet?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Gagal men-download image CD VirtualBox Guest Additions dari &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Apakah anda yakin ingin men-download image CD VirtualBox Guest Additions dari &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (ukuran %3 bytes)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Image CD VirtualBox Guest Additions telah ter-downloaded dengan sukses dari &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; dan disimpan secara lokal sebagai &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Apakah anda ingin me-register image CD ini dan memasangnya pada drive CD/DVD virtual?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;fullscreen&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode fullscreen. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;Seamless&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode seamless. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Jendela mesin virtual dioptimalkan untuk bekerja pada mode warna &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; tapi kualitas warna tampilan virtual saat ini di-set pada &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Silahkan buka dialog properti tampilan pada Sistem Operasi guest dan pilih sebuah mode warna &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, bila tersedia, untuk performa terbaik yang memungkinkan pada subsistem video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan&lt;/b&gt;. Beberapa sistem operasi, seperti OS/2, dapat bekerja secara aktual pada mode 32&amp;nbsp;bit namun melaporkannya sebagai 24&amp;nbsp;bit (16 juta warna). Anda dapat mencoba memilih kualitas warna yang berbeda untuk melihat apakah pesan ini menghilang atau anda dapat dengan mudah mematikan pesan sekarang bila anda yakin kualitas warna yang dibutuhkan (%4&amp;nbsp;bit) tidak tersedia pada Sistem Operasi guest.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Kesalahan kritikal telah terjadi saat menjalankan mesin virtual dan eksekusi mesin telah dihentikan.&lt;/p&gt;&lt;p&gt;Untuk bantuan, silahkan kunjungi bagian Community (Komunitas) &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; atau kontrak pendukung anda. Mohon sediakan isi dari file log file &lt;tt&gt;VBox.log&lt;/tt&gt; dan file image &lt;tt&gt;VBox.png&lt;/tt&gt;, yang dapat anda temukan pada direktori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, demikian juga dengan deskripsi tentang apa yang anda lakukan saat kesalahan ini terjadi. Perhatikan bahwa anda juga dapat mengakses file diatas dengan memilih &lt;b&gt;Tampilkan Log&lt;/b&gt; dari menu &lt;b&gt;Mesin&lt;/b&gt; dalam jendela utama VirtualBox.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Baik&lt;/b&gt; bila anda ingin mematikan mesin atau tekan &lt;b&gt;Abaikan&lt;/b&gt; bila anda ingin membiarkannya untuk debugging. Mohon perhatikan bahwa debugging membutuhkan pengetahuan dan alat khusus, sehingga dianjurkan untuk menekan &lt;b&gt;Baik&lt;/b&gt; sekarang.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Anda tidak memasang sebuah hard disk pada mesin virtual yang baru. Mesin tersebut tidak akan dapat di-boot kecuali anda memasang sebuah hard disk dengan sistem operasi guest atau media bootable lainnya pada waktu lain menggunakan dialog setting mesin atau First Run Wizard.&lt;/p&gt;&lt;p&gt;Anda ingin melanjutkan?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Gagal menemukan file lisensi dalam &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation>Gagal membuka file lisensi &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Periksa permission file.</translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Gagal mengirim event penekanan Tombol Power ACPI ke mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Gagal melakukan koneksi ke layanan registrasi online VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Selamat! Anda telah berhasil terdaftar sebagai seorang pengguna VirtualBox.&lt;/p&gt;&lt;p&gt;Terima kasih atas kesedian anda untuk mengisi form registrasi!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Gagal me-register produk VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Gagal menyimpan setting global VirtualBox pada &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Gagal memuat konfigurasi global GUI dari &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Gagal menyimpan konfigurasi global GUI pada &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Gagal menyimpan setting mesin virtual &lt;b&gt;%1&lt;/b&gt; pada&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Gagal memuat setting mesin virtual &lt;b&gt;%1&lt;/b&gt; dari &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Hapus</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Unregister</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>Abaikan</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>detach image</comment>
+        <translation type="obsolete">Lanjutkan</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Apakah anda ingin menghapus file image hard disk ini &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Hapus&lt;/b&gt; maka file image akan terhapus secara permanen setelah melakukan unregister hard disk. Tindakan ini tidak dapat dibatalkan.&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Unregister&lt;/b&gt; maka hard disk virtual akan di-unregister dan hilang dari koleksi, namun file image akan tetap berada pada disk fisik.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Hapus</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Unregister</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ada hard disk terpasang pada port SATA pada mesin virtual ini. Bila anda menonaktifkan pengendali SATA , semua hard disk tersebut akan secara otomatis terlepas.&lt;/p&gt;&lt;p&gt;Apakah anda yakin bahwa anda ingin menonaktifkan pengendali SATA?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Matikan</translation>
+    </message>
+    <message>
+        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal memasang image hard disk dengan UUID %1 pada slot device %2 pada kanal %3 dari bus %4 mesin tersebut &lt;b&gt;%5&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
+        <translation type="obsolete">Gagal melepas image hard disk dengan dari slot device %1 pada kanal %2 dari bus %3 mesin tersebut &lt;b&gt;%4&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>Download</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>Pasang</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;Kunci host saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>Tangkap</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Satu atau lebih hard disk virtual, CD/DVD or media floppy yang ter-register tidak dapat diakses saat ini. Akibatnya, anda tidak akan dapat mengoperasikan mesin virtual machines yang menggunakan media berikut hingga nantinya mereka tersedia untuk diakses.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Cek&lt;/b&gt; untuk membuka jendela Virtual Disk Manager dan melihat media apa saja yang tidak dapat diakses, atau tekan &lt;b&gt;Abaikan&lt;/b&gt; untuk mengabaikan pesan ini.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>Cek</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;File setting VirtualBox berikut telah dikonversi secara otomatis ke versi format file setting yang baru  &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Adapun, hasil dari konversi saat ini belum disimpan ke dalam disk. Silahkan tekan:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Simpan&lt;/b&gt; untuk segera menyimpan semua file konversi otomatis (tidak memungkinkan untuk menggunakan file setting tersebut dengan versi VirtualBox yang lebih lama di masa datang);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; untuk menciptakan copy backup dari file settings pada format lama sebelum menyimpan mereka dalam format baru;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Batal&lt;/b&gt; untuk tidak menyimpan file setting yang dikonversi secara otomatis.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Perhatikan bila anda memilih &lt;b&gt;Batal&lt;/b&gt;, File setting yang dikonversi secara otomatis akan tetap saja disimpan secara implisit ke dalam format baru seketika anda mengubah setting atau menjalankan mesin virtual, namun &lt;b&gt;tidak ada&lt;/b&gt; copy backup tercipta pada kasus ini.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Simpan</translation>
+    </message>
+    <message>
+        <source>&amp;Backup</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Backup</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">Batal</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>Beralih</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>Beralih</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Apakah anda benar-benar yakin ingin me-reset mesin virtual tersebut?&lt;/p&gt;&lt;p&gt;Saat mesin di-reset, data dari semua aplikasi berjalan yang belum disave akan hilang.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>Reset</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>Lanjutkan</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>Kembali</translation>
+    </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="obsolete">Gagal meng-copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; pada &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ada hard disk yang belum digunakan tersedia untuk pemasangan yang baru diciptakan.&lt;/p&gt;&lt;p&gt;Tekan tombol &lt;b&gt;Ciptakan&lt;/b&gt; untuk menjalankan wizard &lt;i&gt;Disk Virtual Baru&lt;/i&gt; dan menciptakan sebuah hard disk baru, atau tekan tombol &lt;b&gt;Pilih&lt;/b&gt; untuk membuka &lt;i&gt;Virtual Disk Manager&lt;/i&gt; dan pilih yang ingin dilakukan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">&amp;Ciptakan</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Pilih</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tidak dapat masuk ke mode seamless karena ketidakcukupan memori video guest.&lt;/p&gt;&lt;p&gt;Anda harus mengkonfigurasi mesin virtual machine agar setidaknya memiliki video memori sebesar&lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tidak dapat mengubah tampilan guest display menjadi mode fullscreen dikarenakan ketidakcukupan memori video guest.&lt;/p&gt;&lt;p&gt;Anda harus mengkonfigurasi mesin virtual agar memiliki setidaknya memori video sebesar&lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Abaikan&lt;/b&gt; untuk tetap beralih ke mode fullscreen atau tekan &lt;b&gt;Batal&lt;/b&gt; untuk membatalkan tindakan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;fullscreen&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode fullscreen. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;Seamless&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode seamless. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation type="unfinished">&amp;Isi...</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation type="unfinished">Tampilkan isi bantuan online</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation type="unfinished">Website &amp;VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation type="unfinished">Buka browser dan pergi ke website produk VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation type="unfinished">&amp;Reset Semua Peringatan</translation>
+    </message>
+    <message>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation type="unfinished">Menyebabkan semua peringatan dan pesan yang disembunyikan agar ditampilkan kembali</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation type="unfinished">R&amp;egister VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation type="unfinished">Buka formulir registrasi VirtualBox</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check for a new VirtualBox version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation type="unfinished">Tunjukkan dialog dengan informasi produk</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation type="unfinished">Lepas</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished">Hapus</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation type="unfinished">Hapus</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Keluar</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">hard disk</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">image CD/DVD</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">image floppy</translation>
+    </message>
+    <message>
+        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation type="unfinished">Lanjutkan</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="obsolete">Abaikan</translation>
+    </message>
     <message>
         <source>Cancel</source>
         <translation type="unfinished">Batal</translation>
     </message>
     <message>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Apakah anda ingin menghapus anatarmuka jaringan host terpilih &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan:&lt;/b&gt; Antarmuka ini mungkin sedang digunakan oleh satu atau lebih adapter jaringan dari Mesin Virtual ini atau yang lain. Setelah ia terhapus, adapter tersebut tidak akan bekerja lagi hingga anda membetulkan setting mereka dengan memilih nama antarmuka atau tipe attachment adapter yang berbeda.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the host-only network interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open appliance.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create appliance.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create an appliance.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation type="unfinished">Hapus</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium</comment>
+        <translation type="obsolete">&amp;Ciptakan</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="obsolete">&amp;Pilih</translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation type="unfinished">&amp;Keluar</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">hard disk</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">image CD/DVD</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">image floppy</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">hard disk</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished">Hapus</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation type="unfinished">Beralih</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Gagal menyimpan file terdownload sebagai &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Batal</translation>
+    </message>
+    <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Batalkan download image CD VirtualBox Guest Additions</translation>
+        <translation type="obsolete">Batalkan download image CD VirtualBox Guest Additions</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">Mendownload image CD VirtualBox Guest Additions dari &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Mendownload image CD VirtualBox Guest Additions dari &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Batal</translation>
+        <translation type="obsolete">Batal</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -3844,6 +5312,17 @@
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetAdditions</name>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished">Batalkan download image CD VirtualBox Guest Additions</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished">Mendownload image CD VirtualBox Guest Additions dari &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -4720,6 +6199,29 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -4967,135 +6469,6 @@ Versi %1</translation>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation type="obsolete">Saat ditandai, Operating System guest tidak akan dapat menulis pada folder yang dishare yang telah ditetapkan.</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation type="unfinished">Nama</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation type="unfinished">Tipe Sistem Operasi Guest</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation type="unfinished">Floppy</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translation type="unfinished">Image Disk Virtual</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7987,17 +9360,6 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
@@ -8009,13 +9371,6 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     </message>
     <message>
         <source>VirtualBox License</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8338,1288 +9693,6 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>UIMessageCenter</name>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Informasi</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Pertanyaan</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Peringatan</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Kesalahan</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Kesalahan Kritikal</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag</comment>
-        <translation>Jangan tampilkan pesan ini lagi</translation>
-    </message>
-    <message>
-        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Gagal membuka &lt;tt&gt;%1&lt;/tt&gt;. Pastikan lingkungan desktop anda mampu meng-handle tipr URL seperti ini.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gagal menginisialisasi COM atau untuk menemukan server COM VirtualBox. Besar kemungkinan, server VirtualBox tidak berjalan atau gagal memulai.&lt;/p&gt;&lt;p&gt;Aplikasi sekarang akan ditutup.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gagal menciptakan obyek COM VirtualBox.&lt;/p&gt;&lt;p&gt;Aplikasi sekarang akan ditutup.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Gagal memuat konfigurasi global GUI.&lt;/p&gt;&lt;p&gt;Aplikasi sekarang akan ditutup.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Gagal menyimpan konfigurasi global GUI.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to set global VirtualBox properties.</source>
-        <translation>Gagal menetapkan properti global VirtualBox.</translation>
-    </message>
-    <message>
-        <source>Failed to access the USB subsystem.</source>
-        <translation>Gagal mengakses subsistem USB.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation>Gagal menciptakan mesin virtual baru.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal menciptakan mesin virtual baru &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal menambahkan setting pada mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal menyimpan setting pada mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal memuat setting mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal memulai mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal mem-pause eksekusi mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal melanjutkan eksekusi mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal menyimpan keadaan mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal menciptakan snapshot mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal menghentikan mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal menghapus mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal mengabaikan keadaan tersimpan pada mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal mengabaikan snapshot &lt;b&gt;%1&lt;/b&gt; pada mesin virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal mengabaikan keadaan saat ini pada mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal mengabaikan snapshot dan keadaan saat ini dari mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Tidak ada mesin virtual dengan nama &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Anda yakin anda ingin menghapus mesin virtual&lt;b&gt;%1&lt;/b&gt; secara permanen?&lt;/p&gt;&lt;p&gt;Tindakan ini tidak bisa dibatalkan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Apakah anda yakin anda ingin meng-unregister mesin virtual &lt;b&gt;%1&lt;/b&gt; yang tidak dapat diakses?&lt;/p&gt;&lt;p&gt;Anda tidak dapat meregisterkannya kembali melalui GUI.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Apakah anda yakin anda ingin mengabaikan keadaan tersimpan dari mesin virtual &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Tindakan ini setara dengan me-reset atau mematikan power pada mesin tanpa melakukan shutdown yang seharusnya pada Sistem Operasi guest.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Melepaskan image media ini akan melepaskannya dari mesin virtual berikut: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Lanjutkan?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;File image &lt;b&gt;%1&lt;/b&gt; sudah ada. Anda tidak dapat menciptakan mesin virtual baru yang menggunakan file ini, karena ia sudah digunakan oleh hard disk virtual yang lain.&lt;/p&gt;&lt;p&gt;Silahkan memberikan nama file image yang berbeda.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Apakah anda ingin menghapus file image hard disk ini &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Tidak&lt;/b&gt; maka hard disk virtual akan ter-unregister dan menghapusnya dari koleksi, namun file imagenya akan tetap ada pada disk fisik anda.&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Ya&lt;/b&gt; maka file image akan dihapus secara permanen setelah meng-unregister hard disk. Tindakan ini tidak bisa dibatalkan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal menghapus image hard disk virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Apakah anda ingin menghapus (meng-unregister)  hard disk virtual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">Gagal menciptakan image hard disk virtual  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal menyambung sebuah image hard disk dengan UUID %1 pada slot device %2 dari kontroler %3 pada mesin &lt;b&gt;%4&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal melepas sebuah image hard disk dari slot device %1 pada kontroler %2 pada mesin &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">hard disk</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <translation type="obsolete">image CD/DVD</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <translation type="obsolete">image floppy</translation>
-    </message>
-    <message>
-        <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Gagal me-register %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Gagal meng-unregister %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new session.</source>
-        <translation>Gagal menciptakan sesi baru.</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal membuka sebuah sesi untuk mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
-        <translation type="obsolete">Gagal memperoleh keadaan akesibilitas media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Beberapa media yang ter-register mungkin menjadi tidak dapat diakses.</translation>
-    </message>
-    <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal menciptakan antarmuka jaringan pada host &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal menghapus antar muka jaringan pada host &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Gagal menghubungkan device USB &lt;b&gt;%1&lt;/b&gt; pada mesin virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Gagal melepas device USB &lt;b&gt;%1&lt;/b&gt; dari mesin virtual &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Gagal menciptakan sebuah folder yang dishare &lt;b&gt;%1&lt;/b&gt; (menunjuk pada &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) bagi mesin virtual &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Gagal menghapus sebuah folder yang dishare &lt;b&gt;%1&lt;/b&gt; (menunjuk pada &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) bagi mesin virtual &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Anda telah &lt;b&gt;meng-klik mouse&lt;/b&gt; dalam tampilan Mesin Virtual Machine atau menekan &lt;b&gt; tombol host &lt;/b&gt;. Hal ini akan menyebabkan Mesin Virtual Machine untuk &lt;b&gt;menangkap&lt;/b&gt; pointer mouse host (hanya bila integrasi pointer mouse tidak sedang didukung oleh Sistem Operasi guest saat ini) dan keyboard, yang akan membuat mereka tidak tersedia pada aplikasi lain yang berjalan pada mesin host.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapanpun untuk &lt;b&gt;membebaskan&lt;/b&gt; keyboard dan mouse (bila tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang ditugaskan saat ini ditunjukkan pada status bar di bawah window Mesin Virtual, disebelah ikon&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Ikon ini, bersama dengan ikon mouse yang ditempatkan didekatnya, menunjukkan keadaan tangkapan keyboard dan mouse saat ini.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Anda telah menyalakan tombol pilihan &lt;b&gt;Auto capture keyboard&lt;/b&gt;. Hal ini akan menyebabkan mesin virtual untuk secara otomatis &lt;b&gt;meng-capture&lt;/b&gt; keyboard setiap kali jendela Mesin Virtual diaktifkan dan membuatnya tidak tersedia bagi aplikasi lain yang berjalan pada mesin host anda: Saat keyboard di-capture, semua tombol yang ditekan (termasuk sistem seperti Alt+Tab) akan ditujukan pada Mesin Virtual.&lt;/p&gt;&lt;p&gt;Anda dapat menekan &lt;b&gt;tombol host&lt;/b&gt; kapan saja untuk &lt;b&gt;membebaskan&lt;/b&gt; keyboard dan mouse (bila mereka tertangkap) dan mengembalikan mereka pada operasi normal. Tombol host yang sedang ditugaskan saat ini ditunjukkan pada status bar di bawah jendela Mesin Virtual, disebelah ikon&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;. Ikon ini, bersama dengan ikon mouse yang terletak didekatnya, menunjukkan keadaan capture keyboard dan mouse saat ini.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Mesin Virtual melaporkan bahwa OS guest mendukung &lt;b&gt;integrasi pointer mouse&lt;/b&gt;. Hal ini menunjukkan bahwa anda tidak perlu &lt;i&gt;meng-capture&lt;/i&gt; pointer mouse untuk dapat menggunakannya pada OS guest -- semua tindakan mouse yang anda lakukan saat pointer mouse berada pada tampilan Mesin Virtual akan langsung dikirim pada OS guest. Bila mouse sedang ter-capture, ia akan secara otomatis terbebas.&lt;/p&gt;&lt;p&gt;Ikon mouse pada status bar akan terlihat seperti&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;untuk menunjukkan anda bahwa integrasi pointer mouse didukung oleh OS  guest dan saat ini sedang menyala.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan&lt;/b&gt;: Beberapa aplikasi mungkin berperilaku tidak semestinya pada mode integrasi pointer mouse. Anda dapat selalu mematikannya pada sesi tersebut  (dan menyalakannya lagi) dengan memilih tindakan yang sesuai dari menu bar.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mesin Virtual melaporkan bahwa OS guest tidak mendukung &lt;b&gt;integrasi pointer mouse&lt;/b&gt; dalam mode video saat ini. Anda perlu meng-capture mouse (dengan meng-klik di atas tampilan Mesin Virtual atau menekan tombol host) dengan tujuan untuk menggunakan mouse didalam OS guest.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mesin Virtual sedang berada dalam keadaan &lt;b&gt;Pause&lt;/b&gt; dan oleh karena itu tidak menerima masukan keyboard atau mouse. Bila anda ingin melanjutkan bekerja didalam Mesin Virtual, Anda harus melanjutkannya dengan memilih tindakan yang sesuai dari menu bar.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Satu atau lebih dari hard disk virtual , CD/DVD ata floppy media yang terdaftar tidak dapat diakses. Oleh karena itu, anda akan tidak mampu mengoperasikan Mesin VIrtual yang menggunakan media ini sampai mereka menjadi dapat diakses nantinya.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;OK&lt;/b&gt; untuk membuka jendela Virtual Disk Manager dan melihat media apa saja yang tidak dapat diakses, atau tekan &lt;b&gt;Abaikan&lt;/b&gt; untuk mengabaikan pesan ini.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat menjalankan VirtualBox pada mode &lt;i&gt;Pemilih Mesin Virtual&lt;/i&gt; dikarenakan restriksi lokal.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan sekarang.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Kesalahan Fatal&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Kesalahan Tidak-Fatal&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Peringatan&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;ID Kesalahan: &lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation>Tingkatan: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sebuah kesalahan fatal telah terjadi selama eksekusi mesin virtual! Mesin virtual akan dimatikan. Anda disarankan menggunakan clipboard untuk meng-copy pesan kesalahan berikut untuk pemeriksaan lebih lanjut:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sebuah kesalahan telah terjadi selama eksekusi mesin virtual! Detail dari kesalahan ditunjukkan di bawah ini. Anda dapat mencoba membenahi kesalahan yang tertulis dan melanjutkan eksekusi mesin virtual.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Eksekusi mesin virtual mungkin menemui suatu kondisi kesalahan seperti tertulis dibawah ini. Anda dapat mengabaikan pesan ini, tetapi disarankan untuk melakukan tindakan yang sesuai untuk memastikan bahwa kesalahan yang tertulis tidak akan terjadi.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation>Kode&amp;nbsp;Hasil: </translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation>Komponen: </translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation>Antar Muka: </translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation>Pemanggil: </translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation>RC&amp;nbsp;Pemanggil: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat menemukan file bahasa untuk bahasa &lt;b&gt;%1&lt;/b&gt; dalam direktori &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Bahasa akan sementara di-reset pada nilai awal bahasa sistem. Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat memuat file bahasa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Bahasa akan sementara di-reset pada bahasa Inggris (built-in). Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman, &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions terinstall pada Sistem Operasi Guest terlalu tua: versi terinstall adalah %1, versi yang diharapkan adalah %2. Beberapa fitur yang membutuhkan Guest Additions (integrasi mouse, auto-resize tampilan guest) sangat mungkin tidak bekerja dengan semestinya.&lt;/p&gt;&lt;p&gt;Silahkan update the Guest Additions pada versi saat ini dengan memilih &lt;b&gt;Install Guest Additions&lt;/b&gt; dari menu &lt;b&gt;Device&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions terinstall pada Sistem Operasi Guest terlalu tua: versi terinstall adalah %1, versi yang diharapkan adalah %2. Beberapa fitur yang membutuhkan Guest Additions (integrasi mouse, auto-resize tampilan guest) sangat mungkin tidak bekerja dengan semestinya.&lt;/p&gt;&lt;p&gt;Anda dianjurkan meng-update the Guest Additions pada versi saat ini  dengan memilih &lt;b&gt;Install Guest Additions&lt;/b&gt; dari menu &lt;b&gt;Device&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions terinstall pada Sistem Operasi Guest terlalu baru: versi terinstall adalah %1, versi yang diharapkan adalah %2.&lt;/p&gt;&lt;p&gt;Menggunakan versi Additions pada versi lebih lama tidak didukung. Anda dianjurkan meng-update the Guest Additions pada versi saat ini  dengan memilih &lt;b&gt;Install Guest Additions&lt;/b&gt; dari menu &lt;b&gt;Device&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Gagal mengubah path folder snapshot pada mesin virtual&lt;b&gt;%1&lt;b&gt; ke &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tidak dapat memasuki mode seamless dikarenakan video memori guest tidak mencukupi.&lt;/p&gt;&lt;p&gt;Anda harus meng-konfigurasi Mesin VIrtual untuk memiliki setidaknya &lt;b&gt;%1&lt;/b&gt; memori video.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gagal menghapus folder yang di-share &lt;b&gt;%1&lt;/b&gt; (mengarah pada &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) dari mesin virtual &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Silahkan tutup semua program dalam Sistem Operasi guest yang mungkin menggunakan folder yang di-share ini dan coba kembali.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat menemukan file image CD VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; atau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Apa anda ingin men-download image CD ini dari Internet?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gagal men-download image CD VirtualBox Guest Additions dari &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Apakah anda yakin ingin men-download image CD VirtualBox Guest Additions dari &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (ukuran %3 bytes)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Image CD VirtualBox Guest Additions telah ter-downloaded dengan sukses dari &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; dan disimpan secara lokal sebagai &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Apakah anda ingin me-register image CD ini dan memasangnya pada drive CD/DVD virtual?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;fullscreen&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode fullscreen. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;Seamless&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode seamless. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jendela mesin virtual dioptimalkan untuk bekerja pada mode warna &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; tapi kualitas warna tampilan virtual saat ini di-set pada &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Silahkan buka dialog properti tampilan pada Sistem Operasi guest dan pilih sebuah mode warna &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, bila tersedia, untuk performa terbaik yang memungkinkan pada subsistem video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan&lt;/b&gt;. Beberapa sistem operasi, seperti OS/2, dapat bekerja secara aktual pada mode 32&amp;nbsp;bit namun melaporkannya sebagai 24&amp;nbsp;bit (16 juta warna). Anda dapat mencoba memilih kualitas warna yang berbeda untuk melihat apakah pesan ini menghilang atau anda dapat dengan mudah mematikan pesan sekarang bila anda yakin kualitas warna yang dibutuhkan (%4&amp;nbsp;bit) tidak tersedia pada Sistem Operasi guest.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Kesalahan kritikal telah terjadi saat menjalankan mesin virtual dan eksekusi mesin telah dihentikan.&lt;/p&gt;&lt;p&gt;Untuk bantuan, silahkan kunjungi bagian Community (Komunitas) &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; atau kontrak pendukung anda. Mohon sediakan isi dari file log file &lt;tt&gt;VBox.log&lt;/tt&gt; dan file image &lt;tt&gt;VBox.png&lt;/tt&gt;, yang dapat anda temukan pada direktori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, demikian juga dengan deskripsi tentang apa yang anda lakukan saat kesalahan ini terjadi. Perhatikan bahwa anda juga dapat mengakses file diatas dengan memilih &lt;b&gt;Tampilkan Log&lt;/b&gt; dari menu &lt;b&gt;Mesin&lt;/b&gt; dalam jendela utama VirtualBox.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Baik&lt;/b&gt; bila anda ingin mematikan mesin atau tekan &lt;b&gt;Abaikan&lt;/b&gt; bila anda ingin membiarkannya untuk debugging. Mohon perhatikan bahwa debugging membutuhkan pengetahuan dan alat khusus, sehingga dianjurkan untuk menekan &lt;b&gt;Baik&lt;/b&gt; sekarang.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Anda tidak memasang sebuah hard disk pada mesin virtual yang baru. Mesin tersebut tidak akan dapat di-boot kecuali anda memasang sebuah hard disk dengan sistem operasi guest atau media bootable lainnya pada waktu lain menggunakan dialog setting mesin atau First Run Wizard.&lt;/p&gt;&lt;p&gt;Anda ingin melanjutkan?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Gagal menemukan file lisensi dalam &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>Gagal membuka file lisensi &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Periksa permission file.</translation>
-    </message>
-    <message>
-        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal mengirim event penekanan Tombol Power ACPI ke mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Gagal melakukan koneksi ke layanan registrasi online VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selamat! Anda telah berhasil terdaftar sebagai seorang pengguna VirtualBox.&lt;/p&gt;&lt;p&gt;Terima kasih atas kesedian anda untuk mengisi form registrasi!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Gagal me-register produk VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Gagal menyimpan setting global VirtualBox pada &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gagal memuat konfigurasi global GUI dari &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gagal menyimpan konfigurasi global GUI pada &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikasi akan dimatikan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Gagal menyimpan setting mesin virtual &lt;b&gt;%1&lt;/b&gt; pada&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Gagal memuat setting mesin virtual &lt;b&gt;%1&lt;/b&gt; dari &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Hapus</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Unregister</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state</comment>
-        <translation>Abaikan</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>detach image</comment>
-        <translation type="obsolete">Lanjutkan</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Apakah anda ingin menghapus file image hard disk ini &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Hapus&lt;/b&gt; maka file image akan terhapus secara permanen setelah melakukan unregister hard disk. Tindakan ini tidak dapat dibatalkan.&lt;/p&gt;&lt;p&gt;Bila anda memilih &lt;b&gt;Unregister&lt;/b&gt; maka hard disk virtual akan di-unregister dan hilang dari koleksi, namun file image akan tetap berada pada disk fisik.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Hapus</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Unregister</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ada hard disk terpasang pada port SATA pada mesin virtual ini. Bila anda menonaktifkan pengendali SATA , semua hard disk tersebut akan secara otomatis terlepas.&lt;/p&gt;&lt;p&gt;Apakah anda yakin bahwa anda ingin menonaktifkan pengendali SATA?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Disable</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Matikan</translation>
-    </message>
-    <message>
-        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal memasang image hard disk dengan UUID %1 pada slot device %2 pada kanal %3 dari bus %4 mesin tersebut &lt;b&gt;%5&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">Gagal melepas image hard disk dengan dari slot device %1 pada kanal %2 dari bus %3 mesin tersebut &lt;b&gt;%4&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions</comment>
-        <translation>Download</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions</comment>
-        <translation>Pasang</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;Kunci host saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Capture</source>
-        <comment>do input capture</comment>
-        <translation>Tangkap</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Satu atau lebih hard disk virtual, CD/DVD or media floppy yang ter-register tidak dapat diakses saat ini. Akibatnya, anda tidak akan dapat mengoperasikan mesin virtual machines yang menggunakan media berikut hingga nantinya mereka tersedia untuk diakses.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Cek&lt;/b&gt; untuk membuka jendela Virtual Disk Manager dan melihat media apa saja yang tidak dapat diakses, atau tekan &lt;b&gt;Abaikan&lt;/b&gt; untuk mengabaikan pesan ini.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box</comment>
-        <translation>Cek</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;File setting VirtualBox berikut telah dikonversi secara otomatis ke versi format file setting yang baru  &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Adapun, hasil dari konversi saat ini belum disimpan ke dalam disk. Silahkan tekan:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Simpan&lt;/b&gt; untuk segera menyimpan semua file konversi otomatis (tidak memungkinkan untuk menggunakan file setting tersebut dengan versi VirtualBox yang lebih lama di masa datang);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; untuk menciptakan copy backup dari file settings pada format lama sebelum menyimpan mereka dalam format baru;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Batal&lt;/b&gt; untuk tidak menyimpan file setting yang dikonversi secara otomatis.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Perhatikan bila anda memilih &lt;b&gt;Batal&lt;/b&gt;, File setting yang dikonversi secara otomatis akan tetap saja disimpan secara implisit ke dalam format baru seketika anda mengubah setting atau menjalankan mesin virtual, namun &lt;b&gt;tidak ada&lt;/b&gt; copy backup tercipta pada kasus ini.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Simpan</translation>
-    </message>
-    <message>
-        <source>&amp;Backup</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Backup</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">Batal</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen</comment>
-        <translation>Beralih</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless</comment>
-        <translation>Beralih</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Apakah anda benar-benar yakin ingin me-reset mesin virtual tersebut?&lt;/p&gt;&lt;p&gt;Saat mesin di-reset, data dari semua aplikasi berjalan yang belum disave akan hilang.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine</comment>
-        <translation>Reset</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached</comment>
-        <translation>Lanjutkan</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached</comment>
-        <translation>Kembali</translation>
-    </message>
-    <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="obsolete">Gagal meng-copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; pada &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ada hard disk yang belum digunakan tersedia untuk pemasangan yang baru diciptakan.&lt;/p&gt;&lt;p&gt;Tekan tombol &lt;b&gt;Ciptakan&lt;/b&gt; untuk menjalankan wizard &lt;i&gt;Disk Virtual Baru&lt;/i&gt; dan menciptakan sebuah hard disk baru, atau tekan tombol &lt;b&gt;Pilih&lt;/b&gt; untuk membuka &lt;i&gt;Virtual Disk Manager&lt;/i&gt; dan pilih yang ingin dilakukan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">&amp;Ciptakan</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Pilih</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat masuk ke mode seamless karena ketidakcukupan memori video guest.&lt;/p&gt;&lt;p&gt;Anda harus mengkonfigurasi mesin virtual machine agar setidaknya memiliki video memori sebesar&lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tidak dapat mengubah tampilan guest display menjadi mode fullscreen dikarenakan ketidakcukupan memori video guest.&lt;/p&gt;&lt;p&gt;Anda harus mengkonfigurasi mesin virtual agar memiliki setidaknya memori video sebesar&lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Abaikan&lt;/b&gt; untuk tetap beralih ke mode fullscreen atau tekan &lt;b&gt;Batal&lt;/b&gt; untuk membatalkan tindakan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;fullscreen&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode fullscreen. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jendela mesin virtual akan sekarang diubah ke mode &lt;b&gt;Seamless&lt;/b&gt;. Anda dapat kembali ke mode windowed setiap saat dengan menekan &lt;b&gt;%1&lt;/b&gt;. Perhatikan bahwa tombol &lt;i&gt;Host&lt;/i&gt; saat ini didefinisikan sebagai &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa menu bar utama tersembunyi dalam mode seamless. Anda dapat mengaksesnya dengan menekan &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
-    </message>
-    <message>
-        <source>&amp;Contents...</source>
-        <translation type="unfinished">&amp;Isi...</translation>
-    </message>
-    <message>
-        <source>Show the online help contents</source>
-        <translation type="unfinished">Tampilkan isi bantuan online</translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation type="unfinished">Website &amp;VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation type="unfinished">Buka browser dan pergi ke website produk VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation type="unfinished">&amp;Reset Semua Peringatan</translation>
-    </message>
-    <message>
-        <source>Go back to showing all suppressed warnings and messages</source>
-        <translation type="unfinished">Menyebabkan semua peringatan dan pesan yang disembunyikan agar ditampilkan kembali</translation>
-    </message>
-    <message>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation type="unfinished">R&amp;egister VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Open VirtualBox registration form</source>
-        <translation type="unfinished">Buka formulir registrasi VirtualBox</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Check for a new VirtualBox version</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;About VirtualBox...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show a dialog with product information</source>
-        <translation type="unfinished">Tunjukkan dialog dengan informasi produk</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium</comment>
-        <translation type="unfinished">Lepas</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium</comment>
-        <translation type="unfinished">Hapus</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage</comment>
-        <translation type="unfinished">Hapus</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Keluar</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">hard disk</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">image CD/DVD</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">image floppy</translation>
-    </message>
-    <message>
-        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Close VM</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation type="unfinished">Lanjutkan</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="obsolete">Abaikan</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="unfinished">Batal</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Apakah anda ingin menghapus anatarmuka jaringan host terpilih &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Catatan:&lt;/b&gt; Antarmuka ini mungkin sedang digunakan oleh satu atau lebih adapter jaringan dari Mesin Virtual ini atau yang lain. Setelah ia terhapus, adapter tersebut tidak akan bekerja lagi hingga anda membetulkan setting mereka dengan memilih nama antarmuka atau tipe attachment adapter yang berbeda.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the host-only network interface.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to open appliance.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to create appliance.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to create an appliance.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation type="unfinished">Hapus</translation>
-    </message>
-    <message>
-        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>medium</comment>
-        <translation type="obsolete">&amp;Ciptakan</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <comment>medium</comment>
-        <translation type="obsolete">&amp;Pilih</translation>
-    </message>
-    <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> Would you like to force mounting of this medium?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source> Would you like to force unmounting of this medium?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Force Unmount</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation type="unfinished">&amp;Keluar</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...</comment>
-        <translation type="unfinished">hard disk</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...</comment>
-        <translation type="unfinished">image CD/DVD</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...</comment>
-        <translation type="unfinished">image floppy</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">hard disk</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to open virtual machine located in %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete all files</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove only</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="unfinished">Hapus</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create &amp;new disk</source>
-        <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Choose existing disk</source>
-        <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Choose disk</source>
-        <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Leave &amp;empty</source>
-        <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>scale</comment>
-        <translation type="unfinished">Beralih</translation>
-    </message>
-    <message>
-        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Install</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upgrade</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Downgrade</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Reinstall</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep changes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a snapshot of the current machine state</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
@@ -9885,7 +9958,7 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Bantuan</translation>
+        <translation type="obsolete">&amp;Bantuan</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -10533,29 +10606,6 @@ untuk mengaksesnya dari sebuah SIstem Operasi Linux. Fitur ini membutuhkan Guest
         <translation type="unfinished">
             <numerusform></numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -232,6 +232,14 @@
         <source>&amp;Details (%1 of %2)</source>
         <translation>&amp;Detaily (%1 z %2)</translation>
     </message>
+    <message>
+        <source>Copy all errors to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIRichLabel</name>
@@ -540,6 +548,146 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation>Virtuální systém %1</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Název</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation>Produkt</translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation>URL produktu</translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation>Výrobce</translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation>URL na výrobce</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>Verze</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation>Popis</translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation>Licence</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>OS hosta</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation>Řadič disku IDE</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation>Řadič disku SATA</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation>Řadič disku SCSI</translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation>Disketa</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation>Síťová karta</translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation>USB řadič</translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation>Zvuková karta</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translation>Virtuální obraz disku</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation>Neznámý hardware</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation>&lt;b&gt;Původní hodnota:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation>Konfigurace</translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation>Varování:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation>Řadič disku SAS</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation>Importuji applianci...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation>Načítám applianci...</translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -547,6 +695,10 @@
     </message>
     <message>
         <source>Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Base for %1 and %2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -561,10 +713,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
         <translation type="unfinished"></translation>
     </message>
@@ -576,9 +724,36 @@
         <source>%1 Clone</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
         <translation type="unfinished"></translation>
@@ -971,7 +1146,7 @@
     </message>
     <message>
         <source>The download process has been canceled by the user.</source>
-        <translation>Proces stahovaní byl zrušen uživatelem.</translation>
+        <translation type="obsolete">Proces stahovaní byl zrušen uživatelem.</translation>
     </message>
 </context>
 <context>
@@ -990,7 +1165,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Selhalo ukládání staženého souboru jako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Selhalo ukládání staženého souboru jako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
@@ -2108,23 +2283,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="obsolete">Levý Shift</translation>
+        <translation type="unfinished">Levý Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="obsolete">Pravý Shift</translation>
+        <translation type="unfinished">Pravý Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="obsolete">Levý Ctrl</translation>
+        <translation type="unfinished">Levý Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="obsolete">Pravý Ctrl</translation>
+        <translation type="unfinished">Pravý Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="obsolete">Levý Alt</translation>
+        <translation type="unfinished">Levý Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2404,6 +2579,13 @@ p, li { white-space: pre-wrap; }
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>&amp;Upravit</translation>
     </message>
 </context>
 <context>
@@ -4154,7 +4336,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>přiřadili jste tomuto počítači čipovou sadu ICH9. Ta nebude správně fungovat dokud nebude také povolena volba &apos;IO-APIC&apos;. To se aktivuje automaticky pokud akceptujete nastavení virtuálního počítače pomocí tlačítka OK.</translation>
+        <translation type="obsolete">přiřadili jste tomuto počítači čipovou sadu ICH9. Ta nebude správně fungovat dokud nebude také povolena volba &apos;IO-APIC&apos;. To se aktivuje automaticky pokud akceptujete nastavení virtuálního počítače pomocí tlačítka OK.</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
@@ -4180,6 +4362,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4436,25 +4622,1438 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
+    <name>UIMessageCenter</name>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - informace</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - otázka</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - varování</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - chyba</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - kritická chyba</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag</comment>
+        <translation>Nezobrazovat znovu tuto zprávu</translation>
+    </message>
+    <message>
+        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
+        <translation>Nepodařilo se otevřít &lt;tt&gt;%1&lt;/tt&gt;. Ujistěte se, že máte správně nastaveno zacházení s těmito URL.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodařilo se inicializovat COM nebo nelézt COM server VirtualBoxu. Server VirtualBoxu pravděpodobně neběží nebo jej nelze spustit.&lt;/p&gt;&lt;p&gt;Aplikace se ukončí.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodařilo se vytvořit COM objekt VirtualBoxu.&lt;/p&gt;&lt;p&gt;Aplikace bude ukončena&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nepodařilo se načíst nastavení globálního GUI.&lt;/p&gt;&lt;p&gt;Aplikace bude ukončena.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nepodařilo se uložit nastavení globálního GUI.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to set global VirtualBox properties.</source>
+        <translation>Nepodařilo se nastavit globální vlastnosti VirtualBoxu.</translation>
+    </message>
+    <message>
+        <source>Failed to access the USB subsystem.</source>
+        <translation>Nepodařil se přístup na subsystém USB.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine.</source>
+        <translation>Nepodařilo se vytvořit nový virtuální počítač.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se vytvořit nový virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se aplikovat nastavení na virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se uložit nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se načíst nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se spustit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se pozastavit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se obnovit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se uložit stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se vytvořit snímek virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se zastavit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se odstranit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se zahodit uložený stav počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se zahodit snímek &lt;b&gt;%1&lt;/b&gt; virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se zahodit aktuální stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se zahodit aktuální snímek a stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Žádný virtuální počítač &lt;b&gt;%1&lt;/b&gt; neexistuje.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jste si jistí, že chcete natrvalo smazat virtuální počítač &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;b&gt;Tuto operaci nelze vrátit.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jste si jistí, že chcete odregistrovat nedostupný virtuální počítač &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Poté nebudete schopní jej znovu zaregistrovat z GUI.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Jste si jistí, že chcete zahodit uložený stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Tato operace je podobná restartovaní nebo vypnutí počítače bez řadného ukončení hostovaného OS.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Uvolnění tohoto obrazu média jej odpojí od následujících virtuálních počítačů: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;b&gt;Pokračovat?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Obraz &lt;b&gt;%1&lt;/b&gt; již existuje. Nemůžete vytvořit nový virtuální pevný disk který používá tento soubor, protože by mohl již být použit jiným virtuálním pevným diskem-&lt;/p&gt;&lt;p&gt;Zadejte prosím jiný název obrazu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Chcete smazat obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ne&lt;/b&gt;, bude virtuální pevný disk odhlášen a odstraněn ze seznamu, ale obraz bude ponechán na vašem fyzickém disku.&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ano&lt;/b&gt;, bude obraz po odhlášení trvale smazán. Tuto operaci nelze vrátit.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se smazat obraz virtuálního pevného disku &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Chcete odstranit (odhlásit) viruální pevný disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation type="obsolete">Nepodařilo se vytvořit obraz virtuálního pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se připojit obraz pevného disku s UUID %1 ke slotu zařízení %2 ovladače %3 počítače &lt;b&gt;%4&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se odpojit obraz pevného disku ze slotu zařízení %1 ovladače %2 počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">pevný disk</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <translation type="obsolete">CD/DVD obraz</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <translation type="obsolete">obraz diskety</translation>
+    </message>
+    <message>
+        <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Nepodařilo se přihlásit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Nepodařilo se odhlásit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new session.</source>
+        <translation>Nepodařilo se vytvořit nové sezení.</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for a virtual machine with UUID &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se otevřít sezení k virtuálnímu počítači s UUID &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se otevřít sezení k virtuálnímu počítači &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
+        <translation type="obsolete">Nepodařilo se získat stav přistupnosti media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Některá přihlášená média mohou být nedostupná.</translation>
+    </message>
+    <message>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se vytvořit hostitelské síťové rozhraní &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se odstranit hostitelské síťové rozhraní &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Nepodařilo se připojit USB zařízení &lt;b&gt;%1&lt;/b&gt; k virtuálnímu počítači &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Nepodařilo se odpojit USB zařízení &lt;b&gt;%1&lt;/b&gt; od virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepodařilo se vytvořit sdílenou složku &lt;b&gt;%1&lt;/b&gt; (vede do &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) pro virtuální počítač &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepodařilo se odstranit sdílenou složku &lt;b&gt;%1&lt;/b&gt; (vede do &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) z virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;&lt;b&gt;Kliknuli jste myší&lt;/b&gt; uvnitř obrazovky virtuálního počítače nebo jste stiskli &lt;b&gt;klávesu hostitele&lt;/b&gt;. Virtuální počítač tak &lt;b&gt;odchytne&lt;/b&gt; kurzor myši hostitele (pouze pokud hostovaným OS není integrace kurzoru myši právě podporována) a klávesnici, což je znepřístupní pro další běžící aplikace na hostitelském počítači.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku na spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Máte zapnutou volbu &lt;b&gt;Automaticky odchytávat klávesnici&lt;/b&gt;. Virtuální počítač tak bude automaticky &lt;b&gt;odchytávat&lt;/b&gt; události klávesnice pokaždé, když je okno VM aktivováno, a znepřístupní je pro další aplikace běžící na hostitelském počítači: když je klávesnice odchytávána, jsou všechny stisky kláves (včetně systémových jako Alt-Tab) přesměrovány do VM.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku ve spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Virtuální počítač hlásí, že hostovaný OS podporuje &lt;b&gt;integraci kurzoru myši&lt;/b&gt;. To znamená, že nepotřebujete &lt;i&gt;odchytávat&lt;/i&gt; kurzor myši, abyste ho mohli použít v hostovaném OS -- všechny akce provádněné myší nad obrazovkou virtuálního počítače jsou posílány hostovanému OS. Pokud je myš právě odchytávána, bude automaticky uvolněna.&lt;/p&gt;&lt;p&gt;Ikona myši ve stavovém panelu vypadá jako&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;,aby vás informovala, že integrace kurozru myši je podporována hostovaným OS a je právě zapnuta.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka&lt;/b&gt;: Některé aplikace se v režimu integrace kurzoru myši mohou chovat nesprávně. Režim můžete kdykoliv vypnout pro aktuální sezení (nebo znovu zapnout) vybráním odpovídající akce z panelu s nabídkou.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtuální počítač hlásí, že hostovaný OS nepodporuje &lt;b&gt;integraci kurzoru myši&lt;/b&gt; v aktuálním video režimu. Pro možnost používání myši v hostovaném OS ji (kliknutím do obrazovky VM nebo stiskem klávesy hostitele) musíte odchytávat.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtuální počítač je právě v &lt;b&gt;pozastaveném&lt;/b&gt; stavu, proto nepřijímá žádné vstupy z klávesnice nebo myši. Pokud chcete pokračovat s prací ve virtuálním počítači, musíte ji obnovit vybráním odpovídající akce z panelu nabídek.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt; pro otevření okna Správce virtuálních disků a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude nyní přepnuto do režimu &lt;b&gt;celá obrazovka&lt;/b&gt;. Můžete se vrátit zpět do režimu okna stiskem &lt;b&gt;%1&lt;/b&gt;. &lt;i&gt;Hostitelská&lt;/i&gt; klávesa je momentálně nastavena na &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze spustit VirtualBox v režimu &lt;i&gt;Výběr VM&lt;/i&gt; kvůli místním omezením.&lt;/p&gt;&lt;p&gt;Aplikace bude nyní ukončena.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open appliance.</source>
+        <translation>Nepodařilo se otevřít applianci.</translation>
+    </message>
+    <message>
+        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se otevřít/interpretovat applianci &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se importovat applianci &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create appliance.</source>
+        <translation>Nepodařilo se vytvořit applianci.</translation>
+    </message>
+    <message>
+        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se připravit applianci &lt;b&gt;%1&lt;/b&gt; pro export.</translation>
+    </message>
+    <message>
+        <source>Failed to create an appliance.</source>
+        <translation>Vytvoření appliance selhalo.</translation>
+    </message>
+    <message>
+        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se exportovat applianci &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Kritická chyba&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Nekritická chyba&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Varování&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;ID chyby: &lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info</comment>
+        <translation>Závažnost: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Při běhu virtuálního počítače se vyskytla kritická chyba! Virtuální počítač bude vypnut. Doporučuje se použít schránku pro zkopírování následující chybové zprávy pro pozdější prozkoumání:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Vyskytla se chyba při běhu virtuálního počítače! Podrobnosti o chybě jsou zobrazeny níže. Můžete se pokusit opravit popsanou chybu a obnovit běh virtuálního počítače.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Běh virtuálního počítače může skončit chybovým stavem popsaným níže. Můžete tuto zprávu ignorovat, ale doporučuje se podniknout příslušné kroky, aby tato chyba nenastala.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation>Návratový&amp;nbsp;kód: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation>Komponenta: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation>Rozhraní: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation>Volaný: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation>Volaný&amp;nbsp;RC: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze najít jazykový soubor pro jazyk &lt;b&gt;%1&lt;/b&gt; ve složce &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jazyk bude dočasně nastaven na výchozí jazyk systému. Přejděte, prosím, do &lt;b&gt;Nastavení&lt;/b&gt;, které najdete v menu &lt;b&gt;Soubor&lt;/b&gt; hlavního okna VirtualBoxu, a vyberte existující jazyk na stránce &lt;b&gt;Jazyk&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze načíst jazykový soubor&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Jazyk bude dočasně nastaven na angličtinu (vestavěnou). Přejděte, prosím, do &lt;b&gt;Nastavení&lt;/b&gt;, které najdete v menu &lt;b&gt;Soubor&lt;/b&gt; hlavního okna VirtualBoxu, a vyberte existující jazyk na stránce &lt;b&gt;Jazyk&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Přídavky pro hosta nainstalované v hostovaném OS jsou příliš staré: nainstalovaná verze je %1, očekávaná verze je %2. Některé funkce vyžadující Přídavky pro hosta (integrace myši, automatickou změnu velikosti hostované obrazovky) pravděpodobně nebudou správně fungovat.&lt;/p&gt;&lt;p&gt;Prosím aktualizujte Přídavky pro hosta na aktuální verzi výběrem &lt;b&gt;Instalovat Přídavky pro hosta&lt;/b&gt; z nabídky &lt;b&gt;Zařízení&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Přídavky pro hosta nainstalované v hostovaném OS jsou zastaralé: nainstalovaná verze je %1, očekávaná verze je %2. Některé funkce vyžadující Přídavky pro hosta (integrace myši, automatická změna velikosti hostované obrazovky) nemusí fungovat jak byste čekali.&lt;/p&gt;&lt;p&gt;Je doporučována aktualizace Přídavků pro hosta na aktuální verzi  výběrem &lt;b&gt;Instalovat Přídavky pro hosta&lt;/b&gt; z nabídky &lt;b&gt;Zařízení&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Přídavky pro hosta nainstalované v hostovaném OS jsou příliš aktuální: nainstalovaná verze je %1, očekávaná verze je %2. Některé funkce které vyžadují Přídavky pro hosta (integrace myši, automatická změna velikosti hostované obrazovky) pravděpodobně nebudou správně fungovat.&lt;/p&gt;&lt;p&gt;Prosím aktualizujte Přídavky pro hosta na aktuální verzi výběrem &lt;b&gt;Instalovat Přídavky pro hosta&lt;/b&gt; z nabídky &lt;b&gt;Zařízení&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Nepodařilo se změnit cestu ke složce se snímky virtuálního počítače &lt;b&gt;%1&lt;b&gt; na &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nepodařilo se přejít do bezešvého módu kvůli nedostatečné video paměti hosta&lt;/p&gt;&lt;p&gt;Nastavte virtuální počítač, aby měl alespoň &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodařilo se odstranit sdílený sdresář &lt;b&gt;%1&lt;/b&gt; (ukazující do &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) z virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Prosím zavřete všechny programy v hostovaném OS, které by jej mohly používat, a zkuste to znovu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze najít obraz CD Přídavků pro hosta VirtualBoxu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nebo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete stáhnout tento obraz CD z internetu?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodařilo se stáhnout obraz CD Přídavků pro hosta VirtualBoxu z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Jste si jistí, že chcete stáhnout obraz CD Přídavků pro hosta VirtualBoxu z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (velikost %3 bajtů)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Obraz CD Přídavků pro hosta VirtualBoxu byl úspěšně stažen z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; a uložen lokálně jako &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete zaregistrovat tento obraz CD a připojit ho do virtuální CD/DVD mechaniky?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude přepnuto do režimu &lt;b&gt;celé obrazovky&lt;/b&gt;. Můžete jít zpět do režimu okna stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v režimu celé obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude přepnuto do &lt;b&gt;bezešvého&lt;/b&gt; režimu. Můžete jít zpět do režimu okna stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v režimu celé obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Okno virtuálního počítače je optimalizováno pro použití v &lt;b&gt;%1&amp;nbsp;bitové&lt;/b&gt; barevné hloubce, ale barevná kvalita virtuální obrazovky je právě nastavena na &lt;b&gt;%2&amp;nbsp;bitů&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Prosím otevřete dialog vlastností obrazovky hostovaného OS a vyberte &lt;b&gt;%3&amp;nbsp;bitový&lt;/b&gt; barevný režim, pokud je dostupný, pro nejlepší možný výkon virtuálního video subsytému.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka&lt;/b&gt;. Některé operační systémy, jako OS/2, mohou skutečně pracovat v 32&amp;nbsp;bitovém režimu, ale hlasí ho jako 24&amp;nbsp;bitový (16 milionů barev). Můžete vybírat různé kvality barev a vidět, jestli se tato zpráva zobrazí, nebo můžete prostě zprávu zakázat, pokud jste si jistí, že požadovaná kvalita barev (%4&amp;nbsp;bitů) není v daném hostovaném OS dostupná.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Při běhu virtuálního počítače se vyskytla kritická chyba a provádění počítače bylo zastaveno.&lt;/p&gt;&lt;p&gt;Pro pomoc se prosím podívejte do sekce Community na &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; nebo na smlouvu o podpoře. Prosím poskytněte obsah log souboru &lt;tt&gt;VBox.log&lt;/tt&gt; a obrázek &lt;tt&gt;VBox.png&lt;/tt&gt;, který najdete v adresáři &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, společně s popisem, co jste dělali, když chyba nastala. Předchozí soubory také zobrazíte vybráním &lt;b&gt;Zobrazit logy&lt;/b&gt; z menu &lt;b&gt;Počitač&lt;/b&gt; hlavního okna VirtualBoxu.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt;, pokud chcete vypnout počítač, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt;, pokud jej chcete ponechat v současném stavu pro debugování. Upozorňujeme, že debugování vyžaduje zvláštní znalosti a nástroje, takže doporučujeme stisknout &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepřipojili jste pevný disk k novému virtuálnímu počítači. Počítač nebude schopen bootovat, dokud nepřipojíte pevný disk s hostovaným operačním systémem nebo nějaké jiné bootovatelné médium pomocí dialogu nastavení počítače nebo Průvodce prvním spuštěním.&lt;/p&gt;&lt;p&gt;Chcete pokračovat?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Nepodařilo se nalézt licenční soubor v &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation>Nepodařilo se otevřít licenční soubor &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Zkontrolujte oprávnění souboru.</translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se poslat události stisku ACPI vypínacího tlačítka počítači &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nepodařilo se připojit k online registrační službě VirtualBoxu.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Gratulujeme! Úspěšně jste se zaregistrovali jako uživatel VirtualBoxu.&lt;/p&gt;&lt;p&gt;Děkujeme vám že jste si našli čas na vyplnění registračního formuláře!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nepodařilo se zaregistrovat produkt VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nelze uložit globální nastavení VirtualBoxu do &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze načíst globální konfiguraci pro GUI ze složky &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikace bude nyní ukončena.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze uložit globální nastavení GUI VirtualBoxu do &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;Aplikace bude nyní ukončena.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Nelze uložit nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt; do &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Nelze načíst nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt; ze složky &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Smazat</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Odregistrovat</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>Zrušit</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>detach image</comment>
+        <translation type="obsolete">Pokračovat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Chcete smazat obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Smazat&lt;/b&gt;, bude obraz po odhlášení trvale smazán. Tuto operaci nelze vrátit.&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Odregistrovat&lt;/b&gt;, bude virtuální pevný disk odstraněn ze seznamu, ale obraz bude ponechán na vašem fyzickém disku.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Smazat</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Odregistrovat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;K tomuto virtuálnímu počítači jsou připojeny SATA disky. Pokud zakážete SATA řadič, všechny tyto disky budou odpojeny.&lt;/p&gt;&lt;p&gt;Opravdu chcete zakázat SATA řadič?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Zakázat</translation>
+    </message>
+    <message>
+        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se připojit obraz pevného disku s UUID %1 ke slotu zařízení %2 na kanále %3 sběrnice %4 počítače &lt;b&gt;%5&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se odpojit obraz pevného disku ze slotu zařízení %1 oma kanále %2 sběrnice %3 počítače &lt;b&gt;%4&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>Stáhnout</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>Připojit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;Host klávesa je nyní nadefinována na &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>Zachytávat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;Zkontrolovat&lt;/b&gt; pro otevření okna Správce virtuálních disků a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>Zkontrolovat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Následující soubory s nastavením pro VirttualBox byly automaticky převedeny na nový formát souborů. &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Výsledky konverze nebyly ale zatím uloženy na disk. Prosím stiskněte:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Uložit&lt;/b&gt; pro uložení všech automaticky převedených souborů (v budoucnu nebude možné použít tyto soubory s nastaveními pro starší verze aplikace VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Zálohovat&lt;/b&gt; pro vytvoření založní kopie souborů s nastavením ve starším formátu před uložením do formátu nového;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Zrušit&lt;/b&gt; pro neuložení automaticky převedených souborů.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Poznámka: pokud zvolíte &lt;b&gt;Zrušit&lt;/b&gt; budou při změně konfigurace nebo při spuštění virtuálního počítače automaticky převedené soubory s nastavením implicitně uloženy v novém formátu, ale &lt;b&gt;nebude&lt;/b&gt; vytvořena záložní kopie.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Uložit</translation>
+    </message>
+    <message>
+        <source>&amp;Backup</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Zálohovat</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">Zrušit</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>Přepnout</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>Přepnout</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Opravdu chcete resetovat virtuální počítač?&lt;/p&gt;&lt;p&gt;Pokud je virtuální počítač resetován, neuložená data z běžících aplikací budou ztracena.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>Resetovat</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>Pokračovat</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>Přejít zpět</translation>
+    </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="obsolete">Selhalo kopírování souboru &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; na &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Pro připojení není dostupný žádný volný pevný disk. &lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vytvořit&lt;/b&gt; pro spuštění průvodce &lt;i&gt;Nový virtuální disk&lt;/i&gt; nebo stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro spuštění &lt;i&gt;Správce virtuálních disků&lt;/i&gt; a vyberte, co se provádět dále.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Vy&amp;tvořit</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Vybrat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodařilo se přejít do bezešvého módu kvůli nedostatečné video paměti hosta.&lt;/p&gt;&lt;p&gt;Nastavte virtuální počítač tak, aby měl alespoň &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodařilo se přejít do celobrazovkového režimu kvůli nedostatečné video paměti hosta.&lt;/p&gt;&lt;p&gt;Nastavte virtuální počítač tak, aby měl alespoň &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;&lt;p&gt;Stiskněte tlačítko&lt;b&gt;Ignorovat&lt;/b&gt; pro přepnutí do celoobrazovkého režimu nebo &lt;b&gt;Zrušit&lt;/b&gt;pro zrušení této oprace.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nelze získat informace o nové verzi z důvodu následující síťové chyby: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation>Máte nainstalovanou aktuální verzi VirtualBoxu. Prosím proveďte kontrolu verze později.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;b&gt;Kliknuli jste myší&lt;/b&gt; uvnitř obrazovky virtuálního počítače nebo jste stiskli &lt;b&gt;klávesu hostitele&lt;/b&gt;. Virtuální počítač tak &lt;b&gt;odchytne&lt;/b&gt; kurzor myši hostitele (pouze pokud hostovaným OS není integrace kurzoru myši právě podporována) a klávesnici, což je znepřístupní pro další běžící aplikace na hostitelském počítači.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku na spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;.&amp;nbsp; Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Máte zapnutou volbu &lt;b&gt;Automaticky odchytávat klávesnici&lt;/b&gt;. Virtuální počítač tak bude automaticky &lt;b&gt;odchytávat&lt;/b&gt; události klávesnice pokaždé, když je okno aktivováno, a znepřístupní je pro další aplikace běžící na hostitelském počítači: když je klávesnice odchytávána, jsou všechny stisky kláves (včetně systémových jako Alt-Tab) přesměrovány do virtuálního počítače.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku ve spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;.&amp;nbsp; Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtuální počítač hlásí, že hostovaný OS podporuje &lt;b&gt;integraci kurzoru myši&lt;/b&gt;. To znamená, že nepotřebujete &lt;i&gt;odchytávat&lt;/i&gt; kurzor myši, abyste ho mohli použít v hostovaném OS -- všechny akce provádněné myší nad obrazovkou virtuálního počítače jsou posílány hostovanému OS. Pokud je myš právě odchytávána, bude automaticky uvolněna.&lt;/p&gt;&lt;p&gt;Ikona myši ve stavovém panelu vypadá jako&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;,aby vás informovala, že integrace kurzoru myši je podporována hostovaným OS a je právě zapnuta.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka&lt;/b&gt;: Některé aplikace se v režimu integrace kurzoru myši mohou chovat nesprávně. Režim můžete kdykoliv vypnout pro aktuální sezení (nebo znovu zapnout) vybráním odpovídající akce z panelu s nabídkou.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude přepnuto do režimu &lt;b&gt;celé obrazovky&lt;/b&gt;. Zpět do režimu okna přejdete stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v režimu celé obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude přepnuto do &lt;b&gt;bezešvého&lt;/b&gt; režimu. Můžete jít zpět do režimu okna stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v režimu celé obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation>&amp;Obsah...</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation>Zobrazí obsah online nápovědy</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation>Webová stránka &amp;VirtualBoxu...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation>Otevře okno prohlížeče a stránky aplikace VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation>&amp;Resetovat všechna varování</translation>
+    </message>
+    <message>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation>Všechna potlačená varování se zobrazí znovu</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation>R&amp;egistrovat VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation>Otevře registrační formulář pro VirtualBox</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation>Z&amp;kontrolovat aktualizace...</translation>
+    </message>
+    <message>
+        <source>Check for a new VirtualBox version</source>
+        <translation>Provede kontrolu nové verze VirtualBoxu</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation>O &amp;aplikaci VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation>Zobrazí dialog s informacemi pro produktu</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Byla vydána nová verze aplikace VirtualBox! Na stránce &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; je verze &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tuto verzi si můžete stáhnout přímo zde: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Jste si jistí, že chcete uvolnit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Bude odpojen od tohoto virtuálního počítače: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
+        <translation type="obsolete">Název souboru &lt;b&gt;%1&lt;/b&gt; již existuje. Opravdu jej chcete nahradit?&lt;br/&gt;&lt;br/&gt;Soubor již existuje v &quot;%2&quot;. Nahrazením se přepíše jeho obsah.</translation>
+    </message>
+    <message>
+        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
+        <translation>Následující soubor již existuje:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Opravdu jej chcete nahradit? Nahrazením soubor přepíšete jeho obsah.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
+        <translation type="obsolete">Nepodařilo se odebrat soubor &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Pokuste se prosím o jeho odebrání sami a zkuste to znovu.</translation>
+    </message>
+    <message>
+        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
+        <translation>Používáte testovací verzi aplikace VirtualBox. Tato verze není určena pro produkční použití.</translation>
+    </message>
+    <message>
+        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
+        <translation type="obsolete">Nelze použít USB na hostovaném systému i přesto, protože není dostupný USB souborový systém (usbfs) nebo nejsou dostupné služby DBus a hal. Pokud chcete používat USB zařízené v hostovaném systému, musíte to opravit a restartovat VirtualBox.</translation>
+    </message>
+    <message>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
+        <translation>Pokoušíte se vypnout hostovaný systém pomocí ACPI tlačítka. To ale není možné, protože host nepoužívá ACPI sybsystém.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Hardwarová akcelerace VT-x/AMD-V byla povolena, ale nefunguje. Váš 64bitový host nebude schopen detekovan 64bitové CPU a nespustí se.&lt;/p&gt;&lt;p&gt;Prosím ujistěte se, že jste správně povolili VT-x/AMD-V v BIOSu na vašem hostitelském počítači.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation>Zavřít virtuální počítač</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Pokračovat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Opravdu chcete smazat vybraný snímek a uložený stav?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="obsolete">Smazat</translation>
+    </message>
     <message>
         <source>Cancel</source>
         <translation>Zrušit</translation>
     </message>
     <message>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation>Uvolnit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Opravdu chcete odstranit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ze seznamu známých médií?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <translation>Poznámka: tento pevný disk je nedostupný, takže úložiště nelze nyní smazat.</translation>
+    </message>
+    <message>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation>Následující dialog umožňuje zvolit, zda bude úložiště smazáno z disku nebo ponecháno pro pozdější použití.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Poznámka: Médium nebude smazáno a proto bude možné jej později opět přidat do seznamu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation>Odstranit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Úložiště pevného disku v &lt;b&gt;%1&lt;/b&gt; již existuje. Nemůžete vytvořit nový virtuální pevný disk, který používá toto umístění, protože by mohl již být použit jiným virtuálním pevným diskem-&lt;/p&gt;&lt;p&gt;Zadejte prosím jiné umístění.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Chcete smazat úložiště pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Smazat&lt;/b&gt;, bude obraz po odhlášení trvale smazán. Tuto operaci nelze vrátit.&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ponechat&lt;/b&gt;, bude virtuální pevný disk odstraněn ze seznamu, ale obraz bude ponechán na vašem fyzickém disku a lze jej opět později do seznamu přidat.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation>Smazat</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation>Ponechat</translation>
+    </message>
+    <message>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepodařilo se smazat obraz virtuálního pevného disku &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jsou zde pevné disky připojené k portům přídavného řadiče. Pokud tento řadič zakážete, budou všechny tyto disky automaticky odpojeny.&lt;/p&gt;&lt;p&gt;Opravdu chcete zakázat přídavný řadič?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Jsou zde pevné disky připojené k portům přídavného řadiče. Pokud tento řadič změníte, budou všechny tyto disky automaticky odpojeny.&lt;/p&gt;&lt;p&gt;Opravdu chcete změnit přídavný řadič?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Změnit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Pro připojení není dostupný žádný volný pevný disk. &lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vytvořit&lt;/b&gt; pro spuštění průvodce &lt;i&gt;Nový virtuální disk&lt;/i&gt; nebo stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro spuštění &lt;i&gt;Správce virtuálních médií&lt;/i&gt; a vyberte, co se má provádět dále.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation>Nepodařilo se vytvořit obraz virtuálního pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se připojit obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ke slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepodařilo se odpojit obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ze slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Selhalo připojení %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; k počítači &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Selhalo odpojení %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; od počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Nelze otevřít %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Nelze zavřít %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Nelze získat status dostupnosti pro médium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Chcete odstranit vybrané hostitelské síťové rozhraní &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka:&lt;/b&gt; Toto rozhraní může být používáno jednou nebo více síťovými kartami tohoto nebo jiného virtuálního počítače. Po jeho odstranění nebudou tyto karty fungovat, dokud neopravíte jejich nastavení vybráním jiného rozhraní nebo jiného typu připojení karty.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the host-only network interface.</source>
+        <translation>Vytvoření sítě pouze s hostem selhalo.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodařilo se připojit k online registrační službě VirtualBoxu kvůli následující chybě: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze získat informace o nové verzi z důvodu následující chyby: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;Zkontrolovat&lt;/b&gt; pro otevření okna Správce virtuálních médií a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Vaše existující nastavení pro VirtualBox bylo automaticky převedeno ze starého formátu na nový, který používá nová verze aplikace VirtualBox.&lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;OK&lt;/b&gt; pro spuštění aplikace VirtualBox nebo tlačítko &lt;b&gt;Ukončit&lt;/b&gt; pro ukončení aplikace bez provedení změn.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vaše stávající nastavení pro aplikaci VirtualBox bylo automaticky převedeno ze starého formátu na nový.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt; pro spuštění VirtualBoxu nebo tlačítko &lt;b&gt;Více&lt;/b&gt; pokud potřebujete více informací o tom, které soubory byly převedeny.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;Ukončit&lt;/b&gt; pro ukončení aplikace VirtualBox bez uložení výsledků konverze na disk.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;More</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">Ví&amp;ce</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">U&amp;končit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Odstranění této sítě s hostitelem dojde také k odstranění rozhraní, na kterém je síť nastavena. Opravdu chcete odebrat rozhraní pro síť pouze s hostitelem &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka:&lt;/b&gt;toto rozhraní může být použito v jednom nebo i více virtuálních rozhraních patřících virtuálním počítačům. Po odebrání nebudou tato síťová rozhraní použitelná do chvíle, než provedete jejich správné nastavení buď volbou jiného názvu rozhraní nebo jiného typu síťového rozhraní.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Následující soubory s nastavením pro VirtualBox byly automaticky převedeny na nový formát souborů verze &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Výsledky konverze nebyly ale zatím uloženy na disk. Prosím stiskněte:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Zálohovat&lt;/b&gt; pro uložení všech automaticky převedených souborů ve starém formátu;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Přepsat&lt;/b&gt; pro uložení všech automaticky převedených souborů bez vytvoření záložní kopie (v budoucnu nebude možné použít tyto soubory s nastaveními pro starší verze aplikace VirtualBox);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Je doporučeno vždy zvolit &lt;b&gt;Zálohovat&lt;/b&gt; protože v případě potřeby bude možné se vrátit k předchozí verzi VirtualBoxu bez ztráty aktuálního nastavení. Více informací o přechodu na nižší verzi najdete v manuálu k VirtualBoxu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
+        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Ukončit&lt;/b&gt; pro ukončení aplikace VirtualBox bez uložení výsledků konverze na disk.&lt;/li&gt;</translation>
+    </message>
+    <message>
+        <source>O&amp;verwrite</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Přepsat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Při běhu virtuálního počítače se vyskytla kritická chyba a provádění počítače bylo zastaveno.&lt;/p&gt;&lt;p&gt;Pro pomoc se prosím podívejte do sekce Community na &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; nebo na smlouvu o podpoře. Prosím poskytněte obsah log souboru &lt;tt&gt;VBox.log&lt;/tt&gt; a obrázek &lt;tt&gt;VBox.png&lt;/tt&gt;, který najdete v adresáři &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, společně s popisem, co jste dělali, když chyba nastala. Předchozí soubory také zobrazíte vybráním &lt;b&gt;Zobrazit logy&lt;/b&gt; z menu &lt;b&gt;Počitač&lt;/b&gt; hlavního okna VirtualBoxu.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt;, pokud chcete vypnout počítač, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt;, pokud jej chcete ponechat v současném stavu pro debugování. Upozorňujeme, že debugování vyžaduje zvláštní znalosti a nástroje, takže doporučujeme stisknout &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">pevný disk</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">CD/DVD obraz</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">obraz diskety</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation>Následující soubor již existuje:&lt;b&gt;%1&lt;b&gt;. Opravdu jej chcete nahradit?&lt;br /&gt;&lt;br /&gt; Nahrazením souboru přepíšete jeho obsah.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Hardwarová akcelerace VT-x/AMD-V byla povolena, ale nefunguje. Některé virtuální počítače (např. OS/2 a QNX) tuto volbu vyžadují.&lt;/p&gt;&lt;p&gt;Prosím ujistěte se, že jste správně povolili VT-x/AMD-V v BIOSu na vašem hostitelském počítači.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Zadána neplatná e-mailová adresa nebo heslo.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodařilo se zaregistrovat produkt VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation>Selhala kontrola souborů.</translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation>Selhalo odstranění souboru.</translation>
+    </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation>Je patrné, že máte souborový systém USBFS připojen na adresář /sys/bus/usb/drivers. Důrazně doporučujeme to změnit, protože jde o neplatné nastavení systému, které může způsobovat selhání USB zařízení nečekanými způsoby.</translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation>Máte spuštěnu EXPERIMENTÁLNÍ verzi aplikace VirtualBox. Tato verze není vhodná pro produkční použití.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Opravdu chcete obnovit snímek &lt;b&gt;%1&lt;/b&gt;? Tím přijdete o aktuální stav počítače, který už potom nelze obnovit.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Obnovit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Smazáním snímku budou také odstraněny informace o stavu a uložená data na discích, která byla použita ve snímku budou spojena do jednoho souboru. To může být zdlouhavý proces a informace o snímku již potom nelze obnovit.&lt;/p&gt;&lt;p&gt;Opravdu chcete smazat vybraný snímek &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Smazat</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Nepodařilo se obnovit snímek &lt;b&gt;%1&lt;/b&gt; virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Nepodařilo se smazat snímek &lt;b&gt;%1&lt;/b&gt; virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Pro připojení není dostupný žádný volný pevný disk. &lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vytvořit&lt;/b&gt; pro spuštění průvodce &lt;i&gt;Nový virtuální disk&lt;/i&gt; nebo stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro spuštění &lt;i&gt;Správce virtuálních disků&lt;/i&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium</comment>
+        <translation type="obsolete">Vy&amp;tvořit</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="obsolete">&amp;Vybrat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Pro připojení není dostupný žádný volný pevný disk. &lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro spuštění &lt;i&gt;Správce virtuálních disků&lt;/i&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Selhalo připojení %1 ke slotu &lt;i&gt;%2&lt;/i&gt; virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Selhalo odpojení %1 ze slotu &lt;i&gt;%2&lt;/i&gt; virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nelze připojit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; k počítači &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation> Chcete vynutit připojení tohoto média?</translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nelze odpojit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; od počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation> Chcete vynutit odpojení tohoto média?</translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation>Vynutit odpojení</translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation type="obsolete">Selhalo vysunutí disku z virtuálního počítače. Disk může být být zablokován hostovaným operačním systémem. Zkontrolujte to prosím a zkuste znovu.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepodařilo se připojit obraz CD disku s instalací přídavků pro aplikaci VirtualBox do virtuálního počítače &lt;b&gt;%1&lt;/b&gt; protože nemá CD/DVD-ROM zařízení. Přidejte prosím zařízení na záložce uložiště ve vlastnostech virtuálního počítače.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation>U&amp;končit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Následující nastavení pro aplikaci VirtualBox bylo automaticky převedeno ze starého formátu na nový, který používá nová verze.&lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;OK&lt;/b&gt; pro spuštění aplikace VirtualBox nebo tlačítko &lt;b&gt;Ukončit&lt;/b&gt; pro ukončení aplikace bez provedení změn.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation>pevný disk</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation></translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation>CD/DVD obraz</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>disketa</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation>obraz diskety</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">pevný disk</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">CD/DVD zařízení</translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">disketová mechanika</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Opravdu chcete smazat CD/DVD-ROM zařízení?&lt;/p&gt;&lt;p&gt;Bez něj nebudete moci připojit žádný CD nebo DVD obraz ani nainstalovat přídavky pro hosta!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation>&amp;Odstranit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation>&lt;p&gt;Hardwarová akcelerace VT-x/AMD-V není na vašem systému dostupná. Hostované 64bitové počítače nebudou schopni detekovat 64bitové CPU a nepodaří se je spustit.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Hardwarová akcelerace VT-x/AMD-V není na vašem systému dostupná. Některé hostované operační systémy (např. OS/2 a QNX) vyžadují tuto vlastnosti a nepodaří se je proto spustit.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Smazání snímku %1 vyžaduje dočasně více diskového prostoru. V nejhorším případě velikost obrazu %2 naroste až na %3, ale na souborovém systému je pouze %4 volného místa.&lt;/p&gt;&lt;p&gt;Pokud během operace dojde místo na disku, může to vést k poškození obrazu a nastavení pro virtuální počítač. &lt;/p&gt;&lt;p&gt;Můžete pokračovat v mazání na vlastní riziko.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze změnit obrazovku hostovaného počítače kvůli nedostatku video paměti.&lt;/p&gt;&lt;p&gt;Měli by jste pro virtuální počítač nastavit nejméně &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze změnit obrazovku hostovaného počítače kvůli nedostatku video paměti.&lt;/p&gt;&lt;p&gt;Měli by jste pro virtuální počítač nastavit nejméně &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;Stisknutím tlačítka &lt;b&gt;Ignorovat&lt;/b&gt; přepnete do obrazovkového režimu nebo tlačítkem &lt;b&gt;Zrušit&lt;/b&gt; operaci zrušíte.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze přepnout obrazovku hostovaného počítače do celoobrazovkového režimu. Ve virtuálním počítači máte nastaveno více virtuálních obrazovek než má fyzicky hostitelský počítač.&lt;/p&gt;&lt;p&gt;Buď zmenšete počet virtuálních obrazovek v nastavení virtuálního počítače nebo k hostitelskému počítači připojte další obrazovku.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze přepnout obrazovku hostovaného počítače do bezešvého režimu. Ve virtuálním počítači máte nastaveno více virtuálních obrazovek než má fyzicky hostitelský počítač.&lt;/p&gt;&lt;p&gt;Buď zmenšete počet virtuálních obrazovek v nastavení virtuálního počítače nebo k hostitelskému počítači připojte další obrazovku.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nelze najít uživatelský manuál pro VirtualBox  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete jej stáhnout z internetu?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Opravdu chcete stáhnout uživatelský manuál pro VirtualBox z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (velikost %3 bytů)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Stažení uživatelského manuálu pro VirtualBox z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; selhalo.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Uživatelský manuál pro VirtualBox byl úspěšně stažen z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; a uložen lokálně jako &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Uživatelský manuál pro VirtualBox byl úspěšně stažen z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; ale nemohl být uložen lokálně jako &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;Zvolte prosím pro tento soubor jiné umístění.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation>Selhalo otevření virtuálního počítače umístěného v %1.</translation>
+    </message>
+    <message>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation>Selhalo přidání virtuálního počítače &lt;b&gt;%1&lt;/b&gt; umístěného v adresáři &lt;i&gt;%2&lt;/i&gt; protože již existuje.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all files</source>
+        <translation>Smazat všechny soubory</translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation>Pouze odstranit</translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Odstranit</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation>Vyvořit &amp;nový disk</translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation>&amp;Vybrat existující disk</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation>Vy&amp;brat disk</translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation>Nechat &amp;prázdné</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished">Nepodařilo se  &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>&amp;Odstranit</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished">Omlouváme se, vyskytla se obecná chyba.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepodařilo se připojit obraz pevného disku (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) ke slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepodařilo se připojit CD/DVD zařízení (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) ke slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepodařilo se připojit disketovou mechaniku (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) ke slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation type="unfinished">Přepnout</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Selhalo ukládání staženého souboru jako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Zrušit</translation>
+    </message>
+    <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Zruší stahování obrazu CD s přídavky pro hosta aplikace VirtualBox</translation>
+        <translation type="obsolete">Zruší stahování obrazu CD s přídavky pro hosta aplikace VirtualBox</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Stahování obrazu CD s přídavky pro hosta &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Stahování obrazu CD s přídavky pro hosta &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation>Zrušit</translation>
+        <translation type="obsolete">Zrušit</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -4467,6 +6066,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>Stahování manuálu pro VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetAdditions</name>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5587,6 +7197,29 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation>Upravit text</translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation>&amp;Nahradit...</translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation>Nahradí aktuální text obsahem vybraného souboru.</translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation>Text (*.txt);;Vše (*.*)</translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation>Vyberte soubor pro načtení...</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -5822,135 +7455,6 @@ Verze %1</translation>
     <message>
         <source>&amp;Make Permanent</source>
         <translation type="obsolete">Udělat &amp;trvale</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation>Virtuální systém %1</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Název</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation>Produkt</translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation>URL produktu</translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation>Výrobce</translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation>URL na výrobce</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation>Verze</translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation>Popis</translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation>Licence</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>OS hosta</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation>Řadič disku IDE</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation>Řadič disku SATA</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation>Řadič disku SCSI</translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation>Disketa</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation>Síťová karta</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation>USB řadič</translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation>Zvuková karta</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translation>Virtuální obraz disku</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation>Neznámý hardware</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;Původní hodnota:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation>Konfigurace</translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation>Varování:</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation>Řadič disku SAS</translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8871,17 +10375,6 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation>Importuji applianci...</translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation>Načítám applianci...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
@@ -8894,13 +10387,6 @@ na výchozí jazyk systému.&lt;/qt&gt;
     <message>
         <source>VirtualBox License</source>
         <translation>Licence aplikace VirtualBox</translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Upravit</translation>
     </message>
 </context>
 <context>
@@ -9257,1411 +10743,6 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>UIMessageCenter</name>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - informace</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - otázka</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - varování</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - chyba</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - kritická chyba</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag</comment>
-        <translation>Nezobrazovat znovu tuto zprávu</translation>
-    </message>
-    <message>
-        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Nepodařilo se otevřít &lt;tt&gt;%1&lt;/tt&gt;. Ujistěte se, že máte správně nastaveno zacházení s těmito URL.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se inicializovat COM nebo nelézt COM server VirtualBoxu. Server VirtualBoxu pravděpodobně neběží nebo jej nelze spustit.&lt;/p&gt;&lt;p&gt;Aplikace se ukončí.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se vytvořit COM objekt VirtualBoxu.&lt;/p&gt;&lt;p&gt;Aplikace bude ukončena&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nepodařilo se načíst nastavení globálního GUI.&lt;/p&gt;&lt;p&gt;Aplikace bude ukončena.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nepodařilo se uložit nastavení globálního GUI.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to set global VirtualBox properties.</source>
-        <translation>Nepodařilo se nastavit globální vlastnosti VirtualBoxu.</translation>
-    </message>
-    <message>
-        <source>Failed to access the USB subsystem.</source>
-        <translation>Nepodařil se přístup na subsystém USB.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation>Nepodařilo se vytvořit nový virtuální počítač.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se vytvořit nový virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se aplikovat nastavení na virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se uložit nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se načíst nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se spustit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se pozastavit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se obnovit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se uložit stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se vytvořit snímek virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se zastavit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se odstranit virtuální počítač &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se zahodit uložený stav počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se zahodit snímek &lt;b&gt;%1&lt;/b&gt; virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se zahodit aktuální stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se zahodit aktuální snímek a stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Žádný virtuální počítač &lt;b&gt;%1&lt;/b&gt; neexistuje.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jste si jistí, že chcete natrvalo smazat virtuální počítač &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;b&gt;Tuto operaci nelze vrátit.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jste si jistí, že chcete odregistrovat nedostupný virtuální počítač &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Poté nebudete schopní jej znovu zaregistrovat z GUI.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jste si jistí, že chcete zahodit uložený stav virtuálního počítače &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Tato operace je podobná restartovaní nebo vypnutí počítače bez řadného ukončení hostovaného OS.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Uvolnění tohoto obrazu média jej odpojí od následujících virtuálních počítačů: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;b&gt;Pokračovat?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Obraz &lt;b&gt;%1&lt;/b&gt; již existuje. Nemůžete vytvořit nový virtuální pevný disk který používá tento soubor, protože by mohl již být použit jiným virtuálním pevným diskem-&lt;/p&gt;&lt;p&gt;Zadejte prosím jiný název obrazu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Chcete smazat obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ne&lt;/b&gt;, bude virtuální pevný disk odhlášen a odstraněn ze seznamu, ale obraz bude ponechán na vašem fyzickém disku.&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ano&lt;/b&gt;, bude obraz po odhlášení trvale smazán. Tuto operaci nelze vrátit.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se smazat obraz virtuálního pevného disku &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Chcete odstranit (odhlásit) viruální pevný disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">Nepodařilo se vytvořit obraz virtuálního pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se připojit obraz pevného disku s UUID %1 ke slotu zařízení %2 ovladače %3 počítače &lt;b&gt;%4&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se odpojit obraz pevného disku ze slotu zařízení %1 ovladače %2 počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">pevný disk</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <translation type="obsolete">CD/DVD obraz</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <translation type="obsolete">obraz diskety</translation>
-    </message>
-    <message>
-        <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Nepodařilo se přihlásit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Nepodařilo se odhlásit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new session.</source>
-        <translation>Nepodařilo se vytvořit nové sezení.</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for a virtual machine with UUID &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se otevřít sezení k virtuálnímu počítači s UUID &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se otevřít sezení k virtuálnímu počítači &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
-        <translation type="obsolete">Nepodařilo se získat stav přistupnosti media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Některá přihlášená média mohou být nedostupná.</translation>
-    </message>
-    <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se vytvořit hostitelské síťové rozhraní &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se odstranit hostitelské síťové rozhraní &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepodařilo se připojit USB zařízení &lt;b&gt;%1&lt;/b&gt; k virtuálnímu počítači &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepodařilo se odpojit USB zařízení &lt;b&gt;%1&lt;/b&gt; od virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepodařilo se vytvořit sdílenou složku &lt;b&gt;%1&lt;/b&gt; (vede do &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) pro virtuální počítač &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepodařilo se odstranit sdílenou složku &lt;b&gt;%1&lt;/b&gt; (vede do &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) z virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;Kliknuli jste myší&lt;/b&gt; uvnitř obrazovky virtuálního počítače nebo jste stiskli &lt;b&gt;klávesu hostitele&lt;/b&gt;. Virtuální počítač tak &lt;b&gt;odchytne&lt;/b&gt; kurzor myši hostitele (pouze pokud hostovaným OS není integrace kurzoru myši právě podporována) a klávesnici, což je znepřístupní pro další běžící aplikace na hostitelském počítači.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku na spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Máte zapnutou volbu &lt;b&gt;Automaticky odchytávat klávesnici&lt;/b&gt;. Virtuální počítač tak bude automaticky &lt;b&gt;odchytávat&lt;/b&gt; události klávesnice pokaždé, když je okno VM aktivováno, a znepřístupní je pro další aplikace běžící na hostitelském počítači: když je klávesnice odchytávána, jsou všechny stisky kláves (včetně systémových jako Alt-Tab) přesměrovány do VM.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku ve spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Virtuální počítač hlásí, že hostovaný OS podporuje &lt;b&gt;integraci kurzoru myši&lt;/b&gt;. To znamená, že nepotřebujete &lt;i&gt;odchytávat&lt;/i&gt; kurzor myši, abyste ho mohli použít v hostovaném OS -- všechny akce provádněné myší nad obrazovkou virtuálního počítače jsou posílány hostovanému OS. Pokud je myš právě odchytávána, bude automaticky uvolněna.&lt;/p&gt;&lt;p&gt;Ikona myši ve stavovém panelu vypadá jako&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;,aby vás informovala, že integrace kurozru myši je podporována hostovaným OS a je právě zapnuta.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka&lt;/b&gt;: Některé aplikace se v režimu integrace kurzoru myši mohou chovat nesprávně. Režim můžete kdykoliv vypnout pro aktuální sezení (nebo znovu zapnout) vybráním odpovídající akce z panelu s nabídkou.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuální počítač hlásí, že hostovaný OS nepodporuje &lt;b&gt;integraci kurzoru myši&lt;/b&gt; v aktuálním video režimu. Pro možnost používání myši v hostovaném OS ji (kliknutím do obrazovky VM nebo stiskem klávesy hostitele) musíte odchytávat.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuální počítač je právě v &lt;b&gt;pozastaveném&lt;/b&gt; stavu, proto nepřijímá žádné vstupy z klávesnice nebo myši. Pokud chcete pokračovat s prací ve virtuálním počítači, musíte ji obnovit vybráním odpovídající akce z panelu nabídek.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt; pro otevření okna Správce virtuálních disků a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude nyní přepnuto do režimu &lt;b&gt;celá obrazovka&lt;/b&gt;. Můžete se vrátit zpět do režimu okna stiskem &lt;b&gt;%1&lt;/b&gt;. &lt;i&gt;Hostitelská&lt;/i&gt; klávesa je momentálně nastavena na &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze spustit VirtualBox v režimu &lt;i&gt;Výběr VM&lt;/i&gt; kvůli místním omezením.&lt;/p&gt;&lt;p&gt;Aplikace bude nyní ukončena.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open appliance.</source>
-        <translation>Nepodařilo se otevřít applianci.</translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se otevřít/interpretovat applianci &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se importovat applianci &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create appliance.</source>
-        <translation>Nepodařilo se vytvořit applianci.</translation>
-    </message>
-    <message>
-        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se připravit applianci &lt;b&gt;%1&lt;/b&gt; pro export.</translation>
-    </message>
-    <message>
-        <source>Failed to create an appliance.</source>
-        <translation>Vytvoření appliance selhalo.</translation>
-    </message>
-    <message>
-        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se exportovat applianci &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Kritická chyba&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Nekritická chyba&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Varování&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;ID chyby: &lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation>Závažnost: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Při běhu virtuálního počítače se vyskytla kritická chyba! Virtuální počítač bude vypnut. Doporučuje se použít schránku pro zkopírování následující chybové zprávy pro pozdější prozkoumání:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vyskytla se chyba při běhu virtuálního počítače! Podrobnosti o chybě jsou zobrazeny níže. Můžete se pokusit opravit popsanou chybu a obnovit běh virtuálního počítače.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Běh virtuálního počítače může skončit chybovým stavem popsaným níže. Můžete tuto zprávu ignorovat, ale doporučuje se podniknout příslušné kroky, aby tato chyba nenastala.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation>Návratový&amp;nbsp;kód: </translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation>Komponenta: </translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation>Rozhraní: </translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation>Volaný: </translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation>Volaný&amp;nbsp;RC: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze najít jazykový soubor pro jazyk &lt;b&gt;%1&lt;/b&gt; ve složce &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jazyk bude dočasně nastaven na výchozí jazyk systému. Přejděte, prosím, do &lt;b&gt;Nastavení&lt;/b&gt;, které najdete v menu &lt;b&gt;Soubor&lt;/b&gt; hlavního okna VirtualBoxu, a vyberte existující jazyk na stránce &lt;b&gt;Jazyk&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze načíst jazykový soubor&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Jazyk bude dočasně nastaven na angličtinu (vestavěnou). Přejděte, prosím, do &lt;b&gt;Nastavení&lt;/b&gt;, které najdete v menu &lt;b&gt;Soubor&lt;/b&gt; hlavního okna VirtualBoxu, a vyberte existující jazyk na stránce &lt;b&gt;Jazyk&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Přídavky pro hosta nainstalované v hostovaném OS jsou příliš staré: nainstalovaná verze je %1, očekávaná verze je %2. Některé funkce vyžadující Přídavky pro hosta (integrace myši, automatickou změnu velikosti hostované obrazovky) pravděpodobně nebudou správně fungovat.&lt;/p&gt;&lt;p&gt;Prosím aktualizujte Přídavky pro hosta na aktuální verzi výběrem &lt;b&gt;Instalovat Přídavky pro hosta&lt;/b&gt; z nabídky &lt;b&gt;Zařízení&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Přídavky pro hosta nainstalované v hostovaném OS jsou zastaralé: nainstalovaná verze je %1, očekávaná verze je %2. Některé funkce vyžadující Přídavky pro hosta (integrace myši, automatická změna velikosti hostované obrazovky) nemusí fungovat jak byste čekali.&lt;/p&gt;&lt;p&gt;Je doporučována aktualizace Přídavků pro hosta na aktuální verzi  výběrem &lt;b&gt;Instalovat Přídavky pro hosta&lt;/b&gt; z nabídky &lt;b&gt;Zařízení&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Přídavky pro hosta nainstalované v hostovaném OS jsou příliš aktuální: nainstalovaná verze je %1, očekávaná verze je %2. Některé funkce které vyžadují Přídavky pro hosta (integrace myši, automatická změna velikosti hostované obrazovky) pravděpodobně nebudou správně fungovat.&lt;/p&gt;&lt;p&gt;Prosím aktualizujte Přídavky pro hosta na aktuální verzi výběrem &lt;b&gt;Instalovat Přídavky pro hosta&lt;/b&gt; z nabídky &lt;b&gt;Zařízení&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Nepodařilo se změnit cestu ke složce se snímky virtuálního počítače &lt;b&gt;%1&lt;b&gt; na &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nepodařilo se přejít do bezešvého módu kvůli nedostatečné video paměti hosta&lt;/p&gt;&lt;p&gt;Nastavte virtuální počítač, aby měl alespoň &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se odstranit sdílený sdresář &lt;b&gt;%1&lt;/b&gt; (ukazující do &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) z virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Prosím zavřete všechny programy v hostovaném OS, které by jej mohly používat, a zkuste to znovu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze najít obraz CD Přídavků pro hosta VirtualBoxu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nebo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete stáhnout tento obraz CD z internetu?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se stáhnout obraz CD Přídavků pro hosta VirtualBoxu z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jste si jistí, že chcete stáhnout obraz CD Přídavků pro hosta VirtualBoxu z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (velikost %3 bajtů)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Obraz CD Přídavků pro hosta VirtualBoxu byl úspěšně stažen z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; a uložen lokálně jako &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete zaregistrovat tento obraz CD a připojit ho do virtuální CD/DVD mechaniky?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude přepnuto do režimu &lt;b&gt;celé obrazovky&lt;/b&gt;. Můžete jít zpět do režimu okna stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v režimu celé obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude přepnuto do &lt;b&gt;bezešvého&lt;/b&gt; režimu. Můžete jít zpět do režimu okna stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v režimu celé obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Okno virtuálního počítače je optimalizováno pro použití v &lt;b&gt;%1&amp;nbsp;bitové&lt;/b&gt; barevné hloubce, ale barevná kvalita virtuální obrazovky je právě nastavena na &lt;b&gt;%2&amp;nbsp;bitů&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Prosím otevřete dialog vlastností obrazovky hostovaného OS a vyberte &lt;b&gt;%3&amp;nbsp;bitový&lt;/b&gt; barevný režim, pokud je dostupný, pro nejlepší možný výkon virtuálního video subsytému.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka&lt;/b&gt;. Některé operační systémy, jako OS/2, mohou skutečně pracovat v 32&amp;nbsp;bitovém režimu, ale hlasí ho jako 24&amp;nbsp;bitový (16 milionů barev). Můžete vybírat různé kvality barev a vidět, jestli se tato zpráva zobrazí, nebo můžete prostě zprávu zakázat, pokud jste si jistí, že požadovaná kvalita barev (%4&amp;nbsp;bitů) není v daném hostovaném OS dostupná.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Při běhu virtuálního počítače se vyskytla kritická chyba a provádění počítače bylo zastaveno.&lt;/p&gt;&lt;p&gt;Pro pomoc se prosím podívejte do sekce Community na &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; nebo na smlouvu o podpoře. Prosím poskytněte obsah log souboru &lt;tt&gt;VBox.log&lt;/tt&gt; a obrázek &lt;tt&gt;VBox.png&lt;/tt&gt;, který najdete v adresáři &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, společně s popisem, co jste dělali, když chyba nastala. Předchozí soubory také zobrazíte vybráním &lt;b&gt;Zobrazit logy&lt;/b&gt; z menu &lt;b&gt;Počitač&lt;/b&gt; hlavního okna VirtualBoxu.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt;, pokud chcete vypnout počítač, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt;, pokud jej chcete ponechat v současném stavu pro debugování. Upozorňujeme, že debugování vyžaduje zvláštní znalosti a nástroje, takže doporučujeme stisknout &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepřipojili jste pevný disk k novému virtuálnímu počítači. Počítač nebude schopen bootovat, dokud nepřipojíte pevný disk s hostovaným operačním systémem nebo nějaké jiné bootovatelné médium pomocí dialogu nastavení počítače nebo Průvodce prvním spuštěním.&lt;/p&gt;&lt;p&gt;Chcete pokračovat?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Nepodařilo se nalézt licenční soubor v &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>Nepodařilo se otevřít licenční soubor &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Zkontrolujte oprávnění souboru.</translation>
-    </message>
-    <message>
-        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se poslat události stisku ACPI vypínacího tlačítka počítači &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nepodařilo se připojit k online registrační službě VirtualBoxu.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gratulujeme! Úspěšně jste se zaregistrovali jako uživatel VirtualBoxu.&lt;/p&gt;&lt;p&gt;Děkujeme vám že jste si našli čas na vyplnění registračního formuláře!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nepodařilo se zaregistrovat produkt VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nelze uložit globální nastavení VirtualBoxu do &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze načíst globální konfiguraci pro GUI ze složky &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Aplikace bude nyní ukončena.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze uložit globální nastavení GUI VirtualBoxu do &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;Aplikace bude nyní ukončena.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Nelze uložit nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt; do &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Nelze načíst nastavení virtuálního počítače &lt;b&gt;%1&lt;/b&gt; ze složky &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Smazat</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Odregistrovat</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state</comment>
-        <translation>Zrušit</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>detach image</comment>
-        <translation type="obsolete">Pokračovat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Chcete smazat obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Smazat&lt;/b&gt;, bude obraz po odhlášení trvale smazán. Tuto operaci nelze vrátit.&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Odregistrovat&lt;/b&gt;, bude virtuální pevný disk odstraněn ze seznamu, ale obraz bude ponechán na vašem fyzickém disku.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Smazat</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Odregistrovat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;K tomuto virtuálnímu počítači jsou připojeny SATA disky. Pokud zakážete SATA řadič, všechny tyto disky budou odpojeny.&lt;/p&gt;&lt;p&gt;Opravdu chcete zakázat SATA řadič?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Disable</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Zakázat</translation>
-    </message>
-    <message>
-        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se připojit obraz pevného disku s UUID %1 ke slotu zařízení %2 na kanále %3 sběrnice %4 počítače &lt;b&gt;%5&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se odpojit obraz pevného disku ze slotu zařízení %1 oma kanále %2 sběrnice %3 počítače &lt;b&gt;%4&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions</comment>
-        <translation>Stáhnout</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions</comment>
-        <translation>Připojit</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;Host klávesa je nyní nadefinována na &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Capture</source>
-        <comment>do input capture</comment>
-        <translation>Zachytávat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;Zkontrolovat&lt;/b&gt; pro otevření okna Správce virtuálních disků a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box</comment>
-        <translation>Zkontrolovat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Následující soubory s nastavením pro VirttualBox byly automaticky převedeny na nový formát souborů. &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Výsledky konverze nebyly ale zatím uloženy na disk. Prosím stiskněte:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Uložit&lt;/b&gt; pro uložení všech automaticky převedených souborů (v budoucnu nebude možné použít tyto soubory s nastaveními pro starší verze aplikace VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Zálohovat&lt;/b&gt; pro vytvoření založní kopie souborů s nastavením ve starším formátu před uložením do formátu nového;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Zrušit&lt;/b&gt; pro neuložení automaticky převedených souborů.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Poznámka: pokud zvolíte &lt;b&gt;Zrušit&lt;/b&gt; budou při změně konfigurace nebo při spuštění virtuálního počítače automaticky převedené soubory s nastavením implicitně uloženy v novém formátu, ale &lt;b&gt;nebude&lt;/b&gt; vytvořena záložní kopie.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Uložit</translation>
-    </message>
-    <message>
-        <source>&amp;Backup</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Zálohovat</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">Zrušit</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen</comment>
-        <translation>Přepnout</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless</comment>
-        <translation>Přepnout</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Opravdu chcete resetovat virtuální počítač?&lt;/p&gt;&lt;p&gt;Pokud je virtuální počítač resetován, neuložená data z běžících aplikací budou ztracena.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine</comment>
-        <translation>Resetovat</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached</comment>
-        <translation>Pokračovat</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached</comment>
-        <translation>Přejít zpět</translation>
-    </message>
-    <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="obsolete">Selhalo kopírování souboru &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; na &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Pro připojení není dostupný žádný volný pevný disk. &lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vytvořit&lt;/b&gt; pro spuštění průvodce &lt;i&gt;Nový virtuální disk&lt;/i&gt; nebo stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro spuštění &lt;i&gt;Správce virtuálních disků&lt;/i&gt; a vyberte, co se provádět dále.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Vy&amp;tvořit</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Vybrat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se přejít do bezešvého módu kvůli nedostatečné video paměti hosta.&lt;/p&gt;&lt;p&gt;Nastavte virtuální počítač tak, aby měl alespoň &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se přejít do celobrazovkového režimu kvůli nedostatečné video paměti hosta.&lt;/p&gt;&lt;p&gt;Nastavte virtuální počítač tak, aby měl alespoň &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;&lt;p&gt;Stiskněte tlačítko&lt;b&gt;Ignorovat&lt;/b&gt; pro přepnutí do celoobrazovkého režimu nebo &lt;b&gt;Zrušit&lt;/b&gt;pro zrušení této oprace.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nelze získat informace o nové verzi z důvodu následující síťové chyby: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Máte nainstalovanou aktuální verzi VirtualBoxu. Prosím proveďte kontrolu verze později.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Kliknuli jste myší&lt;/b&gt; uvnitř obrazovky virtuálního počítače nebo jste stiskli &lt;b&gt;klávesu hostitele&lt;/b&gt;. Virtuální počítač tak &lt;b&gt;odchytne&lt;/b&gt; kurzor myši hostitele (pouze pokud hostovaným OS není integrace kurzoru myši právě podporována) a klávesnici, což je znepřístupní pro další běžící aplikace na hostitelském počítači.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku na spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;.&amp;nbsp; Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Máte zapnutou volbu &lt;b&gt;Automaticky odchytávat klávesnici&lt;/b&gt;. Virtuální počítač tak bude automaticky &lt;b&gt;odchytávat&lt;/b&gt; události klávesnice pokaždé, když je okno aktivováno, a znepřístupní je pro další aplikace běžící na hostitelském počítači: když je klávesnice odchytávána, jsou všechny stisky kláves (včetně systémových jako Alt-Tab) přesměrovány do virtuálního počítače.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku ve spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;.&amp;nbsp; Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuální počítač hlásí, že hostovaný OS podporuje &lt;b&gt;integraci kurzoru myši&lt;/b&gt;. To znamená, že nepotřebujete &lt;i&gt;odchytávat&lt;/i&gt; kurzor myši, abyste ho mohli použít v hostovaném OS -- všechny akce provádněné myší nad obrazovkou virtuálního počítače jsou posílány hostovanému OS. Pokud je myš právě odchytávána, bude automaticky uvolněna.&lt;/p&gt;&lt;p&gt;Ikona myši ve stavovém panelu vypadá jako&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;,aby vás informovala, že integrace kurzoru myši je podporována hostovaným OS a je právě zapnuta.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka&lt;/b&gt;: Některé aplikace se v režimu integrace kurzoru myši mohou chovat nesprávně. Režim můžete kdykoliv vypnout pro aktuální sezení (nebo znovu zapnout) vybráním odpovídající akce z panelu s nabídkou.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude přepnuto do režimu &lt;b&gt;celé obrazovky&lt;/b&gt;. Zpět do režimu okna přejdete stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v režimu celé obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Okno virtuálního počítače bude přepnuto do &lt;b&gt;bezešvého&lt;/b&gt; režimu. Můžete jít zpět do režimu okna stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v režimu celé obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt; {1&lt;?} {2&lt;?} {1&lt; or 2&lt;?}</translation>
-    </message>
-    <message>
-        <source>&amp;Contents...</source>
-        <translation>&amp;Obsah...</translation>
-    </message>
-    <message>
-        <source>Show the online help contents</source>
-        <translation>Zobrazí obsah online nápovědy</translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation>Webová stránka &amp;VirtualBoxu...</translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Otevře okno prohlížeče a stránky aplikace VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Resetovat všechna varování</translation>
-    </message>
-    <message>
-        <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>Všechna potlačená varování se zobrazí znovu</translation>
-    </message>
-    <message>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation>R&amp;egistrovat VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Open VirtualBox registration form</source>
-        <translation>Otevře registrační formulář pro VirtualBox</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation>Z&amp;kontrolovat aktualizace...</translation>
-    </message>
-    <message>
-        <source>Check for a new VirtualBox version</source>
-        <translation>Provede kontrolu nové verze VirtualBoxu</translation>
-    </message>
-    <message>
-        <source>&amp;About VirtualBox...</source>
-        <translation>O &amp;aplikaci VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Show a dialog with product information</source>
-        <translation>Zobrazí dialog s informacemi pro produktu</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Byla vydána nová verze aplikace VirtualBox! Na stránce &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; je verze &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tuto verzi si můžete stáhnout přímo zde: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jste si jistí, že chcete uvolnit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Bude odpojen od tohoto virtuálního počítače: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">Název souboru &lt;b&gt;%1&lt;/b&gt; již existuje. Opravdu jej chcete nahradit?&lt;br/&gt;&lt;br/&gt;Soubor již existuje v &quot;%2&quot;. Nahrazením se přepíše jeho obsah.</translation>
-    </message>
-    <message>
-        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>Následující soubor již existuje:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Opravdu jej chcete nahradit? Nahrazením soubor přepíšete jeho obsah.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="obsolete">Nepodařilo se odebrat soubor &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Pokuste se prosím o jeho odebrání sami a zkuste to znovu.</translation>
-    </message>
-    <message>
-        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation>Používáte testovací verzi aplikace VirtualBox. Tato verze není určena pro produkční použití.</translation>
-    </message>
-    <message>
-        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="obsolete">Nelze použít USB na hostovaném systému i přesto, protože není dostupný USB souborový systém (usbfs) nebo nejsou dostupné služby DBus a hal. Pokud chcete používat USB zařízené v hostovaném systému, musíte to opravit a restartovat VirtualBox.</translation>
-    </message>
-    <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation>Pokoušíte se vypnout hostovaný systém pomocí ACPI tlačítka. To ale není možné, protože host nepoužívá ACPI sybsystém.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hardwarová akcelerace VT-x/AMD-V byla povolena, ale nefunguje. Váš 64bitový host nebude schopen detekovan 64bitové CPU a nespustí se.&lt;/p&gt;&lt;p&gt;Prosím ujistěte se, že jste správně povolili VT-x/AMD-V v BIOSu na vašem hostitelském počítači.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Close VM</source>
-        <translation>Zavřít virtuální počítač</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Pokračovat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Opravdu chcete smazat vybraný snímek a uložený stav?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="obsolete">Smazat</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Zrušit</translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium</comment>
-        <translation>Uvolnit</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Opravdu chcete odstranit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ze seznamu známých médií?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>Poznámka: tento pevný disk je nedostupný, takže úložiště nelze nyní smazat.</translation>
-    </message>
-    <message>
-        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>Následující dialog umožňuje zvolit, zda bude úložiště smazáno z disku nebo ponecháno pro pozdější použití.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Poznámka: Médium nebude smazáno a proto bude možné jej později opět přidat do seznamu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium</comment>
-        <translation>Odstranit</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Úložiště pevného disku v &lt;b&gt;%1&lt;/b&gt; již existuje. Nemůžete vytvořit nový virtuální pevný disk, který používá toto umístění, protože by mohl již být použit jiným virtuálním pevným diskem-&lt;/p&gt;&lt;p&gt;Zadejte prosím jiné umístění.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Chcete smazat úložiště pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Smazat&lt;/b&gt;, bude obraz po odhlášení trvale smazán. Tuto operaci nelze vrátit.&lt;/p&gt;&lt;p&gt;Pokud zvolíte &lt;b&gt;Ponechat&lt;/b&gt;, bude virtuální pevný disk odstraněn ze seznamu, ale obraz bude ponechán na vašem fyzickém disku a lze jej opět později do seznamu přidat.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage</comment>
-        <translation>Smazat</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage</comment>
-        <translation>Ponechat</translation>
-    </message>
-    <message>
-        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepodařilo se smazat obraz virtuálního pevného disku &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jsou zde pevné disky připojené k portům přídavného řadiče. Pokud tento řadič zakážete, budou všechny tyto disky automaticky odpojeny.&lt;/p&gt;&lt;p&gt;Opravdu chcete zakázat přídavný řadič?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jsou zde pevné disky připojené k portům přídavného řadiče. Pokud tento řadič změníte, budou všechny tyto disky automaticky odpojeny.&lt;/p&gt;&lt;p&gt;Opravdu chcete změnit přídavný řadič?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Change</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Změnit</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Pro připojení není dostupný žádný volný pevný disk. &lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vytvořit&lt;/b&gt; pro spuštění průvodce &lt;i&gt;Nový virtuální disk&lt;/i&gt; nebo stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro spuštění &lt;i&gt;Správce virtuálních médií&lt;/i&gt; a vyberte, co se má provádět dále.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Nepodařilo se vytvořit obraz virtuálního pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se připojit obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ke slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepodařilo se odpojit obraz pevného disku &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ze slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Selhalo připojení %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; k počítači &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Selhalo odpojení %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; od počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Nelze otevřít %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Nelze zavřít %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Nelze získat status dostupnosti pro médium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Chcete odstranit vybrané hostitelské síťové rozhraní &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka:&lt;/b&gt; Toto rozhraní může být používáno jednou nebo více síťovými kartami tohoto nebo jiného virtuálního počítače. Po jeho odstranění nebudou tyto karty fungovat, dokud neopravíte jejich nastavení vybráním jiného rozhraní nebo jiného typu připojení karty.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the host-only network interface.</source>
-        <translation>Vytvoření sítě pouze s hostem selhalo.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se připojit k online registrační službě VirtualBoxu kvůli následující chybě: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze získat informace o nové verzi z důvodu následující chyby: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;Zkontrolovat&lt;/b&gt; pro otevření okna Správce virtuálních médií a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vaše existující nastavení pro VirtualBox bylo automaticky převedeno ze starého formátu na nový, který používá nová verze aplikace VirtualBox.&lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;OK&lt;/b&gt; pro spuštění aplikace VirtualBox nebo tlačítko &lt;b&gt;Ukončit&lt;/b&gt; pro ukončení aplikace bez provedení změn.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vaše stávající nastavení pro aplikaci VirtualBox bylo automaticky převedeno ze starého formátu na nový.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt; pro spuštění VirtualBoxu nebo tlačítko &lt;b&gt;Více&lt;/b&gt; pokud potřebujete více informací o tom, které soubory byly převedeny.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;Ukončit&lt;/b&gt; pro ukončení aplikace VirtualBox bez uložení výsledků konverze na disk.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;More</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">Ví&amp;ce</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">U&amp;končit</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Odstranění této sítě s hostitelem dojde také k odstranění rozhraní, na kterém je síť nastavena. Opravdu chcete odebrat rozhraní pro síť pouze s hostitelem &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka:&lt;/b&gt;toto rozhraní může být použito v jednom nebo i více virtuálních rozhraních patřících virtuálním počítačům. Po odebrání nebudou tato síťová rozhraní použitelná do chvíle, než provedete jejich správné nastavení buď volbou jiného názvu rozhraní nebo jiného typu síťového rozhraní.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Následující soubory s nastavením pro VirtualBox byly automaticky převedeny na nový formát souborů verze &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Výsledky konverze nebyly ale zatím uloženy na disk. Prosím stiskněte:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Zálohovat&lt;/b&gt; pro uložení všech automaticky převedených souborů ve starém formátu;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Přepsat&lt;/b&gt; pro uložení všech automaticky převedených souborů bez vytvoření záložní kopie (v budoucnu nebude možné použít tyto soubory s nastaveními pro starší verze aplikace VirtualBox);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Je doporučeno vždy zvolit &lt;b&gt;Zálohovat&lt;/b&gt; protože v případě potřeby bude možné se vrátit k předchozí verzi VirtualBoxu bez ztráty aktuálního nastavení. Více informací o přechodu na nižší verzi najdete v manuálu k VirtualBoxu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Ukončit&lt;/b&gt; pro ukončení aplikace VirtualBox bez uložení výsledků konverze na disk.&lt;/li&gt;</translation>
-    </message>
-    <message>
-        <source>O&amp;verwrite</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Přepsat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Při běhu virtuálního počítače se vyskytla kritická chyba a provádění počítače bylo zastaveno.&lt;/p&gt;&lt;p&gt;Pro pomoc se prosím podívejte do sekce Community na &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; nebo na smlouvu o podpoře. Prosím poskytněte obsah log souboru &lt;tt&gt;VBox.log&lt;/tt&gt; a obrázek &lt;tt&gt;VBox.png&lt;/tt&gt;, který najdete v adresáři &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, společně s popisem, co jste dělali, když chyba nastala. Předchozí soubory také zobrazíte vybráním &lt;b&gt;Zobrazit logy&lt;/b&gt; z menu &lt;b&gt;Počitač&lt;/b&gt; hlavního okna VirtualBoxu.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt;, pokud chcete vypnout počítač, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt;, pokud jej chcete ponechat v současném stavu pro debugování. Upozorňujeme, že debugování vyžaduje zvláštní znalosti a nástroje, takže doporučujeme stisknout &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">pevný disk</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">CD/DVD obraz</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">obraz diskety</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>Následující soubor již existuje:&lt;b&gt;%1&lt;b&gt;. Opravdu jej chcete nahradit?&lt;br /&gt;&lt;br /&gt; Nahrazením souboru přepíšete jeho obsah.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hardwarová akcelerace VT-x/AMD-V byla povolena, ale nefunguje. Některé virtuální počítače (např. OS/2 a QNX) tuto volbu vyžadují.&lt;/p&gt;&lt;p&gt;Prosím ujistěte se, že jste správně povolili VT-x/AMD-V v BIOSu na vašem hostitelském počítači.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Zadána neplatná e-mailová adresa nebo heslo.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se zaregistrovat produkt VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation>Selhala kontrola souborů.</translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation>Selhalo odstranění souboru.</translation>
-    </message>
-    <message>
-        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation>Je patrné, že máte souborový systém USBFS připojen na adresář /sys/bus/usb/drivers. Důrazně doporučujeme to změnit, protože jde o neplatné nastavení systému, které může způsobovat selhání USB zařízení nečekanými způsoby.</translation>
-    </message>
-    <message>
-        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation>Máte spuštěnu EXPERIMENTÁLNÍ verzi aplikace VirtualBox. Tato verze není vhodná pro produkční použití.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Opravdu chcete obnovit snímek &lt;b&gt;%1&lt;/b&gt;? Tím přijdete o aktuální stav počítače, který už potom nelze obnovit.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>Obnovit</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Smazáním snímku budou také odstraněny informace o stavu a uložená data na discích, která byla použita ve snímku budou spojena do jednoho souboru. To může být zdlouhavý proces a informace o snímku již potom nelze obnovit.&lt;/p&gt;&lt;p&gt;Opravdu chcete smazat vybraný snímek &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Smazat</translation>
-    </message>
-    <message>
-        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepodařilo se obnovit snímek &lt;b&gt;%1&lt;/b&gt; virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepodařilo se smazat snímek &lt;b&gt;%1&lt;/b&gt; virtuálního počítače &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Pro připojení není dostupný žádný volný pevný disk. &lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vytvořit&lt;/b&gt; pro spuštění průvodce &lt;i&gt;Nový virtuální disk&lt;/i&gt; nebo stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro spuštění &lt;i&gt;Správce virtuálních disků&lt;/i&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>medium</comment>
-        <translation type="obsolete">Vy&amp;tvořit</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <comment>medium</comment>
-        <translation type="obsolete">&amp;Vybrat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Pro připojení není dostupný žádný volný pevný disk. &lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;Vybrat&lt;/b&gt; pro spuštění &lt;i&gt;Správce virtuálních disků&lt;/i&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Selhalo připojení %1 ke slotu &lt;i&gt;%2&lt;/i&gt; virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Selhalo odpojení %1 ze slotu &lt;i&gt;%2&lt;/i&gt; virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nelze připojit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; k počítači &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source> Would you like to force mounting of this medium?</source>
-        <translation> Chcete vynutit připojení tohoto média?</translation>
-    </message>
-    <message>
-        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nelze odpojit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; od počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source> Would you like to force unmounting of this medium?</source>
-        <translation> Chcete vynutit odpojení tohoto média?</translation>
-    </message>
-    <message>
-        <source>Force Unmount</source>
-        <translation>Vynutit odpojení</translation>
-    </message>
-    <message>
-        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation type="obsolete">Selhalo vysunutí disku z virtuálního počítače. Disk může být být zablokován hostovaným operačním systémem. Zkontrolujte to prosím a zkuste znovu.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se připojit obraz CD disku s instalací přídavků pro aplikaci VirtualBox do virtuálního počítače &lt;b&gt;%1&lt;/b&gt; protože nemá CD/DVD-ROM zařízení. Přidejte prosím zařízení na záložce uložiště ve vlastnostech virtuálního počítače.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation>U&amp;končit</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Následující nastavení pro aplikaci VirtualBox bylo automaticky převedeno ze starého formátu na nový, který používá nová verze.&lt;/p&gt;&lt;p&gt;Stiskněte tlačítko &lt;b&gt;OK&lt;/b&gt; pro spuštění aplikace VirtualBox nebo tlačítko &lt;b&gt;Ukončit&lt;/b&gt; pro ukončení aplikace bez provedení změn.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...</comment>
-        <translation>pevný disk</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation></translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...</comment>
-        <translation>CD/DVD obraz</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>disketa</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...</comment>
-        <translation>obraz diskety</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">pevný disk</translation>
-    </message>
-    <message>
-        <source>CD/DVD device</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">CD/DVD zařízení</translation>
-    </message>
-    <message>
-        <source>floppy device</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">disketová mechanika</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Opravdu chcete smazat CD/DVD-ROM zařízení?&lt;/p&gt;&lt;p&gt;Bez něj nebudete moci připojit žádný CD nebo DVD obraz ani nainstalovat přídavky pro hosta!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation>&amp;Odstranit</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation>&lt;p&gt;Hardwarová akcelerace VT-x/AMD-V není na vašem systému dostupná. Hostované 64bitové počítače nebudou schopni detekovat 64bitové CPU a nepodaří se je spustit.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hardwarová akcelerace VT-x/AMD-V není na vašem systému dostupná. Některé hostované operační systémy (např. OS/2 a QNX) vyžadují tuto vlastnosti a nepodaří se je proto spustit.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Smazání snímku %1 vyžaduje dočasně více diskového prostoru. V nejhorším případě velikost obrazu %2 naroste až na %3, ale na souborovém systému je pouze %4 volného místa.&lt;/p&gt;&lt;p&gt;Pokud během operace dojde místo na disku, může to vést k poškození obrazu a nastavení pro virtuální počítač. &lt;/p&gt;&lt;p&gt;Můžete pokračovat v mazání na vlastní riziko.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze změnit obrazovku hostovaného počítače kvůli nedostatku video paměti.&lt;/p&gt;&lt;p&gt;Měli by jste pro virtuální počítač nastavit nejméně &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze změnit obrazovku hostovaného počítače kvůli nedostatku video paměti.&lt;/p&gt;&lt;p&gt;Měli by jste pro virtuální počítač nastavit nejméně &lt;b&gt;%1&lt;/b&gt; video paměti.&lt;/p&gt;Stisknutím tlačítka &lt;b&gt;Ignorovat&lt;/b&gt; přepnete do obrazovkového režimu nebo tlačítkem &lt;b&gt;Zrušit&lt;/b&gt; operaci zrušíte.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze přepnout obrazovku hostovaného počítače do celoobrazovkového režimu. Ve virtuálním počítači máte nastaveno více virtuálních obrazovek než má fyzicky hostitelský počítač.&lt;/p&gt;&lt;p&gt;Buď zmenšete počet virtuálních obrazovek v nastavení virtuálního počítače nebo k hostitelskému počítači připojte další obrazovku.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze přepnout obrazovku hostovaného počítače do bezešvého režimu. Ve virtuálním počítači máte nastaveno více virtuálních obrazovek než má fyzicky hostitelský počítač.&lt;/p&gt;&lt;p&gt;Buď zmenšete počet virtuálních obrazovek v nastavení virtuálního počítače nebo k hostitelskému počítači připojte další obrazovku.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze najít uživatelský manuál pro VirtualBox  &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete jej stáhnout z internetu?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Opravdu chcete stáhnout uživatelský manuál pro VirtualBox z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (velikost %3 bytů)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stažení uživatelského manuálu pro VirtualBox z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; selhalo.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Uživatelský manuál pro VirtualBox byl úspěšně stažen z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; a uložen lokálně jako &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Uživatelský manuál pro VirtualBox byl úspěšně stažen z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; ale nemohl být uložen lokálně jako &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;Zvolte prosím pro tento soubor jiné umístění.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open virtual machine located in %1.</source>
-        <translation>Selhalo otevření virtuálního počítače umístěného v %1.</translation>
-    </message>
-    <message>
-        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation>Selhalo přidání virtuálního počítače &lt;b&gt;%1&lt;/b&gt; umístěného v adresáři &lt;i&gt;%2&lt;/i&gt; protože již existuje.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete all files</source>
-        <translation>Smazat všechny soubory</translation>
-    </message>
-    <message>
-        <source>Remove only</source>
-        <translation>Pouze odstranit</translation>
-    </message>
-    <message>
-        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Odstranit</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create &amp;new disk</source>
-        <comment>add attachment routine</comment>
-        <translation>Vyvořit &amp;nový disk</translation>
-    </message>
-    <message>
-        <source>&amp;Choose existing disk</source>
-        <comment>add attachment routine</comment>
-        <translation>&amp;Vybrat existující disk</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Choose disk</source>
-        <comment>add attachment routine</comment>
-        <translation>Vy&amp;brat disk</translation>
-    </message>
-    <message>
-        <source>Leave &amp;empty</source>
-        <comment>add attachment routine</comment>
-        <translation>Nechat &amp;prázdné</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Nepodařilo se  &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>&amp;Odstranit</translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished">Omlouváme se, vyskytla se obecná chyba.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepodařilo se připojit obraz pevného disku (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) ke slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepodařilo se připojit CD/DVD zařízení (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) ke slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepodařilo se připojit disketovou mechaniku (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) ke slotu zařízení &lt;i&gt;%2&lt;/i&gt; počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>scale</comment>
-        <translation type="unfinished">Přepnout</translation>
-    </message>
-    <message>
-        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Install</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upgrade</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Downgrade</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Reinstall</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep changes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a snapshot of the current machine state</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
@@ -10943,7 +11024,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Nápověda</translation>
+        <translation type="obsolete">&amp;Nápověda</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -11572,29 +11653,6 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
             <numerusform>Varování: Chystáte se sejmout snímek z virtuálního počítače, který má připojeno %n nesmazatelných obrazů. Dokud budete pracovat s tímto snímkem nebude možné nesmazatelné disky obnovit aby jste nepřišli o data.</numerusform>
             <numerusform>Varování: Chystáte se sejmout snímek z virtuálního počítače, který má připojeno %n nesmazatelných obrazů. Dokud budete pracovat s tímto snímkem nebude možné nesmazatelné disky obnovit aby jste nepřišli o data.</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation>Upravit text</translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation>&amp;Nahradit...</translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation>Nahradí aktuální text obsahem vybraného souboru.</translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation>Text (*.txt);;Vše (*.*)</translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation>Vyberte soubor pro načtení...</translation>
     </message>
 </context>
 <context>

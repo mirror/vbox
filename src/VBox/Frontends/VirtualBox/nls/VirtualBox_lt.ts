@@ -158,6 +158,14 @@
         <source>&amp;Details (%1 of %2)</source>
         <translation>&amp;Detalės (%1 iš %2)</translation>
     </message>
+    <message>
+        <source>Copy all errors to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Kopijuoti</translation>
+    </message>
 </context>
 <context>
     <name>QIWidgetValidator</name>
@@ -511,6 +519,138 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation>%1 virtuali sistema</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Pavadinimas</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation>Produktas</translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation>Produkto URL adresas</translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation>Gamintojas</translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation>Gamintojo URL adresas</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>Versija</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation>Aprašas</translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation>Licencija</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>Svečio OS tipas</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>Procesorius</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation>Laisvosios prieigos atmintis (RAM)</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation>Standžiojo disko valdiklis (IDE)</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation>Standžiojo disko valdiklis (SATA)</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation>Standžiojo disko valdiklis (SCSI)</translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation>DVD</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation>Diskelis</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation>Tinklo plokštė</translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation>USB valdiklis</translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation>Garso plokštė</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translation>Virtualaus disko atvaizdis</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation>Nežinomas elementas</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation>&lt;b&gt;Originali reikšmė:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation>Konfigūracija</translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation>Įspėjimai:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes
+</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation>Standžiojo disko valdiklis (SAS)</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation>Pažymėjus, visoms sukonfigūruotoms tinklo plokštėms bus priskirti nauji unikalūs MAC adresai.</translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation>&amp;Visoms tinklo plokštėms priskirti naujus MAC adresus</translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation>Įkeliama virtuali mašina...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation>Skaitoma virtuali mašina...</translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -519,6 +659,10 @@
     <message>
         <source>Clone</source>
         <translation>Klonuoti</translation>
+    </message>
+    <message>
+        <source>Linked Base for %1 and %2</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -533,7 +677,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>Pažymėjus, visoms sukonfigūruotoms tinklo plokštėms bus priskirti nauji unikalūs MAC adresai.</translation>
+        <translation type="obsolete">Pažymėjus, visoms sukonfigūruotoms tinklo plokštėms bus priskirti nauji unikalūs MAC adresai.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
@@ -547,20 +691,24 @@
         <source>%1 Clone</source>
         <translation>%1 klonas</translation>
     </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Current machine state</source>
-        <translation>Dabartinė mašinos būsena</translation>
+        <translation type="obsolete">Dabartinė mašinos būsena</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation>Dabartinė būsena ir paveldėtos būsenos</translation>
+        <translation type="obsolete">Dabartinė būsena ir paveldėtos būsenos</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation>Visos būsenos</translation>
+        <translation type="obsolete">Visos būsenos</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
@@ -568,7 +716,46 @@
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation>Pasirinkite virtualios mašinos klonuotinas dalis.</translation>
+        <translation type="obsolete">Pasirinkite virtualios mašinos klonuotinas dalis.</translation>
+    </message>
+    <message>
+        <source>Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage3</name>
+    <message>
+        <source>Current machine state</source>
+        <translation type="unfinished">Dabartinė mašinos būsena</translation>
+    </message>
+    <message>
+        <source>Current machine and all child states</source>
+        <translation type="unfinished">Dabartinė būsena ir paveldėtos būsenos</translation>
+    </message>
+    <message>
+        <source>All states</source>
+        <translation type="unfinished">Visos būsenos</translation>
+    </message>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished">Klonavimo konfigūracija</translation>
+    </message>
+    <message>
+        <source>Please choose which parts of the virtual machine should be cloned.</source>
+        <translation type="unfinished">Pasirinkite virtualios mašinos klonuotinas dalis.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
@@ -898,14 +1085,14 @@
     <name>UIDownloader</name>
     <message>
         <source>The download process has been canceled by the user.</source>
-        <translation>Parsiuntimą nutraukė naudotojas.</translation>
+        <translation type="obsolete">Parsiuntimą nutraukė naudotojas.</translation>
     </message>
 </context>
 <context>
     <name>UIDownloaderAdditions</name>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko įrašyti parsiųstos rinkmenos kaip &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nepavyko įrašyti parsiųstos rinkmenos kaip &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
@@ -1743,23 +1930,23 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="obsolete">Kairysis Lyg2</translation>
+        <translation type="unfinished">Kairysis Lyg2</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="obsolete">Dešinysis Lyg2</translation>
+        <translation type="unfinished">Dešinysis Lyg2</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="obsolete">Kairysis Vald</translation>
+        <translation type="unfinished">Kairysis Vald</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="obsolete">Dešinysis Vald</translation>
+        <translation type="unfinished">Dešinysis Vald</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="obsolete">Kairysis Alt</translation>
+        <translation type="unfinished">Kairysis Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2183,6 +2370,13 @@
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>Rodo įvairias virtualios mašinos funkcijas:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>&amp;Keisti</translation>
     </message>
 </context>
 <context>
@@ -3361,7 +3555,7 @@
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>šiai VM priskyrėte ICH9 lustų rinkinį. Ši savybė neveiktų, jei neįgalinsite IO-ACPI. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
+        <translation type="obsolete">šiai VM priskyrėte ICH9 lustų rinkinį. Ši savybė neveiktų, jei neįgalinsite IO-ACPI. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -3402,6 +3596,10 @@
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
         <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3661,25 +3859,1372 @@
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
+    <name>UIMessageCenter</name>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title
+</comment>
+        <translation type="obsolete">VirtualBox - informacija</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title
+</comment>
+        <translation type="obsolete">VirtualBox - klausimas</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title
+</comment>
+        <translation type="obsolete">VirtualBox - įspėjimas</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title
+</comment>
+        <translation type="obsolete">VirtualBox - klaida</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title
+</comment>
+        <translation type="obsolete">VirtialBox - lemtinga klaida</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag
+</comment>
+        <translation type="obsolete">Daugiau nerodyti šios žinutės</translation>
+    </message>
+    <message>
+        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
+        <translation>Nepavyko atverti &lt;tt&gt;%1&lt;/tt&gt;. Įsitikinkite, ar darbastalio aplinka tikrai gali apdoroti šio tipo URL.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyko paruošti COM arba nerastas VirtualBox COM serveris. Greičiausis VirtualBox serveris nėra paleistas arba jo nepavyko paleisti&lt;/p&gt;&lt;p&gt;Programa netrukus išsijungs.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyko sukurti VirtualBox COM objekto.&lt;/p&gt;&lt;p&gt;Programa netrukus išsijungs.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to set global VirtualBox properties.</source>
+        <translation>Nepavyko nustatyti bendrų VirtualBox savybių.</translation>
+    </message>
+    <message>
+        <source>Failed to access the USB subsystem.</source>
+        <translation>Nepavyko pasiekti USB posistemės.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine.</source>
+        <translation>Nepavyko sukurti naujos virtualios mašinos.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko sukurti naujos virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Virtualiai mašinai &lt;b&gt;%1&lt;/b&gt; nepavyko pritaikyti nuostatų.</translation>
+    </message>
+    <message>
+        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko paleisti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko pristabdyti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; darbo.</translation>
+    </message>
+    <message>
+        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko atkurti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; darbo.</translation>
+    </message>
+    <message>
+        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko sukurti virtualios mašinos momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko sukurti virtualios mašinos momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko sustabdyti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko pašalinti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko panaikinti virtualios mašinos momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nėra tokios virtualios mašinos su pavadinimu &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tikrai norite negrįžtamai pašalinti virtualią mašiną &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Šio veiksmo negalėsite atšaukti.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tikrai norite išregistruoti neprieinamą virtualią mašiną &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Jos nebegalėsite priregistruoti grafinėje aplinkoje.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tikrai norite panaikinti išsaugotą virtualios mašinos momentinę būvio kopiją &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Šis veiksmas atitinka mašinos paleidimą iš naujo arba išjungimą deramai neužbaigus svečio OS darbo.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create a new session.</source>
+        <translation>Nepavyko sukurti naujos sesijos.</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko atverti sesijos virtualiai mašinai &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko pašalinti pagrindinio kompiuterio tinklo sąsajos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Nepavyko prijungti USB įtaiso &lt;b&gt;%1&lt;/b&gt; prie virtualios mašinos &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Nepavyko atjungti USB įtaiso &lt;b&gt;%1&lt;/b&gt; nuo virtualios mašinos &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyko sukurti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) virtualiai mašinai &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyko pervadinti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) virtualiai mašinai &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtuali mašina pranešė, kad svečio OS nepalaiko &lt;b&gt;pelės žymeklio integravimo&lt;/b&gt; šioje vaizdo veiksenoje. Jei norite, kad virtuali mašina reaguotų į pelę, spragtelėkite pele svečio OS lange arba nuspauskite pagrindinio kompiuterio klavišą.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtuali mašina yra &lt;b&gt;pristabdyta&lt;/b&gt;, tad ji nereaguos į klaviatūros ar pelės paspaudimus. Jei norite toliau dirbti virtualioje mašinoje, tęskite nuspaudę atitinkamą meniu mygtuką.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Dėl vietinių apribojimų nepavyksta paleisti VirtualBox &lt;i&gt;VM pasirinkimo&lt;/i&gt; veiksenos.&lt;/p&gt;&lt;p&gt;Programa netrukus baigs darbą.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info
+</comment>
+        <translation type="obsolete">&lt;nobr&gt;Lemtinga klaida&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info
+</comment>
+        <translation type="obsolete">&lt;nobr&gt;Klaida nėra lemtinga&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info
+</comment>
+        <translation type="obsolete">&lt;nobr&gt;Įspėjimai&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info
+</comment>
+        <translation type="obsolete">&lt;nobr&gt;Klaidos ID: &lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info
+</comment>
+        <translation type="obsolete">Rimtumas:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtualios mašinos darbo metu įvyko lemtinga klaida! Virtuali mašina netrukus išsijungs. Jei norite padėti nustatyti problemą, nukopijuokite toliau pateiktą klaidos pranešimą naudodamiesi iškarpine:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtualios mašinos darbo metu įvyko klaida! Šios klaidos detalės pateiktos žemiau. Galite ištaisyti klaidą ir toliau tęsti darbą.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtuali mašiną gali veikti esant toliau nurodytai klaidai. Tikimės, kad elgsitės taip, kad išvengtumėte šios klaidos pasekmių.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info
+</comment>
+        <translation type="obsolete">Rezultato&amp;nbsp;kodas: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info
+</comment>
+        <translation type="obsolete">Elementas:</translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info
+</comment>
+        <translation type="obsolete">Sąsaja: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation>Iššaukė: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation>Iššaukė&amp;nbsp;RC: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyksta rasti &lt;b&gt;%1&lt;/b&gt; kalbos rinkmenos kataloge &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Laikinai bus naudojama sistemos numatytoji kalba. Eikite į &lt;b&gt;nuostatas&lt;/b&gt; per &lt;b&gt;rinkmenos&lt;/b&gt; meniu, esantį pagrindiniame VirtualBox lange, ir pasirinkite egzistuojančią kalbą &lt;b&gt;kalbos&lt;/b&gt; kortelėje.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyksta įkelti kalbos rinkmenos &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Laikinai bus naudojama anglų kalba.Eikite į &lt;b&gt;nuostatas&lt;/b&gt; per &lt;b&gt;rinkmenos&lt;/b&gt; meniu, esantį pagrindiniame VirtualBox lange, ir pasirinkite egzistuojančią kalbą &lt;b&gt;kalbos&lt;/b&gt; kortelėje.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai yra per seni: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Kai kurios funkcijos (pelės integravimas, svečio ekrano dydžio automatinis keitimas) gali neveikti tinkamai.&lt;/p&gt;&lt;p&gt;Atnaujinkite svečio papildinius iki tinkamos versijos nuspaudę &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai nėra patys naujausi: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Kai kurios funkcijos (pelės integravimas, svečio ekrano dydžio automatinis keitimas) gali neveikti tinkamai.&lt;/p&gt;&lt;p&gt;Patariama atnaujinti svečio papildinius iki tinkamos versijos nuspaudus &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai yra per nauji: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Negalima naudoti naujesnių svečio papildinių už versiją, kurią palaiko VirtualBox.&lt;/p&gt;&lt;p&gt;Atnaujinkite svečio papildinius iki tinkamos versijos nuspaudę &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Nepavyko pekeisti momentinių kopijų aplanko virtualiai mašinai &lt;b&gt;%1&lt;b&gt; į &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyko pašalinti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) iš virtualios mašinos &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Užverkite visas svečio OS programas, kurios gali naudotis tuo aplanku ir bandykite iš naujo.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyksta rasti VirtualBox svečio papildinių CD atvaizdžio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; arba &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ar atsisiųsti šį CD atvaizdį iš interneto?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyko parsiųsti VirtualBox svečio papildinių CD avaizdo iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tikrai parsiųsti VirtualBox svečio papildinių CD atvaizdį iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (%3 baitų dydžio)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox svečio papildinių CD atvaizdis iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; parsiųstas sėkmingai ir įrašytas vietinėje sistemoje &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Priregistruoti šį CD atvaizdį ir prijungti jį virtualiame CD/DVD kaupiklyje?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtualios mašinos langas sukonfigūruotas dirbti &lt;b&gt;%1&amp;nbsp;bitų&lt;/b&gt; spalvų veiksenoje, tačiau virtualus ekranas šiuo metu naudoja &lt;b&gt;%2&amp;nbsp;bitų&lt;/b&gt; veikseną.&lt;/p&gt;&lt;p&gt;Jei įmanoma, atverkite svečio OS ekrano nuostatas ir pasirinkite &lt;b&gt;%3&amp;nbsp;bitų&lt;/b&gt; spalvų veikseną; taip užtikrinsite geriausią virtualios vaizdo posistemės veikimą.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Atminkite&lt;/b&gt;. Kai kurios operacinės sistemos, pavyzdžiui OS/2, gali iš tikrųjų dirbti 32&amp;nbsp;bitų veiksenoje, tačiau pranešti, kad yra 24&amp;nbsp;bitų (16 milijonų spalvų). Galite pasirinkti kitą spalvų veikseną, kad įsitikintumėte, ar šis pranešimai pasirodo pagrįstai; arba galite uždrausti šio pranešimo pakartotinį rodymą, jei žinote, kad reikiamos spalvų veiksenos (%4&amp;nbsp;bitų) svečio OS nepalaiko.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Naujai virtualiai mašinai nepriskyrėte jokio standžiojo disko. Jei nepriskirsite standžiojo disko su svečio operacine sistema arba kitos įkraunamos laikmenos, kuri būtų naudojama mašinos nuostatų lange arba pirmojo paleidimo vediklyje, mašinos nebus galima paleisti.&lt;/p&gt;&lt;p&gt;Tęsti?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Nepavyko rasti licencijos rinkmenos &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation>Nepavyko atverti licencijos rinkmenos &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Tikrinkite leidimus.</translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko virtualioje mašinoje &lt;b&gt;%1&lt;/b&gt; nuspausti kompiuterio išjungimo mygtuko.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sveikiname! VirtualBox naudotojas sėkmingai užregistruotas.&lt;/p&gt;&lt;p&gt;Dėkojame, kad užsiregistravote!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nepavyko įrašyti bendrų VirtualBox nuostatų į &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyko įkelti bendrų naudotojo grafinės sąsajos konfigūracijos iš &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Programa netrukus išsijungs.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyko įrašyti bendrų naudotojo grafinės sąsajos konfigūracijos į &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Programa netrukus išsijungs.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Nepavyko įrašyti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; nuostatų į &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Nepavyko įkelti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; nuostatų iš &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine
+</comment>
+        <translation type="obsolete">Pašalinti</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Išregistruoti</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state
+</comment>
+        <translation type="obsolete">Atmesti</translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk
+</comment>
+        <translation type="obsolete">Uždrausti</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions
+</comment>
+        <translation type="obsolete">Parsiųsti</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions
+</comment>
+        <translation type="obsolete">Prijungti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;Šiuo metu pagrindinio kompiuterio klavišas yra &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>Reaguoti</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box
+</comment>
+        <translation type="obsolete">Tikrinti</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen
+</comment>
+        <translation type="obsolete">Perjungti</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless
+</comment>
+        <translation type="obsolete">Perjungti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tikrai norite iš naujo paleisti virtualią mašiną?&lt;/p&gt;&lt;p&gt;Prarasite visus neišsaugotus duomenis.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine
+</comment>
+        <translation type="obsolete">Perkrauti</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached
+</comment>
+        <translation type="obsolete">Tęsti</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached
+</comment>
+        <translation type="obsolete">Atgal</translation>
+    </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="obsolete">Nepavyko nukopijuoti rinkmenos &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; į &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepakanka svečio sistemos vaizdo atminties, kad būtų pereita į integruotą veikseną.&lt;/p&gt;&lt;p&gt;Sukonfigūruokite virtualią mašiną taip, kad vaizdo atminties būtų bent &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepakanka svečio sistemos vaizdo atminties, kad būtų galima pereiti į viso ekrano veikseną.&lt;/p&gt;&lt;p&gt;Sukonfigūruokite virtualią mašiną taip, kad ši turėtų bent &lt;b&gt;%1&lt;/b&gt; virtualios atminties.&lt;/p&gt;&lt;p&gt;Spauskite &lt;b&gt;Nepaisyti&lt;/b&gt;, jei norite vis tiek pabandyti pereiti į viso ekrano veikseną, arba spauskite &lt;b&gt;Atšaukti&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation>Jau naudotės naujausia VirtualBox versija.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;b&gt;Spragtelėjote pele&lt;/b&gt; virtualios mašinos lange arba nuspaudėte &lt;b&gt;pagrindinio kompiuterio klavišą&lt;/b&gt;. Todėl virtuali mašina ims &lt;b&gt;reaguoti&lt;/b&gt; į pagrindinio kompiuterio pelės žymeklį (tik jei svečio operacinė sistema nepalaiko pelės žymeklio integravimo) ir į klaviatūrą; į pelę ir klaiviatūrą nebereaguos jokios kitos pagrindinio kompiuterio programos.&lt;/p&gt;&lt;p&gt;Nuspaudus &lt;b&gt;pagrindinio kompiuterio klavišą&lt;/b&gt; bus &lt;b&gt;nebereaguojama&lt;/b&gt; automatiškai į pelę ir klaviatūrą (jei buvo reaguojama) ir darbas vyks įprastu būdu. Šiuo metu pagrindinio kompiuterio klavišas yra tas, kuris rodomas virtualios mašinos lango apatiniame kampe ties&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ženkliuku. Šis ir pelės ženkliukas rodo reagavimo į klaviatūrą ir pelę būseną.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Įgalinta &lt;b&gt;Automatinio reagavimo į klaviatūrą&lt;/b&gt; parinktis. Todėl virtuali mašina automatiškai &lt;b&gt;reaguos&lt;/b&gt; į klaviatūros paspaudimus, jei virtualios mašinos langas bus aktyvus; tuomet į klaviatūrą nereaguos jokios kitos pagrindiniame kompiuteryje paleistos programos; netgi dauguma sparčiųjų klavišų (įskaitant Alt+Tab) bus tiesiogiai perduoti virtualiai mašinai.&lt;/p&gt;&lt;p&gt;Nuspaudus &lt;b&gt;pagrindinio kompiuterio klavišą&lt;/b&gt; bus &lt;b&gt;nebereaguojama&lt;/b&gt; automatiškai į pelę ir klaviatūrą (jei buvo reaguojama) ir darbas vyks įprastu būdu. Šiuo metu pagrindinio kompiuterio klavišas yra tas, kuris rodomas virtualios mašinos lango apatiniame kampe ties&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ženkliuku. Šis ir pelės ženkliukas rodo reagavimo į klaviatūrą ir pelę būseną.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtuali mašina pranešė, kad svečio OS palaiko &lt;b&gt;pelės žymeklio integravimą&lt;/b&gt;. Taigi nereikia nieko specialiai daryti, kad pelė &lt;i&gt;reaguotų&lt;/i&gt; ir veiktų svečio operacinėje sistemoje -- visi jūsų atliekami pelės veiksmai, kai pelė bus virš virtualios mašinos ekrano, bus tiesiogiai siunčiami į svečio OS. O palikus langą, į pelę automatiškai nebebus reaguojama.&lt;/p&gt;&lt;p&gt;Pelės ženkliukas būsenos juostoje, atrodantis &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;praneš, kad svečio OS palaiko pelės žymeklio integravimą ir yra naudojamasi šia funkcija.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Atminkite&lt;/b&gt;: Kai kurios programos pelės žymeklio integravimo veiksenoje gali elgtis netinkamai. Tad galite uždrausti šią funkciją esamai sesijai (ir paskui vėl įgalinti) pasirinkę atitinkamą meniu juostos veiksmą.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;viso ekrano&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;. Atminkite, kad &lt;i&gt;Pagrindinis (Host)&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, viso ekrano veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;Pagrindinis + Prad (Home)&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;integruoto darbalaukio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;. Atminkite, kad &lt;i&gt;Pagrindinis&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, integruotoje veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;Pagrindinis+Namai&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation>&amp;Turinys...</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation>Rodyti nuotolinės pagalbos turinį</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation>&amp;VirtualBox svetainė...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation>Atverti naršyklę ir eiti į VirtualBox svetainę</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation>&amp;Pamiršti visus įspėjimus</translation>
+    </message>
+    <message>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation>Vėl rodyti visus įspėjimus ir pranešimus</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation>&amp;Užregistruoti VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation>VirtualBox užregistravimo forma</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation>Tikrinti, ar yra at&amp;naujinimų...</translation>
+    </message>
+    <message>
+        <source>Check for a new VirtualBox version</source>
+        <translation>Patikrinti, ar yra naujesnių VirtualBox versijų</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation>&amp;Apie VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation>Rodyti langą su produkto informacija</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Pasirodė nauja VirtualBox versija! Versija &lt;b&gt;%1&lt;/b&gt; pasiekiama &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; svetainėje.&lt;/p&gt;&lt;p&gt;Šią versiją galite atsisiųsti spustelėję šią nuorodą: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tikrai atlaisvinti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Tuomet laikmena nebebus susieta su šia virtualia mašina(-omis): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Release</source>
+        <comment>detach medium
+</comment>
+        <translation type="obsolete">Atlaisvinti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tikrai pašalinti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; iš žinomų laikmenų sąrašo?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <translation>Atminkite, kad šio standžiojo disko dabar negalima ištrinti, nes jis neprieinamas.</translation>
+    </message>
+    <message>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation>Sekančiame puslapyje galėsite pasirinkti, ar ištrinti šį standųjį diską, ar išlaikyti vėlesniam naudojimui.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Atminkite, kad ši laikmena nebus ištrinta, tad vėliau galėsite ją vėl įtraukti į sąrašą.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium
+</comment>
+        <translation type="obsolete">Pašalinti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Standusis diskas ties &lt;b&gt;%1&lt;/b&gt; jau yra. Negalima sukurti kurti naujo virtualaus standžiojo disko, kuris užima tą pačią vietą.&lt;/p&gt;&lt;p&gt;Nurodykite kitą vietą.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tikrai norite ištrinti standųjį diską &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Jei renkatės &lt;b&gt;Pašalinti&lt;/b&gt;, laikmena iš karto ištrinta &lt;b&gt;negrįžtamai&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jei renkatės &lt;b&gt;Išlaikyti&lt;/b&gt;, standusis diskas bus pašalintas tik iš žinomų laikmenų sąrašo, bet jis nebus ištrintas kompiuteryje, tad vėiau jį vėl galėsite įtraukti į minėtą sąrašą.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage
+</comment>
+        <translation type="obsolete">Pašalinti</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage
+</comment>
+        <translation type="obsolete">Išlaikyti</translation>
+    </message>
+    <message>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko pašalinti standžiojo disko kaupiklio &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation>Nepavyko sukurti standžiojo disko kaupiklio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Nepavyko atverti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Nepavyko užverti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Nepavyko nustatyti &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; laikmenos pasiekiamumo būsenos.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyko prisijungti prie VirtualBox nuotolinės registracijos paslaugos, nes įvyko klaida:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyksta gauti informacijos apie naują versiją, nes įvyko klaida:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Vienas ar keli virtualūs standieji diskai, CD/DVD ar diskelių įtaisai nebepasiekiami. Todėl negalėsite naudotis tomis virtualiomis mašinomis, kurios naudoja tas laikmenas tol, kol jos nebus pasiekiamos.&lt;/p&gt;&lt;p&gt;Norėdami atverti virtualių laikmenų tvarkytuvę ir pamatyti tas laikmenas, spauskite &lt;b&gt;Tikrinti&lt;/b&gt;, o norėdami nekreipti dėmesio į šį pranešimą, spauskite &lt;b&gt;Nepaisyti&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtualios mašinos veikimo metu įvyko kritinė klaida, tad mašina sustojo.&lt;/p&gt;&lt;p&gt;Norėdami gauti pagalbos, žiūrėkite „Bendruomenės“ (angl. „Community“) skyrių &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;  svetainėje arba palaikymo kontrakte. Prašom pateikti &lt;tt&gt;VBox.log&lt;/tt&gt; žurnalo rinkmenos turinį ir &lt;tt&gt;VBox.png&lt;/tt&gt; paveiksliuką, kuriuos galite rasti &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; kataloge, bei aprašyti, ką darėte, prieš atsirandant šiai klaidai. Beje, aukščiau nurodytas rinkmenas galite pasiekti iš pagrindinio VirtualBox lango&lt;b&gt;Mašinos&lt;/b&gt; meniu pasirinke &lt;b&gt;Rodyti žurnalą&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jei norite išjungti mašiną, spauskite &lt;b&gt;Gerai&lt;/b&gt;, o jei norite palikti derinimui, spauskite &lt;b&gt;Nepaisyti&lt;b&gt;. Atminkite, kad derinimui reikia specialių žinių ir įrankių, tad dabar patartina spausti &lt;b&gt;Gerai&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
+        <translation>Šios rinkmenos jau yra:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Ar jas pakeisti? Tokiu atveju būtų perrašytas jų turinys.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
+        <translation type="obsolete">Nepavyko pašalinti rinkmenos &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Pašalinkite savarankiškai ir bandykite iš naujo.</translation>
+    </message>
+    <message>
+        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
+        <translation>Naudojate eksperimentinę VirtualBox versiją. Ši versija gali būti netinkama naudoti.</translation>
+    </message>
+    <message>
+        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
+        <translation type="obsolete">Nepavyksta pasiekti pagrindinio kompiuteryje esančių USB įtaisų, nes neprieinama nei USB rinkmenų sistema (usbfs), nei DBus su hal paslaugomis. Jei svečio sistemoje norite naudoti pagrindinio kompiuterio USB įtaisus, privalote pašalinti trūkumus ir iš naujo paleisti VirtualBox.</translation>
+    </message>
+    <message>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
+        <translation>Bandote virtualioje mašinoje nuspausti ACPI išjungimo mygtuką. Tai neįmanoma, nes svečio sistema nepalaiko programinio išjungimo.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimas įgalintas, bet neveiks. Jūsų 64 bitų svečio sistema neaptiks 64 bitų procesoriaus ir negalės pasileisti.&lt;/p&gt;&lt;p&gt;Įsitikinkite, ar tinkamai įgalinote VT-x/AMD-V per savo pagrindinio kompiuterio BIOS.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation>Užverti virtualią mašiną</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Tęsti</translation>
+    </message>
     <message>
         <source>Cancel</source>
         <translation>Atšaukti</translation>
     </message>
     <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Prie papildomo valdiklio lizdo yra prijungtų standžiųjų diskų. Jei uždrausite papildomą valdiklį, visi šie standieji diskai bus automatiškai atjungti.&lt;/p&gt;&lt;p&gt;Tikrai uždrausti papildomą valdiklį?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Prie papildomo valdiklio lizdo yra prijungtų standžiųjų diskų. Jei keisite papildomą valdiklį, visi šie standieji diskai bus automatiškai atjungti.&lt;/p&gt;&lt;p&gt;Tikrai keisti papildomą valdiklį?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <comment>hard disk
+</comment>
+        <translation type="obsolete">Keisti</translation>
+    </message>
+    <message>
+        <source>Failed to create the host-only network interface.</source>
+        <translation>Nepavyko sukurti sąsajos prisijungimui tik prie pagrindinio kompiuterio.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Esamos VirtualBox nuostatų rinkmenos bus automatiškai konvertuotos iš seno į naują formatą, kurį naudoja naujoji VirtualBox versija.&lt;/p&gt;&lt;p&gt;Norėdami paleisti VirtualBox dabar, spauskite &lt;b&gt;Gerai&lt;/b&gt;, o jei norite užverti VirtualBox nieko nedarant, spauskite &lt;b&gt;Baigti&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open appliance.</source>
+        <translation>Nepavyko atverti mašinos.</translation>
+    </message>
+    <message>
+        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko atverti/interpretuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko importuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create appliance.</source>
+        <translation>Nepavyko sukurti virtualios mašinos.</translation>
+    </message>
+    <message>
+        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko eksportavimui paruošti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create an appliance.</source>
+        <translation>Virtualios mašinos sukurti nepavyko.</translation>
+    </message>
+    <message>
+        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko eksportuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation>Rinkmena pavadinimu &lt;b&gt;%1&lt;/b&gt; jau yra. Ar ją pakeisti?&lt;br /&gt;&lt;br /&gt;Tokiu atveju būtų perrašytas jos turinys.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimas įgalintas, bet neveiks. Kai kurioms svečio sistemoms (pvz., OS/2 ir QNX) reikia šios savybės.&lt;/p&gt;&lt;p&gt;Įsitikinkite, ar tinkamai įgalinote VT-x/AMD-V per savo pagrindinio kompiuterio BIOS.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Klaidingas el. pašto adresas arba slaptažodis.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyko užregistruoti VirtualBox produkto.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation>Rinkmenų patikrinti nepavyko.</translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation>Nepavyko pašalinti rinkmenos.</translation>
+    </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation>Regis prie /sys/bus/usb/drivers prijungėte USBFS rinkmenų sistemą. Labai patariame pakeisti tokią būseną, nes tai gali būti rimta sistemos konfigūracijos problema, galinti lemti netikėtus USB įtaisų sutrikimus.</translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation>Naudojate EKSPERIMENTINĘ VirtualBox versiją. Ši versija gali būti netinkama naudoti.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tikrai atkurti momentinę kopiją &lt;b&gt;%1&lt;/b&gt;? Tokiu atveju negrįžtamai prarasite dabartinę savo mašinos būseną.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Atkurti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Pašalinus momentinį būvį, prarasite jame įrašytą informaciją, o keliose rinkmenose laikomi disko duomenys bus sujungti į vieną rinkmeną. Momentiniame būvyje esančios informacijos nebebus galima atkurti. Šis veiksmas gali užtrukti.&lt;/p&gt;&lt;/p&gt;Tikrai pašalinti pasirinktą momentinį būvį &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Pašalinti</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Nepavyko atkurti momentinio būvio iš kopijos &lt;b&gt;%1&lt;/b&gt;, skirtos virtualiai mašinai &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Nepavyko pašalinti momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;, skirtos virtualiai mašinai &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium
+</comment>
+        <translation type="obsolete">Su&amp;kurti</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium
+</comment>
+        <translation type="obsolete">Pa&amp;sirinkti</translation>
+    </message>
+    <message>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepavyko prijungti %1 prie &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Nepavyko atjungti %1 nuo &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyksta prijungti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; prie mašinos &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation> Ar šią laikmeną prijungti priverstinai?</translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyksta atjungti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; nuo mašinos &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation> Ar šią laikmeną atjungti priverstinai?</translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation>Priverstinai atjungti</translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation type="obsolete">Nepavyko išmesti disko iš virtualaus įtaiso. Galbūt įtaisą užblokavo svečio operacinė sistema. Patikrinkite ir bandykite iš naujo.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyksta prijungti VirtualBox svečio papildinių diegimo CD atvaizdžio prie virtualios mašinos &lt;b&gt;%1&lt;/b&gt;, nes mašina neturi CD/DVD įtaiso.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box
+</comment>
+        <translation type="obsolete">&amp;Baigti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sekančios VirtualBox nuostatų rinkmenos bus automatiškai konvertuotos iš seno į naują formatą, kurį naudoja naujoji VirtualBox versija.&lt;/p&gt;&lt;p&gt;Norėdami paleisti VirtualBox dabar, spauskite &lt;b&gt;Gerai&lt;/b&gt;, o jei norite užverti VirtualBox nieko nedarant, spauskite &lt;b&gt;Baigti&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...
+</comment>
+        <translation type="obsolete">standųjį diską</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive
+</comment>
+        <translation type="obsolete">CD/DVD</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...
+</comment>
+        <translation type="obsolete">CD/DVD atvaizdį</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive
+</comment>
+        <translation type="obsolete">diskelį</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...
+</comment>
+        <translation type="obsolete">diskelį atvaizdį</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...
+</comment>
+        <translation type="obsolete">standžiojo disko</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>failed to attach ...
+</comment>
+        <translation type="obsolete">CD/DVD įtaiso</translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>failed to close ...
+</comment>
+        <translation type="obsolete">diskelių įtaiso</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tikrai pašalinti CD/DVD-ROM įtaisą?&lt;/p&gt;&lt;p&gt;Jei taip, negalėsite prijungti jokio CD ar ISO atvaizdžio, negalėsite įdiegti svečio papildinių!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium
+</comment>
+        <translation type="obsolete">Pašalin&amp;ti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimo jūsų sistemoje nėra. Taigi 64 bitų svečio sistema neaptiks 64 bitų procesoriaus ir negalės pasileisti.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimo jūsų sistemoje nėra. Kai kurioms svečio sistemoms (pvz., OS/2 ir QNX) reikia šios savybės; be jos sistema nepasileis.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Šalinant momentinį būvį „%1“, laikinai bus panaudojama daugiau disko vietos. Blogiausiu atveju disko atvaizdis %2 padidės %3, tačiau šioje rinkmenų sistemoje tėra %4 laisvos vietos.&lt;/p&gt;&lt;p&gt;Viršijant disko erdvę suliejimo operacijos metu, atvaizdis ir VM konfigūracija gali būti sugadinti, t. y. prarasta VM ir jos duomenys.&lt;/p&gt;&lt;p&gt;Vis tik galite tęsti momentinio būvio šalinimo operaciją prisiimdami asmeninę atsakomybę.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepakanka vaizdo atminties, kad būtų pakeistas svečio sistemos ekranas šiam pagrindinio kompiuterio ekranui.&lt;/p&gt;&lt;p&gt;Sukonfigūruokite virtualią mašiną taip, kad ji turėtų bent &lt;b&gt;%1&lt;/b&gt; vaizdo atminties.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepakanka vaizdo atminties, kad būtų pakeistas svečio sistemos ekranas šiam pagrindinio kompiuterio ekranui.&lt;/p&gt;&lt;p&gt;Sukonfigūruokite virtualią mašiną taip, kad ji turėtų bent &lt;b&gt;%1&lt;/b&gt; vaizdo atminties.&lt;/p&gt;&lt;p&gt;Spauskite &lt;b&gt;Nepaisyti&lt;/b&gt;, jei vis tiek norite pabandyti perjungti ekraną, arba spauskite &lt;b&gt;Atšaukti&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyksta svečio ekrano perjungti į viso ekrano veikseną. Sukonfigūravote daugiau virtualių ekranų nei yra fizinių ekranų, prijungtų prie pagrindinio kompiuterio.&lt;/p&gt;&lt;p&gt;Arba sumažinkite virtualių ekranų skaičių, arba prie pagrindinio kompiuterio prijunkite papildomų fizinių ekranų.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyksta svečio ekrano perjungti į integruoto darbalaukio veikseną. Sukonfigūravote daugiau virtualių ekranų nei yra fizinių ekranų, prijungtų prie pagrindinio kompiuterio.&lt;/p&gt;&lt;p&gt;Arba sumažinkite virtualių ekranų skaičių, arba prie pagrindinio kompiuterio prijunkite papildomų fizinių ekranų.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyksta rasti VirtualBox naudotojo žinyno &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ar parsiųsti jį iš interneto?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tikrai parsiųsti VirtualBox naudotojo žinyną iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (%3 baitų dydžio)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nepavyko parsiųsti VirtualBox naudojo žinyno iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sėkmingai parsiųstas VirtualBox naudotojo žinynas iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; ir įrašytas vietinėje sistemoje kaip &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sėkmingai parsiųstas VirtualBox naudotojo žinynas iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, tačiau nepavyksta jo įrašyti vietinėje sistemoje  kaip &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Nurodykite kitą rinkmenos įrašymo vietą.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - informacija</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - klausimas</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - įspėjimas</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - klaida</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtialBox - lemtinga klaida</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag</comment>
+        <translation>Daugiau nerodyti šio pranešimo</translation>
+    </message>
+    <message>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation>Nepavyko atverti virtualios mašinos, esančios ties %1.</translation>
+    </message>
+    <message>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation>Nepavyko pridėti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;, esančios ties &lt;i&gt;%2&lt;/i&gt;, nes ji jau yra.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ketinate pašalinti virtualią mašiną &lt;b&gt;%1&lt;/b&gt; iš mašinų sąrašo.&lt;/p&gt;&lt;p&gt;Ar norėtumėte kartu pašalinti iš standžiojo disko ir susijusias rinkmenas?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ketinate pašalinti virtualią mašiną &lt;b&gt;%1&lt;/b&gt; iš mašinų sąrašo.&lt;/p&gt;&lt;p&gt;Ar norėtumėte kartu pašalinti iš standžiojo disko ir susijusias rinkmenas? Tokiu atveju bus pašalintos virtualius diskus turinčios rinkmenos, jei tik jų nenaudoja kita virtuali mašina.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete all files</source>
+        <translation>Šalinti visas rinkmenas</translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation>Tik pašalinti</translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation>Ketinate pašalinti neprieinamą virtualią mašiną &lt;b&gt;%1&lt;/b&gt; iš mašinų sąrašo. Tęsti?</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Pašalinti</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>Atmesti</translation>
+    </message>
+    <message>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation>Atlaisvinti</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation>Pašalinti</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation>Pašalinti</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation>Išlaikyti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują standųjį diską.&lt;/p&gt;&lt;p&gt;Ar tuo pačiu norėtumėte sukurti naują tuščią rinkmeną disko turiniui laikyti, ar pasirinkti esamą?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation>Sukurti &amp;naują diską</translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation>&amp;Pasirinkti esamą diską</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują CD/DVD įtaisą.&lt;/p&gt;&lt;p&gt;Ar norėtumėte tuo pačiu pasirinkti virtualų CD/DVD diską ir jį įdėti į įtaisą, ar šiuo metu įtaisą palikti tuščią?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation>&amp;Pasirinkti diską</translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation>Palikti &amp;tuščią</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują diskelio įtaisą.&lt;/p&gt;&lt;p&gt;Ar norėtumėte tuo pačiu pasirinkti virtualų diskelį ir jį įdėti į įtaisą, ar šiuo metu įtaisą palikti tuščią?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation>Pašalin&amp;ti</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyko atjungti standžiojo disko (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) nuo &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyko atjungti CD/DVD įtaiso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) nuo &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyko atjungti diskelio įtaiso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) nuo &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Regis šioje virtualioje mašinoje neprieinami VirtualBox svečio papildiniai, tad negalite naudoti bendrųjų aplankų. Norėdami naudoti bendruosius aplankus virtualioje mašinoje, įdiekite svečio papildinius (jei jie neįdiegti) arba iš naujo įdiekite juos (jei jie veikia netinkamai) pasirinkdami &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;Mašinos&lt;/b&gt; meniu. Jei jie įdiegti, bet mašina dar pilnai nepasileido, tuomet luktelėkite.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>Parsiųsti</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>Prijungti</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>Tikrinti</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation>&amp;Baigti</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>Perjungti</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>Perjungti</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>Paleisti iš naujo</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>Tęsti</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>Atgal</translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation>Nepavyko atnaujinti svečio papildinių. Svečio papildinių diegimo atvaizdis bus prijungtas tam, kad įdiegtumėte patys rankiniu būdu.</translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko įdiegti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko pašalinti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="obsolete">Ketinate pašalinti papildinių paketą &lt;b&gt;%1&lt;/b&gt;. Tikrai pašalinti?</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>Pašalin&amp;ti</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation>Dabartinės prievadų nukreipimo taisyklės yra netinkamos. Pagr. kompiuterio ar svečio sistemos prievadas negali būti nulis.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Yra neįrašytų prievadų persiuntimo konfigūracijos pakeitimų.&lt;/p&gt;&lt;p&gt;Jei tęsite, prarasite atliktus pakeitimus.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Lemtinga klaida&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Klaida nėra lemtinga&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Įspėjimai&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Klaidos ID: &lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info</comment>
+        <translation>Rimtumas:</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation>standųjį diską</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>CD/DVD</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation>CD/DVD atvaizdį</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>diskelį</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation>diskelio atvaizdį</translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation>Atleiskite, būna daugybinių klaidų.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyko priskirti standžiojo disko (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) prie &lt;i&gt;%2&lt;/i&gt; lizdo &lt;b&gt;%3&lt;/b&gt; mašinoje.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyko priskirti CD/DVD įtaiso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) prie &lt;i&gt;%2&lt;/i&gt; lizdo &lt;b&gt;%3&lt;/b&gt; mašinoje.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nepavyko priskirti diskelio įtaiso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) prie &lt;i&gt;%2&lt;/i&gt; lizdo &lt;b&gt;%3&lt;/b&gt; mašinoje.</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation>Rezultato&amp;nbsp;kodas: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation>Elementas:</translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation>Sąsaja: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Atminkite, kad ši laikmena nebus ištrinta, tad vėliau ją vėl galėsite naudoti.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Regis šioje virtualioje mašinoje neprieinami VirtualBox svečio papildiniai, tad negalite naudoti bendrųjų aplankų. Norėdami naudoti bendruosius aplankus virtualioje mašinoje, įdiekite svečio papildinius (jei jie neįdiegti) arba iš naujo įdiekite juos (jei jie veikia netinkamai) pasirinkdami &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;Įtaisų&lt;/b&gt; meniu. Jei jie įdiegti, bet mašina dar pilnai nepasileido, tuomet luktelėkite.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;viso ekrano&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, viso ekrano veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klavišas) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;integruoto darbalaukio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, integruotoje veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klav.) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;keičiamo lango dydžio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, keičiamo lango dydžio veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klav.) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation>Perjungti</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko atverti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation>Į&amp;diegti</translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation>Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Jau yra įdiegta senesnė papildinių paketo versija. Atnaujinti? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nauja versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Dabartinė versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation>&amp;Atnaujinti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Jau yra įdiegta naujesnė papildinių paketo versija. Pakeisti į senesnę versiją? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nauja versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Dabartinė versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation>&amp;Pasendinti versiją</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Jau yra įdiegta tokia pati papildinių paketo versija. Iš naujo įdiegti? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation>&amp;Iš naujo įdiegti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ketinate pašalinti VirtualBox papildinių paketą &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tęsti?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation>Papildinių paketas &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; įdiegtas.</translation>
+    </message>
+    <message>
+        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
+        <translation type="obsolete">Visų virtuliai mašinai rinkmenų pašalinimas uždraustas Windows/x64 sistemoje tam, kad būtų išvengta strigio. Tai bus ištaisyta sekančiame leidime.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Viršaplankyje &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; nepavyksta sukurti mašinos aplanko &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Patikrinkite, ar viršaplankis iš tiesų yra ir ar turite leidimą kurti mašinos aplanką.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Šioje virtualioje mašinoje įgalintas USB 2.0. Tačiau tam turi įdiegtas &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;nobr&gt;Įdiegike papildinių paketą, kurį rasite VirtualBox svetainėje. Tuomet vėl galėsite įgalite USB 2.0. Iki tol ši funkcija bus uždrausta, nebent atsisakysite dabartinių nuostatų pakeitimų.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko užregistruoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Jums besirenkant mašinos nuostatas, jos buvo pakeistos. Jūs dar neįrašėte pakeitimų.&lt;/p&gt;&lt;p&gt;Ar iš naujo įkelti nuostatas, ar išlaikyti dabar Jūsų atliktus pakeitimus?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation>Iš naujo įkelti nuostatas</translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation>Išlaikyti pakeitimus</translation>
+    </message>
+    <message>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished">Šiuo metu tvarkomos virtualios mašinos būsena pasikeitė. Nuspaudus mygtuką „gerai“ bus įrašytos tik šiame dialoge matomos nuostatos. Visi kiti pakeitimai bus prarasti.</translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nepavyko klonuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation>Sukurti mašinos dabartinio būvio momentinę kopiją</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Tikrai atkurti momentinį būvį &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Klaida keičiant laikmenos tipą iš &lt;b&gt;%1&lt;/b&gt; į &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Šioje virtualioje mašinoje įgalintas USB 2.0. Tačiau tam turi įdiegtas &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;/p&gt;&lt;p&gt;Įdiegike papildinių paketą, kurį rasite VirtualBox svetainėje. Tuomet vėl rinkitės įgalinti USB 2.0. Iki tol ši funkcija bus uždrausta, nebent atsisakysite dabartinių nuostatų pakeitimų.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation>Nepavyksta įkelti pagr. kompiuterio USB įgaliotojo serverio paslaugos (VERR_FILE_NOT_FOUND). Galbūt ši paslauga neįdiegta pagrindiniame kompiueryje</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox programai neleidote pasiekti USB įrenginių. Šią parinktį galite pakeisti savo naudotoją priskirdami „vboxusers“ grupei. Daugiau informacijos rasite naudotojo žinyne</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox programai neleidote pasiekti USB įrenginių. Tai pakeisite leisdami savo naudotojui pasiekti „usbfs“ aplankus ir rinkmenas. Daugiau informacijos rasite naudotojo žinyne</translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation>USB įgaliotojo serverio paslauga dar nesusieta su pagrindiniu kompiuteriu</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation>Nepavyksta įkelti pagr. kompiuterio USB įgaliotojo serverio paslaugos</translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Nepavyko įrašyti parsiųstos rinkmenos kaip &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Atšaukti</translation>
+    </message>
+    <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Atšaukti „VirtualBox svečio papildinių“ CD atvaizdžio parsiuntimą</translation>
+        <translation type="obsolete">Atšaukti „VirtualBox svečio papildinių“ CD atvaizdžio parsiuntimą</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Parsiunčiamas „VirtualBox svečio papildinių“ CD atvaizdis iš &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Parsiunčiamas „VirtualBox svečio papildinių“ CD atvaizdis iš &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation>Atšaukti</translation>
+        <translation type="obsolete">Atšaukti</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -3692,6 +5237,17 @@
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>Pasiunčiamas VirtualBox naudotojo žinynas &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetAdditions</name>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished">Atšaukti „VirtualBox svečio papildinių“ CD atvaizdžio parsiuntimą</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished">Parsiunčiamas „VirtualBox svečio papildinių“ CD atvaizdis iš &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -4398,6 +5954,29 @@
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation>Redaguoti tekstą</translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation>&amp;Pakeisti...</translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation>Šį tekstą pakeisti rinkmenos turiniu.</translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation>Tekstas (*.txt);;Visos (*.*)</translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation>Pasirinkti atvertiną rinkmeną...</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -4560,127 +6139,6 @@
     <message>
         <source>Version %1</source>
         <translation>versija %1</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation>%1 virtuali sistema</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Pavadinimas</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation>Produktas</translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation>Produkto URL adresas</translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation>Gamintojas</translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation>Gamintojo URL adresas</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation>Versija</translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation>Aprašas</translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation>Licencija</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>Svečio OS tipas</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation>Procesorius</translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation>Laisvosios prieigos atmintis (RAM)</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation>Standžiojo disko valdiklis (IDE)</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation>Standžiojo disko valdiklis (SATA)</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation>Standžiojo disko valdiklis (SCSI)</translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation>DVD</translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation>Diskelis</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation>Tinklo plokštė</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation>USB valdiklis</translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation>Garso plokštė</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translation>Virtualaus disko atvaizdis</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation>Nežinomas elementas</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;Originali reikšmė:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation>Konfigūracija</translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation>Įspėjimai:</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024 KBytes
-</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation>Standžiojo disko valdiklis (SAS)</translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>Pažymėjus, visoms sukonfigūruotoms tinklo plokštėms bus priskirti nauji unikalūs MAC adresai.</translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>&amp;Visoms tinklo plokštėms priskirti naujus MAC adresus</translation>
     </message>
 </context>
 <context>
@@ -7512,17 +8970,6 @@ IPv6.</translation>
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation>Įkeliama virtuali mašina...</translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation>Skaitoma virtuali mašina...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>VirtualBox License</source>
@@ -7535,13 +8982,6 @@ IPv6.</translation>
     <message>
         <source>I &amp;Disagree</source>
         <translation>&amp;Nesutinku</translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Keisti</translation>
     </message>
 </context>
 <context>
@@ -7864,1343 +9304,6 @@ IPv6.</translation>
     </message>
 </context>
 <context>
-    <name>UIMessageCenter</name>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title
-</comment>
-        <translation type="obsolete">VirtualBox - informacija</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title
-</comment>
-        <translation type="obsolete">VirtualBox - klausimas</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title
-</comment>
-        <translation type="obsolete">VirtualBox - įspėjimas</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title
-</comment>
-        <translation type="obsolete">VirtualBox - klaida</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title
-</comment>
-        <translation type="obsolete">VirtialBox - lemtinga klaida</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag
-</comment>
-        <translation type="obsolete">Daugiau nerodyti šios žinutės</translation>
-    </message>
-    <message>
-        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Nepavyko atverti &lt;tt&gt;%1&lt;/tt&gt;. Įsitikinkite, ar darbastalio aplinka tikrai gali apdoroti šio tipo URL.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko paruošti COM arba nerastas VirtualBox COM serveris. Greičiausis VirtualBox serveris nėra paleistas arba jo nepavyko paleisti&lt;/p&gt;&lt;p&gt;Programa netrukus išsijungs.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko sukurti VirtualBox COM objekto.&lt;/p&gt;&lt;p&gt;Programa netrukus išsijungs.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to set global VirtualBox properties.</source>
-        <translation>Nepavyko nustatyti bendrų VirtualBox savybių.</translation>
-    </message>
-    <message>
-        <source>Failed to access the USB subsystem.</source>
-        <translation>Nepavyko pasiekti USB posistemės.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation>Nepavyko sukurti naujos virtualios mašinos.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko sukurti naujos virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Virtualiai mašinai &lt;b&gt;%1&lt;/b&gt; nepavyko pritaikyti nuostatų.</translation>
-    </message>
-    <message>
-        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko paleisti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko pristabdyti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; darbo.</translation>
-    </message>
-    <message>
-        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko atkurti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; darbo.</translation>
-    </message>
-    <message>
-        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko sukurti virtualios mašinos momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko sukurti virtualios mašinos momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko sustabdyti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko pašalinti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko panaikinti virtualios mašinos momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nėra tokios virtualios mašinos su pavadinimu &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tikrai norite negrįžtamai pašalinti virtualią mašiną &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Šio veiksmo negalėsite atšaukti.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tikrai norite išregistruoti neprieinamą virtualią mašiną &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Jos nebegalėsite priregistruoti grafinėje aplinkoje.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai norite panaikinti išsaugotą virtualios mašinos momentinę būvio kopiją &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Šis veiksmas atitinka mašinos paleidimą iš naujo arba išjungimą deramai neužbaigus svečio OS darbo.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create a new session.</source>
-        <translation>Nepavyko sukurti naujos sesijos.</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko atverti sesijos virtualiai mašinai &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko pašalinti pagrindinio kompiuterio tinklo sąsajos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepavyko prijungti USB įtaiso &lt;b&gt;%1&lt;/b&gt; prie virtualios mašinos &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepavyko atjungti USB įtaiso &lt;b&gt;%1&lt;/b&gt; nuo virtualios mašinos &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyko sukurti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) virtualiai mašinai &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyko pervadinti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) virtualiai mašinai &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuali mašina pranešė, kad svečio OS nepalaiko &lt;b&gt;pelės žymeklio integravimo&lt;/b&gt; šioje vaizdo veiksenoje. Jei norite, kad virtuali mašina reaguotų į pelę, spragtelėkite pele svečio OS lange arba nuspauskite pagrindinio kompiuterio klavišą.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuali mašina yra &lt;b&gt;pristabdyta&lt;/b&gt;, tad ji nereaguos į klaviatūros ar pelės paspaudimus. Jei norite toliau dirbti virtualioje mašinoje, tęskite nuspaudę atitinkamą meniu mygtuką.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Dėl vietinių apribojimų nepavyksta paleisti VirtualBox &lt;i&gt;VM pasirinkimo&lt;/i&gt; veiksenos.&lt;/p&gt;&lt;p&gt;Programa netrukus baigs darbą.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info
-</comment>
-        <translation type="obsolete">&lt;nobr&gt;Lemtinga klaida&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info
-</comment>
-        <translation type="obsolete">&lt;nobr&gt;Klaida nėra lemtinga&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info
-</comment>
-        <translation type="obsolete">&lt;nobr&gt;Įspėjimai&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info
-</comment>
-        <translation type="obsolete">&lt;nobr&gt;Klaidos ID: &lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info
-</comment>
-        <translation type="obsolete">Rimtumas:</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos darbo metu įvyko lemtinga klaida! Virtuali mašina netrukus išsijungs. Jei norite padėti nustatyti problemą, nukopijuokite toliau pateiktą klaidos pranešimą naudodamiesi iškarpine:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos darbo metu įvyko klaida! Šios klaidos detalės pateiktos žemiau. Galite ištaisyti klaidą ir toliau tęsti darbą.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuali mašiną gali veikti esant toliau nurodytai klaidai. Tikimės, kad elgsitės taip, kad išvengtumėte šios klaidos pasekmių.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info
-</comment>
-        <translation type="obsolete">Rezultato&amp;nbsp;kodas: </translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info
-</comment>
-        <translation type="obsolete">Elementas:</translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info
-</comment>
-        <translation type="obsolete">Sąsaja: </translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation>Iššaukė: </translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation>Iššaukė&amp;nbsp;RC: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta rasti &lt;b&gt;%1&lt;/b&gt; kalbos rinkmenos kataloge &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Laikinai bus naudojama sistemos numatytoji kalba. Eikite į &lt;b&gt;nuostatas&lt;/b&gt; per &lt;b&gt;rinkmenos&lt;/b&gt; meniu, esantį pagrindiniame VirtualBox lange, ir pasirinkite egzistuojančią kalbą &lt;b&gt;kalbos&lt;/b&gt; kortelėje.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta įkelti kalbos rinkmenos &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Laikinai bus naudojama anglų kalba.Eikite į &lt;b&gt;nuostatas&lt;/b&gt; per &lt;b&gt;rinkmenos&lt;/b&gt; meniu, esantį pagrindiniame VirtualBox lange, ir pasirinkite egzistuojančią kalbą &lt;b&gt;kalbos&lt;/b&gt; kortelėje.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai yra per seni: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Kai kurios funkcijos (pelės integravimas, svečio ekrano dydžio automatinis keitimas) gali neveikti tinkamai.&lt;/p&gt;&lt;p&gt;Atnaujinkite svečio papildinius iki tinkamos versijos nuspaudę &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai nėra patys naujausi: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Kai kurios funkcijos (pelės integravimas, svečio ekrano dydžio automatinis keitimas) gali neveikti tinkamai.&lt;/p&gt;&lt;p&gt;Patariama atnaujinti svečio papildinius iki tinkamos versijos nuspaudus &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Įdiegtieji VirtualBox svečio papildiniai yra per nauji: yra įdiegta %1 versija, bet tikėtasi %2 versijos. Negalima naudoti naujesnių svečio papildinių už versiją, kurią palaiko VirtualBox.&lt;/p&gt;&lt;p&gt;Atnaujinkite svečio papildinius iki tinkamos versijos nuspaudę &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;įtaisų&lt;/b&gt; meniu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Nepavyko pekeisti momentinių kopijų aplanko virtualiai mašinai &lt;b&gt;%1&lt;b&gt; į &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko pašalinti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) iš virtualios mašinos &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Užverkite visas svečio OS programas, kurios gali naudotis tuo aplanku ir bandykite iš naujo.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta rasti VirtualBox svečio papildinių CD atvaizdžio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; arba &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ar atsisiųsti šį CD atvaizdį iš interneto?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko parsiųsti VirtualBox svečio papildinių CD avaizdo iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai parsiųsti VirtualBox svečio papildinių CD atvaizdį iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (%3 baitų dydžio)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox svečio papildinių CD atvaizdis iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; parsiųstas sėkmingai ir įrašytas vietinėje sistemoje &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Priregistruoti šį CD atvaizdį ir prijungti jį virtualiame CD/DVD kaupiklyje?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos langas sukonfigūruotas dirbti &lt;b&gt;%1&amp;nbsp;bitų&lt;/b&gt; spalvų veiksenoje, tačiau virtualus ekranas šiuo metu naudoja &lt;b&gt;%2&amp;nbsp;bitų&lt;/b&gt; veikseną.&lt;/p&gt;&lt;p&gt;Jei įmanoma, atverkite svečio OS ekrano nuostatas ir pasirinkite &lt;b&gt;%3&amp;nbsp;bitų&lt;/b&gt; spalvų veikseną; taip užtikrinsite geriausią virtualios vaizdo posistemės veikimą.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Atminkite&lt;/b&gt;. Kai kurios operacinės sistemos, pavyzdžiui OS/2, gali iš tikrųjų dirbti 32&amp;nbsp;bitų veiksenoje, tačiau pranešti, kad yra 24&amp;nbsp;bitų (16 milijonų spalvų). Galite pasirinkti kitą spalvų veikseną, kad įsitikintumėte, ar šis pranešimai pasirodo pagrįstai; arba galite uždrausti šio pranešimo pakartotinį rodymą, jei žinote, kad reikiamos spalvų veiksenos (%4&amp;nbsp;bitų) svečio OS nepalaiko.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Naujai virtualiai mašinai nepriskyrėte jokio standžiojo disko. Jei nepriskirsite standžiojo disko su svečio operacine sistema arba kitos įkraunamos laikmenos, kuri būtų naudojama mašinos nuostatų lange arba pirmojo paleidimo vediklyje, mašinos nebus galima paleisti.&lt;/p&gt;&lt;p&gt;Tęsti?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Nepavyko rasti licencijos rinkmenos &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>Nepavyko atverti licencijos rinkmenos &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Tikrinkite leidimus.</translation>
-    </message>
-    <message>
-        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko virtualioje mašinoje &lt;b&gt;%1&lt;/b&gt; nuspausti kompiuterio išjungimo mygtuko.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sveikiname! VirtualBox naudotojas sėkmingai užregistruotas.&lt;/p&gt;&lt;p&gt;Dėkojame, kad užsiregistravote!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nepavyko įrašyti bendrų VirtualBox nuostatų į &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko įkelti bendrų naudotojo grafinės sąsajos konfigūracijos iš &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Programa netrukus išsijungs.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko įrašyti bendrų naudotojo grafinės sąsajos konfigūracijos į &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Programa netrukus išsijungs.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Nepavyko įrašyti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; nuostatų į &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Nepavyko įkelti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; nuostatų iš &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>machine
-</comment>
-        <translation type="obsolete">Pašalinti</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Išregistruoti</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state
-</comment>
-        <translation type="obsolete">Atmesti</translation>
-    </message>
-    <message>
-        <source>Disable</source>
-        <comment>hard disk
-</comment>
-        <translation type="obsolete">Uždrausti</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions
-</comment>
-        <translation type="obsolete">Parsiųsti</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions
-</comment>
-        <translation type="obsolete">Prijungti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;Šiuo metu pagrindinio kompiuterio klavišas yra &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Capture</source>
-        <comment>do input capture</comment>
-        <translation>Reaguoti</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box
-</comment>
-        <translation type="obsolete">Tikrinti</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen
-</comment>
-        <translation type="obsolete">Perjungti</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless
-</comment>
-        <translation type="obsolete">Perjungti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai norite iš naujo paleisti virtualią mašiną?&lt;/p&gt;&lt;p&gt;Prarasite visus neišsaugotus duomenis.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine
-</comment>
-        <translation type="obsolete">Perkrauti</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached
-</comment>
-        <translation type="obsolete">Tęsti</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached
-</comment>
-        <translation type="obsolete">Atgal</translation>
-    </message>
-    <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="obsolete">Nepavyko nukopijuoti rinkmenos &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; į &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepakanka svečio sistemos vaizdo atminties, kad būtų pereita į integruotą veikseną.&lt;/p&gt;&lt;p&gt;Sukonfigūruokite virtualią mašiną taip, kad vaizdo atminties būtų bent &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepakanka svečio sistemos vaizdo atminties, kad būtų galima pereiti į viso ekrano veikseną.&lt;/p&gt;&lt;p&gt;Sukonfigūruokite virtualią mašiną taip, kad ši turėtų bent &lt;b&gt;%1&lt;/b&gt; virtualios atminties.&lt;/p&gt;&lt;p&gt;Spauskite &lt;b&gt;Nepaisyti&lt;/b&gt;, jei norite vis tiek pabandyti pereiti į viso ekrano veikseną, arba spauskite &lt;b&gt;Atšaukti&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Jau naudotės naujausia VirtualBox versija.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Spragtelėjote pele&lt;/b&gt; virtualios mašinos lange arba nuspaudėte &lt;b&gt;pagrindinio kompiuterio klavišą&lt;/b&gt;. Todėl virtuali mašina ims &lt;b&gt;reaguoti&lt;/b&gt; į pagrindinio kompiuterio pelės žymeklį (tik jei svečio operacinė sistema nepalaiko pelės žymeklio integravimo) ir į klaviatūrą; į pelę ir klaiviatūrą nebereaguos jokios kitos pagrindinio kompiuterio programos.&lt;/p&gt;&lt;p&gt;Nuspaudus &lt;b&gt;pagrindinio kompiuterio klavišą&lt;/b&gt; bus &lt;b&gt;nebereaguojama&lt;/b&gt; automatiškai į pelę ir klaviatūrą (jei buvo reaguojama) ir darbas vyks įprastu būdu. Šiuo metu pagrindinio kompiuterio klavišas yra tas, kuris rodomas virtualios mašinos lango apatiniame kampe ties&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ženkliuku. Šis ir pelės ženkliukas rodo reagavimo į klaviatūrą ir pelę būseną.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Įgalinta &lt;b&gt;Automatinio reagavimo į klaviatūrą&lt;/b&gt; parinktis. Todėl virtuali mašina automatiškai &lt;b&gt;reaguos&lt;/b&gt; į klaviatūros paspaudimus, jei virtualios mašinos langas bus aktyvus; tuomet į klaviatūrą nereaguos jokios kitos pagrindiniame kompiuteryje paleistos programos; netgi dauguma sparčiųjų klavišų (įskaitant Alt+Tab) bus tiesiogiai perduoti virtualiai mašinai.&lt;/p&gt;&lt;p&gt;Nuspaudus &lt;b&gt;pagrindinio kompiuterio klavišą&lt;/b&gt; bus &lt;b&gt;nebereaguojama&lt;/b&gt; automatiškai į pelę ir klaviatūrą (jei buvo reaguojama) ir darbas vyks įprastu būdu. Šiuo metu pagrindinio kompiuterio klavišas yra tas, kuris rodomas virtualios mašinos lango apatiniame kampe ties&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ženkliuku. Šis ir pelės ženkliukas rodo reagavimo į klaviatūrą ir pelę būseną.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuali mašina pranešė, kad svečio OS palaiko &lt;b&gt;pelės žymeklio integravimą&lt;/b&gt;. Taigi nereikia nieko specialiai daryti, kad pelė &lt;i&gt;reaguotų&lt;/i&gt; ir veiktų svečio operacinėje sistemoje -- visi jūsų atliekami pelės veiksmai, kai pelė bus virš virtualios mašinos ekrano, bus tiesiogiai siunčiami į svečio OS. O palikus langą, į pelę automatiškai nebebus reaguojama.&lt;/p&gt;&lt;p&gt;Pelės ženkliukas būsenos juostoje, atrodantis &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;praneš, kad svečio OS palaiko pelės žymeklio integravimą ir yra naudojamasi šia funkcija.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Atminkite&lt;/b&gt;: Kai kurios programos pelės žymeklio integravimo veiksenoje gali elgtis netinkamai. Tad galite uždrausti šią funkciją esamai sesijai (ir paskui vėl įgalinti) pasirinkę atitinkamą meniu juostos veiksmą.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;viso ekrano&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;. Atminkite, kad &lt;i&gt;Pagrindinis (Host)&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, viso ekrano veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;Pagrindinis + Prad (Home)&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;integruoto darbalaukio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;. Atminkite, kad &lt;i&gt;Pagrindinis&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, integruotoje veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;Pagrindinis+Namai&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Contents...</source>
-        <translation>&amp;Turinys...</translation>
-    </message>
-    <message>
-        <source>Show the online help contents</source>
-        <translation>Rodyti nuotolinės pagalbos turinį</translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation>&amp;VirtualBox svetainė...</translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Atverti naršyklę ir eiti į VirtualBox svetainę</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Pamiršti visus įspėjimus</translation>
-    </message>
-    <message>
-        <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>Vėl rodyti visus įspėjimus ir pranešimus</translation>
-    </message>
-    <message>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation>&amp;Užregistruoti VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Open VirtualBox registration form</source>
-        <translation>VirtualBox užregistravimo forma</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation>Tikrinti, ar yra at&amp;naujinimų...</translation>
-    </message>
-    <message>
-        <source>Check for a new VirtualBox version</source>
-        <translation>Patikrinti, ar yra naujesnių VirtualBox versijų</translation>
-    </message>
-    <message>
-        <source>&amp;About VirtualBox...</source>
-        <translation>&amp;Apie VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Show a dialog with product information</source>
-        <translation>Rodyti langą su produkto informacija</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Pasirodė nauja VirtualBox versija! Versija &lt;b&gt;%1&lt;/b&gt; pasiekiama &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; svetainėje.&lt;/p&gt;&lt;p&gt;Šią versiją galite atsisiųsti spustelėję šią nuorodą: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai atlaisvinti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Tuomet laikmena nebebus susieta su šia virtualia mašina(-omis): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium
-</comment>
-        <translation type="obsolete">Atlaisvinti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai pašalinti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; iš žinomų laikmenų sąrašo?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>Atminkite, kad šio standžiojo disko dabar negalima ištrinti, nes jis neprieinamas.</translation>
-    </message>
-    <message>
-        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>Sekančiame puslapyje galėsite pasirinkti, ar ištrinti šį standųjį diską, ar išlaikyti vėlesniam naudojimui.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Atminkite, kad ši laikmena nebus ištrinta, tad vėliau galėsite ją vėl įtraukti į sąrašą.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium
-</comment>
-        <translation type="obsolete">Pašalinti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Standusis diskas ties &lt;b&gt;%1&lt;/b&gt; jau yra. Negalima sukurti kurti naujo virtualaus standžiojo disko, kuris užima tą pačią vietą.&lt;/p&gt;&lt;p&gt;Nurodykite kitą vietą.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai norite ištrinti standųjį diską &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Jei renkatės &lt;b&gt;Pašalinti&lt;/b&gt;, laikmena iš karto ištrinta &lt;b&gt;negrįžtamai&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jei renkatės &lt;b&gt;Išlaikyti&lt;/b&gt;, standusis diskas bus pašalintas tik iš žinomų laikmenų sąrašo, bet jis nebus ištrintas kompiuteryje, tad vėiau jį vėl galėsite įtraukti į minėtą sąrašą.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage
-</comment>
-        <translation type="obsolete">Pašalinti</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage
-</comment>
-        <translation type="obsolete">Išlaikyti</translation>
-    </message>
-    <message>
-        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko pašalinti standžiojo disko kaupiklio &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Nepavyko sukurti standžiojo disko kaupiklio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Nepavyko atverti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Nepavyko užverti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Nepavyko nustatyti &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; laikmenos pasiekiamumo būsenos.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko prisijungti prie VirtualBox nuotolinės registracijos paslaugos, nes įvyko klaida:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta gauti informacijos apie naują versiją, nes įvyko klaida:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vienas ar keli virtualūs standieji diskai, CD/DVD ar diskelių įtaisai nebepasiekiami. Todėl negalėsite naudotis tomis virtualiomis mašinomis, kurios naudoja tas laikmenas tol, kol jos nebus pasiekiamos.&lt;/p&gt;&lt;p&gt;Norėdami atverti virtualių laikmenų tvarkytuvę ir pamatyti tas laikmenas, spauskite &lt;b&gt;Tikrinti&lt;/b&gt;, o norėdami nekreipti dėmesio į šį pranešimą, spauskite &lt;b&gt;Nepaisyti&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos veikimo metu įvyko kritinė klaida, tad mašina sustojo.&lt;/p&gt;&lt;p&gt;Norėdami gauti pagalbos, žiūrėkite „Bendruomenės“ (angl. „Community“) skyrių &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;  svetainėje arba palaikymo kontrakte. Prašom pateikti &lt;tt&gt;VBox.log&lt;/tt&gt; žurnalo rinkmenos turinį ir &lt;tt&gt;VBox.png&lt;/tt&gt; paveiksliuką, kuriuos galite rasti &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; kataloge, bei aprašyti, ką darėte, prieš atsirandant šiai klaidai. Beje, aukščiau nurodytas rinkmenas galite pasiekti iš pagrindinio VirtualBox lango&lt;b&gt;Mašinos&lt;/b&gt; meniu pasirinke &lt;b&gt;Rodyti žurnalą&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jei norite išjungti mašiną, spauskite &lt;b&gt;Gerai&lt;/b&gt;, o jei norite palikti derinimui, spauskite &lt;b&gt;Nepaisyti&lt;b&gt;. Atminkite, kad derinimui reikia specialių žinių ir įrankių, tad dabar patartina spausti &lt;b&gt;Gerai&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>Šios rinkmenos jau yra:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Ar jas pakeisti? Tokiu atveju būtų perrašytas jų turinys.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="obsolete">Nepavyko pašalinti rinkmenos &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Pašalinkite savarankiškai ir bandykite iš naujo.</translation>
-    </message>
-    <message>
-        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation>Naudojate eksperimentinę VirtualBox versiją. Ši versija gali būti netinkama naudoti.</translation>
-    </message>
-    <message>
-        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="obsolete">Nepavyksta pasiekti pagrindinio kompiuteryje esančių USB įtaisų, nes neprieinama nei USB rinkmenų sistema (usbfs), nei DBus su hal paslaugomis. Jei svečio sistemoje norite naudoti pagrindinio kompiuterio USB įtaisus, privalote pašalinti trūkumus ir iš naujo paleisti VirtualBox.</translation>
-    </message>
-    <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation>Bandote virtualioje mašinoje nuspausti ACPI išjungimo mygtuką. Tai neįmanoma, nes svečio sistema nepalaiko programinio išjungimo.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimas įgalintas, bet neveiks. Jūsų 64 bitų svečio sistema neaptiks 64 bitų procesoriaus ir negalės pasileisti.&lt;/p&gt;&lt;p&gt;Įsitikinkite, ar tinkamai įgalinote VT-x/AMD-V per savo pagrindinio kompiuterio BIOS.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Close VM</source>
-        <translation>Užverti virtualią mašiną</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Tęsti</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Atšaukti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Prie papildomo valdiklio lizdo yra prijungtų standžiųjų diskų. Jei uždrausite papildomą valdiklį, visi šie standieji diskai bus automatiškai atjungti.&lt;/p&gt;&lt;p&gt;Tikrai uždrausti papildomą valdiklį?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Prie papildomo valdiklio lizdo yra prijungtų standžiųjų diskų. Jei keisite papildomą valdiklį, visi šie standieji diskai bus automatiškai atjungti.&lt;/p&gt;&lt;p&gt;Tikrai keisti papildomą valdiklį?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Change</source>
-        <comment>hard disk
-</comment>
-        <translation type="obsolete">Keisti</translation>
-    </message>
-    <message>
-        <source>Failed to create the host-only network interface.</source>
-        <translation>Nepavyko sukurti sąsajos prisijungimui tik prie pagrindinio kompiuterio.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Esamos VirtualBox nuostatų rinkmenos bus automatiškai konvertuotos iš seno į naują formatą, kurį naudoja naujoji VirtualBox versija.&lt;/p&gt;&lt;p&gt;Norėdami paleisti VirtualBox dabar, spauskite &lt;b&gt;Gerai&lt;/b&gt;, o jei norite užverti VirtualBox nieko nedarant, spauskite &lt;b&gt;Baigti&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open appliance.</source>
-        <translation>Nepavyko atverti mašinos.</translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko atverti/interpretuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko importuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create appliance.</source>
-        <translation>Nepavyko sukurti virtualios mašinos.</translation>
-    </message>
-    <message>
-        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko eksportavimui paruošti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create an appliance.</source>
-        <translation>Virtualios mašinos sukurti nepavyko.</translation>
-    </message>
-    <message>
-        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko eksportuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>Rinkmena pavadinimu &lt;b&gt;%1&lt;/b&gt; jau yra. Ar ją pakeisti?&lt;br /&gt;&lt;br /&gt;Tokiu atveju būtų perrašytas jos turinys.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimas įgalintas, bet neveiks. Kai kurioms svečio sistemoms (pvz., OS/2 ir QNX) reikia šios savybės.&lt;/p&gt;&lt;p&gt;Įsitikinkite, ar tinkamai įgalinote VT-x/AMD-V per savo pagrindinio kompiuterio BIOS.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Klaidingas el. pašto adresas arba slaptažodis.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko užregistruoti VirtualBox produkto.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation>Rinkmenų patikrinti nepavyko.</translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation>Nepavyko pašalinti rinkmenos.</translation>
-    </message>
-    <message>
-        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation>Regis prie /sys/bus/usb/drivers prijungėte USBFS rinkmenų sistemą. Labai patariame pakeisti tokią būseną, nes tai gali būti rimta sistemos konfigūracijos problema, galinti lemti netikėtus USB įtaisų sutrikimus.</translation>
-    </message>
-    <message>
-        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation>Naudojate EKSPERIMENTINĘ VirtualBox versiją. Ši versija gali būti netinkama naudoti.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tikrai atkurti momentinę kopiją &lt;b&gt;%1&lt;/b&gt;? Tokiu atveju negrįžtamai prarasite dabartinę savo mašinos būseną.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>Atkurti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Pašalinus momentinį būvį, prarasite jame įrašytą informaciją, o keliose rinkmenose laikomi disko duomenys bus sujungti į vieną rinkmeną. Momentiniame būvyje esančios informacijos nebebus galima atkurti. Šis veiksmas gali užtrukti.&lt;/p&gt;&lt;/p&gt;Tikrai pašalinti pasirinktą momentinį būvį &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Pašalinti</translation>
-    </message>
-    <message>
-        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepavyko atkurti momentinio būvio iš kopijos &lt;b&gt;%1&lt;/b&gt;, skirtos virtualiai mašinai &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Nepavyko pašalinti momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;, skirtos virtualiai mašinai &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>medium
-</comment>
-        <translation type="obsolete">Su&amp;kurti</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <comment>medium
-</comment>
-        <translation type="obsolete">Pa&amp;sirinkti</translation>
-    </message>
-    <message>
-        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko prijungti %1 prie &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko atjungti %1 nuo &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyksta prijungti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; prie mašinos &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source> Would you like to force mounting of this medium?</source>
-        <translation> Ar šią laikmeną prijungti priverstinai?</translation>
-    </message>
-    <message>
-        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyksta atjungti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; nuo mašinos &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source> Would you like to force unmounting of this medium?</source>
-        <translation> Ar šią laikmeną atjungti priverstinai?</translation>
-    </message>
-    <message>
-        <source>Force Unmount</source>
-        <translation>Priverstinai atjungti</translation>
-    </message>
-    <message>
-        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation type="obsolete">Nepavyko išmesti disko iš virtualaus įtaiso. Galbūt įtaisą užblokavo svečio operacinė sistema. Patikrinkite ir bandykite iš naujo.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta prijungti VirtualBox svečio papildinių diegimo CD atvaizdžio prie virtualios mašinos &lt;b&gt;%1&lt;/b&gt;, nes mašina neturi CD/DVD įtaiso.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box
-</comment>
-        <translation type="obsolete">&amp;Baigti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sekančios VirtualBox nuostatų rinkmenos bus automatiškai konvertuotos iš seno į naują formatą, kurį naudoja naujoji VirtualBox versija.&lt;/p&gt;&lt;p&gt;Norėdami paleisti VirtualBox dabar, spauskite &lt;b&gt;Gerai&lt;/b&gt;, o jei norite užverti VirtualBox nieko nedarant, spauskite &lt;b&gt;Baigti&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...
-</comment>
-        <translation type="obsolete">standųjį diską</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive
-</comment>
-        <translation type="obsolete">CD/DVD</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...
-</comment>
-        <translation type="obsolete">CD/DVD atvaizdį</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive
-</comment>
-        <translation type="obsolete">diskelį</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...
-</comment>
-        <translation type="obsolete">diskelį atvaizdį</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to attach ...
-</comment>
-        <translation type="obsolete">standžiojo disko</translation>
-    </message>
-    <message>
-        <source>CD/DVD device</source>
-        <comment>failed to attach ...
-</comment>
-        <translation type="obsolete">CD/DVD įtaiso</translation>
-    </message>
-    <message>
-        <source>floppy device</source>
-        <comment>failed to close ...
-</comment>
-        <translation type="obsolete">diskelių įtaiso</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai pašalinti CD/DVD-ROM įtaisą?&lt;/p&gt;&lt;p&gt;Jei taip, negalėsite prijungti jokio CD ar ISO atvaizdžio, negalėsite įdiegti svečio papildinių!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium
-</comment>
-        <translation type="obsolete">Pašalin&amp;ti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimo jūsų sistemoje nėra. Taigi 64 bitų svečio sistema neaptiks 64 bitų procesoriaus ir negalės pasileisti.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V aparatinės įrangos spartimo jūsų sistemoje nėra. Kai kurioms svečio sistemoms (pvz., OS/2 ir QNX) reikia šios savybės; be jos sistema nepasileis.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Šalinant momentinį būvį „%1“, laikinai bus panaudojama daugiau disko vietos. Blogiausiu atveju disko atvaizdis %2 padidės %3, tačiau šioje rinkmenų sistemoje tėra %4 laisvos vietos.&lt;/p&gt;&lt;p&gt;Viršijant disko erdvę suliejimo operacijos metu, atvaizdis ir VM konfigūracija gali būti sugadinti, t. y. prarasta VM ir jos duomenys.&lt;/p&gt;&lt;p&gt;Vis tik galite tęsti momentinio būvio šalinimo operaciją prisiimdami asmeninę atsakomybę.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepakanka vaizdo atminties, kad būtų pakeistas svečio sistemos ekranas šiam pagrindinio kompiuterio ekranui.&lt;/p&gt;&lt;p&gt;Sukonfigūruokite virtualią mašiną taip, kad ji turėtų bent &lt;b&gt;%1&lt;/b&gt; vaizdo atminties.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepakanka vaizdo atminties, kad būtų pakeistas svečio sistemos ekranas šiam pagrindinio kompiuterio ekranui.&lt;/p&gt;&lt;p&gt;Sukonfigūruokite virtualią mašiną taip, kad ji turėtų bent &lt;b&gt;%1&lt;/b&gt; vaizdo atminties.&lt;/p&gt;&lt;p&gt;Spauskite &lt;b&gt;Nepaisyti&lt;/b&gt;, jei vis tiek norite pabandyti perjungti ekraną, arba spauskite &lt;b&gt;Atšaukti&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta svečio ekrano perjungti į viso ekrano veikseną. Sukonfigūravote daugiau virtualių ekranų nei yra fizinių ekranų, prijungtų prie pagrindinio kompiuterio.&lt;/p&gt;&lt;p&gt;Arba sumažinkite virtualių ekranų skaičių, arba prie pagrindinio kompiuterio prijunkite papildomų fizinių ekranų.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta svečio ekrano perjungti į integruoto darbalaukio veikseną. Sukonfigūravote daugiau virtualių ekranų nei yra fizinių ekranų, prijungtų prie pagrindinio kompiuterio.&lt;/p&gt;&lt;p&gt;Arba sumažinkite virtualių ekranų skaičių, arba prie pagrindinio kompiuterio prijunkite papildomų fizinių ekranų.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyksta rasti VirtualBox naudotojo žinyno &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ar parsiųsti jį iš interneto?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai parsiųsti VirtualBox naudotojo žinyną iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (%3 baitų dydžio)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepavyko parsiųsti VirtualBox naudojo žinyno iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sėkmingai parsiųstas VirtualBox naudotojo žinynas iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; ir įrašytas vietinėje sistemoje kaip &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sėkmingai parsiųstas VirtualBox naudotojo žinynas iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, tačiau nepavyksta jo įrašyti vietinėje sistemoje  kaip &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Nurodykite kitą rinkmenos įrašymo vietą.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - informacija</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - klausimas</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - įspėjimas</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - klaida</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtialBox - lemtinga klaida</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag</comment>
-        <translation>Daugiau nerodyti šio pranešimo</translation>
-    </message>
-    <message>
-        <source>Failed to open virtual machine located in %1.</source>
-        <translation>Nepavyko atverti virtualios mašinos, esančios ties %1.</translation>
-    </message>
-    <message>
-        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation>Nepavyko pridėti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;, esančios ties &lt;i&gt;%2&lt;/i&gt;, nes ji jau yra.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ketinate pašalinti virtualią mašiną &lt;b&gt;%1&lt;/b&gt; iš mašinų sąrašo.&lt;/p&gt;&lt;p&gt;Ar norėtumėte kartu pašalinti iš standžiojo disko ir susijusias rinkmenas?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ketinate pašalinti virtualią mašiną &lt;b&gt;%1&lt;/b&gt; iš mašinų sąrašo.&lt;/p&gt;&lt;p&gt;Ar norėtumėte kartu pašalinti iš standžiojo disko ir susijusias rinkmenas? Tokiu atveju bus pašalintos virtualius diskus turinčios rinkmenos, jei tik jų nenaudoja kita virtuali mašina.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete all files</source>
-        <translation>Šalinti visas rinkmenas</translation>
-    </message>
-    <message>
-        <source>Remove only</source>
-        <translation>Tik pašalinti</translation>
-    </message>
-    <message>
-        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation>Ketinate pašalinti neprieinamą virtualią mašiną &lt;b&gt;%1&lt;/b&gt; iš mašinų sąrašo. Tęsti?</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Pašalinti</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state</comment>
-        <translation>Atmesti</translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium</comment>
-        <translation>Atlaisvinti</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium</comment>
-        <translation>Pašalinti</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage</comment>
-        <translation>Pašalinti</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage</comment>
-        <translation>Išlaikyti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują standųjį diską.&lt;/p&gt;&lt;p&gt;Ar tuo pačiu norėtumėte sukurti naują tuščią rinkmeną disko turiniui laikyti, ar pasirinkti esamą?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Create &amp;new disk</source>
-        <comment>add attachment routine</comment>
-        <translation>Sukurti &amp;naują diską</translation>
-    </message>
-    <message>
-        <source>&amp;Choose existing disk</source>
-        <comment>add attachment routine</comment>
-        <translation>&amp;Pasirinkti esamą diską</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują CD/DVD įtaisą.&lt;/p&gt;&lt;p&gt;Ar norėtumėte tuo pačiu pasirinkti virtualų CD/DVD diską ir jį įdėti į įtaisą, ar šiuo metu įtaisą palikti tuščią?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Choose disk</source>
-        <comment>add attachment routine</comment>
-        <translation>&amp;Pasirinkti diską</translation>
-    </message>
-    <message>
-        <source>Leave &amp;empty</source>
-        <comment>add attachment routine</comment>
-        <translation>Palikti &amp;tuščią</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują diskelio įtaisą.&lt;/p&gt;&lt;p&gt;Ar norėtumėte tuo pačiu pasirinkti virtualų diskelį ir jį įdėti į įtaisą, ar šiuo metu įtaisą palikti tuščią?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation>Pašalin&amp;ti</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyko atjungti standžiojo disko (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) nuo &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyko atjungti CD/DVD įtaiso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) nuo &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyko atjungti diskelio įtaiso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) nuo &lt;i&gt;%2&lt;/i&gt; lizdo mašinoje &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Regis šioje virtualioje mašinoje neprieinami VirtualBox svečio papildiniai, tad negalite naudoti bendrųjų aplankų. Norėdami naudoti bendruosius aplankus virtualioje mašinoje, įdiekite svečio papildinius (jei jie neįdiegti) arba iš naujo įdiekite juos (jei jie veikia netinkamai) pasirinkdami &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;Mašinos&lt;/b&gt; meniu. Jei jie įdiegti, bet mašina dar pilnai nepasileido, tuomet luktelėkite.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions</comment>
-        <translation>Parsiųsti</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions</comment>
-        <translation>Prijungti</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box</comment>
-        <translation>Tikrinti</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation>&amp;Baigti</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen</comment>
-        <translation>Perjungti</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless</comment>
-        <translation>Perjungti</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine</comment>
-        <translation>Paleisti iš naujo</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached</comment>
-        <translation>Tęsti</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached</comment>
-        <translation>Atgal</translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation>Nepavyko atnaujinti svečio papildinių. Svečio papildinių diegimo atvaizdis bus prijungtas tam, kad įdiegtumėte patys rankiniu būdu.</translation>
-    </message>
-    <message>
-        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko įdiegti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko pašalinti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation type="obsolete">Ketinate pašalinti papildinių paketą &lt;b&gt;%1&lt;/b&gt;. Tikrai pašalinti?</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>Pašalin&amp;ti</translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation>Dabartinės prievadų nukreipimo taisyklės yra netinkamos. Pagr. kompiuterio ar svečio sistemos prievadas negali būti nulis.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Yra neįrašytų prievadų persiuntimo konfigūracijos pakeitimų.&lt;/p&gt;&lt;p&gt;Jei tęsite, prarasite atliktus pakeitimus.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Lemtinga klaida&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Klaida nėra lemtinga&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Įspėjimai&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Klaidos ID: &lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation>Rimtumas:</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...</comment>
-        <translation>standųjį diską</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>CD/DVD</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...</comment>
-        <translation>CD/DVD atvaizdį</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>diskelį</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...</comment>
-        <translation>diskelio atvaizdį</translation>
-    </message>
-    <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation>Atleiskite, būna daugybinių klaidų.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyko priskirti standžiojo disko (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) prie &lt;i&gt;%2&lt;/i&gt; lizdo &lt;b&gt;%3&lt;/b&gt; mašinoje.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyko priskirti CD/DVD įtaiso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) prie &lt;i&gt;%2&lt;/i&gt; lizdo &lt;b&gt;%3&lt;/b&gt; mašinoje.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nepavyko priskirti diskelio įtaiso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) prie &lt;i&gt;%2&lt;/i&gt; lizdo &lt;b&gt;%3&lt;/b&gt; mašinoje.</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation>Rezultato&amp;nbsp;kodas: </translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation>Elementas:</translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation>Sąsaja: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Atminkite, kad ši laikmena nebus ištrinta, tad vėliau ją vėl galėsite naudoti.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Regis šioje virtualioje mašinoje neprieinami VirtualBox svečio papildiniai, tad negalite naudoti bendrųjų aplankų. Norėdami naudoti bendruosius aplankus virtualioje mašinoje, įdiekite svečio papildinius (jei jie neįdiegti) arba iš naujo įdiekite juos (jei jie veikia netinkamai) pasirinkdami &lt;b&gt;Įdiegti svečio papildinius&lt;/b&gt; iš &lt;b&gt;Įtaisų&lt;/b&gt; meniu. Jei jie įdiegti, bet mašina dar pilnai nepasileido, tuomet luktelėkite.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;viso ekrano&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, viso ekrano veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klavišas) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;integruoto darbalaukio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, integruotoje veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klav.) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;keičiamo lango dydžio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, keičiamo lango dydžio veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klav.) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>scale</comment>
-        <translation>Perjungti</translation>
-    </message>
-    <message>
-        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko atverti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Install</source>
-        <translation>Į&amp;diegti</translation>
-    </message>
-    <message>
-        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation>Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jau yra įdiegta senesnė papildinių paketo versija. Atnaujinti? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nauja versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Dabartinė versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Upgrade</source>
-        <translation>&amp;Atnaujinti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jau yra įdiegta naujesnė papildinių paketo versija. Pakeisti į senesnę versiją? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nauja versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Dabartinė versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Downgrade</source>
-        <translation>&amp;Pasendinti versiją</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jau yra įdiegta tokia pati papildinių paketo versija. Iš naujo įdiegti? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Reinstall</source>
-        <translation>&amp;Iš naujo įdiegti</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ketinate pašalinti VirtualBox papildinių paketą &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tęsti?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation>Papildinių paketas &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; įdiegtas.</translation>
-    </message>
-    <message>
-        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="obsolete">Visų virtuliai mašinai rinkmenų pašalinimas uždraustas Windows/x64 sistemoje tam, kad būtų išvengta strigio. Tai bus ištaisyta sekančiame leidime.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Viršaplankyje &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; nepavyksta sukurti mašinos aplanko &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Patikrinkite, ar viršaplankis iš tiesų yra ir ar turite leidimą kurti mašinos aplanką.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Šioje virtualioje mašinoje įgalintas USB 2.0. Tačiau tam turi įdiegtas &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;nobr&gt;Įdiegike papildinių paketą, kurį rasite VirtualBox svetainėje. Tuomet vėl galėsite įgalite USB 2.0. Iki tol ši funkcija bus uždrausta, nebent atsisakysite dabartinių nuostatų pakeitimų.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko užregistruoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Jums besirenkant mašinos nuostatas, jos buvo pakeistos. Jūs dar neįrašėte pakeitimų.&lt;/p&gt;&lt;p&gt;Ar iš naujo įkelti nuostatas, ar išlaikyti dabar Jūsų atliktus pakeitimus?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reload settings</source>
-        <translation>Iš naujo įkelti nuostatas</translation>
-    </message>
-    <message>
-        <source>Keep changes</source>
-        <translation>Išlaikyti pakeitimus</translation>
-    </message>
-    <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished">Šiuo metu tvarkomos virtualios mašinos būsena pasikeitė. Nuspaudus mygtuką „gerai“ bus įrašytos tik šiame dialoge matomos nuostatos. Visi kiti pakeitimai bus prarasti.</translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nepavyko klonuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a snapshot of the current machine state</source>
-        <translation>Sukurti mašinos dabartinio būvio momentinę kopiją</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tikrai atkurti momentinį būvį &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Klaida keičiant laikmenos tipą iš &lt;b&gt;%1&lt;/b&gt; į &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Šioje virtualioje mašinoje įgalintas USB 2.0. Tačiau tam turi įdiegtas &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;/p&gt;&lt;p&gt;Įdiegike papildinių paketą, kurį rasite VirtualBox svetainėje. Tuomet vėl rinkitės įgalinti USB 2.0. Iki tol ši funkcija bus uždrausta, nebent atsisakysite dabartinių nuostatų pakeitimų.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation>Nepavyksta įkelti pagr. kompiuterio USB įgaliotojo serverio paslaugos (VERR_FILE_NOT_FOUND). Galbūt ši paslauga neįdiegta pagrindiniame kompiueryje</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox programai neleidote pasiekti USB įrenginių. Šią parinktį galite pakeisti savo naudotoją priskirdami „vboxusers“ grupei. Daugiau informacijos rasite naudotojo žinyne</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox programai neleidote pasiekti USB įrenginių. Tai pakeisite leisdami savo naudotojui pasiekti „usbfs“ aplankus ir rinkmenas. Daugiau informacijos rasite naudotojo žinyne</translation>
-    </message>
-    <message>
-        <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation>USB įgaliotojo serverio paslauga dar nesusieta su pagrindiniu kompiuteriu</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy service</source>
-        <translation>Nepavyksta įkelti pagr. kompiuterio USB įgaliotojo serverio paslaugos</translation>
-    </message>
-</context>
-<context>
     <name>VBoxProgressDialog</name>
     <message>
         <source>A few seconds remaining</source>
@@ -9319,7 +9422,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Pagalba</translation>
+        <translation type="obsolete">&amp;Pagalba</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -9779,29 +9882,6 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
             <numerusform>Dėmesio: jūs mėginate sukurti momentinę būvio kopiją veikiančios mašinos, kuri turi %n priskirtus nekeičiamų atvaizdžių. Kol dirbdate su šiuo būviu, tol nekeičiami atvaizdžiai nebus perstatyti siekiant išvengti duomenų praradimo.</numerusform>
             <numerusform>Dėmesio: jūs mėginate sukurti momentinę būvio kopiją veikiančios mašinos, kuri turi %n priskirtų nekeičiamų atvaizdžių. Kol dirbdate su šiuo būviu, tol nekeičiami atvaizdžiai nebus perstatyti siekiant išvengti duomenų praradimo.</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation>Redaguoti tekstą</translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation>&amp;Pakeisti...</translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation>Šį tekstą pakeisti rinkmenos turiniu.</translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation>Tekstas (*.txt);;Visos (*.*)</translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation>Pasirinkti atvertiną rinkmeną...</translation>
     </message>
 </context>
 <context>

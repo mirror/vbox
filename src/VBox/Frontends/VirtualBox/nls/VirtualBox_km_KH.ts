@@ -158,6 +158,14 @@
         <source>&amp;Details (%1 of %2)</source>
         <translation>សេច​ក្តី​លម្អិត​ (%1 នៃ %2)</translation>
     </message>
+    <message>
+        <source>Copy all errors to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIWidgetValidator</name>
@@ -447,6 +455,146 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation>ប្រ​ព័ន្ធ​​និម្មិត​ %1</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>ឈ្មោះ</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation>ផលិត​ផល​</translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation>ផលិតផល​-URL</translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation>ក្រុម​ហ៊ុន​លក់​</translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation>ក្រុម​ហ៊ុន​លក់​​-URL</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>កំណែ​</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation>សេច​ក្តី​ពិណណ៌នា​</translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation>អជ្ញាបណ្ណ</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>ស៊ី​ភី​យូ</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation>សតិ</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation>ឧបករណ៍បញ្ជា​​ថាស​រឹង (IDE)</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation>ឧបករណ៍បញ្ជា​​ថាស​រឹង (SATA)</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation>ឧបករណ៍​បញ្ជា​ថាស​រឹង (SCSI)</translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation>ឌីវីឌី​</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation>ថាសទន់</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation>អាដាប់​ទ័រ​បណ្តាញ​</translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation>ឧបករណ៍​បញ្ជា​ USB</translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation>កាត​សំឡេង​</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translation>រូបភាព​ថាស​និម្មិត​</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation>មិនស្គាល់​ធាតុ​ផ្នែក​រឹង​</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">មេកាបៃ</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation>&lt;b&gt;តម្លៃ​​ដើម​ ៖&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation>ការ​កំណត់​រចនា​សម្ព័ន្ធ</translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation>ការ​ព្រមាន​ ៖</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="obsolete">មេកាបៃ</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="obsolete">មេកាបៃ</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation>កំពុង​អាន​ឧបករណ៍​...</translation>
+    </message>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation>កំពុង​នាំ​ចូល​ឧបករណ៍​...</translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -454,6 +602,10 @@
     </message>
     <message>
         <source>Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Base for %1 and %2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -468,10 +620,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
         <translation type="unfinished"></translation>
     </message>
@@ -483,9 +631,36 @@
         <source>%1 Clone</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
         <translation type="unfinished"></translation>
@@ -831,10 +1006,6 @@
         <source>The download process has been cancelled by the user.</source>
         <translation type="obsolete">ដំណើរការ​​ទាញយក​ត្រូវ​បានបោះបង់​ដោយ​អ្នកប្រើ​ ។</translation>
     </message>
-    <message>
-        <source>The download process has been canceled by the user.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>UIDownloaderAdditions</name>
@@ -852,7 +1023,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បាន​បរាជ័យ​ក្នុងកា​ររក្សាទុក​ឯកសារ​ដែលបាន​ទាញ​យក​ជា &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; ។&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;បាន​បរាជ័យ​ក្នុងកា​ររក្សាទុក​ឯកសារ​ដែលបាន​ទាញ​យក​ជា &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; ។&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
@@ -2019,23 +2190,23 @@ creating/removing host-only network</comment>
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="obsolete">ប្ដូរ(Shift) ឆ្វេង</translation>
+        <translation type="unfinished">ប្ដូរ(Shift) ឆ្វេង</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="obsolete">ប្ដូរ(Shift) ស្ដាំ</translation>
+        <translation type="unfinished">ប្ដូរ(Shift) ស្ដាំ</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="obsolete">បញ្ជា (Ctrl) ឆ្វេង</translation>
+        <translation type="unfinished">បញ្ជា (Ctrl) ឆ្វេង</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="obsolete">បញ្ជា(Ctrl) ស្ដាំ</translation>
+        <translation type="unfinished">បញ្ជា(Ctrl) ស្ដាំ</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="obsolete">ជំនួស​(Alt) ឆ្វេង</translation>
+        <translation type="unfinished">ជំនួស​(Alt) ឆ្វេង</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2427,6 +2598,13 @@ p, li { white-space: pre-wrap; }
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>កែសម្រួល​</translation>
     </message>
 </context>
 <context>
@@ -3675,10 +3853,6 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Execution Cap:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3702,6 +3876,10 @@ network adapter name</comment>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3958,26 +4136,1270 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
+    <name>UIMessageCenter</name>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - ព័ត៌មាន</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - សំណួរ</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - កា​រព្រមាន</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - កំហុស</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - កំហុស​ធ្ងន់ធ្ងរ</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag</comment>
+        <translation>កុំ​បង្ហាញ​សារ​នេះ​ម្ដង​ទៀត</translation>
+    </message>
+    <message>
+        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
+        <translation>បានបរាជ័យ​ក្នុងការ​បើក &lt;tt&gt;%1&lt;/tt&gt; ។ ប្រាកដ​ថា​បរិស្ថាន​ផ្ទៃតុ​របស់​អ្នក​អាច​គ្រប់គ្រង URLs នៃ​ប្រភេទ​នេះ​យ៉ាង​ត្រឹមត្រូវ ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​រចាប់ផ្ដើម COM ឬ​រកម៉ាស៊ីនបម្រើ VirtualBox COM ។ ភាគ​ច្រើន​ម៉ាស៊ីនបម្រើ VirtualBox មិន​រត់​ ឬ​បរាជ័យ​ក្នុងកា​រចាប់ផ្ដើម ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បិទ​ឥឡូវ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​របង្កើត​វត្ថុ VirtualBox COM ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បិទ​ឥឡូវ​នេះ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to set global VirtualBox properties.</source>
+        <translation>បាន​បរាជ័យ​ក្នុង​ការ​កំណត់លក្ខណៈសម្បត្តិរបស់ VirtualBox ។</translation>
+    </message>
+    <message>
+        <source>Failed to access the USB subsystem.</source>
+        <translation>បាន​បរាជ័យ​ក្នុង​ការ​​ចូលដំណើរការ​ប្រព័ន្ធ​រង​របស់ USB ។</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine.</source>
+        <translation>បាន​បរាជ័យ​ក្នុង​ការ​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី ។</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បានបរាជ័យ​ក្នុងការ​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បានបរាជ័យ​ក្នុងការ​អនុវត្ត​ការ​កំណត់ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត​ថ្មី &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​ចាប់ផ្ដើម​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុង​កា​រផ្អាក​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បានបរាជ័យ​ក្នុងការ​បន្ត​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​ររក្សាទុក​ស្ថានភាព​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បានបរាជ័យ​ក្នុងការ​បង្កើត​រូបថត​អេក្រង់​របស់ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​បញ្ឈប់​ម៉ាស៊ីននិម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​រយក​ម៉ាស៊ីន​និម្មិត​ចេញ &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​បោះបង់​ស្ថានភាព​របស់​ម៉ាស៊ីន​និម្មិត​ដែលបាន​រក្សាទុក &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>គ្មាន​ម៉ាស៊ីន​និម្មិត​ដែល​មាន​ឈ្មោះ &lt;b&gt;%1&lt;/b&gt; នោះ​ទេ ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;តើអ្នក​ប្រាកដ​ជា​ចង់​លុប​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ជា​អចិន្ត្រៃយ៍​ឬ ?&lt;/p&gt;&lt;p&gt;ប្រតិបត្តិការ​នេះ​មិនអាច​ត្រូវ​បាន​ធ្វើ​វិញ​ទេ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឈ្មោះ​ម៉ាស៊ីននិម្មិត &lt;b&gt;%1&lt;/b&gt;​ដែល​មិនអាច​ចូលដំណើរការ​បាន​​ដែរឬទេ?&lt;/p&gt;&lt;p&gt;អ្នក​នឹង​មិនអាច​ចុះឈ្មោះ​វា​បានទៀតទេ​ពី GUI ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​បោះបង់​ស្ថានភាព​ដែលបានរក្សាទុក​របស់ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt;ដែរឬទេ ?&lt;/p&gt;&lt;p&gt;ប្រតិបត្តិការ​នេះ​មិន​ស្មើ​នឹង​កា​រកំណត់​ឡើង​វិញ ឬ​បិទ​ម៉ាស៊ីន​​ដោ​​យ​មិន​បានចុច​ប៊ូតុង​ដោយ​សមរម្យ​តាម​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create a new session.</source>
+        <translation>បានបរាជ័យ​ក្នុងការ​បង្កើត​សម័យ​ថ្មី ។</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បានបរាជ័យ​ក្នុងកា​របើក​សម័យ​សម្រាប់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​យក​ចំណុច​ប្រទាក់​បណ្ដាញ​ម៉ាស៊ីន​ &lt;b&gt;%1&lt;/b&gt; ចេញ ។</translation>
+    </message>
+    <message>
+        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​រភ្ជាប់​ឧបករណ៍ USB &lt;b&gt;%1&lt;/b&gt; ទៅ​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%2&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>បាន​ប​រាជ័យ​ក្នុងការ​ផ្ដាច់​ឧបករណ៍ USB &lt;b&gt;%1&lt;/b&gt; ពី​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%2&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​របង្កើត​ថត &lt;b&gt;%1&lt;/b&gt; (ចង្អុល​ទៅ​ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) សម្រាប់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​រយក​ថត​ដែល​បាន​ចែករំលែក​ចេញ &lt;b&gt;%1&lt;/b&gt; (ចង្អុល​ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ពី​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ម៉ាស៊ីន​និម្មិត​រាយការណ៍​ថា​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​មិន​គាំទ្រទេ ។ &lt;b&gt;ការ​រួម​បញ្ចូល​ទ្រនិច​កណ្ដុរ&lt;/b&gt; នៅ​ក្នុង​របៀប​វីដេអូ​បច្ចុប្បន្ន ។ អ្នក​ត្រូវតែ​ចាប់យក​កណ្ដុរ (ដោយ​ចុច​លើ​ការ​បង្ហាញ VM ឬ​ចុច​គ្រាប់ចុច​លើ​ម៉ាស៊ីន) ដើម្បី​ប្រើ​កណ្ដុរ​ខាង​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ម៉ាស៊ីន​និម្មិត​បច្ចុប្បន្ន​ស្ថិត​ក្នុង​ស្ថានភាព &lt;b&gt;បាន​ផ្អាក&lt;/b&gt; ហើយ​ដូច្នេះ​មិន​ទទួល​​ក្ដារចុច​ ឬ​កណ្ដុរ​ណា​មួយ ។ ប្រសិន​បើ​អ្នក​ចង់​បន្ត​ដំណើរការ​ខាង​ក្នុង VM អ្នក​ត្រូវ​តែ​បន្តវា ដោយ​ជ្រើស​សកម្មភាព​ដែល​ទាក់ទង​ពីរបារ​ម៉ឺនុយ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;មិន​អាច​រត់ VirtualBox នៅ​ក្នុងរបៀប &lt;i&gt;កម្មវិធី​ជ្រើស VM​&lt;/i&gt; ដោយសារ​តែ​ការ​ដាក់កម្រិត​មូលដ្ឋាន ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បញ្ចប់​ឥឡូវ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;កំហុស​ធ្ងន់ធ្ងរ&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;មិនមែន​កំហុស​ធ្ងន់ធ្ងរ&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;កា​រព្រមាន&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;លេខសម្គាល់​កំហុស ៖&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info</comment>
+        <translation>ភាព​ម៉ឺងម៉ាត់ ៖</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
+        <translation>&lt;p&gt;កំហុស​ធ្ងន់ធ្ងរ​មានកើត​ឡើង​កំឡុង​ពេល​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត ! ម៉ាស៊ីន​និម្មិត​នឹង​ត្រូវ​បាន​បិទ ។ វា​ត្រូ​វបាន​ស្នើ​ឲ្យ​ប្រើ​ក្ដារតម្បៀតខ្ទាស់​ដើម្បី​ចម្លង​សារ​កំហុស​ដើម្បីពិនិត្យ​មើល​បន្ថែម​ទេ ៖&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;កំហុស​បានកើត​ឡើង​កំឡុង​ពេល​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត ! សេចក្ដី​លម្អិត​កំហុស​ត្រូវ​បានបង្ហាញ​ខាង​ក្រោម ។ អ្នកអាច​ព្យាយាម​កែ​កំហុស​ដែល​ពិពណ៌នា ហើយ​បន្ត​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ការ​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត​អាច​រត់​ក្នុង​លក្ខខណ្ឌ​មាន​កំហុស​ដូច​បាន​ពិពណ៌នា​ខាង​ក្រោម ។ អ្នក​អាច​មិនអើពើ​សារ​នេះ​បាន ប៉ុន្តែ​វា​ត្រូវ​បាន​ស្នើ​ឲ្យ​អនុវត្ត​សកម្មភាព​ដែល​សមរម្យ ដើម្បីប្រាកដ​ថា​សារ​ដែលបានពិពណ៌នា​មិន​កើតឡើង​ទេ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation>កូដ​&amp;nbsp;លទ្ធផល ៖</translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation>សមាសភាគ ៖</translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation>ចំណុច​ប្រទាក់ ៖</translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation>Callee ៖ </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation>Callee&amp;nbsp;RC ៖ </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;រក​មិន​ឃើញ​​ឯកសារ​ភាសា​សម្រាប់​ភាសា &lt;b&gt;%1&lt;/b&gt; នៅ​ក្នុង &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;ទេ ។&lt;/p&gt;&lt;p&gt;ភាសា​នឹង​ត្រូវ​បានកំណត់​ឡើង​វិញជា​បណ្ដោះអាសន្ន​ទៅ​ភាសា​លំនាំដើម​របស់​ប្រព័ន្ធ ។ សូម​ចូល​ទៅ​ប្រអប់ &lt;b&gt;ចំណូលចិត្ត&lt;/b&gt; ដែល​អ្នក​អាច​បើក​ពី​ម៉ឺនុយ &lt;b&gt;ឯកសារ&lt;/b&gt; នៃ​បង្អួច​ VirtualBox មេ ហើយ​ជ្រើស​ភាសា​មួយ​ក្នុង​ចំណោម​ភាសា​ដែល​មាន​នៅ​លើ​ទំព័រ &lt;b&gt;ភាសា&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;មិនអាច​ផ្ទុក​ឯកសារ​ភាសា &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; បានទេ ។ &lt;p&gt;ភាសា​នឹង​ត្រូវ​បានកំណត់​ទៅ​ជា​ភាសា​អង់គ្លេស​ជា​បណ្ដោះអាសន្ន ។ សូម​ចូល​ទៅ​ប្រអប់ &lt;b&gt;ចំណូល​ចិត្ត&lt;/b&gt; ដែល​អ្នក​អាច​បើក​ពី​ម៉ឺនុយ​ &lt;b&gt;ឯកសារ&lt;/b&gt; នៃ​បង្អួច VirtualBox មេ ហើយ​ជ្រើស​ភាសា​មួយ​ក្នុងចំណោម​ភាសា​ដែល​មាន​ស្រាប់​នៅ​លើ​ទំព័រ &lt;b&gt;ភាសា&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;ផ្នែក​បន្ថែម​ភាសា​ភ្ញៀវ​របស់ VirtualBox បាន​ដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ចាស់​ពេក ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុកគឺ %2 ។ លក្ខណៈពិសេស​មួយ​ចំនួន​ត្រូវការ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​ការ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) នឹង​បញ្ឈប់​ដំណើរការ​យ៉ាង​ត្រឹមត្រូវ ។&lt;/p&gt;&lt;p&gt;សូម​ធ្វើ​ឲ្យ​ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កំណែ​បច្ចុប្បន្ន​ ដោយ​ជ្រើស &lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ VirtualBox បានដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​គឺ​ហួស​សម័យ​ហើយ ៖ កំណែ​ដែលបានដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។ លក្ខណៈ​ពិសេស​មួយ​ចំនួន​ដែល​ត្រូវការ​ផ្នែក​បន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​កា​រផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់ម៉ាស៊ីន​ភ្ញៀវ) មិនអាច​ដំណើរការ​ដូច​ដែល​បាន​រំពឹង​ទុក​ទេ ។&lt;/p&gt;&lt;p&gt;វា​ត្រូ​វបានផ្ដល់​អនុសាសន៍​ឲ្យ​ធ្វើ​ឲ្យ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កណែ​បច្ចុប្បន្ន ដោយ​ជ្រើស​ &lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ថ្មីពេក​សម្រាប់​កំណែ​របស់ VirtualBox ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។&lt;/p&gt;&lt;p&gt;កា​រប្រើកំណែ​ថ្មី​របស់​បន្ថែម​ផ្នែកបន្ថែម​ជាង​កំណែ​ចាស់​របស់ VirtualBox មិន​ត្រូវ​បានគាំទ្រទេ ។ សូម​ដំឡើង​កំណែ​បច្ចុប្បន្ន​របស់​ផ្នែកបន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ ដោយ​ជ្រើស​&lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​ផ្លាស់ប្ដូរ​ផ្លូវ​ថត​រូបថត​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;b&gt; ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​រយក​ថត​ដែល​បានចែករំលែក &lt;b&gt;%1&lt;/b&gt; ចេញ (ចង្អុល​ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ពី​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;សូម​បិទ​កម្មវិធី​ទាំង​អស់​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ​ដែល​អាច​កំពុង​ប្រើ​ថត​ដែលបានចែករំលែក​នេះ ហើយ​ព្យាយាម​ម្ដង​ទៀត ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;មិនអាច​រក​​ឯកសារ​រូបភាព​ស៊ីឌី​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ឬ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; ។&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;តើអ្នក​ចង់​ទាញ​យក​រូបភាព​ស៊ីឌី​ពី​អ៊ីនធឺណិត​ដែរឬទេ ?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;បាន​បរាជ័យ​ក្នុងកា​រទាញ​​​យក​រូបភាព​ស៊ីឌី​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt; ។&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;តើ​អ្នក​ប្រាក​ដ​ជា​ចង់​ទាញ​យក​រូបភាព​ស៊ីឌី​បន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (ទំហំ %3 បៃ) ដែរឬទេ?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;រូបភាពស៊ីឌីផ្នែក​នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ VirtualBត្រូ​វបាន​ទាញយក​ដោយ​ជោគជ័យ​ពីr&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;​%2&lt;/a&gt;&lt;/nobr&gt;bហើយ​បាន​រក្សាទុក​ក្នុង​មូលដ្ឋាន​ជា as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt; ។&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;តើ​អ្នក​ចង់​ចុះឈ្មោះ​រូបភាព​ស៊ីឌី​នេះ ហើយ​ម៉ោន​វា​នៅ​លើ​ដ្រាយ​ស៊ីឌី/ឌីវីឌី​និម្មិតដែរឬទេ ?ve?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​ត្រូវ​បានធ្វើ​ឲ្យ​ប្រសើរ​ដើម្បី​ធ្វើការ​ក្នុងរបៀប​ពណ៌ &lt;b&gt;%1&amp;nbsp;ប៊ីត&lt;/b&gt; ប៉ុន្តែ​គុណភាពពណ៌​​នៃ​ការ​បង្ហាញ​និម្មិត​បច្ចុប្បន្ន​ត្រូវ​បានកំណត់​ទៅ &lt;b&gt;%2&amp;nbsp;ប៊ីត&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;សូម​បើក​ប្រអប់លក្ខណៈសម្បត្តិ​បង្ហាញ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ហើយ​ជ្រើសរបៀប​ពណ៌ &lt;b&gt;%3&amp;nbsp;ប៊ីត&lt;/b&gt; ប្រសិនបើ​មាន សម្រាប់​ការអនុវត្ត​ដ៏​ល្អ​បំផុត​របស់​ប្រព័ន្ធ​រង​វីដែអូ​និម្មិត ។&lt;/p&gt;&lt;p&gt;&lt;b&gt;ចំណាំ&lt;/b&gt; ។ ប្រព័ន្ធ​ប្រតិបត្តិការ​មួយ​ចំនួន ដូចជា OS/2 អាច​ដំណើរការ​យ៉ាង​ពិតប្រាកដ​នៅ​ក្នុង​របៀប ៣២&amp;nbsp;ប៊ីត ប៉ុន្តែ​រាយការណ៍​ជា ២៤&amp;nbsp;ប៊ីត (១៦​ លាន​ពណ៌) ។ អ្នក​អាច​ព្យាយាម​ជ្រើស​គុណភាព​ពណ៌​ផ្សេង​ដើម្បីមើល​ថាតើ​សារ​នេះ​មិនបង្ហាញ​ ឬ​អ្នក​អាច​បិទ​សារ​យ៉ាង​សាមញ្ញ ឥឡូវ​ប្រសិនបើ​អ្នក​ប្រាកដ​គុណភាព​ពណ៌​ដែល​ត្រូវការ (%4&amp;nbsp;ប៊ីត) មិនអាច​ប្រើ​បាននៅ​ក្នុង​ប្រព័ន្ធ ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ដែល​បានផ្ដល់​ឲ្យ​ទេ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;អ្នកមិនបានភ្ជាប់​ថាសរឹង​ទៅកាន់​ម៉ាស៊ីន​និម្មិត​ថ្មីទេ ។ ម៉ាស៊ីន​នឹង​មិនអាច​ចាប់ផ្ដើម​បានទេ លុះត្រា​តែ​អ្នក​ភ្ជាប់​ថាសរឹង​ជា​មួយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ ឬ​មេឌៀ​ចាប់ផ្ដើម​ផ្សេងៗ​មួយ​ចំនួន​ទៀត​ទៅវា​ ពេលក្រោយ​ប្រើ​ប្រអប់​កំណត់​ម៉ាស៊ីន​ ឬ​រត់​អ្នក​ជំនួយការ​សិន ។&lt;/p&gt;&lt;p&gt;តើអ្នក​ចង់​បន្ត​ដែរឬទេ ?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>បាន​បរាជ័យ​យក្នុងកា​ររក​ឯកសារ​អាជ្ញាបណ្ណ​នៅ​ក្នុង &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​របើក​ឯកសារ​អាជ្ញាប័ណ្ណ &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ។ ពិនិត្យ​មើល​សិទ្ធិ​របស់​ឯកសារ ។</translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​ផ្ញើ​កា​រចុច​ប៊ូតុងថាមពល ACPI ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;សូមអបអរសាទរ ! អ្នក​បានចុះឈ្មោះ​ជា​អ្នក​ប្រើ VirtualBox ដោយ​ជោគជ័យ​ហើយ ។ &lt;/p&gt;&lt;p&gt;សូម​អរគុណ​ចំពោះ​ការ​ចំណាយ​ពេលវេលា​បំពេញ​សំណុំបែបបទ​ចុះឈ្មោះ !&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;បានបរាជ័យ​ក្នុងកា​ររក្សាទុក​ការ​កំណត់ VirtualBox សកល​ទៅ​កាន់ &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងការ​ផ្ទុក​ការ​កំណត់​រចនាសម្ព័ន្ធ​ចំណុច​ប្រទាក់​អ្នក​ប្រើ​សកល​ពី &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បិទ​ឥឡូវ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​ររក្សាទុក​ការកំណត់​រចនាសម្ព័ន្ធ​ចំណុច​ប្រទាក់​អ្នក​ប្រើសកល​ទៅ​&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បិទ​ឥឡូវ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>បានបរាជ័យ​ក្នុង​ការ​រក្សាទុក​ការ​កំណត់​​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ទៅ&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>បានបរាជ័យ​ក្នុងកា​រផ្ទុក​កា​រកំណត់​របស់ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ពី &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation type="obsolete">លុប</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="obsolete">មិន​ចុះឈ្មោះ</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>បោះបង់</translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">បានបិទ</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>ទាញយក</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>ម៉ោន</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;គ្រាប់ចុច​ម៉ាស៊ីន​បច្ចុប្បន្ន​ត្រូវ​បាន​កំណត់​ជា &lt;b&gt;%1&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>ចាប់យក</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>ពិនិត្យ​មើល</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>ប្ដូរ</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>ប្ដូរ</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;តើ​អ្នក​ពិត​ជា​ចង់​កំណត់​ម៉ាស៊ីននិម្មិត​ឡើង​វិញ​ដែរឬទេ ?&lt;/p&gt;&lt;p&gt;នៅ​ពេល​ម៉ាស៊ីន​ត្រូវ​បាន​កំណត់​ឡើង​វិញ ទិន្នន័យ​របស់​កម្មវិធី​ដែល​មិនបានរក្សាទុកទាំង​អស់​ដែល​កំពុង​រត់​វា​នឹង​ត្រូវ​បានបាត់បង់ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>កំណត់​ឡើង​វិញ</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>បន្ត</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>ទៅ​ក្រោយ</translation>
+    </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="obsolete">បានបរាជ័យ​ក្នុងកា​រចម្លង​ឯកសារ &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ទៅ &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3) ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;មិនអាច​ចូល​របៀប​គ្មាន​ថេរ ដោយសារ​តែ​សតិ​វីដេអូ​ម៉ាស៊ីន​ភ្ញៀវ​មិន​គ្រប់គ្រាន់ ។&lt;/p&gt;&lt;p&gt;អ្នក​គួរ​កំណត់​រចនាសម្ព័ន្ធ​ម៉ាស៊ីន​និម្មិត​យ៉ាង​ហោចណាស់​មានសតិ​វីដេអូ &lt;b&gt;%1&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;មិនអាច​ប្ដូរ​ការ​បង្ហាញ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទៅ​របៀប​ពេញ​អេក្រង់​បានទេ ដោយសារ​តែ​សតិ​វីដេអូ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​មិន​គ្រប់គ្រាន់ ។&lt;/p&gt;&lt;p&gt;អ្នក​គួរ​កំណត់​រចនាសម្ព័ន្ធ​ម៉ាស៊ីន​និម្មិត​ឲ្យ​មានសតិ​​យ៉ាង​ហោចណាស់​ &lt;b&gt;%1&lt;/b&gt; នៃ​សតិ​វីដេអូ ។&lt;/p&gt;&lt;p&gt;ចុច​ &lt;b&gt;មិនអើពើ&lt;/b&gt; ដើម្បី​ប្ដូរ​ទៅ​របៀប​ពេញអេក្រង់ ឬ​បើ​មិន​ដូច្នេះ​ទេ​ចុច &lt;b&gt;បោះបង់&lt;/b&gt; ដើម្បី​បោះបង់​ប្រតិបត្តិការ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation>អ្នក​បាន​ដំឡើង​កំណែ VirtualBox ចុងក្រោយ​បំផុត​រួ​ចហើយ ។ សូម​​ពិនិត្យ​មើល​កំណែ​ពេលក្រោយ ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;អ្នក​បាន &lt;b&gt;ចុចកណ្ដុរ&lt;/b&gt; ខាង​ក្នុង​ការ​បង្ហាញ​របស់​ម៉ាស៊ីន​និម្មិត ឬ​បាន​ចុច​ &lt;b&gt;គ្រាប់ចុច host&lt;/b&gt; ។ វា​នឹងធ្វើ​​ឲ្យ​ម៉ាស៊ីន​និម្មិត &lt;b&gt;ចាប់យក&lt;/b&gt; ទស្សន៍ទ្រនិច​កណ្ដុរ​របស់​ម៉ាស៊ីន (តែ​ក្នុងករណី​ដែល​ការ​រួម​បញ្ចូល​ទស្សន៍ទ្រនិច​បច្ចុប្បន្ន​មិន​ត្រូ​វបានគាំទ្រ​ដោយ​ប្រព័ន្ធប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទេ ។) ហើយ​នឹង​ក្ដារចុច ដែល​នឹង​ធ្វើ​ឲ្យ​កម្មវិធី​ផ្សេងៗ​ដែល​កំពុង​រត់​ក្នុង​ម៉ាស៊ីន​របស់​​​មិនអាច​ប្រើបាន​ទេ ។&lt;/p&gt;&lt;p&gt;អ្នក​អាចចុច​ &lt;b&gt;គ្រាប់ចុច host&lt;/b&gt; នៅពេល​ណាមួយ​ដើម្បី​ &lt;b&gt;មិន​ចាប់យក&lt;/b&gt; ក្ដារចុច និងកណ្ដុរ (ប្រសិន​បើ​​ត្រូវ​បានចាប់​យក) ហើយ​ត្រឡប់​ទៅ​ប្រតិបត្តិការ​ធម្មតា​វិញ ។ បច្ចុប្បន្ន​បានផ្ដល់​គ្រាប់ចុច host ត្រូវ​បានបង្ហាញ​នៅ​ក្នុង​របារ​ស្ថានភាពនៅ​ផ្នែក​ខាងក្រោម​របស់​បង្អួច​ម៉ាស៊ីន​និម្មិត នៅជាប់​នឹងរូបតំណាង&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; ។ រូបតំណាង​នេះ រួម​ជា​មួយ​នឹង​រូបតំណាង​កណ្ដុរ​ដែល​នៅ​ជាប់នោះ បង្ហាញ​នូវ​ក្ដារចុច និង​ស្ថានភាព​ចាប់យក​កណ្ដុរ​បច្ចុប្បន្ន ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;អ្នក​បានបើក​ជម្រើស &lt;b&gt;ចាប់យក​ក្ដារចុច​ដោយ​ស្វ័យ​ប្រវត្តិ&lt;/b&gt; ។ វា​នឹង​​ធ្វើ​ឲ្យ​ម៉ាស៊ីន​និម្មិត​ &lt;b&gt;ចាប់យក&lt;/b&gt; ក្ដារចុច​ដោយ​ស្វ័យ​ប្រវត្តិ​រាល់ពេល​ដែល​បង្អួច VM ត្រូវ​បាន​ធ្វើ​ឲ្យ​សកម្ម​ ហើយ​ធ្វើ​ឲ្យ​វា​មិនអាច​ប្រើបាន​ចំពោះ​កម្មវិធី​ផ្សេងៗ​ដែល​កំពុង​រត់​ក្នុង​ម៉ាស៊ីន​របស់​អ្នក ៖ នៅពេល​ក្ដារចុច​ត្រូវ​បាន​ចាប់យក  keystrokes ទាំង អស់ (រួម​មាន​ប្រព័ន្ធ​មួយ​ដូចជា ជំនួស(Alt)-ថេប(Tab)) នឹង​ត្រូវ​បញ្ជូន​បន្ត​ទៅ​ VM ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ចុច &lt;b&gt;គ្រាប់ចុច host&lt;/b&gt; នៅពេល​ណាមួយ​ទៅ &lt;b&gt;មិន​ចាប់យក&lt;/b&gt; ​ក្ដារចុច​ និង​កណ្ដុរ (ប្រសិនបើ​ត្រូវ​បាន​ចាប់យក) និង​​ត្រឡប់​ពួកវា​ទៅ​ប្រតិបត្តិការ​ធម្មតា​វិញ ។ បច្ចុប្បន្នបានផ្ដល់​គ្រាប់ចុច host ត្រូវ​បានបង្ហាញ​នៅ​លើ​របារ​ស្ថានភាព​នៅផ្នែក​ខាងក្រោម​របស់​បង្អួច​និម្មិត នៅជាប់នឹងរូបតំណាង&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; ។ រូបតំណាង​នេះ​ រួម​ជា​មួយ​នឹង​រូបតំណាង​កណ្ដុរ​នៅជាប់​គ្នា​នោះ បង្ហាញក្ដារចុច និង​ស្ថានភាព​ចាប់យក​កណ្ដុរ​បច្ចុប្បន្ន ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ម៉ាស៊ីន​និម្មិត​រាយការណ៍​ថា​ប្រព័ន្ធ​ប្រតិបត្តិការ​គាំទ្រ &lt;b&gt;ការ​រួម​បញ្ចូល​ទស្សន៍​ទ្រនិច​កណ្ដុរ&lt;/b&gt; ។ នេះ​មានន័យ​ថា អ្នក​មិន​ចាំបាច់ &lt;i&gt;ចាប់យក&lt;/i&gt; ទស្សន៍ទ្រនិ​ច​កណ្ដុរ ដើម្បី​អាច​ប្រើ​វា​នៅ​ក្នុង​ប្រព័ន្ធប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​បានទេ -- សកម្មភាព​កណ្ដុរ​ទាំង​អស់​ដែល​អ្នក​អនុវត្ត​នៅពេល​ទស្សន៍ទ្រនិចកណ្ដុរ​នៅ​លើ​កា​របង្ហាញ​របស់​ម៉ាស៊ីន​និម្មិត ត្រូវ​បានបញ្ជូន​ដោយ​ផ្ទាល់​ទៅ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។ ប្រសិនបើកណ្ដុរបច្ចុប្បន្ន​ត្រូវ​បាន​ចាប់យក វា​នឹង​​មិន​ត្រូ​វបាន​ចាប់យក​ដោយ​ស្វ័យ​ប្រវត្តិ​ទេ ។&lt;/p&gt;&lt;p&gt;រូបតំណាង​កណ្ដុរ​នៅ​លើ​របារ​ស្ថានភាព​នឹង​មាន​រូបរាង​ដូចជា&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;ដើម្បី​ប្រាប់​អ្នក​ថា ការ​រួមបញ្ចូល​ទស្សន៍​ទ្រនិច​កណ្ដុរ​ត្រូវ​បានគាំទ្រ​ដោយ​ប្រព័ន្ធប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ និង​បច្ចុប្បន្ន​ត្រូវ​បានបើក ។&lt;/p&gt;&lt;p&gt;&lt;b&gt;ចំណាំ&lt;/b&gt; ៖ កម្មវិធី​មួយ​ចំនួន​អាច​មាន​ឥរិយាបទ​មិន​ត្រឹមត្រូវ​នៅ​ក្នុង​របៀប​រួម​បញ្ចូល​ទស្សន៍​ទ្រនិច​កណ្ដុរ ។ អ្នក​អាច​បិទ​វា​ជា​និច្ច​សម្រាប់​សម័យ​បច្ចុប្បន្ន (ហើយ​បើក​វា​ម្ដង​ទៀត) ដោយជ្រើសសកម្មភាព​ដែល​ទាក់ទង​ពី​របារ​ម៉ឺនុយ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​នឹង​ត្រូ​វបានប្ដូរ​ទៅ​របៀប &lt;b&gt;ពេញអេក្រង់&lt;/b&gt; ឥឡូវ ។ អ្នក​អាច​ត្រឡប់ក្រោយ​​ទៅ​របៀប​បង្អួច​ នៅពេល​ណាមួយ ដោយ​ចុច &lt;b&gt;%1&lt;/b&gt; ។ ចំណាំ​ថា គ្រាប់ចុច &lt;i&gt;ម៉ាស៊ីន&lt;/i&gt; បច្ចុប្បន្ន​ត្រូវ​បាន​កំណត់​ជា &lt;b&gt;%2&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា របារ​ម៉ឺនុយ​មេ​​ត្រូវ​បានលាក់​ក្នុង​របៀប​ពេញអេក្រង់ ។​ អ្នក​អាច​ចូលដំណើរការ​វា​ដោយ​ចុច &lt;b&gt;ម៉ាស៊ីន(Host)+ដើម(Home)&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​​នឹង​ត្រូ​វបានប្ដូរ​ទៅ​របៀប &lt;b&gt;គ្មាន​ថ្នេរ&lt;/b&gt; ឥឡូវ ។ អ្នកអាច​ត្រឡប់​ទៅ​​របៀប​បង្អួច​នៅ​ពេល​ណាមួយ​ដោយចុច &lt;b&gt;%1&lt;/b&gt; ។ ចំណាំ​ថា គ្រាប់ចុច &lt;i&gt;Host&lt;/i&gt; បច្ចុប្បន្ន​ត្រូវ​បានកំណត់​ជា &lt;b&gt;%2&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ចំណាំថា របារ​ម៉ឺនុយមេ​ត្រូវ​បានលាក់​នៅ​ក្នុង​របៀប​គ្មាន​ថ្នេរ ។ អ្នកអាច​ចូលដំណើរការ​វា ដោយ​ចុច​ &lt;b&gt;Host+ដើម(Home)&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation>មាតិកា</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation>បង្ហាញ​មាតិកា​ជំនួយលើ​បណ្ដាញ</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation>តំបន់បណ្ដាញ VirtualBox​...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation>បើក​កម្មវិធី​រុករក ហើយ​ទៅ​កាន់​តំបន់បណ្ដាញ​ផលិតផល​របស់ VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation>កំណត់​ការ​ព្រមាន​ទាំងអស់</translation>
+    </message>
+    <message>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation>ធ្វើ​ឲ្យ​ការ​ព្រមាន​ទាំងអស់​ដែល​បានបង្ហាប់ ហើយសារ​ត្រូវ​បានបង្ហាញ​ម្ដង​ទៀត</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation>ចុះឈ្មោះ VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation>បើក​សំណុំ​បែបបទ​ចុះឈ្មោះ​របស់ VirtualBox</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation>ពិនិត្យ​មើល​ភាព​ទាន់សម័យ...</translation>
+    </message>
+    <message>
+        <source>Check for a new VirtualBox version</source>
+        <translation>ពិនិត្យ​មើល​កំណែ​របស់​ VirtualBox ថ្មី</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation>អំពី VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation>បង្ហាញ​ប្រអប់​ដែល​មាន​ព័ត៌មាន​ផលិតផល</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;កំណែ​ថ្មី​របស់ VirtualBox ត្រូវ​បាន​ចេញ​ផ្សាយ ! គឺ​កំណែ &lt;b&gt;%1&lt;/b&gt; ដែលអាច​រក​បាន​នៅ &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ទាញ​យក​កំណែ​នេះ​ពី​តំណ​នេះ​ដោយ​ផ្ទាល់ ៖&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​ចេញផ្សាយ %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;វា​នឹង​ផ្ដាច់​វា​ពី​ម៉ាស៊ីន​និម្មិត​ដូច​ខាងក្រោម ៖ &lt;b&gt;%3&lt;/b&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation>ចេញផ្សាយ</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;តើអ្នក​ប្រាកដ​ជា​ចង់​យក %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ចេញ​ពី​មេឌៀ​ដែលបាន​ស្គាល់​ដែរឬទេ ?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <translation>ចំណាំថា ថាសរឹង​នេះ​មិនអាច​ចូលដំណើរការ​បានទេ ដូច្នេះ​ឯកតា​ផ្ទុក​របស់វា​មិនអាច​ត្រូវ​បានលុប​ឥឡូវ​ទេ ។</translation>
+    </message>
+    <message>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation>ប្រអប់​បន្ទាប់​នឹង​អនុញ្ញាត​ឲ្យ​អ្នក​ជ្រើស​ថាតើ អ្នក​ចង់​លុប​ឯកតា​ផ្ទុក​របស់​ថាសរឹង​នេះ ឬ​ទុក​វា​សម្រាប់​ប្រើ​ពេលក្រោយ ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;ចំណាំ​ថា ឯកតា​ផ្ទុក​របស់​ឧបករណ៍​ផ្ទុក​នេះ​នឹង​មិន​ត្រូវ​បានលុប​ទេ ហើយ​ដូច្នេះ​វា​នឹង​អាច​បន្ថែម​ទៅ​កាន់​បញ្ជី​ពេល​ក្រោយ​ម្ដង​ទៀត ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation>យកចេញ</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;មាន​ឯកតា​ផ្ទុក​​របស់​ថាសរឹង​នៅ​ទីតាំង &lt;b&gt;%1&lt;/b&gt; រួច​ហើយ ។ អ្នក​មិនអាច​បង្កើត​ថាសរឹង​និម្មិត​ថ្មី​បាន​ទេ ដែល​ប្រើ​ទីតាំង​នេះ ពីព្រោះ​វា​អាច​ត្រូវ​បានប្រើ​ដោយ​ថាសរឹង​និម្មិត​ផ្សេង ។&lt;/p&gt;&lt;p&gt;សូម​បញ្ជាក់​ទីតាំង​ផ្សេង ​។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;តើ​អ្នក​ចង់​លុប​ឯកតា​ផ្ទុក​របស់​ថាសរឹង​ &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;ដែរឬទេ?&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ជ្រើស &lt;b&gt;លុប&lt;/b&gt; បន្ទាប់​មក​ឯកតា​ផ្ទុក​ដែល​បានបញ្ជាក់​នឹង​ត្រូ​វបាន​លុប​ជា​អចិន្ត្រៃយ៍ ។ ប្រតិបត្តិការ​នេះ &lt;b&gt;មិនអាច​ត្រូ​វបាន​ធ្វើ​វិញ​បានទេ&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ជ្រើស &lt;b&gt;រក្សាទុក&lt;/b&gt; បន្ទាប់​មក​ថាសរឹង​នឹង​ត្រូវ​បានយកចេញ​តែ​ពី​បញ្ជី​របស់​ថាសរឹង​ដែល​ស្គាល់​ប៉ុណ្ណោះ ប៉ុន្តែ​ឯកតា​ផ្ទុក​នឹង​មិន​ត្រូ​វបាន​ប៉ះពាល់​ទេ ដែល​ធ្វើ​ឲ្យ​វា​អាច​បន្ថែម​ថាសរឹង​នេះ​ទៅកាន់​បញ្ជី​ពេលក្រោយ​ម្ដង​ទៀត​បាន ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation>លុប</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation>រក្សាទុក</translation>
+    </message>
+    <message>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​លុប​ការ​ផ្ទុក​របស់​ថាសរឹង &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation>បានបរាជ័យ​ក្នុង​​ការ​បង្កើត​ការ​ផ្ទុក​ថាសរឹង &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; ។&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​បើក %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>បានបរាជ័យ​ក្នុងកា​របិទ %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>បានបរាជ័យ​ក្នុងកា​រ​ចូលដំណើរការ​ស្ថានភាព​របស់​ឧបករណ៍​ផ្ទុក &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​រតភ្ជាប់​ទៅ​កាន់​សេវា​ចុះឈ្មោះ​លើ​បណ្ដាញ​របស់ VirtualBox ដោយ​សារ​តែ​កំហុស​ដូច​ខាងក្រោម ៖&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;មិនអាច​ទទួល​យក​ព័ត៌មានកំណែ​ថ្មី​បាន​ទេ ដោយ​សារ​តែ​កំហុស​ដូច​ខាងក្រោម ៖&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ថាសរឹង​និម្មិត​មួយ ឬ​ច្រើន ស៊ីឌី/ឌីវីឌី ឬ​មេឌៀ​ថាសទន់​បច្ចុប្បន្ន​មិនអាច​ចូលដំណើរការ​បានទេ ។ ជា​លទ្ធផល អ្នកនឹង​មិនអាច​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត​ ដែល​ប្រើ​មេឌៀ​នេះ​បាន​ទេ រហូត​ដល់​ពួកវា​អាច​ចូលដំណើរការ​បាននៅពេល​ក្រោយ ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;ពិនិត្យ​មើល&lt;/b&gt; ដើម្បី​ប្រើ​បង្អួច​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត ហើយ​មើល​អ្វី​ដែល​មេឌៀ​មិនអាច​ចូលដំណើរការ​បាន ឬ​ចុច &lt;b&gt;មិនអើពើ&lt;/b&gt; ដើម្បី​មិនអើពើ​នឹង​សារ​នេះ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;កំហុស​ធ្ងន់ធ្ងរ​បាន​កើត​ឡើង​ខណៈពេល​កំពុង​រត់​ម៉ាស៊ីននិម្មិត ហើយ​ការ​ប្រតិបត្តិ​ម៉ាស៊ីន​ត្រូ​វបានបញ្ឈប់ ។&lt;/p&gt;&lt;p&gt;ចំពោះ​ជំនួយ សូមមើល​ផ្នែក​សហគមន៍​នៅ​លើ &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; ឬ​កិច្ចសន្យា​គាំទ្រ​របស់​អ្នក ។ សូម​ផ្ដល់​នូវ​ខ្លឹមសារ​របស់​ឯកសារ​កំណត់ហេតុ &lt;tt&gt;VBox.log&lt;/tt&gt; ហើយ​នឹង​ឯកសារ​រូបភាព &lt;tt&gt;VBox.png&lt;/tt&gt; ដែល​អ្នក​អាច​រក​បាន​នៅ​ក្នុង​ថត &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ព្រមទាំង​សេចក្ដីពិពណ៌នា​នូវ​អ្វីដែល​អ្នក​កំពុង​ធ្វើ នៅពេល​កំហុស​កើត​ឡើង ។ ចំណាំ​ថា អ្នក​ក៏អាច​ចូលដំណើរការ​ឯកសារ​ខាង​លើ ដោយ​ជ្រើស &lt;b&gt;បង្ហាញ​កំណត់​ហេតុ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ម៉ាស៊ីន&lt;/b&gt; របស់​បង្អួច VirtualBox មេ ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;យល់ព្រម&lt;/b&gt; ប្រសិនបើ​​អ្នក​ចង់​បិទ​ម៉ាស៊ីន ឬ​ចុច &lt;b&gt;មិនអើពើ&lt;/b&gt; ប្រសិន​បើ​អ្នក​ទុក​វា​សម្រាប់បំបាត់​កំហុស ។ សូម​ចំណាំថា​កា​របំបាត់​កំហុស​ទាមទារចំណេះដឹង និង​កម្មវិធី​ពិសេស ដូច្នេះ​ត្រូវ​បានផ្ដល់​អនុសាសន៍​ឲ្យ​ចុច &lt;b&gt;យល់ព្រម&lt;/b&gt; ឥឡូវ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation>​មាន​ឈ្មោះ​ឯកសាររបស់​&lt;b&gt;%1&lt;/b&gt;រួច​ហើយ​ ។ តើ​អ្នក​ពិត​ជាចង់​ជំនួស​វា​​ឬ ?&lt;br /&gt;&lt;br /&gt;​ការ​ជំនួស​វា​នឹង​សរសេរ​ជាន់​លើ​
+មាតិកា​​របស់​វា​ ។</translation>
+    </message>
+    <message>
+        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
+        <translation>មាន​ឯកសារ​​ជាបន្ត​បន្ទាប់​រួច​ហើយ​ ៖&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;តើ​​អ្នក​ពិត​ជាចង់​ជំនួស​​​ពួកវា​ឬ ? ការ​ជំនួស​វា​នឹង​សរសេរ​ជាប់​លើ​មាតិកា​របស់វា ។</translation>
+    </message>
+    <message>
+        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
+        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងកា​រយក​ឯកសារ &lt;b&gt;%1&lt;/b&gt;ចេញ ។&lt;br /&gt;&lt;br /&gt;សូម​ព្យាយាម​យក​ឯកសារ​ចេញ​ដោយ​ខ្លួន​ឯង ហើយ​ព្យាយាម​ម្ដង​ទៀត ។</translation>
+    </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation>អ្នក​ហាក់​បី​ដូច​ជា​មាន​ប្រព័ន្ធ​ឯកសារ USBFS បាន​ម៉ោន​នៅ /sys/bus/usb/drivers ។ យើ​ង​ផ្ដល់​អនុសាសន៍​ឲ្យ​ផ្លាស់ប្ដូរ​វា ព្រោះ​ថា​វា​ជា​កា​រកំណត់​រចនាសម្ព័ន្ធ​មិន​ត្រឹមត្រូវ​នៃ​ប្រព័ន្ធ​របស់​អ្នក ដែល​អាច​ធ្វើ​ឲ្យ​ឧបករណ៍ USB បរាជ័យ​​តាម​វិធី​ដែល​មិនបាន​រំពឹង​ទុក ។</translation>
+    </message>
+    <message>
+        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
+        <translation>អ្នក​កំពុង​ដំណើរការ​កំណែ​ចេញ​ផ្សាយ​មុន​របស់ VirtualBox ។ កំណែ​នេះ​មិន​សម​សម្រាប់​ការ​ប្រើផលិតផល​នេះ​ទេ ។</translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation>អ្នកកំពុង​ដំណើរការ​ការ​ស្ថាបនា​ពិសោធន៍របស់ VirtualBox ។ កំណែ​នេះ​មិន​សម​សម្រាប់ការ​ប្រើ​ផលិតផល​នេះ​ទេ ។</translation>
+    </message>
+    <message>
+        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
+        <translation type="obsolete">មិនអាច​ដំណើរការ​ USB ក្នុង​ប្រព័ន្ធ​របស់​ម៉ាស៊ីនបាន​ទេ ពីព្រោះប្រព័ន្ធ​ឯកសារ USB (usbfs) ឬ DBus និង​សេវា hal បច្ចុប្បន្ននេះអាច​ប្រើ​បាន ។ ប្រសិនបើ​អ្នក​ចង់​ប្រើ​ឧបករណ៍​ USB របស់​ម៉ាស៊ីន អ្នក​ត្រូវ​តែ​កែវា ហើយ​ចាប់ផ្ដើម VirtualBox ឡើង​វិញ ។</translation>
+    </message>
+    <message>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
+        <translation>អ្នក​កំពុង​ព្យាយាប​បិទ​ម៉ាស៊ីន​ដោយ​ប្រើប៊ូតុង​ថាមពល ACPI  ហើយ ។ បច្ចុប្បន្ន​នេះ​មិនអាច​ប្រើបាន​ទេ ពីព្រោះ​ម៉ាស៊ីន​​មិន​គាំទ្រ​​កម្មវិធី​បិទ​​ទេ ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ការ​បង្កើន​ល្បឿន​ផ្នែក​រឹង VT-x/AMD-V ត្រូវ​បានបើក ប៉ុន្តែ​មិន​ដំណើរការ​ទេ ។ ម៉ាស៊ីន​ ៦៤ ប៊ីត​របស់​អ្នក​នឹង​បរាជ័យ​ក្នុង​រក​ស៊ីភីយូ ៦៤ ប៊ីត ហើយ​មិន​អាច​ចាប់ផ្ដើម​បាន​ទេ ។&lt;/p&gt;&lt;p&gt;សូម​ប្រាកដ​ថា អ្នក​បានបើក VT-x/AMD-V យ៉ាង​ត្រាមត្រូវ​នៅ​ក្នុង BIOS នៃ​កុំព្យូទ័រ​របស់​អ្នក ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation>បិទ VM</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>បន្ត</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ការ​បង្កើន​ល្បឿន​ផ្នែក​រឹង VT-x/AMD-V ត្រូវ​បានបើក ប៉ុន្តែ​មិន​អាច​ដំណើរការ​បាន​ទេ ។ ម៉ាស៊ីន​ជាក់លាក់ (ឧ. OS/2 និង QNX) ទាមទារ​លក្ខណៈពិសេស​នេះ ។&lt;/p&gt;&lt;p&gt;សូម​ប្រាកដ​ថា អ្នក​បានបើក​ VT-x/AMD-V យ៉ាង​ត្រឹមត្រូវ​នៅ​ក្នុង BIOS នៃ​​កុំព្យូទ័រ​របស់​អ្នក ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;តើ​អ្នក​ប្រាក​ដ​ជា​ចង់​ស្ដារ​រូបថត​ &lt;b&gt;%1&lt;/b&gt;ឬ ? វា​នឹង​ធ្វើ​ឲ្យ​អ្នក​បាត់បង់​ស្ថានភាព​ម៉ាស៊ីន​បច្ចុប្បន្ន​របស់​អ្នក ដែល​មិនអាច​សង្គ្រោះ​បាន​ទេ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>ស្តារ​</translation>
+    </message>
     <message>
         <source>Cancel</source>
+        <translation>បោះបង់​</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ការ​លុប​រូប​ថត​នឹង​បណ្តាល​ឲ្យព័ត៌​មានចេញ​​ដែល​បាន​រ​ក្សា​ទុក​ត្រូវ​បាន​បាត់​បង់​ និងការ​ផ្សាយ​​ទិន្នន័យ​ថាស​​​លើ​ឯកសារ​រូប​ភាពបី​បួន​​ដែល​ VirtualBox ត្រូវ​បានបង្កើត​ជាមួយ​គ្នា ​រូប​ថត​នឹង​ត្រូវ​បានបញ្ចូល​ចូល​​គ្នា​​ទៅ​ក្នុង​ឯកសារ​តែ​មួយ​ ។​ វាអាច​ដំណើរ​ការ​យូរ​ និង​ព័ត៌​មាន​ក្នុង​រូប​ថត​មិន​អាច​ត្រូវ​បានយកបាន​​ឡើយ ។&lt;/p&gt;&lt;/p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​លុប​រូប​ថត​ដែលបាន​​ជ្រើស​&lt;b&gt;%1&lt;/b&gt; ឬ ?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>លុប</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យក្នុងការ​​​ស្តារ​រូបថត​​ &lt;b&gt;%1&lt;/b&gt; របស់​ម៉ាស៊ីននិម្មិ​ត&lt;b&gt;%2&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>បានបរាជ័យក្នុងការ​​​លុប​រូបថត​​&lt;b&gt;%1&lt;/b&gt; របស់​​ម៉ាស៊ីន​​និម្មិត​​&lt;b&gt;%2&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;មានថាស​រឹង​​ដែ​ល​ភ្ជាប់​ជា​មួយច្រក​របស់​ឧបករណ៍​បញ្ជា​បន្ថែម​ ។ ប្រ​សិន​បើ​អ្នកបិទ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ គ្រប់​ថាស​រឹង​ទាំង​នេះ​នឹង​ត្រូវ​បាន​ផ្តាច់​ដោយ​ស្វ័យ​ប្រ​វត្តិ​ ។&lt;/p&gt;&lt;p&gt;​តើ​​អ្នក​ប្រាកដ​​ជា​​ចង់បិទ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ ឬ ?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;មាន​ថាសរឹង​ដែល​ភ្ជាប់​ជាមួយ​ច្រក​របស់​ឧបករណ៍​បញ្ជា​បន្ថែម​ ។ ប្រ​សិន​បើ​អ្នក​​ផ្លាស់​ប្តូរ​ឧបរណ៍​បញ្ញា​បន្ថែម​​ គ្រប់​ថាស​រឹង​ទាំង​នេះ​នឹង​ត្រូវ​បាន​ផ្តាច់​ដោយ​ស្វ័យ​ប្រវត្តិ​ ។​&lt;/p&gt;&lt;p&gt;​តើ​អ្នក​ប្រាកដជា​​ចង់​ផ្លាស់​ប្តូរ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ឬ ?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <comment>
+
+
+
+hard disk</comment>
+        <translation type="obsolete">ផ្លាស់ប្តូរ​</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;មិនមាន​មេឌៀ​ដែល​មិនបានប្រើ​​សម្រាប់​​​ឯក​សារ​ភ្ជាប់​ដែល​បង្កើតថ្មី​ ។​&lt;/p&gt;&lt;p&gt;ចុច​ &lt;b&gt;បង្កើត​​&lt;/b&gt; ប៊ូតុង​ទៅ​ចាប់​ផ្តើម &lt;i&gt;​ថាស​និម្មិត​ថ្មី&lt;/i&gt; អ្នក​ជំនួយ​ការ​ និង​បង្កើតឧបករណ៍​ផ្ទុកថ្មី​ ឬ​ចុច​​ &lt;b&gt;ជ្រើស​​&lt;/b&gt; ប្រ​សិន​បើ​​អ្នក​មាន​បំណង​ទៅ​បើក​ &lt;i&gt;កម្ម​វិធី​គ្រប់​គ្រង​មេឌៀ​និម្មិត​​&lt;/i&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>
+
+
+
+medium</comment>
+        <translation type="obsolete">បង្កើត</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>
+
+
+
+medium</comment>
+        <translation type="obsolete">ជ្រើស</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;មិនមាន​មេឌៀ​មិន​បាន​ប្រើទេ សម្រាប់​ឯកសារ​ភ្ជាប់​ដែលបានបង្កើត​ថ្មី ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;ជ្រើស&lt;/b&gt; ប្រសិន​បើ​អ្នក​ចង់​បើក &lt;i&gt;កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត&lt;/i&gt; ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​ភ្ជាប់ %1 ទៅ​រន្ធ &lt;i&gt;%2&lt;/i&gt; របស់​ម៉ាស៊ីន&lt;b&gt;%3&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">បាន​បរាជ័យ​ក្នុង​ការ​ផ្ដាច់​ %1 ពី​រន្ធ &lt;i&gt;%2&lt;/i&gt; របស់​ម៉ាស៊ីន&lt;b&gt;%3&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>មិនអាច​ម៉ោន %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; នៅ​លើ​ម៉ាស៊ីន &lt;b&gt;%3&lt;/b&gt;បាន​ទេ ។</translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation> តើ​អ្នក​ចង់​បង្ខំ​ម៉ោន​ឧបករណ៍​ផ្ទុក​នេះ​ដែរឬទេ ?</translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>មិនអាច​អាន់ម៉ោន​ %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ពី​ម៉ាស៊ីន &lt;b&gt;%3&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation> តើ​អ្នក​ចង់​បង្ខំ​អាន់ម៉ោន​ឧបករណ៍​ផ្ទុក​នេះ​ដែរឬទេ ?</translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation>បង្ខំ​អាន់ម៉ោន​</translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation type="obsolete">បានបរាជ័យ​​ក្នុង​កា​រច្រាន​ថាស​ចេញ​ពី​ដ្រាយ​និម្មិត ។ ដ្រាយ​អាច​ត្រូវ​បានចាក់​សោ​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ ។ សូម​ពិនិត្យ​មើល​វា ហើយ​ព្យាយាម​ម្ដង​ទៀត ។</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ការ​លុប​បណ្តាញ​ ម៉ា​ស៊ីន​​-តែ​មួយ​​ នេះ​នឹង​យក​ចេញ​ សំអាង​ទៅ​លើ​បណ្តាញ​ចំនុច​ប្រទាក់​ ម៉ាស៊ីន​​-តែ​មួយ​ នេះ ។ ​តើ​អ្នកពិត​ជា​ចង់​យក​ចេញ​​ (បណ្តាញ ម៉ាស៊ីន​​-​តែ​មួយ​​) ចំណុច​ប្រទាក់​​&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;សម្គាល់​ ៖&lt;/b&gt; ចំណុច​ប្រ​ទាក់​នេះ​អាចប្រើ​​មួយ​ ឬ​​ច្រើន​​អាដាប់​ទ័រ​បណ្តាញនិម្មិត​​​ជាកម្ម​សិទ្ធ​មួយ​នៃ​​​ VMs របស់​អ្នក​ ។ ក្រោយ​ពេល​វា​ត្រូវ​បាន​យក​ចេញ​ អាដាប់​ទ័រ​ទាំង​នេះ​នឹង​មិន​អាច​ប្រើ​បាន​យូរ​ឡើយ​​ រហូត​ដល់​អ្នក​​កែ​ការ​កំណត់​​របស់​វា​មួយ​ណា​ក៏មាន​​​ឈ្មោះ​ខុស​គ្នា​​ចំណុច​ប្រទាក់​ ឬ​ប្រ​ភេទ​ខុស​គ្នា​នៃ​​​ឯកសារ​​ភ្ជាប់​អាដាប់​ទ័រ​ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the host-only network interface.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​​​បង្កើត​ចំណុច​ប្រ​ទាក់​បណ្តាញ​ម៉ាស៊ីន​​-តែ​មួយ​</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;មិនអាច​បញ្ចូល​រូបភាព​ស៊ីឌី​កម្មវិធី​ដំឡើង​បន្ថែម​របស់​ម៉ាស៊ីន VirtualBox ​ទៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត​&lt;b&gt;%1&lt;/b&gt;បាន​ទេ ព្រោះ​ថា​ម៉ាស៊ីន​មាន​ដ្រាយ​ស៊ីឌី/ឌីវីឌី​រ៉ូម ។ សូម​បន្ថែម​ដ្រាយ ដោយ​ប្រើ​ទំព័រ​ផ្ទុក​នៃ​ប្រអប់​កំណត់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;អាសយដ្ឋាន​អ៊ីមែល ឬ​ពាក្យ​សម្ងាត់​ដែលបាន​បញ្ជាក់មិន​ត្រឹមត្រូវ ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation>&lt;p&gt;បាន​បរាជ័យ​ក្នុងកា​រចុះឈ្មោះផលិតផល VirtualBox ។&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ឯកសារ​កំណត់​ VirtualBox មាន​ស្រាប់​​របស់​អ្នក នឹង​ត្រូវ​បានបម្លែង​ដោយ​ស្វ័យ​ប្រវត្តិ​ពី​ទ្រង់ទ្រាយ​ចាស់ ទៅ​ទ្រង់ទ្រាយ​ថ្មី​ដែលបានទាមទារ​ដោយ​កំណែ​ថ្មី​របស់ VirtualBox ​។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;យល់&lt;/b&gt; ដើម្បី​ចាប់ផ្ដើម VirtualBox ឥឡូវ ឬ​ចុច &lt;b&gt;ចាកចេញ&lt;/b&gt; ប្រសិនបើ​អ្នក​ចង់​បញ្ចប់​កម្មវិធី​របស់ VirtualBox ដោយ​គ្មាន​សកម្មភាព​បន្ថែម​ផ្សេង​ទៀត ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>
+
+
+
+warnAboutSettingsAutoConversion message box</comment>
+        <translation type="obsolete">ចេញ</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;ឯកសារ​កំណត់ VirtualBox ដូច​ខាងក្រោម​នឹង​ត្រូវ​បានបម្លែង​ដោយ​ស្វ័យ​ប្រវត្តិ​ពី​ទ្រង់ទ្រាយ​ចាស់​ទៅ​ទ្រង់ទ្រាយ​ថ្មី​របស់ VirtualBox ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;យល់&lt;/b&gt; ដើម្បី​ចាប់ផ្ដើម VirtualBox ឥឡូវ ឬ​ចុច &lt;b&gt;ចាកចេញ&lt;/b&gt; ប្រសិនបើ​អ្នក​ចង់​បញ្ចប់​កម្មវិធី VirtualBox ដោយ​គ្មាន​សកម្មភាព​បន្ថែម​ទៀត ។&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open appliance.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​របើក​ឧបករណ៍ ។</translation>
+    </message>
+    <message>
+        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​របើក/បកប្រែ​ឧបករណ៍&lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​រនាំចូល​ឧបករណ៍&lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation>បាន​បរាជ័យ​ទៅ​ពិនិត្យ​មើល​ឯកសារ​ ។</translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​រយក​ឯកសារ​ចេញ ។</translation>
+    </message>
+    <message>
+        <source>Failed to create appliance.</source>
+        <translation>បាន​បរាជ័យ​ទៅ​បង្កើតឧបករណ៍ ។</translation>
+    </message>
+    <message>
+        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ទៅ​រៀប​ចំ​នាំ​ចូលឧបករណ៍​ &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>Failed to create an appliance.</source>
+        <translation>បាន​បរាជ័យ​ទៅ​បង្កើតឧបករណ៍​ ។</translation>
+    </message>
+    <message>
+        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>បាន​បរាជ័យ​ទៅ​នាំ​ចេញឧបករណ៍​​ &lt;b&gt;%1&lt;/b&gt; ។</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>
+
+
+
+
+failed to mount ...</comment>
+        <translation type="obsolete">ថាសរឹង</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>
+
+
+
+
+failed to mount ... host-drive</comment>
+        <translation type="obsolete">ស៊ីឌី​​​/​ឌីវីឌី​​</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>
+
+
+
+
+failed to mount ...</comment>
+        <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>
+
+
+
+
+failed to mount ... host-drive</comment>
+        <translation type="obsolete">ថាសទន់​</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>
+
+
+
+
+failed to mount ...</comment>
+        <translation type="obsolete">រូបភាព​ថាសទន់</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>
+
+
+
+
+failed to attach ...</comment>
+        <translation type="obsolete">ថាសរឹង</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>
+
+
+
+
+failed to attach ...</comment>
+        <translation type="obsolete">ឧបករណ៍​ស៊ីឌី​​/​ឌីវីឌី​</translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>
+
+
+
+
+failed to close ...</comment>
+        <translation type="obsolete">ឧបករណ៍​ថាសទន់​</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;តើ​​​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឧបករណ៍​​ស៊ី​ឌី​​/​ឌី​វីឌី​-រ៉ូម​ឬ​​?&lt;/p&gt;&lt;p&gt;អ្នក​នឹង​​មិន​អាច​ម៉ោន​ស៊ី​ឌី​ ឬ​រូប​ភាព ISO ឬ​ដំឡើង​​ការ​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​​ដោយ​គ្មាន​វា​បាន​​ទេ ​​!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>
+
+
+
+
+medium</comment>
+        <translation type="obsolete">យកចេញ​</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">ផ្លាស់ប្តូរ​</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium</comment>
+        <translation type="obsolete">បង្កើត</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="obsolete">ជ្រើស</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation type="unfinished">យកចេញ​</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation type="unfinished">ចេញ</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">ថាសរឹង</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation type="unfinished">ស៊ីឌី​​​/​ឌីវីឌី​​</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">រូបភាព​ស៊ីឌី/ឌីវីឌី</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation type="unfinished">ថាសទន់​</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation type="unfinished">រូបភាព​ថាសទន់</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">ថាសរឹង</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">ឧបករណ៍​ស៊ីឌី​​/​ឌីវីឌី​</translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">ឧបករណ៍​ថាសទន់​</translation>
+    </message>
+    <message>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete all files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished">យកចេញ</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">យកចេញ​</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation type="unfinished">ប្ដូរ</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;បាន​បរាជ័យ​ក្នុងកា​ររក្សាទុក​ឯកសារ​ដែលបាន​ទាញ​យក​ជា &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; ។&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">បោះបង់ការ​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​ភ្ញៀវ VirtualBox</translation>
+        <translation type="obsolete">បោះបង់ការ​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​ភ្ញៀវ VirtualBox</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">កំពុង​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">កំពុង​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
         <translation type="unfinished"></translation>
@@ -3989,6 +5411,17 @@ network adapter name</comment>
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetAdditions</name>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished">បោះបង់ការ​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​ភ្ញៀវ VirtualBox</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished">កំពុង​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -4850,6 +6283,29 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation>កែសម្រួល​អត្ថបទ​</translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation>ជំនួស​...</translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation>ជំនួស​អត្ថបទ​បច្ចុប្បន្ន​ដោយ​មាតិកា​របស់​ឯកសារ​មួយ ។</translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation>អត្ថបទ (*.txt);;All (*.*)</translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation>ជ្រើស​ឯកសារត្រូវ​បើក...</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -5000,135 +6456,6 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     <message>
         <source>Version %1</source>
         <translation>កំណែ %1</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation>ប្រ​ព័ន្ធ​​និម្មិត​ %1</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>ឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation>ផលិត​ផល​</translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation>ផលិតផល​-URL</translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation>ក្រុម​ហ៊ុន​លក់​</translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation>ក្រុម​ហ៊ុន​លក់​​-URL</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation>កំណែ​</translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation>សេច​ក្តី​ពិណណ៌នា​</translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation>អជ្ញាបណ្ណ</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation>ស៊ី​ភី​យូ</translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation>សតិ</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation>ឧបករណ៍បញ្ជា​​ថាស​រឹង (IDE)</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation>ឧបករណ៍បញ្ជា​​ថាស​រឹង (SATA)</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation>ឧបករណ៍​បញ្ជា​ថាស​រឹង (SCSI)</translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation>ឌីវីឌី​</translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation>ថាសទន់</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation>អាដាប់​ទ័រ​បណ្តាញ​</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation>ឧបករណ៍​បញ្ជា​ USB</translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation>កាត​សំឡេង​</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translation>រូបភាព​ថាស​និម្មិត​</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation>មិនស្គាល់​ធាតុ​ផ្នែក​រឹង​</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">មេកាបៃ</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;តម្លៃ​​ដើម​ ៖&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation>ការ​កំណត់​រចនា​សម្ព័ន្ធ</translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation>ការ​ព្រមាន​ ៖</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="obsolete">មេកាបៃ</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="obsolete">មេកាបៃ</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7538,17 +8865,6 @@ medium</comment>
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation>កំពុង​អាន​ឧបករណ៍​...</translation>
-    </message>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation>កំពុង​នាំ​ចូល​ឧបករណ៍​...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>VirtualBox License</source>
@@ -7561,13 +8877,6 @@ medium</comment>
     <message>
         <source>I &amp;Disagree</source>
         <translation>ខ្ញុំ​មិន​យល់ព្រម​ទេ</translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>កែសម្រួល​</translation>
     </message>
 </context>
 <context>
@@ -7878,1250 +9187,6 @@ VMM: Floppy Image</comment>
     </message>
 </context>
 <context>
-    <name>UIMessageCenter</name>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - ព័ត៌មាន</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - សំណួរ</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - កា​រព្រមាន</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - កំហុស</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - កំហុស​ធ្ងន់ធ្ងរ</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag</comment>
-        <translation>កុំ​បង្ហាញ​សារ​នេះ​ម្ដង​ទៀត</translation>
-    </message>
-    <message>
-        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​បើក &lt;tt&gt;%1&lt;/tt&gt; ។ ប្រាកដ​ថា​បរិស្ថាន​ផ្ទៃតុ​របស់​អ្នក​អាច​គ្រប់គ្រង URLs នៃ​ប្រភេទ​នេះ​យ៉ាង​ត្រឹមត្រូវ ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​រចាប់ផ្ដើម COM ឬ​រកម៉ាស៊ីនបម្រើ VirtualBox COM ។ ភាគ​ច្រើន​ម៉ាស៊ីនបម្រើ VirtualBox មិន​រត់​ ឬ​បរាជ័យ​ក្នុងកា​រចាប់ផ្ដើម ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បិទ​ឥឡូវ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​របង្កើត​វត្ថុ VirtualBox COM ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បិទ​ឥឡូវ​នេះ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to set global VirtualBox properties.</source>
-        <translation>បាន​បរាជ័យ​ក្នុង​ការ​កំណត់លក្ខណៈសម្បត្តិរបស់ VirtualBox ។</translation>
-    </message>
-    <message>
-        <source>Failed to access the USB subsystem.</source>
-        <translation>បាន​បរាជ័យ​ក្នុង​ការ​​ចូលដំណើរការ​ប្រព័ន្ធ​រង​របស់ USB ។</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation>បាន​បរាជ័យ​ក្នុង​ការ​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី ។</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​អនុវត្ត​ការ​កំណត់ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត​ថ្មី &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​ចាប់ផ្ដើម​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុង​កា​រផ្អាក​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​បន្ត​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​ររក្សាទុក​ស្ថានភាព​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​បង្កើត​រូបថត​អេក្រង់​របស់ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​បញ្ឈប់​ម៉ាស៊ីននិម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​រយក​ម៉ាស៊ីន​និម្មិត​ចេញ &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​បោះបង់​ស្ថានភាព​របស់​ម៉ាស៊ីន​និម្មិត​ដែលបាន​រក្សាទុក &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>គ្មាន​ម៉ាស៊ីន​និម្មិត​ដែល​មាន​ឈ្មោះ &lt;b&gt;%1&lt;/b&gt; នោះ​ទេ ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;តើអ្នក​ប្រាកដ​ជា​ចង់​លុប​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ជា​អចិន្ត្រៃយ៍​ឬ ?&lt;/p&gt;&lt;p&gt;ប្រតិបត្តិការ​នេះ​មិនអាច​ត្រូវ​បាន​ធ្វើ​វិញ​ទេ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឈ្មោះ​ម៉ាស៊ីននិម្មិត &lt;b&gt;%1&lt;/b&gt;​ដែល​មិនអាច​ចូលដំណើរការ​បាន​​ដែរឬទេ?&lt;/p&gt;&lt;p&gt;អ្នក​នឹង​មិនអាច​ចុះឈ្មោះ​វា​បានទៀតទេ​ពី GUI ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​បោះបង់​ស្ថានភាព​ដែលបានរក្សាទុក​របស់ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt;ដែរឬទេ ?&lt;/p&gt;&lt;p&gt;ប្រតិបត្តិការ​នេះ​មិន​ស្មើ​នឹង​កា​រកំណត់​ឡើង​វិញ ឬ​បិទ​ម៉ាស៊ីន​​ដោ​​យ​មិន​បានចុច​ប៊ូតុង​ដោយ​សមរម្យ​តាម​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create a new session.</source>
-        <translation>បានបរាជ័យ​ក្នុងការ​បង្កើត​សម័យ​ថ្មី ។</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បានបរាជ័យ​ក្នុងកា​របើក​សម័យ​សម្រាប់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​យក​ចំណុច​ប្រទាក់​បណ្ដាញ​ម៉ាស៊ីន​ &lt;b&gt;%1&lt;/b&gt; ចេញ ។</translation>
-    </message>
-    <message>
-        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​រភ្ជាប់​ឧបករណ៍ USB &lt;b&gt;%1&lt;/b&gt; ទៅ​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%2&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>បាន​ប​រាជ័យ​ក្នុងការ​ផ្ដាច់​ឧបករណ៍ USB &lt;b&gt;%1&lt;/b&gt; ពី​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%2&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​របង្កើត​ថត &lt;b&gt;%1&lt;/b&gt; (ចង្អុល​ទៅ​ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) សម្រាប់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​រយក​ថត​ដែល​បាន​ចែករំលែក​ចេញ &lt;b&gt;%1&lt;/b&gt; (ចង្អុល​ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ពី​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ម៉ាស៊ីន​និម្មិត​រាយការណ៍​ថា​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​មិន​គាំទ្រទេ ។ &lt;b&gt;ការ​រួម​បញ្ចូល​ទ្រនិច​កណ្ដុរ&lt;/b&gt; នៅ​ក្នុង​របៀប​វីដេអូ​បច្ចុប្បន្ន ។ អ្នក​ត្រូវតែ​ចាប់យក​កណ្ដុរ (ដោយ​ចុច​លើ​ការ​បង្ហាញ VM ឬ​ចុច​គ្រាប់ចុច​លើ​ម៉ាស៊ីន) ដើម្បី​ប្រើ​កណ្ដុរ​ខាង​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ម៉ាស៊ីន​និម្មិត​បច្ចុប្បន្ន​ស្ថិត​ក្នុង​ស្ថានភាព &lt;b&gt;បាន​ផ្អាក&lt;/b&gt; ហើយ​ដូច្នេះ​មិន​ទទួល​​ក្ដារចុច​ ឬ​កណ្ដុរ​ណា​មួយ ។ ប្រសិន​បើ​អ្នក​ចង់​បន្ត​ដំណើរការ​ខាង​ក្នុង VM អ្នក​ត្រូវ​តែ​បន្តវា ដោយ​ជ្រើស​សកម្មភាព​ដែល​ទាក់ទង​ពីរបារ​ម៉ឺនុយ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មិន​អាច​រត់ VirtualBox នៅ​ក្នុងរបៀប &lt;i&gt;កម្មវិធី​ជ្រើស VM​&lt;/i&gt; ដោយសារ​តែ​ការ​ដាក់កម្រិត​មូលដ្ឋាន ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បញ្ចប់​ឥឡូវ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;កំហុស​ធ្ងន់ធ្ងរ&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;មិនមែន​កំហុស​ធ្ងន់ធ្ងរ&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;កា​រព្រមាន&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;លេខសម្គាល់​កំហុស ៖&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation>ភាព​ម៉ឺងម៉ាត់ ៖</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;កំហុស​ធ្ងន់ធ្ងរ​មានកើត​ឡើង​កំឡុង​ពេល​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត ! ម៉ាស៊ីន​និម្មិត​នឹង​ត្រូវ​បាន​បិទ ។ វា​ត្រូ​វបាន​ស្នើ​ឲ្យ​ប្រើ​ក្ដារតម្បៀតខ្ទាស់​ដើម្បី​ចម្លង​សារ​កំហុស​ដើម្បីពិនិត្យ​មើល​បន្ថែម​ទេ ៖&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;កំហុស​បានកើត​ឡើង​កំឡុង​ពេល​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត ! សេចក្ដី​លម្អិត​កំហុស​ត្រូវ​បានបង្ហាញ​ខាង​ក្រោម ។ អ្នកអាច​ព្យាយាម​កែ​កំហុស​ដែល​ពិពណ៌នា ហើយ​បន្ត​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ការ​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត​អាច​រត់​ក្នុង​លក្ខខណ្ឌ​មាន​កំហុស​ដូច​បាន​ពិពណ៌នា​ខាង​ក្រោម ។ អ្នក​អាច​មិនអើពើ​សារ​នេះ​បាន ប៉ុន្តែ​វា​ត្រូវ​បាន​ស្នើ​ឲ្យ​អនុវត្ត​សកម្មភាព​ដែល​សមរម្យ ដើម្បីប្រាកដ​ថា​សារ​ដែលបានពិពណ៌នា​មិន​កើតឡើង​ទេ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation>កូដ​&amp;nbsp;លទ្ធផល ៖</translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation>សមាសភាគ ៖</translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation>ចំណុច​ប្រទាក់ ៖</translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation>Callee ៖ </translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation>Callee&amp;nbsp;RC ៖ </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;រក​មិន​ឃើញ​​ឯកសារ​ភាសា​សម្រាប់​ភាសា &lt;b&gt;%1&lt;/b&gt; នៅ​ក្នុង &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;ទេ ។&lt;/p&gt;&lt;p&gt;ភាសា​នឹង​ត្រូវ​បានកំណត់​ឡើង​វិញជា​បណ្ដោះអាសន្ន​ទៅ​ភាសា​លំនាំដើម​របស់​ប្រព័ន្ធ ។ សូម​ចូល​ទៅ​ប្រអប់ &lt;b&gt;ចំណូលចិត្ត&lt;/b&gt; ដែល​អ្នក​អាច​បើក​ពី​ម៉ឺនុយ &lt;b&gt;ឯកសារ&lt;/b&gt; នៃ​បង្អួច​ VirtualBox មេ ហើយ​ជ្រើស​ភាសា​មួយ​ក្នុង​ចំណោម​ភាសា​ដែល​មាន​នៅ​លើ​ទំព័រ &lt;b&gt;ភាសា&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មិនអាច​ផ្ទុក​ឯកសារ​ភាសា &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; បានទេ ។ &lt;p&gt;ភាសា​នឹង​ត្រូវ​បានកំណត់​ទៅ​ជា​ភាសា​អង់គ្លេស​ជា​បណ្ដោះអាសន្ន ។ សូម​ចូល​ទៅ​ប្រអប់ &lt;b&gt;ចំណូល​ចិត្ត&lt;/b&gt; ដែល​អ្នក​អាច​បើក​ពី​ម៉ឺនុយ​ &lt;b&gt;ឯកសារ&lt;/b&gt; នៃ​បង្អួច VirtualBox មេ ហើយ​ជ្រើស​ភាសា​មួយ​ក្នុងចំណោម​ភាសា​ដែល​មាន​ស្រាប់​នៅ​លើ​ទំព័រ &lt;b&gt;ភាសា&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ផ្នែក​បន្ថែម​ភាសា​ភ្ញៀវ​របស់ VirtualBox បាន​ដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ចាស់​ពេក ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុកគឺ %2 ។ លក្ខណៈពិសេស​មួយ​ចំនួន​ត្រូវការ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​ការ​ផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) នឹង​បញ្ឈប់​ដំណើរការ​យ៉ាង​ត្រឹមត្រូវ ។&lt;/p&gt;&lt;p&gt;សូម​ធ្វើ​ឲ្យ​ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កំណែ​បច្ចុប្បន្ន​ ដោយ​ជ្រើស &lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ផ្នែក​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ VirtualBox បានដំឡើង​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​គឺ​ហួស​សម័យ​ហើយ ៖ កំណែ​ដែលបានដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។ លក្ខណៈ​ពិសេស​មួយ​ចំនួន​ដែល​ត្រូវការ​ផ្នែក​បន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ (ការ​រួម​បញ្ចូល​កណ្ដុរ បង្ហាញ​កា​រផ្លាស់ប្ដូរ​ទំហំ​ដោយ​ស្វ័យ​ប្រវត្តិ​របស់ម៉ាស៊ីន​ភ្ញៀវ) មិនអាច​ដំណើរការ​ដូច​ដែល​បាន​រំពឹង​ទុក​ទេ ។&lt;/p&gt;&lt;p&gt;វា​ត្រូ​វបានផ្ដល់​អនុសាសន៍​ឲ្យ​ធ្វើ​ឲ្យ​ផ្នែកបន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទាន់សម័យ​ទៅ​កណែ​បច្ចុប្បន្ន ដោយ​ជ្រើស​ &lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ថ្មីពេក​សម្រាប់​កំណែ​របស់ VirtualBox ៖ កំណែ​ដែល​បាន​ដំឡើង​គឺ %1 កំណែ​ដែល​រំពឹង​ទុក​គឺ %2 ។&lt;/p&gt;&lt;p&gt;កា​រប្រើកំណែ​ថ្មី​របស់​បន្ថែម​ផ្នែកបន្ថែម​ជាង​កំណែ​ចាស់​របស់ VirtualBox មិន​ត្រូវ​បានគាំទ្រទេ ។ សូម​ដំឡើង​កំណែ​បច្ចុប្បន្ន​របស់​ផ្នែកបន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ ដោយ​ជ្រើស​&lt;b&gt;ដំឡើង​ផ្នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ឧបករណ៍&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​ផ្លាស់ប្ដូរ​ផ្លូវ​ថត​រូបថត​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;b&gt; ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​រយក​ថត​ដែល​បានចែករំលែក &lt;b&gt;%1&lt;/b&gt; ចេញ (ចង្អុល​ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ពី​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;សូម​បិទ​កម្មវិធី​ទាំង​អស់​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ​ដែល​អាច​កំពុង​ប្រើ​ថត​ដែលបានចែករំលែក​នេះ ហើយ​ព្យាយាម​ម្ដង​ទៀត ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មិនអាច​រក​​ឯកសារ​រូបភាព​ស៊ីឌី​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ឬ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; ។&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;តើអ្នក​ចង់​ទាញ​យក​រូបភាព​ស៊ីឌី​ពី​អ៊ីនធឺណិត​ដែរឬទេ ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បាន​បរាជ័យ​ក្នុងកា​រទាញ​​​យក​រូបភាព​ស៊ីឌី​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt; ។&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;តើ​អ្នក​ប្រាក​ដ​ជា​ចង់​ទាញ​យក​រូបភាព​ស៊ីឌី​បន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (ទំហំ %3 បៃ) ដែរឬទេ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;រូបភាពស៊ីឌីផ្នែក​នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ VirtualBត្រូ​វបាន​ទាញយក​ដោយ​ជោគជ័យ​ពីr&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;​%2&lt;/a&gt;&lt;/nobr&gt;bហើយ​បាន​រក្សាទុក​ក្នុង​មូលដ្ឋាន​ជា as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt; ។&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;តើ​អ្នក​ចង់​ចុះឈ្មោះ​រូបភាព​ស៊ីឌី​នេះ ហើយ​ម៉ោន​វា​នៅ​លើ​ដ្រាយ​ស៊ីឌី/ឌីវីឌី​និម្មិតដែរឬទេ ?ve?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​ត្រូវ​បានធ្វើ​ឲ្យ​ប្រសើរ​ដើម្បី​ធ្វើការ​ក្នុងរបៀប​ពណ៌ &lt;b&gt;%1&amp;nbsp;ប៊ីត&lt;/b&gt; ប៉ុន្តែ​គុណភាពពណ៌​​នៃ​ការ​បង្ហាញ​និម្មិត​បច្ចុប្បន្ន​ត្រូវ​បានកំណត់​ទៅ &lt;b&gt;%2&amp;nbsp;ប៊ីត&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;សូម​បើក​ប្រអប់លក្ខណៈសម្បត្តិ​បង្ហាញ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ហើយ​ជ្រើសរបៀប​ពណ៌ &lt;b&gt;%3&amp;nbsp;ប៊ីត&lt;/b&gt; ប្រសិនបើ​មាន សម្រាប់​ការអនុវត្ត​ដ៏​ល្អ​បំផុត​របស់​ប្រព័ន្ធ​រង​វីដែអូ​និម្មិត ។&lt;/p&gt;&lt;p&gt;&lt;b&gt;ចំណាំ&lt;/b&gt; ។ ប្រព័ន្ធ​ប្រតិបត្តិការ​មួយ​ចំនួន ដូចជា OS/2 អាច​ដំណើរការ​យ៉ាង​ពិតប្រាកដ​នៅ​ក្នុង​របៀប ៣២&amp;nbsp;ប៊ីត ប៉ុន្តែ​រាយការណ៍​ជា ២៤&amp;nbsp;ប៊ីត (១៦​ លាន​ពណ៌) ។ អ្នក​អាច​ព្យាយាម​ជ្រើស​គុណភាព​ពណ៌​ផ្សេង​ដើម្បីមើល​ថាតើ​សារ​នេះ​មិនបង្ហាញ​ ឬ​អ្នក​អាច​បិទ​សារ​យ៉ាង​សាមញ្ញ ឥឡូវ​ប្រសិនបើ​អ្នក​ប្រាកដ​គុណភាព​ពណ៌​ដែល​ត្រូវការ (%4&amp;nbsp;ប៊ីត) មិនអាច​ប្រើ​បាននៅ​ក្នុង​ប្រព័ន្ធ ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ដែល​បានផ្ដល់​ឲ្យ​ទេ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;អ្នកមិនបានភ្ជាប់​ថាសរឹង​ទៅកាន់​ម៉ាស៊ីន​និម្មិត​ថ្មីទេ ។ ម៉ាស៊ីន​នឹង​មិនអាច​ចាប់ផ្ដើម​បានទេ លុះត្រា​តែ​អ្នក​ភ្ជាប់​ថាសរឹង​ជា​មួយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ ឬ​មេឌៀ​ចាប់ផ្ដើម​ផ្សេងៗ​មួយ​ចំនួន​ទៀត​ទៅវា​ ពេលក្រោយ​ប្រើ​ប្រអប់​កំណត់​ម៉ាស៊ីន​ ឬ​រត់​អ្នក​ជំនួយការ​សិន ។&lt;/p&gt;&lt;p&gt;តើអ្នក​ចង់​បន្ត​ដែរឬទេ ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>បាន​បរាជ័យ​យក្នុងកា​ររក​ឯកសារ​អាជ្ញាបណ្ណ​នៅ​ក្នុង &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​របើក​ឯកសារ​អាជ្ញាប័ណ្ណ &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ។ ពិនិត្យ​មើល​សិទ្ធិ​របស់​ឯកសារ ។</translation>
-    </message>
-    <message>
-        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​ផ្ញើ​កា​រចុច​ប៊ូតុងថាមពល ACPI ទៅ​កាន់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;សូមអបអរសាទរ ! អ្នក​បានចុះឈ្មោះ​ជា​អ្នក​ប្រើ VirtualBox ដោយ​ជោគជ័យ​ហើយ ។ &lt;/p&gt;&lt;p&gt;សូម​អរគុណ​ចំពោះ​ការ​ចំណាយ​ពេលវេលា​បំពេញ​សំណុំបែបបទ​ចុះឈ្មោះ !&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;បានបរាជ័យ​ក្នុងកា​ររក្សាទុក​ការ​កំណត់ VirtualBox សកល​ទៅ​កាន់ &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងការ​ផ្ទុក​ការ​កំណត់​រចនាសម្ព័ន្ធ​ចំណុច​ប្រទាក់​អ្នក​ប្រើ​សកល​ពី &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បិទ​ឥឡូវ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​ររក្សាទុក​ការកំណត់​រចនាសម្ព័ន្ធ​ចំណុច​ប្រទាក់​អ្នក​ប្រើសកល​ទៅ​&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;កម្មវិធី​នឹង​បិទ​ឥឡូវ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>បានបរាជ័យ​ក្នុង​ការ​រក្សាទុក​ការ​កំណត់​​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ទៅ&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>បានបរាជ័យ​ក្នុងកា​រផ្ទុក​កា​រកំណត់​របស់ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ពី &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>machine</comment>
-        <translation type="obsolete">លុប</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>machine</comment>
-        <translation type="obsolete">មិន​ចុះឈ្មោះ</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state</comment>
-        <translation>បោះបង់</translation>
-    </message>
-    <message>
-        <source>Disable</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">បានបិទ</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions</comment>
-        <translation>ទាញយក</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions</comment>
-        <translation>ម៉ោន</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;គ្រាប់ចុច​ម៉ាស៊ីន​បច្ចុប្បន្ន​ត្រូវ​បាន​កំណត់​ជា &lt;b&gt;%1&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Capture</source>
-        <comment>do input capture</comment>
-        <translation>ចាប់យក</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box</comment>
-        <translation>ពិនិត្យ​មើល</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen</comment>
-        <translation>ប្ដូរ</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless</comment>
-        <translation>ប្ដូរ</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;តើ​អ្នក​ពិត​ជា​ចង់​កំណត់​ម៉ាស៊ីននិម្មិត​ឡើង​វិញ​ដែរឬទេ ?&lt;/p&gt;&lt;p&gt;នៅ​ពេល​ម៉ាស៊ីន​ត្រូវ​បាន​កំណត់​ឡើង​វិញ ទិន្នន័យ​របស់​កម្មវិធី​ដែល​មិនបានរក្សាទុកទាំង​អស់​ដែល​កំពុង​រត់​វា​នឹង​ត្រូវ​បានបាត់បង់ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine</comment>
-        <translation>កំណត់​ឡើង​វិញ</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached</comment>
-        <translation>បន្ត</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached</comment>
-        <translation>ទៅ​ក្រោយ</translation>
-    </message>
-    <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="obsolete">បានបរាជ័យ​ក្នុងកា​រចម្លង​ឯកសារ &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ទៅ &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3) ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មិនអាច​ចូល​របៀប​គ្មាន​ថេរ ដោយសារ​តែ​សតិ​វីដេអូ​ម៉ាស៊ីន​ភ្ញៀវ​មិន​គ្រប់គ្រាន់ ។&lt;/p&gt;&lt;p&gt;អ្នក​គួរ​កំណត់​រចនាសម្ព័ន្ធ​ម៉ាស៊ីន​និម្មិត​យ៉ាង​ហោចណាស់​មានសតិ​វីដេអូ &lt;b&gt;%1&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មិនអាច​ប្ដូរ​ការ​បង្ហាញ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទៅ​របៀប​ពេញ​អេក្រង់​បានទេ ដោយសារ​តែ​សតិ​វីដេអូ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​មិន​គ្រប់គ្រាន់ ។&lt;/p&gt;&lt;p&gt;អ្នក​គួរ​កំណត់​រចនាសម្ព័ន្ធ​ម៉ាស៊ីន​និម្មិត​ឲ្យ​មានសតិ​​យ៉ាង​ហោចណាស់​ &lt;b&gt;%1&lt;/b&gt; នៃ​សតិ​វីដេអូ ។&lt;/p&gt;&lt;p&gt;ចុច​ &lt;b&gt;មិនអើពើ&lt;/b&gt; ដើម្បី​ប្ដូរ​ទៅ​របៀប​ពេញអេក្រង់ ឬ​បើ​មិន​ដូច្នេះ​ទេ​ចុច &lt;b&gt;បោះបង់&lt;/b&gt; ដើម្បី​បោះបង់​ប្រតិបត្តិការ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>អ្នក​បាន​ដំឡើង​កំណែ VirtualBox ចុងក្រោយ​បំផុត​រួ​ចហើយ ។ សូម​​ពិនិត្យ​មើល​កំណែ​ពេលក្រោយ ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;អ្នក​បាន &lt;b&gt;ចុចកណ្ដុរ&lt;/b&gt; ខាង​ក្នុង​ការ​បង្ហាញ​របស់​ម៉ាស៊ីន​និម្មិត ឬ​បាន​ចុច​ &lt;b&gt;គ្រាប់ចុច host&lt;/b&gt; ។ វា​នឹងធ្វើ​​ឲ្យ​ម៉ាស៊ីន​និម្មិត &lt;b&gt;ចាប់យក&lt;/b&gt; ទស្សន៍ទ្រនិច​កណ្ដុរ​របស់​ម៉ាស៊ីន (តែ​ក្នុងករណី​ដែល​ការ​រួម​បញ្ចូល​ទស្សន៍ទ្រនិច​បច្ចុប្បន្ន​មិន​ត្រូ​វបានគាំទ្រ​ដោយ​ប្រព័ន្ធប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ​ទេ ។) ហើយ​នឹង​ក្ដារចុច ដែល​នឹង​ធ្វើ​ឲ្យ​កម្មវិធី​ផ្សេងៗ​ដែល​កំពុង​រត់​ក្នុង​ម៉ាស៊ីន​របស់​​​មិនអាច​ប្រើបាន​ទេ ។&lt;/p&gt;&lt;p&gt;អ្នក​អាចចុច​ &lt;b&gt;គ្រាប់ចុច host&lt;/b&gt; នៅពេល​ណាមួយ​ដើម្បី​ &lt;b&gt;មិន​ចាប់យក&lt;/b&gt; ក្ដារចុច និងកណ្ដុរ (ប្រសិន​បើ​​ត្រូវ​បានចាប់​យក) ហើយ​ត្រឡប់​ទៅ​ប្រតិបត្តិការ​ធម្មតា​វិញ ។ បច្ចុប្បន្ន​បានផ្ដល់​គ្រាប់ចុច host ត្រូវ​បានបង្ហាញ​នៅ​ក្នុង​របារ​ស្ថានភាពនៅ​ផ្នែក​ខាងក្រោម​របស់​បង្អួច​ម៉ាស៊ីន​និម្មិត នៅជាប់​នឹងរូបតំណាង&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; ។ រូបតំណាង​នេះ រួម​ជា​មួយ​នឹង​រូបតំណាង​កណ្ដុរ​ដែល​នៅ​ជាប់នោះ បង្ហាញ​នូវ​ក្ដារចុច និង​ស្ថានភាព​ចាប់យក​កណ្ដុរ​បច្ចុប្បន្ន ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;អ្នក​បានបើក​ជម្រើស &lt;b&gt;ចាប់យក​ក្ដារចុច​ដោយ​ស្វ័យ​ប្រវត្តិ&lt;/b&gt; ។ វា​នឹង​​ធ្វើ​ឲ្យ​ម៉ាស៊ីន​និម្មិត​ &lt;b&gt;ចាប់យក&lt;/b&gt; ក្ដារចុច​ដោយ​ស្វ័យ​ប្រវត្តិ​រាល់ពេល​ដែល​បង្អួច VM ត្រូវ​បាន​ធ្វើ​ឲ្យ​សកម្ម​ ហើយ​ធ្វើ​ឲ្យ​វា​មិនអាច​ប្រើបាន​ចំពោះ​កម្មវិធី​ផ្សេងៗ​ដែល​កំពុង​រត់​ក្នុង​ម៉ាស៊ីន​របស់​អ្នក ៖ នៅពេល​ក្ដារចុច​ត្រូវ​បាន​ចាប់យក  keystrokes ទាំង អស់ (រួម​មាន​ប្រព័ន្ធ​មួយ​ដូចជា ជំនួស(Alt)-ថេប(Tab)) នឹង​ត្រូវ​បញ្ជូន​បន្ត​ទៅ​ VM ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ចុច &lt;b&gt;គ្រាប់ចុច host&lt;/b&gt; នៅពេល​ណាមួយ​ទៅ &lt;b&gt;មិន​ចាប់យក&lt;/b&gt; ​ក្ដារចុច​ និង​កណ្ដុរ (ប្រសិនបើ​ត្រូវ​បាន​ចាប់យក) និង​​ត្រឡប់​ពួកវា​ទៅ​ប្រតិបត្តិការ​ធម្មតា​វិញ ។ បច្ចុប្បន្នបានផ្ដល់​គ្រាប់ចុច host ត្រូវ​បានបង្ហាញ​នៅ​លើ​របារ​ស្ថានភាព​នៅផ្នែក​ខាងក្រោម​របស់​បង្អួច​និម្មិត នៅជាប់នឹងរូបតំណាង&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; ។ រូបតំណាង​នេះ​ រួម​ជា​មួយ​នឹង​រូបតំណាង​កណ្ដុរ​នៅជាប់​គ្នា​នោះ បង្ហាញក្ដារចុច និង​ស្ថានភាព​ចាប់យក​កណ្ដុរ​បច្ចុប្បន្ន ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ម៉ាស៊ីន​និម្មិត​រាយការណ៍​ថា​ប្រព័ន្ធ​ប្រតិបត្តិការ​គាំទ្រ &lt;b&gt;ការ​រួម​បញ្ចូល​ទស្សន៍​ទ្រនិច​កណ្ដុរ&lt;/b&gt; ។ នេះ​មានន័យ​ថា អ្នក​មិន​ចាំបាច់ &lt;i&gt;ចាប់យក&lt;/i&gt; ទស្សន៍ទ្រនិ​ច​កណ្ដុរ ដើម្បី​អាច​ប្រើ​វា​នៅ​ក្នុង​ប្រព័ន្ធប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​បានទេ -- សកម្មភាព​កណ្ដុរ​ទាំង​អស់​ដែល​អ្នក​អនុវត្ត​នៅពេល​ទស្សន៍ទ្រនិចកណ្ដុរ​នៅ​លើ​កា​របង្ហាញ​របស់​ម៉ាស៊ីន​និម្មិត ត្រូវ​បានបញ្ជូន​ដោយ​ផ្ទាល់​ទៅ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ។ ប្រសិនបើកណ្ដុរបច្ចុប្បន្ន​ត្រូវ​បាន​ចាប់យក វា​នឹង​​មិន​ត្រូ​វបាន​ចាប់យក​ដោយ​ស្វ័យ​ប្រវត្តិ​ទេ ។&lt;/p&gt;&lt;p&gt;រូបតំណាង​កណ្ដុរ​នៅ​លើ​របារ​ស្ថានភាព​នឹង​មាន​រូបរាង​ដូចជា&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;ដើម្បី​ប្រាប់​អ្នក​ថា ការ​រួមបញ្ចូល​ទស្សន៍​ទ្រនិច​កណ្ដុរ​ត្រូវ​បានគាំទ្រ​ដោយ​ប្រព័ន្ធប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ និង​បច្ចុប្បន្ន​ត្រូវ​បានបើក ។&lt;/p&gt;&lt;p&gt;&lt;b&gt;ចំណាំ&lt;/b&gt; ៖ កម្មវិធី​មួយ​ចំនួន​អាច​មាន​ឥរិយាបទ​មិន​ត្រឹមត្រូវ​នៅ​ក្នុង​របៀប​រួម​បញ្ចូល​ទស្សន៍​ទ្រនិច​កណ្ដុរ ។ អ្នក​អាច​បិទ​វា​ជា​និច្ច​សម្រាប់​សម័យ​បច្ចុប្បន្ន (ហើយ​បើក​វា​ម្ដង​ទៀត) ដោយជ្រើសសកម្មភាព​ដែល​ទាក់ទង​ពី​របារ​ម៉ឺនុយ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​នឹង​ត្រូ​វបានប្ដូរ​ទៅ​របៀប &lt;b&gt;ពេញអេក្រង់&lt;/b&gt; ឥឡូវ ។ អ្នក​អាច​ត្រឡប់ក្រោយ​​ទៅ​របៀប​បង្អួច​ នៅពេល​ណាមួយ ដោយ​ចុច &lt;b&gt;%1&lt;/b&gt; ។ ចំណាំ​ថា គ្រាប់ចុច &lt;i&gt;ម៉ាស៊ីន&lt;/i&gt; បច្ចុប្បន្ន​ត្រូវ​បាន​កំណត់​ជា &lt;b&gt;%2&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា របារ​ម៉ឺនុយ​មេ​​ត្រូវ​បានលាក់​ក្នុង​របៀប​ពេញអេក្រង់ ។​ អ្នក​អាច​ចូលដំណើរការ​វា​ដោយ​ចុច &lt;b&gt;ម៉ាស៊ីន(Host)+ដើម(Home)&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​​នឹង​ត្រូ​វបានប្ដូរ​ទៅ​របៀប &lt;b&gt;គ្មាន​ថ្នេរ&lt;/b&gt; ឥឡូវ ។ អ្នកអាច​ត្រឡប់​ទៅ​​របៀប​បង្អួច​នៅ​ពេល​ណាមួយ​ដោយចុច &lt;b&gt;%1&lt;/b&gt; ។ ចំណាំ​ថា គ្រាប់ចុច &lt;i&gt;Host&lt;/i&gt; បច្ចុប្បន្ន​ត្រូវ​បានកំណត់​ជា &lt;b&gt;%2&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ចំណាំថា របារ​ម៉ឺនុយមេ​ត្រូវ​បានលាក់​នៅ​ក្នុង​របៀប​គ្មាន​ថ្នេរ ។ អ្នកអាច​ចូលដំណើរការ​វា ដោយ​ចុច​ &lt;b&gt;Host+ដើម(Home)&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Contents...</source>
-        <translation>មាតិកា</translation>
-    </message>
-    <message>
-        <source>Show the online help contents</source>
-        <translation>បង្ហាញ​មាតិកា​ជំនួយលើ​បណ្ដាញ</translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation>តំបន់បណ្ដាញ VirtualBox​...</translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>បើក​កម្មវិធី​រុករក ហើយ​ទៅ​កាន់​តំបន់បណ្ដាញ​ផលិតផល​របស់ VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation>កំណត់​ការ​ព្រមាន​ទាំងអស់</translation>
-    </message>
-    <message>
-        <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>ធ្វើ​ឲ្យ​ការ​ព្រមាន​ទាំងអស់​ដែល​បានបង្ហាប់ ហើយសារ​ត្រូវ​បានបង្ហាញ​ម្ដង​ទៀត</translation>
-    </message>
-    <message>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation>ចុះឈ្មោះ VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Open VirtualBox registration form</source>
-        <translation>បើក​សំណុំ​បែបបទ​ចុះឈ្មោះ​របស់ VirtualBox</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation>ពិនិត្យ​មើល​ភាព​ទាន់សម័យ...</translation>
-    </message>
-    <message>
-        <source>Check for a new VirtualBox version</source>
-        <translation>ពិនិត្យ​មើល​កំណែ​របស់​ VirtualBox ថ្មី</translation>
-    </message>
-    <message>
-        <source>&amp;About VirtualBox...</source>
-        <translation>អំពី VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Show a dialog with product information</source>
-        <translation>បង្ហាញ​ប្រអប់​ដែល​មាន​ព័ត៌មាន​ផលិតផល</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;កំណែ​ថ្មី​របស់ VirtualBox ត្រូវ​បាន​ចេញ​ផ្សាយ ! គឺ​កំណែ &lt;b&gt;%1&lt;/b&gt; ដែលអាច​រក​បាន​នៅ &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ទាញ​យក​កំណែ​នេះ​ពី​តំណ​នេះ​ដោយ​ផ្ទាល់ ៖&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​ចេញផ្សាយ %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;វា​នឹង​ផ្ដាច់​វា​ពី​ម៉ាស៊ីន​និម្មិត​ដូច​ខាងក្រោម ៖ &lt;b&gt;%3&lt;/b&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium</comment>
-        <translation>ចេញផ្សាយ</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;តើអ្នក​ប្រាកដ​ជា​ចង់​យក %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ចេញ​ពី​មេឌៀ​ដែលបាន​ស្គាល់​ដែរឬទេ ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>ចំណាំថា ថាសរឹង​នេះ​មិនអាច​ចូលដំណើរការ​បានទេ ដូច្នេះ​ឯកតា​ផ្ទុក​របស់វា​មិនអាច​ត្រូវ​បានលុប​ឥឡូវ​ទេ ។</translation>
-    </message>
-    <message>
-        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>ប្រអប់​បន្ទាប់​នឹង​អនុញ្ញាត​ឲ្យ​អ្នក​ជ្រើស​ថាតើ អ្នក​ចង់​លុប​ឯកតា​ផ្ទុក​របស់​ថាសរឹង​នេះ ឬ​ទុក​វា​សម្រាប់​ប្រើ​ពេលក្រោយ ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ចំណាំ​ថា ឯកតា​ផ្ទុក​របស់​ឧបករណ៍​ផ្ទុក​នេះ​នឹង​មិន​ត្រូវ​បានលុប​ទេ ហើយ​ដូច្នេះ​វា​នឹង​អាច​បន្ថែម​ទៅ​កាន់​បញ្ជី​ពេល​ក្រោយ​ម្ដង​ទៀត ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium</comment>
-        <translation>យកចេញ</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មាន​ឯកតា​ផ្ទុក​​របស់​ថាសរឹង​នៅ​ទីតាំង &lt;b&gt;%1&lt;/b&gt; រួច​ហើយ ។ អ្នក​មិនអាច​បង្កើត​ថាសរឹង​និម្មិត​ថ្មី​បាន​ទេ ដែល​ប្រើ​ទីតាំង​នេះ ពីព្រោះ​វា​អាច​ត្រូវ​បានប្រើ​ដោយ​ថាសរឹង​និម្មិត​ផ្សេង ។&lt;/p&gt;&lt;p&gt;សូម​បញ្ជាក់​ទីតាំង​ផ្សេង ​។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;តើ​អ្នក​ចង់​លុប​ឯកតា​ផ្ទុក​របស់​ថាសរឹង​ &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;ដែរឬទេ?&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ជ្រើស &lt;b&gt;លុប&lt;/b&gt; បន្ទាប់​មក​ឯកតា​ផ្ទុក​ដែល​បានបញ្ជាក់​នឹង​ត្រូ​វបាន​លុប​ជា​អចិន្ត្រៃយ៍ ។ ប្រតិបត្តិការ​នេះ &lt;b&gt;មិនអាច​ត្រូ​វបាន​ធ្វើ​វិញ​បានទេ&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ជ្រើស &lt;b&gt;រក្សាទុក&lt;/b&gt; បន្ទាប់​មក​ថាសរឹង​នឹង​ត្រូវ​បានយកចេញ​តែ​ពី​បញ្ជី​របស់​ថាសរឹង​ដែល​ស្គាល់​ប៉ុណ្ណោះ ប៉ុន្តែ​ឯកតា​ផ្ទុក​នឹង​មិន​ត្រូ​វបាន​ប៉ះពាល់​ទេ ដែល​ធ្វើ​ឲ្យ​វា​អាច​បន្ថែម​ថាសរឹង​នេះ​ទៅកាន់​បញ្ជី​ពេលក្រោយ​ម្ដង​ទៀត​បាន ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage</comment>
-        <translation>លុប</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage</comment>
-        <translation>រក្សាទុក</translation>
-    </message>
-    <message>
-        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​លុប​ការ​ផ្ទុក​របស់​ថាសរឹង &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>បានបរាជ័យ​ក្នុង​​ការ​បង្កើត​ការ​ផ្ទុក​ថាសរឹង &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; ។&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​បើក %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>បានបរាជ័យ​ក្នុងកា​របិទ %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>បានបរាជ័យ​ក្នុងកា​រ​ចូលដំណើរការ​ស្ថានភាព​របស់​ឧបករណ៍​ផ្ទុក &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​រតភ្ជាប់​ទៅ​កាន់​សេវា​ចុះឈ្មោះ​លើ​បណ្ដាញ​របស់ VirtualBox ដោយ​សារ​តែ​កំហុស​ដូច​ខាងក្រោម ៖&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មិនអាច​ទទួល​យក​ព័ត៌មានកំណែ​ថ្មី​បាន​ទេ ដោយ​សារ​តែ​កំហុស​ដូច​ខាងក្រោម ៖&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ថាសរឹង​និម្មិត​មួយ ឬ​ច្រើន ស៊ីឌី/ឌីវីឌី ឬ​មេឌៀ​ថាសទន់​បច្ចុប្បន្ន​មិនអាច​ចូលដំណើរការ​បានទេ ។ ជា​លទ្ធផល អ្នកនឹង​មិនអាច​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត​ ដែល​ប្រើ​មេឌៀ​នេះ​បាន​ទេ រហូត​ដល់​ពួកវា​អាច​ចូលដំណើរការ​បាននៅពេល​ក្រោយ ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;ពិនិត្យ​មើល&lt;/b&gt; ដើម្បី​ប្រើ​បង្អួច​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត ហើយ​មើល​អ្វី​ដែល​មេឌៀ​មិនអាច​ចូលដំណើរការ​បាន ឬ​ចុច &lt;b&gt;មិនអើពើ&lt;/b&gt; ដើម្បី​មិនអើពើ​នឹង​សារ​នេះ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;កំហុស​ធ្ងន់ធ្ងរ​បាន​កើត​ឡើង​ខណៈពេល​កំពុង​រត់​ម៉ាស៊ីននិម្មិត ហើយ​ការ​ប្រតិបត្តិ​ម៉ាស៊ីន​ត្រូ​វបានបញ្ឈប់ ។&lt;/p&gt;&lt;p&gt;ចំពោះ​ជំនួយ សូមមើល​ផ្នែក​សហគមន៍​នៅ​លើ &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; ឬ​កិច្ចសន្យា​គាំទ្រ​របស់​អ្នក ។ សូម​ផ្ដល់​នូវ​ខ្លឹមសារ​របស់​ឯកសារ​កំណត់ហេតុ &lt;tt&gt;VBox.log&lt;/tt&gt; ហើយ​នឹង​ឯកសារ​រូបភាព &lt;tt&gt;VBox.png&lt;/tt&gt; ដែល​អ្នក​អាច​រក​បាន​នៅ​ក្នុង​ថត &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ព្រមទាំង​សេចក្ដីពិពណ៌នា​នូវ​អ្វីដែល​អ្នក​កំពុង​ធ្វើ នៅពេល​កំហុស​កើត​ឡើង ។ ចំណាំ​ថា អ្នក​ក៏អាច​ចូលដំណើរការ​ឯកសារ​ខាង​លើ ដោយ​ជ្រើស &lt;b&gt;បង្ហាញ​កំណត់​ហេតុ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ម៉ាស៊ីន&lt;/b&gt; របស់​បង្អួច VirtualBox មេ ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;យល់ព្រម&lt;/b&gt; ប្រសិនបើ​​អ្នក​ចង់​បិទ​ម៉ាស៊ីន ឬ​ចុច &lt;b&gt;មិនអើពើ&lt;/b&gt; ប្រសិន​បើ​អ្នក​ទុក​វា​សម្រាប់បំបាត់​កំហុស ។ សូម​ចំណាំថា​កា​របំបាត់​កំហុស​ទាមទារចំណេះដឹង និង​កម្មវិធី​ពិសេស ដូច្នេះ​ត្រូវ​បានផ្ដល់​អនុសាសន៍​ឲ្យ​ចុច &lt;b&gt;យល់ព្រម&lt;/b&gt; ឥឡូវ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>​មាន​ឈ្មោះ​ឯកសាររបស់​&lt;b&gt;%1&lt;/b&gt;រួច​ហើយ​ ។ តើ​អ្នក​ពិត​ជាចង់​ជំនួស​វា​​ឬ ?&lt;br /&gt;&lt;br /&gt;​ការ​ជំនួស​វា​នឹង​សរសេរ​ជាន់​លើ​
-មាតិកា​​របស់​វា​ ។</translation>
-    </message>
-    <message>
-        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>មាន​ឯកសារ​​ជាបន្ត​បន្ទាប់​រួច​ហើយ​ ៖&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;តើ​​អ្នក​ពិត​ជាចង់​ជំនួស​​​ពួកវា​ឬ ? ការ​ជំនួស​វា​នឹង​សរសេរ​ជាប់​លើ​មាតិកា​របស់វា ។</translation>
-    </message>
-    <message>
-        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងកា​រយក​ឯកសារ &lt;b&gt;%1&lt;/b&gt;ចេញ ។&lt;br /&gt;&lt;br /&gt;សូម​ព្យាយាម​យក​ឯកសារ​ចេញ​ដោយ​ខ្លួន​ឯង ហើយ​ព្យាយាម​ម្ដង​ទៀត ។</translation>
-    </message>
-    <message>
-        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation>អ្នក​ហាក់​បី​ដូច​ជា​មាន​ប្រព័ន្ធ​ឯកសារ USBFS បាន​ម៉ោន​នៅ /sys/bus/usb/drivers ។ យើ​ង​ផ្ដល់​អនុសាសន៍​ឲ្យ​ផ្លាស់ប្ដូរ​វា ព្រោះ​ថា​វា​ជា​កា​រកំណត់​រចនាសម្ព័ន្ធ​មិន​ត្រឹមត្រូវ​នៃ​ប្រព័ន្ធ​របស់​អ្នក ដែល​អាច​ធ្វើ​ឲ្យ​ឧបករណ៍ USB បរាជ័យ​​តាម​វិធី​ដែល​មិនបាន​រំពឹង​ទុក ។</translation>
-    </message>
-    <message>
-        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation>អ្នក​កំពុង​ដំណើរការ​កំណែ​ចេញ​ផ្សាយ​មុន​របស់ VirtualBox ។ កំណែ​នេះ​មិន​សម​សម្រាប់​ការ​ប្រើផលិតផល​នេះ​ទេ ។</translation>
-    </message>
-    <message>
-        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation>អ្នកកំពុង​ដំណើរការ​ការ​ស្ថាបនា​ពិសោធន៍របស់ VirtualBox ។ កំណែ​នេះ​មិន​សម​សម្រាប់ការ​ប្រើ​ផលិតផល​នេះ​ទេ ។</translation>
-    </message>
-    <message>
-        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="obsolete">មិនអាច​ដំណើរការ​ USB ក្នុង​ប្រព័ន្ធ​របស់​ម៉ាស៊ីនបាន​ទេ ពីព្រោះប្រព័ន្ធ​ឯកសារ USB (usbfs) ឬ DBus និង​សេវា hal បច្ចុប្បន្ននេះអាច​ប្រើ​បាន ។ ប្រសិនបើ​អ្នក​ចង់​ប្រើ​ឧបករណ៍​ USB របស់​ម៉ាស៊ីន អ្នក​ត្រូវ​តែ​កែវា ហើយ​ចាប់ផ្ដើម VirtualBox ឡើង​វិញ ។</translation>
-    </message>
-    <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation>អ្នក​កំពុង​ព្យាយាប​បិទ​ម៉ាស៊ីន​ដោយ​ប្រើប៊ូតុង​ថាមពល ACPI  ហើយ ។ បច្ចុប្បន្ន​នេះ​មិនអាច​ប្រើបាន​ទេ ពីព្រោះ​ម៉ាស៊ីន​​មិន​គាំទ្រ​​កម្មវិធី​បិទ​​ទេ ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ការ​បង្កើន​ល្បឿន​ផ្នែក​រឹង VT-x/AMD-V ត្រូវ​បានបើក ប៉ុន្តែ​មិន​ដំណើរការ​ទេ ។ ម៉ាស៊ីន​ ៦៤ ប៊ីត​របស់​អ្នក​នឹង​បរាជ័យ​ក្នុង​រក​ស៊ីភីយូ ៦៤ ប៊ីត ហើយ​មិន​អាច​ចាប់ផ្ដើម​បាន​ទេ ។&lt;/p&gt;&lt;p&gt;សូម​ប្រាកដ​ថា អ្នក​បានបើក VT-x/AMD-V យ៉ាង​ត្រាមត្រូវ​នៅ​ក្នុង BIOS នៃ​កុំព្យូទ័រ​របស់​អ្នក ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Close VM</source>
-        <translation>បិទ VM</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>បន្ត</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ការ​បង្កើន​ល្បឿន​ផ្នែក​រឹង VT-x/AMD-V ត្រូវ​បានបើក ប៉ុន្តែ​មិន​អាច​ដំណើរការ​បាន​ទេ ។ ម៉ាស៊ីន​ជាក់លាក់ (ឧ. OS/2 និង QNX) ទាមទារ​លក្ខណៈពិសេស​នេះ ។&lt;/p&gt;&lt;p&gt;សូម​ប្រាកដ​ថា អ្នក​បានបើក​ VT-x/AMD-V យ៉ាង​ត្រឹមត្រូវ​នៅ​ក្នុង BIOS នៃ​​កុំព្យូទ័រ​របស់​អ្នក ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;តើ​អ្នក​ប្រាក​ដ​ជា​ចង់​ស្ដារ​រូបថត​ &lt;b&gt;%1&lt;/b&gt;ឬ ? វា​នឹង​ធ្វើ​ឲ្យ​អ្នក​បាត់បង់​ស្ថានភាព​ម៉ាស៊ីន​បច្ចុប្បន្ន​របស់​អ្នក ដែល​មិនអាច​សង្គ្រោះ​បាន​ទេ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>ស្តារ​</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>បោះបង់​</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ការ​លុប​រូប​ថត​នឹង​បណ្តាល​ឲ្យព័ត៌​មានចេញ​​ដែល​បាន​រ​ក្សា​ទុក​ត្រូវ​បាន​បាត់​បង់​ និងការ​ផ្សាយ​​ទិន្នន័យ​ថាស​​​លើ​ឯកសារ​រូប​ភាពបី​បួន​​ដែល​ VirtualBox ត្រូវ​បានបង្កើត​ជាមួយ​គ្នា ​រូប​ថត​នឹង​ត្រូវ​បានបញ្ចូល​ចូល​​គ្នា​​ទៅ​ក្នុង​ឯកសារ​តែ​មួយ​ ។​ វាអាច​ដំណើរ​ការ​យូរ​ និង​ព័ត៌​មាន​ក្នុង​រូប​ថត​មិន​អាច​ត្រូវ​បានយកបាន​​ឡើយ ។&lt;/p&gt;&lt;/p&gt;តើ​អ្នក​ប្រាកដ​ជា​ចង់​លុប​រូប​ថត​ដែលបាន​​ជ្រើស​&lt;b&gt;%1&lt;/b&gt; ឬ ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>លុប</translation>
-    </message>
-    <message>
-        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យក្នុងការ​​​ស្តារ​រូបថត​​ &lt;b&gt;%1&lt;/b&gt; របស់​ម៉ាស៊ីននិម្មិ​ត&lt;b&gt;%2&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>បានបរាជ័យក្នុងការ​​​លុប​រូបថត​​&lt;b&gt;%1&lt;/b&gt; របស់​​ម៉ាស៊ីន​​និម្មិត​​&lt;b&gt;%2&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;មានថាស​រឹង​​ដែ​ល​ភ្ជាប់​ជា​មួយច្រក​របស់​ឧបករណ៍​បញ្ជា​បន្ថែម​ ។ ប្រ​សិន​បើ​អ្នកបិទ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ គ្រប់​ថាស​រឹង​ទាំង​នេះ​នឹង​ត្រូវ​បាន​ផ្តាច់​ដោយ​ស្វ័យ​ប្រ​វត្តិ​ ។&lt;/p&gt;&lt;p&gt;​តើ​​អ្នក​ប្រាកដ​​ជា​​ចង់បិទ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ ឬ ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;មាន​ថាសរឹង​ដែល​ភ្ជាប់​ជាមួយ​ច្រក​របស់​ឧបករណ៍​បញ្ជា​បន្ថែម​ ។ ប្រ​សិន​បើ​អ្នក​​ផ្លាស់​ប្តូរ​ឧបរណ៍​បញ្ញា​បន្ថែម​​ គ្រប់​ថាស​រឹង​ទាំង​នេះ​នឹង​ត្រូវ​បាន​ផ្តាច់​ដោយ​ស្វ័យ​ប្រវត្តិ​ ។​&lt;/p&gt;&lt;p&gt;​តើ​អ្នក​ប្រាកដជា​​ចង់​ផ្លាស់​ប្តូរ​​ឧបករណ៍​បញ្ជា​បន្ថែម​ឬ ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Change</source>
-        <comment>
-
-
-
-hard disk</comment>
-        <translation type="obsolete">ផ្លាស់ប្តូរ​</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;មិនមាន​មេឌៀ​ដែល​មិនបានប្រើ​​សម្រាប់​​​ឯក​សារ​ភ្ជាប់​ដែល​បង្កើតថ្មី​ ។​&lt;/p&gt;&lt;p&gt;ចុច​ &lt;b&gt;បង្កើត​​&lt;/b&gt; ប៊ូតុង​ទៅ​ចាប់​ផ្តើម &lt;i&gt;​ថាស​និម្មិត​ថ្មី&lt;/i&gt; អ្នក​ជំនួយ​ការ​ និង​បង្កើតឧបករណ៍​ផ្ទុកថ្មី​ ឬ​ចុច​​ &lt;b&gt;ជ្រើស​​&lt;/b&gt; ប្រ​សិន​បើ​​អ្នក​មាន​បំណង​ទៅ​បើក​ &lt;i&gt;កម្ម​វិធី​គ្រប់​គ្រង​មេឌៀ​និម្មិត​​&lt;/i&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>
-
-
-
-medium</comment>
-        <translation type="obsolete">បង្កើត</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <comment>
-
-
-
-medium</comment>
-        <translation type="obsolete">ជ្រើស</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;មិនមាន​មេឌៀ​មិន​បាន​ប្រើទេ សម្រាប់​ឯកសារ​ភ្ជាប់​ដែលបានបង្កើត​ថ្មី ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;ជ្រើស&lt;/b&gt; ប្រសិន​បើ​អ្នក​ចង់​បើក &lt;i&gt;កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត&lt;/i&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​ភ្ជាប់ %1 ទៅ​រន្ធ &lt;i&gt;%2&lt;/i&gt; របស់​ម៉ាស៊ីន&lt;b&gt;%3&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុង​ការ​ផ្ដាច់​ %1 ពី​រន្ធ &lt;i&gt;%2&lt;/i&gt; របស់​ម៉ាស៊ីន&lt;b&gt;%3&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>មិនអាច​ម៉ោន %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; នៅ​លើ​ម៉ាស៊ីន &lt;b&gt;%3&lt;/b&gt;បាន​ទេ ។</translation>
-    </message>
-    <message>
-        <source> Would you like to force mounting of this medium?</source>
-        <translation> តើ​អ្នក​ចង់​បង្ខំ​ម៉ោន​ឧបករណ៍​ផ្ទុក​នេះ​ដែរឬទេ ?</translation>
-    </message>
-    <message>
-        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>មិនអាច​អាន់ម៉ោន​ %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ពី​ម៉ាស៊ីន &lt;b&gt;%3&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source> Would you like to force unmounting of this medium?</source>
-        <translation> តើ​អ្នក​ចង់​បង្ខំ​អាន់ម៉ោន​ឧបករណ៍​ផ្ទុក​នេះ​ដែរឬទេ ?</translation>
-    </message>
-    <message>
-        <source>Force Unmount</source>
-        <translation>បង្ខំ​អាន់ម៉ោន​</translation>
-    </message>
-    <message>
-        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation type="obsolete">បានបរាជ័យ​​ក្នុង​កា​រច្រាន​ថាស​ចេញ​ពី​ដ្រាយ​និម្មិត ។ ដ្រាយ​អាច​ត្រូវ​បានចាក់​សោ​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ ។ សូម​ពិនិត្យ​មើល​វា ហើយ​ព្យាយាម​ម្ដង​ទៀត ។</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ការ​លុប​បណ្តាញ​ ម៉ា​ស៊ីន​​-តែ​មួយ​​ នេះ​នឹង​យក​ចេញ​ សំអាង​ទៅ​លើ​បណ្តាញ​ចំនុច​ប្រទាក់​ ម៉ាស៊ីន​​-តែ​មួយ​ នេះ ។ ​តើ​អ្នកពិត​ជា​ចង់​យក​ចេញ​​ (បណ្តាញ ម៉ាស៊ីន​​-​តែ​មួយ​​) ចំណុច​ប្រទាក់​​&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;សម្គាល់​ ៖&lt;/b&gt; ចំណុច​ប្រ​ទាក់​នេះ​អាចប្រើ​​មួយ​ ឬ​​ច្រើន​​អាដាប់​ទ័រ​បណ្តាញនិម្មិត​​​ជាកម្ម​សិទ្ធ​មួយ​នៃ​​​ VMs របស់​អ្នក​ ។ ក្រោយ​ពេល​វា​ត្រូវ​បាន​យក​ចេញ​ អាដាប់​ទ័រ​ទាំង​នេះ​នឹង​មិន​អាច​ប្រើ​បាន​យូរ​ឡើយ​​ រហូត​ដល់​អ្នក​​កែ​ការ​កំណត់​​របស់​វា​មួយ​ណា​ក៏មាន​​​ឈ្មោះ​ខុស​គ្នា​​ចំណុច​ប្រទាក់​ ឬ​ប្រ​ភេទ​ខុស​គ្នា​នៃ​​​ឯកសារ​​ភ្ជាប់​អាដាប់​ទ័រ​ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the host-only network interface.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងការ​​​បង្កើត​ចំណុច​ប្រ​ទាក់​បណ្តាញ​ម៉ាស៊ីន​​-តែ​មួយ​</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;មិនអាច​បញ្ចូល​រូបភាព​ស៊ីឌី​កម្មវិធី​ដំឡើង​បន្ថែម​របស់​ម៉ាស៊ីន VirtualBox ​ទៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត​&lt;b&gt;%1&lt;/b&gt;បាន​ទេ ព្រោះ​ថា​ម៉ាស៊ីន​មាន​ដ្រាយ​ស៊ីឌី/ឌីវីឌី​រ៉ូម ។ សូម​បន្ថែម​ដ្រាយ ដោយ​ប្រើ​ទំព័រ​ផ្ទុក​នៃ​ប្រអប់​កំណត់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;អាសយដ្ឋាន​អ៊ីមែល ឬ​ពាក្យ​សម្ងាត់​ដែលបាន​បញ្ជាក់មិន​ត្រឹមត្រូវ ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;បាន​បរាជ័យ​ក្នុងកា​រចុះឈ្មោះផលិតផល VirtualBox ។&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ឯកសារ​កំណត់​ VirtualBox មាន​ស្រាប់​​របស់​អ្នក នឹង​ត្រូវ​បានបម្លែង​ដោយ​ស្វ័យ​ប្រវត្តិ​ពី​ទ្រង់ទ្រាយ​ចាស់ ទៅ​ទ្រង់ទ្រាយ​ថ្មី​ដែលបានទាមទារ​ដោយ​កំណែ​ថ្មី​របស់ VirtualBox ​។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;យល់&lt;/b&gt; ដើម្បី​ចាប់ផ្ដើម VirtualBox ឥឡូវ ឬ​ចុច &lt;b&gt;ចាកចេញ&lt;/b&gt; ប្រសិនបើ​អ្នក​ចង់​បញ្ចប់​កម្មវិធី​របស់ VirtualBox ដោយ​គ្មាន​សកម្មភាព​បន្ថែម​ផ្សេង​ទៀត ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>
-
-
-
-warnAboutSettingsAutoConversion message box</comment>
-        <translation type="obsolete">ចេញ</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;ឯកសារ​កំណត់ VirtualBox ដូច​ខាងក្រោម​នឹង​ត្រូវ​បានបម្លែង​ដោយ​ស្វ័យ​ប្រវត្តិ​ពី​ទ្រង់ទ្រាយ​ចាស់​ទៅ​ទ្រង់ទ្រាយ​ថ្មី​របស់ VirtualBox ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;យល់&lt;/b&gt; ដើម្បី​ចាប់ផ្ដើម VirtualBox ឥឡូវ ឬ​ចុច &lt;b&gt;ចាកចេញ&lt;/b&gt; ប្រសិនបើ​អ្នក​ចង់​បញ្ចប់​កម្មវិធី VirtualBox ដោយ​គ្មាន​សកម្មភាព​បន្ថែម​ទៀត ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open appliance.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​របើក​ឧបករណ៍ ។</translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​របើក/បកប្រែ​ឧបករណ៍&lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​រនាំចូល​ឧបករណ៍&lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation>បាន​បរាជ័យ​ទៅ​ពិនិត្យ​មើល​ឯកសារ​ ។</translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation>បាន​បរាជ័យ​ក្នុងកា​រយក​ឯកសារ​ចេញ ។</translation>
-    </message>
-    <message>
-        <source>Failed to create appliance.</source>
-        <translation>បាន​បរាជ័យ​ទៅ​បង្កើតឧបករណ៍ ។</translation>
-    </message>
-    <message>
-        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ទៅ​រៀប​ចំ​នាំ​ចូលឧបករណ៍​ &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>Failed to create an appliance.</source>
-        <translation>បាន​បរាជ័យ​ទៅ​បង្កើតឧបករណ៍​ ។</translation>
-    </message>
-    <message>
-        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>បាន​បរាជ័យ​ទៅ​នាំ​ចេញឧបករណ៍​​ &lt;b&gt;%1&lt;/b&gt; ។</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>
-
-
-
-
-failed to mount ...</comment>
-        <translation type="obsolete">ថាសរឹង</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>
-
-
-
-
-failed to mount ... host-drive</comment>
-        <translation type="obsolete">ស៊ីឌី​​​/​ឌីវីឌី​​</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>
-
-
-
-
-failed to mount ...</comment>
-        <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>
-
-
-
-
-failed to mount ... host-drive</comment>
-        <translation type="obsolete">ថាសទន់​</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>
-
-
-
-
-failed to mount ...</comment>
-        <translation type="obsolete">រូបភាព​ថាសទន់</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>
-
-
-
-
-failed to attach ...</comment>
-        <translation type="obsolete">ថាសរឹង</translation>
-    </message>
-    <message>
-        <source>CD/DVD device</source>
-        <comment>
-
-
-
-
-failed to attach ...</comment>
-        <translation type="obsolete">ឧបករណ៍​ស៊ីឌី​​/​ឌីវីឌី​</translation>
-    </message>
-    <message>
-        <source>floppy device</source>
-        <comment>
-
-
-
-
-failed to close ...</comment>
-        <translation type="obsolete">ឧបករណ៍​ថាសទន់​</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;តើ​​​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឧបករណ៍​​ស៊ី​ឌី​​/​ឌី​វីឌី​-រ៉ូម​ឬ​​?&lt;/p&gt;&lt;p&gt;អ្នក​នឹង​​មិន​អាច​ម៉ោន​ស៊ី​ឌី​ ឬ​រូប​ភាព ISO ឬ​ដំឡើង​​ការ​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​​ដោយ​គ្មាន​វា​បាន​​ទេ ​​!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>
-
-
-
-
-medium</comment>
-        <translation type="obsolete">យកចេញ​</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Change</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">ផ្លាស់ប្តូរ​</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>medium</comment>
-        <translation type="obsolete">បង្កើត</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <comment>medium</comment>
-        <translation type="obsolete">ជ្រើស</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation type="unfinished">យកចេញ​</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation type="unfinished">ចេញ</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...</comment>
-        <translation type="unfinished">ថាសរឹង</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished">ស៊ីឌី​​​/​ឌីវីឌី​​</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...</comment>
-        <translation type="unfinished">រូបភាព​ស៊ីឌី/ឌីវីឌី</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished">ថាសទន់​</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...</comment>
-        <translation type="unfinished">រូបភាព​ថាសទន់</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">ថាសរឹង</translation>
-    </message>
-    <message>
-        <source>CD/DVD device</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">ឧបករណ៍​ស៊ីឌី​​/​ឌីវីឌី​</translation>
-    </message>
-    <message>
-        <source>floppy device</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">ឧបករណ៍​ថាសទន់​</translation>
-    </message>
-    <message>
-        <source>Failed to open virtual machine located in %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Delete all files</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove only</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation type="unfinished">យកចេញ</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create &amp;new disk</source>
-        <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Choose existing disk</source>
-        <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Choose disk</source>
-        <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Leave &amp;empty</source>
-        <comment>add attachment routine</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished">យកចេញ​</translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>scale</comment>
-        <translation type="unfinished">ប្ដូរ</translation>
-    </message>
-    <message>
-        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Install</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Upgrade</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Downgrade</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Reinstall</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep changes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a snapshot of the current machine state</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
@@ -9295,7 +9360,7 @@ medium</comment>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>ជំនួយ</translation>
+        <translation type="obsolete">ជំនួយ</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -9685,29 +9750,6 @@ medium</comment>
         <translation type="unfinished">
             <numerusform>ការ​ព្រមាន ៖ អ្នកកំពុង​ថត​រូប​របស់​ម៉ាស៊ីន​ដែល​កំពុង​រត់ ដែលមាន​រូបភាព​មិនប្រែប្រួល %n បានភ្ជាប់​ទៅកាន់​វា ។ ដ៏រាប​ណា​អ្នកកំពុង​ធ្វើការ​​ពី​រូបភាព​ដែល​មិនប្រែប្រួល​នេះ នឹង​មិន​ត្រូ​វបានកំណត់​ឡើងវិញ​ ដើម្បី​ចៀសវាង​ពី​ការ​បាត់បង់​ទិន្នន័យ​ទេ ។</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation>កែសម្រួល​អត្ថបទ​</translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation>ជំនួស​...</translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation>ជំនួស​អត្ថបទ​បច្ចុប្បន្ន​ដោយ​មាតិកា​របស់​ឯកសារ​មួយ ។</translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation>អត្ថបទ (*.txt);;All (*.*)</translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation>ជ្រើស​ឯកសារត្រូវ​បើក...</translation>
     </message>
 </context>
 <context>

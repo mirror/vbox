@@ -410,6 +410,132 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation>Virtuelles System %1</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Name</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation>Produkt</translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation>Produkt-URL</translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation>Hersteller</translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation>Hersteller-URL</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>Version</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation>Beschreibung</translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation>Lizenz</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>Gast-Betriebssystem</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>CPU</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation>RAM</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation>Festplatten-Controller IDE</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation>Festplatten-Controller SATA</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation>Festplatten-Controller SCSI</translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation>DVD-Laufwerk</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation>Diskettenlaufwerk</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation>Netzwerkadapter</translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation>USB-Controller</translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation>Soundkarte</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translation>Virtuelles Plattenabbild</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation>Unbekannter Hardware</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation>&lt;b&gt;Originalwert:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation>Konfiguration</translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation>Warnungen:</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation>Festplatten-Controller SAS</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation>Falls ausgewählt, wird allen aktivierten Netzwerkkarten eine neue MAC-Adresse zugewiesen.</translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation>&amp;Zuweisen neuer MAC-Adressen für alle Netzwerkkarten</translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation>Appliance importieren ...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation>Appliance lesen ...</translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -1843,6 +1969,13 @@
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>Zeigt an, ob diese virtuelle Maschine Hardware-Virtualisierung benutzt:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>&amp;Ändern</translation>
     </message>
 </context>
 <context>
@@ -4848,6 +4981,29 @@
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation>Text bearbeiten</translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation>&amp;Ersetzen...</translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation>Ersetzt den aktuellen Text mit dem Inhalt einer Datei.</translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation>Text (*.txt);;Alle (*.**)</translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation>Wählen Sie eine Datei zum Öffnen ...</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -4966,121 +5122,6 @@
     <message>
         <source>Version %1</source>
         <translation>Version %1</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation>Virtuelles System %1</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Name</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation>Produkt</translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation>Produkt-URL</translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation>Hersteller</translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation>Hersteller-URL</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation>Version</translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation>Beschreibung</translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation>Lizenz</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>Gast-Betriebssystem</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation>CPU</translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation>RAM</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation>Festplatten-Controller IDE</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation>Festplatten-Controller SATA</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation>Festplatten-Controller SCSI</translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation>DVD-Laufwerk</translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation>Diskettenlaufwerk</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation>Netzwerkadapter</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation>USB-Controller</translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation>Soundkarte</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translation>Virtuelles Plattenabbild</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation>Unbekannter Hardware</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;Originalwert:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation>Konfiguration</translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation>Warnungen:</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation>Festplatten-Controller SAS</translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>Falls ausgewählt, wird allen aktivierten Netzwerkkarten eine neue MAC-Adresse zugewiesen.</translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>&amp;Zuweisen neuer MAC-Adressen für alle Netzwerkkarten</translation>
     </message>
 </context>
 <context>
@@ -6348,17 +6389,6 @@
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation>Appliance importieren ...</translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation>Appliance lesen ...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>VirtualBox License</source>
@@ -6371,13 +6401,6 @@
     <message>
         <source>I &amp;Disagree</source>
         <translation>&amp;Ablehnen</translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Ändern</translation>
     </message>
 </context>
 <context>
@@ -6689,7 +6712,7 @@
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Hilfe</translation>
+        <translation type="obsolete">&amp;Hilfe</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -7037,29 +7060,6 @@
             <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Maschine, die %n unveränderliches Festplattenabbild angeschlossen hat. So lange Sie mit diesem Sicherungspunkt arbeiten, wird das unveränderliche Festplattenabbild nicht zurück gesetzt, um Datenverlust zu vermeiden.</numerusform>
             <numerusform>Warnung: Sie erstellen einen Snapshot von einer laufenden Maschine, die %n unveränderliche Festplattenabbilder angeschlossen hat. So lange Sie mit diesen Sicherungspunkt arbeiten, werden die unveränderlichen Festplattenabbilder nicht zurück gesetzt, um Datenverlust zu vermeiden.</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation>Text bearbeiten</translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation>&amp;Ersetzen...</translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation>Ersetzt den aktuellen Text mit dem Inhalt einer Datei.</translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation>Text (*.txt);;Alle (*.**)</translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation>Wählen Sie eine Datei zum Öffnen ...</translation>
     </message>
 </context>
 <context>

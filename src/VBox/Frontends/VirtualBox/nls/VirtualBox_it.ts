@@ -232,6 +232,14 @@
         <source>&amp;Details (%1 of %2)</source>
         <translation>&amp;Dettagli (%1 di %2)</translation>
     </message>
+    <message>
+        <source>Copy all errors to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Copia</translation>
+    </message>
 </context>
 <context>
     <name>QIRichLabel</name>
@@ -589,6 +597,136 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation>Sistema virtuale %1</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nome</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation>Prodotto</translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation>URL del prodotto</translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation>Venditore</translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation>URL del venditore</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>Versione</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation>Descrizione</translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation>Licenza</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>Sistema operativo guest</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>CPU</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation>RAM</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation>Controller IDE disco fisso</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation>Controller SATA disco fisso</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation>Controller SCSI disco fisso</translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation>DVD</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation>Floppy</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation>Scheda di rete</translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation>Controller USB</translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation>Scheda audio</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translation>Immagine disco virtuale</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation>Elemento hardware sconosciuto</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation>&lt;b&gt;Valore originale:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation>Configurazione</translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation>Avvisi:</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation>Controller del disco fisso (SAS)</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation>Se marcata, un indirizzo MAC nuovo e unico sarà assegnato a tutte le schede di rete configurate.</translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation>Inizializza nuovamente l&apos;indi&amp;rizzo MAC di tutte le schede di rete</translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation>Importazione applicazione virtuale...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation>Lettura applicazione virtuale...</translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -597,6 +735,10 @@
     <message>
         <source>Clone</source>
         <translation>Clona</translation>
+    </message>
+    <message>
+        <source>Linked Base for %1 and %2</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -611,7 +753,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>Se marcata, sarà assegnato un indirizzo MAC nuovo e unico a tutte le schede di rete configurate.</translation>
+        <translation type="obsolete">Se marcata, sarà assegnato un indirizzo MAC nuovo e unico a tutte le schede di rete configurate.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
@@ -625,20 +767,24 @@
         <source>%1 Clone</source>
         <translation>Clone di %1</translation>
     </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Current machine state</source>
-        <translation>Stato corrente della macchina</translation>
+        <translation type="obsolete">Stato corrente della macchina</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation>Lo stato corrente della macchina e di tutti i figli</translation>
+        <translation type="obsolete">Lo stato corrente della macchina e di tutti i figli</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation>Tutti gli stati</translation>
+        <translation type="obsolete">Tutti gli stati</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
@@ -646,19 +792,70 @@
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation>Scegli quali parti della macchina virtuale saranno clonate.</translation>
+        <translation type="obsolete">Scegli quali parti della macchina virtuale saranno clonate.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation>Se selezioni &lt;b&gt;Stato corrente della macchina&lt;/b&gt;, sarà clonato solo lo stato corrente della macchina virtuale.</translation>
+        <translation type="obsolete">Se selezioni &lt;b&gt;Stato corrente della macchina&lt;/b&gt;, sarà clonato solo lo stato corrente della macchina virtuale.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation>Se selezioni &lt;b&gt;Stato corrente della macchina e di tutti i figli&lt;/b&gt;, saranno clonati sia lo stato corrente della macchina virtuale che quello delle istantanee collegate.</translation>
+        <translation type="obsolete">Se selezioni &lt;b&gt;Stato corrente della macchina e di tutti i figli&lt;/b&gt;, saranno clonati sia lo stato corrente della macchina virtuale che quello delle istantanee collegate.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation>Se selezioni &lt;b&gt;Tutti gli stati&lt;/b&gt;, saranno clonati sia lo stato corrente della macchina che quello di tutte le istantanee.</translation>
+        <translation type="obsolete">Se selezioni &lt;b&gt;Tutti gli stati&lt;/b&gt;, saranno clonati sia lo stato corrente della macchina che quello di tutte le istantanee.</translation>
+    </message>
+    <message>
+        <source>Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage3</name>
+    <message>
+        <source>Current machine state</source>
+        <translation type="unfinished">Stato corrente della macchina</translation>
+    </message>
+    <message>
+        <source>Current machine and all child states</source>
+        <translation type="unfinished">Lo stato corrente della macchina e di tutti i figli</translation>
+    </message>
+    <message>
+        <source>All states</source>
+        <translation type="unfinished">Tutti gli stati</translation>
+    </message>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished">Configurazione clonazione</translation>
+    </message>
+    <message>
+        <source>Please choose which parts of the virtual machine should be cloned.</source>
+        <translation type="unfinished">Scegli quali parti della macchina virtuale saranno clonate.</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
+        <translation type="unfinished">Se selezioni &lt;b&gt;Stato corrente della macchina&lt;/b&gt;, sarà clonato solo lo stato corrente della macchina virtuale.</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
+        <translation type="unfinished">Se selezioni &lt;b&gt;Stato corrente della macchina e di tutti i figli&lt;/b&gt;, saranno clonati sia lo stato corrente della macchina virtuale che quello delle istantanee collegate.</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
+        <translation type="unfinished">Se selezioni &lt;b&gt;Tutti gli stati&lt;/b&gt;, saranno clonati sia lo stato corrente della macchina che quello di tutte le istantanee.</translation>
     </message>
 </context>
 <context>
@@ -1020,7 +1217,7 @@
     </message>
     <message>
         <source>The download process has been canceled by the user.</source>
-        <translation>Il processo di scaricamento è stato annullato dall&apos;utente.</translation>
+        <translation type="obsolete">Il processo di scaricamento è stato annullato dall&apos;utente.</translation>
     </message>
 </context>
 <context>
@@ -1039,7 +1236,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile salvare il file scaricato come &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Impossibile salvare il file scaricato come &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
@@ -2163,23 +2360,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="obsolete">Shift sinistro</translation>
+        <translation type="unfinished">Shift sinistro</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="obsolete">Shift destro</translation>
+        <translation type="unfinished">Shift destro</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="obsolete">Ctrl sinistro</translation>
+        <translation type="unfinished">Ctrl sinistro</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="obsolete">Ctrl destro</translation>
+        <translation type="unfinished">Ctrl destro</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="obsolete">Alt sinistro</translation>
+        <translation type="unfinished">Alt sinistro</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2571,6 +2768,13 @@ p, li { white-space: pre-wrap; }
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>Indica lo stato di diverse funzionalità utilizzate dalla macchina virtuale:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>&amp;Modifica</translation>
     </message>
 </context>
 <context>
@@ -4309,7 +4513,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>hai assegnato il tipo di chipset ICH9 a questa macchina virtuale. Funzionerà correttamente solo se anche la funzionalità IO-APIC è abilitata. Ciò avverrà automaticamente quando accetti le impostazioni della MV, premendo il pulsante OK.</translation>
+        <translation type="obsolete">hai assegnato il tipo di chipset ICH9 a questa macchina virtuale. Funzionerà correttamente solo se anche la funzionalità IO-APIC è abilitata. Ciò avverrà automaticamente quando accetti le impostazioni della MV, premendo il pulsante OK.</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
@@ -4336,6 +4540,10 @@ p, li { white-space: pre-wrap; }
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
         <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4595,25 +4803,1446 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
+    <name>UIMessageCenter</name>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Informazioni</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Domanda</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Attenzione</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Errore</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Errore Critico</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag</comment>
+        <translation>Non mostrare ancora questo messaggio</translation>
+    </message>
+    <message>
+        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
+        <translation>Apertura di &lt;tt&gt;%1&lt;/tt&gt; non riuscita. Assicurati che il tuo ambiente desktop possa gestire correttamente URL di questo tipo.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Inizializzazione COM o individuazione del server VirtualBox COM non riuscita. Probabilmente il server VirtualBox non è in esecuzione o non è riuscito a partire.&lt;/p&gt;&lt;p&gt;L&apos;applicazione sarà chiusa.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Creazione dell&apos;oggetto COM VirtualBox non riuscita.&lt;/p&gt;&lt;p&gt;L&apos;applicazione sarà chiusa immediatamente.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Fallimento nel caricamento della configurazione globale della GUI.&lt;/p&gt;&lt;p&gt;L&apos;applicazione verrà ora chiusa.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Fallimento nel salvataggio della configurazione globale della GUI.&lt;p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to set global VirtualBox properties.</source>
+        <translation>Impostazione delle proprietà globali di VirtualBox non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to access the USB subsystem.</source>
+        <translation>Accesso al sottosistema USB non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine.</source>
+        <translation>Creazione di una nuova macchina virtuale non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Creazione di una nuova macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Applicazione delle impostazioni alla macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Salvataggio delle impostazioni della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Caricamento delle impostazioni della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Accensione della macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Pausa dell&apos;esecuzione della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Ripristino dell&apos;esecuzione della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Salvataggio dello stato della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Creazione di un&apos;istantanea della macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Arresto della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Rimozione della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Scarto dello stato salvato per la macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="obsolete">Scarto dell&apos;istantanea &lt;b&gt;%1&lt;/b&gt; della Macchina Virtuale &lt;b&gt;%2&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Scarto dello stato attuale della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Scarto dell&apos;istantanea corrente e dello stato corrente della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Non esiste una macchina virtuale chiamata &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler eliminare definitivamente la Macchina Virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Questa operazione non può essere annullata.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler deregistrare la Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; inaccessibile?&lt;/p&gt;&lt;p&gt;Non potrai registrarla nuovamente dalla GUI.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sei sicuro di voler scartare lo stato salvato della macchina virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Questa operazione è equivalente al reset o allo spegnimento della macchina senza uno spegnimento corretto, dal punto di vista del sistema guest.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Il rilascio di questa immagine lo scollegherà dalle seguenti Macchine Virtuali:
+&lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuare?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Il file immagine &lt;b&gt;%1&lt;/b&gt; esiste già. Non puoi creare un nuovo hard disk virtuale che utilizzi questo file, perché potrebbe già essere usato da un altro hard disk virtuale.&lt;/p&gt;&lt;p&gt;Specifica un nome file diverso.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vuoi eliminare il file immagine di questo hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;No&lt;/b&gt; l&apos;hard disk virtuale sarà deregistrato e rimosso dall&apos;elenco, ma il file immagine sarà lasciato nel tuo disco fisico.&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;Sì&lt;/b&gt; il file immagine sarà rimosso definitivamente dopo la deregistrazione dell&apos;hard disk. Questa operazione non può essere annullata.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Rilevazione dell&apos;immagine hard disk virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vuoi rimuovere (deregistrare) l&apos;hard disk virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation type="obsolete">Creazione dell&apos;immagine hard disk virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; non riuscita.&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
+        <translation type="obsolete">Collegamento di un&apos;immagine hard disk con UUID %1 allo slot dispositivo %2 del controller %3 della macchina &lt;b&gt;%4&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Disconnessione di un&apos;immagine hard disk dallo slot dispositivo %1 del controller %2 della macchina &lt;b&gt;%3&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">hard disk</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <translation type="obsolete">immagine CD/DVD</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <translation type="obsolete">immagine floppy</translation>
+    </message>
+    <message>
+        <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Registrazione del %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Deregistrazione del %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new session.</source>
+        <translation>Creazione di una nuova sessione non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for a virtual machine with UUID &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Apertura di una sessione per la Macchina Virtuale con UUID &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Apertura di una sessione per la Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
+        <translation type="obsolete">Recupero dello stato di accessibilità del media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; non riuscito. Alcuni dei media registrati potrebbero diventare inaccessibili.</translation>
+    </message>
+    <message>
+        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Creazione dell&apos;interfaccia di rete host &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Rimozione dell&apos;interfaccia di rete host &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Connessione del dispositivo USB &lt;b&gt;%1&lt;/b&gt; alla macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Disconnessione del dispositivo USB &lt;b&gt;%1&lt;/b&gt; dalla macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Creazione di una cartella condivisa &lt;b&gt;%1&lt;/b&gt; (che punta a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) per la Macchina Virtuale &lt;b&gt;%3&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Rimozione di una cartella condivisa &lt;b&gt;%1&lt;/b&gt; (che punta a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) dalla Macchina Virtuale &lt;b&gt;%3&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Hai &lt;b&gt;fatto clic con il mouse&lt;/b&gt; nello schermo della Macchina Virtuale o premuto la &lt;b&gt;host key&lt;/b&gt;. Questo causerà l&apos;&lt;b&gt;acquisizione&lt;/b&gt; del puntatore del mouse da parte della Macchina Virtuale (solo se l&apos;Integrazione Mouse non è supportata dal sistema Guest o è disabilitata) e della tastiera, e li renderà non disponibili ad altre applicazioni sul sistema Host.&lt;/p&gt;&lt;p&gt;Puoi premere la &lt;b&gt;host key&lt;/b&gt; in un qualsiasi momento per &lt;b&gt;rilasciare&lt;/b&gt; la tastiera e il mouse (se acquisito) e ritornare alla modalità normale. La host key attuale è mostrata nella barra di stato in fondo alla finestra della Macchina Virtuale, vicino all&apos;icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Questa icona, assieme all&apos;icona del mouse vicina, indica lo stato di acquisizione attuale di mouse e tastiera.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Hai l&apos;opzione &lt;b&gt;Acquisizione automatica della tastiera&lt;/b&gt; attivata. Questo causerà l&apos;&lt;b&gt;acquisizione&lt;/b&gt; automatica della tastiera da parte della Macchina Virtuale ogni volta che la finestra della MV viene attivata e la renderà non disponibile ad altre applicazioni sul sistema Host: quando la tastiera viene acquisita, tutte le pressioni di tasti (incluse quelle di sistema come Alt-Tab) saranno dirette alla MV.&lt;/p&gt;&lt;p&gt;Puoi premere la &lt;b&gt;host key&lt;/b&gt; in un qualsiasi momento per &lt;b&gt;rilasciare&lt;/b&gt; la tastiera e il mouse (se acquisito) e ritornare alla modalità normale. La host key attuale è mostrata nella barra di stato in fondo alla finestra della Macchina Virtuale, vicino all&apos;icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Questa icona, assieme all&apos;icona del mouse vicina, indica lo stato di acquisizione attuale di mouse e tastiera.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;La Macchina Virtuale ha rilevato che il sistema Guest supporta l&apos;&lt;b&gt;Integrazione Mouse&lt;/b&gt;. Ciò significa che non hai bisogno di &lt;i&gt;acquisire&lt;/i&gt; il puntatore del mouse per utilizzarlo nel sistema Guest -- tutte le azioni del mouse che esegui mentre il puntatore è nella finestra della Macchina Virtuale sono inviate direttamente al sistema Guest. Se il mouse è attualmente acquisito, sarà automaticamente rilasciato.&lt;/p&gt;&lt;p&gt;L&apos;icona del mouse nella barra di stato diverrà simile a&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;per informarti che l&apos;Integrazione Mouse è supportata dal sistema Guest ed è correntemente attiva.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Alcune applicazioni possono comportarsi non correttamente nella modalità Integrazione Mouse. Puoi sempre disabilitare la modalità per la sessione corrente (e abilitarla nuovamente) selezionando l&apos;azione corrispondente dalla barra del menu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;La macchina virtuale ha rilevato che il sistema guest non supporta l&apos;&lt;b&gt;integrazione mouse&lt;/b&gt; nella modalità video attuale. Devi acquisire il mouse (facendo clic all&apos;interno dello schermo della MV o premendo il tasto host) per utilizzare il mouse all&apos;interno del sistema guest.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;La macchina virtuale è attualmente in stato di &lt;b&gt;Pausa&lt;/b&gt; e pertanto non accetta comandi da tastiera o mouse. Se vuoi continuare il tuo lavoro all&apos;interno della MV, devi ripristinarla selezionando l&apos;azione corrispondente dal menu azioni.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Uno o più hard disk virtuali, CD/DVD o floppy registrati non sono attualmente accessibili. Come risultato, non potrai utilizzare Macchine Virtuali che sfruttino tali media finché non siano nuovamente accessibili.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; per aprire il Gestore di dischi virtuali e vedere quali sono i media inaccessbili, o premi &lt;b&gt;Ignora&lt;/b&gt; per ignorare questo messaggio.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale verrà ora commutata alla modalità &lt;b&gt;schermo intero&lt;/b&gt;. Puoi tornare indietro alla modalità finestra in qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Nota che la &lt;i&gt;host key&lt;/i&gt; è definita attualmente come &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile eseguire VirtualBox in modalità &lt;i&gt;Selettore MV&lt;/i&gt; a causa di restrizioni locali.&lt;/p&gt;&lt;p&gt;L&apos;applicazione sarà chiusa immediatamente.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Errore grave&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Errore non grave&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Attenzione&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;ID Errore: &lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info</comment>
+        <translation> Gravità: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Un errore grave si è verificato durante l&apos;esecuzione della Macchina Virtuale! La Macchina Virtuale sarà spenta. Ti suggeriamo di usare gli appunti per copiare i messaggi d&apos;errori seguenti per esaminarli più approfonditamente:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Si è verificato un errore durante l&apos;esecuzione della Macchina Virtuale! I dettagli dell&apos;errore sono mostrati sotto. Puoi provare a correggere l&apos;errore descritto e ripristinare l&apos;esecuzione della Macchina Virtuale.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;esecuzione della macchina virtuale può dar luogo ad errori come descritto sotto. Puoi ignorare questo messaggio, ma ti suggeriamo di eseguire le azioni appropriate per assicurarti che l&apos;errore descritto non abbia luogo.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation>Codice&amp;nbsp;&apos;uscita: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation>Componente: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation>Interfaccia: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation>Chiamante: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation>RC&amp;nbsp;Chiamante: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile recuperare il file della lingua &lt;b&gt;%1&lt;/b&gt; nella cartella &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;La lingua sarà temporaneamente reimpostata a quella predefinita di sistema. Apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile caricare il file della lingua &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;p&gt;La lingua sarà temporaneamente reimpostata a Inglese (built-in). Apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Le Guest Additions installate nel sistema Guest sono obsolete: la versione installata è %1, quella attesa è %2. Alcune funzionalità che richiedono Guest Additions (Integrazione mouse, auto-ridimensionamento dello schermo) probabilmente smetteranno di funzionare correttamente.&lt;/p&gt;&lt;p&gt;Aggiorna le Guest Additions alla versione attuale scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Le Guest Additions installate nel sistema Guest non sono aggiornate: la versione installata è %1, quella attesa è %2. Alcune funzionalità che richiedono Guest Additions (Integrazione Mouse, auto-ridimensionamento dello schermo) potrebbero non funzionare come ci si aspetta.&lt;/p&gt;&lt;p&gt;Si consiglia di aggiornare le Guest Additions alla versione attuale scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Le Guest Additions installate nel sistema Guest sono troppo recenti per questa versione di VirtualBox: la versione installata è %1, quella attesa è %2.&lt;/p&gt;&lt;p&gt;L&apos;utilizzo di una versione di Additions più recente di VirtualBox non è supportato. Installa la versione corrente di Guest Additions scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Impossibile modificare il percorso della cartella per le istantanee della macchina virtuale &lt;b&gt;%1&lt;b&gt; al valore &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Impossibile entrare in modalità trasparente per memoria video del sistema guest insufficente.&lt;/p&gt;&lt;p&gt;È necessario configurare la MV per avere almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile rimuovere la cartella condivisa &lt;b&gt;%1&lt;/b&gt; (che punta a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) dalla macchina virtuale &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Chiudere tutti i programmi nel sistema Guest che potrebbero utilizzare la cartella condivisa e provare nuovamente.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile trovare il file immagine per VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; o &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Si vuole scaricare quest&apos;immagine CD da Internet?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile scaricare l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Siete sicuri di voler scaricare l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (dimensione %3 byte)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;immagine CD di VirtualBox Guest Additions è stata scaricata con successo da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; e salvata localmente come &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Si vuole registrare quest&apos;immagine CD e montarla nel drive CD/DVD virtuale?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale verrà ora portata in modalità &lt;b&gt;pieno schermo&lt;/b&gt;. È possibile tornare alla modalità finestra in un qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Il tasto &lt;i&gt;Host&lt;/i&gt; è definito attualmente come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il menu principale viene nascosto in modalità pieno schermo. È possibile accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale verrà ora portata in modalità &lt;b&gt;trasparente&lt;/b&gt;. È possibile tornare alla modalità finestra in un qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Il tasto &lt;i&gt;Host&lt;/i&gt; è definito attualmente come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il menu principale viene nascosto in modalità trasparente. È possibile accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;La finestra della macchina virtuale è ottimizzata per lavorare in modalità colore a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;, ma la qualità del colore dello schermo virtuale è impostata attualmente a &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Apri la finestra delle proprietà dello schermo nel sistema guest e scegli una modalità di colore a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, se disponibile, per ottenere le migliori prestazioni dal sottosistema video virtuale.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: alcuni sistemi operativi, come OS/2, possono lavorare effettivamente in modalità 32&amp;nbsp;bit, ma la segnalano come 24&amp;nbsp;bit (16 milioni di colori). Puoi provare a selezionare una qualità di colore diversa per vedere se questo messaggio scompare, oppure semplicemente disabilitare il messaggio ora se sei sicuro che la qualità di colore richiesta (%4&amp;nbsp;bit) non sia disponibile nel sistema guest.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;È avvenuto un errore critico durante l&apos;esecuzione della macchina virtuale e quest&apos;ultima è stata perciò fermata.&lt;/p&gt;&lt;p&gt;Per ottenere aiuto, si rimanda alla sezione Community su &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o al vostro contratto di supporto. Si prega di fornire i contenuti del file di log &lt;tt&gt;VBox.log&lt;/tt&gt; e il file immagine &lt;tt&gt;VBox.png&lt;/tt&gt;, che potete trovare nella directory &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, assieme alla descrizione di quello che si stava facendo quando è stato visualizzato il presente errore. Si noti che è possibile accedere ai file suindicati anche scegliendo &lt;b&gt;Visualizza log&lt;/b&gt; dal menu &lt;b&gt;Macchina&lt;/b&gt; o dalla finestra principale di VirtualBox.&lt;/p&gt;&lt;p&gt;Premere &lt;b&gt;OK&lt;/b&gt; per spegnere la macchina o premere &lt;b&gt;Ignora&lt;/b&gt; se si vuole lasciarla com&apos;è per il debugging. Notare che il debugging richiede particolari conoscenze e strumenti, quindi è raccomandato premere &lt;b&gt;OK&lt;/b&gt; in questo momento.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Non è stato connesso un disco fisso alla nuova macchina virtuale. La macchina non sarà in grado di avviarsi a meno che non si connetta in seguito (attraverso la finestra delle impostazioni o l&apos;Assistente di primo avvio) un disco fisso con un sistema operativo guest o qualche altro supporto avviabile.&lt;/p&gt;&lt;p&gt;Vuoi continuare?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Impossibile trovare i file di licenza in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation>Impossibile aprire il file di licenza &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Controllare i permessi del file.</translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Impossibile inviare l&apos;evento ACPI Power Button Press alla macchina virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Impossibile connettersi al servizio di registrazione online di VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Congratulazioni! Vi siete registrati con successo come utente di VirtualBox.&lt;/p&gt;&lt;p&gt;Grazie per aver dedicato qualche minuto alla compilazione del modulo di registrazione!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Impossibile registrare il prodotto VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Impossibile salvare le impostazioni globali di VirtualBox su &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile caricare la configurazione GUI globale da &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;applicazione verrà ora chiusa.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile salvare la configurazione GUI globale da &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;applicazione verrà ora chiusa.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Impossibile salvare le impostazioni della macchina virtuale &lt;b&gt;%1&lt;/b&gt; su &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Impossibile caricare le impostazioni della macchina virtuale &lt;b&gt;%1&lt;/b&gt; su &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Rimuovi</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="obsolete">De-registra</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>Scarta</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>detach image</comment>
+        <translation type="obsolete">Continua</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vuoi eliminare il file immagine per questo disco rigido virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;Elimina&lt;/b&gt; il file immagine sarà cancellato permanentemente dopo la de-registrazione del disco rigido. Questa operazione non può essere annullata.&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;De-registra&lt;/b&gt; il disco rigido virtuale sarà de-registrato e rimosso dall&apos;elenco, ma il file immagine verrà lasciato nel tuo disco fisico.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Rimuovi</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">De-registra</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ci sono dischi rigidi collegari alle porte SATA di questa macchina virtuale. Se disabiliti il controller SATA, tutti questi dischi rigidi virtuali saranno disconnessi automaticamente.&lt;/p&gt;&lt;p&gt;Sei sicuro di voler disabilitare il controller SATA?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Disabilita</translation>
+    </message>
+    <message>
+        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
+        <translation type="obsolete">Impossibile connettere un&apos;immagine disco con UUID %1 allo slot %2 sul canale %3 del bus %4 della macchina &lt;b&gt;%5&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
+        <translation type="obsolete">Impossibile disconnettere un&apos;immagine disco dallo slot %1 sul canale %2 del bus %3 della macchina &lt;b&gt;%4&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>Scarica</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>Monta</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;Il tasto host è definito attualmente come &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>Cattura</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Uno o più dischi virtuali registrati, CD/DVD o floppy non sono attualmente accessibili. Come risultato, non sarai in grado di utilizzare machcine virtuali che sfruttino questi media fintantoché non ritornino accessibili.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Controlla&lt;/b&gt; per aprire la finestra del Gestore di dischi virtuali e vedere quale media è inaccessibile, o premi &lt;b&gt;Ignora&lt;/b&gt; per ignorare questo messaggio.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>Controlla</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;I seguenti file di impostazioni di VirtualBox sono stati convertiti automaticamente alla nuova versione &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il risultato della conversione non è stato tuttavia ancora salvato su disco. Premi:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Salva&lt;/b&gt; per salvare tutti i file auto-convertiti in questo momento (non sarà possibile usare questi file di impostazioni con versioni più vecchie di VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; per creare copie di backup dei file nel vecchio formato prima di salvarli in quello nuovo;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Annulla&lt;/b&gt; per non salvare i file auto-convertiti.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Nota che se selezionerai &lt;b&gt;Annulla&lt;/b&gt;, i file di impostazioni auto-convertiti saranno implicitamente salvati nel nuovo formato appena modificherai un&apos;impostazione o lancerai una macchina virtuale, ma &lt;b&gt;nessuna&lt;/b&gt; copia di backup verrà creata in questo caso.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Salva</translation>
+    </message>
+    <message>
+        <source>&amp;Backup</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Backup</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">Annulla</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>Schermo intero</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>Integrazione</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Vuoi davvero ripristinare la macchina virtuale?&lt;/p&gt;&lt;p&gt;Tutti i dati non salvati di tutte le applicazioni in esecuzione saranno persi.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>Reset</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>Continua</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>Torna indietro</translation>
+    </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="obsolete">Impossibile copiare il file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; su &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Non ci sono dischi rigidi inutilizzati disponibili per la connessione appena creata.&lt;/p&gt;&lt;p&gt;Premi il bottone &lt;b&gt;Crea&lt;/b&gt; per lanciare l&apos;Assistente &lt;i&gt;Nuovo Disco Virtuale&lt;/i&gt; e creare un nuovo disco rigido, o premi il bottone &lt;b&gt;Seleziona&lt;/b&gt; per aprire il &lt;i&gt;Gestore di Dischi Virtuali&lt;/i&gt; e decidere il da farsi.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">&amp;Crea</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Seleziona</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile abilitare la modalità trasparente per memoria video insufficiente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile abilitare la modalità a pieno schermo per memoria video insufficiente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Ignora&lt;/b&gt; per passare comunque alla modalità a pieno schermo oppure premere &lt;b&gt;Annulla&lt;/b&gt; per annullare l&apos;operazione.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation>Hai già installato l&apos;ultima versione di VirtualBox. Ripeti in seguito il controllo di versione.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Hai fatto &lt;b&gt;clic con il mouse&lt;/b&gt; sullo schermo della macchina virtuale o premuto il &lt;b&gt;tasto host&lt;/b&gt;. La macchina virtuale &lt;b&gt;acquisirà&lt;/b&gt; il puntatore del mouse (solo se l&apos;integrazione non è supportata dal sistema guest) e la tastiera e li renderà indisponibili alle applicazioni in esecuzione sulla macchina host.&lt;/p&gt;&lt;p&gt;Puoi premere il &lt;b&gt;tasto host&lt;/b&gt; in qualunque momento per &lt;b&gt;liberare&lt;/b&gt; la tastiera e il mouse (se acquisiti) e restituirli alle solite operazioni. Il tasto host assegnato è mostrato nella barra di stato nella parte bassa della finestra della macchina virtuale, accanto all&apos;icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Questa icona, insieme a quella del mouse posizionata accanto, indica lo stato di acquisizione della tastiera e del mouse.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;opzione &lt;b&gt;Acquisizione automatica della tastiera&lt;/b&gt; è attiva. La macchina virtuale &lt;b&gt;acquisirà&lt;/b&gt; automaticamente la tastiera ogni volta che la finestra della MV è attiva e la renderà indisponibile alle applicazioni in esecuzione sulla macchina host: quando la tastiera è acquisita, tutte le combinazioni di tasti (incluse quelle di sistema come Alt-Tab) saranno inviate alla MV.&lt;/p&gt;&lt;p&gt;Puoi premere il &lt;b&gt;tasto host&lt;/b&gt; in qualunque momento per &lt;b&gt;liberare&lt;/b&gt; la tastiera e il mouse (se acquisiti) e restituirli alle solite operazioni. Il tasto host assegnato è mostrato nella barra di stato nella parte bassa della finestra della macchina virtuale, accanto all&apos;icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Questa icona, insieme a quella del mouse posizionata accanto, indica lo stato di acquisizione della tastiera e del mouse.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;La macchina virtuale segnala che il sistema guest supporta &lt;b&gt;integrazione del puntatore del mouse&lt;/b&gt;. Ciò significa che non è necessario &lt;i&gt;acquisire&lt;/i&gt; il puntatore del mouse per poterlo utilizzare nel sistema guest -- tutte le azioni del mouse eseguite quando il puntatore si trova sullo schermo della macchina virtuale sono inviate direttamente al sistema guest. Se è il mouse è stato acquisito, sarà automaticamente liberato.&lt;/p&gt;&lt;p&gt;L&apos;icona del mouse nella barra di stato apparirà come &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp; per informarti che l&apos;integrazione del puntatore del mouse è supportata dal sistema guest ed è attiva.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: alcune applicazioni potrebbero non funzionare correttamente nella modalità di integrazione del puntatore del mouse. Puoi sempre disabilitarla per la sessione corrente (per poi riabilitarla) selezionando l&apos;azione corrispondente nella barra dei menu.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale passerà ora in modalità a &lt;b&gt;schermo intero&lt;/b&gt;. È possibile tornare alla modalità finestra in un qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è definito attualmente come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il menu principale viene nascosto in modalità a schermo intero. È possibile accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale passerà ora portata in modalità &lt;b&gt;trasparente&lt;/b&gt;. È possibile tornare alla modalità finestra in un qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è definito attualmente come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il menu principale viene nascosto in modalità trasparente. È possibile accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation>&amp;Contenuti...</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation>Mostra i contenuti dell&apos;aiuto in linea</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation>Sito web di &amp;VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation>Apri il browser al sito web di VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation>&amp;Ripristina tutti gli avvisi</translation>
+    </message>
+    <message>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation>Mostra nuovamente tutti i messaggi e gli avvisi soppressi</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation>R&amp;egistra VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation>Apri il modulo di registrazione di VirtualBox</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation>Con&amp;trolla aggiornamenti...</translation>
+    </message>
+    <message>
+        <source>Check for a new VirtualBox version</source>
+        <translation>Controlla la presenza di una nuova versione di VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation>Inform&amp;azioni su VirtualBox...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation>Mostra una finestra con le informazioni sul prodotto</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Una nuova versione di VirtualBox è stata rilasciata! La versione &lt;b&gt;%1&lt;/b&gt; è disponibile presso &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puoi scaricare questa versione da questo collegamento diretto:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sei sicuro di voler rilasciare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Sarà sganciato dalla(e) seguente(i) macchina(e) virtuale(i): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation>Rilascia</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sei sicuro di voler rimuovere il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; dall&apos;elenco dei supporti conosciuti?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <translation>Nota che questo disco fisso è inaccessibile, perciò l&apos;unità di archiviazione non può essere eliminata adesso.</translation>
+    </message>
+    <message>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation>La finestra successiva ti consentirà di scegliere se eliminare l&apos;unità di archiviazione del disco fisso o mantenerla per usi futuri.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nota che l&apos;unità di archiviazione di questo supporto non sarà eliminata e, per questo motivo, sarà possibile aggiungerla nuovamente all&apos;elenco.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation>Rimuovi</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;unità di archiviazione di tipo disco fisso esiste già nella posizione &lt;b&gt;%1&lt;/b&gt;. Non puoi creare un nuovo disco fisso virtuale in questa posizione poiché potrebbe essere già utilizzata da un altro disco virtuale.&lt;/p&gt;&lt;p&gt;Specifica una posizione diversa.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Vuoi eliminare l&apos;unità di archiviazione del disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Se selezioni &lt;b&gt;Elimina&lt;/b&gt;, l&apos;unità di archiviazione specificata sarà eliminata in modo permanente. Questa operazione &lt;b&gt;non può essere annullata&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Se selezioni &lt;b&gt;Mantieni&lt;/b&gt;, il disco fisso sarà rimosso solo dall&apos;elenco dei dischi fissi conosciuti, ma l&apos;unità di archiviazione sarà preservata consentendoti di aggiungere successivamente il disco all&apos;elenco.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation>Elimina</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation>Mantieni</translation>
+    </message>
+    <message>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Eliminazione dell&apos;unità di archiviazione del disco fisso &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Non ci sono dischi fissi inutilizzati per il collegamento appena creato.&lt;/p&gt;&lt;p&gt;Premi il pulsante &lt;b&gt;Crea&lt;/b&gt; per iniziare la procedura guidata &lt;i&gt;Nuovo disco virtuale&lt;/i&gt; e crea un nuovo disco fisso, o premi il pulsante &lt;b&gt;Seleziona&lt;/b&gt; per aprire il &lt;i&gt;Gestore supporti virtuali&lt;/i&gt; e scegliere cosa fare.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation>Creazione non riuscita del disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Collegamento non riuscito del disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Rimozione del collegamento non riuscita per il disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; dallo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Impossibile montare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; sulla macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Impossibile smontare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; dalla macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Apertura non riuscita del %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Chiusura non riuscita del %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Impossibile ottenere lo stato di accessibilità del supporto &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Connessione al servizio di registrazione in linea di VirtualBox non riuscita a causa del seguente errore:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile ottenere informazioni sulla nuova versione a causa del seguente errore:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Uno o più dischi fissi virtuali, CD/DVD o floppy non sono la momento accessibili. Ciò significa che non sarai in grado di operare con le macchine virtuali che utilizzano questi supporti fino a quando non ritorneranno accessibili.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Controlla&lt;/b&gt; per aprire la finestra del gestore supporti virtuali e vedere quali supporti non sono accessibili, o premi &lt;b&gt;Ignora&lt;/b&gt; per ignorare questo messaggio.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;I file delle impostazioni di VirtualBox sono stati convertiti automaticamente dal vecchio formato al nuovo richiesto dalla nuova versione di VirtualBox.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; per avviare VirtualBox o premi &lt;b&gt;Altro&lt;/b&gt; se desideri maggiori informazioni su quali file sono stati convertiti e accedere ad azioni aggiuntive.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Esci&lt;/b&gt; per terminare VirtualBox senza salvare i risultati della conversione su disco.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;More</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Altro</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Esci</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;I seguenti file delle impostazioni di VirtualBox sono stati convertiti automaticamente al nuovo formato della versione &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Comunque, i risultati della conversione non sono ancora stati salvati su disco. Premi: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; per creare delle copie di sicurezza dei file delle impostazioni nel vecchio formato prima di salvarli nel nuovo formato;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sovrascrivi&lt;/b&gt; per salvare tutti i file convertiti senza creare copie di sicurezza (dopo non sarà possibile utilizzare questi file con una versione più datata di VirtualBox);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;È consigliato selezionare sempre &lt;b&gt;Backup&lt;/b&gt; perché in questo caso sarà possibile tornare alla vecchia versione di VirtualBox (se necessario) senza perdere le impostazioni correnti. Vedi il manuale di VirtualBox per ulteriori informazioni sull&apos;operazione di downgrade.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
+        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Esci&lt;/b&gt; per terminare VirtualBox senza salvare il risultato della conversione su disco.&lt;/li&gt;</translation>
+    </message>
+    <message>
+        <source>O&amp;verwrite</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">So&amp;vrascrivi</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Si è verificato un errore critico durante il funzionamento della macchina virtuale e l&apos;esecuzione della macchina è stata fermata.&lt;/p&gt;&lt;p&gt;Per ottenere aiuto, vedi la sezione Community su &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o il contratto di supporto. Fornisci il contenuto del file di log &lt;tt&gt;VBox.log&lt;/tt&gt; e il file immagine &lt;tt&gt;VBox.png&lt;/tt&gt;, che puoi trovare nella cartella &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, così come una descrizione di cosa stavi facendo quando si è verificato l&apos;errore. Nota che puoi anche accedere ai suddetti file selezionando &lt;b&gt;Mostra log&lt;/b&gt; dal menu &lt;b&gt;Macchina&lt;/b&gt; della finestra principale di VirtualBox. &lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; se vuoi spegnere la macchina o &lt;b&gt;Ignora&lt;/b&gt; se desideri lasciarla così com&apos;è per debug. Nota che il debug richiede conoscenza particolare e strumenti, perciò è consigliato premere &lt;b&gt;OK&lt;/b&gt; subito.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">disco fisso</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">immagine CD/DVD</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">immagine floppy</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
+        <translation type="obsolete">Un file con nome &lt;b&gt;%1&lt;/b&gt; esiste già. Sei sicuro di volerlo sostituire?&lt;br /&gt;&lt;br /&gt; Il file esiste in &quot;%2&quot;. Sostituendolo sovrascriverai il suo contenuto.</translation>
+    </message>
+    <message>
+        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
+        <translation>I seguenti file esistono già:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Sei sicuro di volerli sostituire? Sostituendoli sovrascriverai il loro contenuto.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
+        <translation type="obsolete">Rimozione del file &lt;b&gt;%1&lt;/b&gt; non riuscita.&lt;br /&gt;&lt;br /&gt;Prova a rimuovere manualmente il file e prova ancora.</translation>
+    </message>
+    <message>
+        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
+        <translation>Stai eseguendo una versione di VirtualBox che precede il rilascio finale. Questa versione non è appropriata per un uso di produzione.</translation>
+    </message>
+    <message>
+        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
+        <translation type="obsolete">Impossibile accedere all&apos;USB del sistema host, poiché né il file system USB (usbfs) né i servizi hal e DBus sono attualmente disponibili. Se desideri utilizzare dispositivi USB nei sistemi guest, devi apportare le dovute modifiche e riavviare VirtualBox.</translation>
+    </message>
+    <message>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
+        <translation>Stai cercando di spegnere il guest con il pulsante di alimentazione ACPI. Al momento non è possibile perché il guest non usa il sottosistema ACPI.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;accelerazione hardware VT-x/AMD-V è stata abilitat, ma non è funzionante. Il guest a 64 bit non riuscirà a rilevare una CPU a 64 bit e non potrà avviarsi.&lt;/p&gt;&lt;p&gt;Assicurati di aver abilitato correttamente VT-x/AMD-V nel BIOS del computer host.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation>Chiudi MV</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Continua</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler eliminare l&apos;istantanea selezionata e lo stato salvato?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="obsolete">Scarta</translation>
+    </message>
     <message>
         <source>Cancel</source>
         <translation>Annulla</translation>
     </message>
     <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ci sono dischi fissi collegati a porte di un controller aggiuntivo. Se disabiliti il controller aggiuntivo, tutti questi dischi saranno scollegati automaticamente.&lt;/p&gt;&lt;p&gt;Sei sicuro di voler disabilitare il controller aggiuntivo?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ci sono dischi fissi collegati a porte di un controller aggiuntivo. Se modifichi il controller aggiuntivo, tutti questi dischi saranno scollegati automaticamente.&lt;/p&gt;&lt;p&gt;Sei sicuro di voler modificare il controller aggiuntivo?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Cambia</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vuoi rimuovere l&apos;interfaccia di rete host &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; selezionata?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; Questa interfaccia potrebbe essere utilizzata da una o più schede di rete di questa o di un&apos;altra MV. Dopo la sua rimozione, queste schede non funzioneranno fino alla correzione delle impostazioni con la scelta di un nome diverso per l&apos;interfaccia o con un tipo di collegamento diverso della scheda.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the host-only network interface.</source>
+        <translation>Creazione dell&apos;interfaccia di rete solo-host non riuscita.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;I file delle impostazioni di VirtualBox esistenti saranno convertiti automaticamente dal vecchio formato al nuovo richiesto dalla nuova versione di VirtualBox.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; per avviare subito VirtualBox o premi &lt;b&gt;Esci&lt;/b&gt; se desideri chiudere VirtualBox senza ulteriori azioni.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open appliance.</source>
+        <translation>Apertura applicazione virtuale non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Apertura/Interpretazione dell&apos;applicazione virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Importazione dell&apos;applicazione virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to create appliance.</source>
+        <translation>Creazione applicazione virtuale non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Preparazione dell&apos;esportazione dell&apos;applicazione virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to create an appliance.</source>
+        <translation>Impossibile creare un&apos;applicazione virtuale.</translation>
+    </message>
+    <message>
+        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Esportazione dell&apos;applicazione virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;eliminazione di questa rete solo host causerà l&apos;eliminazione dell&apos;interfaccia solo host sulla quale questa la rete è basata. Vuoi rimuovere l&apos;interfaccia (rete solo host) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; questa interfaccia potrebbe essere utilizzata da una o più schede di rete virtuali assegnate a una delle MV. Dopo la rimozione, queste schede non saranno più utilizzabili fino alla correzione delle impostazioni con la scelta di un nome dell&apos;interfaccia diverso o con un diverso tipo di collegamento della scheda.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation>Un file con nome &lt;b&gt;%1&lt;/b&gt; esiste già. Sei sicuro di volerlo sostituire?&lt;br /&gt;&lt;br /&gt;La sostituzione sovrascriverà il suo contenuto.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;accelerazione hardware VT-x/AMD-V è stata abilitata, ma non è funzionante. Alcuni guest (ad es. OS/2 e QNX) richiedono questa funzionalità.&lt;/p&gt;&lt;p&gt;Assicurati di aver abilitato VT-x/AMD-V nel BIOS del computer host.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;indirizzo email o la password specificata non sono validi.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Registrazione di VirtualBox non riuscita.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation>Controllo file non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation>Rimozione file non riuscita.</translation>
+    </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation>Sembra che il filesystem USBFS sia montato su /sys/bus/usb/drivers. Consigliamo vivamente di modificare questa situazione, poiché rappresenta un grave errore di configurazione del sistema, che potrebbe causare problemi inattesi ai dispositivi USB.</translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation>Stai utilizzando una versione SPERIMENTALE di VirtualBox. Questa versione non è appropriata per un uso in produzione.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;? Ciò causerà la perdita dello stato attuale della macchina, che non può essere ripristinato.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Ripristina</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Eliminando un&apos;istantanea, le informazioni di stato memorizzate nell&apos;istante andranno perse, e i dati su disco sparsi sui diversi file immagine creati da VirtualBox insieme all&apos;istantanea saranno riuniti in un singolo file. Tale processo può risultare lungo, e le informazioni nell&apos;istantanea non possono essere ripristinate.&lt;/p&gt;&lt;/p&gt;Sei sicuro di voler eliminare l&apos;istantanea selezionata &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Elimina</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Ripristino dell&apos;istantanea &lt;b&gt;%1&lt;/b&gt; della macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Eliminazione dell&apos;istantanea &lt;b&gt;%1&lt;/b&gt; della macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium</comment>
+        <translation type="obsolete">&amp;Crea</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="obsolete">&amp;Seleziona</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Non ci sono supporti inutilizzati disponibile per il collegamento appena creato.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Seleziona&lt;/b&gt; se desideri aprire il &lt;i&gt;Gestore supporti virtuali&lt;/i&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Collegamento del %1 allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Scollegamento del %1 dallo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Impossibile montare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; sulla macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation>Vuoi forzare il montaggio di questo supporto?</translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Impossibile smontare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; dalla macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation>Vuoi forzare la rimozione di questo supporto?</translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation>Forza la rimozione</translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation type="obsolete">Espulsione del disco dal lettore virtuale non riuscito. Il lettore potrebbe essere bloccato dal sistema operativo guest. Controlla e prova ancora.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation>E&amp;sci</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;I seguentifile di configurazione di VirtualBox saranno convertiti automaticamente dal vecchio formato al nuovo formato richiesto dalla nuova versione di VirtualBox.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; per avviare subito VirtualBox o premi &lt;b&gt;Esci&lt;/b&gt; se desideri chiudere l&apos;applicazione senza ulteriori azioni.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation>disco fisso</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>CD/DVD</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation>immagine CD/DVD</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>floppy</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation>immagine floppy</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">disco fisso</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">dispositivo CD/DVD</translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">dispositivo floppy</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sei sicuro di voler eliminare il dispositivo CD/DVD-ROM?&lt;/p&gt;&lt;p&gt;Senza non potrai montare alcun CD o immagine ISO o installare le Guest Additions!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation>&amp;Rimuovi</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation>&lt;p&gt;L&apos;accelerazione hardware VT-x/AMD-V non è disponibile sul sistema. Il sistema guest a 64 bit non sarà in grado di rilevare una CPU a 64 bit e non potrà avviarsi.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;accelerazione hardware VT-x/AMD-V non è disponibile sul sistema. Alcuni sistemi guest (ad .es OS/2 e QNX) richiedono questa funzionalità e non potranno avviarsi senza di essa.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;L&apos;eliminazione dell&apos;istantanea %1 richiederà temporaneamente altro spazio su disco. Nel peggiore dei casi la dimensione dell&apos;immagine %2 crescerà di %3, ma sul filesystem ci sono solo %4 liberi.&lt;/p&gt;&lt;p&gt;Finire lo spazio durante l&apos;operazione di fusione potrebbe produrre un danneggiamento dell&apos;immagine e della configurazione della MV, ad es. la perdita della MV e dei relativi dati.&lt;/p&gt;&lt;p&gt;Puoi continuare con l&apos;eliminazione dell&apos;istantanea a tuo rischio.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile passare lo schermo del guest allo schermo dell&apos;host per la mancanza di memoria video nel sistema guest.&lt;/p&gt;&lt;p&gt;Dovresti configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;p&gt;Impossibile passare lo schermo del guest allo schermo dell&apos;host per la mancanza di memoria video nel sistema guest.&lt;/p&gt;&lt;p&gt;Dovresti configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Ignora&lt;/b&gt; per commutare comunque lo schermo o premi &lt;b&gt;Annulla&lt;/b&gt; per annullare l&apos;operazione.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile abilitare la modalità a schermo intero per lo schermo del sistema guest. Hai più schermi virtuali configurati che schermi fisici collegati all&apos;host.&lt;/p&gt;&lt;p&gt;Riduci il numero di schermi virtuali nella configurazione della MV o collega schermi aggiuntivi all&apos;host.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile abilitare la modalità trasparente per lo schermo del sistema guest. Hai più schermi virtuali configurati che schermi fisici collegati all&apos;host.&lt;/p&gt;&lt;p&gt;Riduci il numero di schermi virtuali nella configurazione della MV o collega schermi aggiuntivi all&apos;host.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile trovare il manuale utente di VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vuoi scaricare il file da Internet?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sei sicuro di voler scaricare il manuale utente di VirtualBox da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (dimensione %3 byte)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile scaricare il manuale utente di VirtualBox da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Il manauale utente di VirtualBox è stato scaricato con successo da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; e salvato localmente come &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Il manauale utente di VirtualBox è stato scaricato con successo da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, ma non può essere salvato localmente come &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Scegli un&apos;altra destinazione per il file.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation>Apertura della macchina virtuale posizionata in %1 non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation>Aggiunta della macchina virtuale &lt;b&gt;%1&lt;/b&gt; posizionata in &lt;i&gt;%2&lt;/i&gt; non riuscita perché è già presente.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Stai per rimuovere la macchina virtuale &lt;b&gt;%1&lt;/b&gt; dall&apos;elenco.&lt;/p&gt;&lt;p&gt;Vuoi eliminare anche i file contenenti la macchina virtuale dal disco fisso?&lt;p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Stai per rimuovere la macchina virtuale inaccessibile &lt;b&gt;%1&lt;/b&gt; dall&apos;elenco.&lt;/p&gt;&lt;p&gt;Vuoi eliminare anche i file contenenti la macchina virtuale dal disco fisso? Questa operazione rimuoverà anche i file che contengono i dischi fissi virtuali della macchina se non sono utilizzati da un&apos;altra macchina.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete all files</source>
+        <translation>Elimina tutti i file</translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation>Rimuovi solo</translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation>Stai per rimuovere la macchina virtuale inaccessibile &lt;b&gt;%1&lt;/b&gt; dall&apos;elenco. Desideri procedere?</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Rimuovi</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Stai per aggiungere un nuovo disco fisso virtuale al controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vuoi creare un file nuovo e vuoto per contenere i dati del disco o selezionarne uno esistente?&lt;p&gt;</translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation>Crea un &amp;nuovo disco</translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation>S&amp;cegli un disco esistente</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Stai per aggiungere un nuovo lettore CD/DVD al controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vuoi scegliere un disco CD/DVD virtuale da inserire nel lettore o lasciarlo vuoto per il momento?&lt;p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation>S&amp;cegli il disco</translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation>Lascia &amp;vuoto</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Stai per aggiungere un nuovo lettore floppy al controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vuoi scegliere un disco floppy virtuale da inserire nel lettore o lasciarlo vuoto per il momento?&lt;p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Scollegamento del disco fisso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) dallo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Scollegamento del dispositivo CD/DVD (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Scollegamento del dispositivo floppy (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Le Guest Additions di VirtualBox non sembrano essere disponibile nella macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale nuovamente se non funzionano correttamente, selezionando &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Macchina&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation>
+            <numerusform>&lt;p&gt;La macchina virtuale &lt;b&gt;%1&lt;/b&gt; è attualmente in uno stato salvato.&lt;/p&gt;&lt;p&gt;Se continui, lo stato di esecuzione della macchina esportata sarà scartato. Nota che la macchina esistentei non viene modificata.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;Le macchine virtuali &lt;b&gt;%1&lt;/b&gt; sono attualmente in uno stato salvato.&lt;/p&gt;&lt;p&gt;Se continui, lo stato di esecuzione delle macchine esportate sarà scartato. Nota che le macchine esistenti non sono modificate.&lt;/p&gt;</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation>Aggiornamento delle Guest Additions non riuscito. L&apos;immagine di installazione delle Guest Additions sarà montata per fornire un&apos;installazione manuale.</translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Installazione dell&apos;Extension Pack &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Disinstallazione dell&apos;Extension Pack &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="obsolete">Stai per rimuovere l&apos;Extension Pack &lt;b&gt;%1&lt;/b&gt;. Sei sicuro di volerlo fare?</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>&amp;Rimuovi</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation>Le regole di inoltro delle porte attuali non sono valide. Nessun valore di porta dell&apos;host o del guest può essere impostato a zero.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ci sono modifiche non salvate nella configurazione di inoltro delle porte.&lt;/p&gt;&lt;p&gt;Se procedi, tali modifiche saranno scartate.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation>Spiacenti, si sono verificati alcuni errori generici.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Collegamento del disco fisso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Collegamento del dispositivo CD/DVD (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Collegamento del dispositivo floppy (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nota che l&apos;unità di archiviazione di questo supporto non sarà eliminata e che sarà possibile utilizzare in seguito.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Le Guest Additions di VirtualBox non sembrano essere presenti su questa macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale di nuovo se non funzionano correttamente, selezionando &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;La finestra della macchina virtuale passerà ora alla modalità a &lt;b&gt;schermo intero&lt;/b&gt;. Puoi tornare alla modalità a finestra in qualunque momento premendo &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è attualmente definito come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota inoltre che la barra principale dei menu è nascosta nella modalità a schermo intero. Puoi accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;La finestra della macchina virtuale passerà ora alla modalità &lt;b&gt;Trasparente&lt;/b&gt;. Puoi tornare alla modalità a finestra in qualunque momento premendo &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è attualmente definito come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota inoltre che la barra principale dei menu è nascosta nella modalità trasparente. Puoi accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;La finestra della macchina virtuale passerà ora alla modalità &lt;b&gt;Scalata&lt;/b&gt;. Puoi tornare alla modalità a finestra in qualunque momento premendo &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è attualmente definito come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota inoltre che la barra principale dei menu è nascosta nella modalità scalata. Puoi accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation>Commuta</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Impossibile aprire il pacchetto di estensione &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Stai per installare un pacchetto di estensione per VirtualBox. I pacchetti di estensione completano le funzionalità di VirtualBox e possono contenere programmi di sistema potenzialmente pericolosi. Leggi con attenzione la descrizione seguente e procedi solo se hai ottenuto il pacchetto di estensione da una fonte attendibile.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nome:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Descrizione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation>&amp;Installa</translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation>I pacchetti di estensione completano le funzionalità di VirtualBox e possono contenere programmi di sistema potenzialmente pericolosi. Leggi attentamente la descrizione seguente e procedi solo se hai ottenuto il pacchetto di estensione da una fonte attendibile.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Una vecchia versione del pacchetto di estensione è già installata, vuoi aggiornarla? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nome:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nuova versione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versione attuale:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Descrizione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation>A&amp;ggiorna</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Una nuova versione del pacchetto di estensione è già installata, vuoi tornare a una versione precedente? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nome:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nuova versione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versione attuale:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Descrizione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation>Prece&amp;dente</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Il pacchetto di estensione è già installato con la stessa versione, vuoi installarlo nuovamente? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nome:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Descrizione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation>&amp;Reinstalla</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Stai per rimuovere il pacchetto di estensione di VirtualBox &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Sei sicuro di voler continuare?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation>Il pacchetto di estensione &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; è stato installato correttamente.</translation>
+    </message>
+    <message>
+        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
+        <translation type="obsolete">L&apos;eliminazione di tutti i file che appartengono alla MV è attualmente disabilitata su Windows/x64 per evitare una chiusura inattesa. Il problema sarà corretto nella prossima versione.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Impossibile creare la cartella della macchina &lt;b&gt;%1&lt;/b&gt; nella cartella superiore &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Controlla che tale cartella esista davvero e di avere i permessi per creare la cartella della macchina.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;USB 2.0 è attualmente abilitato per questa macchina virtuale. In ogni caso, ciò richiede che &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; sia installato. Installa l&apos;Extension Pack dal sito di VirtualBox. Una volta installato, sarà possibile ri-abilitare USB 2.0. Nel frattempo sarà disabilitato a meno che annulli le modifiche correnti alle impostazioni.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>La registrazione della macchina virtuale &lt;b&gt;%1&lt;/b&gt; non è riuscita.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Le impostazioni della macchina sono cambiate mentre le stavi modificando. Attualmente, ci sono modifiche non salvate.&lt;/p&gt;&lt;p&gt;Vuoi ricaricare le impostazioni modificate o mantenere le modifiche?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation>Ricarica le impostazioni</translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation>Mantieni le modifiche</translation>
+    </message>
+    <message>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished">Lo stato della macchina virtuale che hai appena modificato è cambiato. Solo le impostazioni che sono modificabili in esecuzione sono salvate quando premi OK. Tutte le modifiche alle altre impostazioni saranno perse.</translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>La clonazione della macchina virtuale &lt;b&gt;%1&lt;/b&gt; non è riuscita.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Stai per ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Puoi creare subito un&apos;istantanea dello stato corrente della macchina marcando la casella seguente; se non lo fai, lo stato corrente della macchina sarà perso definitivamente. Desideri procedere?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation>Crea un&apos;istantanea dello stato corrente della macchina</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sei sicuro di voler ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Errore durante il cambiamento del tipo di supporto da &lt;b&gt;%1&lt;/b&gt; a &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;USB 2.0 è attualmente abilitato per questa macchina virtuale. In ogni caso, ciò richiede che &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; sia installato.&lt;/p&gt;&lt;p&gt;Installa l&apos;Extension Pack dal sito di VirtualBox. Dopo potrai riabilitare l&apos;USB 2.0. Nel frattempo, sarà disabilitato a meno che tu non annulli le modifiche correnti.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation>Impossibile caricare il servizio Host USB Proxy (VERR_FILE_NOT_FOUND). Il servizio potrebbe non essere installato sul computer host</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>Attualmente VirtualBox non ha il permesso di accedere ai dispositivi USB. Puoi cambiare questa situazione aggiungendo il tuo utente al gruppo &apos;vboxusers&apos;. Vedi il manuale utente per una spiegazione più dettagliata</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation>Attualmente VirtualBox non ha il permesso di accedere ai dispositivi USB. Puoi cambiare questa situazione consentendo al tuo utente di accedere ai file e alla cartella &apos;usbfs&apos;. Vedi il manuale utente per una spiegazione più dettagliata</translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation>Il servizio USB Proxy non è stato ancora portato su questo host</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation>Impossibile caricare il servizio Host USB Proxy</translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Impossibile salvare il file scaricato come &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annulla</translation>
+    </message>
+    <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Annulla lo scaricamento dell&apos;immagine CD di VirtualBox Guest Additions</translation>
+        <translation type="obsolete">Annulla lo scaricamento dell&apos;immagine CD di VirtualBox Guest Additions</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Sto scaricando l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Sto scaricando l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation>Annulla</translation>
+        <translation type="obsolete">Annulla</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -4626,6 +6255,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>Sto scaricando il manuale utente di VirtualBox da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetAdditions</name>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5759,6 +7399,29 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation>Modifica testo</translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation>&amp;Sostituisci...</translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation>Sostituisce il testo attuale con il contenuto di un file specificato.</translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation>Testo (*.txt);;Tutti (*.*)</translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation>Seleziona un file da aprire...</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -6010,125 +7673,6 @@ Versione %1</translation>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation type="obsolete">Se selezionato, il sistema Guest non sarà in grado di scrivere nella cartella specificata.</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation>Sistema virtuale %1</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Nome</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation>Prodotto</translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation>URL del prodotto</translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation>Venditore</translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation>URL del venditore</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation>Versione</translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation>Descrizione</translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation>Licenza</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>Sistema operativo guest</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation>CPU</translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation>RAM</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation>Controller IDE disco fisso</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation>Controller SATA disco fisso</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation>Controller SCSI disco fisso</translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation>DVD</translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation>Floppy</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation>Scheda di rete</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation>Controller USB</translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation>Scheda audio</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translation>Immagine disco virtuale</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation>Elemento hardware sconosciuto</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;Valore originale:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation>Configurazione</translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation>Avvisi:</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation>Controller del disco fisso (SAS)</translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>Se marcata, un indirizzo MAC nuovo e unico sarà assegnato a tutte le schede di rete configurate.</translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>Inizializza nuovamente l&apos;indi&amp;rizzo MAC di tutte le schede di rete</translation>
     </message>
 </context>
 <context>
@@ -9438,17 +10982,6 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation>Importazione applicazione virtuale...</translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation>Lettura applicazione virtuale...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
@@ -9461,13 +10994,6 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     <message>
         <source>VirtualBox License</source>
         <translation>Licenza di VirtualBox</translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Modifica</translation>
     </message>
 </context>
 <context>
@@ -9832,1419 +11358,6 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>UIMessageCenter</name>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Informazioni</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Domanda</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Attenzione</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Errore</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Errore Critico</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag</comment>
-        <translation>Non mostrare ancora questo messaggio</translation>
-    </message>
-    <message>
-        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Apertura di &lt;tt&gt;%1&lt;/tt&gt; non riuscita. Assicurati che il tuo ambiente desktop possa gestire correttamente URL di questo tipo.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Inizializzazione COM o individuazione del server VirtualBox COM non riuscita. Probabilmente il server VirtualBox non è in esecuzione o non è riuscito a partire.&lt;/p&gt;&lt;p&gt;L&apos;applicazione sarà chiusa.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Creazione dell&apos;oggetto COM VirtualBox non riuscita.&lt;/p&gt;&lt;p&gt;L&apos;applicazione sarà chiusa immediatamente.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Fallimento nel caricamento della configurazione globale della GUI.&lt;/p&gt;&lt;p&gt;L&apos;applicazione verrà ora chiusa.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration.&lt;p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Fallimento nel salvataggio della configurazione globale della GUI.&lt;p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to set global VirtualBox properties.</source>
-        <translation>Impostazione delle proprietà globali di VirtualBox non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to access the USB subsystem.</source>
-        <translation>Accesso al sottosistema USB non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation>Creazione di una nuova macchina virtuale non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Creazione di una nuova macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Applicazione delle impostazioni alla macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Salvataggio delle impostazioni della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Caricamento delle impostazioni della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Accensione della macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Pausa dell&apos;esecuzione della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Ripristino dell&apos;esecuzione della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Salvataggio dello stato della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Creazione di un&apos;istantanea della macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Arresto della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Rimozione della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Scarto dello stato salvato per la macchina virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="obsolete">Scarto dell&apos;istantanea &lt;b&gt;%1&lt;/b&gt; della Macchina Virtuale &lt;b&gt;%2&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Scarto dello stato attuale della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Scarto dell&apos;istantanea corrente e dello stato corrente della Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Non esiste una macchina virtuale chiamata &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler eliminare definitivamente la Macchina Virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Questa operazione non può essere annullata.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler deregistrare la Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; inaccessibile?&lt;/p&gt;&lt;p&gt;Non potrai registrarla nuovamente dalla GUI.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sei sicuro di voler scartare lo stato salvato della macchina virtuale &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Questa operazione è equivalente al reset o allo spegnimento della macchina senza uno spegnimento corretto, dal punto di vista del sistema guest.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Releasing this media image will detach it from the following virtual machine(s): &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continue?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Il rilascio di questa immagine lo scollegherà dalle seguenti Macchine Virtuali:
-&lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Continuare?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The image file &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this file, because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different image file name.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Il file immagine &lt;b&gt;%1&lt;/b&gt; esiste già. Non puoi creare un nuovo hard disk virtuale che utilizzi questo file, perché potrebbe già essere usato da un altro hard disk virtuale.&lt;/p&gt;&lt;p&gt;Specifica un nome file diverso.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;No&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Yes&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vuoi eliminare il file immagine di questo hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;No&lt;/b&gt; l&apos;hard disk virtuale sarà deregistrato e rimosso dall&apos;elenco, ma il file immagine sarà lasciato nel tuo disco fisico.&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;Sì&lt;/b&gt; il file immagine sarà rimosso definitivamente dopo la deregistrazione dell&apos;hard disk. Questa operazione non può essere annullata.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to delete the virtual hard disk image &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Rilevazione dell&apos;immagine hard disk virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove (unregister) the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vuoi rimuovere (deregistrare) l&apos;hard disk virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the virtual hard disk image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">Creazione dell&apos;immagine hard disk virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; non riuscita.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach a hard disk image with UUID %1 to the device slot %2 of the controller %3 of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">Collegamento di un&apos;immagine hard disk con UUID %1 allo slot dispositivo %2 del controller %3 della macchina &lt;b&gt;%4&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to detach a hard disk image from the device slot %1 of the controller %2 of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Disconnessione di un&apos;immagine hard disk dallo slot dispositivo %1 del controller %2 della macchina &lt;b&gt;%3&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">hard disk</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <translation type="obsolete">immagine CD/DVD</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <translation type="obsolete">immagine floppy</translation>
-    </message>
-    <message>
-        <source>Failed to register the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Registrazione del %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to unregister the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Deregistrazione del %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new session.</source>
-        <translation>Creazione di una nuova sessione non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for a virtual machine with UUID &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Apertura di una sessione per la Macchina Virtuale con UUID &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Apertura di una sessione per la Macchina Virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Some of the registered media may become inaccessible.</source>
-        <translation type="obsolete">Recupero dello stato di accessibilità del media &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; non riuscito. Alcuni dei media registrati potrebbero diventare inaccessibili.</translation>
-    </message>
-    <message>
-        <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Creazione dell&apos;interfaccia di rete host &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Rimozione dell&apos;interfaccia di rete host &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Connessione del dispositivo USB &lt;b&gt;%1&lt;/b&gt; alla macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Disconnessione del dispositivo USB &lt;b&gt;%1&lt;/b&gt; dalla macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Creazione di una cartella condivisa &lt;b&gt;%1&lt;/b&gt; (che punta a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) per la Macchina Virtuale &lt;b&gt;%3&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Rimozione di una cartella condivisa &lt;b&gt;%1&lt;/b&gt; (che punta a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) dalla Macchina Virtuale &lt;b&gt;%3&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Hai &lt;b&gt;fatto clic con il mouse&lt;/b&gt; nello schermo della Macchina Virtuale o premuto la &lt;b&gt;host key&lt;/b&gt;. Questo causerà l&apos;&lt;b&gt;acquisizione&lt;/b&gt; del puntatore del mouse da parte della Macchina Virtuale (solo se l&apos;Integrazione Mouse non è supportata dal sistema Guest o è disabilitata) e della tastiera, e li renderà non disponibili ad altre applicazioni sul sistema Host.&lt;/p&gt;&lt;p&gt;Puoi premere la &lt;b&gt;host key&lt;/b&gt; in un qualsiasi momento per &lt;b&gt;rilasciare&lt;/b&gt; la tastiera e il mouse (se acquisito) e ritornare alla modalità normale. La host key attuale è mostrata nella barra di stato in fondo alla finestra della Macchina Virtuale, vicino all&apos;icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Questa icona, assieme all&apos;icona del mouse vicina, indica lo stato di acquisizione attuale di mouse e tastiera.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Hai l&apos;opzione &lt;b&gt;Acquisizione automatica della tastiera&lt;/b&gt; attivata. Questo causerà l&apos;&lt;b&gt;acquisizione&lt;/b&gt; automatica della tastiera da parte della Macchina Virtuale ogni volta che la finestra della MV viene attivata e la renderà non disponibile ad altre applicazioni sul sistema Host: quando la tastiera viene acquisita, tutte le pressioni di tasti (incluse quelle di sistema come Alt-Tab) saranno dirette alla MV.&lt;/p&gt;&lt;p&gt;Puoi premere la &lt;b&gt;host key&lt;/b&gt; in un qualsiasi momento per &lt;b&gt;rilasciare&lt;/b&gt; la tastiera e il mouse (se acquisito) e ritornare alla modalità normale. La host key attuale è mostrata nella barra di stato in fondo alla finestra della Macchina Virtuale, vicino all&apos;icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Questa icona, assieme all&apos;icona del mouse vicina, indica lo stato di acquisizione attuale di mouse e tastiera.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La Macchina Virtuale ha rilevato che il sistema Guest supporta l&apos;&lt;b&gt;Integrazione Mouse&lt;/b&gt;. Ciò significa che non hai bisogno di &lt;i&gt;acquisire&lt;/i&gt; il puntatore del mouse per utilizzarlo nel sistema Guest -- tutte le azioni del mouse che esegui mentre il puntatore è nella finestra della Macchina Virtuale sono inviate direttamente al sistema Guest. Se il mouse è attualmente acquisito, sarà automaticamente rilasciato.&lt;/p&gt;&lt;p&gt;L&apos;icona del mouse nella barra di stato diverrà simile a&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;per informarti che l&apos;Integrazione Mouse è supportata dal sistema Guest ed è correntemente attiva.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Alcune applicazioni possono comportarsi non correttamente nella modalità Integrazione Mouse. Puoi sempre disabilitare la modalità per la sessione corrente (e abilitarla nuovamente) selezionando l&apos;azione corrispondente dalla barra del menu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La macchina virtuale ha rilevato che il sistema guest non supporta l&apos;&lt;b&gt;integrazione mouse&lt;/b&gt; nella modalità video attuale. Devi acquisire il mouse (facendo clic all&apos;interno dello schermo della MV o premendo il tasto host) per utilizzare il mouse all&apos;interno del sistema guest.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La macchina virtuale è attualmente in stato di &lt;b&gt;Pausa&lt;/b&gt; e pertanto non accetta comandi da tastiera o mouse. Se vuoi continuare il tuo lavoro all&apos;interno della MV, devi ripristinarla selezionando l&apos;azione corrispondente dal menu azioni.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Uno o più hard disk virtuali, CD/DVD o floppy registrati non sono attualmente accessibili. Come risultato, non potrai utilizzare Macchine Virtuali che sfruttino tali media finché non siano nuovamente accessibili.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; per aprire il Gestore di dischi virtuali e vedere quali sono i media inaccessbili, o premi &lt;b&gt;Ignora&lt;/b&gt; per ignorare questo messaggio.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale verrà ora commutata alla modalità &lt;b&gt;schermo intero&lt;/b&gt;. Puoi tornare indietro alla modalità finestra in qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Nota che la &lt;i&gt;host key&lt;/i&gt; è definita attualmente come &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile eseguire VirtualBox in modalità &lt;i&gt;Selettore MV&lt;/i&gt; a causa di restrizioni locali.&lt;/p&gt;&lt;p&gt;L&apos;applicazione sarà chiusa immediatamente.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Errore grave&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Errore non grave&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Attenzione&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;ID Errore: &lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation> Gravità: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un errore grave si è verificato durante l&apos;esecuzione della Macchina Virtuale! La Macchina Virtuale sarà spenta. Ti suggeriamo di usare gli appunti per copiare i messaggi d&apos;errori seguenti per esaminarli più approfonditamente:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si è verificato un errore durante l&apos;esecuzione della Macchina Virtuale! I dettagli dell&apos;errore sono mostrati sotto. Puoi provare a correggere l&apos;errore descritto e ripristinare l&apos;esecuzione della Macchina Virtuale.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;esecuzione della macchina virtuale può dar luogo ad errori come descritto sotto. Puoi ignorare questo messaggio, ma ti suggeriamo di eseguire le azioni appropriate per assicurarti che l&apos;errore descritto non abbia luogo.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation>Codice&amp;nbsp;&apos;uscita: </translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation>Componente: </translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation>Interfaccia: </translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation>Chiamante: </translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation>RC&amp;nbsp;Chiamante: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile recuperare il file della lingua &lt;b&gt;%1&lt;/b&gt; nella cartella &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;La lingua sarà temporaneamente reimpostata a quella predefinita di sistema. Apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile caricare il file della lingua &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;p&gt;La lingua sarà temporaneamente reimpostata a Inglese (built-in). Apri la finestra delle &lt;b&gt;Impostazioni&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra principale di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Le Guest Additions installate nel sistema Guest sono obsolete: la versione installata è %1, quella attesa è %2. Alcune funzionalità che richiedono Guest Additions (Integrazione mouse, auto-ridimensionamento dello schermo) probabilmente smetteranno di funzionare correttamente.&lt;/p&gt;&lt;p&gt;Aggiorna le Guest Additions alla versione attuale scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Le Guest Additions installate nel sistema Guest non sono aggiornate: la versione installata è %1, quella attesa è %2. Alcune funzionalità che richiedono Guest Additions (Integrazione Mouse, auto-ridimensionamento dello schermo) potrebbero non funzionare come ci si aspetta.&lt;/p&gt;&lt;p&gt;Si consiglia di aggiornare le Guest Additions alla versione attuale scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Le Guest Additions installate nel sistema Guest sono troppo recenti per questa versione di VirtualBox: la versione installata è %1, quella attesa è %2.&lt;/p&gt;&lt;p&gt;L&apos;utilizzo di una versione di Additions più recente di VirtualBox non è supportato. Installa la versione corrente di Guest Additions scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Impossibile modificare il percorso della cartella per le istantanee della macchina virtuale &lt;b&gt;%1&lt;b&gt; al valore &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the VM to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Impossibile entrare in modalità trasparente per memoria video del sistema guest insufficente.&lt;/p&gt;&lt;p&gt;È necessario configurare la MV per avere almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile rimuovere la cartella condivisa &lt;b&gt;%1&lt;/b&gt; (che punta a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) dalla macchina virtuale &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Chiudere tutti i programmi nel sistema Guest che potrebbero utilizzare la cartella condivisa e provare nuovamente.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile trovare il file immagine per VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; o &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Si vuole scaricare quest&apos;immagine CD da Internet?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile scaricare l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Siete sicuri di voler scaricare l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (dimensione %3 byte)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;immagine CD di VirtualBox Guest Additions è stata scaricata con successo da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; e salvata localmente come &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Si vuole registrare quest&apos;immagine CD e montarla nel drive CD/DVD virtuale?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale verrà ora portata in modalità &lt;b&gt;pieno schermo&lt;/b&gt;. È possibile tornare alla modalità finestra in un qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Il tasto &lt;i&gt;Host&lt;/i&gt; è definito attualmente come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il menu principale viene nascosto in modalità pieno schermo. È possibile accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale verrà ora portata in modalità &lt;b&gt;trasparente&lt;/b&gt;. È possibile tornare alla modalità finestra in un qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Il tasto &lt;i&gt;Host&lt;/i&gt; è definito attualmente come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il menu principale viene nascosto in modalità trasparente. È possibile accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La finestra della macchina virtuale è ottimizzata per lavorare in modalità colore a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;, ma la qualità del colore dello schermo virtuale è impostata attualmente a &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Apri la finestra delle proprietà dello schermo nel sistema guest e scegli una modalità di colore a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, se disponibile, per ottenere le migliori prestazioni dal sottosistema video virtuale.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: alcuni sistemi operativi, come OS/2, possono lavorare effettivamente in modalità 32&amp;nbsp;bit, ma la segnalano come 24&amp;nbsp;bit (16 milioni di colori). Puoi provare a selezionare una qualità di colore diversa per vedere se questo messaggio scompare, oppure semplicemente disabilitare il messaggio ora se sei sicuro che la qualità di colore richiesta (%4&amp;nbsp;bit) non sia disponibile nel sistema guest.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;È avvenuto un errore critico durante l&apos;esecuzione della macchina virtuale e quest&apos;ultima è stata perciò fermata.&lt;/p&gt;&lt;p&gt;Per ottenere aiuto, si rimanda alla sezione Community su &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o al vostro contratto di supporto. Si prega di fornire i contenuti del file di log &lt;tt&gt;VBox.log&lt;/tt&gt; e il file immagine &lt;tt&gt;VBox.png&lt;/tt&gt;, che potete trovare nella directory &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, assieme alla descrizione di quello che si stava facendo quando è stato visualizzato il presente errore. Si noti che è possibile accedere ai file suindicati anche scegliendo &lt;b&gt;Visualizza log&lt;/b&gt; dal menu &lt;b&gt;Macchina&lt;/b&gt; o dalla finestra principale di VirtualBox.&lt;/p&gt;&lt;p&gt;Premere &lt;b&gt;OK&lt;/b&gt; per spegnere la macchina o premere &lt;b&gt;Ignora&lt;/b&gt; se si vuole lasciarla com&apos;è per il debugging. Notare che il debugging richiede particolari conoscenze e strumenti, quindi è raccomandato premere &lt;b&gt;OK&lt;/b&gt; in questo momento.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Non è stato connesso un disco fisso alla nuova macchina virtuale. La macchina non sarà in grado di avviarsi a meno che non si connetta in seguito (attraverso la finestra delle impostazioni o l&apos;Assistente di primo avvio) un disco fisso con un sistema operativo guest o qualche altro supporto avviabile.&lt;/p&gt;&lt;p&gt;Vuoi continuare?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Impossibile trovare i file di licenza in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>Impossibile aprire il file di licenza &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Controllare i permessi del file.</translation>
-    </message>
-    <message>
-        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Impossibile inviare l&apos;evento ACPI Power Button Press alla macchina virtuale &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Impossibile connettersi al servizio di registrazione online di VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Congratulazioni! Vi siete registrati con successo come utente di VirtualBox.&lt;/p&gt;&lt;p&gt;Grazie per aver dedicato qualche minuto alla compilazione del modulo di registrazione!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Impossibile registrare il prodotto VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Impossibile salvare le impostazioni globali di VirtualBox su &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile caricare la configurazione GUI globale da &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;applicazione verrà ora chiusa.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile salvare la configurazione GUI globale da &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;L&apos;applicazione verrà ora chiusa.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Impossibile salvare le impostazioni della macchina virtuale &lt;b&gt;%1&lt;/b&gt; su &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Impossibile caricare le impostazioni della macchina virtuale &lt;b&gt;%1&lt;/b&gt; su &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Rimuovi</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>machine</comment>
-        <translation type="obsolete">De-registra</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state</comment>
-        <translation>Scarta</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>detach image</comment>
-        <translation type="obsolete">Continua</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete this hard disk&apos;s image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the image file will be permanently deleted after unregistering the hard disk. This operation cannot be undone.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Unregister&lt;/b&gt; then the virtual hard disk will be unregistered and removed from the collection, but the image file will be left on your physical disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vuoi eliminare il file immagine per questo disco rigido virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;Elimina&lt;/b&gt; il file immagine sarà cancellato permanentemente dopo la de-registrazione del disco rigido. Questa operazione non può essere annullata.&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;De-registra&lt;/b&gt; il disco rigido virtuale sarà de-registrato e rimosso dall&apos;elenco, ma il file immagine verrà lasciato nel tuo disco fisico.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Rimuovi</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">De-registra</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ci sono dischi rigidi collegari alle porte SATA di questa macchina virtuale. Se disabiliti il controller SATA, tutti questi dischi rigidi virtuali saranno disconnessi automaticamente.&lt;/p&gt;&lt;p&gt;Sei sicuro di voler disabilitare il controller SATA?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Disable</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Disabilita</translation>
-    </message>
-    <message>
-        <source>Failed to attach a hard disk image with UUID %1 to device slot %2 on channel %3 of the %4 bus of the machine &lt;b&gt;%5&lt;/b&gt;.</source>
-        <translation type="obsolete">Impossibile connettere un&apos;immagine disco con UUID %1 allo slot %2 sul canale %3 del bus %4 della macchina &lt;b&gt;%5&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach a hard disk image from device slot %1 on channel %2 of the %3 bus of the machine &lt;b&gt;%4&lt;/b&gt;.</source>
-        <translation type="obsolete">Impossibile disconnettere un&apos;immagine disco dallo slot %1 sul canale %2 del bus %3 della macchina &lt;b&gt;%4&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions</comment>
-        <translation>Scarica</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions</comment>
-        <translation>Monta</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;Il tasto host è definito attualmente come &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Capture</source>
-        <comment>do input capture</comment>
-        <translation>Cattura</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Uno o più dischi virtuali registrati, CD/DVD o floppy non sono attualmente accessibili. Come risultato, non sarai in grado di utilizzare machcine virtuali che sfruttino questi media fintantoché non ritornino accessibili.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Controlla&lt;/b&gt; per aprire la finestra del Gestore di dischi virtuali e vedere quale media è inaccessibile, o premi &lt;b&gt;Ignora&lt;/b&gt; per ignorare questo messaggio.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box</comment>
-        <translation>Controlla</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;I seguenti file di impostazioni di VirtualBox sono stati convertiti automaticamente alla nuova versione &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il risultato della conversione non è stato tuttavia ancora salvato su disco. Premi:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Salva&lt;/b&gt; per salvare tutti i file auto-convertiti in questo momento (non sarà possibile usare questi file di impostazioni con versioni più vecchie di VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; per creare copie di backup dei file nel vecchio formato prima di salvarli in quello nuovo;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Annulla&lt;/b&gt; per non salvare i file auto-convertiti.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Nota che se selezionerai &lt;b&gt;Annulla&lt;/b&gt;, i file di impostazioni auto-convertiti saranno implicitamente salvati nel nuovo formato appena modificherai un&apos;impostazione o lancerai una macchina virtuale, ma &lt;b&gt;nessuna&lt;/b&gt; copia di backup verrà creata in questo caso.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Salva</translation>
-    </message>
-    <message>
-        <source>&amp;Backup</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Backup</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">Annulla</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen</comment>
-        <translation>Schermo intero</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless</comment>
-        <translation>Integrazione</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vuoi davvero ripristinare la macchina virtuale?&lt;/p&gt;&lt;p&gt;Tutti i dati non salvati di tutte le applicazioni in esecuzione saranno persi.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine</comment>
-        <translation>Reset</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached</comment>
-        <translation>Continua</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached</comment>
-        <translation>Torna indietro</translation>
-    </message>
-    <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="obsolete">Impossibile copiare il file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; su &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Disk Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Non ci sono dischi rigidi inutilizzati disponibili per la connessione appena creata.&lt;/p&gt;&lt;p&gt;Premi il bottone &lt;b&gt;Crea&lt;/b&gt; per lanciare l&apos;Assistente &lt;i&gt;Nuovo Disco Virtuale&lt;/i&gt; e creare un nuovo disco rigido, o premi il bottone &lt;b&gt;Seleziona&lt;/b&gt; per aprire il &lt;i&gt;Gestore di Dischi Virtuali&lt;/i&gt; e decidere il da farsi.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">&amp;Crea</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Seleziona</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile abilitare la modalità trasparente per memoria video insufficiente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile abilitare la modalità a pieno schermo per memoria video insufficiente nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Ignora&lt;/b&gt; per passare comunque alla modalità a pieno schermo oppure premere &lt;b&gt;Annulla&lt;/b&gt; per annullare l&apos;operazione.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Hai già installato l&apos;ultima versione di VirtualBox. Ripeti in seguito il controllo di versione.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hai fatto &lt;b&gt;clic con il mouse&lt;/b&gt; sullo schermo della macchina virtuale o premuto il &lt;b&gt;tasto host&lt;/b&gt;. La macchina virtuale &lt;b&gt;acquisirà&lt;/b&gt; il puntatore del mouse (solo se l&apos;integrazione non è supportata dal sistema guest) e la tastiera e li renderà indisponibili alle applicazioni in esecuzione sulla macchina host.&lt;/p&gt;&lt;p&gt;Puoi premere il &lt;b&gt;tasto host&lt;/b&gt; in qualunque momento per &lt;b&gt;liberare&lt;/b&gt; la tastiera e il mouse (se acquisiti) e restituirli alle solite operazioni. Il tasto host assegnato è mostrato nella barra di stato nella parte bassa della finestra della macchina virtuale, accanto all&apos;icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Questa icona, insieme a quella del mouse posizionata accanto, indica lo stato di acquisizione della tastiera e del mouse.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;opzione &lt;b&gt;Acquisizione automatica della tastiera&lt;/b&gt; è attiva. La macchina virtuale &lt;b&gt;acquisirà&lt;/b&gt; automaticamente la tastiera ogni volta che la finestra della MV è attiva e la renderà indisponibile alle applicazioni in esecuzione sulla macchina host: quando la tastiera è acquisita, tutte le combinazioni di tasti (incluse quelle di sistema come Alt-Tab) saranno inviate alla MV.&lt;/p&gt;&lt;p&gt;Puoi premere il &lt;b&gt;tasto host&lt;/b&gt; in qualunque momento per &lt;b&gt;liberare&lt;/b&gt; la tastiera e il mouse (se acquisiti) e restituirli alle solite operazioni. Il tasto host assegnato è mostrato nella barra di stato nella parte bassa della finestra della macchina virtuale, accanto all&apos;icona&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;. Questa icona, insieme a quella del mouse posizionata accanto, indica lo stato di acquisizione della tastiera e del mouse.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La macchina virtuale segnala che il sistema guest supporta &lt;b&gt;integrazione del puntatore del mouse&lt;/b&gt;. Ciò significa che non è necessario &lt;i&gt;acquisire&lt;/i&gt; il puntatore del mouse per poterlo utilizzare nel sistema guest -- tutte le azioni del mouse eseguite quando il puntatore si trova sullo schermo della macchina virtuale sono inviate direttamente al sistema guest. Se è il mouse è stato acquisito, sarà automaticamente liberato.&lt;/p&gt;&lt;p&gt;L&apos;icona del mouse nella barra di stato apparirà come &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp; per informarti che l&apos;integrazione del puntatore del mouse è supportata dal sistema guest ed è attiva.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: alcune applicazioni potrebbero non funzionare correttamente nella modalità di integrazione del puntatore del mouse. Puoi sempre disabilitarla per la sessione corrente (per poi riabilitarla) selezionando l&apos;azione corrispondente nella barra dei menu.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale passerà ora in modalità a &lt;b&gt;schermo intero&lt;/b&gt;. È possibile tornare alla modalità finestra in un qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è definito attualmente come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il menu principale viene nascosto in modalità a schermo intero. È possibile accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale passerà ora portata in modalità &lt;b&gt;trasparente&lt;/b&gt;. È possibile tornare alla modalità finestra in un qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è definito attualmente come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Il menu principale viene nascosto in modalità trasparente. È possibile accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Contents...</source>
-        <translation>&amp;Contenuti...</translation>
-    </message>
-    <message>
-        <source>Show the online help contents</source>
-        <translation>Mostra i contenuti dell&apos;aiuto in linea</translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation>Sito web di &amp;VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Apri il browser al sito web di VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Ripristina tutti gli avvisi</translation>
-    </message>
-    <message>
-        <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>Mostra nuovamente tutti i messaggi e gli avvisi soppressi</translation>
-    </message>
-    <message>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation>R&amp;egistra VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Open VirtualBox registration form</source>
-        <translation>Apri il modulo di registrazione di VirtualBox</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation>Con&amp;trolla aggiornamenti...</translation>
-    </message>
-    <message>
-        <source>Check for a new VirtualBox version</source>
-        <translation>Controlla la presenza di una nuova versione di VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;About VirtualBox...</source>
-        <translation>Inform&amp;azioni su VirtualBox...</translation>
-    </message>
-    <message>
-        <source>Show a dialog with product information</source>
-        <translation>Mostra una finestra con le informazioni sul prodotto</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Una nuova versione di VirtualBox è stata rilasciata! La versione &lt;b&gt;%1&lt;/b&gt; è disponibile presso &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puoi scaricare questa versione da questo collegamento diretto:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sei sicuro di voler rilasciare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Sarà sganciato dalla(e) seguente(i) macchina(e) virtuale(i): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium</comment>
-        <translation>Rilascia</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sei sicuro di voler rimuovere il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; dall&apos;elenco dei supporti conosciuti?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>Nota che questo disco fisso è inaccessibile, perciò l&apos;unità di archiviazione non può essere eliminata adesso.</translation>
-    </message>
-    <message>
-        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>La finestra successiva ti consentirà di scegliere se eliminare l&apos;unità di archiviazione del disco fisso o mantenerla per usi futuri.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nota che l&apos;unità di archiviazione di questo supporto non sarà eliminata e, per questo motivo, sarà possibile aggiungerla nuovamente all&apos;elenco.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium</comment>
-        <translation>Rimuovi</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;unità di archiviazione di tipo disco fisso esiste già nella posizione &lt;b&gt;%1&lt;/b&gt;. Non puoi creare un nuovo disco fisso virtuale in questa posizione poiché potrebbe essere già utilizzata da un altro disco virtuale.&lt;/p&gt;&lt;p&gt;Specifica una posizione diversa.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vuoi eliminare l&apos;unità di archiviazione del disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Se selezioni &lt;b&gt;Elimina&lt;/b&gt;, l&apos;unità di archiviazione specificata sarà eliminata in modo permanente. Questa operazione &lt;b&gt;non può essere annullata&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Se selezioni &lt;b&gt;Mantieni&lt;/b&gt;, il disco fisso sarà rimosso solo dall&apos;elenco dei dischi fissi conosciuti, ma l&apos;unità di archiviazione sarà preservata consentendoti di aggiungere successivamente il disco all&apos;elenco.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage</comment>
-        <translation>Elimina</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage</comment>
-        <translation>Mantieni</translation>
-    </message>
-    <message>
-        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Eliminazione dell&apos;unità di archiviazione del disco fisso &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Non ci sono dischi fissi inutilizzati per il collegamento appena creato.&lt;/p&gt;&lt;p&gt;Premi il pulsante &lt;b&gt;Crea&lt;/b&gt; per iniziare la procedura guidata &lt;i&gt;Nuovo disco virtuale&lt;/i&gt; e crea un nuovo disco fisso, o premi il pulsante &lt;b&gt;Seleziona&lt;/b&gt; per aprire il &lt;i&gt;Gestore supporti virtuali&lt;/i&gt; e scegliere cosa fare.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Creazione non riuscita del disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Collegamento non riuscito del disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Rimozione del collegamento non riuscita per il disco fisso &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; dallo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Impossibile montare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; sulla macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Impossibile smontare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; dalla macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Apertura non riuscita del %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Chiusura non riuscita del %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Impossibile ottenere lo stato di accessibilità del supporto &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Connessione al servizio di registrazione in linea di VirtualBox non riuscita a causa del seguente errore:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile ottenere informazioni sulla nuova versione a causa del seguente errore:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Uno o più dischi fissi virtuali, CD/DVD o floppy non sono la momento accessibili. Ciò significa che non sarai in grado di operare con le macchine virtuali che utilizzano questi supporti fino a quando non ritorneranno accessibili.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Controlla&lt;/b&gt; per aprire la finestra del gestore supporti virtuali e vedere quali supporti non sono accessibili, o premi &lt;b&gt;Ignora&lt;/b&gt; per ignorare questo messaggio.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;I file delle impostazioni di VirtualBox sono stati convertiti automaticamente dal vecchio formato al nuovo richiesto dalla nuova versione di VirtualBox.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; per avviare VirtualBox o premi &lt;b&gt;Altro&lt;/b&gt; se desideri maggiori informazioni su quali file sono stati convertiti e accedere ad azioni aggiuntive.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Esci&lt;/b&gt; per terminare VirtualBox senza salvare i risultati della conversione su disco.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;More</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Altro</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Esci</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;I seguenti file delle impostazioni di VirtualBox sono stati convertiti automaticamente al nuovo formato della versione &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Comunque, i risultati della conversione non sono ancora stati salvati su disco. Premi: &lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; per creare delle copie di sicurezza dei file delle impostazioni nel vecchio formato prima di salvarli nel nuovo formato;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sovrascrivi&lt;/b&gt; per salvare tutti i file convertiti senza creare copie di sicurezza (dopo non sarà possibile utilizzare questi file con una versione più datata di VirtualBox);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;È consigliato selezionare sempre &lt;b&gt;Backup&lt;/b&gt; perché in questo caso sarà possibile tornare alla vecchia versione di VirtualBox (se necessario) senza perdere le impostazioni correnti. Vedi il manuale di VirtualBox per ulteriori informazioni sull&apos;operazione di downgrade.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Esci&lt;/b&gt; per terminare VirtualBox senza salvare il risultato della conversione su disco.&lt;/li&gt;</translation>
-    </message>
-    <message>
-        <source>O&amp;verwrite</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">So&amp;vrascrivi</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si è verificato un errore critico durante il funzionamento della macchina virtuale e l&apos;esecuzione della macchina è stata fermata.&lt;/p&gt;&lt;p&gt;Per ottenere aiuto, vedi la sezione Community su &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; o il contratto di supporto. Fornisci il contenuto del file di log &lt;tt&gt;VBox.log&lt;/tt&gt; e il file immagine &lt;tt&gt;VBox.png&lt;/tt&gt;, che puoi trovare nella cartella &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, così come una descrizione di cosa stavi facendo quando si è verificato l&apos;errore. Nota che puoi anche accedere ai suddetti file selezionando &lt;b&gt;Mostra log&lt;/b&gt; dal menu &lt;b&gt;Macchina&lt;/b&gt; della finestra principale di VirtualBox. &lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; se vuoi spegnere la macchina o &lt;b&gt;Ignora&lt;/b&gt; se desideri lasciarla così com&apos;è per debug. Nota che il debug richiede conoscenza particolare e strumenti, perciò è consigliato premere &lt;b&gt;OK&lt;/b&gt; subito.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">disco fisso</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">immagine CD/DVD</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">immagine floppy</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">Un file con nome &lt;b&gt;%1&lt;/b&gt; esiste già. Sei sicuro di volerlo sostituire?&lt;br /&gt;&lt;br /&gt; Il file esiste in &quot;%2&quot;. Sostituendolo sovrascriverai il suo contenuto.</translation>
-    </message>
-    <message>
-        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>I seguenti file esistono già:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Sei sicuro di volerli sostituire? Sostituendoli sovrascriverai il loro contenuto.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="obsolete">Rimozione del file &lt;b&gt;%1&lt;/b&gt; non riuscita.&lt;br /&gt;&lt;br /&gt;Prova a rimuovere manualmente il file e prova ancora.</translation>
-    </message>
-    <message>
-        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation>Stai eseguendo una versione di VirtualBox che precede il rilascio finale. Questa versione non è appropriata per un uso di produzione.</translation>
-    </message>
-    <message>
-        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="obsolete">Impossibile accedere all&apos;USB del sistema host, poiché né il file system USB (usbfs) né i servizi hal e DBus sono attualmente disponibili. Se desideri utilizzare dispositivi USB nei sistemi guest, devi apportare le dovute modifiche e riavviare VirtualBox.</translation>
-    </message>
-    <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation>Stai cercando di spegnere il guest con il pulsante di alimentazione ACPI. Al momento non è possibile perché il guest non usa il sottosistema ACPI.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;accelerazione hardware VT-x/AMD-V è stata abilitat, ma non è funzionante. Il guest a 64 bit non riuscirà a rilevare una CPU a 64 bit e non potrà avviarsi.&lt;/p&gt;&lt;p&gt;Assicurati di aver abilitato correttamente VT-x/AMD-V nel BIOS del computer host.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Close VM</source>
-        <translation>Chiudi MV</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Continua</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler eliminare l&apos;istantanea selezionata e lo stato salvato?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="obsolete">Scarta</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annulla</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ci sono dischi fissi collegati a porte di un controller aggiuntivo. Se disabiliti il controller aggiuntivo, tutti questi dischi saranno scollegati automaticamente.&lt;/p&gt;&lt;p&gt;Sei sicuro di voler disabilitare il controller aggiuntivo?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ci sono dischi fissi collegati a porte di un controller aggiuntivo. Se modifichi il controller aggiuntivo, tutti questi dischi saranno scollegati automaticamente.&lt;/p&gt;&lt;p&gt;Sei sicuro di voler modificare il controller aggiuntivo?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Change</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Cambia</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vuoi rimuovere l&apos;interfaccia di rete host &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; selezionata?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; Questa interfaccia potrebbe essere utilizzata da una o più schede di rete di questa o di un&apos;altra MV. Dopo la sua rimozione, queste schede non funzioneranno fino alla correzione delle impostazioni con la scelta di un nome diverso per l&apos;interfaccia o con un tipo di collegamento diverso della scheda.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the host-only network interface.</source>
-        <translation>Creazione dell&apos;interfaccia di rete solo-host non riuscita.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;I file delle impostazioni di VirtualBox esistenti saranno convertiti automaticamente dal vecchio formato al nuovo richiesto dalla nuova versione di VirtualBox.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; per avviare subito VirtualBox o premi &lt;b&gt;Esci&lt;/b&gt; se desideri chiudere VirtualBox senza ulteriori azioni.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open appliance.</source>
-        <translation>Apertura applicazione virtuale non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Apertura/Interpretazione dell&apos;applicazione virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Importazione dell&apos;applicazione virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to create appliance.</source>
-        <translation>Creazione applicazione virtuale non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Preparazione dell&apos;esportazione dell&apos;applicazione virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to create an appliance.</source>
-        <translation>Impossibile creare un&apos;applicazione virtuale.</translation>
-    </message>
-    <message>
-        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Esportazione dell&apos;applicazione virtuale &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;eliminazione di questa rete solo host causerà l&apos;eliminazione dell&apos;interfaccia solo host sulla quale questa la rete è basata. Vuoi rimuovere l&apos;interfaccia (rete solo host) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota:&lt;/b&gt; questa interfaccia potrebbe essere utilizzata da una o più schede di rete virtuali assegnate a una delle MV. Dopo la rimozione, queste schede non saranno più utilizzabili fino alla correzione delle impostazioni con la scelta di un nome dell&apos;interfaccia diverso o con un diverso tipo di collegamento della scheda.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>Un file con nome &lt;b&gt;%1&lt;/b&gt; esiste già. Sei sicuro di volerlo sostituire?&lt;br /&gt;&lt;br /&gt;La sostituzione sovrascriverà il suo contenuto.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;accelerazione hardware VT-x/AMD-V è stata abilitata, ma non è funzionante. Alcuni guest (ad es. OS/2 e QNX) richiedono questa funzionalità.&lt;/p&gt;&lt;p&gt;Assicurati di aver abilitato VT-x/AMD-V nel BIOS del computer host.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;indirizzo email o la password specificata non sono validi.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Registrazione di VirtualBox non riuscita.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation>Controllo file non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation>Rimozione file non riuscita.</translation>
-    </message>
-    <message>
-        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation>Sembra che il filesystem USBFS sia montato su /sys/bus/usb/drivers. Consigliamo vivamente di modificare questa situazione, poiché rappresenta un grave errore di configurazione del sistema, che potrebbe causare problemi inattesi ai dispositivi USB.</translation>
-    </message>
-    <message>
-        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation>Stai utilizzando una versione SPERIMENTALE di VirtualBox. Questa versione non è appropriata per un uso in produzione.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sei sicuro di voler ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;? Ciò causerà la perdita dello stato attuale della macchina, che non può essere ripristinato.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>Ripristina</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Eliminando un&apos;istantanea, le informazioni di stato memorizzate nell&apos;istante andranno perse, e i dati su disco sparsi sui diversi file immagine creati da VirtualBox insieme all&apos;istantanea saranno riuniti in un singolo file. Tale processo può risultare lungo, e le informazioni nell&apos;istantanea non possono essere ripristinate.&lt;/p&gt;&lt;/p&gt;Sei sicuro di voler eliminare l&apos;istantanea selezionata &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Elimina</translation>
-    </message>
-    <message>
-        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Ripristino dell&apos;istantanea &lt;b&gt;%1&lt;/b&gt; della macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Eliminazione dell&apos;istantanea &lt;b&gt;%1&lt;/b&gt; della macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>medium</comment>
-        <translation type="obsolete">&amp;Crea</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <comment>medium</comment>
-        <translation type="obsolete">&amp;Seleziona</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Non ci sono supporti inutilizzati disponibile per il collegamento appena creato.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Seleziona&lt;/b&gt; se desideri aprire il &lt;i&gt;Gestore supporti virtuali&lt;/i&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Collegamento del %1 allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Scollegamento del %1 dallo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Impossibile montare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; sulla macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source> Would you like to force mounting of this medium?</source>
-        <translation>Vuoi forzare il montaggio di questo supporto?</translation>
-    </message>
-    <message>
-        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Impossibile smontare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; dalla macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source> Would you like to force unmounting of this medium?</source>
-        <translation>Vuoi forzare la rimozione di questo supporto?</translation>
-    </message>
-    <message>
-        <source>Force Unmount</source>
-        <translation>Forza la rimozione</translation>
-    </message>
-    <message>
-        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation type="obsolete">Espulsione del disco dal lettore virtuale non riuscito. Il lettore potrebbe essere bloccato dal sistema operativo guest. Controlla e prova ancora.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation>E&amp;sci</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;I seguentifile di configurazione di VirtualBox saranno convertiti automaticamente dal vecchio formato al nuovo formato richiesto dalla nuova versione di VirtualBox.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;OK&lt;/b&gt; per avviare subito VirtualBox o premi &lt;b&gt;Esci&lt;/b&gt; se desideri chiudere l&apos;applicazione senza ulteriori azioni.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...</comment>
-        <translation>disco fisso</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>CD/DVD</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...</comment>
-        <translation>immagine CD/DVD</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>floppy</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...</comment>
-        <translation>immagine floppy</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">disco fisso</translation>
-    </message>
-    <message>
-        <source>CD/DVD device</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">dispositivo CD/DVD</translation>
-    </message>
-    <message>
-        <source>floppy device</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">dispositivo floppy</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sei sicuro di voler eliminare il dispositivo CD/DVD-ROM?&lt;/p&gt;&lt;p&gt;Senza non potrai montare alcun CD o immagine ISO o installare le Guest Additions!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation>&amp;Rimuovi</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation>&lt;p&gt;L&apos;accelerazione hardware VT-x/AMD-V non è disponibile sul sistema. Il sistema guest a 64 bit non sarà in grado di rilevare una CPU a 64 bit e non potrà avviarsi.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;accelerazione hardware VT-x/AMD-V non è disponibile sul sistema. Alcuni sistemi guest (ad .es OS/2 e QNX) richiedono questa funzionalità e non potranno avviarsi senza di essa.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;L&apos;eliminazione dell&apos;istantanea %1 richiederà temporaneamente altro spazio su disco. Nel peggiore dei casi la dimensione dell&apos;immagine %2 crescerà di %3, ma sul filesystem ci sono solo %4 liberi.&lt;/p&gt;&lt;p&gt;Finire lo spazio durante l&apos;operazione di fusione potrebbe produrre un danneggiamento dell&apos;immagine e della configurazione della MV, ad es. la perdita della MV e dei relativi dati.&lt;/p&gt;&lt;p&gt;Puoi continuare con l&apos;eliminazione dell&apos;istantanea a tuo rischio.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile passare lo schermo del guest allo schermo dell&apos;host per la mancanza di memoria video nel sistema guest.&lt;/p&gt;&lt;p&gt;Dovresti configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;p&gt;Impossibile passare lo schermo del guest allo schermo dell&apos;host per la mancanza di memoria video nel sistema guest.&lt;/p&gt;&lt;p&gt;Dovresti configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Ignora&lt;/b&gt; per commutare comunque lo schermo o premi &lt;b&gt;Annulla&lt;/b&gt; per annullare l&apos;operazione.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile abilitare la modalità a schermo intero per lo schermo del sistema guest. Hai più schermi virtuali configurati che schermi fisici collegati all&apos;host.&lt;/p&gt;&lt;p&gt;Riduci il numero di schermi virtuali nella configurazione della MV o collega schermi aggiuntivi all&apos;host.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile abilitare la modalità trasparente per lo schermo del sistema guest. Hai più schermi virtuali configurati che schermi fisici collegati all&apos;host.&lt;/p&gt;&lt;p&gt;Riduci il numero di schermi virtuali nella configurazione della MV o collega schermi aggiuntivi all&apos;host.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile trovare il manuale utente di VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vuoi scaricare il file da Internet?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sei sicuro di voler scaricare il manuale utente di VirtualBox da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (dimensione %3 byte)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile scaricare il manuale utente di VirtualBox da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Il manauale utente di VirtualBox è stato scaricato con successo da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; e salvato localmente come &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Il manauale utente di VirtualBox è stato scaricato con successo da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, ma non può essere salvato localmente come &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Scegli un&apos;altra destinazione per il file.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open virtual machine located in %1.</source>
-        <translation>Apertura della macchina virtuale posizionata in %1 non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation>Aggiunta della macchina virtuale &lt;b&gt;%1&lt;/b&gt; posizionata in &lt;i&gt;%2&lt;/i&gt; non riuscita perché è già presente.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stai per rimuovere la macchina virtuale &lt;b&gt;%1&lt;/b&gt; dall&apos;elenco.&lt;/p&gt;&lt;p&gt;Vuoi eliminare anche i file contenenti la macchina virtuale dal disco fisso?&lt;p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stai per rimuovere la macchina virtuale inaccessibile &lt;b&gt;%1&lt;/b&gt; dall&apos;elenco.&lt;/p&gt;&lt;p&gt;Vuoi eliminare anche i file contenenti la macchina virtuale dal disco fisso? Questa operazione rimuoverà anche i file che contengono i dischi fissi virtuali della macchina se non sono utilizzati da un&apos;altra macchina.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete all files</source>
-        <translation>Elimina tutti i file</translation>
-    </message>
-    <message>
-        <source>Remove only</source>
-        <translation>Rimuovi solo</translation>
-    </message>
-    <message>
-        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation>Stai per rimuovere la macchina virtuale inaccessibile &lt;b&gt;%1&lt;/b&gt; dall&apos;elenco. Desideri procedere?</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Rimuovi</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stai per aggiungere un nuovo disco fisso virtuale al controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vuoi creare un file nuovo e vuoto per contenere i dati del disco o selezionarne uno esistente?&lt;p&gt;</translation>
-    </message>
-    <message>
-        <source>Create &amp;new disk</source>
-        <comment>add attachment routine</comment>
-        <translation>Crea un &amp;nuovo disco</translation>
-    </message>
-    <message>
-        <source>&amp;Choose existing disk</source>
-        <comment>add attachment routine</comment>
-        <translation>S&amp;cegli un disco esistente</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stai per aggiungere un nuovo lettore CD/DVD al controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vuoi scegliere un disco CD/DVD virtuale da inserire nel lettore o lasciarlo vuoto per il momento?&lt;p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Choose disk</source>
-        <comment>add attachment routine</comment>
-        <translation>S&amp;cegli il disco</translation>
-    </message>
-    <message>
-        <source>Leave &amp;empty</source>
-        <comment>add attachment routine</comment>
-        <translation>Lascia &amp;vuoto</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stai per aggiungere un nuovo lettore floppy al controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vuoi scegliere un disco floppy virtuale da inserire nel lettore o lasciarlo vuoto per il momento?&lt;p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Scollegamento del disco fisso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) dallo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Scollegamento del dispositivo CD/DVD (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Scollegamento del dispositivo floppy (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Le Guest Additions di VirtualBox non sembrano essere disponibile nella macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale nuovamente se non funzionano correttamente, selezionando &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Macchina&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation>
-            <numerusform>&lt;p&gt;La macchina virtuale &lt;b&gt;%1&lt;/b&gt; è attualmente in uno stato salvato.&lt;/p&gt;&lt;p&gt;Se continui, lo stato di esecuzione della macchina esportata sarà scartato. Nota che la macchina esistentei non viene modificata.&lt;/p&gt;</numerusform>
-            <numerusform>&lt;p&gt;Le macchine virtuali &lt;b&gt;%1&lt;/b&gt; sono attualmente in uno stato salvato.&lt;/p&gt;&lt;p&gt;Se continui, lo stato di esecuzione delle macchine esportate sarà scartato. Nota che le macchine esistenti non sono modificate.&lt;/p&gt;</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation>Aggiornamento delle Guest Additions non riuscito. L&apos;immagine di installazione delle Guest Additions sarà montata per fornire un&apos;installazione manuale.</translation>
-    </message>
-    <message>
-        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Installazione dell&apos;Extension Pack &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Disinstallazione dell&apos;Extension Pack &lt;b&gt;%1&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation type="obsolete">Stai per rimuovere l&apos;Extension Pack &lt;b&gt;%1&lt;/b&gt;. Sei sicuro di volerlo fare?</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>&amp;Rimuovi</translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation>Le regole di inoltro delle porte attuali non sono valide. Nessun valore di porta dell&apos;host o del guest può essere impostato a zero.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ci sono modifiche non salvate nella configurazione di inoltro delle porte.&lt;/p&gt;&lt;p&gt;Se procedi, tali modifiche saranno scartate.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation>Spiacenti, si sono verificati alcuni errori generici.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Collegamento del disco fisso (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Collegamento del dispositivo CD/DVD (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Collegamento del dispositivo floppy (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) allo slot &lt;i&gt;%2&lt;/i&gt; della macchina &lt;b&gt;%3&lt;/b&gt; non riuscito.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nota che l&apos;unità di archiviazione di questo supporto non sarà eliminata e che sarà possibile utilizzare in seguito.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Le Guest Additions di VirtualBox non sembrano essere presenti su questa macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale di nuovo se non funzionano correttamente, selezionando &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La finestra della macchina virtuale passerà ora alla modalità a &lt;b&gt;schermo intero&lt;/b&gt;. Puoi tornare alla modalità a finestra in qualunque momento premendo &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è attualmente definito come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota inoltre che la barra principale dei menu è nascosta nella modalità a schermo intero. Puoi accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La finestra della macchina virtuale passerà ora alla modalità &lt;b&gt;Trasparente&lt;/b&gt;. Puoi tornare alla modalità a finestra in qualunque momento premendo &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è attualmente definito come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota inoltre che la barra principale dei menu è nascosta nella modalità trasparente. Puoi accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La finestra della macchina virtuale passerà ora alla modalità &lt;b&gt;Scalata&lt;/b&gt;. Puoi tornare alla modalità a finestra in qualunque momento premendo &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è attualmente definito come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota inoltre che la barra principale dei menu è nascosta nella modalità scalata. Puoi accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>scale</comment>
-        <translation>Commuta</translation>
-    </message>
-    <message>
-        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Impossibile aprire il pacchetto di estensione &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stai per installare un pacchetto di estensione per VirtualBox. I pacchetti di estensione completano le funzionalità di VirtualBox e possono contenere programmi di sistema potenzialmente pericolosi. Leggi con attenzione la descrizione seguente e procedi solo se hai ottenuto il pacchetto di estensione da una fonte attendibile.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nome:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Descrizione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Install</source>
-        <translation>&amp;Installa</translation>
-    </message>
-    <message>
-        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation>I pacchetti di estensione completano le funzionalità di VirtualBox e possono contenere programmi di sistema potenzialmente pericolosi. Leggi attentamente la descrizione seguente e procedi solo se hai ottenuto il pacchetto di estensione da una fonte attendibile.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Una vecchia versione del pacchetto di estensione è già installata, vuoi aggiornarla? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nome:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nuova versione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versione attuale:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Descrizione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Upgrade</source>
-        <translation>A&amp;ggiorna</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Una nuova versione del pacchetto di estensione è già installata, vuoi tornare a una versione precedente? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nome:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nuova versione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versione attuale:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Descrizione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Downgrade</source>
-        <translation>Prece&amp;dente</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Il pacchetto di estensione è già installato con la stessa versione, vuoi installarlo nuovamente? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nome:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Descrizione:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Reinstall</source>
-        <translation>&amp;Reinstalla</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stai per rimuovere il pacchetto di estensione di VirtualBox &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Sei sicuro di voler continuare?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation>Il pacchetto di estensione &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; è stato installato correttamente.</translation>
-    </message>
-    <message>
-        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="obsolete">L&apos;eliminazione di tutti i file che appartengono alla MV è attualmente disabilitata su Windows/x64 per evitare una chiusura inattesa. Il problema sarà corretto nella prossima versione.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile creare la cartella della macchina &lt;b&gt;%1&lt;/b&gt; nella cartella superiore &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Controlla che tale cartella esista davvero e di avere i permessi per creare la cartella della macchina.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;USB 2.0 è attualmente abilitato per questa macchina virtuale. In ogni caso, ciò richiede che &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; sia installato. Installa l&apos;Extension Pack dal sito di VirtualBox. Una volta installato, sarà possibile ri-abilitare USB 2.0. Nel frattempo sarà disabilitato a meno che annulli le modifiche correnti alle impostazioni.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>La registrazione della macchina virtuale &lt;b&gt;%1&lt;/b&gt; non è riuscita.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Le impostazioni della macchina sono cambiate mentre le stavi modificando. Attualmente, ci sono modifiche non salvate.&lt;/p&gt;&lt;p&gt;Vuoi ricaricare le impostazioni modificate o mantenere le modifiche?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reload settings</source>
-        <translation>Ricarica le impostazioni</translation>
-    </message>
-    <message>
-        <source>Keep changes</source>
-        <translation>Mantieni le modifiche</translation>
-    </message>
-    <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished">Lo stato della macchina virtuale che hai appena modificato è cambiato. Solo le impostazioni che sono modificabili in esecuzione sono salvate quando premi OK. Tutte le modifiche alle altre impostazioni saranno perse.</translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>La clonazione della macchina virtuale &lt;b&gt;%1&lt;/b&gt; non è riuscita.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stai per ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Puoi creare subito un&apos;istantanea dello stato corrente della macchina marcando la casella seguente; se non lo fai, lo stato corrente della macchina sarà perso definitivamente. Desideri procedere?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Create a snapshot of the current machine state</source>
-        <translation>Crea un&apos;istantanea dello stato corrente della macchina</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sei sicuro di voler ripristinare l&apos;istantanea &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Errore durante il cambiamento del tipo di supporto da &lt;b&gt;%1&lt;/b&gt; a &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;USB 2.0 è attualmente abilitato per questa macchina virtuale. In ogni caso, ciò richiede che &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; sia installato.&lt;/p&gt;&lt;p&gt;Installa l&apos;Extension Pack dal sito di VirtualBox. Dopo potrai riabilitare l&apos;USB 2.0. Nel frattempo, sarà disabilitato a meno che tu non annulli le modifiche correnti.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation>Impossibile caricare il servizio Host USB Proxy (VERR_FILE_NOT_FOUND). Il servizio potrebbe non essere installato sul computer host</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>Attualmente VirtualBox non ha il permesso di accedere ai dispositivi USB. Puoi cambiare questa situazione aggiungendo il tuo utente al gruppo &apos;vboxusers&apos;. Vedi il manuale utente per una spiegazione più dettagliata</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation>Attualmente VirtualBox non ha il permesso di accedere ai dispositivi USB. Puoi cambiare questa situazione consentendo al tuo utente di accedere ai file e alla cartella &apos;usbfs&apos;. Vedi il manuale utente per una spiegazione più dettagliata</translation>
-    </message>
-    <message>
-        <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation>Il servizio USB Proxy non è stato ancora portato su questo host</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy service</source>
-        <translation>Impossibile caricare il servizio Host USB Proxy</translation>
-    </message>
-</context>
-<context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
@@ -11574,7 +11687,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Aiuto</translation>
+        <translation type="obsolete">&amp;Aiuto</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -12334,29 +12447,6 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
             <numerusform>Avviso: stai acquisendo un&apos;istantanea di una macchina in esecuzione che ha un&apos;immagine non modificabile collegata. Fino a quando lavorerari con questa istantanea, l&apos;immagine non modificabile non sarà ripristinata per evitare perdite di dati.</numerusform>
             <numerusform>Avviso: stai acquisendo un&apos;istantanea di una macchina in esecuzione che ha %n immagini non modificabili collegate. Fino a quando lavorerari con questa istantanea, le immagini non modificabili non saranno ripristinate per evitare perdite di dati.</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation>Modifica testo</translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation>&amp;Sostituisci...</translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation>Sostituisce il testo attuale con il contenuto di un file specificato.</translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation>Testo (*.txt);;Tutti (*.*)</translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation>Seleziona un file da aprire...</translation>
     </message>
 </context>
 <context>

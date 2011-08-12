@@ -191,6 +191,14 @@
         <source>&amp;Details (%1 of %2)</source>
         <translation>자세한 정보 (%2 중 %1)(&amp;D)</translation>
     </message>
+    <message>
+        <source>Copy all errors to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">복사</translation>
+    </message>
 </context>
 <context>
     <name>QIWidgetValidator</name>
@@ -492,6 +500,146 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation>가상 시스템 %1</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>이름</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation>제품</translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation>제품 URL</translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation>제조사</translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation>제조사 URL</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>버전</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation>설명</translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation>라이선스</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>게스트 운영체제 종류</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>CPU</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation>RAM</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation>IDE 하드 디스크 컨트롤러</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation>SATA 하드 디스크 컨트롤러</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation>SCSI 하드 디스크 컨트롤러</translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation>DVD</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation>플로피 디스크</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation>네트워크 어댑터</translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation>USB 컨트롤러</translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation>사운드 카드</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translation>가상 디스크 이미지</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation>알 수 없는 하드웨어 종류</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation>&lt;b&gt;원래 값:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation>설정</translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation>경고:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation>하드 디스크 컨트롤러 (SAS)</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation>선택하면 모든 설정된 네트워크 카드에 새 고유 MAC 주소를 할당합니다.</translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation>모든 네트워크 카드의 MAC 주소 초기화(&amp;R)</translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation>가상 시스템 가져오는 중...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation>가상 시스템 읽는 중...</translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -500,6 +648,10 @@
     <message>
         <source>Clone</source>
         <translation>복제</translation>
+    </message>
+    <message>
+        <source>Linked Base for %1 and %2</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -514,7 +666,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>선택하면 모든 설정된 네트워크 카드에 새로운 고유 MAC 주소를 할당합니다.</translation>
+        <translation type="obsolete">선택하면 모든 설정된 네트워크 카드에 새로운 고유 MAC 주소를 할당합니다.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
@@ -528,20 +680,24 @@
         <source>%1 Clone</source>
         <translation>%1 복제</translation>
     </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Current machine state</source>
-        <translation>현재 머신 상태</translation>
+        <translation type="obsolete">현재 머신 상태</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation>현재 머신 및 모든 머신 상태</translation>
+        <translation type="obsolete">현재 머신 및 모든 머신 상태</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation>모든 상태</translation>
+        <translation type="obsolete">모든 상태</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
@@ -549,19 +705,70 @@
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation>가상 머신의 복제할 부분을 선택하십시오.</translation>
+        <translation type="obsolete">가상 머신의 복제할 부분을 선택하십시오.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation>&lt;b&gt;현재 머신 상태&lt;/b&gt;를 선택하면 가상 머신의 현재 상태만 복제됩니다.</translation>
+        <translation type="obsolete">&lt;b&gt;현재 머신 상태&lt;/b&gt;를 선택하면 가상 머신의 현재 상태만 복제됩니다.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation>&lt;b&gt;현재 머신 및 모든 자식 상태&lt;/b&gt;를 선택하면 현재 가상 머신의 상태와 모든 자식 상태 스냅샷을 복제합니다.</translation>
+        <translation type="obsolete">&lt;b&gt;현재 머신 및 모든 자식 상태&lt;/b&gt;를 선택하면 현재 가상 머신의 상태와 모든 자식 상태 스냅샷을 복제합니다.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation>&lt;b&gt;모든 상태&lt;/b&gt;를 선택하면 현재 머신 상태와 모든 스냅샷을 복제합니다.</translation>
+        <translation type="obsolete">&lt;b&gt;모든 상태&lt;/b&gt;를 선택하면 현재 머신 상태와 모든 스냅샷을 복제합니다.</translation>
+    </message>
+    <message>
+        <source>Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage3</name>
+    <message>
+        <source>Current machine state</source>
+        <translation type="unfinished">현재 머신 상태</translation>
+    </message>
+    <message>
+        <source>Current machine and all child states</source>
+        <translation type="unfinished">현재 머신 및 모든 머신 상태</translation>
+    </message>
+    <message>
+        <source>All states</source>
+        <translation type="unfinished">모든 상태</translation>
+    </message>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished">복제 설정</translation>
+    </message>
+    <message>
+        <source>Please choose which parts of the virtual machine should be cloned.</source>
+        <translation type="unfinished">가상 머신의 복제할 부분을 선택하십시오.</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
+        <translation type="unfinished">&lt;b&gt;현재 머신 상태&lt;/b&gt;를 선택하면 가상 머신의 현재 상태만 복제됩니다.</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
+        <translation type="unfinished">&lt;b&gt;현재 머신 및 모든 자식 상태&lt;/b&gt;를 선택하면 현재 가상 머신의 상태와 모든 자식 상태 스냅샷을 복제합니다.</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
+        <translation type="unfinished">&lt;b&gt;모든 상태&lt;/b&gt;를 선택하면 현재 머신 상태와 모든 스냅샷을 복제합니다.</translation>
     </message>
 </context>
 <context>
@@ -883,7 +1090,7 @@
     </message>
     <message>
         <source>The download process has been canceled by the user.</source>
-        <translation>사용자가 다운로드 과정을 취소했습니다.</translation>
+        <translation type="obsolete">사용자가 다운로드 과정을 취소했습니다.</translation>
     </message>
 </context>
 <context>
@@ -902,7 +1109,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 다운로드한 파일을 저장할 수 없음.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 다운로드한 파일을 저장할 수 없음.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
@@ -2022,23 +2229,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="obsolete">왼쪽 Shift</translation>
+        <translation type="unfinished">왼쪽 Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="obsolete">오른쪽 Shift</translation>
+        <translation type="unfinished">오른쪽 Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="obsolete">왼쪽 Ctrl</translation>
+        <translation type="unfinished">왼쪽 Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="obsolete">오른쪽 Ctrl</translation>
+        <translation type="unfinished">오른쪽 Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="obsolete">왼쪽 Alt</translation>
+        <translation type="unfinished">왼쪽 Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2430,6 +2637,13 @@ p, li { white-space: pre-wrap; }
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>이 가상 머신의 여러 기능 상태를 표시합니다:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>편집(&amp;E)</translation>
     </message>
 </context>
 <context>
@@ -4073,7 +4287,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>이 가상 머신에 ICH9 칩셋을 사용하기로 선택하였습니다. IO APIC 기능을 활성화하지 않으면 작동하지 않을 것입니다. 확인 단추를 누르면 가상 머신 설정에서 IO APIC를 켤 것입니다.</translation>
+        <translation type="obsolete">이 가상 머신에 ICH9 칩셋을 사용하기로 선택하였습니다. IO APIC 기능을 활성화하지 않으면 작동하지 않을 것입니다. 확인 단추를 누르면 가상 머신 설정에서 IO APIC를 켤 것입니다.</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
@@ -4100,6 +4314,10 @@ p, li { white-space: pre-wrap; }
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
         <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4359,25 +4577,1275 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
+    <name>UIMessageCenter</name>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 정보</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 질문</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 경고</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 오류</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 치명적 오류</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag</comment>
+        <translation>이 메시지를 다시 표시하지 않기</translation>
+    </message>
+    <message>
+        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
+        <translation>&lt;tt&gt;%1&lt;/tt&gt;을(를) 열 수 없습니다. 현재 데스크톱 환경에서 이런 형식의 URL을 올바르게 처리할 수 있는지 확인하십시오.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;COM이나 VirtualBox COM 서버를 초기화할 수 없습니다. VirtualBox 서버가 실행 중이지 않거나 시작하는 데 오류가 발생했을 수도 있습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox COM 개체를 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to set global VirtualBox properties.</source>
+        <translation>전역 VirtualBox 속성을 지정할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to access the USB subsystem.</source>
+        <translation>USB 하위 시스템에 접근할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine.</source>
+        <translation>새 가상 머신을 만드는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>새 가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 만드는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;에 설정을 적용하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 시작하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행을 일시 정지시키는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행을 다시 시작시키는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 상태를 저장하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 스냅샷을 만드는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 정지하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 저장된 상태를 삭제하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="obsolete">가상 머신 &lt;b&gt;%2&lt;/b&gt;의 저장된 상태 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">가상 머신 &lt;b&gt;%1&lt;/b&gt;의 현재 상태를 삭제하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">가상 머신 &lt;b&gt;%1&lt;/b&gt;의 현재 스냅샷과 상태를 삭제하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;이(가) 존재하지 않습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 영구적으로 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 실행 취소할 수 없습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;접근할 수 없는 가상 머신 &lt;b&gt;%1&lt;/b&gt;의 등록을 해제하시겠습니까?&lt;/p&gt;&lt;p&gt;GUI를 사용해서 다시 등록할 수 없습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;의 저장된 상태를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 게스트 OS를 올바르게 종료하지 않은 상태에서 전원을 끄거나 재부팅하는 것과 같습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create a new session.</source>
+        <translation>새 세션을 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 세션을 열 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>호스트 네트워크 인터페이스 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에 USB 장치 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에서 USB 장치 &lt;b&gt;%1&lt;/b&gt;을(를) 제거할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%3&lt;/b&gt;에 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가리키는 공유 폴더 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%3&lt;/b&gt;에서 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가리키는 공유 폴더 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;현재 가상 머신의 비디오 모드에서 게스트 운영체제가 &lt;b&gt;마우스 통합&lt;/b&gt;을 지원하지 않습니다. 게스트 운영체제에서 마우스를 사용하기 위해서 가상 머신 디스플레이나 호스트 키를 눌러서 마우스를 잡아야 합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;현재 가상 머신이 &lt;b&gt;일시 정지&lt;/b&gt;되어 있습니다. 키보드와 마우스 입력을 더 이상 받아들이지 않을 것입니다. 가상 머신을 사용하려면 메뉴 표시줄에서 다시 시작을 선택하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;지역적 제한으로 인해서 VirtualBox를 &lt;i&gt;가상 머신 선택기&lt;/i&gt; 모드로 실행시킬 수 없습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;치명적 오류&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;치명적이지 않은 오류&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;경고&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;오류 ID:&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info</comment>
+        <translation>심각성: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
+        <translation>&lt;qt&gt;가상 머신을 실행하는 중 치명적인 오류가 발생하였습니다! 가상 머신의 전원이 꺼질 것입니다. 다음에 사용하기 위해서 아래에 나타나는 오류 메시지를 복사해 둘 것을 추천합니다:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신을 실행하는 중 오류가 발생하였습니다! 자세한 정보는 아래에 나와 있습니다. 아래에 설명된 오류를 고쳐서 가상 머신의 실행을 다시 시도할 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신을 실행하는 중 다음의 오류 조건에 걸릴 수도 있습니다. 이 메시지를 무시할 수 있지만, 가능하다면 적절한 작업을 통해서 이 오류가 발생하지 않도록 수정하시기 바랍니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation>결과&amp;nbsp;코드: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation>구성 요소: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation>인터페이스: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation>호출자: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation>호출자&amp;nbsp;RC: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;디렉터리 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에서 &lt;b&gt;%1&lt;/b&gt;을(를) 위한 파일을 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;언어를 시스템 기본값으로 초기화합니다. VirtualBox 주 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;언어 파일 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 불러올 수 없습니다.&lt;p&gt;언어를 내장되어 있는 영어로 초기화합니다. VirtualBox 주 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;게스트 운영체제에 설치된 VirtualBox 게스트 확장이 너무 오래되었습니다. 예상하는 버전은 %2이지만 설치된 버전은 %1입니다. 마우스 통합, 게스트 디스플레이 자동 크기 조정 같은 게스트 확장이 필요한 기능들이 작동하지 않을 수 있습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;장치&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 새 버전의 게스트 확장을 설치하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;게스트 운영체제에 설치된 VirtualBox 게스트 확장이 오래되었습니다. 예상하는 버전은 %2이지만 설치된 버전은 %1입니다. 마우스 통합, 게스트 디스플레이 자동 크기 조정 같은 게스트 확장이 필요한 기능들이 예상한 대로 작동하지 않을 수 있습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;장치&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 새 버전의 게스트 확장을 설치하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;게스트 운영체제에 설치된 VirtualBox 게스트 확장의 버전이 높습니다. 예상하는 버전은 %2이지만 설치된 버전은 %1입니다.&lt;/p&gt;새 버전의 게스트 확장을 오래된 버전의 VirtualBox에서 사용하는 것은 지원되지 않습니다. &lt;b&gt;장치&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 현재 버전의 게스트 확장을 설치하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">가상 머신의 스냅샷 폴더를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;(으)로 변경하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;공유 폴더 &lt;b&gt;%1&lt;/b&gt;(&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가리키는)을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에서 삭제할 수 없습니다.&lt;/p&gt;&lt;p&gt;이 공유 폴더를 사용하고 있는 게스트 OS의 모든 프로그램을 종료하시고 다시 시도해 보십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 게스트 확장 CD 이미지 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;이나 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;이 CD 이미지를 인터넷에서 다운로드하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 파일을 다운로드할 수 없습니다.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 파일을 다운로드하시겠습니까? (크기: %3 바이트)&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 게스트 확장 CD 이미지 파일을 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 다운로드했으며 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;에 저장했습니다.&lt;/p&gt;&lt;p&gt;이 CD 이미지를 등록하고 가상 CD/DVD 드라이브에 마운트하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신 창은 &lt;b&gt;%1&amp;nbsp;비트&lt;/b&gt; 모드에 최적화되어 있지만 현재 가상 디스플레이의 색 설정은 &lt;b&gt;%2&amp;nbsp;비트&lt;/b&gt;입니다.&lt;/p&gt;&lt;p&gt;게스트 운영체제의 성능을 향상시키려면 게스트 운영체제의 디스플레이 속성을 여시고 사용 가능한 경우 &lt;b&gt;%3&amp;nbsp;비트&lt;/b&gt; 모드를 선택하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;메모&lt;/b&gt;: OS/2 같은 일부 운영체제는 실제로 32&amp;nbsp;비트 모드에서 작동하지만 24&amp;nbsp;비트 모드를 사용한다고 보고합니다. 만약 이 메시지가 나타나면 다른 색 품질을 선택하거나 게스트 운영체제에서 필요한 색 품질(%4&amp;nbsp;비트)을 지원하지 않으면 이 메시지를 비활성화 시킬 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;새 가상 머신에 하드디스크를 연결하지 않았습니다. 게스트 운영체제가 설치되어 있는 하드디스크나 또 다른 부팅 가능한 미디어를 연결하지 않는 한 머신은 부팅되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 라이선스 파일을 찾을 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation>라이선스 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 열 수 없습니다. 파일 권한을 확인하십시오.</translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;에 ACPI 전원 단추 눌림 이벤트를 보낼 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;축하합니다! VirtualBox 사용자로 등록되었습니다.&lt;/p&gt;&lt;p&gt;등록 양식을 작성해 주셔서 감사합니다!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;다음 VirtualBox 제품을 등록할 수 없었습니다&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;전역 VirtualBox 설정을 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;에 저장할 수 없습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;전역 GUI 설정을 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;에서 불러올 수 없습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;전역 GUI 설정을 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;에 저장할 수 없습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 설정을 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에 저장할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 설정을 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에서 불러올 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation type="obsolete">삭제</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="obsolete">등록 해제</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">사용 안함</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>다운로드</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>마운트</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;현재 호스트 키는 &lt;b&gt;%1&lt;/b&gt;입니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>잡기</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>검사하기</translation>
+    </message>
+    <message>
+        <source>&amp;Backup</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">백업(&amp;B)</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>전환</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>전환</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신을 초기화시키겠습니까?&lt;/p&gt;&lt;p&gt;이 머신을 초기화시키면 가상 머신 안의 저장되지 않은 모든 데이터는 손실됩니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>초기화</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>계속</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>뒤로 가기</translation>
+    </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="obsolete">파일 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;(으)로 복사하는 데 실패했습니다. (%3).</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">만들기(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">선택</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 심리스 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 심리스 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;&lt;p&gt;그래도 전체 화면 모드로 들어가려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르시고, &lt;b&gt;취소&lt;/b&gt; 단추를 누르면 작업을 취소합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation>최신 버전의 VirtualBox를 사용하고 있습니다. 나중에 다시 확인하십시오.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신 안에서 &lt;b&gt;마우스를 클릭했거나 호스트 키를 눌렀습니다&lt;/b&gt;. 이 동작을 실행하면 게스트 확장에서 마우스 통합을 지원하지 않는 경우 가상 머신에서 호스트 마우스 포인터와 키보드를 &lt;b&gt;잡게&lt;/b&gt; 됩니다. 키보드가 잡혀 있으면 호스트에서 실행 중인 프로그램으로 키보드 입력이 전달되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 키&lt;/b&gt;를 눌러서 키보드와 마우스를 &lt;b&gt;잡지 않도록&lt;/b&gt; 할 수 있습니다. 현재 할당되어 있는 호스트 키는 가상 머신 창의 상태 표시줄에서&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; 아이콘 옆에 표시되어 있습니다.  마우스 아이콘 근처에 있는 이 아이콘은 현재 키보드와 마우스가 잡힌 상태를 표시합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;현재 &lt;b&gt;자동으로 키보드 잡기&lt;/b&gt; 옵션이 켜져 있습니다. 가상 머신 창이 활성화되어 있을 때 자동으로 키보드를 &lt;b&gt;잡게 되며&lt;/b&gt; 호스트에서 실행 중인 프로그램으로 전달되지 않을 것입니다. 키보드가 잡혀 있을 경우에는 Alt-Tab 같은 시스템 동작을 비롯한 모든 키보드 입력이 가상 머신으로 전달됩니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 키&lt;/b&gt;를 눌러서 키보드가  &lt;b&gt;잡힌 상태를 해제&lt;/b&gt;할 수 있으며 정상적인 작동을 할 수 있도록 합니다. 현재 할당된 호스트 키는 가상 머신 창 아래쪽의 상태 표시줄의&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;아이콘 옆에 나타나 있습니다. 마우스 아이콘 근처에 있는 이 아이콘은 현재 키보드와 마우스가 잡힌 상태를 표시합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;현재 가상 머신의 게스트 운영체제에서 &lt;b&gt;마우스 통합&lt;/b&gt;을 지원합니다. 게스트 운영체제에서 마우스를 사용하기 위해서 포인터를 &lt;i&gt;잡을&lt;/i&gt; 필요가 없습니다. 가상 머신 디스플레이 위에서 발생하는 모든 마우스 동작은 게스트 운영체제로 전달됩니다.  만약 마우스 포인터가 잡혀 있다면 자동으로 잡힌 상태가 해제됩니다.&lt;/p&gt;&lt;p&gt;상태 표시줄에 &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;과 같은 아이콘이 표시되어 마우스 통합을 게스트 운영체제에서 사용할 수 있고 현재 사용 중임을 나타냅니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;메모&lt;/b&gt;: 몇몇 프로그램들은 마우스 통합 모드에서 작동하지 않을 수 있습니다. 메뉴 표시줄의 항목을 선택해서 마우스 통합을 끄거나 다시 켤 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;가상 머신을 &lt;b&gt;전체 화면&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;전체 화면 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;가상 머신을 &lt;b&gt;심리스&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;심리스 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation>내용(&amp;C)...</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation>온라인 도움말의 내용을 표시합니다</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation>VirtualBox 웹 사이트(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation>웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation>모든 경고 초기화(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation>모든 경고 메시지를 다시 보이도록 설정합니다</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation>VirtualBox 등록(&amp;E)...</translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation>VirtualBox 등록 대화 상자를 엽니다</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation>업데이트 찾기(&amp;H)...</translation>
+    </message>
+    <message>
+        <source>Check for a new VirtualBox version</source>
+        <translation>새 VirtualBox 버전을 찾습니다</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation>VirtualBox 정보(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation>제품 정보 대화상자를 표시합니다</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;의 연결을 해제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 다음 가상 머신에서의 연결을 끊습니다: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation>연결 해제</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;미디어 목록에서 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <translation>이 하드디스크에 접근할 수 없기 때문에 저장소 유닛을 삭제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation>다음 대화 상자에서 저장소 유닛을 같이 삭제하거나 나중에 사용하기 위해서 삭제하지 않을지 여부를 선택할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;이 미디어의 저장소 유닛은 삭제되지 않을 것이며 다음에 다시 사용할 때 추가할 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;하드 디스크 저장소 유닛 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 존재합니다. 다른 가상 하드디스크가 이 저장소 유닛을 사용하고 있으므로 새 가상 하드디스크를 여기에 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;다른 위치를 지정하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 저장소 유닛을 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;삭제&lt;/b&gt;를 선택하면 선택한 저장소 유닛도 같이 삭제됩니다. 이 작업은 &lt;b&gt;실행 취소할 수 없습니다.&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;유지&lt;/b&gt;를 선택하면 하드디스크 목록에서만 삭제되며 저장소 유닛은 삭제되지 않으므로 다음에 하드디스크를 다시 추가할 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation>유지</translation>
+    </message>
+    <message>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>하드디스크 &lt;b&gt;%1&lt;/b&gt;의 저장소 유닛을 삭제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;새로 연결할 수 있는 하드디스크가 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;만들기&lt;/b&gt; 단추를 누르면 새 하드디스크를 만들 수 있는 &lt;i&gt;새 가상 디스크&lt;/i&gt; 마법사를 열 수 있으며, &lt;b&gt;선택&lt;/b&gt; 단추를 누르면 &lt;i&gt;가상 미디어 관리자&lt;/i&gt;를 열어서 할 수 있는 일을 선택할 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation>하드디스크 저장소 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 &lt;i&gt;%2&lt;/i&gt; 슬롯에 연결할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 &lt;i&gt;%2&lt;/i&gt; 슬롯에서 연결 해제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에 마운트하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에서 마운트 해제하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 여는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 닫는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>미디어 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 접근성을 검사하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;다음 이유로 VirtualBox 온라인 등록 서비스에 연결할 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 새 버전이 출시되었습니다! &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; 웹 사이트에 새 버전 &lt;b&gt;%1&lt;/b&gt;이(가) 올라와 있습니다.&lt;/p&gt;&lt;p&gt;이 링크를 사용해서 새 버전을 다운로드하십시오:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;다음 오류로 인하여 새 버전 정보를 찾을 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;하나 이상의 등록된 가상 하드디스크나, CD/DVD 또는 플로피 미디어에 접근할 수 없습니다. 접근할 수 있게 될 때까지 이들 미디어를 사용하는 가상 머신을 작동할 수 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;검사하기&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자를 연 다음 어떤 미디어에 접근할 수 없는가 확인하거나, &lt;b&gt;무시&lt;/b&gt; 단추를 눌러서 이 메시지를 무시할 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;존재하는 VirtualBox 설정 파일이 새로운 버전의 형식으로 변환될 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;확인&lt;/b&gt; 단추를 누르면 설정 파일을 변환하면서 VirtualBox를 시작하며 &lt;b&gt;더 보기&lt;/b&gt; 단추를 누르면 어떤 파일이 변환되며 어떤 추가 동작을 진행하는지 알 수 있습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;종료&lt;/b&gt; 단추를 누르면 VirtualBox 설정 파일을 변환하지 않고 종료합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;More</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">더 보기(&amp;M)</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">종료(&amp;X)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;다음 VirtualBox 설정 파일들은 새 설정 파일 형식 버전 &lt;b&gt;%1&lt;/b&gt;(으)로 자동으로 변환되었습니다.&lt;/p&gt;&lt;p&gt;그러나 변환 결과가 아직 디스크에 저장되지 않았습니다.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;백업&lt;/b&gt; 단추를 누르면 변환하기 전 파일을 백업해 둡니다.&lt;/li&gt;&lt;li&gt;&lt;b&gt;덮어쓰기&lt;/b&gt; 단추를 누르면 백업 파일을 만들지 않고 변환된 파일을 덮어씁니다. 나중에 과거 버전의 VirtualBox에서 이 설정 파일을 사용할 수 없습니다. &lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;이전 버전의 VirtualBox로 돌아갈 때를 대비해서 현재 설정을 보존할 수 있는 &lt;b&gt;백업&lt;/b&gt; 단추를 누르는 것을 추천합니다. 다운그레이딩에 대해서는 VirtualBox 설명서를 참고하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
+        <translation type="obsolete">&lt;li&gt;&lt;b&gt;끝내기&lt;/b&gt; 단추를 누르면 변환된 파일을 디스크에 저장하지 않고 VirtualBox를 종료합니다.&lt;/li&gt;</translation>
+    </message>
+    <message>
+        <source>O&amp;verwrite</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">덮어쓰기(&amp;V)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신을 실행하는 중 치명적 오류가 발생하였고 가상 머신의 실행이 중단되었습니다.&lt;/p&gt;&lt;p&gt;도움말을 보시려면 &lt;a href=&quot;http://www.virtualbox.org&quot;&gt;http://www.virtualbox.org&lt;/a&gt; 사이트의 커뮤니티 섹션을 참조하거나 지원 업체에 연락하십시오. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디렉터리에 있는 로그 파일 &lt;tt&gt;VBox.log&lt;/tt&gt;와 이미지 파일 &lt;tt&gt;VBox.png&lt;/tt&gt;의 내용도 같이 알려 주십시오. 이 파일의 내용은 오류가 발생했을 때 무엇을 하고 있었는지 알려 줍니다. 위 파일들은 주 VirtualBox 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;로그 보기&lt;/b&gt; 항목에서도 볼 수 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 전원을 끄려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르거나, 디버깅 목적으로 계속 실행되게 하려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르십시오. 지금 당장 디버그하지 않으시려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르시기를 권장합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">하드디스크</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">CD/DVD 이미지</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">플로피 이미지</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
+        <translation type="obsolete">파일 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 있습니다. 새 파일로 덮어쓰시겠습니까?&lt;br /&gt;&lt;br /&gt;파일이 이미 &quot;%2&quot;에 존재합니다. 파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
+    </message>
+    <message>
+        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
+        <translation>다음 파일이 이미 존재합니다:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;새 파일로 덮어쓰시겠습니까? 파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
+        <translation type="obsolete">파일 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하는 데 실패했습니다.&lt;br /&gt;&lt;br /&gt;파일을 수동으로 삭제한 다음 다시 시도해 보십시오.</translation>
+    </message>
+    <message>
+        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
+        <translation>VirtualBox의 개발 버전을 사용하고 있습니다. 이 버전은 안정적이지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
+        <translation type="obsolete">호스트 시스템의 USB에 접근할 수 없습니다. 게스트 시스템에서 USB를 사용하려면 USB 파일 시스템(usbfs), D-Bus/HAL 서비스 둘 중 하나를 활성화한 다음 VirtualBox를 다시 시작하십시오.</translation>
+    </message>
+    <message>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
+        <translation>게스트 시스템을 ACPI를 통해서 종료하려고 하고 있습니다. 게스트 운영 체제에서 ACPI를 사용하지 않으므로 작동하지 않을 것입니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V 하드웨어 가속 기능이 활성화되었지만, 현재 작동하지 않습니다. 64비트 게스트 운영체제에서 64비트 CPU를 인식할 수 없어서 부팅할 수 없습니다.&lt;/p&gt;&lt;p&gt;컴퓨터 바이오스에서 VT-x/AMD-V를 활성화했는지 확인해 보십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation>가상 머신 닫기</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>계속</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;선택한 스냅샷과 저장된 상태를 삭제하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="obsolete">삭제</translation>
+    </message>
     <message>
         <source>Cancel</source>
         <translation>취소</translation>
     </message>
     <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;추가 컨트롤러의 포트에 연결된 하드 디스크가 있습니다. 추가 컨트롤러를 비활성화시키면 이 컨트롤러에 연결된 모든 하드 디스크의 연결이 해제됩니다.&lt;/p&gt;&lt;p&gt;추가 컨트롤러를 비활성화시키시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;추가 컨트롤러의 포트에 연결된 하드 디스크가 있습니다. 추가 컨트롤러를 바꾸면 이 컨트롤러에 연결된 모든 하드 디스크의 연결이 해제됩니다.&lt;/p&gt;&lt;p&gt;추가 컨트롤러를 바꾸시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">바꾸기</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;선택한 호스트 네트워크 인터페이스 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를) 삭제하시겠습니까?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;주의:&lt;/b&gt; 이 가상 머신 또는 다른 가상 머신의 하나 이상의 네트워크 어댑터에서 이 인터페이스를 사용할 수도 있습니다. 인터페이스를 삭제하면 이 인터페이스를 사용하는 가상 머신의 네트워크 어댑터 설정을 수정하여 다른 인터페이스 이름이나 다른 어댑터 종류를 선택하지 않는 한 인터페이스를 사용했던 어댑터들은 작동하지 않을 것입니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the host-only network interface.</source>
+        <translation>호스트 전용 네트워크 인터페이스를 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;기존 VirtualBox 설정 파일이 예전 형식에서 새 형식으로 변환될 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;확인&lt;/b&gt; 단추를 누르면 변환 작업을 시작하며, &lt;b&gt;종료&lt;/b&gt; 단추를 누르면 변환하지 않고 VirtualBox를 종료합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open appliance.</source>
+        <translation>가상 시스템을 열 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 열거나 처리할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 가져올 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to create appliance.</source>
+        <translation>가상 시스템을 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 내보내는 준비를 할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to create an appliance.</source>
+        <translation>가상 시스템을 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 내보낼 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;이 호스트 전용 네트워크를 삭제하면, 이 네트워크가 사용하는 호스트 전용 인터페이스를 삭제합니다. 호스트 전용 네트워크 인터페이스 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;메모:&lt;/b&gt; 하나 이상의 다른 가상 머신에서 이 인터페이스를 사용하고 있을 수도 있습니다. 다른 어댑터를 연결하거나, 새 인터페이스 이름을 지정하지 않는 한 이 어댑터를 다른 가상 머신에서 사용할 수 없습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation>파일 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 존재합니다. 새 파일로 덮어쓰시겠습니까?&lt;br /&gt;&lt;br /&gt;파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V 하드웨어 가속 기능이 활성화되었지만, 현재 작동하지 않습니다. 일부 게스트 운영체제(OS/2, QNX 등)에서는 이 기능이 필요합니다.&lt;/p&gt;&lt;p&gt;컴퓨터 바이오스에서 VT-x/AMD-V를 활성화했는지 확인해 보십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;전자 우편 주소나 암호가 잘못되었습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 제품을 등록하는 데 실패했습니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation>파일을 검사하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation>파일을 삭제하는 데 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation>/sys/bus/usb/drivers에 USBFS 파일 시스템이 마운트되어 있는 것 같습니다. 현재 설정은 잘못되어 있으며, 가상 머신에서 USB 장치가 생각하지 못한 방식으로 작동하지 않을 수도 있기 때문에 설정을 바꾸는 것을 추천합니다.</translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation>VirtualBox의 개발 버전을 사용하고 있습니다. 이 버전은 안정적이지 않습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;(으)로 되돌리시겠습니까? 현재 가상 머신 상태가 삭제되며, 복구할 수 없습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>복원</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;스냅샷을 삭제하면 저장된 정보가 삭제되며, VirtualBox에서 나눠서 저장한 디스크 데이터가 한 파일로 합쳐집니다. 이 작업은 시간이 걸릴 수 있으며 삭제된 스냅샷에 저장된 정보는 복구할 수 없습니다.&lt;/p&gt;&lt;p&gt;선택한 스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;의 스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;의 스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;새로 만든 연결에 사용할 미디어가 없습니다.&lt;/p&gt;&lt;p&gt;&lt;p&gt;&lt;b&gt;만들기&lt;/b&gt; 단추를 눌러서 &lt;i&gt;새 가상 디스크&lt;/i&gt; 마법사를 실행시켜 새 미디어를 만들거나, &lt;b&gt;선택&lt;/b&gt; 단추를 눌러서 &lt;i&gt;가상 미디어 관리자&lt;/i&gt;를 열 수도 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium</comment>
+        <translation type="obsolete">만들기(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="obsolete">선택(&amp;S)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;새로 만든 연결에 사용할 미디어가 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;선택&lt;/b&gt; 단추를 눌러서 &lt;i&gt;가상 미디어 관리자&lt;/i&gt;를 열 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 %1을(를) 연결할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 %1의 연결을 해제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에 마운트할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation> 이 미디어를 강제로 마운트하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에서 마운트 해제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation> 이 미디어를 강제로 마운트 해제하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation>강제 마운트 해제</translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation type="obsolete">가상 드라이브에서 디스크를 꺼낼 수 없습니다. 게스트 운영체제에서 잠갔을 수도 있습니다. 확인한 다음 다시 시도하십시오.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;에는 CD/DVD-ROM 드라이브가 없기 때문에 VirtualBox 게스트 확장 CD 이미지를 마운트할 수 없습니다. 가상 머신 설정 대화상자에서 드라이브를 추가해 주십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation>종료(&amp;X)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;기존 VirtualBox 설정 파일이 예전 형식에서 새 형식으로 변환될 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;확인&lt;/b&gt; 단추를 누르면 변환 작업을 시작하며, &lt;b&gt;종료&lt;/b&gt; 단추를 누르면 변환하지 않고 VirtualBox를 종료합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation>하드디스크</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>CD/DVD</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation>CD/DVD 이미지</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>플로피</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation>플로피 이미지</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">하드디스크</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">CD/DVD 장치</translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">플로피 장치</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;이 CD/DVD-ROM 장치를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;CD나 ISO 이미지를 마운트할 수도, 게스트 확장을 설치할 수도 없습니다!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation>삭제(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation>&lt;p&gt;시스템에서 VT-x/AMD-V 하드웨어 가속을 사용할 수 없습니다. 64비트 게스트가 64비트 CPU를 인식할 수 없으며 부팅할 수 없을 것입니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;시스템에서 VT-x/AMD-V 하드웨어 가속을 사용할 수 없습니다. OS/2나 QNX 같은 일부 게스트 운영체제는 이 기능이 필요하며, 사용하지 않으면 부팅할 수 없습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;스냅샷 %1을(를) 삭제하려면 임시로 디스크 공간이 더 필요합니다. 최악의 경우 현재 이미지 크기 %2가 %3로 증가할 수 있지만, 현재 파일시스템에는 %4만 남아 있습니다.&lt;/p&gt;&lt;p&gt;이미지 병합 과정에서 디스크 공간이 부족하면 이미지와 가상 머신 설정이 꼬일 수 있으며, 가상 머신과 데이터를 잃어버릴 수 있습니다.&lt;/p&gt;&lt;p&gt;위험 사항에 대해서 잘 알고 있다면 스냅샷을 삭제할 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 게스트 화면을 이 호스트 화면으로 바꿀 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 게스트 화면을 이 호스트 화면으로 바꿀 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;&lt;p&gt;그래도 화면을 전환하려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르시고, &lt;b&gt;취소&lt;/b&gt; 단추를 누르면 작업을 취소합니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;호스트에 연결된 화면보다 가상 화면이 더 많아서 전체 화면 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 화면 개수를 줄이거나, 호스트에 더 많은 모니터를 연결하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;호스트에 연결된 화면보다 가상 화면이 더 많아서 심리스 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 화면 개수를 줄이거나, 호스트에 더 많은 모니터를 연결하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 사용자 설명서 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;인터넷에서 다운로드하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서를 다운로드하시겠습니까? (크기: %3 바이트)&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서를 다운로드할 수 없습니다.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서를 다운로드하였고, 로컬 디스크의 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;에 저장하였습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서를 다운로드하였으나 로컬 디스크의 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;에 저장할 수 없습니다.&lt;/p&gt;&lt;p&gt;다른 위치를 선택하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation>%1에 있는 가상 머신을 열 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation>이미 존재하기 때문에 &lt;i&gt;%2&lt;/i&gt;에 있는 가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 머신 목록에서 삭제하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신 설정을 포함하는 파일도 같이 삭제하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 머신 목록에서 삭제하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신 설정을 포함하는 파일도 같이 삭제하시겠습니까? 다른 머신에서 사용하지 않는 가상 머신의 하드 디스크도 같이 삭제할 것입니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete all files</source>
+        <translation>모든 파일 지우기</translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation>지우기만 하기</translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation>접근할 수 없는 가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 목록에서 지우려고 하고 있습니다. 계속 진행하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 하드 디스크를 컨트롤러 &lt;b&gt;%1&lt;/b&gt;에 추가하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;디스크 내용을 포함할 새 파일을 만들거나, 기존 파일 중에서 선택하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation>새 디스크 만들기(&amp;N)</translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation>기존 디스크 선택하기(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;CD/DVD 드라이브를 컨트롤러 &lt;b&gt;%1&lt;/b&gt;에 추가하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;드라이브에 삽입할 가상 CD/DVD 디스크를 선택하거나, 나중에 추가하기 위해서 비워 두시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation>디스크 선택하기(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation>비워 두기(&amp;E)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;플로피 드라이브를 컨트롤러 &lt;b&gt;%1&lt;/b&gt;에 추가하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;드라이브에 삽입할 가상 플로피 디스크를 선택하거나, 나중에 추가하기 위해서 비워 두시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>CD/DVD 장치 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>플로피 장치 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;현재 가상 머신에서 VirtualBox 게스트 확장을 사용할 수 없는 것 같으며, 공유 폴더를 사용하려면 이 기능이 필요합니다. 가상 머신에서 공유 폴더를 사용하려면, 게스트 확장이 설치되어 있지 않으면 우선 설치하시고, 작동하지 않으면 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 다시 설치하십시오. 게스트 확장이 설치되어 있으나 가상 머신이 시작하는 중일 때에는 공유 폴더 기능이 작동하지 않습니다.&lt;/p&gt;</translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation>
+            <numerusform>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행 상태가 저장되어 있습니다.&lt;/p&gt;&lt;p&gt;머신을 내보내더라도 저장된 실행 상태는 내보내지 않을 것입니다. 기존 머신의 실행 상태는 변경되지 않습니다.&lt;/p&gt;</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation>게스트 확장을 업데이트할 수 없습니다. 게스트 확장 이미지가 마운트될 것이며, 여기에서 수동으로 설치하십시오.</translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 설치할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="obsolete">확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하려고 하고 있습니다. 계속 진행하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>삭제(&amp;R)</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation>현재 포트 포워딩 규칙이 올바르지 않습니다. 호스트나 게스트의 포트 번호가 0으로 설정될 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;포트 포워딩 규칙에 저장되지 않은 설정값이 있습니다.&lt;/p&gt;&lt;p&gt;계속 진행하면 저장하지 않은 설정은 무시됩니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation>일반 오류가 발생하였습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>CD/DVD 장치 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>플로피 장치 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;이 미디어의 저장소 유닛은 삭제되지 않을 것이며 다음에 다시 사용할 때 추가할 수 있습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;현재 가상 머신에서 VirtualBox 게스트 확장을 사용할 수 없는 것 같으며, 공유 폴더를 사용하려면 이 기능이 필요합니다. 가상 머신에서 공유 폴더를 사용하려면, 게스트 확장이 설치되어 있지 않으면 우선 설치하시고, 작동하지 않으면 &lt;b&gt;장치&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 다시 설치하십시오. 게스트 확장이 설치되어 있으나 가상 머신이 시작하는 중일 때에는 공유 폴더 기능이 작동하지 않습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신을 &lt;b&gt;전체 화면&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;전체 화면 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신을 &lt;b&gt;심리스&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;심리스 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;가상 머신을 &lt;b&gt;스케일&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;스케일 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation>전환</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 열 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 확장 기능 패키지를 설치하려고 합니다. 확장 기능 패키지는 VirtualBox의 기능을 보완하며, 시스템에 영향을 줄 수 있는 소프트웨어를 포함할 수도 있습니다. 아래쪽에 있는 설명을 읽어 보시고, 확장 기능 패키지를 믿을 수 있는 곳에서 다운로드한 경우에만 설치하십시오.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;이름:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;설명:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation>설치(&amp;I)</translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation> 확장 기능 패키지는 VirtualBox의 기능을 보완하며, 시스템에 영향을 줄 수 있는 소프트웨어를 포함할 수도 있습니다. 아래쪽에 있는 설명을 읽어 보시고, 확장 기능 패키지를 믿을 수 있는 곳에서 다운로드한 경우에만 설치하십시오.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;확장 기능 패키지의 예전 버전이 설치되어 있습니다. 업그레이드하시겠습니까?.&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;이름:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;새 버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;현재 버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;설명:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation>업그레이드(&amp;U)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;확장 기능 패키지의 새 버전이 설치되어 있습니다. 다운그레이드하시겠습니까?.&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;이름:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;새 버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;현재 버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;설명:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation>다운그레이드(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;확장 기능 패키지의 같은 버전이 설치되어 있습니다. 다시 설치하시겠습니까?.&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;이름:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;설명:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation>다시 설치(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 제거하려고 합니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation>확장 기능 패키지 &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;이(가) 설치되었습니다.</translation>
+    </message>
+    <message>
+        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
+        <translation type="obsolete">충돌을 방지하기 위하여 64비트 윈도에서는 가상 머신에 속해 있는 모든 파일을 삭제할 수 없습니다. 곧 수정하겠습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;부모 폴더 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 안에 머신 폴더 &lt;b&gt;%1&lt;/b&gt;을(를) 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;부모 폴더가 존재하는지 여부 및 머신 폴더를 만들 권한이 있는지 여부를 확인하십시오.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;현재 가상 머신에서 USB 2.0을 사용할 수 있으나, &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 설치해야 합니다.&lt;/p&gt;&lt;p&gt;VirtualBox 다운로드 사이트에서 확장 기능 패키지를 설치하면 USB 2.0을 사용할 수 있습니다. 이대로 변경 사항을 저장하면 확장 기능 패키지를 설치하기 전까지 USB 2.0을 사용할 수 없습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 등록할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;머신 설정을 편집하는 중 변경되었습니다. 현재 저장되지 않은 변경 사항이 있습니다.&lt;/p&gt;&lt;p&gt;변경 사항을 다시 불러오거나, 현재 저장되지 않은 변경 사항을 유지하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation>설정 새로 고침</translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation>변경 사항 유지</translation>
+    </message>
+    <message>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished">편집 중인 가상 머신의 상태가 변경되었습니다. 확인 단추를 누르면 실행 중 변경 가능한 설정만 저장되며 모든 다른 설정은 저장되지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 복제하는 데 실패하였습니다.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원하려고 합니다.&lt;/p&gt;&lt;p&gt;아래 상자를 선택하면 가상 머신의 현재 상태를 스냅샷으로 저장할 수 있습니다. 현재 상태를 저장하지 않으면 복원할 수 없습니다. 계속 진행하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation>현재 가상 머신 상태 스냅샷 만들기</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;미디어 종류를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;b&gt;%2&lt;/b&gt;(으)로 변경하는 데 실패하였습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;현재 가상 머신에서 USB 2.0을 사용할 수 있으나, &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 설치해야 합니다.&lt;/p&gt;&lt;p&gt;VirtualBox 다운로드 사이트에서 확장 기능 패키지를 설치하면 USB 2.0을 사용할 수 있습니다. 이대로 변경 사항을 저장하면 확장 기능 패키지를 설치하기 전까지 USB 2.0을 사용할 수 없습니다.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation>호스트 USB 프록시 서비스를 불러올 수 없습니다(VERR_FILE_NOT_FOUND). 호스트 컴퓨터에 서비스가 설치되어 있지 않을 수도 있습니다</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox에서 USB 장치에 접근할 수 없습니다. 현재 사용자를 &apos;vboxusers&apos; 그룹에 추가하십시오. 더 자세한 설명은 사용자 설명서를 참고하십시오</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox에서 USB 장치에 접근할 수 없습니다. 현재 사용자가 &apos;usbfs&apos; 폴더 및 파일에 접근할 수 있도록 하십시오. 더 자세한 설명은 사용자 설명서를 참고하십시오</translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation>USB 프록시 서비스를 현재 호스트에서 사용할 수 없습니다</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation>호스트 USB 프록시 서비스를 불러올 수 없음</translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에 다운로드한 파일을 저장할 수 없음.&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">취소</translation>
+    </message>
+    <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>VirtualBox 게스트 확장 CD 이미지 다운로드 취소</translation>
+        <translation type="obsolete">VirtualBox 게스트 확장 CD 이미지 다운로드 취소</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 다운로드 중...</translation>
+        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 다운로드 중...</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation>취소</translation>
+        <translation type="obsolete">취소</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -4390,6 +5858,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서 다운로드 중...</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetAdditions</name>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished">VirtualBox 게스트 확장 CD 이미지 다운로드 취소</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 다운로드 중...</translation>
     </message>
 </context>
 <context>
@@ -5271,6 +6750,29 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation>텍스트 편집하기</translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation>바꾸기(&amp;R)...</translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation>현재 텍스트의 내용을 주어진 파일의 내용으로 바꿉니다.</translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation>텍스트 (*.txt);;모든 파일 (*.*)</translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation>열 파일을 선택하십시오...</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -5444,135 +6946,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Cancel</source>
         <translation type="obsolete">취소</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation>가상 시스템 %1</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>이름</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation>제품</translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation>제품 URL</translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation>제조사</translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation>제조사 URL</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation>버전</translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation>설명</translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation>라이선스</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>게스트 운영체제 종류</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation>CPU</translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation>RAM</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation>IDE 하드 디스크 컨트롤러</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation>SATA 하드 디스크 컨트롤러</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation>SCSI 하드 디스크 컨트롤러</translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation>DVD</translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation>플로피 디스크</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation>네트워크 어댑터</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation>USB 컨트롤러</translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation>사운드 카드</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translation>가상 디스크 이미지</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation>알 수 없는 하드웨어 종류</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;원래 값:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation>설정</translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation>경고:</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation>하드 디스크 컨트롤러 (SAS)</translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>선택하면 모든 설정된 네트워크 카드에 새 고유 MAC 주소를 할당합니다.</translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>모든 네트워크 카드의 MAC 주소 초기화(&amp;R)</translation>
     </message>
 </context>
 <context>
@@ -7721,17 +9094,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation>가상 시스템 가져오는 중...</translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation>가상 시스템 읽는 중...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>VirtualBox License</source>
@@ -7744,13 +9106,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>I &amp;Disagree</source>
         <translation>동의하지 않습니다(&amp;D)</translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>편집(&amp;E)</translation>
     </message>
 </context>
 <context>
@@ -8064,1248 +9419,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMessageCenter</name>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 정보</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 질문</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 경고</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 오류</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 치명적 오류</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag</comment>
-        <translation>이 메시지를 다시 표시하지 않기</translation>
-    </message>
-    <message>
-        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>&lt;tt&gt;%1&lt;/tt&gt;을(를) 열 수 없습니다. 현재 데스크톱 환경에서 이런 형식의 URL을 올바르게 처리할 수 있는지 확인하십시오.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;COM이나 VirtualBox COM 서버를 초기화할 수 없습니다. VirtualBox 서버가 실행 중이지 않거나 시작하는 데 오류가 발생했을 수도 있습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox COM 개체를 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to set global VirtualBox properties.</source>
-        <translation>전역 VirtualBox 속성을 지정할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to access the USB subsystem.</source>
-        <translation>USB 하위 시스템에 접근할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation>새 가상 머신을 만드는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>새 가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 만드는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;에 설정을 적용하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 시작하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행을 일시 정지시키는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행을 다시 시작시키는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 상태를 저장하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 스냅샷을 만드는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 정지하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 저장된 상태를 삭제하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="obsolete">가상 머신 &lt;b&gt;%2&lt;/b&gt;의 저장된 상태 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">가상 머신 &lt;b&gt;%1&lt;/b&gt;의 현재 상태를 삭제하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">가상 머신 &lt;b&gt;%1&lt;/b&gt;의 현재 스냅샷과 상태를 삭제하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;이(가) 존재하지 않습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 영구적으로 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 실행 취소할 수 없습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;접근할 수 없는 가상 머신 &lt;b&gt;%1&lt;/b&gt;의 등록을 해제하시겠습니까?&lt;/p&gt;&lt;p&gt;GUI를 사용해서 다시 등록할 수 없습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;의 저장된 상태를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 게스트 OS를 올바르게 종료하지 않은 상태에서 전원을 끄거나 재부팅하는 것과 같습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create a new session.</source>
-        <translation>새 세션을 만들 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 세션을 열 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>호스트 네트워크 인터페이스 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에 USB 장치 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에서 USB 장치 &lt;b&gt;%1&lt;/b&gt;을(를) 제거할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%3&lt;/b&gt;에 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가리키는 공유 폴더 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%3&lt;/b&gt;에서 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가리키는 공유 폴더 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;현재 가상 머신의 비디오 모드에서 게스트 운영체제가 &lt;b&gt;마우스 통합&lt;/b&gt;을 지원하지 않습니다. 게스트 운영체제에서 마우스를 사용하기 위해서 가상 머신 디스플레이나 호스트 키를 눌러서 마우스를 잡아야 합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;현재 가상 머신이 &lt;b&gt;일시 정지&lt;/b&gt;되어 있습니다. 키보드와 마우스 입력을 더 이상 받아들이지 않을 것입니다. 가상 머신을 사용하려면 메뉴 표시줄에서 다시 시작을 선택하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;지역적 제한으로 인해서 VirtualBox를 &lt;i&gt;가상 머신 선택기&lt;/i&gt; 모드로 실행시킬 수 없습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;치명적 오류&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;치명적이지 않은 오류&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;경고&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;오류 ID:&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation>심각성: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;qt&gt;가상 머신을 실행하는 중 치명적인 오류가 발생하였습니다! 가상 머신의 전원이 꺼질 것입니다. 다음에 사용하기 위해서 아래에 나타나는 오류 메시지를 복사해 둘 것을 추천합니다:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신을 실행하는 중 오류가 발생하였습니다! 자세한 정보는 아래에 나와 있습니다. 아래에 설명된 오류를 고쳐서 가상 머신의 실행을 다시 시도할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신을 실행하는 중 다음의 오류 조건에 걸릴 수도 있습니다. 이 메시지를 무시할 수 있지만, 가능하다면 적절한 작업을 통해서 이 오류가 발생하지 않도록 수정하시기 바랍니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation>결과&amp;nbsp;코드: </translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation>구성 요소: </translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation>인터페이스: </translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation>호출자: </translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation>호출자&amp;nbsp;RC: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;디렉터리 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에서 &lt;b&gt;%1&lt;/b&gt;을(를) 위한 파일을 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;언어를 시스템 기본값으로 초기화합니다. VirtualBox 주 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;언어 파일 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 불러올 수 없습니다.&lt;p&gt;언어를 내장되어 있는 영어로 초기화합니다. VirtualBox 주 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;게스트 운영체제에 설치된 VirtualBox 게스트 확장이 너무 오래되었습니다. 예상하는 버전은 %2이지만 설치된 버전은 %1입니다. 마우스 통합, 게스트 디스플레이 자동 크기 조정 같은 게스트 확장이 필요한 기능들이 작동하지 않을 수 있습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;장치&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 새 버전의 게스트 확장을 설치하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;게스트 운영체제에 설치된 VirtualBox 게스트 확장이 오래되었습니다. 예상하는 버전은 %2이지만 설치된 버전은 %1입니다. 마우스 통합, 게스트 디스플레이 자동 크기 조정 같은 게스트 확장이 필요한 기능들이 예상한 대로 작동하지 않을 수 있습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;장치&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 새 버전의 게스트 확장을 설치하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;게스트 운영체제에 설치된 VirtualBox 게스트 확장의 버전이 높습니다. 예상하는 버전은 %2이지만 설치된 버전은 %1입니다.&lt;/p&gt;새 버전의 게스트 확장을 오래된 버전의 VirtualBox에서 사용하는 것은 지원되지 않습니다. &lt;b&gt;장치&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 현재 버전의 게스트 확장을 설치하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">가상 머신의 스냅샷 폴더를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;(으)로 변경하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;공유 폴더 &lt;b&gt;%1&lt;/b&gt;(&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가리키는)을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에서 삭제할 수 없습니다.&lt;/p&gt;&lt;p&gt;이 공유 폴더를 사용하고 있는 게스트 OS의 모든 프로그램을 종료하시고 다시 시도해 보십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 게스트 확장 CD 이미지 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;이나 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;이 CD 이미지를 인터넷에서 다운로드하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 파일을 다운로드할 수 없습니다.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 게스트 확장 CD 이미지 파일을 다운로드하시겠습니까? (크기: %3 바이트)&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 게스트 확장 CD 이미지 파일을 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 다운로드했으며 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;에 저장했습니다.&lt;/p&gt;&lt;p&gt;이 CD 이미지를 등록하고 가상 CD/DVD 드라이브에 마운트하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신 창은 &lt;b&gt;%1&amp;nbsp;비트&lt;/b&gt; 모드에 최적화되어 있지만 현재 가상 디스플레이의 색 설정은 &lt;b&gt;%2&amp;nbsp;비트&lt;/b&gt;입니다.&lt;/p&gt;&lt;p&gt;게스트 운영체제의 성능을 향상시키려면 게스트 운영체제의 디스플레이 속성을 여시고 사용 가능한 경우 &lt;b&gt;%3&amp;nbsp;비트&lt;/b&gt; 모드를 선택하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;메모&lt;/b&gt;: OS/2 같은 일부 운영체제는 실제로 32&amp;nbsp;비트 모드에서 작동하지만 24&amp;nbsp;비트 모드를 사용한다고 보고합니다. 만약 이 메시지가 나타나면 다른 색 품질을 선택하거나 게스트 운영체제에서 필요한 색 품질(%4&amp;nbsp;비트)을 지원하지 않으면 이 메시지를 비활성화 시킬 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;새 가상 머신에 하드디스크를 연결하지 않았습니다. 게스트 운영체제가 설치되어 있는 하드디스크나 또 다른 부팅 가능한 미디어를 연결하지 않는 한 머신은 부팅되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;에서 라이선스 파일을 찾을 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>라이선스 파일 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 열 수 없습니다. 파일 권한을 확인하십시오.</translation>
-    </message>
-    <message>
-        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;에 ACPI 전원 단추 눌림 이벤트를 보낼 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;축하합니다! VirtualBox 사용자로 등록되었습니다.&lt;/p&gt;&lt;p&gt;등록 양식을 작성해 주셔서 감사합니다!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;다음 VirtualBox 제품을 등록할 수 없었습니다&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;전역 VirtualBox 설정을 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;에 저장할 수 없습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;전역 GUI 설정을 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;에서 불러올 수 없습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;전역 GUI 설정을 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;에 저장할 수 없습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 설정을 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에 저장할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 설정을 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에서 불러올 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>machine</comment>
-        <translation type="obsolete">삭제</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>machine</comment>
-        <translation type="obsolete">등록 해제</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state</comment>
-        <translation>삭제</translation>
-    </message>
-    <message>
-        <source>Disable</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">사용 안함</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions</comment>
-        <translation>다운로드</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions</comment>
-        <translation>마운트</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;현재 호스트 키는 &lt;b&gt;%1&lt;/b&gt;입니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Capture</source>
-        <comment>do input capture</comment>
-        <translation>잡기</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box</comment>
-        <translation>검사하기</translation>
-    </message>
-    <message>
-        <source>&amp;Backup</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">백업(&amp;B)</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen</comment>
-        <translation>전환</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless</comment>
-        <translation>전환</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신을 초기화시키겠습니까?&lt;/p&gt;&lt;p&gt;이 머신을 초기화시키면 가상 머신 안의 저장되지 않은 모든 데이터는 손실됩니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine</comment>
-        <translation>초기화</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached</comment>
-        <translation>계속</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached</comment>
-        <translation>뒤로 가기</translation>
-    </message>
-    <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="obsolete">파일 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;(으)로 복사하는 데 실패했습니다. (%3).</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">만들기(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">선택</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 심리스 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 심리스 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;&lt;p&gt;그래도 전체 화면 모드로 들어가려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르시고, &lt;b&gt;취소&lt;/b&gt; 단추를 누르면 작업을 취소합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>최신 버전의 VirtualBox를 사용하고 있습니다. 나중에 다시 확인하십시오.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신 안에서 &lt;b&gt;마우스를 클릭했거나 호스트 키를 눌렀습니다&lt;/b&gt;. 이 동작을 실행하면 게스트 확장에서 마우스 통합을 지원하지 않는 경우 가상 머신에서 호스트 마우스 포인터와 키보드를 &lt;b&gt;잡게&lt;/b&gt; 됩니다. 키보드가 잡혀 있으면 호스트에서 실행 중인 프로그램으로 키보드 입력이 전달되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 키&lt;/b&gt;를 눌러서 키보드와 마우스를 &lt;b&gt;잡지 않도록&lt;/b&gt; 할 수 있습니다. 현재 할당되어 있는 호스트 키는 가상 머신 창의 상태 표시줄에서&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; 아이콘 옆에 표시되어 있습니다.  마우스 아이콘 근처에 있는 이 아이콘은 현재 키보드와 마우스가 잡힌 상태를 표시합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;현재 &lt;b&gt;자동으로 키보드 잡기&lt;/b&gt; 옵션이 켜져 있습니다. 가상 머신 창이 활성화되어 있을 때 자동으로 키보드를 &lt;b&gt;잡게 되며&lt;/b&gt; 호스트에서 실행 중인 프로그램으로 전달되지 않을 것입니다. 키보드가 잡혀 있을 경우에는 Alt-Tab 같은 시스템 동작을 비롯한 모든 키보드 입력이 가상 머신으로 전달됩니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 키&lt;/b&gt;를 눌러서 키보드가  &lt;b&gt;잡힌 상태를 해제&lt;/b&gt;할 수 있으며 정상적인 작동을 할 수 있도록 합니다. 현재 할당된 호스트 키는 가상 머신 창 아래쪽의 상태 표시줄의&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;아이콘 옆에 나타나 있습니다. 마우스 아이콘 근처에 있는 이 아이콘은 현재 키보드와 마우스가 잡힌 상태를 표시합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;현재 가상 머신의 게스트 운영체제에서 &lt;b&gt;마우스 통합&lt;/b&gt;을 지원합니다. 게스트 운영체제에서 마우스를 사용하기 위해서 포인터를 &lt;i&gt;잡을&lt;/i&gt; 필요가 없습니다. 가상 머신 디스플레이 위에서 발생하는 모든 마우스 동작은 게스트 운영체제로 전달됩니다.  만약 마우스 포인터가 잡혀 있다면 자동으로 잡힌 상태가 해제됩니다.&lt;/p&gt;&lt;p&gt;상태 표시줄에 &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;과 같은 아이콘이 표시되어 마우스 통합을 게스트 운영체제에서 사용할 수 있고 현재 사용 중임을 나타냅니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;메모&lt;/b&gt;: 몇몇 프로그램들은 마우스 통합 모드에서 작동하지 않을 수 있습니다. 메뉴 표시줄의 항목을 선택해서 마우스 통합을 끄거나 다시 켤 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;가상 머신을 &lt;b&gt;전체 화면&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;전체 화면 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;가상 머신을 &lt;b&gt;심리스&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;심리스 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Contents...</source>
-        <translation>내용(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>Show the online help contents</source>
-        <translation>온라인 도움말의 내용을 표시합니다</translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation>VirtualBox 웹 사이트(&amp;V)...</translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>웹 브라우저를 열고 VirtualBox 제품 웹 사이트를 표시합니다</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation>모든 경고 초기화(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>모든 경고 메시지를 다시 보이도록 설정합니다</translation>
-    </message>
-    <message>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation>VirtualBox 등록(&amp;E)...</translation>
-    </message>
-    <message>
-        <source>Open VirtualBox registration form</source>
-        <translation>VirtualBox 등록 대화 상자를 엽니다</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation>업데이트 찾기(&amp;H)...</translation>
-    </message>
-    <message>
-        <source>Check for a new VirtualBox version</source>
-        <translation>새 VirtualBox 버전을 찾습니다</translation>
-    </message>
-    <message>
-        <source>&amp;About VirtualBox...</source>
-        <translation>VirtualBox 정보(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>Show a dialog with product information</source>
-        <translation>제품 정보 대화상자를 표시합니다</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;의 연결을 해제하시겠습니까?&lt;/p&gt;&lt;p&gt;이 동작은 다음 가상 머신에서의 연결을 끊습니다: &lt;b&gt;%3&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium</comment>
-        <translation>연결 해제</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;미디어 목록에서 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>이 하드디스크에 접근할 수 없기 때문에 저장소 유닛을 삭제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>다음 대화 상자에서 저장소 유닛을 같이 삭제하거나 나중에 사용하기 위해서 삭제하지 않을지 여부를 선택할 수 있습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;이 미디어의 저장소 유닛은 삭제되지 않을 것이며 다음에 다시 사용할 때 추가할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium</comment>
-        <translation>삭제</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;하드 디스크 저장소 유닛 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 존재합니다. 다른 가상 하드디스크가 이 저장소 유닛을 사용하고 있으므로 새 가상 하드디스크를 여기에 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;다른 위치를 지정하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 저장소 유닛을 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;삭제&lt;/b&gt;를 선택하면 선택한 저장소 유닛도 같이 삭제됩니다. 이 작업은 &lt;b&gt;실행 취소할 수 없습니다.&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;유지&lt;/b&gt;를 선택하면 하드디스크 목록에서만 삭제되며 저장소 유닛은 삭제되지 않으므로 다음에 하드디스크를 다시 추가할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage</comment>
-        <translation>삭제</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage</comment>
-        <translation>유지</translation>
-    </message>
-    <message>
-        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>하드디스크 &lt;b&gt;%1&lt;/b&gt;의 저장소 유닛을 삭제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;새로 연결할 수 있는 하드디스크가 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;만들기&lt;/b&gt; 단추를 누르면 새 하드디스크를 만들 수 있는 &lt;i&gt;새 가상 디스크&lt;/i&gt; 마법사를 열 수 있으며, &lt;b&gt;선택&lt;/b&gt; 단추를 누르면 &lt;i&gt;가상 미디어 관리자&lt;/i&gt;를 열어서 할 수 있는 일을 선택할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>하드디스크 저장소 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 만들 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 &lt;i&gt;%2&lt;/i&gt; 슬롯에 연결할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 &lt;i&gt;%2&lt;/i&gt; 슬롯에서 연결 해제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에 마운트하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에서 마운트 해제하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 여는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 닫는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>미디어 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 접근성을 검사하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;다음 이유로 VirtualBox 온라인 등록 서비스에 연결할 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 새 버전이 출시되었습니다! &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; 웹 사이트에 새 버전 &lt;b&gt;%1&lt;/b&gt;이(가) 올라와 있습니다.&lt;/p&gt;&lt;p&gt;이 링크를 사용해서 새 버전을 다운로드하십시오:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;다음 오류로 인하여 새 버전 정보를 찾을 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;하나 이상의 등록된 가상 하드디스크나, CD/DVD 또는 플로피 미디어에 접근할 수 없습니다. 접근할 수 있게 될 때까지 이들 미디어를 사용하는 가상 머신을 작동할 수 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;검사하기&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자를 연 다음 어떤 미디어에 접근할 수 없는가 확인하거나, &lt;b&gt;무시&lt;/b&gt; 단추를 눌러서 이 메시지를 무시할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;존재하는 VirtualBox 설정 파일이 새로운 버전의 형식으로 변환될 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;확인&lt;/b&gt; 단추를 누르면 설정 파일을 변환하면서 VirtualBox를 시작하며 &lt;b&gt;더 보기&lt;/b&gt; 단추를 누르면 어떤 파일이 변환되며 어떤 추가 동작을 진행하는지 알 수 있습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;종료&lt;/b&gt; 단추를 누르면 VirtualBox 설정 파일을 변환하지 않고 종료합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;More</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">더 보기(&amp;M)</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">종료(&amp;X)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;다음 VirtualBox 설정 파일들은 새 설정 파일 형식 버전 &lt;b&gt;%1&lt;/b&gt;(으)로 자동으로 변환되었습니다.&lt;/p&gt;&lt;p&gt;그러나 변환 결과가 아직 디스크에 저장되지 않았습니다.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;백업&lt;/b&gt; 단추를 누르면 변환하기 전 파일을 백업해 둡니다.&lt;/li&gt;&lt;li&gt;&lt;b&gt;덮어쓰기&lt;/b&gt; 단추를 누르면 백업 파일을 만들지 않고 변환된 파일을 덮어씁니다. 나중에 과거 버전의 VirtualBox에서 이 설정 파일을 사용할 수 없습니다. &lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;이전 버전의 VirtualBox로 돌아갈 때를 대비해서 현재 설정을 보존할 수 있는 &lt;b&gt;백업&lt;/b&gt; 단추를 누르는 것을 추천합니다. 다운그레이딩에 대해서는 VirtualBox 설명서를 참고하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation type="obsolete">&lt;li&gt;&lt;b&gt;끝내기&lt;/b&gt; 단추를 누르면 변환된 파일을 디스크에 저장하지 않고 VirtualBox를 종료합니다.&lt;/li&gt;</translation>
-    </message>
-    <message>
-        <source>O&amp;verwrite</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">덮어쓰기(&amp;V)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신을 실행하는 중 치명적 오류가 발생하였고 가상 머신의 실행이 중단되었습니다.&lt;/p&gt;&lt;p&gt;도움말을 보시려면 &lt;a href=&quot;http://www.virtualbox.org&quot;&gt;http://www.virtualbox.org&lt;/a&gt; 사이트의 커뮤니티 섹션을 참조하거나 지원 업체에 연락하십시오. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디렉터리에 있는 로그 파일 &lt;tt&gt;VBox.log&lt;/tt&gt;와 이미지 파일 &lt;tt&gt;VBox.png&lt;/tt&gt;의 내용도 같이 알려 주십시오. 이 파일의 내용은 오류가 발생했을 때 무엇을 하고 있었는지 알려 줍니다. 위 파일들은 주 VirtualBox 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;로그 보기&lt;/b&gt; 항목에서도 볼 수 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 전원을 끄려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르거나, 디버깅 목적으로 계속 실행되게 하려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르십시오. 지금 당장 디버그하지 않으시려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르시기를 권장합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">하드디스크</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">CD/DVD 이미지</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">플로피 이미지</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">파일 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 있습니다. 새 파일로 덮어쓰시겠습니까?&lt;br /&gt;&lt;br /&gt;파일이 이미 &quot;%2&quot;에 존재합니다. 파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
-    </message>
-    <message>
-        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>다음 파일이 이미 존재합니다:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;새 파일로 덮어쓰시겠습니까? 파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="obsolete">파일 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하는 데 실패했습니다.&lt;br /&gt;&lt;br /&gt;파일을 수동으로 삭제한 다음 다시 시도해 보십시오.</translation>
-    </message>
-    <message>
-        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation>VirtualBox의 개발 버전을 사용하고 있습니다. 이 버전은 안정적이지 않습니다.</translation>
-    </message>
-    <message>
-        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="obsolete">호스트 시스템의 USB에 접근할 수 없습니다. 게스트 시스템에서 USB를 사용하려면 USB 파일 시스템(usbfs), D-Bus/HAL 서비스 둘 중 하나를 활성화한 다음 VirtualBox를 다시 시작하십시오.</translation>
-    </message>
-    <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation>게스트 시스템을 ACPI를 통해서 종료하려고 하고 있습니다. 게스트 운영 체제에서 ACPI를 사용하지 않으므로 작동하지 않을 것입니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V 하드웨어 가속 기능이 활성화되었지만, 현재 작동하지 않습니다. 64비트 게스트 운영체제에서 64비트 CPU를 인식할 수 없어서 부팅할 수 없습니다.&lt;/p&gt;&lt;p&gt;컴퓨터 바이오스에서 VT-x/AMD-V를 활성화했는지 확인해 보십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Close VM</source>
-        <translation>가상 머신 닫기</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>계속</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;선택한 스냅샷과 저장된 상태를 삭제하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="obsolete">삭제</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>취소</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;추가 컨트롤러의 포트에 연결된 하드 디스크가 있습니다. 추가 컨트롤러를 비활성화시키면 이 컨트롤러에 연결된 모든 하드 디스크의 연결이 해제됩니다.&lt;/p&gt;&lt;p&gt;추가 컨트롤러를 비활성화시키시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;추가 컨트롤러의 포트에 연결된 하드 디스크가 있습니다. 추가 컨트롤러를 바꾸면 이 컨트롤러에 연결된 모든 하드 디스크의 연결이 해제됩니다.&lt;/p&gt;&lt;p&gt;추가 컨트롤러를 바꾸시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Change</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">바꾸기</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;선택한 호스트 네트워크 인터페이스 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를) 삭제하시겠습니까?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;주의:&lt;/b&gt; 이 가상 머신 또는 다른 가상 머신의 하나 이상의 네트워크 어댑터에서 이 인터페이스를 사용할 수도 있습니다. 인터페이스를 삭제하면 이 인터페이스를 사용하는 가상 머신의 네트워크 어댑터 설정을 수정하여 다른 인터페이스 이름이나 다른 어댑터 종류를 선택하지 않는 한 인터페이스를 사용했던 어댑터들은 작동하지 않을 것입니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the host-only network interface.</source>
-        <translation>호스트 전용 네트워크 인터페이스를 만들 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;기존 VirtualBox 설정 파일이 예전 형식에서 새 형식으로 변환될 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;확인&lt;/b&gt; 단추를 누르면 변환 작업을 시작하며, &lt;b&gt;종료&lt;/b&gt; 단추를 누르면 변환하지 않고 VirtualBox를 종료합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open appliance.</source>
-        <translation>가상 시스템을 열 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 열거나 처리할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 가져올 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to create appliance.</source>
-        <translation>가상 시스템을 만들 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 내보내는 준비를 할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to create an appliance.</source>
-        <translation>가상 시스템을 만들 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 시스템 &lt;b&gt;%1&lt;/b&gt;을(를) 내보낼 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 호스트 전용 네트워크를 삭제하면, 이 네트워크가 사용하는 호스트 전용 인터페이스를 삭제합니다. 호스트 전용 네트워크 인터페이스 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;메모:&lt;/b&gt; 하나 이상의 다른 가상 머신에서 이 인터페이스를 사용하고 있을 수도 있습니다. 다른 어댑터를 연결하거나, 새 인터페이스 이름을 지정하지 않는 한 이 어댑터를 다른 가상 머신에서 사용할 수 없습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>파일 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 존재합니다. 새 파일로 덮어쓰시겠습니까?&lt;br /&gt;&lt;br /&gt;파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V 하드웨어 가속 기능이 활성화되었지만, 현재 작동하지 않습니다. 일부 게스트 운영체제(OS/2, QNX 등)에서는 이 기능이 필요합니다.&lt;/p&gt;&lt;p&gt;컴퓨터 바이오스에서 VT-x/AMD-V를 활성화했는지 확인해 보십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;전자 우편 주소나 암호가 잘못되었습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 제품을 등록하는 데 실패했습니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation>파일을 검사하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation>파일을 삭제하는 데 실패했습니다.</translation>
-    </message>
-    <message>
-        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation>/sys/bus/usb/drivers에 USBFS 파일 시스템이 마운트되어 있는 것 같습니다. 현재 설정은 잘못되어 있으며, 가상 머신에서 USB 장치가 생각하지 못한 방식으로 작동하지 않을 수도 있기 때문에 설정을 바꾸는 것을 추천합니다.</translation>
-    </message>
-    <message>
-        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation>VirtualBox의 개발 버전을 사용하고 있습니다. 이 버전은 안정적이지 않습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;(으)로 되돌리시겠습니까? 현재 가상 머신 상태가 삭제되며, 복구할 수 없습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>복원</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;스냅샷을 삭제하면 저장된 정보가 삭제되며, VirtualBox에서 나눠서 저장한 디스크 데이터가 한 파일로 합쳐집니다. 이 작업은 시간이 걸릴 수 있으며 삭제된 스냅샷에 저장된 정보는 복구할 수 없습니다.&lt;/p&gt;&lt;p&gt;선택한 스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>삭제</translation>
-    </message>
-    <message>
-        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;의 스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;의 스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;새로 만든 연결에 사용할 미디어가 없습니다.&lt;/p&gt;&lt;p&gt;&lt;p&gt;&lt;b&gt;만들기&lt;/b&gt; 단추를 눌러서 &lt;i&gt;새 가상 디스크&lt;/i&gt; 마법사를 실행시켜 새 미디어를 만들거나, &lt;b&gt;선택&lt;/b&gt; 단추를 눌러서 &lt;i&gt;가상 미디어 관리자&lt;/i&gt;를 열 수도 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>medium</comment>
-        <translation type="obsolete">만들기(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <comment>medium</comment>
-        <translation type="obsolete">선택(&amp;S)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;새로 만든 연결에 사용할 미디어가 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;선택&lt;/b&gt; 단추를 눌러서 &lt;i&gt;가상 미디어 관리자&lt;/i&gt;를 열 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 %1을(를) 연결할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 %1의 연결을 해제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에 마운트할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source> Would you like to force mounting of this medium?</source>
-        <translation> 이 미디어를 강제로 마운트하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;에서 마운트 해제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source> Would you like to force unmounting of this medium?</source>
-        <translation> 이 미디어를 강제로 마운트 해제하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>Force Unmount</source>
-        <translation>강제 마운트 해제</translation>
-    </message>
-    <message>
-        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation type="obsolete">가상 드라이브에서 디스크를 꺼낼 수 없습니다. 게스트 운영체제에서 잠갔을 수도 있습니다. 확인한 다음 다시 시도하십시오.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;에는 CD/DVD-ROM 드라이브가 없기 때문에 VirtualBox 게스트 확장 CD 이미지를 마운트할 수 없습니다. 가상 머신 설정 대화상자에서 드라이브를 추가해 주십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation>종료(&amp;X)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;기존 VirtualBox 설정 파일이 예전 형식에서 새 형식으로 변환될 것입니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;확인&lt;/b&gt; 단추를 누르면 변환 작업을 시작하며, &lt;b&gt;종료&lt;/b&gt; 단추를 누르면 변환하지 않고 VirtualBox를 종료합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...</comment>
-        <translation>하드디스크</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>CD/DVD</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...</comment>
-        <translation>CD/DVD 이미지</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>플로피</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...</comment>
-        <translation>플로피 이미지</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">하드디스크</translation>
-    </message>
-    <message>
-        <source>CD/DVD device</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">CD/DVD 장치</translation>
-    </message>
-    <message>
-        <source>floppy device</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">플로피 장치</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 CD/DVD-ROM 장치를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;CD나 ISO 이미지를 마운트할 수도, 게스트 확장을 설치할 수도 없습니다!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation>삭제(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation>&lt;p&gt;시스템에서 VT-x/AMD-V 하드웨어 가속을 사용할 수 없습니다. 64비트 게스트가 64비트 CPU를 인식할 수 없으며 부팅할 수 없을 것입니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;시스템에서 VT-x/AMD-V 하드웨어 가속을 사용할 수 없습니다. OS/2나 QNX 같은 일부 게스트 운영체제는 이 기능이 필요하며, 사용하지 않으면 부팅할 수 없습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;스냅샷 %1을(를) 삭제하려면 임시로 디스크 공간이 더 필요합니다. 최악의 경우 현재 이미지 크기 %2가 %3로 증가할 수 있지만, 현재 파일시스템에는 %4만 남아 있습니다.&lt;/p&gt;&lt;p&gt;이미지 병합 과정에서 디스크 공간이 부족하면 이미지와 가상 머신 설정이 꼬일 수 있으며, 가상 머신과 데이터를 잃어버릴 수 있습니다.&lt;/p&gt;&lt;p&gt;위험 사항에 대해서 잘 알고 있다면 스냅샷을 삭제할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 게스트 화면을 이 호스트 화면으로 바꿀 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;게스트 비디오 메모리가 부족해서 게스트 화면을 이 호스트 화면으로 바꿀 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.&lt;/p&gt;&lt;p&gt;그래도 화면을 전환하려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르시고, &lt;b&gt;취소&lt;/b&gt; 단추를 누르면 작업을 취소합니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;호스트에 연결된 화면보다 가상 화면이 더 많아서 전체 화면 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 화면 개수를 줄이거나, 호스트에 더 많은 모니터를 연결하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;호스트에 연결된 화면보다 가상 화면이 더 많아서 심리스 모드로 들어갈 수 없습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 화면 개수를 줄이거나, 호스트에 더 많은 모니터를 연결하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 사용자 설명서 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;인터넷에서 다운로드하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서를 다운로드하시겠습니까? (크기: %3 바이트)&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서를 다운로드할 수 없습니다.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서를 다운로드하였고, 로컬 디스크의 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;에 저장하였습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;에서 VirtualBox 사용자 설명서를 다운로드하였으나 로컬 디스크의 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;에 저장할 수 없습니다.&lt;/p&gt;&lt;p&gt;다른 위치를 선택하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open virtual machine located in %1.</source>
-        <translation>%1에 있는 가상 머신을 열 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation>이미 존재하기 때문에 &lt;i&gt;%2&lt;/i&gt;에 있는 가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 머신 목록에서 삭제하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신 설정을 포함하는 파일도 같이 삭제하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 머신 목록에서 삭제하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신 설정을 포함하는 파일도 같이 삭제하시겠습니까? 다른 머신에서 사용하지 않는 가상 머신의 하드 디스크도 같이 삭제할 것입니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete all files</source>
-        <translation>모든 파일 지우기</translation>
-    </message>
-    <message>
-        <source>Remove only</source>
-        <translation>지우기만 하기</translation>
-    </message>
-    <message>
-        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation>접근할 수 없는 가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 목록에서 지우려고 하고 있습니다. 계속 진행하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>삭제</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 하드 디스크를 컨트롤러 &lt;b&gt;%1&lt;/b&gt;에 추가하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;디스크 내용을 포함할 새 파일을 만들거나, 기존 파일 중에서 선택하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Create &amp;new disk</source>
-        <comment>add attachment routine</comment>
-        <translation>새 디스크 만들기(&amp;N)</translation>
-    </message>
-    <message>
-        <source>&amp;Choose existing disk</source>
-        <comment>add attachment routine</comment>
-        <translation>기존 디스크 선택하기(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;CD/DVD 드라이브를 컨트롤러 &lt;b&gt;%1&lt;/b&gt;에 추가하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;드라이브에 삽입할 가상 CD/DVD 디스크를 선택하거나, 나중에 추가하기 위해서 비워 두시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Choose disk</source>
-        <comment>add attachment routine</comment>
-        <translation>디스크 선택하기(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Leave &amp;empty</source>
-        <comment>add attachment routine</comment>
-        <translation>비워 두기(&amp;E)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;플로피 드라이브를 컨트롤러 &lt;b&gt;%1&lt;/b&gt;에 추가하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;드라이브에 삽입할 가상 플로피 디스크를 선택하거나, 나중에 추가하기 위해서 비워 두시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>CD/DVD 장치 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>플로피 장치 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;현재 가상 머신에서 VirtualBox 게스트 확장을 사용할 수 없는 것 같으며, 공유 폴더를 사용하려면 이 기능이 필요합니다. 가상 머신에서 공유 폴더를 사용하려면, 게스트 확장이 설치되어 있지 않으면 우선 설치하시고, 작동하지 않으면 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 다시 설치하십시오. 게스트 확장이 설치되어 있으나 가상 머신이 시작하는 중일 때에는 공유 폴더 기능이 작동하지 않습니다.&lt;/p&gt;</translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation>
-            <numerusform>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;의 실행 상태가 저장되어 있습니다.&lt;/p&gt;&lt;p&gt;머신을 내보내더라도 저장된 실행 상태는 내보내지 않을 것입니다. 기존 머신의 실행 상태는 변경되지 않습니다.&lt;/p&gt;</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation>게스트 확장을 업데이트할 수 없습니다. 게스트 확장 이미지가 마운트될 것이며, 여기에서 수동으로 설치하십시오.</translation>
-    </message>
-    <message>
-        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 설치할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation type="obsolete">확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 삭제하려고 하고 있습니다. 계속 진행하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>삭제(&amp;R)</translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation>현재 포트 포워딩 규칙이 올바르지 않습니다. 호스트나 게스트의 포트 번호가 0으로 설정될 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;포트 포워딩 규칙에 저장되지 않은 설정값이 있습니다.&lt;/p&gt;&lt;p&gt;계속 진행하면 저장하지 않은 설정은 무시됩니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation>일반 오류가 발생하였습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>하드디스크 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>CD/DVD 장치 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>플로피 장치 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;을(를) 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;이 미디어의 저장소 유닛은 삭제되지 않을 것이며 다음에 다시 사용할 때 추가할 수 있습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;현재 가상 머신에서 VirtualBox 게스트 확장을 사용할 수 없는 것 같으며, 공유 폴더를 사용하려면 이 기능이 필요합니다. 가상 머신에서 공유 폴더를 사용하려면, 게스트 확장이 설치되어 있지 않으면 우선 설치하시고, 작동하지 않으면 &lt;b&gt;장치&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 설치&lt;/b&gt; 항목을 선택하셔서 다시 설치하십시오. 게스트 확장이 설치되어 있으나 가상 머신이 시작하는 중일 때에는 공유 폴더 기능이 작동하지 않습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신을 &lt;b&gt;전체 화면&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;전체 화면 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신을 &lt;b&gt;심리스&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;심리스 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;가상 머신을 &lt;b&gt;스케일&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;스케일 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>scale</comment>
-        <translation>전환</translation>
-    </message>
-    <message>
-        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 열 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 확장 기능 패키지를 설치하려고 합니다. 확장 기능 패키지는 VirtualBox의 기능을 보완하며, 시스템에 영향을 줄 수 있는 소프트웨어를 포함할 수도 있습니다. 아래쪽에 있는 설명을 읽어 보시고, 확장 기능 패키지를 믿을 수 있는 곳에서 다운로드한 경우에만 설치하십시오.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;이름:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;설명:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Install</source>
-        <translation>설치(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation> 확장 기능 패키지는 VirtualBox의 기능을 보완하며, 시스템에 영향을 줄 수 있는 소프트웨어를 포함할 수도 있습니다. 아래쪽에 있는 설명을 읽어 보시고, 확장 기능 패키지를 믿을 수 있는 곳에서 다운로드한 경우에만 설치하십시오.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;확장 기능 패키지의 예전 버전이 설치되어 있습니다. 업그레이드하시겠습니까?.&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;이름:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;새 버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;현재 버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;설명:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Upgrade</source>
-        <translation>업그레이드(&amp;U)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;확장 기능 패키지의 새 버전이 설치되어 있습니다. 다운그레이드하시겠습니까?.&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;이름:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;새 버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;현재 버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;설명:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Downgrade</source>
-        <translation>다운그레이드(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;확장 기능 패키지의 같은 버전이 설치되어 있습니다. 다시 설치하시겠습니까?.&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;이름:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;버전:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;설명:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Reinstall</source>
-        <translation>다시 설치(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 확장 기능 패키지 &lt;b&gt;%1&lt;/b&gt;을(를) 제거하려고 합니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation>확장 기능 패키지 &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;이(가) 설치되었습니다.</translation>
-    </message>
-    <message>
-        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="obsolete">충돌을 방지하기 위하여 64비트 윈도에서는 가상 머신에 속해 있는 모든 파일을 삭제할 수 없습니다. 곧 수정하겠습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;부모 폴더 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 안에 머신 폴더 &lt;b&gt;%1&lt;/b&gt;을(를) 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;부모 폴더가 존재하는지 여부 및 머신 폴더를 만들 권한이 있는지 여부를 확인하십시오.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;현재 가상 머신에서 USB 2.0을 사용할 수 있으나, &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 설치해야 합니다.&lt;/p&gt;&lt;p&gt;VirtualBox 다운로드 사이트에서 확장 기능 패키지를 설치하면 USB 2.0을 사용할 수 있습니다. 이대로 변경 사항을 저장하면 확장 기능 패키지를 설치하기 전까지 USB 2.0을 사용할 수 없습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 등록할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;머신 설정을 편집하는 중 변경되었습니다. 현재 저장되지 않은 변경 사항이 있습니다.&lt;/p&gt;&lt;p&gt;변경 사항을 다시 불러오거나, 현재 저장되지 않은 변경 사항을 유지하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reload settings</source>
-        <translation>설정 새로 고침</translation>
-    </message>
-    <message>
-        <source>Keep changes</source>
-        <translation>변경 사항 유지</translation>
-    </message>
-    <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished">편집 중인 가상 머신의 상태가 변경되었습니다. 확인 단추를 누르면 실행 중 변경 가능한 설정만 저장되며 모든 다른 설정은 저장되지 않습니다.</translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;을(를) 복제하는 데 실패하였습니다.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원하려고 합니다.&lt;/p&gt;&lt;p&gt;아래 상자를 선택하면 가상 머신의 현재 상태를 스냅샷으로 저장할 수 있습니다. 현재 상태를 저장하지 않으면 복원할 수 없습니다. 계속 진행하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Create a snapshot of the current machine state</source>
-        <translation>현재 가상 머신 상태 스냅샷 만들기</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원하시겠습니까?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;미디어 종류를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;b&gt;%2&lt;/b&gt;(으)로 변경하는 데 실패하였습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;현재 가상 머신에서 USB 2.0을 사용할 수 있으나, &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 설치해야 합니다.&lt;/p&gt;&lt;p&gt;VirtualBox 다운로드 사이트에서 확장 기능 패키지를 설치하면 USB 2.0을 사용할 수 있습니다. 이대로 변경 사항을 저장하면 확장 기능 패키지를 설치하기 전까지 USB 2.0을 사용할 수 없습니다.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation>호스트 USB 프록시 서비스를 불러올 수 없습니다(VERR_FILE_NOT_FOUND). 호스트 컴퓨터에 서비스가 설치되어 있지 않을 수도 있습니다</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox에서 USB 장치에 접근할 수 없습니다. 현재 사용자를 &apos;vboxusers&apos; 그룹에 추가하십시오. 더 자세한 설명은 사용자 설명서를 참고하십시오</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox에서 USB 장치에 접근할 수 없습니다. 현재 사용자가 &apos;usbfs&apos; 폴더 및 파일에 접근할 수 있도록 하십시오. 더 자세한 설명은 사용자 설명서를 참고하십시오</translation>
-    </message>
-    <message>
-        <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation>USB 프록시 서비스를 현재 호스트에서 사용할 수 없습니다</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy service</source>
-        <translation>호스트 USB 프록시 서비스를 불러올 수 없음</translation>
-    </message>
-</context>
-<context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
@@ -9503,7 +9616,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>도움말(&amp;H)</translation>
+        <translation type="obsolete">도움말(&amp;H)</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -9941,29 +10054,6 @@ p, li { white-space: pre-wrap; }
         <translation>
             <numerusform>경고: 스냅샷을 찍으려고 하는 실행 중인 머신에 변경 불가능한 이미지가 %n개 연결되어 있습니다. 데이터 손실을 방지하기 위해서, 스냅샷을 찍은 다음에는 변경 불가능한 이미지의 데이터는 더 이상 초기화되지 않습니다.</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation>텍스트 편집하기</translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation>바꾸기(&amp;R)...</translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation>현재 텍스트의 내용을 주어진 파일의 내용으로 바꿉니다.</translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation>텍스트 (*.txt);;모든 파일 (*.*)</translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation>열 파일을 선택하십시오...</translation>
     </message>
 </context>
 <context>

@@ -191,6 +191,14 @@
         <source>&amp;Details (%1 of %2)</source>
         <translation>&amp;Details (%1 van %2)</translation>
     </message>
+    <message>
+        <source>Copy all errors to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIWidgetValidator</name>
@@ -537,6 +545,147 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation>Virtueel systeem %1</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Naam</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation>Produkt</translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation>Produkt-URL</translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation>Leverancier</translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation>Leveranciers-URL</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>Versie</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation>Omschrijving</translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation>Licentie</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>OS soort gast</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>CPU</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation>RAM</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation>Harde schijf controller IDE</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation>Harde schijf controller SATA</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation>Harde schijf controller SCSI</translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation>DVD</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation>Diskette</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation>Netzwerk adapter</translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation>USB controller</translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation>Geluidskaart</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translatorcomment>het woord &apos;Disk image&apos; is lastig, suggesties: schijf afbeelding, ...</translatorcomment>
+        <translation>Virtuele schijf</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation>Onbekende hardware</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation>&lt;b&gt;Oospronkelijke waarde:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation>Configuratie</translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation>Waarschuwingen:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation>Harde schijf controller (SAS)</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation>Hulpmiddel importeren ...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation>Hulpmiddel lezen ...</translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -544,6 +693,10 @@
     </message>
     <message>
         <source>Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Base for %1 and %2</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -558,10 +711,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
         <translation type="unfinished"></translation>
     </message>
@@ -573,9 +722,36 @@
         <source>%1 Clone</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
         <translation type="unfinished"></translation>
@@ -928,7 +1104,7 @@
     </message>
     <message>
         <source>The download process has been canceled by the user.</source>
-        <translation>Het download proces is geannuleerd door de gebruiker.</translation>
+        <translation type="obsolete">Het download proces is geannuleerd door de gebruiker.</translation>
     </message>
 </context>
 <context>
@@ -947,7 +1123,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet gelukt het gedownloade bestand als &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; op te slaan.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Het is niet gelukt het gedownloade bestand als &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; op te slaan.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
@@ -2068,23 +2244,23 @@ p, li {white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="obsolete">Linker Shift</translation>
+        <translation type="unfinished">Linker Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="obsolete">Rechter Shift</translation>
+        <translation type="unfinished">Rechter Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="obsolete">Linker Ctrl</translation>
+        <translation type="unfinished">Linker Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="obsolete">Rechter Ctrl</translation>
+        <translation type="unfinished">Rechter Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="obsolete">Linker Alt</translation>
+        <translation type="unfinished">Linker Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2479,6 +2655,13 @@ p, li { white-space: pre-wrap; }
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>B&amp;ewerken</translation>
     </message>
 </context>
 <context>
@@ -3856,7 +4039,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>u heeft een ICH9 chipset type toegekend aan deze VM. Deze zal niet goed werken tenzij de IO-APIC optie is geactiveerd. Dit wordt automatisch uitgevoerd als u de VM instellingen accpeteerd door op OK te klikken.</translation>
+        <translation type="obsolete">u heeft een ICH9 chipset type toegekend aan deze VM. Deze zal niet goed werken tenzij de IO-APIC optie is geactiveerd. Dit wordt automatisch uitgevoerd als u de VM instellingen accpeteerd door op OK te klikken.</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
@@ -3882,6 +4065,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4142,25 +4329,1266 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
+    <name>UIMessageCenter</name>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Informatie</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox -vraag</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Waarschuwing</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Fout</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Kritieke fout</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag</comment>
+        <translation>Geef deze boodschap niet opnieuw weer</translation>
+    </message>
+    <message>
+        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
+        <translation>De volgende bestanden bestaal al: &lt;br/&gt;&lt;br/&gt;%1&lt;br/&gt;&lt;br/&gt;Weet u zeker dat u deze wil vervangen? Door deze te vervangen overschrijft u de inhoud.</translation>
+    </message>
+    <message>
+        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
+        <translation>U draait een pre-release versie van VirtualBox. Deze versie is niet geschikt voor productie.</translation>
+    </message>
+    <message>
+        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
+        <translation>Het is niet gelukt &lt;tt&gt;%1&lt;/tt&gt; te openen. Verzeker u ervan dat uw bureaublad omgeving op een goede wijze met URL&apos;s van dit soort om kan gaan.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het is niet gelukt de COM op te zetten of de VirtualBox COM server is niet gevonden. Waarschijnlijk draait de VirtualBox server niet of lukt het niet deze op te starten.&lt;/p&gt;&lt;p&gt;Het programma wordt nu afgesloten.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het is niet gelukt het VirtualBox COM object aan te maken.&lt;/p&gt;&lt;p&gt;Het programma wordt nu afgesloten.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to set global VirtualBox properties.</source>
+        <translation>Het is niet gelukt de algemene VirtualBox eigenschappen in te stellen.</translation>
+    </message>
+    <message>
+        <source>Failed to access the USB subsystem.</source>
+        <translation>Het is niet gelukt om toegang naar het USB subsysteem te krijgen.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine.</source>
+        <translation>Het is niet gelukt een nieuwe virtuele machine aan te maken.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt de nieuwe virtuele machine &lt;b&gt;%1&lt;/b&gt; aan te maken.</translation>
+    </message>
+    <message>
+        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt de eigenschappen aan virtuele machine &lt;b&gt;%1&lt;/b&gt; toe te kennen.</translation>
+    </message>
+    <message>
+        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt virtuele machine &lt;b&gt;%1&lt;/b&gt; op te starten.</translation>
+    </message>
+    <message>
+        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt virtuele machine&lt;b&gt;%1&lt;/b&gt; te pauseren.</translation>
+    </message>
+    <message>
+        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt virtuele machine &lt;b&gt;%1&lt;/b&gt; te hervatten.</translation>
+    </message>
+    <message>
+        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt de status van virtuele machine &lt;b&gt;%1&lt;/b&gt; op te slaan.</translation>
+    </message>
+    <message>
+        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt een momentopname van virtuele machine &lt;b&gt;%1&lt;/b&gt; te maken.</translation>
+    </message>
+    <message>
+        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt virtuele machine&lt;b&gt;%1&lt;/b&gt; te stoppen.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt virtuele machine &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt de opgeslagen status van virtuele machine &lt;b&gt;%1&lt;/b&gt; weg te gooien.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De VT-x/AMD-V hardware versnelling is geactiveerd maar niet operationeel. Uw 64-Bit gast kan de 64 Bit CPU niet herkennen en zal dus niet opstarten.&lt;/p&gt;&lt;p&gt;Verzeker u ervan dat de VT-x/AMD-V instelling correct is aangezet in de BIOS van uw fysieke computer.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="obsolete">Het is niet gelukt de momentopame &lt;b&gt;%1&lt;/b&gt; van virtuele machine &lt;b&gt;%2&lt;/b&gt; weg te gooien.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Het is niet gelukt de huidige status van virtuele machine &lt;b&gt;%1&lt;/b&gt; weg te gooien.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">Het is niet gelukt de huidige momentopname en de huidige status van virtuele machine &lt;b&gt;%1&lt;/b&gt; weg te gooien.</translation>
+    </message>
+    <message>
+        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Een virtuele machine met deze naam bestaat niet &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Weet u zeker dat u virtuele machine &lt;b&gt;%1&lt;/b&gt; voorgoed wil verwijderen?&lt;/p&gt;&lt;p&gt;Deze actie kan niet teruggedraaid worden.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Weet u zeker dat u, de niet te benaderen, virtuele machine &lt;b&gt;%1&lt;/b&gt; wilt uitschrijven?&lt;/p&gt;&lt;p&gt;U kunt deze dan niet meer via de GUI registreren.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Weet u zeker dat u de opgeslagen status van virtuele machine &lt;b&gt;%1&lt;/b&gt; wilt weggooien?&lt;/p&gt;&lt;p&gt;Deze actie staat gelijk aan het uitzetten van de machine zonder het gast besturingssysteem netjes af te sluiten.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Aan de poorten van de extra controler zijn harde schijven gekoppeld. Zet u deze controler uit dan zullen al deze harde schijven automatisch ontkoppeld worden.&lt;/p&gt;&lt;p&gt;Weet u het zeker dat deze controler wilt deactiveren?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Aan de poorten van de extra controler zijn harde schijven gekoppeld. Past u deze controler aan dan zullen al deze harde schijven automatisch ontkoppeld worden.&lt;/p&gt;&lt;p&gt;Weet u het zeker dat u deze controler uit wilt zetten?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create a new session.</source>
+        <translation>Het is niet gelukt een nieuwe sessie aan te maken.</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt een sessie aan te maken voor virtuele machine &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Verwijderen van dit host-only netwerk zal leiden tot het verwijderen van de host only interface waarop dit netwerk is gebaseerd. Wilt u deze (host-only netwerk) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op:&lt;/b&gt; Deze interface wordt mogelijk door meerdere virtuele netwerk adapters, van uw virtuele machines, gebruikt. Nadat deze interface is verwijderd zullen de adapters niet meer bruikbaar zijn, tenzij u de instellingen corrigeert door of een andere interface naam of een andere soort adapter te kiezen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt netwerk interface &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt USB apparaat &lt;b&gt;%1&lt;/b&gt; te koppelen aan virtuele machine &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt USB apparaat &lt;b&gt;%1&lt;/b&gt; te ontkoppelen van virtuele machine &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om gedeelde map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) aan te maken voor virtuale machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om gedeelde map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) te verwijderen van virtuale machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De virtuale machine rapporteert dat het gast besturingssysteem geen &lt;b&gt;muis integraten&lt;/b&gt; ondersteunt in de huidige video modus. U moet de muis vangen, door te klikken in het venster van de virtuale machine of door te drukken op de gastheer toets, om deze te kunnen gebruiken in het gast besturingssyteem.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De virtuale machine is nu in de &lt;b&gt;gepauseerde&lt;/b&gt; toestand en accepteert daarom geen invoer van het toetsenbord of de muis. Wilt u doorgaan met werken in deze virtuale machine dan moet u deze activeren via de overeenkomstige actie in de menubalk.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox kan niet draaien in &lt;i&gt;VM Selector modus&lt;/i&gt; door locake restricties.&lt;/p&gt;&lt;p&gt;Het programma sluit zich af.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create appliance.</source>
+        <translation>Het is niet gelukt om een appliance aan te maken.</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Fatale fout&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Normale fout&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Waarschuwing&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Fout ID: &lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info</comment>
+        <translation>nauwgezetheid:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Een fatale fout is opgetreden tijdens de werking van de virtuale machine! De virtuale machine wordt uitgezet. Het is zinvol om de volgende foutboodschap te kopieren, wat helpt bij het nader onderzoeken van het probleem:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;een fout is opgetreden tijdens de werking van de virtuale machine! De details van de fout worden hieronder weergegeven. U kunt proberen de beschreven fout te herstellen en de uitvoering van de virtuale machine.voort te zetten.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De uitvoering van de virtuale machine.kan tegen de onderstaande foutsituatie aanlopen. U kunt de boodschap negeren maar het is verstandig om een geschikte actie te ondernemen om er zeker van te zijn deze fout niet zal optreden. &lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation>Resultaat&amp;nbsp;code:</translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation>Component:</translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation>Interface:</translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translatorcomment>?</translatorcomment>
+        <translation>Callee:</translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translatorcomment>/</translatorcomment>
+        <translation>Callee&amp;nbsp;RC:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan geen taalbestand vinden voor de taal &lt;b&gt;%1&lt;/b&gt; in de folder &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;De taal wordt tijdelijk terug gezet op de systeem standaard. Ga naar de &lt;b&gt;voorkeuren&lt;/b&gt; dialoog, deze is te bereiken via het menu in het VirtualBox hoofdscherm, en selecteer een van de bestaande talen uit de pagina &lt;b&gt;talen&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan het taalbestand &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; niet laden.&lt;p&gt;De taal wordt tijdelijk terug gezet naar Engels (ingebouwd). Ga naar de &lt;b&gt;voorkeuren&lt;/b&gt; dialoog, deze is te bereiken via het menu in het VirtualBox hoofdscherm, en selecteer een van de bestaande talen uit de pagina &lt;b&gt;talen&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;De gast uitbreidingen, geïnstalleerd in de het gast besturingssysteem, zijn te oud: versie %1 is geïnstalleerd, terwijl versie %2 wordt verwacht. Een aantal onderdelen die afhankelijk zijn van de gast uitbreiding (muis integratie, automatisch scherm aanpassen) zullen niet goed werken .&lt;/p&gt;&lt;p&gt;Werk de gast uitbreiding bij door te kiezen voor &lt;b&gt;gast uitbreiding installatie&lt;/b&gt; in het menu &lt;b&gt;apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;De gast uitbreidingen, geïnstalleerd in de het gast besturingssysteem, zijn verouderd: versie %1 is geïnstalleerd, terwijl versie %2 wordt verwacht. Een aantal onderdelen die afhankelijk zijn van de gast uitbreiding (muis integratie, automatisch scherm aanpassen) zullen niet goed werken.&lt;/p&gt;&lt;p&gt;Werk de gast uitbreiding bij door te kiezen voor &lt;b&gt;gast uitbreiding installatie&lt;/b&gt; in het menu &lt;b&gt;apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;De gast uitbreidingen, geïnstalleerd in de het gast besturingssysteem, zijn te nieuw: versie %1 is geïnstalleerd, terwijl versie %2.&lt;/p&gt;&lt;p&gt;wordt verwacht. Een te nieuwe versie gebruiken bij een oudere versie van VirtualBox wordt niet ondersteunt. Installeer de huidige versie van |de gast uitbreiding door te kiezen voor &lt;b&gt;gast uitbreiding installatie&lt;/b&gt; in het menu &lt;b&gt;apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">Het is niet gelukt om het pad naar de map voor de momentopname, van virtuele machine &lt;b&gt;%1&lt;/b&gt;, te wijzigen naar &lt;nobr&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het is niet gelukt om de gedeeld map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) te verwijderen van virtuele machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Sluit alle programma&apos;s af, in het gast besturginssysteem, die deze map mogen gebruiken en probeer het opnieuw.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De CD image bestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; of &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; , met daarop de gast uitbreidingen, is niet te vinden.&lt;/p&gt;&lt;p&gt;Wilt u deze downloaden van het internet?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het is niet gelukt om het CD image bestand, met daarop de gast uitbreidingen, bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; te downloaden.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Weet u het zeker dat u het CD image bestand, met daarop de gast uitbreidingen, bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (omvang %3 bytes) wil downladen?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het CD image bestand, met daarop de gast uitbreidingen, is succesvol gedownload bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; en locaal opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;wilt u de CD image registreren en koppelen aan het virtuele CD/DVD station?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het venster van de virtuale machine is geöptimaliseerd om te werken in &lt;b&gt;%1 bits&lt;/b&gt; kleurenmodus, echter de kleurkwaliteit van het virtuele beeldscherm staat op &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Open de beeldscherm eigenschappen in het gast besturingssysteem en selecteer &lt;b&gt;%3 bits&lt;/b&gt;kleurenmodus,mits beschikbaar, voor de beste prestatie van het video subsysteem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op&lt;/b&gt;: Sommige besturingssystemen (zoals OS/2) werken in 32 bits kleurenmodus maar melden dit als 24 bits kleurenmodus (16 miljoen kleuren).U kunt proberen een andere kleur kwaliteit te selecteren om de boodschap weg te krijgen of u kunt de boodschap nu uitzetten, als u zeker weet dat de vereist kleur kwaliteit (%4&amp;nbsp; bit) niet beschikbaar is in het besturingssysteem.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U heeft geen harde schijf gekoppeld aan de nieuwe virtuele machine. De machine kan niet eerder opstarten dan nadat u een harde schijf, met een gast besturingssysteem of een andere opstartbaar medium, hebt gekoppeld. U kunt dit doen via de machine instellingen dialoog of door de assistent op te starten.&lt;/p&gt;&lt;p&gt;Wilt u doorgaan?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Het is niet gelukt om het licentie bestand in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te vinden.</translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation>Het is niet gelukt om het licentie bestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te openen. Controleer de toegangsrechten.</translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om de ACPI startknop gebeurtenis naar virtuele machine &lt;b&gt;%1&lt;/b&gt; te sturen.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Gefeliciteerd! u bent met succes geregistreerd als gebuiker van VirtualBox.&lt;/p&gt;&lt;p&gt;Bedankt dat u de moeite nam om het registratieformulier in te vullen!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Verwijder</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Uitschrijven</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>Verwerp</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>Download</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>aankoppelen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;De gasheer toets is op dit moment als &lt;b&gt;%1&lt;/b&gt; gedefineerd.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>Vangen</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>Controleer</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>Overschakelen</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>Overschakelen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Weet u zeker dat u de virtuele machine wilt resetten?&lt;/p&gt;&lt;p&gt;Wordt de machine gereset dan gaan alle, niet opgeslagen, gegevens van alle draaiende programma&apos;s verloren.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>Terugzetten</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>Doorgaan</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>Terug gaan</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Het is niet gelukt om instellingen van de VirtualBox naar&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; op te slaan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het is niet gelukt om de algemene GUI configuratie te laden vanuit &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Het programma wordt nu afgesloten.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het is niet gelukt om de algemene GUI configuratie op te slaan in &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Het programma wordt nu afgesloten.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om de instellingen van virtuele machine &lt;b&gt;%1&lt;/b&gt; op te slaan in &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om de instellingen van virtuele machine &lt;b&gt;%1&lt;/b&gt; vanuit &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; te laden.</translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Deactiveren</translation>
+    </message>
+    <message>
+        <source>&amp;Backup</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Back-up</translation>
+    </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="obsolete">Het is niet mogelijk om bestand &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; te kopiëren naar &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">&amp;Aanmaken</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Selecteer</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan de naadloze modus niet binnengaan omdat de gast onvoldoende video geheugen heeft.&lt;/p&gt;&lt;p&gt;U moet, bij de configuratie, de virtuele machine minimaal &lt;b&gt;%1&lt;/b&gt; video geheugen meegeven.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan de gast scherm niet laten overschakelen op schermvullend omdat de gast te weinig video geheugen heeft.&lt;/p&gt;&lt;p&gt;U moet, bij de configuratie, de virtuele machine minimaal &lt;b&gt;%1&lt;/b&gt; video geheugen meegeven.&lt;/p&gt;&lt;p&gt;klik op &lt;b&gt;Negeren&lt;/b&gt; om toch op volledig beeld over te schakelen of klik op&lt;b&gt;Annuleren&lt;/b&gt; om niets te doen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation>U heeft reeds de laatste versie van VirtualBox geïnstalleerd.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U heeft op &lt;b&gt;de muis geklikt&lt;/b&gt;in het scherm van de virtuele machine of op &lt;b&gt;gastheer toets&lt;/b&gt; gedrukt.Dit zorgt ervoor dat de virtuele machine de muis &lt;b&gt;vangt&lt;/b&gt; (dit treed alleen op als de muis integratie niet ondersteund wordt door het gast besturingssysteem) en het toetsenbord. Deze twee zijn dan niet meer beschikbaar voor andere applicaties die draaien op de gastheer machine.&lt;/p&gt;&lt;p&gt;U kunt op ieder moment op de &lt;b&gt;gastheer toets&lt;/b&gt; drukken omhet toetsenbord en de muis (als deze gevangen is) weer &lt;b&gt;vrij te geven&lt;/b&gt;. De huidige gastheer toets word weergegeven in de statusbalk onderin het venster van de virtuele machine, naast het&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikoon. Dit ikoon, samen met het muis ikoon, geven de huidige status weer, gevangen of vrij.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U heeft de modus &lt;b&gt;automatisch toetsenbord vangen&lt;/b&gt; aangezet. Dit zorgt ervoor dat de virtuele machine automatisch het toetsenbord &lt;b&gt;vangt&lt;/b&gt; iedere keer dat het VM venster wordt geactiveerd en maakt het toetsenbaar, voor andere applicaties, niet beschikbaar. Is het toestenbord gevangen dan worden alle toets aanslagen (inclusief de speciale zoals Alt-Tab) doorgegeven aan de VM.&lt;p&gt;&lt;/p&gt;U kunt ieder moment op de &lt;b&gt;gastheer toets&lt;/b&gt; drukken om het toetsenbord en de muis (als deze gevangen is) weer &lt;b&gt;vrij te geven&lt;/b&gt;. De huidige gastheer toets word weergegeven in de statusbalk onderin het venster van de virtuele machine, naast het&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikoon. Dit ikoon, samen met het muis ikoon, geven de huidige status weer, gevangen of vrij&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De virtuele machine meldt dat het gast besturingssysteem &lt;b&gt;muis integratie&lt;/b&gt; ondersteund. Dit betekend dat u niet de muis hoeft te &lt;i&gt;vangen&lt;/i&gt; om deze in het gast besturingssysteem te gebruiken. Bevindt de muis zich op het venster van de virtuele machnie dan zullen alle acties naar het gast besturingssysteem worden gestuurd. Is de muis nu gevangen dan wordt deze automatisch vrijgegeven.&lt;/p&gt;&lt;p&gt;Het ikoon van de muis op statusbalk lijkt hierop:&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp; dit maakt duidelijk dat muis integratie wordt ondersteund en nu geactiveerd is.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op:&lt;/b&gt; bepaalde applicaties kunnen zich vreem gedragen in deze modus. U kunt dit altijd deactiveren voor de huidige sessie (en later weer activeren) door de overeenkomstige actie in de menubalk te selecteren.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;schermvullende&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de &lt;i&gt;gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen bij volledig scherm. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;naadloze&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen in naadloze modus. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation>&amp;Inhoud...</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation>Geef de online help inhoud weer</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation>&amp;VirtualBox website...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation>open de browser en ga naar de website van VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation>Alle waarschuwingen &amp;terugzetten</translation>
+    </message>
+    <message>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation>Hierdoor worden alle onderdrukte waarschuwingen en berichten weer zichtbaar</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation>VirtualBox r&amp;egistreren...</translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation>Open het registratieformulier van VirtualBox</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation>&amp;Controleer op updates...</translation>
+    </message>
+    <message>
+        <source>Check for a new VirtualBox version</source>
+        <translation>Controleer of een nieuwe versie van VirtualBox beschikbaar is</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation>VirtualBox i&amp;nfo...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation>Geef de produkt informatie weer</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Een nieuwe versie van VirtualBox is vrijgegeven! Versie &lt;b&gt;%1&lt;/b&gt; is beschikbaar bij &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;U kunt deze versie direct downloaden via deze link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Weet u zeker dat u %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; wilt vrijgeven?&lt;/p&gt;&lt;p&gt;Hierdoor worden deze ontkoppeld van de volgende virtuele machines: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation>Vrijgeven</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Weet u zeker dat u %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; wilt verwijderen uit de lijst met bekende media?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <translation>Let op: deze harde schijf is niet te benaderen, dus kan zijn opslag eenheid nu niet verwijderd worden.</translation>
+    </message>
+    <message>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation>De volgende dialoog laat u kiezen of u ook de opslag eenheid wilt verwijderen of dat u deze harde schijf wilt bewaren voor later gebruik.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Let op: de opslag eenheid van dit medium wordt niet verwijderd en dus is het mogelijk deze later opnieuw aan de lijst toe te voegen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation>Verwijderen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De opslag eenheid van de harde schijf, op locatie &lt;b&gt;%1&lt;/b&gt;, bestaat al. U kunt geen nieuwe virtuele harde schijf aanmaken op deze locatie omdat deze mogelijk door een andere virtuele harde schijf wordt gebruikt.&lt;/p&gt;&lt;p&gt;Geef een andere locatie op.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Wilt u de opslag eenheid van harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Verwijderen&lt;/b&gt; dan wordt de opslag eenheid permanent verijderd.Deze actie &lt;b&gt;kan niet&lt;/b&gt; terug gedraaid worden.&lt;p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Behouden&lt;/b&gt; dan wordt de harde schijf alleen uit de lijst met bekende harde schijven gehaald maar de opslag eendheid wordt niet onaangetast, zodat het mogelijk is om de harde schijf op een later moment weer op de lijst te zetten.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation>Verwijderen</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation>Behouden</translation>
+    </message>
+    <message>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om de opslag eenheid van harde schijf &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Voor de nieuw aangemaakte bijlage is geen, ongebruikte, harde schijf beschikbaar.&lt;/p&gt;&lt;p&gt;Druk op de knop &lt;b&gt;Aanmaken&lt;/b&gt; om de assistent voor een &lt;i&gt;nieuwe virtuele schijf/i&gt; op te starten en daarmee een nieuwe harde schijf aan te maken. Of druk op de knop &lt;b&gt;Selecteer&lt;/b&gt; om de &lt;i&gt;manager voor virtuele media&lt;/i&gt; te openen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation>Het is niet gelukt om de harde schijf opslag &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; aan te maken.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Het is niet gelukt om harde schijf&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te koppelen aan het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Het is niet gelukt om harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; te koppelen aan de virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; los te koppel van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; te openen.</translation>
+    </message>
+    <message>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; te sluiten.</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Het is niet gelukt om de toegankelijkheids status van medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; op te halen.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het is niet gelukt om een verbinding te krijgen met de VirtualBox online registratie service vanwege de volgende fout:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het is niet gelukt om infomatie over de nieuwe versie op te halen vanwege de volgende fout:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Een of meer virtuele harde schijven, CD/DVD-Rom&apos;s of de diskette zijn nu niet te benaderen.Hierdoor kunt u niet met de virtuele machines werken die deze media gebruiken, totdat de media later wel weer benaderbaar zijn.&lt;/p&gt;&lt;p&gt;Druk op de knop &lt;b&gt;Controleren&lt;/b&gt; om de manager voor virtuele media te openen om na te gaan welke media niet te benaderen is, of drukt opde knop &lt;b&gt;Nogeren&lt;/b&gt; om dir berichte te negeren.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;De bestaande bestanden, met VirtualBox instellingen, zijn automatisch van het oude formaat in het nieuwe formaat overgezet, dit was nodig voor de nieuwe versie van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; om VirtualBox op te starten of klik op&lt;b&gt;Meer&lt;/b&gt; voor extra informatie over welke bestanden overgezet zijn en toegang te krijgen naar aanvullende acties.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Afsluiten&lt;/b&gt; om VirtualBox af te sluiten zonder dat de resultaten van het overzetten op schijf te bewaren.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;More</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Meer</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Afsluiten</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;De volgende bestanden, met VirtualBox instellingen, zijn automatisch overgezet naar het nieuwe formaat &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;De resultaten zijn nog niet op schijf op geslagen. Klik op &lt;p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Back-up&lt;/b&gt; om back-up kopiën te maken van de bestanden met instellingen in het oude formaat, voordat de bestanden met het nieuwe formaat worden overschreven.&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overschrijven&lt;/b&gt; om alle bestanden in het nieuwe formaat op te slaan. Het daarna niet meer mogelijk deze bestanden, met instellingen, voor oudere versies van VirtualBox te gebruiken. &lt;/li&gt;&lt;li&gt;%2&lt;/ul&gt;&lt;p&gt;Het verdient aanbeveling om altijd voor &lt;b&gt;Back-up&lt;/b&gt; te keizen omdat dan de mogelijkheid aanwezig blijft om, indien nodig, terug te keren naar de voorgaande versie van VirtualBox. Kijk in het VirtualBox handboek voor meer informatie over dit onderwerp.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
+        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Afsluiten&lt;/b&gt; om VirtualBox te stoppen zonder de resultaten van het overzetten op schijf te bewaren.&lt;/li&gt;</translation>
+    </message>
+    <message>
+        <source>O&amp;verwrite</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Overschrijven</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Een fatale fout is opgetreden terwijl de virtuele machine draaide en de machine is gestopt.&lt;/p&gt;&lt;p&gt;Kijk voor ondersteuning op de community sectie van &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; of u contact voor ondersteuning. Lever aub de inhoud van het logbestand &lt;tt&gt;VBox.log&lt;/tt&gt; en het image bestand &lt;tt&gt;VBox.png&lt;/tt&gt; deze kunt u terugvinden in de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; folder, samen met een beschrijving van wat u deed op het moment dat de fout optrad. Let op; u kunt genoemde bestanden ook benaderen via &lt;b&gt;Toon Log&lt;/b&gt; in het &lt;b&gt;machine&lt;/b&gt; menu van de hoofdvenster van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; als u de machine uit wilt zetten of klik op &lt;b&gt;Negeren&lt;/b&gt; als u alles zo wilt laten staan voor nader onderzoek. Let op: nader onderzoek vereist specifieke kennis en hulpmiddelen, het is wenselijker om op &lt;b&gt;Ok&lt;/b&gt; te klikken.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">harde schijf</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">CD/DVD image</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">diskette image</translation>
+    </message>
+    <message>
+        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
+        <translation type="obsolete">Het is niet mogelijk om de USB op het gastheer systeem te benaderen omdat nog het USB bestandssysteem (usbfs) nog de DBus en HAL services nu beschikbaar zijn. Wilt u het met USB op het gast systeem werken moet eea corrigeren en VirtuaBox herstarten.</translation>
+    </message>
+    <message>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
+        <translation>U probeert de gast af te sluiten via de ACPI startknop. Dit is op dit moment niet mogelijk omdat de gast geen ACPI subsysteem gebruikt.</translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation>VM afsluiten</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Doorgaan</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Aanpassen</translation>
+    </message>
+    <message>
+        <source>Failed to create the host-only network interface.</source>
+        <translation>Het is niet gelukt om de host only interface aan te maken.</translation>
+    </message>
+    <message>
+        <source>Failed to open appliance.</source>
+        <translation>Het is niet gelukt om de appliance te openen.</translation>
+    </message>
+    <message>
+        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om appliance &lt;b&gt;%1&lt;/b&gt; te openen of interpreteren.</translation>
+    </message>
+    <message>
+        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om appliance &lt;b&gt;%1&lt;/b&gt; te importeren.</translation>
+    </message>
+    <message>
+        <source>Failed to create an appliance.</source>
+        <translation>Het is niet gelukt om een appliance aan te maken.</translation>
+    </message>
+    <message>
+        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om de export van appliance &lt;b&gt;%1&lt;/b&gt; voor te bereiden.</translation>
+    </message>
+    <message>
+        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om appliance &lt;b&gt;%1&lt;/b&gt; te exporteren.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
+        <translation type="obsolete">Het is niet gelukt om bestand &lt;b&gt;%1&lt;/b&gt; te verwijderen.&lt;br/&gt;&lt;br/&gt;Probeer zelf het bestand te verwijderen en probeer het dan opnieuw.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Weet u zeker dat u de geselecteerde momentopname en opgeslagen status wilt verwijderen?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="obsolete">Verwerpen</translation>
+    </message>
     <message>
         <source>Cancel</source>
         <translation>Annuleren</translation>
     </message>
     <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De bestaande bestanden, met VirtualBox instellingen, zijn automatisch van het oude formaat in het nieuwe formaat overgezet, dit was nodig voor de nieuwe versie van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; om nu VirtualBox te starten of &lt;b&gt;Afsluiten&lt;/b&gt; om VirtualBox, zonder verdere acties af te sluiten.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation>Een bestand met de naam &lt;b&gt;%1&lt;/b&gt; bestaat al. Weet u het zeker dat deze wilt vervangen?&lt;br/&gt;&lt;br/&gt;Vervangen betekend overschrijven van de inhoud.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De hardware versnelling VT-X/AMD-V is geactiveerd maar is niet operationeel. Bepaalde gasten (zoals OS/2 en QNX) hebben deze functie nodig.&lt;/p&gt;&lt;p&gt;Controleer aub of de VT-x/AMD-V correct in de BIOS van uw fysieke computer is geconfigureerd.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ongeldig e-mai adres of wachtwoord opgegeven.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het is niet geluk om VirtualBox te registreren.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation>Het is niet gelukt om de bestanden te controleren.</translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation>Het is niet gelukt om het bestand te verwijderen.</translation>
+    </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation>U lijkt een USBFS bestandssysteem gekoppeld te hebben aan /sys/bus/usb/drivers. We adviseren u met klem dit te wijzigen, omdat dit een ernstige mis-configuratie van uw systeem is. Dit kan ervoor zorgen dat uw USB apparaten op onverwachte momenten storing geven.</translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation>U draait een PROEF constructie van VirtualBox. Deze versie is niet geschikt voor productie.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Bent u er zeker van dat u de momentopname &lt;b&gt;%1&lt;/b&gt; wilt terugzetten? Hierdoor verliest u de huidige status van de machine en dit is niet te herstellen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Terugzetten</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Door het verwijderen van een momentopname wordt de status informatie opgeslagen in de momentopname weg gegooid. En de schijf gegevens, verspreidt over verschillende image bestanden, die VirtualBox heeft aangemaakt tesamen met de momentopname, worden samengevoegd in één bestand. Dit kan een langdurig proces zijn en de informatie in de momentopname kan niet hersteld worden.&lt;/p&gt;&lt;/p&gt;Bent u er zeker van dat u de geselecteerde momentopname &lt;b&gt;%1&lt;/b&gt; wilt verwijderen?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Verwijderen</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Kan de momentopname &lt;b&gt;%1&lt;/b&gt;, virtuale machine &lt;b&gt;%2&lt;/b&gt;.niet terugzetten.</translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>Kan de momentopname &lt;b&gt;%1&lt;/b&gt;, virtuale machine &lt;b&gt;%2&lt;/b&gt;.niet verwijderen.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Voor de nieuw aangemaakte bijlage is geen ongebruikte media beschikbaar.&lt;/p&gt;&lt;p&gt;Druk op de &lt;b&gt;Aanmaak&lt;/b&gt; knop om de assistent &lt;i&gt;Nieuwe virtuale schijfk&lt;/i&gt; te starten en maak een nieuw medium aan of druk op &lt;b&gt;Selecteer&lt;/b&gt; als u de &lt;i&gt;Virtuale media manager&lt;/i&gt; wilt openen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium</comment>
+        <translation type="obsolete">&amp;Aanmaken</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="obsolete">&amp;Selecteer</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Voor de nieuw aangemaakte bijlage is geen ongebruikte media beschikbaar.&lt;/p&gt;&lt;p&gt;Druk op &lt;b&gt;Selecteer&lt;/b&gt; als u de &lt;i&gt;Virtuale media manager&lt;/i&gt; wilt opene.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Aansluiten van de %1 aan slot &lt;i&gt;%2&lt;/i&gt; van machine &lt;b&gt;%3&lt;/b&gt; mislukt.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Afsluiten van de %1 aan slot &lt;i&gt;%2&lt;/i&gt; van machine &lt;b&gt;%3&lt;/b&gt; mislukt.</translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Kan %1 niet kopppelen aan &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; op machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation> Wilt u de koppeling van dit medium forceren?</translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Kan %1 niet afkopppelen van &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; op machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation> Wilt u de afkoppeling van dit medium forceren?</translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation>Geforceerde afkoppeling</translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation type="obsolete">Het uitwerpen van de schijf, uit het virtuele station, is mislukt. Het station kan vergrendeld zijn door het besturingssysteem van de gast. Controleer dit a.u.b. en probeer het opnieuw.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan de VirtualBox Gast toevoegingen installatie CD image niet plaatsten in de virtuele machine &lt;b&gt;%1&lt;/b&gt;, omdat de machine geen  CD/DVD-ROM station heeft. Voeg a.u.b. een station toe via de opslag pagina bij de instellingen van de virtuele machine.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation>&amp;Afsluiten</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De volgende bestanden met VirtualBox instellingen zullen automatisch omgezet worden van het oude formaat naar het nieuwe formaat, dat is nodig voor de nieuwe versie van VirtualBox.&lt;/p&gt;&lt;p&gt;Druk op &lt;b&gt;OK&lt;/b&gt; om VirtualBox nu te starten of druk op &lt;b&gt;Afsluiten&lt;/b&gt; als u de VirtualBox applicatie witl beëindigen zonder verdere acties.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation>harde schijf</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>CD/DVD</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation>CD/DVD image</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>Diskette</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation>diskette image</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">harde schijf</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">CD/DVD apparaat</translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">diskette apparaat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Weet u zeker dat u de CD/DVD-ROM apparaat wilt verwijderen?&lt;/p&gt;&lt;p&gt;Het is daarna niet meer mogelijk om enige CD of ISO images to koppelen of de Gastuitbreidingen te installeren!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation>Ve&amp;rwijderen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation>&lt;p&gt;VT-x/AMD-V hardware versnelling is niet beschikbaar op uw systeem. Uw 64-bit gast will zal geen 64-bit CPU detecteren en kan niet opstareten.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V hardware versnelling is niet beschikbaar op uw systeem. Bepaalde gastsystemen (bv. OS/2 en QNX) Hebben deze mogelijkheid nodig en kunnen anders niet opstarten.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het verwijderen van momentopname %1 kost tijdelijk meer schijfruimte. In het ergste geval zal de omvang van image %2 groeien met %3, echter er is maar %4 vrij.&lt;/p&gt;&lt;p&gt;Door de schijfruimte heen raken tijdens een samenvoeg operatie kan resluteren in het corrupt raken van de de image en de VM configuratie, dus het verlies van de VM en zijn gegevens.&lt;/p&gt;&lt;p&gt;U mag op eigen risico doorgaan met het verwijderen van de momentopname.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan het gastscherm niet veranderen in het gastheerscherm omdat er onvoldoende videogeheugen is voor gast.&lt;/p&gt;&lt;p&gt;U moet de virtuale machine zo configureren dat deze tenminste &lt;b&gt;%1&lt;/b&gt; aan video memory heeft.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan het gastscherm niet veranderen in het gastheerscherm omdat er onvoldoende videogeheugen is voor gast.&lt;/p&gt;&lt;p&gt;U moet de virtuale machine zo configureren dat deze tenminste &lt;b&gt;%1&lt;/b&gt; aan video memory heeft.&lt;/p&gt;&lt;p&gt;Druk op &lt;b&gt;Negeren&lt;/b&gt; om toch te wisselen of druk op &lt;b&gt;Annuleren&lt;/b&gt; om de operatie te stoppen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan het gastscherm niet omzetten naar volledigscherm. U hebt meer virtuale schermen geconfigureerd dan dat er fysieke schermen zijn aangesloten.&lt;/p&gt;&lt;p&gt;Verminder het aantal virtuale schermen in u VM configuratie of sluit meer schermen aan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan het gastscherm niet omzetten naar naadloze modus. U hebt meer virtuale schermen geconfigureerd dan dat er fysieke schermen zijn aangesloten.&lt;/p&gt;&lt;p&gt;Verminder het aantal virtuale schermen in u VM configuratie of sluit meer schermen aan.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan de gebruikershandleiding &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; van VirtualBox niet vinden.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Wilt u deze van het internet downloaden?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Weet u het zeker dat u gebruikershandleiding van VirtualBox wilt downloaden bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (omvang %3 bytes)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het downloaden van de gebruikershandleiding van VirtualBox is mislukt bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De gebruikershandleiding van VirtualBox is succesvol gedownload bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; en lokaal opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De gebruikershandleiding van VirtualBox is succesvol gedownload bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; maar kan lokaal niet worden opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Kies aub een andere locatie voor dit bestand.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U staat op het punt om de virtuele machine &lt;b&gt;%1&lt;/b&gt; uit de lijst met machines te verwijderen.&lt;/p&gt;&lt;p&gt;Moeten de bestanden, die de virtuele machine bevatten, ook verwijderd worden van u harde schijf?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U staat op het punt om de virtuele machine &lt;b&gt;%1&lt;/b&gt; uit de lijst met machines te verwijderen.&lt;/p&gt;&lt;p&gt;Moeten de bestanden, die de virtuele machine bevatten, ook verwijderd worden van u harde schijf? Hiermee worden ook de bestanden verwijderd die de virtuele harde schijven van de machine bevatten, tenzij ze ingebruik zijn door een andere machine.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete all files</source>
+        <translation>Verwijder alle bestanden</translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation>Verwijder alleen</translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation>U staat op het punt om de virtuele machine &lt;b&gt;%1&lt;/b&gt;, die niet te benaderen is, uit de lijst met machines te verwijderen. Wilt u doorgaan?</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Verwijderen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U staat op het punt om een virtuele harde schijf aan controler &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een nieuw leeg bestand maken, die schijfinhoud bevat of een bestaande selecteren?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation>Maak een &amp;nieuwe schijf aan</translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation>&amp;Kies een bestaande schijf</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U staat op het punt om een nieuw CD/DVD station aan controler &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een virtuale CD/DVD schijf in het station plaatsen of voor nu leeg laten?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation>&amp;Kies een schijf</translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation>Laat &amp;leeg</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U staat op het punt om een nieuw diskette station aan controler &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een virtuale diskette in het station plaatsen of voor nu leeg laten?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om CD/DVD station &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om diskette station &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;De VirtualBox gast aanvullingen lijken niet beschikbaar op deze virtuale machine en gedeelde mappen kunnen dan niet worden gebruikt. Om gedeelde mappen te gebruiken binnen de virtuele machine installeer de gast aanvullingen als deze nog niet zijn geïnstalleerd, of herisntalleer deze als ze niet goed werken. Selecteer &lt;b&gt;Installeer gast aanvullingen&lt;/b&gt; uit het menu &lt;b&gt;Machine&lt;/b&gt;. Zijn deze geïnstalleer maar is de machine nog niet helemaal gestart dan komen de gedeelde mappen beschikbaar zo dadelijk bechikbaar.&lt;/p&gt;</translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation>
+            <numerusform>&lt;p&gt;De virtuale machine(s) &lt;b&gt;%1&lt;/b&gt; is(zijn) nu in een veilige staat.&lt;/p&gt;&lt;p&gt;Als u verder gaat wordt de status &quot;Uitvoeren&quot;, van de te exportern machine(s), genegeerd. Let op, de bestaande machine(s) worden niet gewijzigd.&lt;/p&gt;</numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation>Het is niet gelukt om de Gast aanvullingen bij te werken. De Gast aanvullings installatie image wordt gekoppeld voor een handmatige installatie.</translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te installeren.</translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te deïnstalleren.</translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="obsolete">U staat op het punt om het uitbreidingspakket  &lt;b&gt;%1&lt;/b&gt; te verwijderen. Weet u dit zeker?</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>Ve&amp;rwijderen</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation>De huidige regel voor het doorverwijzen van poorten zijn niet geldig. Geen van de poorten, nog van de gastheer nog van de gast, mogen op nul staan.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De poort doorverwijzings configuratie heeft nog niet bewaarde wijzigingen.&lt;/p&gt;&lt;p&gt;Gaat u verder dan gaan uw wijzigingen verloren.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation type="unfinished">Excusses een algemene fout is opgetreden.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om harde schijf&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te koppelen aan het slot &lt;i&gt;%2&lt;/i&gt; van de machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om CD/DVD station &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te koppelen aan het slot &lt;i&gt;%2&lt;/i&gt; van de machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om diskette station &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te koppelen aan het slot &lt;i&gt;%2&lt;/i&gt; van de machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Let op: de opslag eenheid van dit medium wordt niet verwijderd en dus is het mogelijk deze later opnieuw aan de lijst toe te voegen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De VirtualBox gast aanvullingen lijken niet beschikbaar op deze virtuale machine en gedeelde mappen kunnen dan niet worden gebruikt. Om gedeelde mappen te gebruiken binnen de virtuele machine installeer de gast aanvullingen als deze nog niet zijn geïnstalleerd, of herisntalleer deze als ze niet goed werken. Selecteer &lt;b&gt;Installeer gast aanvullingen&lt;/b&gt; uit het menu &lt;b&gt;Machine&lt;/b&gt;. Zijn deze geïnstalleer maar is de machine nog niet helemaal gestart dan komen de gedeelde mappen beschikbaar zo dadelijk bechikbaar.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;schermvullende&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de &lt;i&gt;gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen bij volledig scherm. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;naadloze&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen in naadloze modus. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;schaalbare&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen in schaalbare modus. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation>Overschakelen</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Het is niet gelukt om het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te installeren.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U staat op het punt om het uitbreidingspakket voor VirtualBox te installeren. Uitbreidingspakketten vullen de functionaliteit van VirtualBox aan en kan software op systeem niveau bevatten die mogelijk schadelijk is voor uw systeem. Bekijkt de omschrijving hieronder aub. en ga alleen verder als u een uitbreidingspakket van een betrouwbare bron hebt ontvangen.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Omschrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation>&amp;Installeer</translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation>Uitbreidingspakketten vullen de functionaliteit van VirtualBox aan en kan software op systeem niveau bevatten die mogelijk schadelijk is voor uw systeem. Bekijkt de omschrijving hieronder aub. en ga alleen verder als u een uitbreidingspakket van een betrouwbare bron hebt ontvangen.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Een oudere versie van het uitbreidingspakket is al geïnstalleerd, wilt u deze opwaarderen? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nieuwe Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Huidige Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Omscrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation>&amp;Opwaarderen</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Een nieuwere versie van het uitbreidingspakket is al geïnstalleerd, wilt u naar de lagere versie?  &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nieuwe Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;huidige Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Omschrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation>&amp;Downgrade</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Het uitbreidingspakket is al geïnstalleerd met dezelfde versie, wilt u deze opnieuw installeren? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Omschrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation>&amp;Opieuw installeren</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;U staat op het punt om het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te verwijderen. Weet u dit zeker?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation>Het uitbreidingspakket &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was succesvo geïnstalleerd.</translation>
+    </message>
+    <message>
+        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
+        <translation type="obsolete">Verwijderen van alle bestanden die bij de VM horen is nu inactief op Windows/x64 om een crash te voorkomen. Dit wordt in de volgende versie opgelost.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kan de map &lt;b&gt;%1&lt;/b&gt; voor de machine niet aanmaken  in de bovenligende map &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Controleer of de bovenliggende map bestaat en dan u rechten heeft om de machine map aan te maken.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;USB 2.0 is momenteel geactiveerd voor deze virtuele machine. Maar dit vereist installatie van &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Installeer het uitbreidingspakket beschikbaar op de VirtualBox download site. Hierna ben u instaat om de USB 2.0 opnieuw te activeren. In de tussentijn blijft deze inactief tenzij u de huidige instelling wijzigd.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Het is niet gelukt het gedownloade bestand als &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; op te slaan.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annuleren</translation>
+    </message>
+    <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>Annuleer de download van de virtuele CD, met de VirtualBox gast uitbreidingen</translation>
+        <translation type="obsolete">Annuleer de download van de virtuele CD, met de VirtualBox gast uitbreidingen</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>Download de virtuele CD, met de VirtualBox gast uitbreidingen bij &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Download de virtuele CD, met de VirtualBox gast uitbreidingen bij &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation>Annuleren</translation>
+        <translation type="obsolete">Annuleren</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -4173,6 +5601,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>Download het VirtualBox gebruikershandboek &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetAdditions</name>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished">Annuleer de download van de virtuele CD, met de VirtualBox gast uitbreidingen</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished">Download de virtuele CD, met de VirtualBox gast uitbreidingen bij &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -5097,6 +6536,29 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation>Tekst wijzigen</translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation>&amp;Vervangen...</translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation>Vervangt de bestaande tekst met de inhoud van het opgegeven bestand.</translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation>Tekst (*.txt);;Alles (*.**)</translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation>Selecteer een bestand om te openen...</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -5248,136 +6710,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Version %1</source>
         <translation>Versie %1</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation>Virtueel systeem %1</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Naam</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation>Produkt</translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation>Produkt-URL</translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation>Leverancier</translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation>Leveranciers-URL</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation>Versie</translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation>Omschrijving</translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation>Licentie</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>OS soort gast</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation>CPU</translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation>RAM</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation>Harde schijf controller IDE</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation>Harde schijf controller SATA</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation>Harde schijf controller SCSI</translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation>DVD</translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation>Diskette</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation>Netzwerk adapter</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation>USB controller</translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation>Geluidskaart</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translatorcomment>het woord &apos;Disk image&apos; is lastig, suggesties: schijf afbeelding, ...</translatorcomment>
-        <translation>Virtuele schijf</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation>Onbekende hardware</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;Oospronkelijke waarde:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation>Configuratie</translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation>Waarschuwingen:</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation>Harde schijf controller (SAS)</translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7481,17 +8813,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation>Hulpmiddel importeren ...</translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation>Hulpmiddel lezen ...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>VirtualBox License</source>
@@ -7504,13 +8825,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>I &amp;Disagree</source>
         <translation>I ga &amp;niet akkoord</translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>B&amp;ewerken</translation>
     </message>
 </context>
 <context>
@@ -7820,1239 +9134,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMessageCenter</name>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Informatie</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox -vraag</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Waarschuwing</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Fout</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Kritieke fout</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag</comment>
-        <translation>Geef deze boodschap niet opnieuw weer</translation>
-    </message>
-    <message>
-        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>De volgende bestanden bestaal al: &lt;br/&gt;&lt;br/&gt;%1&lt;br/&gt;&lt;br/&gt;Weet u zeker dat u deze wil vervangen? Door deze te vervangen overschrijft u de inhoud.</translation>
-    </message>
-    <message>
-        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation>U draait een pre-release versie van VirtualBox. Deze versie is niet geschikt voor productie.</translation>
-    </message>
-    <message>
-        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Het is niet gelukt &lt;tt&gt;%1&lt;/tt&gt; te openen. Verzeker u ervan dat uw bureaublad omgeving op een goede wijze met URL&apos;s van dit soort om kan gaan.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet gelukt de COM op te zetten of de VirtualBox COM server is niet gevonden. Waarschijnlijk draait de VirtualBox server niet of lukt het niet deze op te starten.&lt;/p&gt;&lt;p&gt;Het programma wordt nu afgesloten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet gelukt het VirtualBox COM object aan te maken.&lt;/p&gt;&lt;p&gt;Het programma wordt nu afgesloten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to set global VirtualBox properties.</source>
-        <translation>Het is niet gelukt de algemene VirtualBox eigenschappen in te stellen.</translation>
-    </message>
-    <message>
-        <source>Failed to access the USB subsystem.</source>
-        <translation>Het is niet gelukt om toegang naar het USB subsysteem te krijgen.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation>Het is niet gelukt een nieuwe virtuele machine aan te maken.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt de nieuwe virtuele machine &lt;b&gt;%1&lt;/b&gt; aan te maken.</translation>
-    </message>
-    <message>
-        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt de eigenschappen aan virtuele machine &lt;b&gt;%1&lt;/b&gt; toe te kennen.</translation>
-    </message>
-    <message>
-        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt virtuele machine &lt;b&gt;%1&lt;/b&gt; op te starten.</translation>
-    </message>
-    <message>
-        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt virtuele machine&lt;b&gt;%1&lt;/b&gt; te pauseren.</translation>
-    </message>
-    <message>
-        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt virtuele machine &lt;b&gt;%1&lt;/b&gt; te hervatten.</translation>
-    </message>
-    <message>
-        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt de status van virtuele machine &lt;b&gt;%1&lt;/b&gt; op te slaan.</translation>
-    </message>
-    <message>
-        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt een momentopname van virtuele machine &lt;b&gt;%1&lt;/b&gt; te maken.</translation>
-    </message>
-    <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt virtuele machine&lt;b&gt;%1&lt;/b&gt; te stoppen.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt virtuele machine &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt de opgeslagen status van virtuele machine &lt;b&gt;%1&lt;/b&gt; weg te gooien.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De VT-x/AMD-V hardware versnelling is geactiveerd maar niet operationeel. Uw 64-Bit gast kan de 64 Bit CPU niet herkennen en zal dus niet opstarten.&lt;/p&gt;&lt;p&gt;Verzeker u ervan dat de VT-x/AMD-V instelling correct is aangezet in de BIOS van uw fysieke computer.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt de momentopame &lt;b&gt;%1&lt;/b&gt; van virtuele machine &lt;b&gt;%2&lt;/b&gt; weg te gooien.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt de huidige status van virtuele machine &lt;b&gt;%1&lt;/b&gt; weg te gooien.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt de huidige momentopname en de huidige status van virtuele machine &lt;b&gt;%1&lt;/b&gt; weg te gooien.</translation>
-    </message>
-    <message>
-        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Een virtuele machine met deze naam bestaat niet &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Weet u zeker dat u virtuele machine &lt;b&gt;%1&lt;/b&gt; voorgoed wil verwijderen?&lt;/p&gt;&lt;p&gt;Deze actie kan niet teruggedraaid worden.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Weet u zeker dat u, de niet te benaderen, virtuele machine &lt;b&gt;%1&lt;/b&gt; wilt uitschrijven?&lt;/p&gt;&lt;p&gt;U kunt deze dan niet meer via de GUI registreren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Weet u zeker dat u de opgeslagen status van virtuele machine &lt;b&gt;%1&lt;/b&gt; wilt weggooien?&lt;/p&gt;&lt;p&gt;Deze actie staat gelijk aan het uitzetten van de machine zonder het gast besturingssysteem netjes af te sluiten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Aan de poorten van de extra controler zijn harde schijven gekoppeld. Zet u deze controler uit dan zullen al deze harde schijven automatisch ontkoppeld worden.&lt;/p&gt;&lt;p&gt;Weet u het zeker dat deze controler wilt deactiveren?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Aan de poorten van de extra controler zijn harde schijven gekoppeld. Past u deze controler aan dan zullen al deze harde schijven automatisch ontkoppeld worden.&lt;/p&gt;&lt;p&gt;Weet u het zeker dat u deze controler uit wilt zetten?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create a new session.</source>
-        <translation>Het is niet gelukt een nieuwe sessie aan te maken.</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt een sessie aan te maken voor virtuele machine &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Verwijderen van dit host-only netwerk zal leiden tot het verwijderen van de host only interface waarop dit netwerk is gebaseerd. Wilt u deze (host-only netwerk) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op:&lt;/b&gt; Deze interface wordt mogelijk door meerdere virtuele netwerk adapters, van uw virtuele machines, gebruikt. Nadat deze interface is verwijderd zullen de adapters niet meer bruikbaar zijn, tenzij u de instellingen corrigeert door of een andere interface naam of een andere soort adapter te kiezen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt netwerk interface &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt USB apparaat &lt;b&gt;%1&lt;/b&gt; te koppelen aan virtuele machine &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt USB apparaat &lt;b&gt;%1&lt;/b&gt; te ontkoppelen van virtuele machine &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om gedeelde map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) aan te maken voor virtuale machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om gedeelde map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) te verwijderen van virtuale machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De virtuale machine rapporteert dat het gast besturingssysteem geen &lt;b&gt;muis integraten&lt;/b&gt; ondersteunt in de huidige video modus. U moet de muis vangen, door te klikken in het venster van de virtuale machine of door te drukken op de gastheer toets, om deze te kunnen gebruiken in het gast besturingssyteem.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De virtuale machine is nu in de &lt;b&gt;gepauseerde&lt;/b&gt; toestand en accepteert daarom geen invoer van het toetsenbord of de muis. Wilt u doorgaan met werken in deze virtuale machine dan moet u deze activeren via de overeenkomstige actie in de menubalk.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox kan niet draaien in &lt;i&gt;VM Selector modus&lt;/i&gt; door locake restricties.&lt;/p&gt;&lt;p&gt;Het programma sluit zich af.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create appliance.</source>
-        <translation>Het is niet gelukt om een appliance aan te maken.</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Fatale fout&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Normale fout&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Waarschuwing&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Fout ID: &lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation>nauwgezetheid:</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Een fatale fout is opgetreden tijdens de werking van de virtuale machine! De virtuale machine wordt uitgezet. Het is zinvol om de volgende foutboodschap te kopieren, wat helpt bij het nader onderzoeken van het probleem:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;een fout is opgetreden tijdens de werking van de virtuale machine! De details van de fout worden hieronder weergegeven. U kunt proberen de beschreven fout te herstellen en de uitvoering van de virtuale machine.voort te zetten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De uitvoering van de virtuale machine.kan tegen de onderstaande foutsituatie aanlopen. U kunt de boodschap negeren maar het is verstandig om een geschikte actie te ondernemen om er zeker van te zijn deze fout niet zal optreden. &lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation>Resultaat&amp;nbsp;code:</translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation>Component:</translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation>Interface:</translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translatorcomment>?</translatorcomment>
-        <translation>Callee:</translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translatorcomment>/</translatorcomment>
-        <translation>Callee&amp;nbsp;RC:</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan geen taalbestand vinden voor de taal &lt;b&gt;%1&lt;/b&gt; in de folder &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;De taal wordt tijdelijk terug gezet op de systeem standaard. Ga naar de &lt;b&gt;voorkeuren&lt;/b&gt; dialoog, deze is te bereiken via het menu in het VirtualBox hoofdscherm, en selecteer een van de bestaande talen uit de pagina &lt;b&gt;talen&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan het taalbestand &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; niet laden.&lt;p&gt;De taal wordt tijdelijk terug gezet naar Engels (ingebouwd). Ga naar de &lt;b&gt;voorkeuren&lt;/b&gt; dialoog, deze is te bereiken via het menu in het VirtualBox hoofdscherm, en selecteer een van de bestaande talen uit de pagina &lt;b&gt;talen&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De gast uitbreidingen, geïnstalleerd in de het gast besturingssysteem, zijn te oud: versie %1 is geïnstalleerd, terwijl versie %2 wordt verwacht. Een aantal onderdelen die afhankelijk zijn van de gast uitbreiding (muis integratie, automatisch scherm aanpassen) zullen niet goed werken .&lt;/p&gt;&lt;p&gt;Werk de gast uitbreiding bij door te kiezen voor &lt;b&gt;gast uitbreiding installatie&lt;/b&gt; in het menu &lt;b&gt;apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De gast uitbreidingen, geïnstalleerd in de het gast besturingssysteem, zijn verouderd: versie %1 is geïnstalleerd, terwijl versie %2 wordt verwacht. Een aantal onderdelen die afhankelijk zijn van de gast uitbreiding (muis integratie, automatisch scherm aanpassen) zullen niet goed werken.&lt;/p&gt;&lt;p&gt;Werk de gast uitbreiding bij door te kiezen voor &lt;b&gt;gast uitbreiding installatie&lt;/b&gt; in het menu &lt;b&gt;apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De gast uitbreidingen, geïnstalleerd in de het gast besturingssysteem, zijn te nieuw: versie %1 is geïnstalleerd, terwijl versie %2.&lt;/p&gt;&lt;p&gt;wordt verwacht. Een te nieuwe versie gebruiken bij een oudere versie van VirtualBox wordt niet ondersteunt. Installeer de huidige versie van |de gast uitbreiding door te kiezen voor &lt;b&gt;gast uitbreiding installatie&lt;/b&gt; in het menu &lt;b&gt;apparaten&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt om het pad naar de map voor de momentopname, van virtuele machine &lt;b&gt;%1&lt;/b&gt;, te wijzigen naar &lt;nobr&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet gelukt om de gedeeld map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) te verwijderen van virtuele machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Sluit alle programma&apos;s af, in het gast besturginssysteem, die deze map mogen gebruiken en probeer het opnieuw.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De CD image bestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; of &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; , met daarop de gast uitbreidingen, is niet te vinden.&lt;/p&gt;&lt;p&gt;Wilt u deze downloaden van het internet?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet gelukt om het CD image bestand, met daarop de gast uitbreidingen, bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; te downloaden.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Weet u het zeker dat u het CD image bestand, met daarop de gast uitbreidingen, bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (omvang %3 bytes) wil downladen?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het CD image bestand, met daarop de gast uitbreidingen, is succesvol gedownload bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; en locaal opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;wilt u de CD image registreren en koppelen aan het virtuele CD/DVD station?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het venster van de virtuale machine is geöptimaliseerd om te werken in &lt;b&gt;%1 bits&lt;/b&gt; kleurenmodus, echter de kleurkwaliteit van het virtuele beeldscherm staat op &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Open de beeldscherm eigenschappen in het gast besturingssysteem en selecteer &lt;b&gt;%3 bits&lt;/b&gt;kleurenmodus,mits beschikbaar, voor de beste prestatie van het video subsysteem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op&lt;/b&gt;: Sommige besturingssystemen (zoals OS/2) werken in 32 bits kleurenmodus maar melden dit als 24 bits kleurenmodus (16 miljoen kleuren).U kunt proberen een andere kleur kwaliteit te selecteren om de boodschap weg te krijgen of u kunt de boodschap nu uitzetten, als u zeker weet dat de vereist kleur kwaliteit (%4&amp;nbsp; bit) niet beschikbaar is in het besturingssysteem.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U heeft geen harde schijf gekoppeld aan de nieuwe virtuele machine. De machine kan niet eerder opstarten dan nadat u een harde schijf, met een gast besturingssysteem of een andere opstartbaar medium, hebt gekoppeld. U kunt dit doen via de machine instellingen dialoog of door de assistent op te starten.&lt;/p&gt;&lt;p&gt;Wilt u doorgaan?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Het is niet gelukt om het licentie bestand in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te vinden.</translation>
-    </message>
-    <message>
-        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>Het is niet gelukt om het licentie bestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te openen. Controleer de toegangsrechten.</translation>
-    </message>
-    <message>
-        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om de ACPI startknop gebeurtenis naar virtuele machine &lt;b&gt;%1&lt;/b&gt; te sturen.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gefeliciteerd! u bent met succes geregistreerd als gebuiker van VirtualBox.&lt;/p&gt;&lt;p&gt;Bedankt dat u de moeite nam om het registratieformulier in te vullen!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Verwijder</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Uitschrijven</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state</comment>
-        <translation>Verwerp</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions</comment>
-        <translation>Download</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions</comment>
-        <translation>aankoppelen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;De gasheer toets is op dit moment als &lt;b&gt;%1&lt;/b&gt; gedefineerd.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Capture</source>
-        <comment>do input capture</comment>
-        <translation>Vangen</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box</comment>
-        <translation>Controleer</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen</comment>
-        <translation>Overschakelen</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless</comment>
-        <translation>Overschakelen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Weet u zeker dat u de virtuele machine wilt resetten?&lt;/p&gt;&lt;p&gt;Wordt de machine gereset dan gaan alle, niet opgeslagen, gegevens van alle draaiende programma&apos;s verloren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine</comment>
-        <translation>Terugzetten</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached</comment>
-        <translation>Doorgaan</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached</comment>
-        <translation>Terug gaan</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Het is niet gelukt om instellingen van de VirtualBox naar&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; op te slaan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet gelukt om de algemene GUI configuratie te laden vanuit &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Het programma wordt nu afgesloten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet gelukt om de algemene GUI configuratie op te slaan in &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Het programma wordt nu afgesloten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om de instellingen van virtuele machine &lt;b&gt;%1&lt;/b&gt; op te slaan in &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om de instellingen van virtuele machine &lt;b&gt;%1&lt;/b&gt; vanuit &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; te laden.</translation>
-    </message>
-    <message>
-        <source>Disable</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Deactiveren</translation>
-    </message>
-    <message>
-        <source>&amp;Backup</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Back-up</translation>
-    </message>
-    <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="obsolete">Het is niet mogelijk om bestand &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; te kopiëren naar &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">&amp;Aanmaken</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Selecteer</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan de naadloze modus niet binnengaan omdat de gast onvoldoende video geheugen heeft.&lt;/p&gt;&lt;p&gt;U moet, bij de configuratie, de virtuele machine minimaal &lt;b&gt;%1&lt;/b&gt; video geheugen meegeven.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan de gast scherm niet laten overschakelen op schermvullend omdat de gast te weinig video geheugen heeft.&lt;/p&gt;&lt;p&gt;U moet, bij de configuratie, de virtuele machine minimaal &lt;b&gt;%1&lt;/b&gt; video geheugen meegeven.&lt;/p&gt;&lt;p&gt;klik op &lt;b&gt;Negeren&lt;/b&gt; om toch op volledig beeld over te schakelen of klik op&lt;b&gt;Annuleren&lt;/b&gt; om niets te doen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>U heeft reeds de laatste versie van VirtualBox geïnstalleerd.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U heeft op &lt;b&gt;de muis geklikt&lt;/b&gt;in het scherm van de virtuele machine of op &lt;b&gt;gastheer toets&lt;/b&gt; gedrukt.Dit zorgt ervoor dat de virtuele machine de muis &lt;b&gt;vangt&lt;/b&gt; (dit treed alleen op als de muis integratie niet ondersteund wordt door het gast besturingssysteem) en het toetsenbord. Deze twee zijn dan niet meer beschikbaar voor andere applicaties die draaien op de gastheer machine.&lt;/p&gt;&lt;p&gt;U kunt op ieder moment op de &lt;b&gt;gastheer toets&lt;/b&gt; drukken omhet toetsenbord en de muis (als deze gevangen is) weer &lt;b&gt;vrij te geven&lt;/b&gt;. De huidige gastheer toets word weergegeven in de statusbalk onderin het venster van de virtuele machine, naast het&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikoon. Dit ikoon, samen met het muis ikoon, geven de huidige status weer, gevangen of vrij.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U heeft de modus &lt;b&gt;automatisch toetsenbord vangen&lt;/b&gt; aangezet. Dit zorgt ervoor dat de virtuele machine automatisch het toetsenbord &lt;b&gt;vangt&lt;/b&gt; iedere keer dat het VM venster wordt geactiveerd en maakt het toetsenbaar, voor andere applicaties, niet beschikbaar. Is het toestenbord gevangen dan worden alle toets aanslagen (inclusief de speciale zoals Alt-Tab) doorgegeven aan de VM.&lt;p&gt;&lt;/p&gt;U kunt ieder moment op de &lt;b&gt;gastheer toets&lt;/b&gt; drukken om het toetsenbord en de muis (als deze gevangen is) weer &lt;b&gt;vrij te geven&lt;/b&gt;. De huidige gastheer toets word weergegeven in de statusbalk onderin het venster van de virtuele machine, naast het&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikoon. Dit ikoon, samen met het muis ikoon, geven de huidige status weer, gevangen of vrij&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De virtuele machine meldt dat het gast besturingssysteem &lt;b&gt;muis integratie&lt;/b&gt; ondersteund. Dit betekend dat u niet de muis hoeft te &lt;i&gt;vangen&lt;/i&gt; om deze in het gast besturingssysteem te gebruiken. Bevindt de muis zich op het venster van de virtuele machnie dan zullen alle acties naar het gast besturingssysteem worden gestuurd. Is de muis nu gevangen dan wordt deze automatisch vrijgegeven.&lt;/p&gt;&lt;p&gt;Het ikoon van de muis op statusbalk lijkt hierop:&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp; dit maakt duidelijk dat muis integratie wordt ondersteund en nu geactiveerd is.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op:&lt;/b&gt; bepaalde applicaties kunnen zich vreem gedragen in deze modus. U kunt dit altijd deactiveren voor de huidige sessie (en later weer activeren) door de overeenkomstige actie in de menubalk te selecteren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;schermvullende&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de &lt;i&gt;gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen bij volledig scherm. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;naadloze&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen in naadloze modus. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Contents...</source>
-        <translation>&amp;Inhoud...</translation>
-    </message>
-    <message>
-        <source>Show the online help contents</source>
-        <translation>Geef de online help inhoud weer</translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation>&amp;VirtualBox website...</translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>open de browser en ga naar de website van VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation>Alle waarschuwingen &amp;terugzetten</translation>
-    </message>
-    <message>
-        <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>Hierdoor worden alle onderdrukte waarschuwingen en berichten weer zichtbaar</translation>
-    </message>
-    <message>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation>VirtualBox r&amp;egistreren...</translation>
-    </message>
-    <message>
-        <source>Open VirtualBox registration form</source>
-        <translation>Open het registratieformulier van VirtualBox</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation>&amp;Controleer op updates...</translation>
-    </message>
-    <message>
-        <source>Check for a new VirtualBox version</source>
-        <translation>Controleer of een nieuwe versie van VirtualBox beschikbaar is</translation>
-    </message>
-    <message>
-        <source>&amp;About VirtualBox...</source>
-        <translation>VirtualBox i&amp;nfo...</translation>
-    </message>
-    <message>
-        <source>Show a dialog with product information</source>
-        <translation>Geef de produkt informatie weer</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Een nieuwe versie van VirtualBox is vrijgegeven! Versie &lt;b&gt;%1&lt;/b&gt; is beschikbaar bij &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;U kunt deze versie direct downloaden via deze link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Weet u zeker dat u %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; wilt vrijgeven?&lt;/p&gt;&lt;p&gt;Hierdoor worden deze ontkoppeld van de volgende virtuele machines: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium</comment>
-        <translation>Vrijgeven</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Weet u zeker dat u %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; wilt verwijderen uit de lijst met bekende media?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>Let op: deze harde schijf is niet te benaderen, dus kan zijn opslag eenheid nu niet verwijderd worden.</translation>
-    </message>
-    <message>
-        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>De volgende dialoog laat u kiezen of u ook de opslag eenheid wilt verwijderen of dat u deze harde schijf wilt bewaren voor later gebruik.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Let op: de opslag eenheid van dit medium wordt niet verwijderd en dus is het mogelijk deze later opnieuw aan de lijst toe te voegen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium</comment>
-        <translation>Verwijderen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De opslag eenheid van de harde schijf, op locatie &lt;b&gt;%1&lt;/b&gt;, bestaat al. U kunt geen nieuwe virtuele harde schijf aanmaken op deze locatie omdat deze mogelijk door een andere virtuele harde schijf wordt gebruikt.&lt;/p&gt;&lt;p&gt;Geef een andere locatie op.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Wilt u de opslag eenheid van harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Verwijderen&lt;/b&gt; dan wordt de opslag eenheid permanent verijderd.Deze actie &lt;b&gt;kan niet&lt;/b&gt; terug gedraaid worden.&lt;p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Behouden&lt;/b&gt; dan wordt de harde schijf alleen uit de lijst met bekende harde schijven gehaald maar de opslag eendheid wordt niet onaangetast, zodat het mogelijk is om de harde schijf op een later moment weer op de lijst te zetten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage</comment>
-        <translation>Verwijderen</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage</comment>
-        <translation>Behouden</translation>
-    </message>
-    <message>
-        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om de opslag eenheid van harde schijf &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Voor de nieuw aangemaakte bijlage is geen, ongebruikte, harde schijf beschikbaar.&lt;/p&gt;&lt;p&gt;Druk op de knop &lt;b&gt;Aanmaken&lt;/b&gt; om de assistent voor een &lt;i&gt;nieuwe virtuele schijf/i&gt; op te starten en daarmee een nieuwe harde schijf aan te maken. Of druk op de knop &lt;b&gt;Selecteer&lt;/b&gt; om de &lt;i&gt;manager voor virtuele media&lt;/i&gt; te openen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Het is niet gelukt om de harde schijf opslag &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; aan te maken.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt om harde schijf&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te koppelen aan het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt om harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; te koppelen aan de virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; los te koppel van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; te openen.</translation>
-    </message>
-    <message>
-        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Het is niet gelukt om %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; te sluiten.</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Het is niet gelukt om de toegankelijkheids status van medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; op te halen.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet gelukt om een verbinding te krijgen met de VirtualBox online registratie service vanwege de volgende fout:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet gelukt om infomatie over de nieuwe versie op te halen vanwege de volgende fout:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Een of meer virtuele harde schijven, CD/DVD-Rom&apos;s of de diskette zijn nu niet te benaderen.Hierdoor kunt u niet met de virtuele machines werken die deze media gebruiken, totdat de media later wel weer benaderbaar zijn.&lt;/p&gt;&lt;p&gt;Druk op de knop &lt;b&gt;Controleren&lt;/b&gt; om de manager voor virtuele media te openen om na te gaan welke media niet te benaderen is, of drukt opde knop &lt;b&gt;Nogeren&lt;/b&gt; om dir berichte te negeren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De bestaande bestanden, met VirtualBox instellingen, zijn automatisch van het oude formaat in het nieuwe formaat overgezet, dit was nodig voor de nieuwe versie van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; om VirtualBox op te starten of klik op&lt;b&gt;Meer&lt;/b&gt; voor extra informatie over welke bestanden overgezet zijn en toegang te krijgen naar aanvullende acties.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Afsluiten&lt;/b&gt; om VirtualBox af te sluiten zonder dat de resultaten van het overzetten op schijf te bewaren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;More</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Meer</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Afsluiten</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De volgende bestanden, met VirtualBox instellingen, zijn automatisch overgezet naar het nieuwe formaat &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;De resultaten zijn nog niet op schijf op geslagen. Klik op &lt;p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Back-up&lt;/b&gt; om back-up kopiën te maken van de bestanden met instellingen in het oude formaat, voordat de bestanden met het nieuwe formaat worden overschreven.&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overschrijven&lt;/b&gt; om alle bestanden in het nieuwe formaat op te slaan. Het daarna niet meer mogelijk deze bestanden, met instellingen, voor oudere versies van VirtualBox te gebruiken. &lt;/li&gt;&lt;li&gt;%2&lt;/ul&gt;&lt;p&gt;Het verdient aanbeveling om altijd voor &lt;b&gt;Back-up&lt;/b&gt; te keizen omdat dan de mogelijkheid aanwezig blijft om, indien nodig, terug te keren naar de voorgaande versie van VirtualBox. Kijk in het VirtualBox handboek voor meer informatie over dit onderwerp.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Afsluiten&lt;/b&gt; om VirtualBox te stoppen zonder de resultaten van het overzetten op schijf te bewaren.&lt;/li&gt;</translation>
-    </message>
-    <message>
-        <source>O&amp;verwrite</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Overschrijven</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Een fatale fout is opgetreden terwijl de virtuele machine draaide en de machine is gestopt.&lt;/p&gt;&lt;p&gt;Kijk voor ondersteuning op de community sectie van &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; of u contact voor ondersteuning. Lever aub de inhoud van het logbestand &lt;tt&gt;VBox.log&lt;/tt&gt; en het image bestand &lt;tt&gt;VBox.png&lt;/tt&gt; deze kunt u terugvinden in de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; folder, samen met een beschrijving van wat u deed op het moment dat de fout optrad. Let op; u kunt genoemde bestanden ook benaderen via &lt;b&gt;Toon Log&lt;/b&gt; in het &lt;b&gt;machine&lt;/b&gt; menu van de hoofdvenster van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; als u de machine uit wilt zetten of klik op &lt;b&gt;Negeren&lt;/b&gt; als u alles zo wilt laten staan voor nader onderzoek. Let op: nader onderzoek vereist specifieke kennis en hulpmiddelen, het is wenselijker om op &lt;b&gt;Ok&lt;/b&gt; te klikken.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">harde schijf</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">CD/DVD image</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">diskette image</translation>
-    </message>
-    <message>
-        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="obsolete">Het is niet mogelijk om de USB op het gastheer systeem te benaderen omdat nog het USB bestandssysteem (usbfs) nog de DBus en HAL services nu beschikbaar zijn. Wilt u het met USB op het gast systeem werken moet eea corrigeren en VirtuaBox herstarten.</translation>
-    </message>
-    <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation>U probeert de gast af te sluiten via de ACPI startknop. Dit is op dit moment niet mogelijk omdat de gast geen ACPI subsysteem gebruikt.</translation>
-    </message>
-    <message>
-        <source>Close VM</source>
-        <translation>VM afsluiten</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Doorgaan</translation>
-    </message>
-    <message>
-        <source>Change</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Aanpassen</translation>
-    </message>
-    <message>
-        <source>Failed to create the host-only network interface.</source>
-        <translation>Het is niet gelukt om de host only interface aan te maken.</translation>
-    </message>
-    <message>
-        <source>Failed to open appliance.</source>
-        <translation>Het is niet gelukt om de appliance te openen.</translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om appliance &lt;b&gt;%1&lt;/b&gt; te openen of interpreteren.</translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om appliance &lt;b&gt;%1&lt;/b&gt; te importeren.</translation>
-    </message>
-    <message>
-        <source>Failed to create an appliance.</source>
-        <translation>Het is niet gelukt om een appliance aan te maken.</translation>
-    </message>
-    <message>
-        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om de export van appliance &lt;b&gt;%1&lt;/b&gt; voor te bereiden.</translation>
-    </message>
-    <message>
-        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om appliance &lt;b&gt;%1&lt;/b&gt; te exporteren.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="obsolete">Het is niet gelukt om bestand &lt;b&gt;%1&lt;/b&gt; te verwijderen.&lt;br/&gt;&lt;br/&gt;Probeer zelf het bestand te verwijderen en probeer het dan opnieuw.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Weet u zeker dat u de geselecteerde momentopname en opgeslagen status wilt verwijderen?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="obsolete">Verwerpen</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annuleren</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De bestaande bestanden, met VirtualBox instellingen, zijn automatisch van het oude formaat in het nieuwe formaat overgezet, dit was nodig voor de nieuwe versie van VirtualBox.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Ok&lt;/b&gt; om nu VirtualBox te starten of &lt;b&gt;Afsluiten&lt;/b&gt; om VirtualBox, zonder verdere acties af te sluiten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>Een bestand met de naam &lt;b&gt;%1&lt;/b&gt; bestaat al. Weet u het zeker dat deze wilt vervangen?&lt;br/&gt;&lt;br/&gt;Vervangen betekend overschrijven van de inhoud.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De hardware versnelling VT-X/AMD-V is geactiveerd maar is niet operationeel. Bepaalde gasten (zoals OS/2 en QNX) hebben deze functie nodig.&lt;/p&gt;&lt;p&gt;Controleer aub of de VT-x/AMD-V correct in de BIOS van uw fysieke computer is geconfigureerd.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ongeldig e-mai adres of wachtwoord opgegeven.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het is niet geluk om VirtualBox te registreren.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation>Het is niet gelukt om de bestanden te controleren.</translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation>Het is niet gelukt om het bestand te verwijderen.</translation>
-    </message>
-    <message>
-        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation>U lijkt een USBFS bestandssysteem gekoppeld te hebben aan /sys/bus/usb/drivers. We adviseren u met klem dit te wijzigen, omdat dit een ernstige mis-configuratie van uw systeem is. Dit kan ervoor zorgen dat uw USB apparaten op onverwachte momenten storing geven.</translation>
-    </message>
-    <message>
-        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation>U draait een PROEF constructie van VirtualBox. Deze versie is niet geschikt voor productie.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Bent u er zeker van dat u de momentopname &lt;b&gt;%1&lt;/b&gt; wilt terugzetten? Hierdoor verliest u de huidige status van de machine en dit is niet te herstellen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>Terugzetten</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Door het verwijderen van een momentopname wordt de status informatie opgeslagen in de momentopname weg gegooid. En de schijf gegevens, verspreidt over verschillende image bestanden, die VirtualBox heeft aangemaakt tesamen met de momentopname, worden samengevoegd in één bestand. Dit kan een langdurig proces zijn en de informatie in de momentopname kan niet hersteld worden.&lt;/p&gt;&lt;/p&gt;Bent u er zeker van dat u de geselecteerde momentopname &lt;b&gt;%1&lt;/b&gt; wilt verwijderen?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Verwijderen</translation>
-    </message>
-    <message>
-        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Kan de momentopname &lt;b&gt;%1&lt;/b&gt;, virtuale machine &lt;b&gt;%2&lt;/b&gt;.niet terugzetten.</translation>
-    </message>
-    <message>
-        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Kan de momentopname &lt;b&gt;%1&lt;/b&gt;, virtuale machine &lt;b&gt;%2&lt;/b&gt;.niet verwijderen.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Voor de nieuw aangemaakte bijlage is geen ongebruikte media beschikbaar.&lt;/p&gt;&lt;p&gt;Druk op de &lt;b&gt;Aanmaak&lt;/b&gt; knop om de assistent &lt;i&gt;Nieuwe virtuale schijfk&lt;/i&gt; te starten en maak een nieuw medium aan of druk op &lt;b&gt;Selecteer&lt;/b&gt; als u de &lt;i&gt;Virtuale media manager&lt;/i&gt; wilt openen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>medium</comment>
-        <translation type="obsolete">&amp;Aanmaken</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <comment>medium</comment>
-        <translation type="obsolete">&amp;Selecteer</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Voor de nieuw aangemaakte bijlage is geen ongebruikte media beschikbaar.&lt;/p&gt;&lt;p&gt;Druk op &lt;b&gt;Selecteer&lt;/b&gt; als u de &lt;i&gt;Virtuale media manager&lt;/i&gt; wilt opene.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Aansluiten van de %1 aan slot &lt;i&gt;%2&lt;/i&gt; van machine &lt;b&gt;%3&lt;/b&gt; mislukt.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Afsluiten van de %1 aan slot &lt;i&gt;%2&lt;/i&gt; van machine &lt;b&gt;%3&lt;/b&gt; mislukt.</translation>
-    </message>
-    <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Kan %1 niet kopppelen aan &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; op machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source> Would you like to force mounting of this medium?</source>
-        <translation> Wilt u de koppeling van dit medium forceren?</translation>
-    </message>
-    <message>
-        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Kan %1 niet afkopppelen van &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; op machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source> Would you like to force unmounting of this medium?</source>
-        <translation> Wilt u de afkoppeling van dit medium forceren?</translation>
-    </message>
-    <message>
-        <source>Force Unmount</source>
-        <translation>Geforceerde afkoppeling</translation>
-    </message>
-    <message>
-        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation type="obsolete">Het uitwerpen van de schijf, uit het virtuele station, is mislukt. Het station kan vergrendeld zijn door het besturingssysteem van de gast. Controleer dit a.u.b. en probeer het opnieuw.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan de VirtualBox Gast toevoegingen installatie CD image niet plaatsten in de virtuele machine &lt;b&gt;%1&lt;/b&gt;, omdat de machine geen  CD/DVD-ROM station heeft. Voeg a.u.b. een station toe via de opslag pagina bij de instellingen van de virtuele machine.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation>&amp;Afsluiten</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De volgende bestanden met VirtualBox instellingen zullen automatisch omgezet worden van het oude formaat naar het nieuwe formaat, dat is nodig voor de nieuwe versie van VirtualBox.&lt;/p&gt;&lt;p&gt;Druk op &lt;b&gt;OK&lt;/b&gt; om VirtualBox nu te starten of druk op &lt;b&gt;Afsluiten&lt;/b&gt; als u de VirtualBox applicatie witl beëindigen zonder verdere acties.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...</comment>
-        <translation>harde schijf</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>CD/DVD</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...</comment>
-        <translation>CD/DVD image</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>Diskette</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...</comment>
-        <translation>diskette image</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">harde schijf</translation>
-    </message>
-    <message>
-        <source>CD/DVD device</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">CD/DVD apparaat</translation>
-    </message>
-    <message>
-        <source>floppy device</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">diskette apparaat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Weet u zeker dat u de CD/DVD-ROM apparaat wilt verwijderen?&lt;/p&gt;&lt;p&gt;Het is daarna niet meer mogelijk om enige CD of ISO images to koppelen of de Gastuitbreidingen te installeren!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation>Ve&amp;rwijderen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation>&lt;p&gt;VT-x/AMD-V hardware versnelling is niet beschikbaar op uw systeem. Uw 64-bit gast will zal geen 64-bit CPU detecteren en kan niet opstareten.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V hardware versnelling is niet beschikbaar op uw systeem. Bepaalde gastsystemen (bv. OS/2 en QNX) Hebben deze mogelijkheid nodig en kunnen anders niet opstarten.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het verwijderen van momentopname %1 kost tijdelijk meer schijfruimte. In het ergste geval zal de omvang van image %2 groeien met %3, echter er is maar %4 vrij.&lt;/p&gt;&lt;p&gt;Door de schijfruimte heen raken tijdens een samenvoeg operatie kan resluteren in het corrupt raken van de de image en de VM configuratie, dus het verlies van de VM en zijn gegevens.&lt;/p&gt;&lt;p&gt;U mag op eigen risico doorgaan met het verwijderen van de momentopname.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan het gastscherm niet veranderen in het gastheerscherm omdat er onvoldoende videogeheugen is voor gast.&lt;/p&gt;&lt;p&gt;U moet de virtuale machine zo configureren dat deze tenminste &lt;b&gt;%1&lt;/b&gt; aan video memory heeft.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan het gastscherm niet veranderen in het gastheerscherm omdat er onvoldoende videogeheugen is voor gast.&lt;/p&gt;&lt;p&gt;U moet de virtuale machine zo configureren dat deze tenminste &lt;b&gt;%1&lt;/b&gt; aan video memory heeft.&lt;/p&gt;&lt;p&gt;Druk op &lt;b&gt;Negeren&lt;/b&gt; om toch te wisselen of druk op &lt;b&gt;Annuleren&lt;/b&gt; om de operatie te stoppen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan het gastscherm niet omzetten naar volledigscherm. U hebt meer virtuale schermen geconfigureerd dan dat er fysieke schermen zijn aangesloten.&lt;/p&gt;&lt;p&gt;Verminder het aantal virtuale schermen in u VM configuratie of sluit meer schermen aan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan het gastscherm niet omzetten naar naadloze modus. U hebt meer virtuale schermen geconfigureerd dan dat er fysieke schermen zijn aangesloten.&lt;/p&gt;&lt;p&gt;Verminder het aantal virtuale schermen in u VM configuratie of sluit meer schermen aan.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan de gebruikershandleiding &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; van VirtualBox niet vinden.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Wilt u deze van het internet downloaden?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Weet u het zeker dat u gebruikershandleiding van VirtualBox wilt downloaden bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (omvang %3 bytes)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het downloaden van de gebruikershandleiding van VirtualBox is mislukt bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De gebruikershandleiding van VirtualBox is succesvol gedownload bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; en lokaal opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De gebruikershandleiding van VirtualBox is succesvol gedownload bij &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; maar kan lokaal niet worden opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Kies aub een andere locatie voor dit bestand.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open virtual machine located in %1.</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U staat op het punt om de virtuele machine &lt;b&gt;%1&lt;/b&gt; uit de lijst met machines te verwijderen.&lt;/p&gt;&lt;p&gt;Moeten de bestanden, die de virtuele machine bevatten, ook verwijderd worden van u harde schijf?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U staat op het punt om de virtuele machine &lt;b&gt;%1&lt;/b&gt; uit de lijst met machines te verwijderen.&lt;/p&gt;&lt;p&gt;Moeten de bestanden, die de virtuele machine bevatten, ook verwijderd worden van u harde schijf? Hiermee worden ook de bestanden verwijderd die de virtuele harde schijven van de machine bevatten, tenzij ze ingebruik zijn door een andere machine.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete all files</source>
-        <translation>Verwijder alle bestanden</translation>
-    </message>
-    <message>
-        <source>Remove only</source>
-        <translation>Verwijder alleen</translation>
-    </message>
-    <message>
-        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation>U staat op het punt om de virtuele machine &lt;b&gt;%1&lt;/b&gt;, die niet te benaderen is, uit de lijst met machines te verwijderen. Wilt u doorgaan?</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Verwijderen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U staat op het punt om een virtuele harde schijf aan controler &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een nieuw leeg bestand maken, die schijfinhoud bevat of een bestaande selecteren?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Create &amp;new disk</source>
-        <comment>add attachment routine</comment>
-        <translation>Maak een &amp;nieuwe schijf aan</translation>
-    </message>
-    <message>
-        <source>&amp;Choose existing disk</source>
-        <comment>add attachment routine</comment>
-        <translation>&amp;Kies een bestaande schijf</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U staat op het punt om een nieuw CD/DVD station aan controler &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een virtuale CD/DVD schijf in het station plaatsen of voor nu leeg laten?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Choose disk</source>
-        <comment>add attachment routine</comment>
-        <translation>&amp;Kies een schijf</translation>
-    </message>
-    <message>
-        <source>Leave &amp;empty</source>
-        <comment>add attachment routine</comment>
-        <translation>Laat &amp;leeg</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U staat op het punt om een nieuw diskette station aan controler &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een virtuale diskette in het station plaatsen of voor nu leeg laten?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om CD/DVD station &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om diskette station &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; los te koppelen van het slot &lt;i&gt;%2&lt;/i&gt; van virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De VirtualBox gast aanvullingen lijken niet beschikbaar op deze virtuale machine en gedeelde mappen kunnen dan niet worden gebruikt. Om gedeelde mappen te gebruiken binnen de virtuele machine installeer de gast aanvullingen als deze nog niet zijn geïnstalleerd, of herisntalleer deze als ze niet goed werken. Selecteer &lt;b&gt;Installeer gast aanvullingen&lt;/b&gt; uit het menu &lt;b&gt;Machine&lt;/b&gt;. Zijn deze geïnstalleer maar is de machine nog niet helemaal gestart dan komen de gedeelde mappen beschikbaar zo dadelijk bechikbaar.&lt;/p&gt;</translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation>
-            <numerusform>&lt;p&gt;De virtuale machine(s) &lt;b&gt;%1&lt;/b&gt; is(zijn) nu in een veilige staat.&lt;/p&gt;&lt;p&gt;Als u verder gaat wordt de status &quot;Uitvoeren&quot;, van de te exportern machine(s), genegeerd. Let op, de bestaande machine(s) worden niet gewijzigd.&lt;/p&gt;</numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation>Het is niet gelukt om de Gast aanvullingen bij te werken. De Gast aanvullings installatie image wordt gekoppeld voor een handmatige installatie.</translation>
-    </message>
-    <message>
-        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te installeren.</translation>
-    </message>
-    <message>
-        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te deïnstalleren.</translation>
-    </message>
-    <message>
-        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation type="obsolete">U staat op het punt om het uitbreidingspakket  &lt;b&gt;%1&lt;/b&gt; te verwijderen. Weet u dit zeker?</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>Ve&amp;rwijderen</translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation>De huidige regel voor het doorverwijzen van poorten zijn niet geldig. Geen van de poorten, nog van de gastheer nog van de gast, mogen op nul staan.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De poort doorverwijzings configuratie heeft nog niet bewaarde wijzigingen.&lt;/p&gt;&lt;p&gt;Gaat u verder dan gaan uw wijzigingen verloren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation type="unfinished">Excusses een algemene fout is opgetreden.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om harde schijf&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te koppelen aan het slot &lt;i&gt;%2&lt;/i&gt; van de machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om CD/DVD station &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te koppelen aan het slot &lt;i&gt;%2&lt;/i&gt; van de machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om diskette station &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te koppelen aan het slot &lt;i&gt;%2&lt;/i&gt; van de machine &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Let op: de opslag eenheid van dit medium wordt niet verwijderd en dus is het mogelijk deze later opnieuw aan de lijst toe te voegen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De VirtualBox gast aanvullingen lijken niet beschikbaar op deze virtuale machine en gedeelde mappen kunnen dan niet worden gebruikt. Om gedeelde mappen te gebruiken binnen de virtuele machine installeer de gast aanvullingen als deze nog niet zijn geïnstalleerd, of herisntalleer deze als ze niet goed werken. Selecteer &lt;b&gt;Installeer gast aanvullingen&lt;/b&gt; uit het menu &lt;b&gt;Machine&lt;/b&gt;. Zijn deze geïnstalleer maar is de machine nog niet helemaal gestart dan komen de gedeelde mappen beschikbaar zo dadelijk bechikbaar.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;schermvullende&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de &lt;i&gt;gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen bij volledig scherm. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;naadloze&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen in naadloze modus. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;De virtuale machine schakelt nu over op de &lt;b&gt;schaalbare&lt;/b&gt; modus. U kunt ieder moment terug keren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de gastheer toets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Let op: het hoofdmenu is verborgen in schaalbare modus. U kunt dit menu benaderen door op de &lt;b&gt;gastheer toets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>scale</comment>
-        <translation>Overschakelen</translation>
-    </message>
-    <message>
-        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Het is niet gelukt om het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te installeren.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U staat op het punt om het uitbreidingspakket voor VirtualBox te installeren. Uitbreidingspakketten vullen de functionaliteit van VirtualBox aan en kan software op systeem niveau bevatten die mogelijk schadelijk is voor uw systeem. Bekijkt de omschrijving hieronder aub. en ga alleen verder als u een uitbreidingspakket van een betrouwbare bron hebt ontvangen.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Omschrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Install</source>
-        <translation>&amp;Installeer</translation>
-    </message>
-    <message>
-        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation>Uitbreidingspakketten vullen de functionaliteit van VirtualBox aan en kan software op systeem niveau bevatten die mogelijk schadelijk is voor uw systeem. Bekijkt de omschrijving hieronder aub. en ga alleen verder als u een uitbreidingspakket van een betrouwbare bron hebt ontvangen.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Een oudere versie van het uitbreidingspakket is al geïnstalleerd, wilt u deze opwaarderen? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nieuwe Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Huidige Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Omscrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Upgrade</source>
-        <translation>&amp;Opwaarderen</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Een nieuwere versie van het uitbreidingspakket is al geïnstalleerd, wilt u naar de lagere versie?  &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Nieuwe Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;huidige Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Omschrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Downgrade</source>
-        <translation>&amp;Downgrade</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Het uitbreidingspakket is al geïnstalleerd met dezelfde versie, wilt u deze opnieuw installeren? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Omschrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Reinstall</source>
-        <translation>&amp;Opieuw installeren</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U staat op het punt om het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te verwijderen. Weet u dit zeker?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation>Het uitbreidingspakket &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was succesvo geïnstalleerd.</translation>
-    </message>
-    <message>
-        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="obsolete">Verwijderen van alle bestanden die bij de VM horen is nu inactief op Windows/x64 om een crash te voorkomen. Dit wordt in de volgende versie opgelost.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kan de map &lt;b&gt;%1&lt;/b&gt; voor de machine niet aanmaken  in de bovenligende map &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Controleer of de bovenliggende map bestaat en dan u rechten heeft om de machine map aan te maken.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;USB 2.0 is momenteel geactiveerd voor deze virtuele machine. Maar dit vereist installatie van &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Installeer het uitbreidingspakket beschikbaar op de VirtualBox download site. Hierna ben u instaat om de USB 2.0 opnieuw te activeren. In de tussentijn blijft deze inactief tenzij u de huidige instelling wijzigd.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reload settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Keep changes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create a snapshot of the current machine state</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy service</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
@@ -9229,7 +9310,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>&amp;Help</translation>
+        <translation type="obsolete">&amp;Help</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -9700,29 +9781,6 @@ p, li { white-space: pre-wrap; }
             <numerusform>Waarschuwing: U maakt een momentopname van de werkende machine die %n niet te wijzigen images gekoppeld heeft. Zolang u werkt vanaf deze momentopname zullen de niet te wijzigen images niet gereset worden om gegevens verlies te voorkomen.</numerusform>
             <numerusform></numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation>Tekst wijzigen</translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation>&amp;Vervangen...</translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation>Vervangt de bestaande tekst met de inhoud van het opgegeven bestand.</translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation>Tekst (*.txt);;Alles (*.**)</translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation>Selecteer een bestand om te openen...</translation>
     </message>
 </context>
 <context>

@@ -158,6 +158,14 @@
         <source>&amp;Details (%1 of %2)</source>
         <translation>詳細資料 (%1 / %2)(&amp;D)</translation>
     </message>
+    <message>
+        <source>Copy all errors to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">複製</translation>
+    </message>
 </context>
 <context>
     <name>QIWidgetValidator</name>
@@ -402,6 +410,132 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation>虛擬系統 %1</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>名稱</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation>產品</translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation>產品 URL</translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation>供應商</translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation>供應商 URL</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>版本</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation>描述</translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation>授權</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>客體作業系統類型</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>CPU</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation>RAM</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation>硬碟控制器 (IDE)</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation>硬碟控制器 (SATA)</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation>硬碟控制器 (SCSI)</translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation>DVD</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation>軟碟</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation>網路卡</translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation>USB 控制器</translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation>音效卡</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translation>虛擬磁碟映像</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation>未知硬體項目</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation>&lt;b&gt;原始值:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation>組態</translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation>警告:</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation>硬碟控制器 (SAS)</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation>勾選時，將指派新的唯一 MAC 位址到所有已組態的網路卡。</translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation>重新初始化所有網路卡的 MAC 位址(&amp;R)</translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation>正在匯入應用裝置 ...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation>正在讀取應用裝置 ...</translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -410,6 +544,10 @@
     <message>
         <source>Clone</source>
         <translation>再製</translation>
+    </message>
+    <message>
+        <source>Linked Base for %1 and %2</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -424,7 +562,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>勾選時，將指派新的唯一 MAC 位址到所有已組態的網路卡。</translation>
+        <translation type="obsolete">勾選時，將指派新的唯一 MAC 位址到所有已組態的網路卡。</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
@@ -438,20 +576,24 @@
         <source>%1 Clone</source>
         <translation>%1 再製</translation>
     </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Current machine state</source>
-        <translation>目前機器狀態</translation>
+        <translation type="obsolete">目前機器狀態</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation>目前機器和所有子狀態</translation>
+        <translation type="obsolete">目前機器和所有子狀態</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation>所有狀態</translation>
+        <translation type="obsolete">所有狀態</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
@@ -459,19 +601,70 @@
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation>請選擇虛擬機器應再製的部分。</translation>
+        <translation type="obsolete">請選擇虛擬機器應再製的部分。</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation>如果您選取 [&lt;b&gt;目前機器狀態&lt;/b&gt;]，只再製虛擬機器的目前狀態。</translation>
+        <translation type="obsolete">如果您選取 [&lt;b&gt;目前機器狀態&lt;/b&gt;]，只再製虛擬機器的目前狀態。</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation>如果您選取 [&lt;b&gt;目前機器和所有子狀態&lt;/b&gt;]，將再製虛擬機器的目前狀態和子快照的任何狀態。</translation>
+        <translation type="obsolete">如果您選取 [&lt;b&gt;目前機器和所有子狀態&lt;/b&gt;]，將再製虛擬機器的目前狀態和子快照的任何狀態。</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation>如果您選取 [&lt;b&gt;所有狀態&lt;/b&gt;]，將再製目前機器狀態和所有快照。</translation>
+        <translation type="obsolete">如果您選取 [&lt;b&gt;所有狀態&lt;/b&gt;]，將再製目前機器狀態和所有快照。</translation>
+    </message>
+    <message>
+        <source>Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage3</name>
+    <message>
+        <source>Current machine state</source>
+        <translation type="unfinished">目前機器狀態</translation>
+    </message>
+    <message>
+        <source>Current machine and all child states</source>
+        <translation type="unfinished">目前機器和所有子狀態</translation>
+    </message>
+    <message>
+        <source>All states</source>
+        <translation type="unfinished">所有狀態</translation>
+    </message>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished">再製組態</translation>
+    </message>
+    <message>
+        <source>Please choose which parts of the virtual machine should be cloned.</source>
+        <translation type="unfinished">請選擇虛擬機器應再製的部分。</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
+        <translation type="unfinished">如果您選取 [&lt;b&gt;目前機器狀態&lt;/b&gt;]，只再製虛擬機器的目前狀態。</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
+        <translation type="unfinished">如果您選取 [&lt;b&gt;目前機器和所有子狀態&lt;/b&gt;]，將再製虛擬機器的目前狀態和子快照的任何狀態。</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
+        <translation type="unfinished">如果您選取 [&lt;b&gt;所有狀態&lt;/b&gt;]，將再製目前機器狀態和所有快照。</translation>
     </message>
 </context>
 <context>
@@ -784,14 +977,14 @@
     <name>UIDownloader</name>
     <message>
         <source>The download process has been canceled by the user.</source>
-        <translation>使用者已取消下載處理程序。</translation>
+        <translation type="obsolete">使用者已取消下載處理程序。</translation>
     </message>
 </context>
 <context>
     <name>UIDownloaderAdditions</name>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;儲存已下載檔案為 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失敗。&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;儲存已下載檔案為 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失敗。&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
@@ -1583,6 +1776,26 @@
         <source>None</source>
         <translation>無</translation>
     </message>
+    <message>
+        <source>Left Shift</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right Shift</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left Ctrl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Right Ctrl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left Alt</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIImportApplianceWzd</name>
@@ -1756,6 +1969,13 @@
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>指示這部虛擬機器所用不同功能的狀態:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>編輯(&amp;E)</translation>
     </message>
 </context>
 <context>
@@ -2916,7 +3136,7 @@
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>您已指派 ICH9 晶片組類型到此 VM。 除非同時啟用 IO-APIC 功能否則將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值將會自動完成。</translation>
+        <translation type="obsolete">您已指派 ICH9 晶片組類型到此 VM。 除非同時啟用 IO-APIC 功能否則將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值將會自動完成。</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
@@ -2942,6 +3162,10 @@
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3198,25 +3422,1021 @@
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
+    <name>UIMessageCenter</name>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 資訊</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 問題</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 警告</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 錯誤</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - 嚴重錯誤</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag</comment>
+        <translation>不再顯示這個訊息</translation>
+    </message>
+    <message>
+        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
+        <translation>開啟 &lt;tt&gt;%1&lt;/tt&gt; 失敗。 請確定您的桌面環境可以適當地處理這個類型的 URL。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;初始化 COM 或尋找 VirtualBox COM 伺服器時失敗。很有可能，VirtualBox 伺服器未執作或是啟動失敗。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;建立 VirtualBox COM 物件時失敗。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to set global VirtualBox properties.</source>
+        <translation>設定全域 VirtualBox 內容失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to access the USB subsystem.</source>
+        <translation>存取 USB 子系統時失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine.</source>
+        <translation>新建虛擬機器失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>新建虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>套用虛擬機器 &lt;b&gt;%1&lt;/b&gt; 設定值時失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>啟動虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>暫停虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的執行失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>繼續執行虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>儲存虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的狀態失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>建立虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的快照失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>停止虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>移除虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>捨棄已儲存的虛擬機器 &lt;b&gt;%1&lt;/b&gt; 狀態失敗。</translation>
+    </message>
+    <message>
+        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>沒有名為 &lt;b&gt;%1&lt;/b&gt; 的虛擬機器。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您確定要放棄虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的已儲存狀態嗎?&lt;/p&gt;&lt;p&gt;這個操作相當於重設或關閉機器而不使用客體作業系統的正常關機。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create a new session.</source>
+        <translation>新建工作階段失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>開啟虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的工作階段失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>移除主機網路介面 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>附加 USB 裝置 &lt;b&gt;%1&lt;/b&gt; 到虛擬機器 &lt;b&gt;%2&lt;/b&gt; 時失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>從虛擬機器 &lt;b&gt;%2&lt;/b&gt; 分離 USB 裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>建立虛擬機器 &lt;b&gt;%3&lt;/b&gt; 的共用資料夾 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>從虛擬機器 &lt;b&gt;%3&lt;/b&gt; 移除共用資料夾 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;虛擬機器回報在目前的視訊模式中，客體作業系統不支援&lt;b&gt;滑鼠指標整合&lt;/b&gt;。 為了在客體作業系統之內使用滑鼠，您需要擷取滑鼠 (在虛擬機器顯示上方按一下或按下 Host 鍵) 。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;虛擬機器目前在&lt;b&gt;暫停&lt;/b&gt;狀態且無法看到任何鍵盤或滑鼠輸入。 如果您要繼續在 VM 中工作，您需要從功能表列選取相應動作來繼續。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;由於本機限制，無法在 &lt;i&gt;VM Selector&lt;/i&gt; 模式中執行 VirtualBox。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;嚴重錯誤&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;非嚴重錯誤&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;警告&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;錯誤 ID: &lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info</comment>
+        <translation>嚴重性:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
+        <translation>&lt;p&gt;虛擬機器執行期間發生嚴重錯誤! 虛擬機器將關機。 請使用剪貼簿複製以下錯誤訊息以協助診斷問題:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;虛擬機器執行期間發生錯誤! 錯誤詳細資料如下方所示。 您可以嘗試修正錯誤並繼續執行虛擬機器。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;虛擬機器的執行可能會遇到如下所述的錯誤情況。 我們建議您採取適當的動作，以避免錯誤。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation>結果碼:</translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation>元件:</translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation>介面:</translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation>被呼叫端:</translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation>被呼叫端&amp;nbsp;RC:</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;目錄 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; 中找不到語言 &lt;b&gt;%1&lt;/b&gt; 的語言檔案。&lt;/p&gt;&lt;p&gt;語言將會暫時重設為系統的預設語言。 請前往 VirtualBox 主視窗 &lt;b&gt;檔案&lt;/b&gt; 功能表開啟 &lt;b&gt;喜好設定&lt;/b&gt; 對話方塊，並且在 &lt;b&gt;語言&lt;/b&gt; 頁面選取現有的語言之一。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;無法載入語言檔 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;。 &lt;p&gt;語言將會暫時重設為英文 (內建)。 請前往 VirtualBox 主視窗 &lt;b&gt;檔案&lt;/b&gt; 功能表開啟 &lt;b&gt;喜好設定&lt;/b&gt; 對話方塊，並且在 &lt;b&gt;語言&lt;/b&gt; 頁面選取現有的語言之一。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;從虛擬機器 &lt;b&gt;%3&lt;/b&gt; 移除共用資料夾 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 時失敗。&lt;/p&gt;&lt;p&gt;請關閉客體作業系統中所有可能會用到這個共用資料夾的程式，並且再試一次。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;找不到 VirtualBox Guest Additions CD 映像檔案 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 或 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望從網際網路下載這個 CD 映像嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載 VirtualBox Guest Additions 光碟映像失敗。&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您確定要從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載 VirtualBox Guest Additions 光碟映像 (大小 %3 位元組) 嗎? &lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox Guest Additions CD 映像已成功從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載並本機儲存為 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您要登錄這個 CD 映像並將它掛載在虛擬 CD/DVD 光碟機嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;虛擬機器視窗已最佳化於 &lt;b&gt;%1&amp;nbsp;位元&lt;/b&gt; 的色彩模式中工作，但是目前虛擬顯示設定為 &lt;b&gt;%2&amp;nbsp;位元&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;如果可用，請開啟客體作業系統的顯示內容對話方塊，並且選取 &lt;b&gt;%3&amp;nbsp;位元&lt;/b&gt; 的色彩模式，作為虛擬視訊子系統的最佳效能。&lt;/p&gt;&lt;p&gt;&lt;b&gt;請注意&lt;/b&gt;，某些像是 OS/2 的作業系統，可能實際上作用於 32&amp;nbsp;位元模式，卻回報為 24&amp;nbsp;位元 (1600 萬色) 。 您可以試著選取不同的色彩模式來查看這個訊息是否消失，如果您確定所要求的色彩模式 (%4&amp;nbsp;位元) 在客體作業系統中不可用，您可以現在就簡單的停用訊息。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您未附加硬碟到新的虛擬機器。 除非您稍後使用機器設定對話方塊或首次執行精靈，來附加一顆含有客體作業系統的硬碟，或是某些其它可以開機的媒體，否則機器將無法開機。&lt;/p&gt;&lt;p&gt;您希望繼續嗎? &lt;p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>在 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 中尋找授權檔案失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation>開啟授權檔案 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 失敗。 請檢查檔案權限。</translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>傳送出 ACPI 關關按鈕的按下事件到虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;恭喜! 您已經成功以 VirtualBox 使用者身分註冊。&lt;/p&gt;&lt;p&gt;謝謝您花費時間來填寫註冊表單! &lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;從 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 載入全域 GUI 組態失敗。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;儲存全域 GUI 組態到 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 失敗。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>儲存虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的設定值到 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>從 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; 載入虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的設定值失敗。</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>捨棄</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>下載</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>掛載</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;Host 鍵目前定義為 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>擷取</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>檢查</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>切換</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>切換</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您確定要重設虛擬機器嗎?&lt;/p&gt;&lt;p&gt;這將導致在虛擬機器執行中應用程式的任何未儲存資料遺失。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>重設</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>繼續</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>上一步</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;由於客體視訊記憶體不足無法進入無縫模式。&lt;/p&gt;&lt;p&gt;您應組態虛擬機器至少 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;由於客體視訊記憶體不足無法切換客體顯示為全螢幕模式。&lt;/p&gt;&lt;p&gt;您應組態虛擬機器至少 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;忽略&lt;/b&gt;] 無論如何切換為全螢幕或按下 [&lt;b&gt;取消&lt;/b&gt;] 來取消操作。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation>您已經使用 VirtualBox 的最新版本。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您已在虛擬機器顯示中&lt;b&gt;按下滑鼠&lt;/b&gt;或按下 [&lt;b&gt;Host 鍵&lt;/b&gt;]。 這將導致虛擬機器&lt;b&gt;擷取&lt;/b&gt;主機滑鼠指標 (除非客體作業系統目前不支援滑鼠指標整合) 與鍵盤，並使得其它執行在您主機機器的應用程式不可使用。&lt;/p&gt;&lt;p&gt;您可以隨時按下 [&lt;b&gt;Host 鍵&lt;/b&gt;] 來&lt;b&gt;取消擷取&lt;/b&gt;鍵盤與滑鼠 (如果擷取時) 並使它們回到正常操作。 目前指派的 Host 鍵顯示在虛擬機器視窗下方的狀態列，&amp;nbsp;&lt; img src=:/hostkey_16px.png/ &gt;&amp;nbsp;圖示旁。 這個圖示與放在附近的滑鼠圖示一起。 指示目前鍵盤和滑鼠的擷取狀態。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您已開啟&lt;b&gt;自動擷取鍵盤&lt;/b&gt;選項。 這將導致每次啟動 VM 視窗時虛擬機器自動&lt;b&gt;擷取&lt;/b&gt;鍵盤並使其它執行在您主機機器的應用程式不可使用: 擷取鍵盤時，會將所有鍵盤輸入 (包含系統如 Alt Tab) 都引導至 VM。&lt;/p&gt;&lt;p&gt;您可以隨時按下 [&lt;b&gt;Host 鍵&lt;/b&gt;] 來&lt;b&gt;取消擷取&lt;/b&gt;鍵盤和滑鼠 (如果擷取時)，並使它們回到正常操作。 目前指派的 Host 鍵顯示在虛擬機器視窗下方的狀態列，&amp;nbsp;&lt; img src=:/hostkey_16px.png/ &gt;&amp;nbsp;圖示旁。 這個圖示與放在附近的滑鼠圖示一起。 指示目前鍵盤和滑鼠的擷取狀態。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;虛擬機器回報客體作業系統支援&lt;b&gt;滑鼠指標整合&lt;/b&gt;。 這意味著您不需要在客體作業系統中使用&lt;i&gt;擷取&lt;/i&gt;滑鼠指標來使用它 -- 當滑鼠指標位於虛擬機器的顯示上方時，所有您執行的滑鼠動作將直接傳送到客體作業系統。 如果目前已擷取滑鼠，將會自動取消擷取。&lt;/p&gt;&lt;p&gt;狀態列的滑鼠圖示將看起來像&amp;nbsp;&lt; img src=:/mouse_seamless_16px.png/ &gt;&amp;nbsp;以通知您客體作業系統支援滑鼠指標整合並且目前已開啟。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;注意&lt;/b&gt;: 某些應用程式可能在滑鼠指標整合模式下的行為不正確。 您可以從功能表列中選取相對應的動作於目前工作階段一律停用它 (與再次啟用) 。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation>內容(&amp;C)...</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation>顯示線上說明內容</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation>VirtualBox 網站(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation>開啟瀏覽器並前往 VirtualBox 產品網站</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation>重設所有警告(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation>返回以顯示所有抑制的警告和訊息</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation>註冊 VirtualBox (&amp;E)...</translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation>開啟 VirtualBox 註冊表單</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation>檢查更新(&amp;H)...</translation>
+    </message>
+    <message>
+        <source>Check for a new VirtualBox version</source>
+        <translation>檢查 VirtualBox 的新版本</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation>關於 VirtualBox (&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation>顯示產品資訊對話方塊</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 的新版本已發佈! 版本 &lt;b&gt;%1&lt;/b&gt; 在 &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;可用。&lt;/p&gt;&lt;p&gt;您可以使用連結:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;下載這個版本</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您確定要釋放 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;嗎?&lt;/p&gt;&lt;p&gt;這將從以下的虛擬機器分離: &lt;b&gt;%3&lt;/b&gt;。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation>釋放</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您確定要從未知媒體的清單移除 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <translation>請注意，由於這個硬碟不可存取它的存放單元現在不可刪除。</translation>
+    </message>
+    <message>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation>下一個對話方塊會讓您選擇是否也要刪除這個硬碟存放單元或保留它供以後使用。</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation>移除</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;硬碟存放單元於位置 &lt;b&gt;%1&lt;/b&gt; 已經存在。 您不能使用這個位置新建虛擬硬碟因為另一個虛擬硬碟已經使用中。&lt;/p&gt;&lt;p&gt;請指定不同的位置。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您要刪除硬碟的存放單元 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;嗎?&lt;/p&gt;&lt;p&gt;如果您選取 [&lt;b&gt;刪除&lt;/b&gt;] 將永久刪除指定的存放單元。 這個操作&lt;b&gt;無法復原&lt;/b&gt;。 &lt;/p&gt;&lt;p&gt;如果您選取 [&lt;b&gt;保留&lt;/b&gt;] 硬碟將只從未知硬碟清單中移除，但存放單元將保持未接觸，使得稍後可以再次加入這個硬碟到清單。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation>刪除</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation>保留</translation>
+    </message>
+    <message>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>刪除硬碟 &lt;b&gt;%1&lt;/b&gt; 的存放單元失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation>建立硬碟存放 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失敗。&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>開啟 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>關閉 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>判斷媒體 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 的可存取性狀態失敗。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;連線到 VirtualBox 線上註冊服務失敗，由於以下錯誤:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;無法獲取新版本資訊由於以下錯誤:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;一或多個虛擬硬碟、CD/DVD 或軟碟媒體目前不可存取。 因此您將無法操作使用這些媒體的虛擬機器，直至它們稍後成為可存取。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;檢查&lt;/b&gt;] 來開啟虛擬媒體管理員視窗並查看哪些媒體不可存取或按下 [&lt;b&gt;忽略&lt;/b&gt;] 來忽略這個訊息。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;執行虛擬機器時發生關鍵錯誤並已停止機器執行。&lt;/p&gt;&lt;p&gt;有關協助，請查閱 Community 單元於 &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; 或您的技術支援。 請提供日誌檔 &lt;tt&gt;VBox.log&lt;/tt&gt; 的內容和圖像檔 &lt;tt&gt;VBox.png&lt;/tt&gt;，您可以在 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目錄找到，以及說明您正在做什麼時發生此錯誤。 請注意，您也可以從 VirtualBox 主視窗的&lt;b&gt;機器&lt;/b&gt;功能表選取&lt;b&gt;顯示紀錄&lt;/b&gt;存取以上檔案。&lt;/p&gt;&lt;p&gt;如果您要關閉機器按下 [&lt;b&gt;確定&lt;/b&gt;] 或如果您要保留它作為除錯按下 [&lt;b&gt;忽略&lt;/b&gt;] 。 請注意除錯需要特殊的知識和工具，因此建議您立即按下 [&lt;b&gt;確定&lt;/b&gt;] 。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
+        <translation>以下檔案已經存在:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;您確定要取代它們嗎?&lt;br /&gt;&lt;br /&gt; 取代它們將覆寫它的內容。</translation>
+    </message>
+    <message>
+        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
+        <translation>您正在執行預先發佈的 VirtualBox 版本。 這個版本不適合生產使用。</translation>
+    </message>
+    <message>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
+        <translation>您嘗試使用 ACPI 電源按鈕關閉客體。 目前不可能因為客體不支援軟體關機。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速已啟用，但是不可操作。 您的 64-bit 客體將偵測 64-bit CPU 失敗且將無法開機。&lt;/p&gt;&lt;p&gt;請確認在您主機電腦的 BIOS 中已正確啟用 VT-x/AMD-V 。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation>關閉 VM</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>繼續</translation>
+    </message>
     <message>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
+        <source>Failed to create the host-only network interface.</source>
+        <translation>建立「僅限主機」網路介面失敗。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您現有的 VirtualBox 設定檔將自動從舊格式轉換為 VirtualBox 新版本所需的新格式。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;確定&lt;/b&gt;] 立即啟動 VirtualBox 或按下 [&lt;b&gt;結束&lt;/b&gt;] 如果您要終止 VirtualBox 應用程式而不作任何進一步動作。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open appliance.</source>
+        <translation>開啟應用裝置失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>開啟/解譯應用裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>匯入應用裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to create appliance.</source>
+        <translation>建立應用裝置失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>準備匯出應用裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to create an appliance.</source>
+        <translation>建立應用裝置失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>匯出應用裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;刪除這個「僅限主機」網路將移除基於這個網路的「僅限主機」介面。 您要要移除 (只有主機網路) 介面 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意:&lt;/b&gt;這個介面可能由一或多個虛擬網路卡使用中屬於您的虛擬機器之一。 移除後，這些介面卡將不再可用，直到您選擇不同介面名稱或不同介面卡附件類型來修正它們的設定。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation>檔案名稱 &lt;b&gt;%1&lt;/b&gt; 已經存在。 您確定要取代它嗎?&lt;br /&gt;&lt;br /&gt;取代它將覆寫它的內容。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速已啟用，但是不可操作。 某些客體 (例如 OS/2 與 QNX) 需要這個功能。&lt;/p&gt;&lt;p&gt;請確認在您主機電腦的 BIOS 中已正確啟用 VT-x/AMD-V 。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;指定無效的電子郵件或密碼。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation>&lt;p&gt;註冊 VirtualBox 產品失敗。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation>檢查檔案失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation>移除檔案失敗。</translation>
+    </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation>您似乎在 /sys/bus/usb/drivers 掛載 USBFS 檔案系統。 我們強烈建議您變更此，由於它是一個嚴重的錯誤組態您的系統，這可能導致 USB 裝置以意想不到的方式失敗。</translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation>您正在執行 VirtualBox 的 EXPERIMENTAL 組建。 這個版本不適合在生產上使用。</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>還原</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;刪除快照將導致它儲存的狀態資訊遺失，且 VirtualBox 與快照一起建立分布在數個磁碟資料的映像檔案將合併為一個檔案。 這可能是一個漫長的過程，且快照中資訊無法恢復。&lt;/p&gt;&lt;/p&gt;您確定要刪除選取的快照 &lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>刪除</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>還原虛擬機器 &lt;b&gt;%2&lt;/b&gt; 的快照 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>刪除虛擬機器 &lt;b&gt;%2&lt;/b&gt; 的快照 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>無法在機器 &lt;b&gt;%3&lt;/b&gt; 掛載 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;。</translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation>您要強制掛載這個媒體嗎?</translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>無法從機器 &lt;b&gt;%3&lt;/b&gt; 卸載 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;。</translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation>您要強制卸載這個媒體嗎?</translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation>強制卸載</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;無法插入 VirtualBox Guest Additions 安裝程式 CD 映像至虛擬機器 &lt;b&gt;%1&lt;/b&gt;，由於機器沒有 CD/DVD-ROM 光碟機。 請使用虛擬機器設定對話方塊的存放裝置頁面加入一個光碟機。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation>結束(&amp;X)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;以下 VirtualBox 設定檔將自動從舊格式轉換為 VirtualBox 新版本所需的新格式。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;確定&lt;/b&gt;] 立即啟動 VirtualBox 或按下 [&lt;b&gt;結束&lt;/b&gt;] 若您要終止 VirtualBox 應用程式而不要任何進一步動作。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation>硬碟</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>CD/DVD</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation>CD/DVD 映像</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>軟碟</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation>軟碟映像</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您確定要刪除 CD/DVD-ROM 裝置嗎?&lt;/p&gt;&lt;p&gt;沒有它您將無法掛載任何 CD 或 ISO 映像或安裝 Guest Additions !&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation>移除(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速在您的系統不可用。 您的 64 位元客體將會偵測 64 位元 CPU 失敗且無法開機。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速在您的系統不可用。 某些客體 (例如 OS/2 和 QNX) 需要這個功能且沒有它將會開機失敗。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;刪除快照 %1 將暫時需要更多磁碟空間。 在最糟情形下，映像 %2 的大小將成長為 %3，然而在這個檔案系統中只有 %4 的可用空間。&lt;/p&gt;&lt;p&gt;在映像操作期間執行超過磁碟空間，會造成映像和 VM 組態損毀，例如遺失 VM 和它的資料。&lt;/p&gt;&lt;p&gt;您可以繼續刪除快照，風險自負。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;由於客體視訊記憶體不足，無法變更客體顯示為這個主機螢幕。&lt;/p&gt;&lt;p&gt;您應組態虛擬機器至少 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;由於客體視訊記憶體不足，無法變更客體顯示為這個主機螢幕。&lt;/p&gt;&lt;p&gt;您應組態虛擬機器至少 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;忽略&lt;/b&gt;] 仍然切換螢幕或按下 [&lt;b&gt;取消&lt;/b&gt;] 取消操作。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;無法切換客體顯示為全螢幕模式。 您組態的虛擬螢幕比附加到主機的實體螢幕還多。&lt;/p&gt;&lt;p&gt;請在您的 VM 組態中減少虛擬螢幕或在您的主機附加額外的螢幕。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;無法切換客體顯示為無縫模式。 您組態的虛擬螢幕比附加到主機的實體螢幕還多。&lt;/p&gt;&lt;p&gt;請在您的 VM 組態中減少虛擬螢幕或在您的主機附加額外的螢幕。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;找不到 VirtualBox 使用者手冊 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望從網際網路下載這個檔案嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您確定要從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載 VirtualBox 使用者手冊 (大小 %3 位元組) 嗎? &lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載 VirtualBox 使用者手冊失敗。&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 使用者手冊已成功從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載並本機儲存為 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox 使用者手冊已成功從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載但無法本機儲存為 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;請為該檔案選擇另一個位置。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation>開啟位於 %1 的虛擬機器失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation>加入位於 &lt;i&gt;%2&lt;/i&gt; 的虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗，因為已經存在。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您即將從機器清單中移除虛擬機器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望同時從您的硬碟中刪除包含虛擬機器的檔案嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您即將從機器清單中移除虛擬機器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望同時從您的硬碟中刪除包含虛擬機器的檔案嗎? 如此做也會移除包含機器的虛擬硬碟檔案，如果其它機器沒有在使用中。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete all files</source>
+        <translation>刪除所有的檔案</translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation>僅移除</translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation>您即將從機器清單中移除不可存取的虛擬機器 &lt;b&gt;%1&lt;/b&gt;，您希望進行嗎?</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>移除</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您即將加入虛擬硬碟到控制器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望建立新的空檔案來持有磁碟內容或選取現有的檔案?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation>建立新磁碟(&amp;N)</translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation>選擇現有的磁碟(&amp;C)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您即將加入新的 CD/DVD 光碟機到控制器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望選擇虛擬 CD/DVD 磁碟放在光碟機或現在保持為空嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation>選擇磁碟(&amp;C)</translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation>保持為空(&amp;E)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您即將加入新的軟碟機到控制器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望選擇虛擬軟碟放在軟碟機或現在保持為空嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離硬碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離 CD/DVD 裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離軟碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation>
+            <numerusform>&lt;p&gt;虛擬機器 &lt;b&gt;%1&lt;/b&gt; 目前在儲存的狀態。&lt;/p&gt;&lt;p&gt;如果您繼續，匯出機器的執行階段狀態將捨棄。 請注意，現有的機器未變更。&lt;/p&gt;</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation>更新 Guest Additions 失敗。 將掛載 Guest Additions 安裝映像以提供手動安裝。</translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>安裝擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>解除安裝擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>移除(&amp;R)</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation>目前的連接埠轉送規則無效。 沒有主機或客體連接埠的值可能設定為 0 。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;未儲存連接埠轉送組態的變更。&lt;/p&gt;&lt;p&gt;如果您進行，您的變更將捨棄。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>在機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 附加硬碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>在機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 附加 CD/DVD 裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>在機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 附加軟碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;請注意，這個媒體的存放單元將不會刪除且可以稍後再次使用。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VirtualBox Guest Additions 似乎在這部虛擬機器不可使用，因此共用資料夾無法使用。 若要在虛擬機器內使用共用資料夾，如果是未安裝請安裝 Guest Additions ，或如果是未正常動作則重新安裝，從&lt;b&gt;裝置&lt;/b&gt;功能表選取&lt;b&gt;安裝 Guest Additions&lt;/b&gt;。 如果已安裝但機器尚未完全啟動，則共用資料夾將在啟動後可以使用。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;全螢幕&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;主功能表列在全螢幕模式中是隱藏的。 您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;無縫&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;主功能表列在無縫模式中是隱藏的。 您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;縮放&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;請注意，主功能表列在縮放模式中是隱藏的。您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation>切換</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>開啟擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您即將安裝 VirtualBox 擴充包。 擴充包補充 VirtualBox 的功能且包含系統層級的軟體，可能潛在危害您的系統。 請檢閱以下描述，並只進行從信任來源所取得的擴充包。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation>安裝(&amp;I)</translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation>擴充包補充 VirtualBox 的功能且可以包含系統層級的軟體，可能潛在危害您的系統。 請檢閱以下描述，並只進行從信任來源所取得的擴充包。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;已經安裝擴充包的較舊版本，您希望昇級嗎? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新的版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;目前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation>升級(&amp;U)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;已經安裝擴充包的較新版本，您希望降級嗎? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新的版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;目前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation>降級(&amp;D)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;已經安裝擴充包的相同版本，您希望重新安裝嗎? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation>重新安裝(&amp;R)</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您即將移除 VirtualBox 擴充包 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您確定要進行嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation>擴充包 &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; 已安裝成功。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;無法在上層資料夾 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; 建立機器資料夾 &lt;b&gt;%1&lt;/b&gt; 。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;請檢查上層真的存在且您有權限建立機器資料夾。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>註冊虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;在您編輯時機器設定已變更。 您目前未儲存設定變更。&lt;/p&gt;&lt;p&gt;您希望重新載入已變更的設定或保留您自己的變更?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation>重新載入設定</translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation>保留變更</translation>
+    </message>
+    <message>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished">您目前編輯的虛擬機器狀態已變更。 在您按下 [確定] 時只會儲存執行階段可編輯的設定。 所有其它變更的設定將失去。</translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>再製虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您即將還原快照 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您可以按一下以下方塊先建立虛擬機器目前狀態的快照; 如果您不如此做，將永久失去目前狀態。 您希望進行嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation>建立目前虛擬機器狀態的快照</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;您確定要還原快照 &lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;變更媒體類型從 &lt;b&gt;%1&lt;/b&gt; 到 &lt;b&gt;%2&lt;/b&gt;錯誤。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation>抱歉，發生某些一般錯誤。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;USB 2.0 目前在這部虛擬機器啟用。 然而這需要安裝 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;請從 VirtualBox 下載網站安裝擴充包。 在此之後您將可以重新啟用 USB 2.0。 除非您取消目前設定變更，否則將在主期間停用。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation>無法載入主機 USB Proxy 服務 (VERR_FILE_NOT_FOUND)。 服務可能未安裝在主機電腦中</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox 目前不允許存取 USB 裝置。 您可以加入您的使用者到 &apos;vboxusers&apos; 群組來變更。  更多詳細解釋請查看使用者手冊</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation>VirtualBox 目前不允許存取 USB 裝置。 您可以允許您的使用者存取 &apos;usbfs&apos; 資料夾和檔案來變更。  更多詳細解釋請查看使用者手冊</translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation>USB Proxy Service 尚未移植到此主機</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation>無法載入主機 USB Proxy 服務</translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;儲存已下載檔案為 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失敗。&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
+    </message>
+    <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>取消 VirtualBox Guest Additions CD 映像下載</translation>
+        <translation type="obsolete">取消 VirtualBox Guest Additions CD 映像下載</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>正在下載 VirtualBox Guest Additions CD 映像從 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">正在下載 VirtualBox Guest Additions CD 映像從 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation>取消</translation>
+        <translation type="obsolete">取消</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -3229,6 +4449,17 @@
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>正在下載 VirtualBox 使用者手冊 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetAdditions</name>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished">取消 VirtualBox Guest Additions CD 映像下載</translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished">正在下載 VirtualBox Guest Additions CD 映像從 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -3749,6 +4980,29 @@
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation>編輯文字</translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation>取代(&amp;R)...</translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation>以檔案的內容取代目前文字。</translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation>文字 (*.txt);;所有 (*.*)</translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation>選取開啟的檔案...</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -3867,121 +5121,6 @@
     <message>
         <source>Version %1</source>
         <translation>版本 %1</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation>虛擬系統 %1</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>名稱</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation>產品</translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation>產品 URL</translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation>供應商</translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation>供應商 URL</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation>版本</translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation>描述</translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation>授權</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>客體作業系統類型</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation>CPU</translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation>RAM</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation>硬碟控制器 (IDE)</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation>硬碟控制器 (SATA)</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation>硬碟控制器 (SCSI)</translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation>DVD</translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation>軟碟</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation>網路卡</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation>USB 控制器</translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation>音效卡</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translation>虛擬磁碟映像</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation>未知硬體項目</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;原始值:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation>組態</translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation>警告:</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation>硬碟控制器 (SAS)</translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>勾選時，將指派新的唯一 MAC 位址到所有已組態的網路卡。</translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>重新初始化所有網路卡的 MAC 位址(&amp;R)</translation>
     </message>
 </context>
 <context>
@@ -5243,17 +6382,6 @@
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation>正在匯入應用裝置 ...</translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translation>正在讀取應用裝置 ...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>VirtualBox License</source>
@@ -5266,13 +6394,6 @@
     <message>
         <source>I &amp;Disagree</source>
         <translation>我不同意(&amp;D)</translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>編輯(&amp;E)</translation>
     </message>
 </context>
 <context>
@@ -5525,994 +6646,6 @@
     </message>
 </context>
 <context>
-    <name>UIMessageCenter</name>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 資訊</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 問題</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 警告</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 錯誤</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - 嚴重錯誤</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag</comment>
-        <translation>不再顯示這個訊息</translation>
-    </message>
-    <message>
-        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>開啟 &lt;tt&gt;%1&lt;/tt&gt; 失敗。 請確定您的桌面環境可以適當地處理這個類型的 URL。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;初始化 COM 或尋找 VirtualBox COM 伺服器時失敗。很有可能，VirtualBox 伺服器未執作或是啟動失敗。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;建立 VirtualBox COM 物件時失敗。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to set global VirtualBox properties.</source>
-        <translation>設定全域 VirtualBox 內容失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to access the USB subsystem.</source>
-        <translation>存取 USB 子系統時失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation>新建虛擬機器失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>新建虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>套用虛擬機器 &lt;b&gt;%1&lt;/b&gt; 設定值時失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>啟動虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>暫停虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的執行失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>繼續執行虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>儲存虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的狀態失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>建立虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的快照失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>停止虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>移除虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>捨棄已儲存的虛擬機器 &lt;b&gt;%1&lt;/b&gt; 狀態失敗。</translation>
-    </message>
-    <message>
-        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>沒有名為 &lt;b&gt;%1&lt;/b&gt; 的虛擬機器。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要放棄虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的已儲存狀態嗎?&lt;/p&gt;&lt;p&gt;這個操作相當於重設或關閉機器而不使用客體作業系統的正常關機。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create a new session.</source>
-        <translation>新建工作階段失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>開啟虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的工作階段失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>移除主機網路介面 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>附加 USB 裝置 &lt;b&gt;%1&lt;/b&gt; 到虛擬機器 &lt;b&gt;%2&lt;/b&gt; 時失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>從虛擬機器 &lt;b&gt;%2&lt;/b&gt; 分離 USB 裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>建立虛擬機器 &lt;b&gt;%3&lt;/b&gt; 的共用資料夾 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>從虛擬機器 &lt;b&gt;%3&lt;/b&gt; 移除共用資料夾 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器回報在目前的視訊模式中，客體作業系統不支援&lt;b&gt;滑鼠指標整合&lt;/b&gt;。 為了在客體作業系統之內使用滑鼠，您需要擷取滑鼠 (在虛擬機器顯示上方按一下或按下 Host 鍵) 。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器目前在&lt;b&gt;暫停&lt;/b&gt;狀態且無法看到任何鍵盤或滑鼠輸入。 如果您要繼續在 VM 中工作，您需要從功能表列選取相應動作來繼續。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;由於本機限制，無法在 &lt;i&gt;VM Selector&lt;/i&gt; 模式中執行 VirtualBox。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;嚴重錯誤&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;非嚴重錯誤&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;警告&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;錯誤 ID: &lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation>嚴重性:</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器執行期間發生嚴重錯誤! 虛擬機器將關機。 請使用剪貼簿複製以下錯誤訊息以協助診斷問題:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器執行期間發生錯誤! 錯誤詳細資料如下方所示。 您可以嘗試修正錯誤並繼續執行虛擬機器。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器的執行可能會遇到如下所述的錯誤情況。 我們建議您採取適當的動作，以避免錯誤。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation>結果碼:</translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation>元件:</translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation>介面:</translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation>被呼叫端:</translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation>被呼叫端&amp;nbsp;RC:</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;目錄 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; 中找不到語言 &lt;b&gt;%1&lt;/b&gt; 的語言檔案。&lt;/p&gt;&lt;p&gt;語言將會暫時重設為系統的預設語言。 請前往 VirtualBox 主視窗 &lt;b&gt;檔案&lt;/b&gt; 功能表開啟 &lt;b&gt;喜好設定&lt;/b&gt; 對話方塊，並且在 &lt;b&gt;語言&lt;/b&gt; 頁面選取現有的語言之一。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;無法載入語言檔 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;。 &lt;p&gt;語言將會暫時重設為英文 (內建)。 請前往 VirtualBox 主視窗 &lt;b&gt;檔案&lt;/b&gt; 功能表開啟 &lt;b&gt;喜好設定&lt;/b&gt; 對話方塊，並且在 &lt;b&gt;語言&lt;/b&gt; 頁面選取現有的語言之一。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;從虛擬機器 &lt;b&gt;%3&lt;/b&gt; 移除共用資料夾 &lt;b&gt;%1&lt;/b&gt; (指向 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) 時失敗。&lt;/p&gt;&lt;p&gt;請關閉客體作業系統中所有可能會用到這個共用資料夾的程式，並且再試一次。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;找不到 VirtualBox Guest Additions CD 映像檔案 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 或 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望從網際網路下載這個 CD 映像嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載 VirtualBox Guest Additions 光碟映像失敗。&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載 VirtualBox Guest Additions 光碟映像 (大小 %3 位元組) 嗎? &lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox Guest Additions CD 映像已成功從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載並本機儲存為 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您要登錄這個 CD 映像並將它掛載在虛擬 CD/DVD 光碟機嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器視窗已最佳化於 &lt;b&gt;%1&amp;nbsp;位元&lt;/b&gt; 的色彩模式中工作，但是目前虛擬顯示設定為 &lt;b&gt;%2&amp;nbsp;位元&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;如果可用，請開啟客體作業系統的顯示內容對話方塊，並且選取 &lt;b&gt;%3&amp;nbsp;位元&lt;/b&gt; 的色彩模式，作為虛擬視訊子系統的最佳效能。&lt;/p&gt;&lt;p&gt;&lt;b&gt;請注意&lt;/b&gt;，某些像是 OS/2 的作業系統，可能實際上作用於 32&amp;nbsp;位元模式，卻回報為 24&amp;nbsp;位元 (1600 萬色) 。 您可以試著選取不同的色彩模式來查看這個訊息是否消失，如果您確定所要求的色彩模式 (%4&amp;nbsp;位元) 在客體作業系統中不可用，您可以現在就簡單的停用訊息。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您未附加硬碟到新的虛擬機器。 除非您稍後使用機器設定對話方塊或首次執行精靈，來附加一顆含有客體作業系統的硬碟，或是某些其它可以開機的媒體，否則機器將無法開機。&lt;/p&gt;&lt;p&gt;您希望繼續嗎? &lt;p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>在 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 中尋找授權檔案失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>開啟授權檔案 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 失敗。 請檢查檔案權限。</translation>
-    </message>
-    <message>
-        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>傳送出 ACPI 關關按鈕的按下事件到虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;恭喜! 您已經成功以 VirtualBox 使用者身分註冊。&lt;/p&gt;&lt;p&gt;謝謝您花費時間來填寫註冊表單! &lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;從 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 載入全域 GUI 組態失敗。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;儲存全域 GUI 組態到 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; 失敗。&lt;/p&gt;&lt;p&gt;應用程式現在將終止。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>儲存虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的設定值到 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>從 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; 載入虛擬機器 &lt;b&gt;%1&lt;/b&gt; 的設定值失敗。</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state</comment>
-        <translation>捨棄</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions</comment>
-        <translation>下載</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions</comment>
-        <translation>掛載</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;Host 鍵目前定義為 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Capture</source>
-        <comment>do input capture</comment>
-        <translation>擷取</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box</comment>
-        <translation>檢查</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen</comment>
-        <translation>切換</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless</comment>
-        <translation>切換</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要重設虛擬機器嗎?&lt;/p&gt;&lt;p&gt;這將導致在虛擬機器執行中應用程式的任何未儲存資料遺失。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine</comment>
-        <translation>重設</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached</comment>
-        <translation>繼續</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached</comment>
-        <translation>上一步</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;由於客體視訊記憶體不足無法進入無縫模式。&lt;/p&gt;&lt;p&gt;您應組態虛擬機器至少 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;由於客體視訊記憶體不足無法切換客體顯示為全螢幕模式。&lt;/p&gt;&lt;p&gt;您應組態虛擬機器至少 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;忽略&lt;/b&gt;] 無論如何切換為全螢幕或按下 [&lt;b&gt;取消&lt;/b&gt;] 來取消操作。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>您已經使用 VirtualBox 的最新版本。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您已在虛擬機器顯示中&lt;b&gt;按下滑鼠&lt;/b&gt;或按下 [&lt;b&gt;Host 鍵&lt;/b&gt;]。 這將導致虛擬機器&lt;b&gt;擷取&lt;/b&gt;主機滑鼠指標 (除非客體作業系統目前不支援滑鼠指標整合) 與鍵盤，並使得其它執行在您主機機器的應用程式不可使用。&lt;/p&gt;&lt;p&gt;您可以隨時按下 [&lt;b&gt;Host 鍵&lt;/b&gt;] 來&lt;b&gt;取消擷取&lt;/b&gt;鍵盤與滑鼠 (如果擷取時) 並使它們回到正常操作。 目前指派的 Host 鍵顯示在虛擬機器視窗下方的狀態列，&amp;nbsp;&lt; img src=:/hostkey_16px.png/ &gt;&amp;nbsp;圖示旁。 這個圖示與放在附近的滑鼠圖示一起。 指示目前鍵盤和滑鼠的擷取狀態。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您已開啟&lt;b&gt;自動擷取鍵盤&lt;/b&gt;選項。 這將導致每次啟動 VM 視窗時虛擬機器自動&lt;b&gt;擷取&lt;/b&gt;鍵盤並使其它執行在您主機機器的應用程式不可使用: 擷取鍵盤時，會將所有鍵盤輸入 (包含系統如 Alt Tab) 都引導至 VM。&lt;/p&gt;&lt;p&gt;您可以隨時按下 [&lt;b&gt;Host 鍵&lt;/b&gt;] 來&lt;b&gt;取消擷取&lt;/b&gt;鍵盤和滑鼠 (如果擷取時)，並使它們回到正常操作。 目前指派的 Host 鍵顯示在虛擬機器視窗下方的狀態列，&amp;nbsp;&lt; img src=:/hostkey_16px.png/ &gt;&amp;nbsp;圖示旁。 這個圖示與放在附近的滑鼠圖示一起。 指示目前鍵盤和滑鼠的擷取狀態。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器回報客體作業系統支援&lt;b&gt;滑鼠指標整合&lt;/b&gt;。 這意味著您不需要在客體作業系統中使用&lt;i&gt;擷取&lt;/i&gt;滑鼠指標來使用它 -- 當滑鼠指標位於虛擬機器的顯示上方時，所有您執行的滑鼠動作將直接傳送到客體作業系統。 如果目前已擷取滑鼠，將會自動取消擷取。&lt;/p&gt;&lt;p&gt;狀態列的滑鼠圖示將看起來像&amp;nbsp;&lt; img src=:/mouse_seamless_16px.png/ &gt;&amp;nbsp;以通知您客體作業系統支援滑鼠指標整合並且目前已開啟。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;注意&lt;/b&gt;: 某些應用程式可能在滑鼠指標整合模式下的行為不正確。 您可以從功能表列中選取相對應的動作於目前工作階段一律停用它 (與再次啟用) 。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Contents...</source>
-        <translation>內容(&amp;C)...</translation>
-    </message>
-    <message>
-        <source>Show the online help contents</source>
-        <translation>顯示線上說明內容</translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation>VirtualBox 網站(&amp;V)...</translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>開啟瀏覽器並前往 VirtualBox 產品網站</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation>重設所有警告(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>返回以顯示所有抑制的警告和訊息</translation>
-    </message>
-    <message>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation>註冊 VirtualBox (&amp;E)...</translation>
-    </message>
-    <message>
-        <source>Open VirtualBox registration form</source>
-        <translation>開啟 VirtualBox 註冊表單</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation>檢查更新(&amp;H)...</translation>
-    </message>
-    <message>
-        <source>Check for a new VirtualBox version</source>
-        <translation>檢查 VirtualBox 的新版本</translation>
-    </message>
-    <message>
-        <source>&amp;About VirtualBox...</source>
-        <translation>關於 VirtualBox (&amp;A)...</translation>
-    </message>
-    <message>
-        <source>Show a dialog with product information</source>
-        <translation>顯示產品資訊對話方塊</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 的新版本已發佈! 版本 &lt;b&gt;%1&lt;/b&gt; 在 &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;可用。&lt;/p&gt;&lt;p&gt;您可以使用連結:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;下載這個版本</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要釋放 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;嗎?&lt;/p&gt;&lt;p&gt;這將從以下的虛擬機器分離: &lt;b&gt;%3&lt;/b&gt;。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium</comment>
-        <translation>釋放</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要從未知媒體的清單移除 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>請注意，由於這個硬碟不可存取它的存放單元現在不可刪除。</translation>
-    </message>
-    <message>
-        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>下一個對話方塊會讓您選擇是否也要刪除這個硬碟存放單元或保留它供以後使用。</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium</comment>
-        <translation>移除</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;硬碟存放單元於位置 &lt;b&gt;%1&lt;/b&gt; 已經存在。 您不能使用這個位置新建虛擬硬碟因為另一個虛擬硬碟已經使用中。&lt;/p&gt;&lt;p&gt;請指定不同的位置。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您要刪除硬碟的存放單元 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;嗎?&lt;/p&gt;&lt;p&gt;如果您選取 [&lt;b&gt;刪除&lt;/b&gt;] 將永久刪除指定的存放單元。 這個操作&lt;b&gt;無法復原&lt;/b&gt;。 &lt;/p&gt;&lt;p&gt;如果您選取 [&lt;b&gt;保留&lt;/b&gt;] 硬碟將只從未知硬碟清單中移除，但存放單元將保持未接觸，使得稍後可以再次加入這個硬碟到清單。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage</comment>
-        <translation>刪除</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage</comment>
-        <translation>保留</translation>
-    </message>
-    <message>
-        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>刪除硬碟 &lt;b&gt;%1&lt;/b&gt; 的存放單元失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>建立硬碟存放 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失敗。&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>開啟 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>關閉 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>判斷媒體 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 的可存取性狀態失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;連線到 VirtualBox 線上註冊服務失敗，由於以下錯誤:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;無法獲取新版本資訊由於以下錯誤:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;一或多個虛擬硬碟、CD/DVD 或軟碟媒體目前不可存取。 因此您將無法操作使用這些媒體的虛擬機器，直至它們稍後成為可存取。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;檢查&lt;/b&gt;] 來開啟虛擬媒體管理員視窗並查看哪些媒體不可存取或按下 [&lt;b&gt;忽略&lt;/b&gt;] 來忽略這個訊息。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;執行虛擬機器時發生關鍵錯誤並已停止機器執行。&lt;/p&gt;&lt;p&gt;有關協助，請查閱 Community 單元於 &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; 或您的技術支援。 請提供日誌檔 &lt;tt&gt;VBox.log&lt;/tt&gt; 的內容和圖像檔 &lt;tt&gt;VBox.png&lt;/tt&gt;，您可以在 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 目錄找到，以及說明您正在做什麼時發生此錯誤。 請注意，您也可以從 VirtualBox 主視窗的&lt;b&gt;機器&lt;/b&gt;功能表選取&lt;b&gt;顯示紀錄&lt;/b&gt;存取以上檔案。&lt;/p&gt;&lt;p&gt;如果您要關閉機器按下 [&lt;b&gt;確定&lt;/b&gt;] 或如果您要保留它作為除錯按下 [&lt;b&gt;忽略&lt;/b&gt;] 。 請注意除錯需要特殊的知識和工具，因此建議您立即按下 [&lt;b&gt;確定&lt;/b&gt;] 。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>以下檔案已經存在:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;您確定要取代它們嗎?&lt;br /&gt;&lt;br /&gt; 取代它們將覆寫它的內容。</translation>
-    </message>
-    <message>
-        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation>您正在執行預先發佈的 VirtualBox 版本。 這個版本不適合生產使用。</translation>
-    </message>
-    <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation>您嘗試使用 ACPI 電源按鈕關閉客體。 目前不可能因為客體不支援軟體關機。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速已啟用，但是不可操作。 您的 64-bit 客體將偵測 64-bit CPU 失敗且將無法開機。&lt;/p&gt;&lt;p&gt;請確認在您主機電腦的 BIOS 中已正確啟用 VT-x/AMD-V 。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Close VM</source>
-        <translation>關閉 VM</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>繼續</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <source>Failed to create the host-only network interface.</source>
-        <translation>建立「僅限主機」網路介面失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您現有的 VirtualBox 設定檔將自動從舊格式轉換為 VirtualBox 新版本所需的新格式。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;確定&lt;/b&gt;] 立即啟動 VirtualBox 或按下 [&lt;b&gt;結束&lt;/b&gt;] 如果您要終止 VirtualBox 應用程式而不作任何進一步動作。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open appliance.</source>
-        <translation>開啟應用裝置失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>開啟/解譯應用裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>匯入應用裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to create appliance.</source>
-        <translation>建立應用裝置失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>準備匯出應用裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to create an appliance.</source>
-        <translation>建立應用裝置失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>匯出應用裝置 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;刪除這個「僅限主機」網路將移除基於這個網路的「僅限主機」介面。 您要要移除 (只有主機網路) 介面 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注意:&lt;/b&gt;這個介面可能由一或多個虛擬網路卡使用中屬於您的虛擬機器之一。 移除後，這些介面卡將不再可用，直到您選擇不同介面名稱或不同介面卡附件類型來修正它們的設定。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>檔案名稱 &lt;b&gt;%1&lt;/b&gt; 已經存在。 您確定要取代它嗎?&lt;br /&gt;&lt;br /&gt;取代它將覆寫它的內容。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速已啟用，但是不可操作。 某些客體 (例如 OS/2 與 QNX) 需要這個功能。&lt;/p&gt;&lt;p&gt;請確認在您主機電腦的 BIOS 中已正確啟用 VT-x/AMD-V 。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;指定無效的電子郵件或密碼。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;註冊 VirtualBox 產品失敗。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation>檢查檔案失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation>移除檔案失敗。</translation>
-    </message>
-    <message>
-        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation>您似乎在 /sys/bus/usb/drivers 掛載 USBFS 檔案系統。 我們強烈建議您變更此，由於它是一個嚴重的錯誤組態您的系統，這可能導致 USB 裝置以意想不到的方式失敗。</translation>
-    </message>
-    <message>
-        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation>您正在執行 VirtualBox 的 EXPERIMENTAL 組建。 這個版本不適合在生產上使用。</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>還原</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;刪除快照將導致它儲存的狀態資訊遺失，且 VirtualBox 與快照一起建立分布在數個磁碟資料的映像檔案將合併為一個檔案。 這可能是一個漫長的過程，且快照中資訊無法恢復。&lt;/p&gt;&lt;/p&gt;您確定要刪除選取的快照 &lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>刪除</translation>
-    </message>
-    <message>
-        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>還原虛擬機器 &lt;b&gt;%2&lt;/b&gt; 的快照 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>刪除虛擬機器 &lt;b&gt;%2&lt;/b&gt; 的快照 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>無法在機器 &lt;b&gt;%3&lt;/b&gt; 掛載 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;。</translation>
-    </message>
-    <message>
-        <source> Would you like to force mounting of this medium?</source>
-        <translation>您要強制掛載這個媒體嗎?</translation>
-    </message>
-    <message>
-        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>無法從機器 &lt;b&gt;%3&lt;/b&gt; 卸載 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;。</translation>
-    </message>
-    <message>
-        <source> Would you like to force unmounting of this medium?</source>
-        <translation>您要強制卸載這個媒體嗎?</translation>
-    </message>
-    <message>
-        <source>Force Unmount</source>
-        <translation>強制卸載</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;無法插入 VirtualBox Guest Additions 安裝程式 CD 映像至虛擬機器 &lt;b&gt;%1&lt;/b&gt;，由於機器沒有 CD/DVD-ROM 光碟機。 請使用虛擬機器設定對話方塊的存放裝置頁面加入一個光碟機。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation>結束(&amp;X)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;以下 VirtualBox 設定檔將自動從舊格式轉換為 VirtualBox 新版本所需的新格式。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;確定&lt;/b&gt;] 立即啟動 VirtualBox 或按下 [&lt;b&gt;結束&lt;/b&gt;] 若您要終止 VirtualBox 應用程式而不要任何進一步動作。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...</comment>
-        <translation>硬碟</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>CD/DVD</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...</comment>
-        <translation>CD/DVD 映像</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>軟碟</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...</comment>
-        <translation>軟碟映像</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要刪除 CD/DVD-ROM 裝置嗎?&lt;/p&gt;&lt;p&gt;沒有它您將無法掛載任何 CD 或 ISO 映像或安裝 Guest Additions !&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation>移除(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速在您的系統不可用。 您的 64 位元客體將會偵測 64 位元 CPU 失敗且無法開機。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速在您的系統不可用。 某些客體 (例如 OS/2 和 QNX) 需要這個功能且沒有它將會開機失敗。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;刪除快照 %1 將暫時需要更多磁碟空間。 在最糟情形下，映像 %2 的大小將成長為 %3，然而在這個檔案系統中只有 %4 的可用空間。&lt;/p&gt;&lt;p&gt;在映像操作期間執行超過磁碟空間，會造成映像和 VM 組態損毀，例如遺失 VM 和它的資料。&lt;/p&gt;&lt;p&gt;您可以繼續刪除快照，風險自負。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;由於客體視訊記憶體不足，無法變更客體顯示為這個主機螢幕。&lt;/p&gt;&lt;p&gt;您應組態虛擬機器至少 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;由於客體視訊記憶體不足，無法變更客體顯示為這個主機螢幕。&lt;/p&gt;&lt;p&gt;您應組態虛擬機器至少 &lt;b&gt;%1&lt;/b&gt; 的視訊記憶體。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;忽略&lt;/b&gt;] 仍然切換螢幕或按下 [&lt;b&gt;取消&lt;/b&gt;] 取消操作。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;無法切換客體顯示為全螢幕模式。 您組態的虛擬螢幕比附加到主機的實體螢幕還多。&lt;/p&gt;&lt;p&gt;請在您的 VM 組態中減少虛擬螢幕或在您的主機附加額外的螢幕。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;無法切換客體顯示為無縫模式。 您組態的虛擬螢幕比附加到主機的實體螢幕還多。&lt;/p&gt;&lt;p&gt;請在您的 VM 組態中減少虛擬螢幕或在您的主機附加額外的螢幕。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;找不到 VirtualBox 使用者手冊 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望從網際網路下載這個檔案嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載 VirtualBox 使用者手冊 (大小 %3 位元組) 嗎? &lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載 VirtualBox 使用者手冊失敗。&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 使用者手冊已成功從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載並本機儲存為 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 使用者手冊已成功從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; 下載但無法本機儲存為 &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;請為該檔案選擇另一個位置。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open virtual machine located in %1.</source>
-        <translation>開啟位於 %1 的虛擬機器失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation>加入位於 &lt;i&gt;%2&lt;/i&gt; 的虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗，因為已經存在。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將從機器清單中移除虛擬機器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望同時從您的硬碟中刪除包含虛擬機器的檔案嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將從機器清單中移除虛擬機器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望同時從您的硬碟中刪除包含虛擬機器的檔案嗎? 如此做也會移除包含機器的虛擬硬碟檔案，如果其它機器沒有在使用中。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete all files</source>
-        <translation>刪除所有的檔案</translation>
-    </message>
-    <message>
-        <source>Remove only</source>
-        <translation>僅移除</translation>
-    </message>
-    <message>
-        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation>您即將從機器清單中移除不可存取的虛擬機器 &lt;b&gt;%1&lt;/b&gt;，您希望進行嗎?</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>移除</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將加入虛擬硬碟到控制器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望建立新的空檔案來持有磁碟內容或選取現有的檔案?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Create &amp;new disk</source>
-        <comment>add attachment routine</comment>
-        <translation>建立新磁碟(&amp;N)</translation>
-    </message>
-    <message>
-        <source>&amp;Choose existing disk</source>
-        <comment>add attachment routine</comment>
-        <translation>選擇現有的磁碟(&amp;C)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將加入新的 CD/DVD 光碟機到控制器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望選擇虛擬 CD/DVD 磁碟放在光碟機或現在保持為空嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Choose disk</source>
-        <comment>add attachment routine</comment>
-        <translation>選擇磁碟(&amp;C)</translation>
-    </message>
-    <message>
-        <source>Leave &amp;empty</source>
-        <comment>add attachment routine</comment>
-        <translation>保持為空(&amp;E)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將加入新的軟碟機到控制器 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您希望選擇虛擬軟碟放在軟碟機或現在保持為空嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離硬碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離 CD/DVD 裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>從機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 分離軟碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation>
-            <numerusform>&lt;p&gt;虛擬機器 &lt;b&gt;%1&lt;/b&gt; 目前在儲存的狀態。&lt;/p&gt;&lt;p&gt;如果您繼續，匯出機器的執行階段狀態將捨棄。 請注意，現有的機器未變更。&lt;/p&gt;</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation>更新 Guest Additions 失敗。 將掛載 Guest Additions 安裝映像以提供手動安裝。</translation>
-    </message>
-    <message>
-        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>安裝擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>解除安裝擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>移除(&amp;R)</translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation>目前的連接埠轉送規則無效。 沒有主機或客體連接埠的值可能設定為 0 。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;未儲存連接埠轉送組態的變更。&lt;/p&gt;&lt;p&gt;如果您進行，您的變更將捨棄。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>在機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 附加硬碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>在機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 附加 CD/DVD 裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
-    </message>
-    <message>
-        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>在機器 &lt;b&gt;%3&lt;/b&gt; 的插槽 &lt;i&gt;%2&lt;/i&gt; 附加軟碟裝置 (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) 失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;請注意，這個媒體的存放單元將不會刪除且可以稍後再次使用。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox Guest Additions 似乎在這部虛擬機器不可使用，因此共用資料夾無法使用。 若要在虛擬機器內使用共用資料夾，如果是未安裝請安裝 Guest Additions ，或如果是未正常動作則重新安裝，從&lt;b&gt;裝置&lt;/b&gt;功能表選取&lt;b&gt;安裝 Guest Additions&lt;/b&gt;。 如果已安裝但機器尚未完全啟動，則共用資料夾將在啟動後可以使用。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;全螢幕&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;主功能表列在全螢幕模式中是隱藏的。 您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;無縫&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;主功能表列在無縫模式中是隱藏的。 您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;縮放&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;請注意，主功能表列在縮放模式中是隱藏的。您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>scale</comment>
-        <translation>切換</translation>
-    </message>
-    <message>
-        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>開啟擴充包 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將安裝 VirtualBox 擴充包。 擴充包補充 VirtualBox 的功能且包含系統層級的軟體，可能潛在危害您的系統。 請檢閱以下描述，並只進行從信任來源所取得的擴充包。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Install</source>
-        <translation>安裝(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation>擴充包補充 VirtualBox 的功能且可以包含系統層級的軟體，可能潛在危害您的系統。 請檢閱以下描述，並只進行從信任來源所取得的擴充包。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;已經安裝擴充包的較舊版本，您希望昇級嗎? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新的版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;目前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Upgrade</source>
-        <translation>升級(&amp;U)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;已經安裝擴充包的較新版本，您希望降級嗎? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;新的版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;目前版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Downgrade</source>
-        <translation>降級(&amp;D)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;已經安裝擴充包的相同版本，您希望重新安裝嗎? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名稱:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;版本:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;描述:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Reinstall</source>
-        <translation>重新安裝(&amp;R)</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將移除 VirtualBox 擴充包 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您確定要進行嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation>擴充包 &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; 已安裝成功。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;無法在上層資料夾 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; 建立機器資料夾 &lt;b&gt;%1&lt;/b&gt; 。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;請檢查上層真的存在且您有權限建立機器資料夾。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>註冊虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;在您編輯時機器設定已變更。 您目前未儲存設定變更。&lt;/p&gt;&lt;p&gt;您希望重新載入已變更的設定或保留您自己的變更?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reload settings</source>
-        <translation>重新載入設定</translation>
-    </message>
-    <message>
-        <source>Keep changes</source>
-        <translation>保留變更</translation>
-    </message>
-    <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished">您目前編輯的虛擬機器狀態已變更。 在您按下 [確定] 時只會儲存執行階段可編輯的設定。 所有其它變更的設定將失去。</translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>再製虛擬機器 &lt;b&gt;%1&lt;/b&gt; 失敗。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您即將還原快照 &lt;b&gt;%1&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;您可以按一下以下方塊先建立虛擬機器目前狀態的快照; 如果您不如此做，將永久失去目前狀態。 您希望進行嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Create a snapshot of the current machine state</source>
-        <translation>建立目前虛擬機器狀態的快照</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您確定要還原快照 &lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;變更媒體類型從 &lt;b&gt;%1&lt;/b&gt; 到 &lt;b&gt;%2&lt;/b&gt;錯誤。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation>抱歉，發生某些一般錯誤。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;USB 2.0 目前在這部虛擬機器啟用。 然而這需要安裝 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;請從 VirtualBox 下載網站安裝擴充包。 在此之後您將可以重新啟用 USB 2.0。 除非您取消目前設定變更，否則將在主期間停用。&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation>無法載入主機 USB Proxy 服務 (VERR_FILE_NOT_FOUND)。 服務可能未安裝在主機電腦中</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox 目前不允許存取 USB 裝置。 您可以加入您的使用者到 &apos;vboxusers&apos; 群組來變更。  更多詳細解釋請查看使用者手冊</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation>VirtualBox 目前不允許存取 USB 裝置。 您可以允許您的使用者存取 &apos;usbfs&apos; 資料夾和檔案來變更。  更多詳細解釋請查看使用者手冊</translation>
-    </message>
-    <message>
-        <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation>USB Proxy Service 尚未移植到此主機</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy service</source>
-        <translation>無法載入主機 USB Proxy 服務</translation>
-    </message>
-</context>
-<context>
     <name>VBoxScreenshotViewer</name>
     <message>
         <source>Screenshot of %1 (%2)</source>
@@ -6572,7 +6705,7 @@
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>說明(&amp;H)</translation>
+        <translation type="obsolete">說明(&amp;H)</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -6919,29 +7052,6 @@
         <translation>
             <numerusform>警告: 您正在取得執行中機器的快照，其附加 %n 不可改變的映像。 只要您正在從這個快照工作，將不能重設該不可變的映像，以避免資料遺失。</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation>編輯文字</translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation>取代(&amp;R)...</translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation>以檔案的內容取代目前文字。</translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation>文字 (*.txt);;所有 (*.*)</translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation>選取開啟的檔案...</translation>
     </message>
 </context>
 <context>

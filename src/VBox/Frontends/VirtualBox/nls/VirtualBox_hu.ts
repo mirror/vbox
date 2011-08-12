@@ -233,6 +233,14 @@
         <source>&amp;Details (%1 of %2)</source>
         <translation>&amp;Részletek(%1 / %2)</translation>
     </message>
+    <message>
+        <source>Copy all errors to the clipboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy</source>
+        <translation type="unfinished">Másolás</translation>
+    </message>
 </context>
 <context>
     <name>QIRichLabel</name>
@@ -590,6 +598,147 @@
     </message>
 </context>
 <context>
+    <name>UIApplianceEditorWidget</name>
+    <message>
+        <source>Virtual System %1</source>
+        <translation>Virtuális rendszer %1</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Név</translation>
+    </message>
+    <message>
+        <source>Product</source>
+        <translation>Termék</translation>
+    </message>
+    <message>
+        <source>Product-URL</source>
+        <translation>Termék URL</translation>
+    </message>
+    <message>
+        <source>Vendor</source>
+        <translation>Gyártó</translation>
+    </message>
+    <message>
+        <source>Vendor-URL</source>
+        <translation>Gyártó URL</translation>
+    </message>
+    <message>
+        <source>Version</source>
+        <translation>Verzió</translation>
+    </message>
+    <message>
+        <source>Description</source>
+        <translation>Leírás</translation>
+    </message>
+    <message>
+        <source>License</source>
+        <translation>Licenc</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>Vendég OS típusa</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>Processzor</translation>
+    </message>
+    <message>
+        <source>RAM</source>
+        <translation>RAM</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (IDE)</source>
+        <translation>IDE merevlemezvezérlő</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SATA)</source>
+        <translation>SATA merevlemezvezérlő</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SCSI)</source>
+        <translation>SCSI merevlemezvezérlő</translation>
+    </message>
+    <message>
+        <source>DVD</source>
+        <translation>DVD</translation>
+    </message>
+    <message>
+        <source>Floppy</source>
+        <translation>Floppy</translation>
+    </message>
+    <message>
+        <source>Network Adapter</source>
+        <translation>Hálózati kártya</translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <translation>USB vezérlő</translation>
+    </message>
+    <message>
+        <source>Sound Card</source>
+        <translation>Hangkártya</translation>
+    </message>
+    <message>
+        <source>Virtual Disk Image</source>
+        <translation>Virtuális lemezkép</translation>
+    </message>
+    <message>
+        <source>Unknown Hardware Item</source>
+        <translation>Ismeretlen hardverelem</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
+        <translation>&lt;b&gt;Eredeti érték:&lt;/b&gt; %1</translation>
+    </message>
+    <message>
+        <source>Configuration</source>
+        <translation>Konfiguráció</translation>
+    </message>
+    <message>
+        <source>Warnings:</source>
+        <translation>Figyelmeztetések:</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024 KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>MB</source>
+        <comment>size suffix MBytes=1024KBytes</comment>
+        <translation type="obsolete">MB</translation>
+    </message>
+    <message>
+        <source>Hard Disk Controller (SAS)</source>
+        <translation>Merevlemez vezérlő (SAS)</translation>
+    </message>
+    <message>
+        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
+        <translation>Ha engedélyezett, új egyedi MAC cím lesz minden hálózati kártyához rendelve.</translation>
+    </message>
+    <message>
+        <source>&amp;Reinitialize the MAC address of all network cards</source>
+        <translation>MAC címek új&amp;ra-inicializálása a hálózati kártyákhoz</translation>
+    </message>
+</context>
+<context>
+    <name>UIApplianceImportEditorWidget</name>
+    <message>
+        <source>Importing Appliance ...</source>
+        <translation>Virtuális gép importálása...</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translatorcomment>CHECK</translatorcomment>
+        <translation>Virtuális gép olvasása...</translation>
+    </message>
+</context>
+<context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
@@ -598,6 +747,10 @@
     <message>
         <source>Clone</source>
         <translation>Klónozás</translation>
+    </message>
+    <message>
+        <source>Linked Base for %1 and %2</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -612,7 +765,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>Ha engedélyezett, új egyedi MAC cím lesz minden beállított hálózati kártyához rendelve.</translation>
+        <translation type="obsolete">Ha engedélyezett, új egyedi MAC cím lesz minden beállított hálózati kártyához rendelve.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
@@ -626,20 +779,24 @@
         <source>%1 Clone</source>
         <translation>%1 Klónozás</translation>
     </message>
+    <message>
+        <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Current machine state</source>
-        <translation>Aktuális gép állapota</translation>
+        <translation type="obsolete">Aktuális gép állapota</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation>Aktuális gép és gyermekei állapota</translation>
+        <translation type="obsolete">Aktuális gép és gyermekei állapota</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation>Minden állapot</translation>
+        <translation type="obsolete">Minden állapot</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
@@ -647,19 +804,70 @@
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation>Válaszd ki, hogy a virtuális gép melyik részét kell klónozni.</translation>
+        <translation type="obsolete">Válaszd ki, hogy a virtuális gép melyik részét kell klónozni.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation>Ha az &lt;b&gt;Aktuális gép állapot&lt;/b&gt;át választod, csak a virtuális gép aktuális állapota lesz klónozva.</translation>
+        <translation type="obsolete">Ha az &lt;b&gt;Aktuális gép állapot&lt;/b&gt;át választod, csak a virtuális gép aktuális állapota lesz klónozva.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation>Ha az &lt;b&gt;Aktuális gép és gyermekei állapot&lt;/b&gt;át választod, a virtuális gép aktuális állapota és a gyermekek pillanatképeinek minden állapota klónozva lesz.</translation>
+        <translation type="obsolete">Ha az &lt;b&gt;Aktuális gép és gyermekei állapot&lt;/b&gt;át választod, a virtuális gép aktuális állapota és a gyermekek pillanatképeinek minden állapota klónozva lesz.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation>Ha a &lt;b&gt;Minden állapot&lt;/b&gt;ot választod, az aktuális virtuális gép és minden piialantkép klónozva lesz.</translation>
+        <translation type="obsolete">Ha a &lt;b&gt;Minden állapot&lt;/b&gt;ot választod, az aktuális virtuális gép és minden piialantkép klónozva lesz.</translation>
+    </message>
+    <message>
+        <source>Full Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Linked Clone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UICloneVMWizardPage3</name>
+    <message>
+        <source>Current machine state</source>
+        <translation type="unfinished">Aktuális gép állapota</translation>
+    </message>
+    <message>
+        <source>Current machine and all child states</source>
+        <translation type="unfinished">Aktuális gép és gyermekei állapota</translation>
+    </message>
+    <message>
+        <source>All states</source>
+        <translation type="unfinished">Minden állapot</translation>
+    </message>
+    <message>
+        <source>Cloning Configuration</source>
+        <translation type="unfinished">Klónozási konfiguráció</translation>
+    </message>
+    <message>
+        <source>Please choose which parts of the virtual machine should be cloned.</source>
+        <translation type="unfinished">Válaszd ki, hogy a virtuális gép melyik részét kell klónozni.</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
+        <translation type="unfinished">Ha az &lt;b&gt;Aktuális gép állapot&lt;/b&gt;át választod, csak a virtuális gép aktuális állapota lesz klónozva.</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
+        <translation type="unfinished">Ha az &lt;b&gt;Aktuális gép és gyermekei állapot&lt;/b&gt;át választod, a virtuális gép aktuális állapota és a gyermekek pillanatképeinek minden állapota klónozva lesz.</translation>
+    </message>
+    <message>
+        <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
+        <translation type="unfinished">Ha a &lt;b&gt;Minden állapot&lt;/b&gt;ot választod, az aktuális virtuális gép és minden piialantkép klónozva lesz.</translation>
     </message>
 </context>
 <context>
@@ -1009,7 +1217,7 @@
     </message>
     <message>
         <source>The download process has been canceled by the user.</source>
-        <translation>A letöltést megszakította a felhasználó.</translation>
+        <translation type="obsolete">A letöltést megszakította a felhasználó.</translation>
     </message>
 </context>
 <context>
@@ -1028,7 +1236,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem sikerült elmenteni a letöltött fájlt ide: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nem sikerült elmenteni a letöltött fájlt ide: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
@@ -2174,23 +2382,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="obsolete">Bal Shift</translation>
+        <translation type="unfinished">Bal Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="obsolete">Jobb Shift</translation>
+        <translation type="unfinished">Jobb Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="obsolete">Bal Ctrl</translation>
+        <translation type="unfinished">Bal Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="obsolete">Jobb Ctrl</translation>
+        <translation type="unfinished">Jobb Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="obsolete">Bal Alt</translation>
+        <translation type="unfinished">Bal Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2566,6 +2774,13 @@ p, li { white-space: pre-wrap; }
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>Megmutatja a virtuális gépen használt szolgáltatások közötti különbséget:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UILineTextEdit</name>
+    <message>
+        <source>&amp;Edit</source>
+        <translation>Sz&amp;erkesztés</translation>
     </message>
 </context>
 <context>
@@ -4191,7 +4406,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>az ICH9 lapkakészlet típust választottad a virtuális géphez. Csak akkor fog helyesen működni, ha az IO APIC is be van kapcsolva. Ez automatikusan meg fog történni, mikor az OK gomb megnyomásával elfogadod a beállításokat.</translation>
+        <translation type="obsolete">az ICH9 lapkakészlet típust választottad a virtuális géphez. Csak akkor fog helyesen működni, ha az IO APIC is be van kapcsolva. Ez automatikusan meg fog történni, mikor az OK gomb megnyomásával elfogadod a beállításokat.</translation>
     </message>
     <message>
         <source>&amp;Execution Cap:</source>
@@ -4218,6 +4433,10 @@ p, li { white-space: pre-wrap; }
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
         <comment>Max CPU execution cap in %</comment>
         <translation>&lt;qt&gt;%1%&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4477,25 +4696,1312 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
+    <name>UIMessageCenter</name>
+    <message>
+        <source>VirtualBox - Information</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Információ</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Question</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Kérdés</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Warning</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Figyelem</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Hiba</translation>
+    </message>
+    <message>
+        <source>VirtualBox - Critical Error</source>
+        <comment>msg box title</comment>
+        <translation>VirtualBox - Kritikus hiba</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <comment>msg box flag</comment>
+        <translation>Ne mutassa ezt az üzenetet újra</translation>
+    </message>
+    <message>
+        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
+        <translation>Sikertelen megnyitás: &lt;tt&gt;%1&lt;/tt&gt;. Ellenőrizd, hogy az asztali környezeted képes-e lekezelni ezt az URL típust.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A COM inicializálása vagy a VirtualBox COM szerver megtalálása sikertelen. Valószínűleg a VirtualBox szerver nem fut vagy nem tudott elindulni.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A VirtualBox COM feladat létrehozása sikertelen.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to set global VirtualBox properties.</source>
+        <translation>A VirtualBox globális tulajdonságainak beállítása sikertelen.</translation>
+    </message>
+    <message>
+        <source>Failed to access the USB subsystem.</source>
+        <translation>Az USB alrendszerhez történő hozzáférés sikertelen.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine.</source>
+        <translation>Az új virtuális gép létrehozása sikertelen.</translation>
+    </message>
+    <message>
+        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Az új virtuális gép létrehozása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A beállítások alkalmazása a virtuális gépre sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép elindítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép futásának megállítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép futásának folytatása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép állapotának mentése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Pillanatkép készítése a virtuális gépről sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép leállítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép eltávolítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép mentett állapotának elvetése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="obsolete">A(z) &lt;b&gt;%2&lt;/b&gt; virtuális gép &lt;b&gt;%1&lt;/b&gt; pillanatképének elvetése sikertelen.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">A virtuális gép aktuális állapotának elvetése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="obsolete">A virtuális gép aktuális pillanatképének és állapotának elvetése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Nincs ilyen nevű virtuális gép: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Biztos véglegesen törölni akarod ezt a virtuális gépet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ez a művelet később nem vonható vissza!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Biztos eltávolítod ezt az elérhetetlen virtuális gépet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Többé nem lehet majd visszaregisztrálni ezt a gépet a grafikus felületről!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Biztos elveted a virtuális gép mentett állapotát: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ez a művelet egyenértékű a virtuális gép újraindításával vagy kikapcsolásával, ami a vendég operációs rendszer nem szabályos leállítását jelenti.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <translation type="obsolete">merevlemez</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <translation type="obsolete">CD/DVD kép</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <translation type="obsolete">floppy kép</translation>
+    </message>
+    <message>
+        <source>Failed to create a new session.</source>
+        <translation>Új munkamenet létrehozása sikertelen.</translation>
+    </message>
+    <message>
+        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép munkamenetének megnyitása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A gazda hálózati interfész eltávolítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; USB eszköz csatlakoztatása sikertelen a virtuális géphez: &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; USB eszköz leválasztása sikertelen a virtuális gépről: &lt;b&gt;%2&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; megosztott mappa (ami ide mutat: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) létrehozása sikertelen a virtuális gép számára: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; megosztott mappa (ami ide mutat: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) eltávolítása sikertelen a virtuális gépről: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A virtuális gépen a vendég OS nem támogatja az &lt;b&gt;egér-integrációt&lt;/b&gt; a jelenlegi videó módban. Neked kell aktiválnod az egeret (a virtuális gép képernyőjére kattintva vagy a gazda-billentyű megnyomásával) a vendég rendszerben, hogy használhasd.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A virtuális gép jelenleg &lt;b&gt;megállított&lt;/b&gt; állapotban van és emiatt semmilyen billentyűzet- vagy egér aktivitást sem fogad. Ha folytatni szeretnéd a virtuális gépen belüli munkát, a menüből a megfelelő művelet kiválasztásával folytathatod a futtatását.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A VirtualBox nem futhat &lt;i&gt;virtuális gép választó&lt;/i&gt; módban a helyi korlátozások miatt.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Végzetes hiba&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Nem-végzetes hiba&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Figyelem&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Severity: </source>
+        <comment>runtime error info</comment>
+        <translation>Sürgősség: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A virtuális gép futása a lentebb leírt hibába futott. Figyelmen kívül hagyhatod ezt az üzenetet, de ajánlott megtenni a megfelelő lépéseket, hogy a leírt hiba többé ne forduljon elő.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Result&amp;nbsp;Code: </source>
+        <comment>error info</comment>
+        <translation>Eredmény&amp;nbsp;kód: </translation>
+    </message>
+    <message>
+        <source>Component: </source>
+        <comment>error info</comment>
+        <translation>Komponens: </translation>
+    </message>
+    <message>
+        <source>Interface: </source>
+        <comment>error info</comment>
+        <translation>Interfész: </translation>
+    </message>
+    <message>
+        <source>Callee: </source>
+        <comment>error info</comment>
+        <translation>Callee: </translation>
+    </message>
+    <message>
+        <source>Callee&amp;nbsp;RC: </source>
+        <comment>error info</comment>
+        <translation>Callee&amp;nbsp;RC: </translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A(z) &lt;b&gt;%1&lt;/b&gt; nyelv fájlja nem található a mappában: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A nyelv ideiglenesen visszaáll a rendszer alapértelmezett nyelvére. A Virtualbox ablakában, a &lt;b&gt;Fájl&lt;/b&gt;menün belül válaszd a &lt;b&gt;Beállítások&lt;/b&gt; menüpontot, és a &lt;b&gt;Nyelv&lt;/b&gt; oldalon válassz egy nyelvet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A nyelvi fájl nem tölthető be: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;A nyelv ideiglenesen visszaáll angolra (beépítet). A Virtualbox ablakában, a &lt;b&gt;Fájl&lt;/b&gt;menün belül válaszd a &lt;b&gt;Beállítások&lt;/b&gt; menüpontot, és a &lt;b&gt;Nyelv&lt;/b&gt; oldalon válassz egy nyelvet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl régiiek: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások elavultak: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl újak a VirtualBox ezen verziójához: telepített verzió: %1, ajánlott verzió: %2.&lt;/p&gt;&lt;p&gt;Régi VirtualBoxon nem támogatott egy újabb Additions használata. &lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával telepítsd fel az Integrációs szolgáltatások aktuális verzióját.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
+        <comment>runtime error info</comment>
+        <translation>&lt;nobr&gt;Hiba azonosító: &lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Végzetes hiba lépett fel a virtuális gép futása során! A virtuáis gép ki fog kapcsolni. Ajánlott a következő hibaüzenet vágólapra másolása a későbbi megvizsgáláshoz:&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Végzetes hiba lépett fel a virtuális gép futása során! A részletes hiba alul látható. Megpróbálhatod kijavítani a leírt hibát és folytatni a virtuális gép futtatását.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="obsolete">A virtuális gép &lt;b&gt;%1&lt;/b&gt; pillantkép mappájának &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; mappára történő átállítása sikertelen.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A(z) &lt;b&gt;%1&lt;/b&gt;megosztott mappa (ami ide mutat: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) eltávolítása sikertelen a virtuáis gépről: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Zárj be minden programot a vendég OS-en belül, mely a mappát használhatja és próbáld újra.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem található a VirtualBox Integrációs szolgáltatások CD fájl: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; vagy &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Letöltöd a CD-t az internetről?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A VirtualBox Integrációs szolgáltatások CD letöltése sikertelen innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Biztos le akarod tölteni a VirtualBox Integrációs szolgáltatások CD-t innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (mérete %3 bájt)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A VirtualBox Integrációs szolgáltatások CD sikeresen letöltődött a &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; helyről és el lett mentve: &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Szeretnéd regisztrálni a CD képet és berakni a virtuális CD/DVD meghajtóba?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A virtuális gép ablaka &lt;b&gt;%1&amp;nbsp;bites&lt;/b&gt; színmélységű munkára van optimalizálva, de a virtuális megjelenítő jelenlegi színmélysége &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nyisd meg a vendég OS megjelenítési tulajdonságait és válassz egy &lt;b&gt;%3&amp;nbsp;bites&lt;/b&gt; módot, ha elérhető, a virtuális videóalrendszer legjobb teljesítménye érdekében.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés&lt;/b&gt;. Néhány operációs rendszer, mint az OS/2, működhetnek 32&amp;nbsp;bites módban, de mégis 24&amp;nbsp;bitnek (16 millió szín) érzékeli. Próbáld meg másik színmélységet választani, hogy akkor eltűnik-e ez az üzenet vay egyszerűen kikapcsolhatod most is, ha biztos vagy bene, hogy a szükséges színmélység (%4&amp;nbsp;bit) nem érhető el az adott vendég rendszeren.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem csatoltál merevlemezt az új virtuális géphez. A gép nem lesz képes elindulni, hacsak nem csatolsz egy merevlemezt a vendég operációs rendszerhez vagy egyéb bootolható médiát, amit később a gép beállításai ablak vagy az Első indítási varázsló használhat.&lt;/p&gt;&lt;p&gt;Folytatni akarod?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Nem sikerült itt megtalálni a licenc fájlt: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
+        <translation>Nem sikerült megnyitni a licenc fájlt &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Ellenőrizd a fájl engedélyeit.</translation>
+    </message>
+    <message>
+        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>Az ACPI Power gomb megnyomási eseményt nem sikerült elküldeni a virtuális gépnek: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Gratulálunk! Sikeresen regisztráltad magadat, mint VirtualBox felhasználó.&lt;/p&gt;&lt;p&gt;Köszönjük, hogy szakítottál időt a regisztrációs űrlap kitöltésére!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;A VirtualBox regisztrálása sikertelen&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;A VirtualBox globális beállításainak mentése sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A globális grafikus felület beállításainak betöltése sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A globális grafikus felület beállításainak mentése sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; virtuális gép beállításainak mentés sikertelen: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
+        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; virtuális gép beállításainak &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; helyről történő betöltése sikertelen.</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Törlés</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>machine</comment>
+        <translation type="obsolete">Eltávolítás</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <comment>saved state</comment>
+        <translation>Eldobás</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>detach image</comment>
+        <translation type="obsolete">Folytat</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Törlés</translation>
+    </message>
+    <message>
+        <source>Unregister</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Eltávolítás</translation>
+    </message>
+    <message>
+        <source>Disable</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Letiltás</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>additions</comment>
+        <translation>Letöltés</translation>
+    </message>
+    <message>
+        <source>Mount</source>
+        <comment>additions</comment>
+        <translation>Csatolás</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
+        <comment>additional message box paragraph</comment>
+        <translation>&lt;p&gt;A gazda billentyű jelenleg így van megadva: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Capture</source>
+        <comment>do input capture</comment>
+        <translation>Elfogás</translation>
+    </message>
+    <message>
+        <source>Check</source>
+        <comment>inaccessible media message box</comment>
+        <translation>Ellenőrzés</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">Menté&amp;s</translation>
+    </message>
+    <message>
+        <source>&amp;Backup</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Biztonsági mentés</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">Mégsem</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>fullscreen</comment>
+        <translation>Átváltás</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>seamless</comment>
+        <translation>Átváltás</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Biztos reset-eled a virtuális gépet?&lt;/p&gt;&lt;p&gt;Mert ebben az esetben, a benne futó alkalmazások mentetlen adatai mind elvesznek.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <comment>machine</comment>
+        <translation>Reset</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <comment>no hard disk attached</comment>
+        <translation>Folytatás</translation>
+    </message>
+    <message>
+        <source>Go Back</source>
+        <comment>no hard disk attached</comment>
+        <translation>Vissza</translation>
+    </message>
+    <message>
+        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
+        <translation type="obsolete">A fájl másolása sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ide: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Ú&amp;j</translation>
+    </message>
+    <message>
+        <source>Select</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Kiválaszt</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem lehet az asztal-integrációs módba váltani a vendég kevés videó-memóriája miatt.&lt;/p&gt;&lt;p&gt;Be kell állítanod a virtuális gépet, hogy legalább &lt;b&gt;%1&lt;/b&gt; videó-memóriával rendelkezzen.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem tudsz teljes képernyőre váltani a vendég kevés videó-memóriája miatt.&lt;/p&gt;&lt;p&gt;Be kell állítanod a virtuális gépet, hogy legalább &lt;b&gt;%1&lt;/b&gt; videó-memóriával rendelkezzen.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;Kihagy&lt;/b&gt; teljes képernyőre válthatsz vagy a &lt;b&gt;Mégsem&lt;/b&gt; gombbal megszakíthatod a műveletet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation>A legfrissebb VirtualBox van telepítve. Később ismételd meg a verzió ellenőrzést.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;b&gt;Belekattintottál&lt;/b&gt; a virtuális gép képernyőjébe vagy megnyomtad a &lt;b&gt;gazda-billentyűt&lt;/b&gt;. Ezáltal a virtuális gép &lt;b&gt;elfogja&lt;/b&gt; a gazda gép egérmutatóját (kivéve, ha az egér-integrációt nem támogatja a  a vendég operációs rendszer) és billentyűzetét, melyek elérhetetlenné válnak a gazda gépen futó többi alkalmazás számára.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;gazda-billentyű&lt;/b&gt; megnyomásával bármikor &lt;b&gt;felszabadíthatod&lt;/b&gt; a billentyűzetet és az egeret (ha el volt fogva) és visszatérnek a normális működésükhöz. A jelenleg társított gazda-billentyű a virtuális gép ablakának alsó állapotsorában jelenik meg, közvetlen a&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikon mellett. Ez az ikon, a közeli egérikonnal együtt, mutatja a billentyűzet és az egér elfogási állapotát.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Bekapcsoltad az &lt;b&gt;Automata billentyűzet-elkapás&lt;/b&gt; lehetőséget. Ezáltal a virtuális gép automatikusan mindig &lt;b&gt;elfogja&lt;/b&gt; a billentyűzetet, ha a virtuális gép ablaka aktív és elérhetetlenné teszi a gazda gépen futó többi alkalmazás számára: mikor a billentyűzet el van fogva, minden billentyűkód (a rendszerét is beleértve, mint az Alt-Tab) a virtuális géphez kapcsolódik.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;gazda-billentyű&lt;/b&gt; megnyomásával bármikor &lt;b&gt;felszabadíthatod&lt;/b&gt; a billentyűzetet és az egeret (ha el volt fogva) és visszatérnek a normális működésükhöz. A jelenleg társított gazda-billentyű a virtuális gép ablakának alsó állapotsorában jelenik meg, közvetlen a&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikon mellett. Ez az ikon, a közeli egérikonnal együtt, mutatja a billentyűzet és az egér elfogási állapotát.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A virtuális gép észlelte, hogy a vendég operációs rendszer támogatja az &lt;b&gt;egér-integrációt&lt;/b&gt;. Ez azt jelenti, hogy nem kell &lt;i&gt;elfognod&lt;/i&gt; az egérmutatót, hogy a vendég operációs rendszerben használhasd -- ha az egérmutató a virtuális gép képernyője felett van, minden végrehajtott egérművelet közvetlen a vendég operációs rendszeren hajtódik végre. Ha az egér el van fogva, automatikusan el lesz engedve.&lt;/p&gt;&lt;p&gt;Az állapotsorban megjelenő&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;egér ikon tájékoztat az egér-integráció vendég operációs rendszerbeli támogatásáról és bekapcsolt állapotáról.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés&lt;/b&gt;: Néhány alkalmazás helytelenül működhet egér-integrációs módban. Bármikor kikapcsolhatod az aktuális munkafolyamathoz (majd újra be) a menüből,a megfelelő művelet kiválasztásával.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;teljesképernyős&lt;/b&gt; módra vált. Bármikor visszaléphetsz ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik teljesképernyős módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;asztal-integrációs&lt;/b&gt; módra vált. Bármikor visszaléphetsz ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik asztal-integrációs módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Contents...</source>
+        <translation>&amp;Tartalom...</translation>
+    </message>
+    <message>
+        <source>Show the online help contents</source>
+        <translation>Online súgó megjelenítése</translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Web Site...</source>
+        <translation>A &amp;VirtualBox weboldala...</translation>
+    </message>
+    <message>
+        <source>Open the browser and go to the VirtualBox product web site</source>
+        <translation>Böngésző megnyitása a VirtualBox weboldalával</translation>
+    </message>
+    <message>
+        <source>&amp;Reset All Warnings</source>
+        <translation>Minden figyelmeztetés &amp;alaphelyzetbe</translation>
+    </message>
+    <message>
+        <source>Go back to showing all suppressed warnings and messages</source>
+        <translation>Minden figyelmeztetés meg fog jelenni újra</translation>
+    </message>
+    <message>
+        <source>R&amp;egister VirtualBox...</source>
+        <translation>VirtualBox r&amp;egisztrálása....</translation>
+    </message>
+    <message>
+        <source>Open VirtualBox registration form</source>
+        <translation>A regisztrációs űrlap megnyitása</translation>
+    </message>
+    <message>
+        <source>C&amp;heck for Updates...</source>
+        <translation>Frissítések elle&amp;nőrzése...</translation>
+    </message>
+    <message>
+        <source>Check for a new VirtualBox version</source>
+        <translation>Új VirtualBox verzió keresése</translation>
+    </message>
+    <message>
+        <source>&amp;About VirtualBox...</source>
+        <translation>VirtualBox név&amp;jegy...</translation>
+    </message>
+    <message>
+        <source>Show a dialog with product information</source>
+        <translation>Egy ablak mutatása a termékinformációkkal</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Elérhető a VirtualBox egy újabb verziója! A(z) &lt;b&gt;%1&lt;/b&gt; -s verzió elérhető a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; weboldalon.&lt;/p&gt;&lt;p&gt;Közvetlenül pedig erről a linkről töltheted le:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Biztos elengeded ezt, ami egy %1 : &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Le fog választódni a következő virtuális gép(ek)ről: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Release</source>
+        <comment>detach medium</comment>
+        <translation>Elenged</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Biztos törölni akarod az ismert médiumok listájáról ezt, ami egy %1 : &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <translation>Ne feledd, hogy ez a merevlemez elérhetetlen, így ez a tárolóegység most nem törölhető.</translation>
+    </message>
+    <message>
+        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
+        <translation>A következő ablakban választhatsz, hogy törlöd a merevlemez tárolóegységét vagy meghagyod későbbi használatra.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ne feledd, hogy ezen médium tárolóegysége nem lesz törölve és így később is hozzá lehet adni a listához.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <comment>medium</comment>
+        <translation>Eltávolítás</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A merevlemez tárolóegység már létezik a következő helyen: &lt;b&gt;%1&lt;/b&gt;. Nem hozhatsz létre egy új merevlemezt ezen a helyen, mert már egy másik virtuális merevlemez használja.&lt;/p&gt;&lt;p&gt;Válassz egy másik helyet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Törölni akarod a merevlemez ezen tárolóegységét: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Ha a &lt;b&gt;Törlést&lt;/b&gt; választod, a tárolóegység véglegesen törlődni fog. Ez a művelet &lt;b&gt;nem vonható vissza&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ha a &lt;b&gt;Megtartást&lt;/b&gt; választod, a merevlemez csak az ismert merevlemezek listájáról törlődik, de a tárolóegység érintetlen marad, amit később újra hozzá lehet adni a merevlemezek listájához.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <comment>hard disk storage</comment>
+        <translation>Törlés</translation>
+    </message>
+    <message>
+        <source>Keep</source>
+        <comment>hard disk storage</comment>
+        <translation>Megtartás</translation>
+    </message>
+    <message>
+        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A merevlemez következő tárolóegységének törlése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Az újonnan létrehozott hozzárendeléshez nem érhető el használaton kívüli merevlemez.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Új&lt;/b&gt; gombbal elindíthatod az &lt;i&gt;Új Virtuális lemez&lt;/i&gt; varázslót és létrehozhatsz egy új merevlemezt, vagy a &lt;b&gt;Kiválasztás&lt;/b&gt; gombbal nyisd meg a &lt;i&gt;Virtuális médiakezelőt&lt;/i&gt; és válassz valamit.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
+        <translation>A merevlemez létrehozása sikertelen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Nem sikerült (az) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;merevlemezt a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">Nem sikerült (az) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;merevlemezt a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról leválasztani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">A(z) %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; csatolása nem sikerült a virtuális géphez: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">A(z) %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; lecsatolása nem sikerült a virtuális gépről: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Sikertelen megnyitás: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>Sikertelen bezárás: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation>A(z) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; médium állapotinformációinak bekérése sikertelen.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem sikerült a VirtualBox online regisztrációs szolgáltatásához csatlakozni a következő hiba miatt:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Az új verzióinformáció nem érhető el a következő hiba miatt:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Egy vagy több virtuális merevlemez, CD/DVD vagy floppy jelenleg nem érhető el. Ennek eredményeképp, nem leszel képes olyan műveletek végrehajtására, melyek ezt a médiumot használnák, amíg az újra elérhető nem lesz.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombbal nyisd meg a Virtuális médiakezelő ablakot és láthatod az elérhetetlen médiát, vagy a &lt;b&gt;Kihagy&lt;/b&gt; gombbal figyelmen kívül hagyod ezt az üzenetet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;A meglévő VirtualBox beállítási fájlok automatikusan átkonvertálódnak a régi formátumból az újba, mely az új verziójú VirtualBoxhoz szükséges.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;OK&lt;/b&gt; gombbal elindíthatod a VirtualBoxot vagy a &lt;b&gt;Több&lt;/b&gt; gombbal további információt szerezhetsz arról, hogy mely fájlok lettek átkonvertálva és az elérhető további műveletekről.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;Kilépés&lt;/b&gt; gombbal megszakítod a VirtualBox indítását,az átalakítás eredményének mentése nélkül.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;More</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">&amp;Több</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">Ki&amp;lépés</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;A következő VirtualBox beállítási fájlok automatikusan átkonvertálódtak az új formátumba: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Habár az átalakítás eredményei még nem lettek elmentve. Válassz egyet:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Biztonsági mentés&lt;/b&gt;: biztonsági másolat készül a régi formátumú beállítási fájlokról azok átalakítása előtt;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Felülírás&lt;/b&gt;: átalakított fájlok mentése biztonsági másolatok készítése nélkül (ezek a beállítások nem használhatók egy régebbi VirtualBox verzióval);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Ajánlott mindig a &lt;b&gt;Biztonsági mentést&lt;/b&gt; használni, mert ilyenkor még vissza lehet váltani egy korábbi VirtualBox verzióra (ha szükséges) a jelenlegi beállítások elvesztése nélkül. A visszaváltásról további információk a VirtualBox kézikönyvben találhatók.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
+        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Kilépés&lt;/b&gt; a VirtualBox bezárásához, az átalakítás eredményének mentése nélkül.&lt;/li&gt;</translation>
+    </message>
+    <message>
+        <source>O&amp;verwrite</source>
+        <comment>warnAboutAutoConvertedSettings message box</comment>
+        <translation type="obsolete">F&amp;elülírás</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Kritikus hiba lépett fel a virtuális gép futása során és a gép leállt.&lt;/p&gt;&lt;p&gt;Segítségért látogass el a &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; közösségi részlegébe vagy a támogatási oldalra. Mellékeld a &lt;tt&gt;VBox.log&lt;/tt&gt; naplófájl tartalmát és a &lt;tt&gt;VBox.png&lt;/tt&gt; képet, melyeket a(z) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; mappában megtalálsz, ahogy annak a leírását is, mit csináltál mikor a hiba bekövetkezett. Ne feledd, hogy a fenti fájlokhoz hozzáférhetsz a VirtualBox főablakából a &lt;b&gt;Gép&lt;/b&gt; menüben a &lt;b&gt;Napló mutatása&lt;/b&gt; menüpont választásával.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;OK&lt;/b&gt; gombbal kikapcsolhatod a gépet vagy a  &lt;b&gt;Kihagy&lt;/b&gt; gombbal hagyhatod futni hibakereséshez. Ne feledd, hogy a hibakereséshez speciális tudás és eszközök kellenek, ezért ajánlott az &lt;b&gt;OK&lt;/b&gt; gombot megnyomni.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">merevlemez</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">CD/DVD kép</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">floppy kép</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
+        <translation type="obsolete">Egy &lt;b&gt;%1&lt;/b&gt; nevű fájl már létezik. Le akarod cserélni?&lt;br /&gt;&lt;br /&gt;A fájl már létezik itt: &quot;%2&quot;. A lecseréléssel felülíródik a tartalma.</translation>
+    </message>
+    <message>
+        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
+        <translation>A következő fájl már létezik:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Biztos lecseréled? A lecseréléssel felülíródik a tartalma.</translation>
+    </message>
+    <message>
+        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
+        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; fájl eltávolítása sikertelen.&lt;br /&gt;&lt;br /&gt;Próbáld meg magad eltávolítani a fájl és próbáld meg újra.</translation>
+    </message>
+    <message>
+        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
+        <translation>Egy nem végleges VirtualBoxot futtatsz. Ez a verzió nem alkalmas tömeges használatra.</translation>
+    </message>
+    <message>
+        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
+        <translation type="obsolete">Nem lehet használni az USB-t a gazda rendszerben, mert sem az USB fájlrendszer (usbfs), sem a DBus/Hal szolgáltatások nem elérhetők. Ha szeretnél USB eszközt használni a gazda gép rendszeréből, ennek a problémának a javítása szükséges. Ha végeztél, indítsd újra a VirtualBox-ot.</translation>
+    </message>
+    <message>
+        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
+        <translation>Az ACPI power gomb megnyomásával próbáltad lekapcsolni a vendég rendszert. Ez jelenleg nem lehetséges, mert a vendég nem használja az ACPI alrendszert.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V hardveres gyorsító be van kapcsolva, de nem használható. A 64-bites vendég rendszered nem lesz képes érzékelni a 64-bites processzort és nem elsz képes elindulni.&lt;/p&gt;&lt;p&gt;Ellenőrizd, hogy a VT-x/AMD-V helyesen van-e bekapcsolva a gazda számítógép BIOS-ában.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation>Virtuális gép bezárása</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>Folytatás</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Biztos törölni akarod a kiválasztott pillanatképet és mentett állapotot?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="obsolete">Eldobás</translation>
+    </message>
     <message>
         <source>Cancel</source>
         <translation>Mégsem</translation>
     </message>
     <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Merevlemezek vannak hozzárendelve a kiegészítő vezérlő portjaihoz. Ha kikapcsolod a kiegészítő vezérlőt, ezek a merevlemezek automatikusan leválasztódnak.&lt;/p&gt;&lt;p&gt;Biztos kikapcsolod a kiegészítő vezérlőt?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Merevlemezek vannak hozzárendelve a kiegészítő vezérlő portjaihoz. Ha módosítod a kiegészítő vezérlőt, ezek a merevlemezek automatikusan leválasztódnak.&lt;/p&gt;&lt;p&gt;Biztos módosítod a kiegészítő vezérlőt?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Change</source>
+        <comment>hard disk</comment>
+        <translation type="obsolete">Változtat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Biztosan eltávolítod a kiválasztott (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) gazda interfészt?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Figyelem:&lt;/b&gt; Ezt az interfészt több virtuális gép hálókártyája is használhatja. Ha eltávolítod, ezek a kártyák nem fognak rendesen működni addig, amíg nem választasz számukra másik gazda interfészt, vagy másik kapcsolódási módot. &lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to create the host-only network interface.</source>
+        <translation>Host-only hálózati kártya létrehozása sikertelen.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A meglévő VirtualBox beállítási fájljaid automatikusan átkonvertálódtak a régi formátumból az újba, mely az új verziós VirtualBoxhoz szükséges.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;OK&lt;/b&gt; gombbal elindíthatod a VirtualBoxot vagy a &lt;b&gt;Kilépés&lt;/b&gt; gombbal megszakítod a VirtualBox programot.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open appliance.</source>
+        <translation>A gép megnyitása sikertelen.</translation>
+    </message>
+    <message>
+        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép megnyitása/értelmezése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A gép importálása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create appliance.</source>
+        <translation>A gép létrehozása sikertelen.</translation>
+    </message>
+    <message>
+        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép felkészítése exportálásra sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to create an appliance.</source>
+        <translation>A virtuális gép létrehozása sikertelen.</translation>
+    </message>
+    <message>
+        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép exportálása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ezen host-only hálózat törlésével törlődni fog az erre a hálózatra csatlakozó host-only interfész is. El akarod távolítani az (host-only hálózat) interfészt: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés:&lt;/b&gt; ezt az interfészt talán az egyik virtuális géped egy vagy több hálózati kártyája is használja. Az eltávolítása után, ezek a kártyák már nem használhatók, amíg a beállításaikban meg nem adsz egy másik interfész nevet vagy egy másik kártya típust.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
+        <translation>Egy &lt;b&gt;%1&lt;/b&gt; nevű fájl már létezik. Le akarod cserélni?&lt;br /&gt;A lecseréléssel felülíródik a tartalma.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V hardveres gyorsító be van kapcsolva, de nem használható, azonban néhány operációs rendszer (pl. OS/2 és QNX) mégis igényli ezt.&lt;/p&gt;&lt;p&gt;Ellenőrizd, hogy a VT-x/AMD-V helyesen van-e bekapcsolva a gazda számítógép BIOS-ában.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Érvénytelen e-mail cím vagy jelszó lett megadva.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem sikerült regisztrálni a VirtualBox terméket.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to check files.</source>
+        <translation>A fájlok ellenőrzése sikertelen.</translation>
+    </message>
+    <message>
+        <source>Failed to remove file.</source>
+        <translation>A fájl eltávolítása sikertelen.</translation>
+    </message>
+    <message>
+        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
+        <translation>Úgy néz ki, USBFS fájlrendszert használsz a /sys/bus/usb/drivers alá csatolva. Erősen ajánlott ennek megváltoztatása, mert egy hibás beállítás az USB eszközök működésének váratlan zavarát okozhatja.</translation>
+    </message>
+    <message>
+        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
+        <translation>A Virtualbox TESZTELÉS ALATTI verzióját futtatod. Ez a verzió nem ajánlott éles környezetbe.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Biztos, hogy vissza akarod tölteni ezt a pillanatképet: &lt;b&gt;%1&lt;/b&gt;? Ez a gép jelenlegi állapotának végleges elvesztését okozhatja.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Visszatöltés</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A pillanatkép törlése azt okozhatja, hogy a mentett állapotinformációk elvesznek, és a VirtualBox által készített lemez-pillanatképek rá lesznek játszva az aktuális lemezre. Ez hosszú ideig is eltarthat, és a pillanatkép-beli információk ezután már nem lesznek helyreállíthatóak.&lt;/p&gt;&lt;p&gt;Biztos törlöd ezt a pillanatképet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Törlés</translation>
+    </message>
+    <message>
+        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>A(z) &lt;b&gt;%2&lt;/b&gt; virtuális gép &lt;b&gt;%1&lt;/b&gt; pillanatképének helyreállítása nem sikerült.</translation>
+    </message>
+    <message>
+        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation>A(z) &lt;b&gt;%2&lt;/b&gt; virtuális gép &lt;b&gt;%1&lt;/b&gt; pillanatképének törlése nem sikerült.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;Új&lt;/b&gt; gombot az &lt;i&gt;Új virtuális lemez&lt;/i&gt; varázsló elindításához, és készíts egy új médiumot, vagy nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Create</source>
+        <comment>medium</comment>
+        <translation type="obsolete">Ú&amp;j</translation>
+    </message>
+    <message>
+        <source>&amp;Select</source>
+        <comment>medium</comment>
+        <translation type="obsolete">Kiválasztá&amp;s</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">A(z) %1 csatlakoztatása a(z) &lt;b&gt;%3&lt;/b&gt; virtuális gép &lt;i&gt;%2&lt;/i&gt; csatlakozójába nem sikerült.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="obsolete">A(z) %1 leválasztása a(z) &lt;b&gt;%3&lt;/b&gt; virtuális gép &lt;i&gt;%2&lt;/i&gt; csatlakozójáról nem sikerült.</translation>
+    </message>
+    <message>
+        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nem sikerült felcsatolni a(z) %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; a(z) &lt;b&gt;%3&lt;/b&gt; gépre.</translation>
+    </message>
+    <message>
+        <source> Would you like to force mounting of this medium?</source>
+        <translation>Biztosan erőszakkal akarod felcsatolni ezt a médiumot?</translation>
+    </message>
+    <message>
+        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nem sikerült lecsatolni a(z) %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; a(z) &lt;b&gt;%3&lt;/b&gt; gépről.</translation>
+    </message>
+    <message>
+        <source> Would you like to force unmounting of this medium?</source>
+        <translation>Biztosan erőszakkal akarod leválasztani ezt a médiumot?</translation>
+    </message>
+    <message>
+        <source>Force Unmount</source>
+        <translation>Erőszakos leválasztás</translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation type="obsolete">Nem sikerült kidobni a lemezt a virtuális eszközből. Az eszközt valószínűleg zárolta a vendég rendszer. Ellenőrizd ezt, és próbáld újra.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem lehet a VirtualBox integrációs szolgáltatások telepítőlemezét felcsatolni a(z) &lt;b&gt;%1&lt;/b&gt; virtuálus gépre, mert a gép nem rendelkezik CD/DVD meghajtóval. Adj egyet a hozzá a virtuális gép beállításainál a Tároló fülön.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation>Ki&amp;lépés</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A következő VirtualBox beállításfájlok automatikusan konvertálva lesznek a régi formátumról az újra.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;OK&lt;/b&gt; gombot a VirtualBox indításához, vagy a &lt;b&gt;Kilépés&lt;/b&gt;-t a VirtualBox-ból való azonnali kilépéshez&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to mount ...</comment>
+        <translation>merevlemez</translation>
+    </message>
+    <message>
+        <source>CD/DVD</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>CD/DVD</translation>
+    </message>
+    <message>
+        <source>CD/DVD image</source>
+        <comment>failed to mount ...</comment>
+        <translation>CD/DVD kép</translation>
+    </message>
+    <message>
+        <source>floppy</source>
+        <comment>failed to mount ... host-drive</comment>
+        <translation>floppy</translation>
+    </message>
+    <message>
+        <source>floppy image</source>
+        <comment>failed to mount ...</comment>
+        <translation>floppy kép</translation>
+    </message>
+    <message>
+        <source>hard disk</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">merevlemez</translation>
+    </message>
+    <message>
+        <source>CD/DVD device</source>
+        <comment>failed to attach ...</comment>
+        <translation type="obsolete">CD/DVD eszköz</translation>
+    </message>
+    <message>
+        <source>floppy device</source>
+        <comment>failed to close ...</comment>
+        <translation type="obsolete">floppy</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Biztos, hogy törlöd ezt a CD/DVD eszközt?&lt;/p&gt;&lt;p&gt;Enélkül nem leszel képes CD-t vagy ISO képmást csatolni, illetve az integrációs szolgáltatásokat telepíteni!&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <comment>medium</comment>
+        <translation>Eltávolítá&amp;s</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
+        <translation>&lt;p&gt;VT-x/AMD-V hardveres gyorsítás nem érhető el a te rendszereden. A te 64-bites vendéged nem észlelt 64-bites processzort és nem lesz képes elindulni.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;VT-x/AMD-V hardveres gyorsítás nem érhető el a te rendszereden. Bizonyos vendégeknek (pl OS/2 és QNX) szüksége van erre a szolgáltatásra és nélküle nem képesek elindulni&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A(z) %1 pillanatfelvéte törléséhez időlegesen többszabad hely szükséges. A legrosszabb esetben a(z) %2 kép mérete %3 mérettel nőhet meg, miközben csak %4 szabad hely van a rendszeren.&lt;/p&gt;&lt;p&gt;Ha a művelet közben fogy el a szabad hely, az a kép és a virtuális gép beállításainak megsérülését okozhatja,mint például a virtuális gép és annak adatainak elvesztése.&lt;/p&gt;&lt;p&gt;Saját felelősségre folytathatja a pillanatfelvétel törlését.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem tudod a vendék képernyőjét a gazda képernyőjére váltani a vendég kevés videó-memóriája miatt.&lt;/p&gt;&lt;p&gt;A virtuális gépnek legalább &lt;b&gt;%1&lt;/b&gt; videó-memóriával kellene rendelkezni.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem tudod a vendék képernyőjét a gazda képernyőjére váltani a vendég kevés videó-memóriája miatt.&lt;/p&gt;&lt;p&gt;A virtuális gépnek legalább &lt;b&gt;%1&lt;/b&gt; videó-memóriával kellene rendelkezni.&lt;/p&gt;&lt;p&gt;Nyomj &lt;b&gt;Kihagy&lt;/b&gt; gombot az átváltáshoz vagy &lt;b&gt;Mégsem&lt;/b&gt; gombot a művelet megszakításához.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem tudsz teljes képernyőre váltani. Több virtuális képernyőd van beállítva, mint mannyi fizikai van csatlakoztatva a gazda géphez.&lt;/p&gt;&lt;p&gt;Csökkentsd a virtuális képernyők számát a beállításoknál vagy csatlakoztass további képernyőt a gazda géphez.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem tudsz asztal-integrációs módba váltani. Több virtuális képernyőd van beállítva, mint mannyi fizikai van csatlakoztatva a gazda géphez.&lt;/p&gt;&lt;p&gt;Csökkentsd a virtuális képernyők számát a beállításoknál vagy csatlakoztass további képernyőt a gazda géphez.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem található a VirtualBox felhasználói kézikönyv: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Letöltöd az internetről?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Biztos le akarod tölteni a VirtualBox Felhasználói kézikönyvet innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (%3 bájt)?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Nem sikerült letölteni a VirtualBox Felhasználói kézikönyvet innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A VirtualBox Felhasználói kézikönyv sikresen letöltődött innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; és el lett mentve mint &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A VirtualBox Felhasználói kézikönyv sikresen letöltődött innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; de nem lett helyikeg elmentve, mint &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Válassz a fájl számára másik helyet.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to open virtual machine located in %1.</source>
+        <translation>Nem sikerült megnyitni a virtuális gépet: %1.</translation>
+    </message>
+    <message>
+        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
+        <translation>Nem sikerült a virtuális gép hozzáadása, mivel már létezik: &lt;b&gt;%1&lt;/b&gt; (&lt;i&gt;%2&lt;/i&gt;).</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;El akarod távolítani a virtuális gépet a listából: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnéd a virtuális gépet tároló fájlt is törölni a merevlemezről?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;El akarod távolítani a virtuális gépet a listából: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnéd a virtuális gépet tároló fájlt is törölni a merevlemezről? Ezzel eltávolítod a virtuális gépet tároló fájlt, ha azt nem használja egy másik gép.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Delete all files</source>
+        <translation>Minden fájl törlése</translation>
+    </message>
+    <message>
+        <source>Remove only</source>
+        <translation>Csak eltávolítás</translation>
+    </message>
+    <message>
+        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
+        <translation>El fogod távolítani az elérhetetlen virtuális gépet a listából: &lt;b&gt;%1&lt;/b&gt;. Biztos folytatod?</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Eltávolítás</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtuális merevlemezt adsz hozzá a vezérlőhöz: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnél egy újat létrehozni, egy üres fájlt vagy választasz egy létező fájlt?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <comment>add attachment routine</comment>
+        <translation>Ú&amp;j lemez létrehozása</translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <comment>add attachment routine</comment>
+        <translation>Létező merevlemez &amp;használata</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&gt;Virtuális CD/DVD meghajtót adsz hozzá a vezérlőhöz: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnél egy virtuális CD/DVD lemezt a meghajtóba tenni vagy még maradjon üresen?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <comment>add attachment routine</comment>
+        <translation>Lemez &amp;választása</translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <comment>add attachment routine</comment>
+        <translation>Ür&amp;esen hagy</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Virtuális floppy meghajtót adsz hozzá a vezérlőhöz: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnél egy virtuálisfloppy lemezt a meghajtóba tenni vagy még maradjon üresen?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nem sikerült a merevlemezt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) leválasztani a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról, ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nem sikerült a CD/DVD eszközt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) leválasztani a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról, ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nem sikerült a floppy eszközt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) leválasztani a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról, ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Úgy tűnik a VirtualBox Integrációs szolgáltatások nem érhetők el a virtuális gépen, és nélküle a megosztott mappák nem használhatók. A virtuális gépen belüli megosztott mappák használatához telepítsd fel az Integrációs szolgáltatásokat, ha nincsenek telepítve, vagy ha csak nem működnek helyesen, az &lt;b&gt;Eszközök&lt;/b&gt; menüben az &lt;b&gt;Integrációs szolgáltatások telepítése...&lt;/b&gt; választásával. Ha telepítve vannak, de a gép nem teljesen indult még el, a megosztott mappák elérhetők lesznek.&lt;/p&gt;</translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation>
+            <numerusform>&lt;p&gt;A virtuális gép jelenleg mentett állapotban van: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ha folytatod, az exportált gép állapota elveszik. A létező gépek nem módosulnak.&lt;/p&gt;</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <translation>Az Integrációs szolgáltatások telepítése sikertelen. Az Integrációs szolgáltatások telepítési képe fel lesz csatolva a manuális etlepítés biztosításához.</translation>
+    </message>
+    <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A Kiterjesztő csomag telepítése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A Kiterjesztő csomag eltávolítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
+        <translation type="obsolete">El fogod távolítani a Kiterjesztő csomagot: &lt;b&gt;%1&lt;/b&gt;. Biztos ezt akarod tenni?</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>Eltávolítá&amp;s</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation>Az aktuális port továbbítási szabályok nem érvényesek. Ne feledd, hogy a gazda- és a vendég port-értékei nullára válthatnak.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A port továbbítási beállítások mentetlen módosításokattartalmaznak.&lt;/p&gt;&lt;p&gt;Ha folytatod, a módosítások elvesznek.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Sorry, some generic error happens.</source>
+        <translation>Sajnálom, véletlen hiba lépett fel.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nem sikerült a merevlemezt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nem sikerült a CD/DVD eszközt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation>Nem sikerült a floppy eszközt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Ne feledd, hogy ezen médium tárolóegysége nem lesz törölve és így később is hozzá lehet adni a listához.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Úgy tűnik a VirtualBox Integrációs szolgáltatások nem érhetők el a virtuális gépen, és nélküle a megosztott mappák nem használhatók. A virtuális gépen belüli megosztott mappák használatához telepítsd fel az Integrációs szolgáltatásokat, ha nincsenek telepítve, vagy ha csak nem működnek helyesen, az &lt;b&gt;Eszközök&lt;/b&gt; menüben az &lt;b&gt;Integrációs szolgáltatások telepítése...&lt;/b&gt; választásával. Ha telepítve vannak, de a gép nem teljesen indult még el, a megosztott mappák elérhetők lesznek.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;teljes képernyős&lt;/b&gt; módra vált. Bármikor visszaléphetsz az ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik a teljes képernyős módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;asztal-integrációs&lt;/b&gt; módra vált. Bármikor visszaléphetsz az ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik asztal-integrációs módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;átméretezhető&lt;/b&gt; módra vált. Bármikor visszaléphetsz az ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik átméretezhető módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <comment>scale</comment>
+        <translation>Átváltás</translation>
+    </message>
+    <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A Kiterjesztő csomag megnyitása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Egy VirtualBox kiterjesztő csomagot telepítesz. A kiterjesztő csomagok kiegészítik a VirtualBox képességeit és rendszerszintű szoftvert tartalmaznak, mely teljesen ártalmatlan a rendszeredre. Nézd át a lenti leírást és csak akkor folytasd, ha megbízható forásból származik a kiterjesztő csomag.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Install</source>
+        <translation>&amp;Telepítés</translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation>A kiterjesztő csomagok kiegészítik a VirtualBox képességeit és rendszerszintű szoftvert tartalmaznak, mely teljesen ártalmatlan a rendszeredre. Nézd át a lenti leírást és csak akkor folytasd, ha megbízható forásból származik a kiterjesztő csomag.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Egy régi kiterjesztő csomag van telepítve. Szeretnéd frissíteni? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Új verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Jelenlegi verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Upgrade</source>
+        <translation>&amp;Frissítés</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Egy régebbi kiterjesztő csomag van telepítve. Szeretnéd visszabutítani? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Új verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Jelenlegi verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Downgrade</source>
+        <translation>&amp;Lebutítás</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A kiterjesztő csomag ezen verziója már telepítve vav. Szeretnéd ismét feltelepíteni? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Reinstall</source>
+        <translation>Új&amp;ratelepítés</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Eltávolítod a VirtualBox kiterjesztő scomagot: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Biztos folytatni akarod?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation>A kiterjesztő csomag sikeresen telepítve: &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt;.</translation>
+    </message>
+    <message>
+        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
+        <translation type="obsolete">A virtuális géphez tartozó fájlok fájlok törlése jelenleg le van tiltva Windows/x64 rendszeren az összeomlás elkerülése miatt. Ez a következő kiadásban kerül javításra.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A(z) &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; szülő mappában nem tudod létrehozni a gép mappáját: &lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ellenőrizd, hogy a szülő mappa tényleg létezik és hogy van jogod ott mappát létrehozni.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Az USB 2.0 jelenleg be van kapcsolva a virtuális gépen. Azonban ehhez a következőnek telepítve kell lennie: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A VirtualBox oldaláról letöltve telepítsd fel a Kiterjesztő csomagot. Ezután újra be engedélyezni tudod az USB 2.0-t. Addig ki lesz kapcsolva, hacsak meg nem szakítod a beállítások módosítását.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép regisztrálása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A gép beállításai megváltoztak az utolsó módosításuk óta.&lt;/p&gt;&lt;p&gt;Szeretnéd visszatölteni a megváltozott beállításokat vagy meghagyod a jelenlegieket?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Reload settings</source>
+        <translation>Beállítások visszatöltése</translation>
+    </message>
+    <message>
+        <source>Keep changes</source>
+        <translation>Módosítások megtartása</translation>
+    </message>
+    <message>
+        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
+        <translation type="unfinished">A jelenleg szerkesztett virtuális gép állapota megváltozott. Csak a futáskor szerkesztett beállítások lesznek mentve az OK gomb megnyomásakor. Minden egyéb módosítás elveszik.</translation>
+    </message>
+    <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>A virtuális gép klónozása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Vissza akarod állítani a pillanatképet: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;készíthetsz pillanatképet a virtuális gép jelenlegi állapotáról a lenti jelölőnégyzettel; ha nem teszed meg, a jelenlegi állapot végleg elveszik. Folytatni akarod?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Create a snapshot of the current machine state</source>
+        <translation>Pillanatkép készítése az aktuális gép állapotáról</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Biztos vissza akarod állítani a pillanatképet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Hiba a médium &lt;b&gt;%1&lt;/b&gt; típusáról &lt;b&gt;%2&lt;/b&gt; típusra történő váltáskor.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Az USB 2.0 jelenleg be van kapcsolva a virtuális gépen. Azonban ehhez a következőnek telepítve kell lennie: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A VirtualBox oldaláról letöltve telepítsd fel a Kiterjesztő csomagot. Ezután újra engedélyezni tudod az USB 2.0-t. Addig ki lesz kapcsolva, hacsak meg nem szakítod a beállítások módosítását.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
+        <translation>Nem tölthető be a gazda USB Proxy szolgáltatás (FÁJL_NEM_TALÁHATÓ). A szolgáltatás talán nincs telepítve a gazda számítógépre</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
+        <translation>A VirtualBox jelenleg nem férhet hozzá az USB eszközökhöz.  Ezen változtathatsz, ha a felhasználód hozzáadod a &apos;vboxusers&apos; csoporthoz.  Részletes magyarázatért nézd meg a Felhasználói kézikönyvet</translation>
+    </message>
+    <message>
+        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
+        <translation>A VirtualBox jelenleg nem férhet hozzá az USB eszközökhöz.  Ezen változtathatsz, ha engedélyezed a felhasználódnak az &apos;usbfs&apos; mappa és fájlok elérését.  Részletes magyarázatért nézd meg a Felhasználói kézikönyvet</translation>
+    </message>
+    <message>
+        <source>The USB Proxy Service has not yet been ported to this host</source>
+        <translation>Az USB proxy szolgáltatás még nem lett portolva erre a gazda rendszerre</translation>
+    </message>
+    <message>
+        <source>Could not load the Host USB Proxy service</source>
+        <translation>A gazda USB szolgáltatás nem tölthető be</translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Nem sikerült elmenteni a letöltött fájlt ide: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProcessWidgetAdditions</name>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Mégsem</translation>
+    </message>
+    <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation>A VirtualBox Integrációs szolgáltatások CD letöltésének megszakítása</translation>
+        <translation type="obsolete">A VirtualBox Integrációs szolgáltatások CD letöltésének megszakítása</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation>A VirtualBox integrációs szolgáltatások CD letöltése innen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation type="obsolete">A VirtualBox integrációs szolgáltatások CD letöltése innen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
     <message>
         <source>Cancel</source>
-        <translation>Mégsem</translation>
+        <translation type="obsolete">Mégsem</translation>
     </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
@@ -4508,6 +6014,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>A Virtualbox Felhasználói kézikönyv letöltése &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetAdditions</name>
+    <message>
+        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5611,6 +7128,29 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     </message>
 </context>
 <context>
+    <name>UITextEditor</name>
+    <message>
+        <source>Edit text</source>
+        <translation>Szöveg módosítása</translation>
+    </message>
+    <message>
+        <source>&amp;Replace...</source>
+        <translation>Cse&amp;re...</translation>
+    </message>
+    <message>
+        <source>Replaces the current text with the content of a file.</source>
+        <translation>A jelenlegi szöveg cseréje a megadott fájl tartalmára.</translation>
+    </message>
+    <message>
+        <source>Text (*.txt);;All (*.*)</source>
+        <translation>Szövegfájlok (*.txt);;Minden fájl (*.*)</translation>
+    </message>
+    <message>
+        <source>Select a file to open...</source>
+        <translation>Beillesztendő fájl...</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -5858,135 +7398,6 @@ Verzió %1</translation>
     <message>
         <source>&amp;Make Permanent</source>
         <translation type="obsolete">Legyen tartó&amp;s</translation>
-    </message>
-</context>
-<context>
-    <name>UIApplianceEditorWidget</name>
-    <message>
-        <source>Virtual System %1</source>
-        <translation>Virtuális rendszer %1</translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation>Név</translation>
-    </message>
-    <message>
-        <source>Product</source>
-        <translation>Termék</translation>
-    </message>
-    <message>
-        <source>Product-URL</source>
-        <translation>Termék URL</translation>
-    </message>
-    <message>
-        <source>Vendor</source>
-        <translation>Gyártó</translation>
-    </message>
-    <message>
-        <source>Vendor-URL</source>
-        <translation>Gyártó URL</translation>
-    </message>
-    <message>
-        <source>Version</source>
-        <translation>Verzió</translation>
-    </message>
-    <message>
-        <source>Description</source>
-        <translation>Leírás</translation>
-    </message>
-    <message>
-        <source>License</source>
-        <translation>Licenc</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>Vendég OS típusa</translation>
-    </message>
-    <message>
-        <source>CPU</source>
-        <translation>Processzor</translation>
-    </message>
-    <message>
-        <source>RAM</source>
-        <translation>RAM</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (IDE)</source>
-        <translation>IDE merevlemezvezérlő</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SATA)</source>
-        <translation>SATA merevlemezvezérlő</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SCSI)</source>
-        <translation>SCSI merevlemezvezérlő</translation>
-    </message>
-    <message>
-        <source>DVD</source>
-        <translation>DVD</translation>
-    </message>
-    <message>
-        <source>Floppy</source>
-        <translation>Floppy</translation>
-    </message>
-    <message>
-        <source>Network Adapter</source>
-        <translation>Hálózati kártya</translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <translation>USB vezérlő</translation>
-    </message>
-    <message>
-        <source>Sound Card</source>
-        <translation>Hangkártya</translation>
-    </message>
-    <message>
-        <source>Virtual Disk Image</source>
-        <translation>Virtuális lemezkép</translation>
-    </message>
-    <message>
-        <source>Unknown Hardware Item</source>
-        <translation>Ismeretlen hardverelem</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
-        <translation>&lt;b&gt;Eredeti érték:&lt;/b&gt; %1</translation>
-    </message>
-    <message>
-        <source>Configuration</source>
-        <translation>Konfiguráció</translation>
-    </message>
-    <message>
-        <source>Warnings:</source>
-        <translation>Figyelmeztetések:</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>MB</source>
-        <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="obsolete">MB</translation>
-    </message>
-    <message>
-        <source>Hard Disk Controller (SAS)</source>
-        <translation>Merevlemez vezérlő (SAS)</translation>
-    </message>
-    <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation>Ha engedélyezett, új egyedi MAC cím lesz minden hálózati kártyához rendelve.</translation>
-    </message>
-    <message>
-        <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation>MAC címek új&amp;ra-inicializálása a hálózati kártyákhoz</translation>
     </message>
 </context>
 <context>
@@ -9041,18 +10452,6 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>UIApplianceImportEditorWidget</name>
-    <message>
-        <source>Importing Appliance ...</source>
-        <translation>Virtuális gép importálása...</translation>
-    </message>
-    <message>
-        <source>Reading Appliance ...</source>
-        <translatorcomment>CHECK</translatorcomment>
-        <translation>Virtuális gép olvasása...</translation>
-    </message>
-</context>
-<context>
     <name>VBoxLicenseViewer</name>
     <message>
         <source>I &amp;Agree</source>
@@ -9065,13 +10464,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>VirtualBox License</source>
         <translation></translation>
-    </message>
-</context>
-<context>
-    <name>UILineTextEdit</name>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>Sz&amp;erkesztés</translation>
     </message>
 </context>
 <context>
@@ -9432,1285 +10824,6 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>UIMessageCenter</name>
-    <message>
-        <source>VirtualBox - Information</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Információ</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Question</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Kérdés</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Warning</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Figyelem</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Hiba</translation>
-    </message>
-    <message>
-        <source>VirtualBox - Critical Error</source>
-        <comment>msg box title</comment>
-        <translation>VirtualBox - Kritikus hiba</translation>
-    </message>
-    <message>
-        <source>Do not show this message again</source>
-        <comment>msg box flag</comment>
-        <translation>Ne mutassa ezt az üzenetet újra</translation>
-    </message>
-    <message>
-        <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Sikertelen megnyitás: &lt;tt&gt;%1&lt;/tt&gt;. Ellenőrizd, hogy az asztali környezeted képes-e lekezelni ezt az URL típust.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A COM inicializálása vagy a VirtualBox COM szerver megtalálása sikertelen. Valószínűleg a VirtualBox szerver nem fut vagy nem tudott elindulni.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to create the VirtualBox COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A VirtualBox COM feladat létrehozása sikertelen.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to set global VirtualBox properties.</source>
-        <translation>A VirtualBox globális tulajdonságainak beállítása sikertelen.</translation>
-    </message>
-    <message>
-        <source>Failed to access the USB subsystem.</source>
-        <translation>Az USB alrendszerhez történő hozzáférés sikertelen.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine.</source>
-        <translation>Az új virtuális gép létrehozása sikertelen.</translation>
-    </message>
-    <message>
-        <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Az új virtuális gép létrehozása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A beállítások alkalmazása a virtuális gépre sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép elindítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to pause the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép futásának megállítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to resume the execution of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép futásának folytatása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép állapotának mentése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Pillanatkép készítése a virtuális gépről sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép leállítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép eltávolítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép mentett állapotának elvetése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="obsolete">A(z) &lt;b&gt;%2&lt;/b&gt; virtuális gép &lt;b&gt;%1&lt;/b&gt; pillanatképének elvetése sikertelen.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">A virtuális gép aktuális állapotának elvetése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to discard the current snapshot and the current state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">A virtuális gép aktuális pillanatképének és állapotának elvetése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Nincs ilyen nevű virtuális gép: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Biztos véglegesen törölni akarod ezt a virtuális gépet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ez a művelet később nem vonható vissza!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will not be able to register it again from GUI.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Biztos eltávolítod ezt az elérhetetlen virtuális gépet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Többé nem lehet majd visszaregisztrálni ezt a gépet a grafikus felületről!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos elveted a virtuális gép mentett állapotát: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ez a művelet egyenértékű a virtuális gép újraindításával vagy kikapcsolásával, ami a vendég operációs rendszer nem szabályos leállítását jelenti.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <translation type="obsolete">merevlemez</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <translation type="obsolete">CD/DVD kép</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <translation type="obsolete">floppy kép</translation>
-    </message>
-    <message>
-        <source>Failed to create a new session.</source>
-        <translation>Új munkamenet létrehozása sikertelen.</translation>
-    </message>
-    <message>
-        <source>Failed to open a session for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép munkamenetének megnyitása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A gazda hálózati interfész eltávolítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; USB eszköz csatlakoztatása sikertelen a virtuális géphez: &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; USB eszköz leválasztása sikertelen a virtuális gépről: &lt;b&gt;%2&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; megosztott mappa (ami ide mutat: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) létrehozása sikertelen a virtuális gép számára: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; megosztott mappa (ami ide mutat: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) eltávolítása sikertelen a virtuális gépről: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A virtuális gépen a vendég OS nem támogatja az &lt;b&gt;egér-integrációt&lt;/b&gt; a jelenlegi videó módban. Neked kell aktiválnod az egeret (a virtuális gép képernyőjére kattintva vagy a gazda-billentyű megnyomásával) a vendég rendszerben, hogy használhasd.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A virtuális gép jelenleg &lt;b&gt;megállított&lt;/b&gt; állapotban van és emiatt semmilyen billentyűzet- vagy egér aktivitást sem fogad. Ha folytatni szeretnéd a virtuális gépen belüli munkát, a menüből a megfelelő művelet kiválasztásával folytathatod a futtatását.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A VirtualBox nem futhat &lt;i&gt;virtuális gép választó&lt;/i&gt; módban a helyi korlátozások miatt.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Végzetes hiba&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Non-Fatal Error&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Nem-végzetes hiba&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Warning&lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Figyelem&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Severity: </source>
-        <comment>runtime error info</comment>
-        <translation>Sürgősség: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. We suggest that you take an appropriate action to avert the error.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A virtuális gép futása a lentebb leírt hibába futott. Figyelmen kívül hagyhatod ezt az üzenetet, de ajánlott megtenni a megfelelő lépéseket, hogy a leírt hiba többé ne forduljon elő.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Result&amp;nbsp;Code: </source>
-        <comment>error info</comment>
-        <translation>Eredmény&amp;nbsp;kód: </translation>
-    </message>
-    <message>
-        <source>Component: </source>
-        <comment>error info</comment>
-        <translation>Komponens: </translation>
-    </message>
-    <message>
-        <source>Interface: </source>
-        <comment>error info</comment>
-        <translation>Interfész: </translation>
-    </message>
-    <message>
-        <source>Callee: </source>
-        <comment>error info</comment>
-        <translation>Callee: </translation>
-    </message>
-    <message>
-        <source>Callee&amp;nbsp;RC: </source>
-        <comment>error info</comment>
-        <translation>Callee&amp;nbsp;RC: </translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A(z) &lt;b&gt;%1&lt;/b&gt; nyelv fájlja nem található a mappában: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A nyelv ideiglenesen visszaáll a rendszer alapértelmezett nyelvére. A Virtualbox ablakában, a &lt;b&gt;Fájl&lt;/b&gt;menün belül válaszd a &lt;b&gt;Beállítások&lt;/b&gt; menüpontot, és a &lt;b&gt;Nyelv&lt;/b&gt; oldalon válassz egy nyelvet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A nyelvi fájl nem tölthető be: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;A nyelv ideiglenesen visszaáll angolra (beépítet). A Virtualbox ablakában, a &lt;b&gt;Fájl&lt;/b&gt;menün belül válaszd a &lt;b&gt;Beállítások&lt;/b&gt; menüpontot, és a &lt;b&gt;Nyelv&lt;/b&gt; oldalon válassz egy nyelvet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl régiiek: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások elavultak: telepített verzió: %1, ajánlott verzió: %2. Néhány, Integrációs szolgáltatást igénylő funkció (egér-integráció, vendég képernyőjének átméretezése) valószínűleg nem fog helyesen működni.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával frissítsd az Integrációs szolgáltatásokat az aktuális verzióra.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A vendég rendszerre telepített VirtualBox Integrációs szolgáltatások túl újak a VirtualBox ezen verziójához: telepített verzió: %1, ajánlott verzió: %2.&lt;/p&gt;&lt;p&gt;Régi VirtualBoxon nem támogatott egy újabb Additions használata. &lt;p&gt;Az &lt;b&gt;Eszközök&lt;/b&gt; menüből, az &lt;b&gt;Integrációs szolgáltatások telepítése&lt;/b&gt; menüpont kiválasztásával telepítsd fel az Integrációs szolgáltatások aktuális verzióját.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;Error ID: &lt;/nobr&gt;</source>
-        <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Hiba azonosító: &lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. Please copy the following error message using the clipboard to help diagnose the problem:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Végzetes hiba lépett fel a virtuális gép futása során! A virtuáis gép ki fog kapcsolni. Ajánlott a következő hibaüzenet vágólapra másolása a későbbi megvizsgáláshoz:&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You may try to correct the error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Végzetes hiba lépett fel a virtuális gép futása során! A részletes hiba alul látható. Megpróbálhatod kijavítani a leírt hibát és folytatni a virtuális gép futtatását.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to change the snapshot folder path of the virtual machine &lt;b&gt;%1&lt;b&gt; to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="obsolete">A virtuális gép &lt;b&gt;%1&lt;/b&gt; pillantkép mappájának &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; mappára történő átállítása sikertelen.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A(z) &lt;b&gt;%1&lt;/b&gt;megosztott mappa (ami ide mutat: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) eltávolítása sikertelen a virtuáis gépről: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Zárj be minden programot a vendég OS-en belül, mely a mappát használhatja és próbáld újra.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem található a VirtualBox Integrációs szolgáltatások CD fájl: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; vagy &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Letöltöd a CD-t az internetről?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A VirtualBox Integrációs szolgáltatások CD letöltése sikertelen innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos le akarod tölteni a VirtualBox Integrációs szolgáltatások CD-t innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (mérete %3 bájt)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A VirtualBox Integrációs szolgáltatások CD sikeresen letöltődött a &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; helyről és el lett mentve: &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Szeretnéd regisztrálni a CD képet és berakni a virtuális CD/DVD meghajtóba?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A virtuális gép ablaka &lt;b&gt;%1&amp;nbsp;bites&lt;/b&gt; színmélységű munkára van optimalizálva, de a virtuális megjelenítő jelenlegi színmélysége &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nyisd meg a vendég OS megjelenítési tulajdonságait és válassz egy &lt;b&gt;%3&amp;nbsp;bites&lt;/b&gt; módot, ha elérhető, a virtuális videóalrendszer legjobb teljesítménye érdekében.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés&lt;/b&gt;. Néhány operációs rendszer, mint az OS/2, működhetnek 32&amp;nbsp;bites módban, de mégis 24&amp;nbsp;bitnek (16 millió szín) érzékeli. Próbáld meg másik színmélységet választani, hogy akkor eltűnik-e ez az üzenet vay egyszerűen kikapcsolhatod most is, ha biztos vagy bene, hogy a szükséges színmélység (%4&amp;nbsp;bit) nem érhető el az adott vendég rendszeren.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem csatoltál merevlemezt az új virtuális géphez. A gép nem lesz képes elindulni, hacsak nem csatolsz egy merevlemezt a vendég operációs rendszerhez vagy egyéb bootolható médiát, amit később a gép beállításai ablak vagy az Első indítási varázsló használhat.&lt;/p&gt;&lt;p&gt;Folytatni akarod?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Nem sikerült itt megtalálni a licenc fájlt: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>Nem sikerült megnyitni a licenc fájlt &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Ellenőrizd a fájl engedélyeit.</translation>
-    </message>
-    <message>
-        <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Az ACPI Power gomb megnyomási eseményt nem sikerült elküldeni a virtuális gépnek: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Gratulálunk! Sikeresen regisztráltad magadat, mint VirtualBox felhasználó.&lt;/p&gt;&lt;p&gt;Köszönjük, hogy szakítottál időt a regisztrációs űrlap kitöltésére!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A VirtualBox regisztrálása sikertelen&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global VirtualBox settings to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A VirtualBox globális beállításainak mentése sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to load the global GUI configuration from &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A globális grafikus felület beállításainak betöltése sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to save the global GUI configuration to &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A globális grafikus felület beállításainak mentése sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Az alkalmazás most bezáródik.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; virtuális gép beállításainak mentés sikertelen: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>A(z) &lt;b&gt;%1&lt;/b&gt; virtuális gép beállításainak &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; helyről történő betöltése sikertelen.</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Törlés</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>machine</comment>
-        <translation type="obsolete">Eltávolítás</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <comment>saved state</comment>
-        <translation>Eldobás</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>detach image</comment>
-        <translation type="obsolete">Folytat</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Törlés</translation>
-    </message>
-    <message>
-        <source>Unregister</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Eltávolítás</translation>
-    </message>
-    <message>
-        <source>Disable</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Letiltás</translation>
-    </message>
-    <message>
-        <source>Download</source>
-        <comment>additions</comment>
-        <translation>Letöltés</translation>
-    </message>
-    <message>
-        <source>Mount</source>
-        <comment>additions</comment>
-        <translation>Csatolás</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <comment>additional message box paragraph</comment>
-        <translation>&lt;p&gt;A gazda billentyű jelenleg így van megadva: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Capture</source>
-        <comment>do input capture</comment>
-        <translation>Elfogás</translation>
-    </message>
-    <message>
-        <source>Check</source>
-        <comment>inaccessible media message box</comment>
-        <translation>Ellenőrzés</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">Menté&amp;s</translation>
-    </message>
-    <message>
-        <source>&amp;Backup</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Biztonsági mentés</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">Mégsem</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>fullscreen</comment>
-        <translation>Átváltás</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>seamless</comment>
-        <translation>Átváltás</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos reset-eled a virtuális gépet?&lt;/p&gt;&lt;p&gt;Mert ebben az esetben, a benne futó alkalmazások mentetlen adatai mind elvesznek.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reset</source>
-        <comment>machine</comment>
-        <translation>Reset</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <comment>no hard disk attached</comment>
-        <translation>Folytatás</translation>
-    </message>
-    <message>
-        <source>Go Back</source>
-        <comment>no hard disk attached</comment>
-        <translation>Vissza</translation>
-    </message>
-    <message>
-        <source>Failed to copy file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</source>
-        <translation type="obsolete">A fájl másolása sikertelen: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ide: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; (%3).</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Ú&amp;j</translation>
-    </message>
-    <message>
-        <source>Select</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Kiválaszt</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not enter seamless mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem lehet az asztal-integrációs módba váltani a vendég kevés videó-memóriája miatt.&lt;/p&gt;&lt;p&gt;Be kell állítanod a virtuális gépet, hogy legalább &lt;b&gt;%1&lt;/b&gt; videó-memóriával rendelkezzen.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not switch the guest display to fullscreen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to fullscreen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem tudsz teljes képernyőre váltani a vendég kevés videó-memóriája miatt.&lt;/p&gt;&lt;p&gt;Be kell állítanod a virtuális gépet, hogy legalább &lt;b&gt;%1&lt;/b&gt; videó-memóriával rendelkezzen.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;Kihagy&lt;/b&gt; teljes képernyőre válthatsz vagy a &lt;b&gt;Mégsem&lt;/b&gt; gombbal megszakíthatod a műveletet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>A legfrissebb VirtualBox van telepítve. Később ismételd meg a verzió ellenőrzést.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Belekattintottál&lt;/b&gt; a virtuális gép képernyőjébe vagy megnyomtad a &lt;b&gt;gazda-billentyűt&lt;/b&gt;. Ezáltal a virtuális gép &lt;b&gt;elfogja&lt;/b&gt; a gazda gép egérmutatóját (kivéve, ha az egér-integrációt nem támogatja a  a vendég operációs rendszer) és billentyűzetét, melyek elérhetetlenné válnak a gazda gépen futó többi alkalmazás számára.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;gazda-billentyű&lt;/b&gt; megnyomásával bármikor &lt;b&gt;felszabadíthatod&lt;/b&gt; a billentyűzetet és az egeret (ha el volt fogva) és visszatérnek a normális működésükhöz. A jelenleg társított gazda-billentyű a virtuális gép ablakának alsó állapotsorában jelenik meg, közvetlen a&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikon mellett. Ez az ikon, a közeli egérikonnal együtt, mutatja a billentyűzet és az egér elfogási állapotát.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Bekapcsoltad az &lt;b&gt;Automata billentyűzet-elkapás&lt;/b&gt; lehetőséget. Ezáltal a virtuális gép automatikusan mindig &lt;b&gt;elfogja&lt;/b&gt; a billentyűzetet, ha a virtuális gép ablaka aktív és elérhetetlenné teszi a gazda gépen futó többi alkalmazás számára: mikor a billentyűzet el van fogva, minden billentyűkód (a rendszerét is beleértve, mint az Alt-Tab) a virtuális géphez kapcsolódik.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;gazda-billentyű&lt;/b&gt; megnyomásával bármikor &lt;b&gt;felszabadíthatod&lt;/b&gt; a billentyűzetet és az egeret (ha el volt fogva) és visszatérnek a normális működésükhöz. A jelenleg társított gazda-billentyű a virtuális gép ablakának alsó állapotsorában jelenik meg, közvetlen a&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;ikon mellett. Ez az ikon, a közeli egérikonnal együtt, mutatja a billentyűzet és az egér elfogási állapotát.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A virtuális gép észlelte, hogy a vendég operációs rendszer támogatja az &lt;b&gt;egér-integrációt&lt;/b&gt;. Ez azt jelenti, hogy nem kell &lt;i&gt;elfognod&lt;/i&gt; az egérmutatót, hogy a vendég operációs rendszerben használhasd -- ha az egérmutató a virtuális gép képernyője felett van, minden végrehajtott egérművelet közvetlen a vendég operációs rendszeren hajtódik végre. Ha az egér el van fogva, automatikusan el lesz engedve.&lt;/p&gt;&lt;p&gt;Az állapotsorban megjelenő&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;egér ikon tájékoztat az egér-integráció vendég operációs rendszerbeli támogatásáról és bekapcsolt állapotáról.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés&lt;/b&gt;: Néhány alkalmazás helytelenül működhet egér-integrációs módban. Bármikor kikapcsolhatod az aktuális munkafolyamathoz (majd újra be) a menüből,a megfelelő művelet kiválasztásával.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;teljesképernyős&lt;/b&gt; módra vált. Bármikor visszaléphetsz ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik teljesképernyős módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;asztal-integrációs&lt;/b&gt; módra vált. Bármikor visszaléphetsz ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik asztal-integrációs módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Contents...</source>
-        <translation>&amp;Tartalom...</translation>
-    </message>
-    <message>
-        <source>Show the online help contents</source>
-        <translation>Online súgó megjelenítése</translation>
-    </message>
-    <message>
-        <source>&amp;VirtualBox Web Site...</source>
-        <translation>A &amp;VirtualBox weboldala...</translation>
-    </message>
-    <message>
-        <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Böngésző megnyitása a VirtualBox weboldalával</translation>
-    </message>
-    <message>
-        <source>&amp;Reset All Warnings</source>
-        <translation>Minden figyelmeztetés &amp;alaphelyzetbe</translation>
-    </message>
-    <message>
-        <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>Minden figyelmeztetés meg fog jelenni újra</translation>
-    </message>
-    <message>
-        <source>R&amp;egister VirtualBox...</source>
-        <translation>VirtualBox r&amp;egisztrálása....</translation>
-    </message>
-    <message>
-        <source>Open VirtualBox registration form</source>
-        <translation>A regisztrációs űrlap megnyitása</translation>
-    </message>
-    <message>
-        <source>C&amp;heck for Updates...</source>
-        <translation>Frissítések elle&amp;nőrzése...</translation>
-    </message>
-    <message>
-        <source>Check for a new VirtualBox version</source>
-        <translation>Új VirtualBox verzió keresése</translation>
-    </message>
-    <message>
-        <source>&amp;About VirtualBox...</source>
-        <translation>VirtualBox név&amp;jegy...</translation>
-    </message>
-    <message>
-        <source>Show a dialog with product information</source>
-        <translation>Egy ablak mutatása a termékinformációkkal</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Elérhető a VirtualBox egy újabb verziója! A(z) &lt;b&gt;%1&lt;/b&gt; -s verzió elérhető a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; weboldalon.&lt;/p&gt;&lt;p&gt;Közvetlenül pedig erről a linkről töltheted le:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos elengeded ezt, ami egy %1 : &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Le fog választódni a következő virtuális gép(ek)ről: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Release</source>
-        <comment>detach medium</comment>
-        <translation>Elenged</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos törölni akarod az ismert médiumok listájáról ezt, ami egy %1 : &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>Ne feledd, hogy ez a merevlemez elérhetetlen, így ez a tárolóegység most nem törölhető.</translation>
-    </message>
-    <message>
-        <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>A következő ablakban választhatsz, hogy törlöd a merevlemez tárolóegységét vagy meghagyod későbbi használatra.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ne feledd, hogy ezen médium tárolóegysége nem lesz törölve és így később is hozzá lehet adni a listához.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <comment>medium</comment>
-        <translation>Eltávolítás</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A merevlemez tárolóegység már létezik a következő helyen: &lt;b&gt;%1&lt;/b&gt;. Nem hozhatsz létre egy új merevlemezt ezen a helyen, mert már egy másik virtuális merevlemez használja.&lt;/p&gt;&lt;p&gt;Válassz egy másik helyet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Törölni akarod a merevlemez ezen tárolóegységét: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Ha a &lt;b&gt;Törlést&lt;/b&gt; választod, a tárolóegység véglegesen törlődni fog. Ez a művelet &lt;b&gt;nem vonható vissza&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ha a &lt;b&gt;Megtartást&lt;/b&gt; választod, a merevlemez csak az ismert merevlemezek listájáról törlődik, de a tárolóegység érintetlen marad, amit később újra hozzá lehet adni a merevlemezek listájához.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <comment>hard disk storage</comment>
-        <translation>Törlés</translation>
-    </message>
-    <message>
-        <source>Keep</source>
-        <comment>hard disk storage</comment>
-        <translation>Megtartás</translation>
-    </message>
-    <message>
-        <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A merevlemez következő tárolóegységének törlése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Az újonnan létrehozott hozzárendeléshez nem érhető el használaton kívüli merevlemez.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Új&lt;/b&gt; gombbal elindíthatod az &lt;i&gt;Új Virtuális lemez&lt;/i&gt; varázslót és létrehozhatsz egy új merevlemezt, vagy a &lt;b&gt;Kiválasztás&lt;/b&gt; gombbal nyisd meg a &lt;i&gt;Virtuális médiakezelőt&lt;/i&gt; és válassz valamit.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>A merevlemez létrehozása sikertelen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Nem sikerült (az) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;merevlemezt a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Nem sikerült (az) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;merevlemezt a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról leválasztani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">A(z) %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; csatolása nem sikerült a virtuális géphez: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">A(z) %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; lecsatolása nem sikerült a virtuális gépről: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Sikertelen megnyitás: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Sikertelen bezárás: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>A(z) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; médium állapotinformációinak bekérése sikertelen.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem sikerült a VirtualBox online regisztrációs szolgáltatásához csatlakozni a következő hiba miatt:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Az új verzióinformáció nem érhető el a következő hiba miatt:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Egy vagy több virtuális merevlemez, CD/DVD vagy floppy jelenleg nem érhető el. Ennek eredményeképp, nem leszel képes olyan műveletek végrehajtására, melyek ezt a médiumot használnák, amíg az újra elérhető nem lesz.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombbal nyisd meg a Virtuális médiakezelő ablakot és láthatod az elérhetetlen médiát, vagy a &lt;b&gt;Kihagy&lt;/b&gt; gombbal figyelmen kívül hagyod ezt az üzenetet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A meglévő VirtualBox beállítási fájlok automatikusan átkonvertálódnak a régi formátumból az újba, mely az új verziójú VirtualBoxhoz szükséges.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;OK&lt;/b&gt; gombbal elindíthatod a VirtualBoxot vagy a &lt;b&gt;Több&lt;/b&gt; gombbal további információt szerezhetsz arról, hogy mely fájlok lettek átkonvertálva és az elérhető további műveletekről.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;Kilépés&lt;/b&gt; gombbal megszakítod a VirtualBox indítását,az átalakítás eredményének mentése nélkül.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;More</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">&amp;Több</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">Ki&amp;lépés</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;A következő VirtualBox beállítási fájlok automatikusan átkonvertálódtak az új formátumba: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Habár az átalakítás eredményei még nem lettek elmentve. Válassz egyet:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Biztonsági mentés&lt;/b&gt;: biztonsági másolat készül a régi formátumú beállítási fájlokról azok átalakítása előtt;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Felülírás&lt;/b&gt;: átalakított fájlok mentése biztonsági másolatok készítése nélkül (ezek a beállítások nem használhatók egy régebbi VirtualBox verzióval);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Ajánlott mindig a &lt;b&gt;Biztonsági mentést&lt;/b&gt; használni, mert ilyenkor még vissza lehet váltani egy korábbi VirtualBox verzióra (ha szükséges) a jelenlegi beállítások elvesztése nélkül. A visszaváltásról további információk a VirtualBox kézikönyvben találhatók.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Kilépés&lt;/b&gt; a VirtualBox bezárásához, az átalakítás eredményének mentése nélkül.&lt;/li&gt;</translation>
-    </message>
-    <message>
-        <source>O&amp;verwrite</source>
-        <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation type="obsolete">F&amp;elülírás</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kritikus hiba lépett fel a virtuális gép futása során és a gép leállt.&lt;/p&gt;&lt;p&gt;Segítségért látogass el a &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; közösségi részlegébe vagy a támogatási oldalra. Mellékeld a &lt;tt&gt;VBox.log&lt;/tt&gt; naplófájl tartalmát és a &lt;tt&gt;VBox.png&lt;/tt&gt; képet, melyeket a(z) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; mappában megtalálsz, ahogy annak a leírását is, mit csináltál mikor a hiba bekövetkezett. Ne feledd, hogy a fenti fájlokhoz hozzáférhetsz a VirtualBox főablakából a &lt;b&gt;Gép&lt;/b&gt; menüben a &lt;b&gt;Napló mutatása&lt;/b&gt; menüpont választásával.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;OK&lt;/b&gt; gombbal kikapcsolhatod a gépet vagy a  &lt;b&gt;Kihagy&lt;/b&gt; gombbal hagyhatod futni hibakereséshez. Ne feledd, hogy a hibakereséshez speciális tudás és eszközök kellenek, ezért ajánlott az &lt;b&gt;OK&lt;/b&gt; gombot megnyomni.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">merevlemez</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">CD/DVD kép</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">floppy kép</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;The file already exists in &quot;%2&quot;. Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">Egy &lt;b&gt;%1&lt;/b&gt; nevű fájl már létezik. Le akarod cserélni?&lt;br /&gt;&lt;br /&gt;A fájl már létezik itt: &quot;%2&quot;. A lecseréléssel felülíródik a tartalma.</translation>
-    </message>
-    <message>
-        <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation>A következő fájl már létezik:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Biztos lecseréled? A lecseréléssel felülíródik a tartalma.</translation>
-    </message>
-    <message>
-        <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; fájl eltávolítása sikertelen.&lt;br /&gt;&lt;br /&gt;Próbáld meg magad eltávolítani a fájl és próbáld meg újra.</translation>
-    </message>
-    <message>
-        <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation>Egy nem végleges VirtualBoxot futtatsz. Ez a verzió nem alkalmas tömeges használatra.</translation>
-    </message>
-    <message>
-        <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="obsolete">Nem lehet használni az USB-t a gazda rendszerben, mert sem az USB fájlrendszer (usbfs), sem a DBus/Hal szolgáltatások nem elérhetők. Ha szeretnél USB eszközt használni a gazda gép rendszeréből, ennek a problémának a javítása szükséges. Ha végeztél, indítsd újra a VirtualBox-ot.</translation>
-    </message>
-    <message>
-        <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not support software shutdown.</source>
-        <translation>Az ACPI power gomb megnyomásával próbáltad lekapcsolni a vendég rendszert. Ez jelenleg nem lehetséges, mert a vendég nem használja az ACPI alrendszert.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V hardveres gyorsító be van kapcsolva, de nem használható. A 64-bites vendég rendszered nem lesz képes érzékelni a 64-bites processzort és nem elsz képes elindulni.&lt;/p&gt;&lt;p&gt;Ellenőrizd, hogy a VT-x/AMD-V helyesen van-e bekapcsolva a gazda számítógép BIOS-ában.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Close VM</source>
-        <translation>Virtuális gép bezárása</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Folytatás</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Biztos törölni akarod a kiválasztott pillanatképet és mentett állapotot?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="obsolete">Eldobás</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Mégsem</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Merevlemezek vannak hozzárendelve a kiegészítő vezérlő portjaihoz. Ha kikapcsolod a kiegészítő vezérlőt, ezek a merevlemezek automatikusan leválasztódnak.&lt;/p&gt;&lt;p&gt;Biztos kikapcsolod a kiegészítő vezérlőt?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Merevlemezek vannak hozzárendelve a kiegészítő vezérlő portjaihoz. Ha módosítod a kiegészítő vezérlőt, ezek a merevlemezek automatikusan leválasztódnak.&lt;/p&gt;&lt;p&gt;Biztos módosítod a kiegészítő vezérlőt?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Change</source>
-        <comment>hard disk</comment>
-        <translation type="obsolete">Változtat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Biztosan eltávolítod a kiválasztott (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) gazda interfészt?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Figyelem:&lt;/b&gt; Ezt az interfészt több virtuális gép hálókártyája is használhatja. Ha eltávolítod, ezek a kártyák nem fognak rendesen működni addig, amíg nem választasz számukra másik gazda interfészt, vagy másik kapcsolódási módot. &lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to create the host-only network interface.</source>
-        <translation>Host-only hálózati kártya létrehozása sikertelen.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A meglévő VirtualBox beállítási fájljaid automatikusan átkonvertálódtak a régi formátumból az újba, mely az új verziós VirtualBoxhoz szükséges.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;OK&lt;/b&gt; gombbal elindíthatod a VirtualBoxot vagy a &lt;b&gt;Kilépés&lt;/b&gt; gombbal megszakítod a VirtualBox programot.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open appliance.</source>
-        <translation>A gép megnyitása sikertelen.</translation>
-    </message>
-    <message>
-        <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép megnyitása/értelmezése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A gép importálása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create appliance.</source>
-        <translation>A gép létrehozása sikertelen.</translation>
-    </message>
-    <message>
-        <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép felkészítése exportálásra sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to create an appliance.</source>
-        <translation>A virtuális gép létrehozása sikertelen.</translation>
-    </message>
-    <message>
-        <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép exportálása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ezen host-only hálózat törlésével törlődni fog az erre a hálózatra csatlakozó host-only interfész is. El akarod távolítani az (host-only hálózat) interfészt: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés:&lt;/b&gt; ezt az interfészt talán az egyik virtuális géped egy vagy több hálózati kártyája is használja. Az eltávolítása után, ezek a kártyák már nem használhatók, amíg a beállításaikban meg nem adsz egy másik interfész nevet vagy egy másik kártya típust.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>Egy &lt;b&gt;%1&lt;/b&gt; nevű fájl már létezik. Le akarod cserélni?&lt;br /&gt;A lecseréléssel felülíródik a tartalma.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V hardveres gyorsító be van kapcsolva, de nem használható, azonban néhány operációs rendszer (pl. OS/2 és QNX) mégis igényli ezt.&lt;/p&gt;&lt;p&gt;Ellenőrizd, hogy a VT-x/AMD-V helyesen van-e bekapcsolva a gazda számítógép BIOS-ában.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Érvénytelen e-mail cím vagy jelszó lett megadva.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem sikerült regisztrálni a VirtualBox terméket.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to check files.</source>
-        <translation>A fájlok ellenőrzése sikertelen.</translation>
-    </message>
-    <message>
-        <source>Failed to remove file.</source>
-        <translation>A fájl eltávolítása sikertelen.</translation>
-    </message>
-    <message>
-        <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
-        <translation>Úgy néz ki, USBFS fájlrendszert használsz a /sys/bus/usb/drivers alá csatolva. Erősen ajánlott ennek megváltoztatása, mert egy hibás beállítás az USB eszközök működésének váratlan zavarát okozhatja.</translation>
-    </message>
-    <message>
-        <source>You are running an EXPERIMENTAL build of VirtualBox. This version is not suitable for production use.</source>
-        <translation>A Virtualbox TESZTELÉS ALATTI verzióját futtatod. Ez a verzió nem ajánlott éles környezetbe.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;? This will cause you to lose your current machine state, which cannot be recovered.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Biztos, hogy vissza akarod tölteni ezt a pillanatképet: &lt;b&gt;%1&lt;/b&gt;? Ez a gép jelenlegi állapotának végleges elvesztését okozhatja.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Restore</source>
-        <translation>Visszatöltés</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A pillanatkép törlése azt okozhatja, hogy a mentett állapotinformációk elvesznek, és a VirtualBox által készített lemez-pillanatképek rá lesznek játszva az aktuális lemezre. Ez hosszú ideig is eltarthat, és a pillanatkép-beli információk ezután már nem lesznek helyreállíthatóak.&lt;/p&gt;&lt;p&gt;Biztos törlöd ezt a pillanatképet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete</source>
-        <translation>Törlés</translation>
-    </message>
-    <message>
-        <source>Failed to restore the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>A(z) &lt;b&gt;%2&lt;/b&gt; virtuális gép &lt;b&gt;%1&lt;/b&gt; pillanatképének helyreállítása nem sikerült.</translation>
-    </message>
-    <message>
-        <source>Failed to delete the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>A(z) &lt;b&gt;%2&lt;/b&gt; virtuális gép &lt;b&gt;%1&lt;/b&gt; pillanatképének törlése nem sikerült.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new medium, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;Új&lt;/b&gt; gombot az &lt;i&gt;Új virtuális lemez&lt;/i&gt; varázsló elindításához, és készíts egy új médiumot, vagy nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Create</source>
-        <comment>medium</comment>
-        <translation type="obsolete">Ú&amp;j</translation>
-    </message>
-    <message>
-        <source>&amp;Select</source>
-        <comment>medium</comment>
-        <translation type="obsolete">Kiválasztá&amp;s</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are no unused media available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nem érhető el felhasználható média az újonnan létrehozott perifériához.&lt;/p&gt;&lt;p&gt;Nyomd meg a &lt;b&gt;Kiválasztás&lt;/b&gt; gombot a &lt;i&gt;Virtuális média-kezelő&lt;/&gt; elinditásához.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to attach the %1 to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">A(z) %1 csatlakoztatása a(z) &lt;b&gt;%3&lt;/b&gt; virtuális gép &lt;i&gt;%2&lt;/i&gt; csatlakozójába nem sikerült.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the %1 from slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">A(z) %1 leválasztása a(z) &lt;b&gt;%3&lt;/b&gt; virtuális gép &lt;i&gt;%2&lt;/i&gt; csatlakozójáról nem sikerült.</translation>
-    </message>
-    <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nem sikerült felcsatolni a(z) %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; a(z) &lt;b&gt;%3&lt;/b&gt; gépre.</translation>
-    </message>
-    <message>
-        <source> Would you like to force mounting of this medium?</source>
-        <translation>Biztosan erőszakkal akarod felcsatolni ezt a médiumot?</translation>
-    </message>
-    <message>
-        <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nem sikerült lecsatolni a(z) %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; a(z) &lt;b&gt;%3&lt;/b&gt; gépről.</translation>
-    </message>
-    <message>
-        <source> Would you like to force unmounting of this medium?</source>
-        <translation>Biztosan erőszakkal akarod leválasztani ezt a médiumot?</translation>
-    </message>
-    <message>
-        <source>Force Unmount</source>
-        <translation>Erőszakos leválasztás</translation>
-    </message>
-    <message>
-        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
-        <translation type="obsolete">Nem sikerült kidobni a lemezt a virtuális eszközből. Az eszközt valószínűleg zárolta a vendég rendszer. Ellenőrizd ezt, és próbáld újra.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem lehet a VirtualBox integrációs szolgáltatások telepítőlemezét felcsatolni a(z) &lt;b&gt;%1&lt;/b&gt; virtuálus gépre, mert a gép nem rendelkezik CD/DVD meghajtóval. Adj egyet a hozzá a virtuális gép beállításainál a Tároló fülön.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation>Ki&amp;lépés</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A következő VirtualBox beállításfájlok automatikusan konvertálva lesznek a régi formátumról az újra.&lt;/p&gt;&lt;p&gt;Nyomd meg az &lt;b&gt;OK&lt;/b&gt; gombot a VirtualBox indításához, vagy a &lt;b&gt;Kilépés&lt;/b&gt;-t a VirtualBox-ból való azonnali kilépéshez&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to mount ...</comment>
-        <translation>merevlemez</translation>
-    </message>
-    <message>
-        <source>CD/DVD</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>CD/DVD</translation>
-    </message>
-    <message>
-        <source>CD/DVD image</source>
-        <comment>failed to mount ...</comment>
-        <translation>CD/DVD kép</translation>
-    </message>
-    <message>
-        <source>floppy</source>
-        <comment>failed to mount ... host-drive</comment>
-        <translation>floppy</translation>
-    </message>
-    <message>
-        <source>floppy image</source>
-        <comment>failed to mount ...</comment>
-        <translation>floppy kép</translation>
-    </message>
-    <message>
-        <source>hard disk</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">merevlemez</translation>
-    </message>
-    <message>
-        <source>CD/DVD device</source>
-        <comment>failed to attach ...</comment>
-        <translation type="obsolete">CD/DVD eszköz</translation>
-    </message>
-    <message>
-        <source>floppy device</source>
-        <comment>failed to close ...</comment>
-        <translation type="obsolete">floppy</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos, hogy törlöd ezt a CD/DVD eszközt?&lt;/p&gt;&lt;p&gt;Enélkül nem leszel képes CD-t vagy ISO képmást csatolni, illetve az integrációs szolgáltatásokat telepíteni!&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <comment>medium</comment>
-        <translation>Eltávolítá&amp;s</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</source>
-        <translation>&lt;p&gt;VT-x/AMD-V hardveres gyorsítás nem érhető el a te rendszereden. A te 64-bites vendéged nem észlelt 64-bites processzort és nem lesz képes elindulni.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VT-x/AMD-V hardware acceleration is not available on your system. Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V hardveres gyorsítás nem érhető el a te rendszereden. Bizonyos vendégeknek (pl OS/2 és QNX) szüksége van erre a szolgáltatásra és nélküle nem képesek elindulni&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of disk space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A(z) %1 pillanatfelvéte törléséhez időlegesen többszabad hely szükséges. A legrosszabb esetben a(z) %2 kép mérete %3 mérettel nőhet meg, miközben csak %4 szabad hely van a rendszeren.&lt;/p&gt;&lt;p&gt;Ha a művelet közben fogy el a szabad hely, az a kép és a virtuális gép beállításainak megsérülését okozhatja,mint például a virtuális gép és annak adatainak elvesztése.&lt;/p&gt;&lt;p&gt;Saját felelősségre folytathatja a pillanatfelvétel törlését.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem tudod a vendék képernyőjét a gazda képernyőjére váltani a vendég kevés videó-memóriája miatt.&lt;/p&gt;&lt;p&gt;A virtuális gépnek legalább &lt;b&gt;%1&lt;/b&gt; videó-memóriával kellene rendelkezni.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch the screen anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem tudod a vendék képernyőjét a gazda képernyőjére váltani a vendég kevés videó-memóriája miatt.&lt;/p&gt;&lt;p&gt;A virtuális gépnek legalább &lt;b&gt;%1&lt;/b&gt; videó-memóriával kellene rendelkezni.&lt;/p&gt;&lt;p&gt;Nyomj &lt;b&gt;Kihagy&lt;/b&gt; gombot az átváltáshoz vagy &lt;b&gt;Mégsem&lt;/b&gt; gombot a művelet megszakításához.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem tudsz teljes képernyőre váltani. Több virtuális képernyőd van beállítva, mint mannyi fizikai van csatlakoztatva a gazda géphez.&lt;/p&gt;&lt;p&gt;Csökkentsd a virtuális képernyők számát a beállításoknál vagy csatlakoztass további képernyőt a gazda géphez.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem tudsz asztal-integrációs módba váltani. Több virtuális képernyőd van beállítva, mint mannyi fizikai van csatlakoztatva a gazda géphez.&lt;/p&gt;&lt;p&gt;Csökkentsd a virtuális képernyők számát a beállításoknál vagy csatlakoztass további képernyőt a gazda géphez.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem található a VirtualBox felhasználói kézikönyv: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Letöltöd az internetről?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos le akarod tölteni a VirtualBox Felhasználói kézikönyvet innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (%3 bájt)?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem sikerült letölteni a VirtualBox Felhasználói kézikönyvet innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A VirtualBox Felhasználói kézikönyv sikresen letöltődött innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; és el lett mentve mint &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A VirtualBox Felhasználói kézikönyv sikresen letöltődött innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; de nem lett helyikeg elmentve, mint &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Válassz a fájl számára másik helyet.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to open virtual machine located in %1.</source>
-        <translation>Nem sikerült megnyitni a virtuális gépet: %1.</translation>
-    </message>
-    <message>
-        <source>Failed to add virtual machine &lt;b&gt;%1&lt;/b&gt; located in &lt;i&gt;%2&lt;/i&gt; because its already present.</source>
-        <translation>Nem sikerült a virtuális gép hozzáadása, mivel már létezik: &lt;b&gt;%1&lt;/b&gt; (&lt;i&gt;%2&lt;/i&gt;).</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;El akarod távolítani a virtuális gépet a listából: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnéd a virtuális gépet tároló fájlt is törölni a merevlemezről?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;El akarod távolítani a virtuális gépet a listából: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnéd a virtuális gépet tároló fájlt is törölni a merevlemezről? Ezzel eltávolítod a virtuális gépet tároló fájlt, ha azt nem használja egy másik gép.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Delete all files</source>
-        <translation>Minden fájl törlése</translation>
-    </message>
-    <message>
-        <source>Remove only</source>
-        <translation>Csak eltávolítás</translation>
-    </message>
-    <message>
-        <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation>El fogod távolítani az elérhetetlen virtuális gépet a listából: &lt;b&gt;%1&lt;/b&gt;. Biztos folytatod?</translation>
-    </message>
-    <message>
-        <source>Remove</source>
-        <translation>Eltávolítás</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuális merevlemezt adsz hozzá a vezérlőhöz: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnél egy újat létrehozni, egy üres fájlt vagy választasz egy létező fájlt?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Create &amp;new disk</source>
-        <comment>add attachment routine</comment>
-        <translation>Ú&amp;j lemez létrehozása</translation>
-    </message>
-    <message>
-        <source>&amp;Choose existing disk</source>
-        <comment>add attachment routine</comment>
-        <translation>Létező merevlemez &amp;használata</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&gt;Virtuális CD/DVD meghajtót adsz hozzá a vezérlőhöz: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnél egy virtuális CD/DVD lemezt a meghajtóba tenni vagy még maradjon üresen?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Choose disk</source>
-        <comment>add attachment routine</comment>
-        <translation>Lemez &amp;választása</translation>
-    </message>
-    <message>
-        <source>Leave &amp;empty</source>
-        <comment>add attachment routine</comment>
-        <translation>Ür&amp;esen hagy</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Virtuális floppy meghajtót adsz hozzá a vezérlőhöz: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Szeretnél egy virtuálisfloppy lemezt a meghajtóba tenni vagy még maradjon üresen?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nem sikerült a merevlemezt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) leválasztani a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról, ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nem sikerült a CD/DVD eszközt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) leválasztani a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról, ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to detach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nem sikerült a floppy eszközt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) leválasztani a(z) &lt;i&gt;%2&lt;/i&gt; foglalatról, ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Úgy tűnik a VirtualBox Integrációs szolgáltatások nem érhetők el a virtuális gépen, és nélküle a megosztott mappák nem használhatók. A virtuális gépen belüli megosztott mappák használatához telepítsd fel az Integrációs szolgáltatásokat, ha nincsenek telepítve, vagy ha csak nem működnek helyesen, az &lt;b&gt;Eszközök&lt;/b&gt; menüben az &lt;b&gt;Integrációs szolgáltatások telepítése...&lt;/b&gt; választásával. Ha telepítve vannak, de a gép nem teljesen indult még el, a megosztott mappák elérhetők lesznek.&lt;/p&gt;</translation>
-    </message>
-    <message numerus="yes">
-        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation>
-            <numerusform>&lt;p&gt;A virtuális gép jelenleg mentett állapotban van: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ha folytatod, az exportált gép állapota elveszik. A létező gépek nem módosulnak.&lt;/p&gt;</numerusform>
-        </translation>
-    </message>
-    <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
-        <translation>Az Integrációs szolgáltatások telepítése sikertelen. Az Integrációs szolgáltatások telepítési képe fel lesz csatolva a manuális etlepítés biztosításához.</translation>
-    </message>
-    <message>
-        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A Kiterjesztő csomag telepítése sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A Kiterjesztő csomag eltávolítása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
-        <translation type="obsolete">El fogod távolítani a Kiterjesztő csomagot: &lt;b&gt;%1&lt;/b&gt;. Biztos ezt akarod tenni?</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>Eltávolítá&amp;s</translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation>Az aktuális port továbbítási szabályok nem érvényesek. Ne feledd, hogy a gazda- és a vendég port-értékei nullára válthatnak.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A port továbbítási beállítások mentetlen módosításokattartalmaznak.&lt;/p&gt;&lt;p&gt;Ha folytatod, a módosítások elvesznek.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Sorry, some generic error happens.</source>
-        <translation>Sajnálom, véletlen hiba lépett fel.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nem sikerült a merevlemezt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the CD/DVD device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nem sikerült a CD/DVD eszközt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>Failed to attach the floppy device (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Nem sikerült a floppy eszközt (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) a(z) &lt;i&gt;%2&lt;/i&gt; foglalathoz társítani ezen a virtuális gépen: &lt;b&gt;%3&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ne feledd, hogy ezen médium tárolóegysége nem lesz törölve és így később is hozzá lehet adni a listához.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Úgy tűnik a VirtualBox Integrációs szolgáltatások nem érhetők el a virtuális gépen, és nélküle a megosztott mappák nem használhatók. A virtuális gépen belüli megosztott mappák használatához telepítsd fel az Integrációs szolgáltatásokat, ha nincsenek telepítve, vagy ha csak nem működnek helyesen, az &lt;b&gt;Eszközök&lt;/b&gt; menüben az &lt;b&gt;Integrációs szolgáltatások telepítése...&lt;/b&gt; választásával. Ha telepítve vannak, de a gép nem teljesen indult még el, a megosztott mappák elérhetők lesznek.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;teljes képernyős&lt;/b&gt; módra vált. Bármikor visszaléphetsz az ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik a teljes képernyős módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;asztal-integrációs&lt;/b&gt; módra vált. Bármikor visszaléphetsz az ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik asztal-integrációs módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;átméretezhető&lt;/b&gt; módra vált. Bármikor visszaléphetsz az ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik átméretezhető módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Switch</source>
-        <comment>scale</comment>
-        <translation>Átváltás</translation>
-    </message>
-    <message>
-        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A Kiterjesztő csomag megnyitása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Egy VirtualBox kiterjesztő csomagot telepítesz. A kiterjesztő csomagok kiegészítik a VirtualBox képességeit és rendszerszintű szoftvert tartalmaznak, mely teljesen ártalmatlan a rendszeredre. Nézd át a lenti leírást és csak akkor folytasd, ha megbízható forásból származik a kiterjesztő csomag.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Install</source>
-        <translation>&amp;Telepítés</translation>
-    </message>
-    <message>
-        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation>A kiterjesztő csomagok kiegészítik a VirtualBox képességeit és rendszerszintű szoftvert tartalmaznak, mely teljesen ártalmatlan a rendszeredre. Nézd át a lenti leírást és csak akkor folytasd, ha megbízható forásból származik a kiterjesztő csomag.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Egy régi kiterjesztő csomag van telepítve. Szeretnéd frissíteni? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Új verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Jelenlegi verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Upgrade</source>
-        <translation>&amp;Frissítés</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;An newer version of the extension pack is already installed, would you like to downgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Egy régebbi kiterjesztő csomag van telepítve. Szeretnéd visszabutítani? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Új verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Jelenlegi verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Downgrade</source>
-        <translation>&amp;Lebutítás</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The extension pack is already installed with the same version, would you like reinstall it? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A kiterjesztő csomag ezen verziója már telepítve vav. Szeretnéd ismét feltelepíteni? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Név:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Verzió:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Leírás:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;Reinstall</source>
-        <translation>Új&amp;ratelepítés</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Eltávolítod a VirtualBox kiterjesztő scomagot: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Biztos folytatni akarod?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation>A kiterjesztő csomag sikeresen telepítve: &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt;.</translation>
-    </message>
-    <message>
-        <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
-        <translation type="obsolete">A virtuális géphez tartozó fájlok fájlok törlése jelenleg le van tiltva Windows/x64 rendszeren az összeomlás elkerülése miatt. Ez a következő kiadásban kerül javításra.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A(z) &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; szülő mappában nem tudod létrehozni a gép mappáját: &lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ellenőrizd, hogy a szülő mappa tényleg létezik és hogy van jogod ott mappát létrehozni.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Az USB 2.0 jelenleg be van kapcsolva a virtuális gépen. Azonban ehhez a következőnek telepítve kell lennie: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A VirtualBox oldaláról letöltve telepítsd fel a Kiterjesztő csomagot. Ezután újra be engedélyezni tudod az USB 2.0-t. Addig ki lesz kapcsolva, hacsak meg nem szakítod a beállítások módosítását.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép regisztrálása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A gép beállításai megváltoztak az utolsó módosításuk óta.&lt;/p&gt;&lt;p&gt;Szeretnéd visszatölteni a megváltozott beállításokat vagy meghagyod a jelenlegieket?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Reload settings</source>
-        <translation>Beállítások visszatöltése</translation>
-    </message>
-    <message>
-        <source>Keep changes</source>
-        <translation>Módosítások megtartása</translation>
-    </message>
-    <message>
-        <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished">A jelenleg szerkesztett virtuális gép állapota megváltozott. Csak a futáskor szerkesztett beállítások lesznek mentve az OK gomb megnyomásakor. Minden egyéb módosítás elveszik.</translation>
-    </message>
-    <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>A virtuális gép klónozása sikertelen: &lt;b&gt;%1&lt;/b&gt;.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vissza akarod állítani a pillanatképet: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;készíthetsz pillanatképet a virtuális gép jelenlegi állapotáról a lenti jelölőnégyzettel; ha nem teszed meg, a jelenlegi állapot végleg elveszik. Folytatni akarod?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Create a snapshot of the current machine state</source>
-        <translation>Pillanatkép készítése az aktuális gép állapotáról</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Are you sure you want to restore snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Biztos vissza akarod állítani a pillanatképet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Hiba a médium &lt;b&gt;%1&lt;/b&gt; típusáról &lt;b&gt;%2&lt;/b&gt; típusra történő váltáskor.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Az USB 2.0 jelenleg be van kapcsolva a virtuális gépen. Azonban ehhez a következőnek telepítve kell lennie: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A VirtualBox oldaláról letöltve telepítsd fel a Kiterjesztő csomagot. Ezután újra engedélyezni tudod az USB 2.0-t. Addig ki lesz kapcsolva, hacsak meg nem szakítod a beállítások módosítását.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy Service (VERR_FILE_NOT_FOUND). The service might not be installed on the host computer</source>
-        <translation>Nem tölthető be a gazda USB Proxy szolgáltatás (FÁJL_NEM_TALÁHATÓ). A szolgáltatás talán nincs telepítve a gazda számítógépre</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by adding your user to the &apos;vboxusers&apos; group.  Please see the user manual for a more detailed explanation</source>
-        <translation>A VirtualBox jelenleg nem férhet hozzá az USB eszközökhöz.  Ezen változtathatsz, ha a felhasználód hozzáadod a &apos;vboxusers&apos; csoporthoz.  Részletes magyarázatért nézd meg a Felhasználói kézikönyvet</translation>
-    </message>
-    <message>
-        <source>VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the &apos;usbfs&apos; folder and files.  Please see the user manual for a more detailed explanation</source>
-        <translation>A VirtualBox jelenleg nem férhet hozzá az USB eszközökhöz.  Ezen változtathatsz, ha engedélyezed a felhasználódnak az &apos;usbfs&apos; mappa és fájlok elérését.  Részletes magyarázatért nézd meg a Felhasználói kézikönyvet</translation>
-    </message>
-    <message>
-        <source>The USB Proxy Service has not yet been ported to this host</source>
-        <translation>Az USB proxy szolgáltatás még nem lett portolva erre a gazda rendszerre</translation>
-    </message>
-    <message>
-        <source>Could not load the Host USB Proxy service</source>
-        <translation>A gazda USB szolgáltatás nem tölthető be</translation>
-    </message>
-</context>
-<context>
     <name>VBoxRegistrationDlg</name>
     <message>
         <source>VirtualBox Registration Dialog</source>
@@ -11040,7 +11153,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>Sú&amp;gó</translation>
+        <translation type="obsolete">Sú&amp;gó</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
@@ -11728,29 +11841,6 @@ parancsot Linux-alapú OS-ekből. Integrációs szolgáltatások szükségesek h
         <translation>
             <numerusform>Vigyázz: Pillanatképet készülsz készíteni egy olyan gépről, melyhez %n nem-módosíthato képfájl van csatlakoztatva. Amíg ebből a pillanatképből dolgozol, a nem-módosítható képfájl nem lesz helyreállitva az adatvesztés elkerülése érdekében.</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>UITextEditor</name>
-    <message>
-        <source>Edit text</source>
-        <translation>Szöveg módosítása</translation>
-    </message>
-    <message>
-        <source>&amp;Replace...</source>
-        <translation>Cse&amp;re...</translation>
-    </message>
-    <message>
-        <source>Replaces the current text with the content of a file.</source>
-        <translation>A jelenlegi szöveg cseréje a megadott fájl tartalmára.</translation>
-    </message>
-    <message>
-        <source>Text (*.txt);;All (*.*)</source>
-        <translation>Szövegfájlok (*.txt);;Minden fájl (*.*)</translation>
-    </message>
-    <message>
-        <source>Select a file to open...</source>
-        <translation>Beillesztendő fájl...</translation>
     </message>
 </context>
 <context>
