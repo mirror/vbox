@@ -534,10 +534,7 @@ STDMETHODIMP USBController::InsertDeviceFilter(ULONG aPosition,
 
     /* notify the proxy (only when it makes sense) */
     if (filter->getData().mActive && Global::IsOnline(adep.machineState())
-#ifdef RT_OS_WINDOWS
-        && filter->getData().mRemote.isMatch (false)
-#endif
-    )
+        && filter->getData().mRemote.isMatch (false))
     {
         USBProxyService *service = m->pHost->usbProxyService();
         ComAssertRet(service, E_FAIL);
@@ -609,10 +606,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter(ULONG aPosition,
 
     /* notify the proxy (only when it makes sense) */
     if (filter->getData().mActive && Global::IsOnline(adep.machineState())
-#ifdef RT_OS_WINDOWS
-        && filter->getData().mRemote.isMatch (false)
-#endif
-    )
+        && filter->getData().mRemote.isMatch (false))
     {
         USBProxyService *service = m->pHost->usbProxyService();
         ComAssertRet(service, E_FAIL);
@@ -776,10 +770,7 @@ void USBController::rollback()
                 /* notify the proxy (only when it makes sense) */
                 if ((*it)->getData().mActive &&
                     Global::IsOnline (adep.machineState())
-#ifdef RT_OS_WINDOWS
-                    && (*it)->getData().mRemote.isMatch (false)
-#endif
-                )
+                    && (*it)->getData().mRemote.isMatch (false))
                 {
                     USBDeviceFilter *filter = *it;
                     Assert(filter->getId() != NULL);
@@ -804,10 +795,7 @@ void USBController::rollback()
                 {
                     /* notify the proxy (only when necessary) */
                     if ((*it)->getData().mActive
-#ifdef RT_OS_WINDOWS
-                            && (*it)->getData().mRemote.isMatch (false)
-#endif
-                            )
+                            && (*it)->getData().mRemote.isMatch (false))
                     {
                         USBDeviceFilter *flt = *it; /* resolve ambiguity */
                         Assert(flt->getId() == NULL);
@@ -1029,9 +1017,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
 
         if (aActiveChanged)
         {
-#ifdef RT_OS_WINDOWS
             if (aFilter->getData().mRemote.isMatch (false))
-#endif
             {
                 /* insert/remove the filter from the proxy */
                 if (aFilter->getData().mActive)
@@ -1054,9 +1040,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
                 /* update the filter in the proxy */
                 ComAssertRet(aFilter->getId() != NULL, E_FAIL);
                 service->removeFilter(aFilter->getId());
-#ifdef RT_OS_WINDOWS
                 if (aFilter->getData().mRemote.isMatch (false))
-#endif
                 {
                     aFilter->getId() = service->insertFilter(&aFilter->getData().mUSBFilter);
                 }
@@ -1236,9 +1220,7 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
 
         /* notify the proxy (only if the filter is active) */
         if (flt->getData().mActive
-#ifdef RT_OS_WINDOWS
                 && flt->getData().mRemote.isMatch (false) /* and if the filter is NOT remote */
-#endif
                 )
         {
             if (aInsertFilters)
