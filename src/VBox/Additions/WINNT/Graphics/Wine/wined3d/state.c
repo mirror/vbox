@@ -54,7 +54,7 @@ static void state_undefined(DWORD state, IWineD3DStateBlockImpl *stateblock, str
 {
 #ifdef DEBUG_misha
     WARN("Undefined state.\n");
-#else
+#elif !defined(VBOX_WITH_WDDM)
     ERR("Undefined state.\n");
 #endif
 }
