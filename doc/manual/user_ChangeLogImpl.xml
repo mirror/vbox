@@ -32,7 +32,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: when taking a snaphot from the VM selector, don't do
+        <para>GUI: when taking a snapshot from the VM selector, don't do
           a live snapshot</para>
       </listitem>
 
@@ -47,13 +47,14 @@
       </listitem>
 
       <listitem>
-        <para>Guest control execution: limited to serve up to 5 guest processes at a time
-          by default</para>
+        <para>Guest control execution: limited to serve up to 5 guest processes
+          at a time by default</para>
       </listitem>
 
       <listitem>
         <para>Main: return the correct RDP default port fixing settings
-          warnings in the GUI if the remote display was enabled at runtime (bug #9368)</para>
+          warnings in the GUI if the remote display was enabled at runtime (bug
+          #9368)</para>
       </listitem>
 
       <listitem>
@@ -62,7 +63,8 @@
       </listitem>
 
       <listitem>
-        <para>VBoxSVC: several fixes for cloning of VMs</para>
+        <para>VBoxSVC: several fixes/performance improvements for cloning of
+          VMs</para>
       </listitem>
 
       <listitem>
@@ -71,9 +73,9 @@
       </listitem>
 
       <listitem>
-        <para>VBoxManage: implemented <emphasis>copyfrom</emphasis> and <emphasis>stat</emphasis>
-          guest control tools to copy files from guest to host and to check for
-          existence of files on the guest</para>
+        <para>VBoxManage: implemented <emphasis>copyfrom</emphasis> and
+          <emphasis>stat</emphasis> guest control tools to copy files from guest
+          to host and to check for existence of files on the guest</para>
       </listitem>
 
       <listitem>
