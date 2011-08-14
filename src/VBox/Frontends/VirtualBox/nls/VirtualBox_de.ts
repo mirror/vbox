@@ -547,7 +547,7 @@
     </message>
     <message>
         <source>Linked Base for %1 and %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Ausgangspunkt für %1 und %2</translation>
     </message>
 </context>
 <context>
@@ -569,10 +569,6 @@
         <translation>%1-Klon</translation>
     </message>
     <message>
-        <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="obsolete">Falls ausgewählt, wird allen aktivierten Netzwerkkarten eine neue MAC-Adresse zugewiesen.</translation>
-    </message>
-    <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
         <translation>&amp;Zuweisen neuer MAC-Adressen für alle Netzwerkkarten</translation>
     </message>
@@ -584,67 +580,39 @@
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
-        <source>Current machine state</source>
-        <translation type="obsolete">Aktueller Zustand</translation>
-    </message>
-    <message>
-        <source>Current machine and all child states</source>
-        <translation type="obsolete">Aktueller und alle nachfolgenden Zustände</translation>
-    </message>
-    <message>
-        <source>All states</source>
-        <translation type="obsolete">Alle Zustände</translation>
-    </message>
-    <message>
         <source>Cloning Configuration</source>
         <translation>Auswahl der Zustände</translation>
     </message>
     <message>
-        <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="obsolete">Bitte wählen Sie, welche Zustände der virtuellen Maschine geklont werden sollen.</translation>
-    </message>
-    <message>
-        <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="obsolete">Falls Sie &lt;b&gt;Aktueller Zustand&lt;/b&gt; wählen, wird nur der aktuelle Zustand der virtuellen Maschine geklont.</translation>
-    </message>
-    <message>
-        <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="obsolete">Falls Sie &lt;b&gt;Aktueller und alle nachfolgenden Zustände&lt;/b&gt; auswählen, werden der aktuelle Zustand und alle Zustände, die in nachfolgenden Sicherheitspunkten gespeichert sind, kopiert.</translation>
-    </message>
-    <message>
-        <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="obsolete">Falls Sie &lt;b&gt;Alle Zustände&lt;/b&gt; wählen, werden wirklich alle Zustände geklont.</translation>
-    </message>
-    <message>
         <source>Full Clone</source>
-        <translation>Vollständiger Klon</translation>
+        <translation>vollständiger Klon</translation>
     </message>
     <message>
         <source>Linked Clone</source>
-        <translation>Verknüpfter Klon</translation>
+        <translation>verknüpfter Klon</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Bitte wählen Sie, wie der Klon erstellt werden soll.&lt;/p&gt;&lt;p&gt;Ein &lt;b&gt;vollständiger Klon&lt;/b&gt; erzeugt eine genaue Kopie der VM mit allen virtuellen Plattenabbildern. Ein &lt;b&gt;verknüpfter Klon&lt;/b&gt; erzeugt eine Kopie, bei dem alle virtuellen Platten der originalen VM verwendet werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Bitte beachten Sie, dass ein neuer Sicherungspunkt der originalen VM erzeugt wird, falls Sie &lt;b&gt;Verknüpfter Klon&lt;/b&gt; wählen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Bitte beachten Sie, dass ein neuer Sicherungspunkt der originalen VM erzeugt wird, falls Sie &lt;b&gt;verknüpfter Klon&lt;/b&gt; wählen.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation>Aktueller Zustand</translation>
+        <translation>aktueller Zustand</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation>Aktueller und alle nachfolgenden Zustände</translation>
+        <translation>aktueller und alle nachfolgenden Zustände</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation>Alle Zustände</translation>
+        <translation>alle Zustände</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
@@ -656,15 +624,15 @@
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation>Falls Sie &lt;b&gt;Aktueller Zustand&lt;/b&gt; wählen, wird nur der aktuelle Zustand der virtuellen Maschine geklont.</translation>
+        <translation>Falls Sie &lt;b&gt;aktueller Zustand&lt;/b&gt; wählen, wird nur der aktuelle Zustand der virtuellen Maschine geklont.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation>Falls Sie &lt;b&gt;Aktueller und alle nachfolgenden Zustände&lt;/b&gt; auswählen, werden der aktuelle Zustand und alle Zustände, die in nachfolgenden Sicherheitspunkten gespeichert sind, kopiert.</translation>
+        <translation>Falls Sie &lt;b&gt;aktueller und alle nachfolgenden Zustände&lt;/b&gt; auswählen, werden der aktuelle Zustand und alle Zustände, die in nachfolgenden Sicherheitspunkten gespeichert sind, kopiert.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation>Falls Sie &lt;b&gt;Alle Zustände&lt;/b&gt; wählen, werden wirklich alle Zustände geklont.</translation>
+        <translation>Falls Sie &lt;b&gt;alle Zustände&lt;/b&gt; wählen, werden wirklich alle Zustände geklont.</translation>
     </message>
 </context>
 <context>
@@ -974,18 +942,7 @@
     </message>
 </context>
 <context>
-    <name>UIDownloader</name>
-    <message>
-        <source>The download process has been canceled by the user.</source>
-        <translation type="obsolete">Das Herunterladen wurde vom Nutzer unterbrochen.</translation>
-    </message>
-</context>
-<context>
     <name>UIDownloaderAdditions</name>
-    <message>
-        <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Die heruntergeladene Datei konnte nicht als &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; gespeichert werden.&lt;/nobr&gt;&lt;/p&gt;</translation>
-    </message>
     <message>
         <source>Select folder to save Guest Additions image to</source>
         <translation>Wählen Sie den Ordner aus, in dem die Gasterweiterungen gespeichert werden sollen</translation>
@@ -3135,10 +3092,6 @@
         <translation>Einstellung für den Chipsatz, der für diese VM emuliert werden soll. Die ICH-9-Chipsatz-Emulation ist noch experimentell und sollte nur für Gäste ausgewählt werden, die darauf angewiesen sind (z.B. Mac-OS-X-Gäste).</translation>
     </message>
     <message>
-        <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="obsolete">haben Sie die ICH9-Chipsatzemulation für diese VM gewählt. Diese Emulation setzt einen aktivierten IO-APIC voraus. Diese Änderung wird automatisch vorgenommen, falls Sie die Einstellungen akzeptieren.</translation>
-    </message>
-    <message>
         <source>&amp;Execution Cap:</source>
         <translation>&amp;CPU-Begrenzung:</translation>
     </message>
@@ -4419,26 +4372,7 @@
     </message>
 </context>
 <context>
-    <name>UIMiniProcessWidgetAdditions</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
-    <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="obsolete">Bricht das Herunterladen der VirtualBox-Gasterweiterungen ab</translation>
-    </message>
-    <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="obsolete">Herunterladen des CDROM-Abbilds mit den VirtualBox-Gasterweiterungen von &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
-    </message>
-</context>
-<context>
     <name>UIMiniProcessWidgetUserManual</name>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">Abbrechen</translation>
-    </message>
     <message>
         <source>Cancel the VirtualBox User Manual download</source>
         <translation>Bricht das Herunterladen des Benutzerhandbuchs ab</translation>
@@ -6709,10 +6643,6 @@
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
         <translation>Aktualisiert den Zustand der ausgewählten virtuellen Maschine</translation>
-    </message>
-    <message>
-        <source>&amp;Help</source>
-        <translation type="obsolete">&amp;Hilfe</translation>
     </message>
     <message>
         <source>S&amp;how</source>
