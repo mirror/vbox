@@ -292,6 +292,9 @@ struct file_operations sf_dir_fops =
     .readdir = sf_dir_read,
     .release = sf_dir_release,
     .read    = generic_read_dir
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
+  , .llseek  = generic_file_llseek
+#endif
 };
 
 
