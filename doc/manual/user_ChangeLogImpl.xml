@@ -108,8 +108,18 @@
       </listitem>
 
       <listitem>
-        <para>VBoxService: keep logged in user count in out-of-memory situations and
-          warn about it</para>
+        <para>USB: fixed device recognition issues (bugs #9299) and
+          fixed several device capturing issues (Windows hosts; bug #9299)</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: fixed issues with remote filters being applied to local
+          USB devices</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: keep logged in user count in out-of-memory situations
+          and warn about it</para>
       </listitem>
 
       <listitem>
@@ -142,15 +152,15 @@
       </listitem>
 
       <listitem>
-        <para>USB: fixed device recognition issues (bugs #9299) for Windows hosts, 
-          fixed several device capturing issues for Windows hosts,
-          fixed issues with remote filters being applied to local USB devices</para>
-      </listitem>
-      
-      <listitem>
         <para>Windows Vista and 7 guests: WDDM driver fixes and performance enhancements, 
           fixed WinSAT crashes (#9267)</para>
       </listitem>
+
+      <listitem>
+        <para>Linux Additions: fixed <emphasis>llseek</emphasis> for Linux kernels
+          2.6.37 and above</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
