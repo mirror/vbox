@@ -6013,8 +6013,8 @@ VBOXDDU_DECL(int) VDCopyEx(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo
     bool fLockReadFrom = false, fLockWriteFrom = false, fLockWriteTo = false;
     PVDIMAGE pImageTo = NULL;
 
-    LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu uImageFlags=%#x pDstUuid=%#p uOpenFlags=%#x pVDIfsOperation=%#p pDstVDIfsImage=%#p pDstVDIfsOperation=%#p\n",
-                 pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, uImageFlags, pDstUuid, uOpenFlags, pVDIfsOperation, pDstVDIfsImage, pDstVDIfsOperation));
+    LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu nImageFromSame=%u nImageToSame=%u uImageFlags=%#x pDstUuid=%#p uOpenFlags=%#x pVDIfsOperation=%#p pDstVDIfsImage=%#p pDstVDIfsOperation=%#p\n",
+                 pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, nImageFromSame, nImageToSame, uImageFlags, pDstUuid, uOpenFlags, pVDIfsOperation, pDstVDIfsImage, pDstVDIfsOperation));
 
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
                                               VDINTERFACETYPE_PROGRESS);
@@ -6212,12 +6212,27 @@ VBOXDDU_DECL(int) VDCopyEx(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo
         /* Whether we can take the optimized copy path (false) or not.
          * Don't optimize if the image existed or if it is a child image. */
         bool fSuppressRedundantIo = (   !(pszFilename == NULL || cImagesTo > 0)
-                                     || (nImageToSame != UINT32_MAX));
+                                     || (nImageToSame != VD_IMAGE_CONTENT_UNKNOWN));
+        unsigned cImagesFromReadBack, cImagesToReadBack;
+
+        if (nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN)
+            cImagesFromReadBack = 0;
+        else
+        {
+            if (nImage == VD_LAST_IMAGE)
+                cImagesFromReadBack = pDiskFrom->cImages - nImageFromSame - 1;
+            else
+                cImagesFromReadBack = nImage - nImageFromSame;
+        }
+
+        if (nImageToSame == VD_IMAGE_CONTENT_UNKNOWN)
+            cImagesToReadBack = 0;
+        else
+            cImagesToReadBack = pDiskTo->cImages - nImageToSame - 1;
 
         /* Copy the data. */
         rc = vdCopyHelper(pDiskFrom, pImageFrom, pDiskTo, cbSize,
-                          nImageFromSame == VD_IMAGE_CONTENT_UNKNOWN ? 0 : nImage - nImageFromSame,
-                          nImageToSame == VD_IMAGE_CONTENT_UNKNOWN ? 0 : pDiskTo->cImages - nImageToSame + 1,
+                          cImagesFromReadBack, cImagesToReadBack,
                           fSuppressRedundantIo, pIfProgress, pCbProgress,
                           pDstIfProgress, pDstCbProgress);
 
