@@ -857,18 +857,23 @@ static void ctrlCopyContextFree(PCOPYCONTEXT pContext)
     }
 }
 
-/*
- * Source          Dest                 Translated
- * c:\foo.txt      c:\from_host         c:\from_host\foo.txt
- * c:\asdf\foo     c:\qwer              c:\qwer\foo
- * c:\bar\baz.txt  d:\users\            d:\users\baz.txt
- * c:\*.dll        e:\baz               e:\baz
+/**
+ * Translates a source path to a destintation path (can be both sides,
+ * either host or guest). The source root is needed to determine the start
+ * of the relative source path which also needs to present in the destination
+ * path.
+ *
+ * @return  IPRT status code.
+ * @param   pszSourceRoot           Source root path.
+ * @param   pszSource               Actual source to transform. Must begin with
+ *                                  the source root path!
+ * @param   pszDest                 Destination path.
+ * @param   ppszTranslated          Pointer to the allocated, translated destination
+ *                                  path. Must be free'd with RTStrFree().
  */
-static int ctrlCopyTranslatePath(PCOPYCONTEXT pContext,
-                                 const char *pszSourceRoot, const char *pszSource,
+static int ctrlCopyTranslatePath(const char *pszSourceRoot, const char *pszSource,
                                  const char *pszDest, char **ppszTranslated)
 {
-    AssertPtrReturn(pContext, VERR_INVALID_POINTER);
     AssertPtrReturn(pszSourceRoot, VERR_INVALID_POINTER);
     AssertPtrReturn(pszSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDest, VERR_INVALID_POINTER);
@@ -896,14 +901,61 @@ static int ctrlCopyTranslatePath(PCOPYCONTEXT pContext,
 
     *ppszTranslated = pszTranslated;
 
-#ifdef DEBUG
-    if (pContext->fVerbose)
-        RTPrintf("Translating root=%s, source=%s, dest=%s -> %s\n",
-                 pszSourceRoot, pszSource, pszDest, *ppszTranslated);
-#endif
-
     return vrc;
 }
+
+#ifdef DEBUG_andy
+static void tstTranslatePath()
+{
+    static struct
+    {
+        const char *pszSourceRoot;
+        const char *pszSource;
+        const char *pszDest;
+        const char *pszTranslated;
+        int         iResult;
+    } aTests[] =
+    {
+        /* Invalid stuff. */
+        { NULL, NULL, NULL, NULL, VERR_INVALID_POINTER },
+        /* Windows paths. */
+        { "c:\\foo", "c:\\foo\\bar.txt", "c:\\test", "c:\\test\\bar.txt", VINF_SUCCESS },
+        { "c:\\foo", "c:\\foo\\baz\\bar.txt", "c:\\test", "c:\\test\\baz\\bar.txt", VINF_SUCCESS }
+        /* UNIX-like paths. */
+        /* Mixed paths*/
+        /** @todo */
+    };
+
+    int iTest = 0;
+    for (iTest; iTest < RT_ELEMENTS(aTests); iTest++)
+    {
+        RTPrintf("=> Test %d\n", iTest);
+        RTPrintf("\tSourceRoot=%s, Source=%s, Dest=%s\n",
+                 aTests[iTest].pszSourceRoot, aTests[iTest].pszSource, aTests[iTest].pszDest);
+
+        char *pszTranslated = NULL;
+        int iResult =  ctrlCopyTranslatePath(aTests[iTest].pszSourceRoot, aTests[iTest].pszSource,
+                                             aTests[iTest].pszDest, &pszTranslated);
+        if (iResult != aTests[iTest].iResult)
+        {
+            RTPrintf("\tReturned %Rrc, expected %Rrc\n",
+                     iResult, aTests[iTest].iResult);
+        }
+        else if (   pszTranslated
+                 && strcmp(pszTranslated, aTests[iTest].pszTranslated))
+        {
+            RTPrintf("\tReturned translated path %s, expected %s\n",
+                     pszTranslated, aTests[iTest].pszTranslated);
+        }
+
+        if (pszTranslated)
+        {
+            RTPrintf("\tTranslated=%s\n", pszTranslated);
+            RTStrFree(pszTranslated);
+        }
+    }
+}
+#endif
 
 static int ctrlCopyDirCreate(PCOPYCONTEXT pContext, const char *pszDir)
 {
@@ -1142,7 +1194,7 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
                         if (!fDirCreated)
                         {
                             char *pszDestDir;
-                            rc = ctrlCopyTranslatePath(pContext, pszSource, szCurDir,
+                            rc = ctrlCopyTranslatePath(pszSource, szCurDir,
                                                        pszDest, &pszDestDir);
                             if (RT_SUCCESS(rc))
                             {
@@ -1160,7 +1212,7 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
                                              szCurDir, DirEntry.szName))
                             {
                                 char *pszFileDest;
-                                rc = ctrlCopyTranslatePath(pContext, pszSource, pszFileSource,
+                                rc = ctrlCopyTranslatePath(pszSource, pszFileSource,
                                                            pszDest, &pszFileDest);
                                 if (RT_SUCCESS(rc))
                                 {
@@ -1215,7 +1267,7 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
 
     ULONG uDirHandle;
     HRESULT hr = pContext->pGuest->DirectoryOpen(Bstr(szCurDir).raw(), Bstr(pszFilter).raw(),
-                                                 fFlags,
+                                                 DirectoryOpenFlag_None /* No flags supported yet. */,
                                                  Bstr(pContext->pszUsername).raw(), Bstr(pContext->pszPassword).raw(),
                                                  &uDirHandle);
     if (FAILED(hr))
@@ -1280,7 +1332,7 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                         if (!fDirCreated)
                         {
                             char *pszDestDir;
-                            rc = ctrlCopyTranslatePath(pContext, pszSource, szCurDir,
+                            rc = ctrlCopyTranslatePath(pszSource, szCurDir,
                                                        pszDest, &pszDestDir);
                             if (RT_SUCCESS(rc))
                             {
@@ -1298,7 +1350,7 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                                              szCurDir, strFile.c_str()))
                             {
                                 char *pszFileDest;
-                                rc = ctrlCopyTranslatePath(pContext, pszSource, pszFileSource,
+                                rc = ctrlCopyTranslatePath(pszSource, pszFileSource,
                                                            pszDest, &pszFileDest);
                                 if (RT_SUCCESS(rc))
                                 {
@@ -1411,6 +1463,11 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
      * what and how to implement the file enumeration/recursive lookup, like VBoxManage
      * does in here.
      */
+
+#ifdef DEBUG_andy
+    tstTranslatePath();
+    return VINF_SUCCESS;
+#endif
 
     static const RTGETOPTDEF s_aOptions[] =
     {
@@ -1595,7 +1652,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
                 {
                     /* Single file. */
                     char *pszDestFile;
-                    vrc = ctrlCopyTranslatePath(pContext, pszSourceRoot, pszSource,
+                    vrc = ctrlCopyTranslatePath(pszSourceRoot, pszSource,
                                                 Utf8Dest.c_str(), &pszDestFile);
                     if (RT_SUCCESS(vrc))
                     {
