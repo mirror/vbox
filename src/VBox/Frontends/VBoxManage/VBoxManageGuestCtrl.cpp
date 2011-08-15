@@ -1633,10 +1633,22 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
             if (   Utf8CurSource.endsWith("/")
                 || Utf8CurSource.endsWith("\\"))
             {
-                if (pszFilter) /* Directory with filter. */
-                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSourceRoot, &fExists);
-                else /* Regular directory without filter. */
-                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSource, &fExists);
+#ifndef DEBUG_andy
+                if (pContext->fHostToGuest)
+                {
+#endif
+                    if (pszFilter) /* Directory with filter. */
+                        vrc = ctrlCopyDirExistsOnSource(pContext, pszSourceRoot, &fExists);
+                    else /* Regular directory without filter. */
+                        vrc = ctrlCopyDirExistsOnSource(pContext, pszSource, &fExists);
+#ifndef DEBUG_andy
+                }
+                else
+                {
+                    RTMsgError("Copying of guest directories to the host is not supported yet!\n");
+                    vrc = VERR_NOT_IMPLEMENTED;
+                }
+#endif
             }
             else
             {
