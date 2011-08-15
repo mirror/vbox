@@ -242,11 +242,11 @@
     </message>
     <message>
         <source>Copy all errors to the clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiar todos los errores al portapapeles</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Copiar</translation>
+        <translation>Copiar</translation>
     </message>
 </context>
 <context>
@@ -759,7 +759,7 @@
     </message>
     <message>
         <source>Linked Base for %1 and %2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Base enlazada for %1 and %2</translation>
     </message>
 </context>
 <context>
@@ -790,7 +790,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccionado, una nueva dirección MAC única será asignada a todas las tarjetas de red configuradas.</translation>
     </message>
 </context>
 <context>
@@ -829,54 +829,54 @@
     </message>
     <message>
         <source>Full Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Clonación completa</translation>
     </message>
     <message>
         <source>Linked Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Clonación enlazada</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleccione el tipo de clonación.&lt;/p&gt;&lt;p&gt;Si selecciona &lt;b&gt;Clonación completa&lt;/b&gt;, se creará una copia exacta de la máquina virtual original (incluyendo todas la imágenes de discos virtuales). Si selecciona &lt;b&gt;Clonación enlazada&lt;/b&gt;, se creará una nueva máquina virtual, pero las imágenes de discos virtuales apuntarán a los de la máquina virtual original.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tenga en cuenta que una nueva instantánea será creada en la VM original si selecciona &lt;b&gt;Clonación enlazada&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished">Estado de máquina actual</translation>
+        <translation>Estado actual de la máquina</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished">Máquina actual y estados hijos</translation>
+        <translation>Máquina actual y estados hijos</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished">Todos los estados</translation>
+        <translation>Todos los estados</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished">Clonando configuración</translation>
+        <translation>Configuración de clonación</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished">Seleccione que partes de la máquina virtual deberían ser clonados.</translation>
+        <translation>Seleccione que partes de la máquina virtual deberían ser clonados.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished">Si selecciona &lt;b&gt;Estado de máquina actual&lt;/b&gt;, solo el estado actual de la máquina virtual será clonado.</translation>
+        <translation>Si selecciona &lt;b&gt;Estado actual de la máquina&lt;/b&gt;, solo el estado actual de la máquina virtual será clonado.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished">Si selecciona &lt;b&gt;Máquina actual y estados hijos&lt;/b&gt;, el estado actual de la máquina virtual y cualquier estado de las instantáneas hijas serán clonados.</translation>
+        <translation>Si selecciona &lt;b&gt;Máquina actual y estados hijos&lt;/b&gt;, el estado actual de la máquina virtual y cualquier estado de las instantáneas hijas serán clonados.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished">Si selecciona &lt;b&gt;Todos los estados&lt;/b&gt;, el estado actual de la máquina virtual y todas las instantáneas serán clonados.</translation>
+        <translation>Si selecciona &lt;b&gt;Todos los estados&lt;/b&gt;, el estado actual de la máquina virtual y todas las instantáneas serán clonados.</translation>
     </message>
 </context>
 <context>
@@ -2393,23 +2393,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished">Mayús Izquierdo</translation>
+        <translation>Mayús Izquierdo</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished">Mayús Derecho</translation>
+        <translation>Mayús Derecho</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished">Ctrl Izquierdo</translation>
+        <translation>Ctrl Izquierdo</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished">Ctrl Derecho</translation>
+        <translation>Ctrl Derecho</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished">Alt Izquierdo</translation>
+        <translation>Alt Izquierdo</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -4089,7 +4089,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished">Seleccionado, suprime el desmontaje del medio cuando el SO invitado lo extrae.</translation>
+        <translation>Seleccionado, el disco virtual no será desmontado cuando el SO invitado lo extrae.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
@@ -4097,7 +4097,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked the guest system will see the virtual disk as a solid state device.</source>
-        <translation type="unfinished">Seleccionado, marca el medio como almacenamiento no rotacional (SSD).</translation>
+        <translation>Seleccionado, el sistema operativo invitado reconocerá al disco virtual como un disco de estado solido (SSD).</translation>
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
@@ -4139,7 +4139,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished">Selecciona la cantidad de puertos del controlador SATA seleccionado en el árbol de almacenamiento. Este valor no puede ser menor al número de puerto máximu utilizado + 1.</translation>
+        <translation>Selecciona la cantidad de puertos del controlador SATA seleccionado en el árbol de almacenamiento. Este valor debe ser mayor al numero de puerto mayor que necesite utilizar.</translation>
     </message>
 </context>
 <context>
@@ -4325,7 +4325,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation type="unfinished">Define el tipo de chipset usado en esta máquina virtual.</translation>
+        <translation>Selecciona el chipset a ser emulado por la máquina virtual. Tenga en cuenta que la emulación de chipset ICH9 es experimental y solo se recomienda su uso para sistemas operativos invitados que lo requieran (Max OS X, por ejemplo).</translation>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -4359,7 +4359,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>ha asignado el chipset ICH9 a esta MV. Esto no funcionará a menos que la característica IO-APIC esté habilitada. Esto se hará automáticamente cuando acepte la configuración de la MV presionando el botón Aceptar.</translation>
     </message>
 </context>
 <context>
@@ -5960,7 +5960,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished">El estado de la máquina virtual que está editando ha cambiado. Solo la configuración que era editable en tiempo de ejecución será guardada cuando presione Aceptar. Todos los demás cambios se perderán.</translation>
+        <translation>La máquina virtual que está modificando está encendida. Solamente algunas configuraciones pueden ser modificadas con la máquina encendida. Todos los demás cambios se perderán si cierra la ventana ahora.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6008,11 +6008,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>No se puede encontrar la instantánea de nombre &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;No se pudo guardar el archivo descargado como &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6053,11 +6053,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancelar la descarga de la imagen de CD de las «Guest Additions»</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Descargando la imagen de CD de las «Guest Additions» desde &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -6413,7 +6413,7 @@ dependiendo del tamaño de la imagen y el rendimiento de su disco duro.&lt;/p&gt
     </message>
     <message>
         <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished">Presione el botón &lt;b&gt;Seleccionar&lt;/b&gt; para seleccionar la localización de un archivo para almacenar los datos del disco virtual o escriba una nombre de archivo en el campo de entrada.</translation>
+        <translation>Por favor escriba el nombre de archivo del nuevo disco virtual en el campo a continuación, o haga clic en el ícono de carpeta para seleccionar otra carpeta donde crear el archivo.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -6907,11 +6907,11 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Start-up &amp;Disk</source>
-        <translation type="unfinished">Disco &amp;duro de arranque</translation>
+        <translation>Disco &amp;duro de arranque</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Seleccione un disco duro virtual a ser usado como disco duro de arranque de la máquina virtual. Puede crear un nuevo disco duro o seleccionar uno existente de la lista desplegable o presionando el botón correspondiente (para invocar la ventana de abrir archivos)&lt;/p&gt;&lt;p&gt;Si necesita una configuración más complicada de disco duro, también puede omitir este paso y conectar un disco duro más tarde usando el diálogo de configuración de la MV.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Seleccione un disco duro virtual a ser usado como disco duro de arranque de la máquina virtual. Puede crear un nuevo disco duro o seleccionar uno existente de la lista desplegable o desde otra ubicación utilizando el ícono de carpeta.&lt;/p&gt;&lt;p&gt;Si necesita una configuración más compleja de disco virtual, puede omitir este paso y modificar la configuración una vez que la máquina haya sido creada.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -6919,7 +6919,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">El tamaño recomendado del disco duro de arranque es &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>El tamaño recomendado del disco duro de arranque es &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -6955,7 +6955,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     <message>
         <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished">Disco duro de arranque</translation>
+        <translation>Disco duro de arranque</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
