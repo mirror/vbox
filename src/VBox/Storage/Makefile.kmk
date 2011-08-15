@@ -42,6 +42,7 @@ StorageLib_SOURCES  = \
 	Parallels.cpp \
 	ISCSI.cpp \
 	RAW.cpp \
+	QED.cpp \
 	VCICache.cpp
 
 #StorageLibNoDB_TEMPLATE = VBOXR3
