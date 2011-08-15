@@ -2538,7 +2538,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 
     // locking: we need the tree lock first because we access parent pointers
     AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 alock(this, diff COMMA_LOCKVAL_SRC_POS);
 
     if (m->type == MediumType_Writethrough)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -2573,6 +2573,14 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
         return setError(rc, tr("Could not lock medium when creating diff '%s'"),
                         diff->getLocationFull().c_str());
     }
+
+    Guid parentMachineRegistry;
+    if (getFirstRegistryMachineId(parentMachineRegistry))
+    {
+        /* since this medium has been just created it isn't associated yet */
+        diff->m->llRegistryIDs.push_back(parentMachineRegistry);
+    }
+
     treeLock.release();
     alock.release();
 
@@ -7235,6 +7243,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
     }
 
     // now, at the end of this task (always asynchronous), save the settings
+    if (SUCCEEDED(mrc))
     {
         // save the settings
         GuidList llRegistriesThatNeedSaving;
