@@ -160,11 +160,11 @@
     </message>
     <message>
         <source>Copy all errors to the clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Copier toutes les erreurs dans le presse-papiers</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Copier</translation>
+        <translation>Copier</translation>
     </message>
 </context>
 <context>
@@ -669,7 +669,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si sélectionnée, une nouvelle adresse MAC unique sera assignée à toutes les interfaces réseau.</translation>
     </message>
 </context>
 <context>
@@ -708,54 +708,54 @@
     </message>
     <message>
         <source>Full Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Clone complet</translation>
     </message>
     <message>
         <source>Linked Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Clone lié</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Veuillez choisir le type de clone.&lt;/p&gt;&lt;p&gt;Le &lt;b&gt;Clone complet&lt;/b&gt; crée une copie exacte (disques virtuels inclus) de la machine virtuelle source. Le&lt;b&gt;Clone lié&lt;/b&gt;, créé une nouvelle machine virtuelle mais les images des disques virtuels pointent vers les images disques de la machine source.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Notez qu&apos;un nouvel instantané sera créé pour la machine virtuelle source si vous sélectionnez &lt;b&gt;Clone lié&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished">État actuel de la machine</translation>
+        <translation>État actuel de la machine</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished">État actuel de la machine et tous les états dérivés</translation>
+        <translation>État actuel de la machine et tous les états dérivés</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished">Tous les états</translation>
+        <translation>Tous les états</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished">Clonage de la configuration</translation>
+        <translation>Clonage de la configuration</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished">Choisissez les parties de la machine virtuelle à cloner.</translation>
+        <translation>Choisissez les parties de la machine virtuelle à cloner.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished">Si vous choisissez &lt;b&gt;État actuel de la machine&lt;/b&gt;, seul l&apos;état actuel de la machine virtuelle sera cloné.</translation>
+        <translation>Si vous choisissez &lt;b&gt;État actuel de la machine&lt;/b&gt;, seul l&apos;état actuel de la machine virtuelle sera cloné.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished">Si vous choisissez &lt;b&gt;État actuel de la machine et tous les états dérivés&lt;/b&gt;, l&apos;état actuel de la machine virtuelle et tous les états dérivés seront clonés.</translation>
+        <translation>Si vous choisissez &lt;b&gt;État actuel de la machine et tous les états dérivés&lt;/b&gt;, l&apos;état actuel de la machine virtuelle et tous les états dérivés seront clonés.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished">Si vous choisissez &lt;b&gt;Tous les états&lt;/b&gt;, l&apos;état actuel de la machine virtuelle et tous les instantanés seront clonés.</translation>
+        <translation>Si vous choisissez &lt;b&gt;Tous les états&lt;/b&gt;, l&apos;état actuel de la machine virtuelle et tous les instantanés seront clonés.</translation>
     </message>
 </context>
 <context>
@@ -1943,23 +1943,23 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished">Maj gauche</translation>
+        <translation>Maj gauche</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished">Maj droite</translation>
+        <translation>Maj droite</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished">Ctrl gauche</translation>
+        <translation>Ctrl gauche</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished">Ctrl droite</translation>
+        <translation>Ctrl droite</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished">Alt gauche</translation>
+        <translation>Alt gauche</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -3322,7 +3322,7 @@
     </message>
     <message>
         <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished">Si cette case est cochée le média ne sera pas déselectionné quand le système d&apos;exploitation invité l&apos;éjecte.</translation>
+        <translation>Si cette case est cochée le média ne sera pas déselectionné quand le système d&apos;exploitation invité l&apos;éjecte.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
@@ -3576,7 +3576,7 @@
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>vous avez affecté un chipset de type ICH9 à cette machine. Cela nécessite l&apos;activation d&apos;un contrôleur IO-APIC. Cette fonction sera activée automatiquement en cliquant sur OK.</translation>
     </message>
 </context>
 <context>
@@ -4305,7 +4305,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Êtes-vous sûr de vouloir libérer %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&amp;nbsp;?&lt;/p&gt;&lt;p&gt;Il sera détaché de (ou des) machines virtuelles suivantes : &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Êtes-vous sûr de vouloir libérer %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ?&lt;/p&gt;&lt;p&gt;Il sera détaché de (ou des) machines virtuelles suivantes : &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Release</source>
@@ -4339,7 +4339,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Voulez-vous supprimer le conteneur du disque dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&amp;nbsp;?&lt;/p&gt;&lt;p&gt;Si vous choisissez &lt;b&gt;Supprimer&lt;/b&gt; le conteneur sera supprimé. Cette opération est &lt;b&gt;irréversible&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Si vous choisissez &lt;b&gt;Conserver&lt;/b&gt; il sera seulement enlevé de la liste des disques connus, et le conteneur sera laissé tel quel. Il sera donc possible de rajouter le disque dur à la liste ultérieurement.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Voulez-vous supprimer le conteneur du disque dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ?&lt;/p&gt;&lt;p&gt;Si vous choisissez &lt;b&gt;Supprimer&lt;/b&gt; le conteneur sera supprimé. Cette opération est &lt;b&gt;irréversible&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Si vous choisissez &lt;b&gt;Conserver&lt;/b&gt; il sera seulement enlevé de la liste des disques connus, et le conteneur sera laissé tel quel. Il sera donc possible de rajouter le disque dur à la liste ultérieurement.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -4966,11 +4966,11 @@
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossible de trouver l&apos;instantané &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Échec de l&apos;enregistrement du fichier téléchargé &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Échec de l&apos;enregistrement du fichier téléchargé &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5011,11 +5011,11 @@
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Annuler le téléchargement du CD virtuel « Additions invité VirtualBox »</translation>
+        <translation>Annuler le téléchargement de l&apos;image CD « Additions invité VirtualBox »</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">Téléchargement du CD virtuel « Additions invité VirtualBox » de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Téléchargement de l&apos;image CD « Additions invité VirtualBox » de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
