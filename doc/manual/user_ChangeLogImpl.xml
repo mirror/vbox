@@ -123,6 +123,10 @@
       </listitem>
 
       <listitem>
+          <para>OVA: fixed import of renamed OVA files (bug #9033)</para>
+      </listitem>
+
+      <listitem>
         <para>Windows host: fixed icon for .VDI files (bug #9393)</para>
       </listitem>
 
