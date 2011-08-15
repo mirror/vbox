@@ -149,7 +149,7 @@ private:
     HRESULT readFS(TaskOVF *pTask);
     HRESULT readFSOVF(TaskOVF *pTask);
     HRESULT readFSOVA(TaskOVF *pTask);
-    HRESULT readFSImpl(TaskOVF *pTask, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage);
+    HRESULT readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage);
     HRESULT readS3(TaskOVF *pTask);
 
     /*******************************************************************************
