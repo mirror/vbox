@@ -25,7 +25,6 @@ FORMS = \
     src/VBoxMediaManagerDlg.ui \
     src/VBoxSnapshotDetailsDlg.ui \
     src/VBoxTakeSnapshotDlg.ui \
-    src/VBoxUpdateDlg.ui \
     src/VBoxVMLogViewer.ui \
     src/settings/UISettingsDialog.ui \
     src/settings/global/UIGlobalSettingsGeneral.ui \

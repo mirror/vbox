@@ -22,7 +22,7 @@
 /* Local includes */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsUpdate.gen.h"
-#include "VBoxUpdateDlg.h"
+#include "UIUpdateDefs.h"
 
 /* Global settings / Update page / Cache: */
 struct UISettingsCacheGlobalUpdate

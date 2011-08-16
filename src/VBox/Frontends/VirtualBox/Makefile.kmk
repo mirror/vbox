@@ -270,7 +270,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/UIMediumTypeChangeDialog.h \
 	src/VBoxSnapshotDetailsDlg.h \
 	src/VBoxTakeSnapshotDlg.h \
-	src/VBoxUpdateDlg.h \
 	src/VBoxVMInformationDlg.h \
 	src/VBoxVMLogViewer.h \
 	src/VBoxLicenseViewer.h \
@@ -352,9 +351,11 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxOSTypeSelectorWidget.h \
 	src/widgets/VBoxWarningPane.h \
 	src/net/UINetworkManager.h \
+	src/net/UIUpdateManager.h \
 	src/net/UIDownloader.h \
 	src/net/UIDownloaderAdditions.h \
 	src/net/UIDownloaderUserManual.h \
+	src/net/UIDownloaderExtensionPack.h \
 	src/selector/UIActionPoolSelector.h \
 	src/selector/UIVMDesktop.h \
 	src/selector/UIVMListView.h \
@@ -439,7 +440,6 @@ VirtualBox_SOURCES = \
 	src/VBoxMedium.cpp \
 	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
-	src/VBoxUpdateDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
 	src/VBoxVMLogViewer.cpp \
 	src/VBoxLicenseViewer.cpp \
@@ -525,9 +525,12 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxOSTypeSelectorWidget.cpp \
 	src/widgets/VBoxWarningPane.cpp \
 	src/net/UINetworkManager.cpp \
+	src/net/UIUpdateDefs.cpp \
+	src/net/UIUpdateManager.cpp \
 	src/net/UIDownloader.cpp \
 	src/net/UIDownloaderAdditions.cpp \
 	src/net/UIDownloaderUserManual.cpp \
+	src/net/UIDownloaderExtensionPack.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UISelectorShortcuts.cpp \
 	src/selector/UIVMDesktop.cpp \

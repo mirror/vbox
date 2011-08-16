@@ -309,6 +309,12 @@ public:
     void warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget);
     void warnAboutUserManualCantBeSaved(const QString &strURL, const QString &strTarget);
 
+    bool proposeDownloadExtensionPack();
+    bool confirmDownloadExtensionPack(const QString &strURL, ulong uSize);
+    bool proposeInstallExtentionPack(const QString &strFrom, const QString &strTo);
+    void warnAboutExtentionPackCantBeSaved(const QString &strFrom, const QString &strTo);
+    void cannotDownloadExtensionPack(const QString &strFrom, const QString &strError);
+
     void cannotConnectRegister(QWidget *pParent,
                                const QString &strUrl,
                                const QString &strReason);

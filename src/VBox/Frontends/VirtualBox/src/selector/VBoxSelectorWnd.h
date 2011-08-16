@@ -133,7 +133,8 @@ private slots:
     void trayIconChanged(bool fEnabled);
 #endif
 
-    void sltDownloaderUserManualEmbed();
+    void sltEmbedDownloaderForUserManual();
+    void sltEmbedDownloaderForExtensionPack();
 
     void showViewContextMenu(const QPoint &pos);
 

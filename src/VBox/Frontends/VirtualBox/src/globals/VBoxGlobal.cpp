@@ -28,16 +28,18 @@
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
+#include "UIActionPoolSelector.h"
+#include "UIActionPoolRuntime.h"
 #include "UIExtraDataEventHandler.h"
 #include "QIFileDialog.h"
 #include "UINetworkManager.h"
+#include "UIUpdateManager.h"
 
 #include "UIMachine.h"
 #include "UISession.h"
 #ifdef VBOX_WITH_REGISTRATION
 # include "UIRegistrationWzd.h"
 #endif
-#include "VBoxUpdateDlg.h"
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include "VBoxFBOverlay.h"
 #endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -270,7 +272,6 @@ VBoxGlobal::VBoxGlobal()
 #ifdef VBOX_WITH_REGISTRATION
     , mRegDlg (NULL)
 #endif
-    , mUpdDlg (NULL)
 #ifdef VBOX_GUI_WITH_SYSTRAY
     , mIsTrayMenu (false)
     , mIncreasedWindowCounter (false)
@@ -4612,67 +4613,6 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
 #endif
 }
 
-/**
- * Shows the VirtualBox version check & update dialog.
- *
- * @note that this method is not part of UIMessageCenter (like e.g.
- *       UIMessageCenter::sltShowHelpAboutDialog()) because it is tied to
- *       VBoxCallback::OnExtraDataChange() handling performed by VBoxGlobal.
- *
- * @param aForce
- */
-void VBoxGlobal::showUpdateDialog (bool aForce)
-{
-    /* Silently check in one day after current time-stamp */
-    QTimer::singleShot (24 /* hours */   * 60   /* minutes */ *
-                        60 /* seconds */ * 1000 /* milliseconds */,
-                        this, SLOT (perDayNewVersionNotifier()));
-
-    bool isNecessary = VBoxUpdateDlg::isNecessary();
-
-    if (!aForce && !isNecessary)
-        return;
-
-    if (mUpdDlg)
-    {
-        if (!mUpdDlg->isHidden())
-        {
-            mUpdDlg->setWindowState (mUpdDlg->windowState() & ~Qt::WindowMinimized);
-            mUpdDlg->raise();
-            mUpdDlg->activateWindow();
-        }
-    }
-    else
-    {
-        /* Store the ID of the main window to ensure that only one
-         * update dialog is shown at a time. Due to manipulations with
-         * OnExtraDataCanChange() and OnExtraDataChange() signals, this extra
-         * data item acts like an inter-process mutex, so the first process
-         * that attempts to set it will win, the rest will get a failure from
-         * the SetExtraData() call. */
-        mVBox.SetExtraData (VBoxDefs::GUI_UpdateDlgWinID,
-                            QString ("%1").arg ((qulonglong) mMainWindow->winId()));
-
-        if (mVBox.isOk())
-        {
-            /* We've got the "mutex", create a new update dialog */
-            VBoxUpdateDlg *dlg = new VBoxUpdateDlg (&mUpdDlg, aForce, 0);
-            dlg->setAttribute (Qt::WA_DeleteOnClose);
-            Assert (dlg == mUpdDlg);
-
-            /* Update dialog always in background mode for now.
-             * if (!aForce && isAutomatic) */
-            mUpdDlg->search();
-            /* else mUpdDlg->show(); */
-        }
-    }
-}
-
-void VBoxGlobal::perDayNewVersionNotifier()
-{
-    showUpdateDialog (false /* force show? */);
-}
-
 void VBoxGlobal::sltGUILanguageChange(QString strLang)
 {
     loadLanguage(strLang);
@@ -5243,8 +5183,17 @@ void VBoxGlobal::init()
     /* Handle global settings change for the first time: */
     sltProcessGlobalSettingChange();
 
+    /* Create action pool: */
+    if (isVMConsoleProcess())
+        UIActionPoolRuntime::create();
+    else
+        UIActionPoolSelector::create();
+
     /* Create network manager: */
     UINetworkManager::create();
+
+    /* Schedule update manager: */
+    UIUpdateManager::schedule();
 }
 
 
@@ -5255,8 +5204,17 @@ void VBoxGlobal::init()
  */
 void VBoxGlobal::cleanup()
 {
+    /* Shutdown update manager: */
+    UIUpdateManager::shutdown();
+
     /* Destroy network manager: */
     UINetworkManager::destroy();
+
+    /* Destroy action pool: */
+    if (isVMConsoleProcess())
+        UIActionPoolRuntime::destroy();
+    else
+        UIActionPoolSelector::destroy();
 
     /* sanity check */
     if (!sVBoxGlobalInCleanup)
