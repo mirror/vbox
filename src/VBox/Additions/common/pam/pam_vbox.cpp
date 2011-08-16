@@ -38,7 +38,10 @@
 
 #include <pwd.h>
 #include <syslog.h>
-#include <stdlib.h>
+#ifdef RT_OS_SOLARIS
+# include <mem.h>
+# include <stdlib.h>
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/env.h>
