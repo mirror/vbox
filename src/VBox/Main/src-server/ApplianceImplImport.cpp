@@ -869,8 +869,8 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Callbacks = 0;
-    PVDINTERFACEIO pTarCallbacks = 0;
+    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pTarIo = 0;
     char *pszFilename = 0;
     do
     {
@@ -880,30 +880,29 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
             rc = VBOX_E_FILE_ERROR;
             break;
         }
-        pSha1Callbacks = Sha1CreateInterface();
-        if (!pSha1Callbacks)
+        pSha1Io = Sha1CreateInterface();
+        if (!pSha1Io)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
-        pTarCallbacks = TarCreateInterface();
-        if (!pTarCallbacks)
+        pTarIo = TarCreateInterface();
+        if (!pTarIo)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
-        VDINTERFACE VDInterfaceIO;
         SHA1STORAGE storage;
         RT_ZERO(storage);
-        vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IOTar",
-                             VDINTERFACETYPE_IO, pTarCallbacks,
-                             tar, &storage.pVDImageIfaces);
+        vrc = VDInterfaceAdd(&pTarIo->Core, "Appliance::IOTar",
+                             VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
+                             &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
         {
             rc = E_FAIL;
             break;
         }
-        rc = readFSImpl(pTask, pszFilename, pSha1Callbacks, &storage);
+        rc = readFSImpl(pTask, pszFilename, pSha1Io, &storage);
     }while(0);
 
     RTTarClose(tar);
@@ -911,10 +910,10 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
     /* Cleanup */
     if (pszFilename)
         RTMemFree(pszFilename);
-    if (pSha1Callbacks)
-        RTMemFree(pSha1Callbacks);
-    if (pTarCallbacks)
-        RTMemFree(pTarCallbacks);
+    if (pSha1Io)
+        RTMemFree(pSha1Io);
+    if (pTarIo)
+        RTMemFree(pTarIo);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -922,7 +921,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
     return rc;
 }
 
-HRESULT Appliance::readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage)
+HRESULT Appliance::readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pIfIo, PSHA1STORAGE pStorage)
 {
     LogFlowFuncEnter();
 
@@ -935,7 +934,7 @@ HRESULT Appliance::readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDI
     {
         /* Read the OVF into a memory buffer */
         size_t cbSize = 0;
-        int vrc = Sha1ReadBuf(strFilename.c_str(), &pvTmpBuf, &cbSize, pCallbacks, pStorage);
+        int vrc = Sha1ReadBuf(strFilename.c_str(), &pvTmpBuf, &cbSize, pIfIo, pStorage);
         if (   RT_FAILURE(vrc)
             || !pvTmpBuf)
             throw setError(VBOX_E_FILE_ERROR,
@@ -1306,27 +1305,26 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Callbacks = 0;
-    PVDINTERFACEIO pTarCallbacks = 0;
+    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pTarIo = 0;
     char *pszFilename = 0;
     void *pvMfBuf = 0;
     writeLock.release();
     try
     {
         /* Create the necessary file access interfaces. */
-        pSha1Callbacks = Sha1CreateInterface();
-        if (!pSha1Callbacks)
+        pSha1Io = Sha1CreateInterface();
+        if (!pSha1Io)
             throw E_OUTOFMEMORY;
-        pTarCallbacks = TarCreateInterface();
-        if (!pTarCallbacks)
+        pTarIo = TarCreateInterface();
+        if (!pTarIo)
             throw E_OUTOFMEMORY;
 
-        VDINTERFACE VDInterfaceIO;
         SHA1STORAGE storage;
         RT_ZERO(storage);
-        vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IOTar",
-                             VDINTERFACETYPE_IO, pTarCallbacks,
-                             tar, &storage.pVDImageIfaces);
+        vrc = VDInterfaceAdd(&pTarIo->Core, "Appliance::IOTar",
+                             VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
+                             &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
             throw setError(E_FAIL,
                            tr("Internal error (%Rrc)"), vrc);
@@ -1344,7 +1342,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             throw setError(E_FAIL,
                            tr("Internal error (%Rrc)"), vrc);
 
-        PVDINTERFACEIO pCallbacks = pSha1Callbacks;
+        PVDINTERFACEIO pCallbacks = pSha1Io;
         PSHA1STORAGE pStorage = &storage;
 
         /* We always need to create the digest, cause we didn't know if there
@@ -1399,10 +1397,10 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         RTMemFree(pszFilename);
     if (pvMfBuf)
         RTMemFree(pvMfBuf);
-    if (pSha1Callbacks)
-        RTMemFree(pSha1Callbacks);
-    if (pTarCallbacks)
-        RTMemFree(pTarCallbacks);
+    if (pSha1Io)
+        RTMemFree(pSha1Io);
+    if (pTarIo)
+        RTMemFree(pTarIo);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();

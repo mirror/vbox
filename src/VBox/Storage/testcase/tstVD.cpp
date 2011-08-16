@@ -67,8 +67,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     VDGEOMETRY       PCHS = { 0, 0, 0 };
     VDGEOMETRY       LCHS = { 0, 0, 0 };
     PVDINTERFACE     pVDIfs = NULL;
-    VDINTERFACE      VDIError;
-    VDINTERFACEERROR VDIErrorCallbacks;
+    VDINTERFACEERROR VDIfError;
 
 #define CHECK(str) \
     do \
@@ -82,16 +81,14 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     } while (0)
 
     /* Create error interface. */
-    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
-    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    VDIErrorCallbacks.pfnError = tstVDError;
-    VDIErrorCallbacks.pfnMessage = tstVDMessage;
+    VDIfError.pfnError = tstVDError;
+    VDIfError.pfnMessage = tstVDMessage;
 
-    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                        NULL, &pVDIfs);
+    rc = VDInterfaceAdd(&VDIfError.Core, "tstVD_Error", VDINTERFACETYPE_ERROR,
+                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
+    rc = VDCreate(pVDIfs, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     rc = VDCreateBase(pVD, pszBackend, pszFilename, cbSize,
@@ -125,8 +122,7 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
     VDGEOMETRY       PCHS = { 0, 0, 0 };
     VDGEOMETRY       LCHS = { 0, 0, 0 };
     PVDINTERFACE     pVDIfs = NULL;
-    VDINTERFACE      VDIError;
-    VDINTERFACEERROR VDIErrorCallbacks;
+    VDINTERFACEERROR VDIfError;
 
 #define CHECK(str) \
     do \
@@ -140,16 +136,15 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
     } while (0)
 
     /* Create error interface. */
-    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
-    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    VDIErrorCallbacks.pfnError = tstVDError;
-    VDIErrorCallbacks.pfnMessage = tstVDMessage;
+    VDIfError.pfnError = tstVDError;
+    VDIfError.pfnMessage = tstVDMessage;
 
-    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                        NULL, &pVDIfs);
+    rc = VDInterfaceAdd(&VDIfError.Core, "tstVD_Error", VDINTERFACETYPE_ERROR,
+                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
+
+    rc = VDCreate(pVDIfs, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     rc = VDOpen(pVD, pszBackend, pszFilename, VD_OPEN_FLAGS_NORMAL, NULL);
@@ -510,8 +505,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     uint64_t u64DiskSize = 1000 * _1M;
     uint32_t u32SectorSize = 512;
     PVDINTERFACE     pVDIfs = NULL;
-    VDINTERFACE      VDIError;
-    VDINTERFACEERROR VDIErrorCallbacks;
+    VDINTERFACEERROR VDIfError;
 
 #define CHECK(str) \
     do \
@@ -529,17 +523,15 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     void *pvBuf = RTMemAlloc(_1M);
 
     /* Create error interface. */
-    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
-    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    VDIErrorCallbacks.pfnError = tstVDError;
-    VDIErrorCallbacks.pfnMessage = tstVDMessage;
+    VDIfError.pfnError = tstVDError;
+    VDIfError.pfnMessage = tstVDMessage;
 
-    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                        NULL, &pVDIfs);
+    rc = VDInterfaceAdd(&VDIfError.Core, "tstVD_Error", VDINTERFACETYPE_ERROR,
+                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(rc);
 
 
-    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
+    rc = VDCreate(pVDIfs, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     RTFILE File;
@@ -635,8 +627,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     uint64_t u64DiskSize = 1000 * _1M;
     uint32_t u32SectorSize = 512;
     PVDINTERFACE     pVDIfs = NULL;
-    VDINTERFACE      VDIError;
-    VDINTERFACEERROR VDIErrorCallbacks;
+    VDINTERFACEERROR VDIfError;
 
 #define CHECK(str) \
     do \
@@ -654,17 +645,14 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     void *pvBuf = RTMemAlloc(_1M);
 
     /* Create error interface. */
-    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
-    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    VDIErrorCallbacks.pfnError = tstVDError;
-    VDIErrorCallbacks.pfnMessage = tstVDMessage;
+    VDIfError.pfnError = tstVDError;
+    VDIfError.pfnMessage = tstVDMessage;
 
-    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                        NULL, &pVDIfs);
+    rc = VDInterfaceAdd(&VDIfError.Core, "tstVD_Error", VDINTERFACETYPE_ERROR,
+                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(rc);
 
-
-    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
+    rc = VDCreate(pVDIfs, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     RTFILE File;
@@ -714,8 +702,7 @@ static int tstVmdkRename(const char *src, const char *dst)
     int rc;
     PVBOXHDD pVD = NULL;
     PVDINTERFACE     pVDIfs = NULL;
-    VDINTERFACE      VDIError;
-    VDINTERFACEERROR VDIErrorCallbacks;
+    VDINTERFACEERROR VDIfError;
 
 #define CHECK(str) \
     do \
@@ -729,16 +716,14 @@ static int tstVmdkRename(const char *src, const char *dst)
     } while (0)
 
     /* Create error interface. */
-    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
-    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    VDIErrorCallbacks.pfnError = tstVDError;
-    VDIErrorCallbacks.pfnMessage = tstVDMessage;
+    VDIfError.pfnError = tstVDError;
+    VDIfError.pfnMessage = tstVDMessage;
 
-    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                        NULL, &pVDIfs);
+    rc = VDInterfaceAdd(&VDIfError.Core, "tstVD_Error", VDINTERFACETYPE_ERROR,
+                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
+    rc = VDCreate(pVDIfs, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     rc = VDOpen(pVD, "VMDK", src, VD_OPEN_FLAGS_NORMAL, NULL);
@@ -765,8 +750,7 @@ static int tstVmdkCreateRenameOpen(const char *src, const char *dst,
 
     PVBOXHDD pVD = NULL;
     PVDINTERFACE     pVDIfs = NULL;
-    VDINTERFACE      VDIError;
-    VDINTERFACEERROR VDIErrorCallbacks;
+    VDINTERFACEERROR VDIfError;
 
 #define CHECK(str) \
     do \
@@ -780,16 +764,14 @@ static int tstVmdkCreateRenameOpen(const char *src, const char *dst,
     } while (0)
 
     /* Create error interface. */
-    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
-    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    VDIErrorCallbacks.pfnError = tstVDError;
-    VDIErrorCallbacks.pfnMessage = tstVDMessage;
+    VDIfError.pfnError = tstVDError;
+    VDIfError.pfnMessage = tstVDMessage;
 
-    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                        NULL, &pVDIfs);
+    rc = VDInterfaceAdd(&VDIfError.Core, "tstVD_Error", VDINTERFACETYPE_ERROR,
+                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
+    rc = VDCreate(pVDIfs, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     rc = VDOpen(pVD, "VMDK", dst, VD_OPEN_FLAGS_NORMAL, NULL);

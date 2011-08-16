@@ -635,10 +635,8 @@ int handleConvert(HandlerArg *a)
     unsigned uImageFlags = VD_IMAGE_FLAGS_NONE;
     PVDINTERFACE pIfsImageInput = NULL;
     PVDINTERFACE pIfsImageOutput = NULL;
-    VDINTERFACE IfsInputIO;
-    VDINTERFACE IfsOutputIO;
-    VDINTERFACEIO IfsInputIOCb;
-    VDINTERFACEIO IfsOutputIOCb;
+    VDINTERFACEIO IfsInputIO;
+    VDINTERFACEIO IfsOutputIO;
     int rc = VINF_SUCCESS;
 
     /* Parse the command line. */
@@ -717,39 +715,35 @@ int handleConvert(HandlerArg *a)
 
     if (fStdIn)
     {
-        IfsInputIOCb.cbSize                 = sizeof(VDINTERFACEIO);
-        IfsInputIOCb.enmInterface           = VDINTERFACETYPE_IO;
-        IfsInputIOCb.pfnOpen                = convInOpen;
-        IfsInputIOCb.pfnClose               = convInClose;
-        IfsInputIOCb.pfnDelete              = convInDelete;
-        IfsInputIOCb.pfnMove                = convInMove;
-        IfsInputIOCb.pfnGetFreeSpace        = convInGetFreeSpace;
-        IfsInputIOCb.pfnGetModificationTime = convInGetModificationTime;
-        IfsInputIOCb.pfnGetSize             = convInGetSize;
-        IfsInputIOCb.pfnSetSize             = convInSetSize;
-        IfsInputIOCb.pfnReadSync            = convInRead;
-        IfsInputIOCb.pfnWriteSync           = convInWrite;
-        IfsInputIOCb.pfnFlushSync           = convInFlush;
-        VDInterfaceAdd(&IfsInputIO, "stdin", VDINTERFACETYPE_IO,
-                       &IfsInputIOCb, NULL, &pIfsImageInput);
+        IfsInputIO.pfnOpen                = convInOpen;
+        IfsInputIO.pfnClose               = convInClose;
+        IfsInputIO.pfnDelete              = convInDelete;
+        IfsInputIO.pfnMove                = convInMove;
+        IfsInputIO.pfnGetFreeSpace        = convInGetFreeSpace;
+        IfsInputIO.pfnGetModificationTime = convInGetModificationTime;
+        IfsInputIO.pfnGetSize             = convInGetSize;
+        IfsInputIO.pfnSetSize             = convInSetSize;
+        IfsInputIO.pfnReadSync            = convInRead;
+        IfsInputIO.pfnWriteSync           = convInWrite;
+        IfsInputIO.pfnFlushSync           = convInFlush;
+        VDInterfaceAdd(&IfsInputIO.Core, "stdin", VDINTERFACETYPE_IO,
+                       NULL, sizeof(VDINTERFACEIO), &pIfsImageInput);
     }
     if (fStdOut)
     {
-        IfsOutputIOCb.cbSize                    = sizeof(VDINTERFACEIO);
-        IfsOutputIOCb.enmInterface              = VDINTERFACETYPE_IO;
-        IfsOutputIOCb.pfnOpen                   = convOutOpen;
-        IfsOutputIOCb.pfnClose                  = convOutClose;
-        IfsOutputIOCb.pfnDelete                 = convOutDelete;
-        IfsOutputIOCb.pfnMove                   = convOutMove;
-        IfsOutputIOCb.pfnGetFreeSpace           = convOutGetFreeSpace;
-        IfsOutputIOCb.pfnGetModificationTime    = convOutGetModificationTime;
-        IfsOutputIOCb.pfnGetSize                = convOutGetSize;
-        IfsOutputIOCb.pfnSetSize                = convOutSetSize;
-        IfsOutputIOCb.pfnReadSync               = convOutRead;
-        IfsOutputIOCb.pfnWriteSync              = convOutWrite;
-        IfsOutputIOCb.pfnFlushSync              = convOutFlush;
-        VDInterfaceAdd(&IfsOutputIO, "stdout", VDINTERFACETYPE_IO,
-                       &IfsOutputIOCb, NULL, &pIfsImageOutput);
+        IfsOutputIO.pfnOpen                   = convOutOpen;
+        IfsOutputIO.pfnClose                  = convOutClose;
+        IfsOutputIO.pfnDelete                 = convOutDelete;
+        IfsOutputIO.pfnMove                   = convOutMove;
+        IfsOutputIO.pfnGetFreeSpace           = convOutGetFreeSpace;
+        IfsOutputIO.pfnGetModificationTime    = convOutGetModificationTime;
+        IfsOutputIO.pfnGetSize                = convOutGetSize;
+        IfsOutputIO.pfnSetSize                = convOutSetSize;
+        IfsOutputIO.pfnReadSync               = convOutRead;
+        IfsOutputIO.pfnWriteSync              = convOutWrite;
+        IfsOutputIO.pfnFlushSync              = convOutFlush;
+        VDInterfaceAdd(&IfsOutputIO.Core, "stdout", VDINTERFACETYPE_IO,
+                       NULL, sizeof(VDINTERFACEIO), &pIfsImageOutput);
     }
 
     /* check the variant parameter */
@@ -1086,15 +1080,12 @@ int main(int argc, char *argv[])
         showLogo(g_pStdOut);
 
     /* initialize the VD backend with dummy handlers */
-    VDINTERFACE      vdInterfaceError;
-    VDINTERFACEERROR vdInterfaceErrorCallbacks;
-    vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
-    vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    vdInterfaceErrorCallbacks.pfnError     = handleVDError;
-    vdInterfaceErrorCallbacks.pfnMessage   = handleVDMessage;
+    VDINTERFACEERROR vdInterfaceError;
+    vdInterfaceError.pfnError     = handleVDError;
+    vdInterfaceError.pfnMessage   = handleVDMessage;
 
-    rc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
-                        &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
+    rc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
 
     rc = VDInit();
     if (RT_FAILURE(rc))

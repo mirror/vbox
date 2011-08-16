@@ -1675,44 +1675,43 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Callbacks = 0;
-    PVDINTERFACEIO pTarCallbacks = 0;
+    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pTarIo = 0;
     do
     {
-        pSha1Callbacks = Sha1CreateInterface();
-        if (!pSha1Callbacks)
+        pSha1Io = Sha1CreateInterface();
+        if (!pSha1Io)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
-        pTarCallbacks = TarCreateInterface();
-        if (!pTarCallbacks)
+        pTarIo = TarCreateInterface();
+        if (!pTarIo)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
-        VDINTERFACE VDInterfaceIO;
         SHA1STORAGE storage;
         RT_ZERO(storage);
         storage.fCreateDigest = m->fManifest;
-        vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IOTar",
-                             VDINTERFACETYPE_IO, pTarCallbacks,
-                             tar, &storage.pVDImageIfaces);
+        vrc = VDInterfaceAdd(&pTarIo->Core, "Appliance::IOTar",
+                             VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
+                             &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
         {
             rc = E_FAIL;
             break;
         }
-        rc = writeFSImpl(pTask, writeLock, pSha1Callbacks, &storage);
+        rc = writeFSImpl(pTask, writeLock, pSha1Io, &storage);
     }while(0);
 
     RTTarClose(tar);
 
     /* Cleanup */
-    if (pSha1Callbacks)
-        RTMemFree(pSha1Callbacks);
-    if (pTarCallbacks)
-        RTMemFree(pTarCallbacks);
+    if (pSha1Io)
+        RTMemFree(pSha1Io);
+    if (pTarIo)
+        RTMemFree(pTarIo);
 
     /* Delete ova file on error */
     if(FAILED(rc))
@@ -1722,7 +1721,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     return rc;
 }
 
-HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage)
+HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pIfIo, PSHA1STORAGE pStorage)
 {
     LogFlowFuncEnter();
 
@@ -1754,7 +1753,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                                tr("Could not create OVF file '%s'"),
                                strOvfFile.c_str());
             /* Write the ovf file to disk. */
-            vrc = Sha1WriteBuf(strOvfFile.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
+            vrc = Sha1WriteBuf(strOvfFile.c_str(), pvBuf, cbSize, pIfIo, pStorage);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create OVF file '%s' (%Rrc)"),
@@ -1824,7 +1823,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally
 
                 // create a flat copy of the source disk image
-                rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), format, MediumVariant_VmdkStreamOptimized, pCallbacks, pStorage, pProgress2);
+                rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), format, MediumVariant_VmdkStreamOptimized, pIfIo, pStorage, pProgress2);
                 if (FAILED(rc)) throw rc;
 
                 ComPtr<IProgress> pProgress3(pProgress2);
@@ -1871,7 +1870,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             /* Disable digest creation for the manifest file. */
             pStorage->fCreateDigest = false;
             /* Write the manifest file to disk. */
-            vrc = Sha1WriteBuf(strMfFilePath.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
+            vrc = Sha1WriteBuf(strMfFilePath.c_str(), pvBuf, cbSize, pIfIo, pStorage);
             RTMemFree(pvBuf);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
@@ -1896,7 +1895,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
         for (it1 = fileList.begin();
              it1 != fileList.end();
              ++it1)
-             pCallbacks->pfnDelete(pStorage, (*it1).first.c_str());
+             pIfIo->pfnDelete(pStorage, (*it1).first.c_str());
     }
 
     LogFlowFunc(("rc=%Rhrc\n", rc));

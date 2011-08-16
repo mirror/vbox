@@ -253,12 +253,12 @@ public:
     HRESULT exportFile(const char *aFilename,
                        const ComObjPtr<MediumFormat> &aFormat,
                        MediumVariant_T aVariant,
-                       void *aVDImageIOCallbacks, void *aVDImageIOUser,
+                       PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
                        const ComObjPtr<Progress> &aProgress);
     HRESULT importFile(const char *aFilename,
                        const ComObjPtr<MediumFormat> &aFormat,
                        MediumVariant_T aVariant,
-                       void *aVDImageIOCallbacks, void *aVDImageIOUser,
+                       PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
                        const ComObjPtr<Medium> &aParent,
                        const ComObjPtr<Progress> &aProgress);
 

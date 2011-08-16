@@ -84,12 +84,12 @@ typedef struct VBOXIMAGE
     struct VBOXIMAGE    *pNext;
     /** Pointer to list of VD interfaces. Per-image. */
     PVDINTERFACE       pVDIfsImage;
-    /** Common structure for the configuration information interface. */
-    VDINTERFACE        VDIConfig;
-    /** Common structure for the supported TCP network stack interface. */
-    VDINTERFACE        VDITcpNet;
-    /** Common structure for the supported I/O interface. */
-    VDINTERFACE        VDIIO;
+    /** Configuration information interface. */
+    VDINTERFACECONFIG  VDIfConfig;
+    /** TCP network stack interface. */
+    VDINTERFACETCPNET  VDIfTcpNet;
+    /** I/O interface. */
+    VDINTERFACEIO      VDIfIo;
 } VBOXIMAGE, *PVBOXIMAGE;
 
 /**
@@ -124,37 +124,26 @@ typedef struct DRVVDSTORAGEBACKEND
 typedef struct VBOXDISK
 {
     /** The VBox disk container. */
-    PVBOXHDD           pDisk;
+    PVBOXHDD                 pDisk;
     /** The media interface. */
-    PDMIMEDIA          IMedia;
+    PDMIMEDIA                IMedia;
     /** Media port. */
-    PPDMIMEDIAPORT     pDrvMediaPort;
+    PPDMIMEDIAPORT           pDrvMediaPort;
     /** Pointer to the driver instance. */
-    PPDMDRVINS         pDrvIns;
+    PPDMDRVINS               pDrvIns;
     /** Flag whether suspend has changed image open mode to read only. */
-    bool               fTempReadOnly;
+    bool                     fTempReadOnly;
     /** Flag whether to use the runtime (true) or startup error facility. */
-    bool               fErrorUseRuntime;
+    bool                     fErrorUseRuntime;
     /** Pointer to list of VD interfaces. Per-disk. */
-    PVDINTERFACE       pVDIfsDisk;
-    /** Common structure for the supported error interface. */
-    VDINTERFACE        VDIError;
-    /** Callback table for error interface. */
-    VDINTERFACEERROR   VDIErrorCallbacks;
-    /** Common structure for the supported thread synchronization interface. */
-    VDINTERFACE        VDIThreadSync;
-    /** Callback table for thread synchronization interface. */
-    VDINTERFACETHREADSYNC VDIThreadSyncCallbacks;
-
-    /** Callback table for the configuration information interface. */
-    VDINTERFACECONFIG  VDIConfigCallbacks;
-    /** Callback table for TCP network stack interface. */
-    VDINTERFACETCPNET  VDITcpNetCallbacks;
-    /** Callback table for I/O interface. */
-    VDINTERFACEIO      VDIIOCallbacks;
+    PVDINTERFACE             pVDIfsDisk;
+    /** Error interface. */
+    VDINTERFACEERROR         VDIfError;
+    /** Thread synchronization interface. */
+    VDINTERFACETHREADSYNC    VDIfThreadSync;
 
     /** Flag whether opened disk supports async I/O operations. */
-    bool               fAsyncIOSupported;
+    bool                     fAsyncIOSupported;
     /** The async media interface. */
     PDMIMEDIAASYNC           IMediaAsync;
     /** The async media port interface above. */
@@ -162,44 +151,44 @@ typedef struct VBOXDISK
     /** Pointer to the list of data we need to keep per image. */
     PVBOXIMAGE               pImages;
     /** Flag whether the media should allow concurrent open for writing. */
-    bool                fShareable;
+    bool                     fShareable;
     /** Flag whether a merge operation has been set up. */
-    bool                fMergePending;
+    bool                     fMergePending;
     /** Synchronization to prevent destruction before merge finishes. */
-    RTSEMFASTMUTEX      MergeCompleteMutex;
+    RTSEMFASTMUTEX           MergeCompleteMutex;
     /** Synchronization between merge and other image accesses. */
-    RTSEMRW             MergeLock;
+    RTSEMRW                  MergeLock;
     /** Source image index for merging. */
-    unsigned            uMergeSource;
+    unsigned                 uMergeSource;
     /** Target image index for merging. */
-    unsigned            uMergeTarget;
+    unsigned                 uMergeTarget;
 
     /** Flag whether boot acceleration is enabled. */
-    bool                fBootAccelEnabled;
+    bool                     fBootAccelEnabled;
     /** Flag whether boot acceleration is currently active. */
-    bool                fBootAccelActive;
+    bool                     fBootAccelActive;
     /** Size of the disk, used for read truncation. */
-    size_t              cbDisk;
+    size_t                   cbDisk;
     /** Size of the configured buffer. */
-    size_t              cbBootAccelBuffer;
+    size_t                   cbBootAccelBuffer;
     /** Start offset for which the buffer holds data. */
-    uint64_t            offDisk;
+    uint64_t                 offDisk;
     /** Number of valid bytes in the buffer. */
-    size_t              cbDataValid;
+    size_t                   cbDataValid;
     /** The disk buffer. */
-    uint8_t            *pbData;
+    uint8_t                 *pbData;
     /** Bandwidth group the disk is assigned to. */
-    char               *pszBwGroup;
+    char                    *pszBwGroup;
     /** Flag whether async I/O using the host cache is enabled. */
-    bool                fAsyncIoWithHostCache;
+    bool                     fAsyncIoWithHostCache;
 
     /** I/O interface for a cache image. */
-    VDINTERFACE         VDIIOCache;
+    VDINTERFACEIO            VDIfIoCache;
     /** Interface list for the cache image. */
-    PVDINTERFACE        pVDIfsCache;
+    PVDINTERFACE             pVDIfsCache;
 
     /** The block cache handle if configured. */
-    PPDMBLKCACHE        pBlkCache;
+    PPDMBLKCACHE             pBlkCache;
 } VBOXDISK, *PVBOXDISK;
 
 
@@ -1555,13 +1544,10 @@ static DECLCALLBACK(int) drvvdMerge(PPDMIMEDIA pInterface,
          * PFNVDPROGRESS, so there's no need for a conversion function. */
         /** @todo maybe introduce a conversion which limits update frequency. */
         PVDINTERFACE pVDIfsOperation = NULL;
-        VDINTERFACE VDIProgress;
-        VDINTERFACEPROGRESS VDIProgressCallbacks;
-        VDIProgressCallbacks.cbSize       = sizeof(VDINTERFACEPROGRESS);
-        VDIProgressCallbacks.enmInterface = VDINTERFACETYPE_PROGRESS;
-        VDIProgressCallbacks.pfnProgress  = pfnProgress;
-        rc2 = VDInterfaceAdd(&VDIProgress, "DrvVD_VDIProgress", VDINTERFACETYPE_PROGRESS,
-                             &VDIProgressCallbacks, pvUser, &pVDIfsOperation);
+        VDINTERFACEPROGRESS VDIfProgress;
+        VDIfProgress.pfnProgress  = pfnProgress;
+        rc2 = VDInterfaceAdd(&VDIfProgress.Core, "DrvVD_VDIProgress", VDINTERFACETYPE_PROGRESS,
+                             pvUser, sizeof(VDINTERFACEPROGRESS), &pVDIfsOperation);
         AssertRC(rc2);
         pThis->fMergePending = false;
         rc = VDMerge(pThis->pDisk, pThis->uMergeSource,
@@ -2081,22 +2067,11 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     /* Initialize supported VD interfaces. */
     pThis->pVDIfsDisk = NULL;
 
-    pThis->VDIErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
-    pThis->VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    pThis->VDIErrorCallbacks.pfnError     = drvvdErrorCallback;
-    pThis->VDIErrorCallbacks.pfnMessage   = NULL;
-
-    rc = VDInterfaceAdd(&pThis->VDIError, "DrvVD_VDIError", VDINTERFACETYPE_ERROR,
-                        &pThis->VDIErrorCallbacks, pDrvIns, &pThis->pVDIfsDisk);
+    pThis->VDIfError.pfnError     = drvvdErrorCallback;
+    pThis->VDIfError.pfnMessage   = NULL;
+    rc = VDInterfaceAdd(&pThis->VDIfError.Core, "DrvVD_VDIError", VDINTERFACETYPE_ERROR,
+                        pDrvIns, sizeof(VDINTERFACEERROR), &pThis->pVDIfsDisk);
     AssertRC(rc);
-
-    /* This is just prepared here, the actual interface is per-image, so it's
-     * added later. No need to have separate callback tables. */
-    pThis->VDIConfigCallbacks.cbSize                = sizeof(VDINTERFACECONFIG);
-    pThis->VDIConfigCallbacks.enmInterface          = VDINTERFACETYPE_CONFIG;
-    pThis->VDIConfigCallbacks.pfnAreKeysValid       = drvvdCfgAreKeysValid;
-    pThis->VDIConfigCallbacks.pfnQuerySize          = drvvdCfgQuerySize;
-    pThis->VDIConfigCallbacks.pfnQuery              = drvvdCfgQuery;
 
     /* List of images is empty now. */
     pThis->pImages = NULL;
@@ -2312,77 +2287,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      */
     if (RT_SUCCESS(rc))
     {
-        /* Construct TCPNET callback table depending on the config. This is
-         * done unconditionally, as uninterested backends will ignore it. */
-        if (fHostIP)
-        {
-            pThis->VDITcpNetCallbacks.cbSize = sizeof(VDINTERFACETCPNET);
-            pThis->VDITcpNetCallbacks.enmInterface = VDINTERFACETYPE_TCPNET;
-            pThis->VDITcpNetCallbacks.pfnSocketCreate = drvvdTcpSocketCreate;
-            pThis->VDITcpNetCallbacks.pfnSocketDestroy = drvvdTcpSocketDestroy;
-            pThis->VDITcpNetCallbacks.pfnClientConnect = drvvdTcpClientConnect;
-            pThis->VDITcpNetCallbacks.pfnIsClientConnected = drvvdTcpIsClientConnected;
-            pThis->VDITcpNetCallbacks.pfnClientClose = drvvdTcpClientClose;
-            pThis->VDITcpNetCallbacks.pfnSelectOne = drvvdTcpSelectOne;
-            pThis->VDITcpNetCallbacks.pfnRead = drvvdTcpRead;
-            pThis->VDITcpNetCallbacks.pfnWrite = drvvdTcpWrite;
-            pThis->VDITcpNetCallbacks.pfnSgWrite = drvvdTcpSgWrite;
-            pThis->VDITcpNetCallbacks.pfnReadNB = drvvdTcpReadNB;
-            pThis->VDITcpNetCallbacks.pfnWriteNB = drvvdTcpWriteNB;
-            pThis->VDITcpNetCallbacks.pfnSgWriteNB = drvvdTcpSgWriteNB;
-            pThis->VDITcpNetCallbacks.pfnFlush = drvvdTcpFlush;
-            pThis->VDITcpNetCallbacks.pfnSetSendCoalescing = drvvdTcpSetSendCoalescing;
-            pThis->VDITcpNetCallbacks.pfnGetLocalAddress = drvvdTcpGetLocalAddress;
-            pThis->VDITcpNetCallbacks.pfnGetPeerAddress = drvvdTcpGetPeerAddress;
-
-            /*
-             * There is a 15ms delay between receiving the data and marking the socket
-             * as readable on Windows XP which hurts async I/O performance of
-             * TCP backends badly. Provide a different select method without
-             * using poll on XP.
-             * This is only used on XP because it is not as efficient as the one using poll
-             * and all other Windows versions are working fine.
-             */
-            char szOS[64];
-            memset(szOS, 0, sizeof(szOS));
-            rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, &szOS[0], sizeof(szOS));
-
-            if (RT_SUCCESS(rc) && !strncmp(szOS, "Windows XP", 10))
-            {
-                LogRel(("VD: Detected Windows XP, disabled poll based waiting for TCP\n"));
-                pThis->VDITcpNetCallbacks.pfnSelectOneEx = drvvdTcpSelectOneExNoPoll;
-            }
-            else
-                pThis->VDITcpNetCallbacks.pfnSelectOneEx = drvvdTcpSelectOneExPoll;
-
-            pThis->VDITcpNetCallbacks.pfnPoke = drvvdTcpPoke;
-        }
-        else
-        {
-#ifndef VBOX_WITH_INIP
-            rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
-                                     RT_SRC_POS, N_("DrvVD: Configuration error: TCP over Internal Networking not compiled in"));
-#else /* VBOX_WITH_INIP */
-            pThis->VDITcpNetCallbacks.cbSize = sizeof(VDINTERFACETCPNET);
-            pThis->VDITcpNetCallbacks.enmInterface = VDINTERFACETYPE_TCPNET;
-            pThis->VDITcpNetCallbacks.pfnSocketCreate = drvvdINIPSocketCreate;
-            pThis->VDITcpNetCallbacks.pfnSocketDestroy = drvvdINIPSocketDestroy;
-            pThis->VDITcpNetCallbacks.pfnClientConnect = drvvdINIPClientConnect;
-            pThis->VDITcpNetCallbacks.pfnClientClose = drvvdINIPClientClose;
-            pThis->VDITcpNetCallbacks.pfnIsClientConnected = drvvdINIPIsClientConnected;
-            pThis->VDITcpNetCallbacks.pfnSelectOne = drvvdINIPSelectOne;
-            pThis->VDITcpNetCallbacks.pfnRead = drvvdINIPRead;
-            pThis->VDITcpNetCallbacks.pfnWrite = drvvdINIPWrite;
-            pThis->VDITcpNetCallbacks.pfnSgWrite = drvvdINIPSgWrite;
-            pThis->VDITcpNetCallbacks.pfnFlush = drvvdINIPFlush;
-            pThis->VDITcpNetCallbacks.pfnSetSendCoalescing = drvvdINIPSetSendCoalescing;
-            pThis->VDITcpNetCallbacks.pfnGetLocalAddress = drvvdINIPGetLocalAddress;
-            pThis->VDITcpNetCallbacks.pfnGetPeerAddress = drvvdINIPGetPeerAddress;
-            pThis->VDITcpNetCallbacks.pfnSelectOneEx = drvvdINIPSelectOneEx;
-            pThis->VDITcpNetCallbacks.pfnPoke = drvvdINIPPoke;
-#endif /* VBOX_WITH_INIP */
-        }
-
         /*
          * The image has a bandwidth group but the host cache is enabled.
          * Use the async I/O framework but tell it to enable the host cache.
@@ -2399,27 +2303,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         if (pThis->fMergePending)
             fUseNewIo = false;
 
-        if (RT_SUCCESS(rc) && fUseNewIo)
-        {
-#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-            pThis->VDIIOCallbacks.cbSize        = sizeof(VDINTERFACEIO);
-            pThis->VDIIOCallbacks.enmInterface  = VDINTERFACETYPE_IO;
-            pThis->VDIIOCallbacks.pfnOpen       = drvvdAsyncIOOpen;
-            pThis->VDIIOCallbacks.pfnClose      = drvvdAsyncIOClose;
-            pThis->VDIIOCallbacks.pfnGetSize    = drvvdAsyncIOGetSize;
-            pThis->VDIIOCallbacks.pfnSetSize    = drvvdAsyncIOSetSize;
-            pThis->VDIIOCallbacks.pfnReadSync   = drvvdAsyncIOReadSync;
-            pThis->VDIIOCallbacks.pfnWriteSync  = drvvdAsyncIOWriteSync;
-            pThis->VDIIOCallbacks.pfnFlushSync  = drvvdAsyncIOFlushSync;
-            pThis->VDIIOCallbacks.pfnReadAsync  = drvvdAsyncIOReadAsync;
-            pThis->VDIIOCallbacks.pfnWriteAsync = drvvdAsyncIOWriteAsync;
-            pThis->VDIIOCallbacks.pfnFlushAsync = drvvdAsyncIOFlushAsync;
-#else /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
-            rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
-                                     RT_SRC_POS, N_("DrvVD: Configuration error: Async Completion Framework not compiled in"));
-#endif /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
-        }
-
         if (RT_SUCCESS(rc) && pThis->fMergePending)
         {
             rc = RTSemFastMutexCreate(&pThis->MergeCompleteMutex);
@@ -2427,15 +2310,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                 rc = RTSemRWCreate(&pThis->MergeLock);
             if (RT_SUCCESS(rc))
             {
-                pThis->VDIThreadSyncCallbacks.cbSize        = sizeof(VDINTERFACETHREADSYNC);
-                pThis->VDIThreadSyncCallbacks.enmInterface  = VDINTERFACETYPE_THREADSYNC;
-                pThis->VDIThreadSyncCallbacks.pfnStartRead  = drvvdThreadStartRead;
-                pThis->VDIThreadSyncCallbacks.pfnFinishRead = drvvdThreadFinishRead;
-                pThis->VDIThreadSyncCallbacks.pfnStartWrite = drvvdThreadStartWrite;
-                pThis->VDIThreadSyncCallbacks.pfnFinishWrite = drvvdThreadFinishWrite;
+                pThis->VDIfThreadSync.pfnStartRead   = drvvdThreadStartRead;
+                pThis->VDIfThreadSync.pfnFinishRead  = drvvdThreadFinishRead;
+                pThis->VDIfThreadSync.pfnStartWrite  = drvvdThreadStartWrite;
+                pThis->VDIfThreadSync.pfnFinishWrite = drvvdThreadFinishWrite;
 
-                rc = VDInterfaceAdd(&pThis->VDIThreadSync, "DrvVD_ThreadSync", VDINTERFACETYPE_THREADSYNC,
-                                    &pThis->VDIThreadSyncCallbacks, pThis, &pThis->pVDIfsDisk);
+                rc = VDInterfaceAdd(&pThis->VDIfThreadSync.Core, "DrvVD_ThreadSync", VDINTERFACETYPE_THREADSYNC,
+                                    pThis, sizeof(VDINTERFACETHREADSYNC), &pThis->pVDIfsDisk);
             }
             else
             {
@@ -2525,17 +2406,86 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         }
 
         PCFGMNODE pCfgVDConfig = CFGMR3GetChild(pCurNode, "VDConfig");
-        rc = VDInterfaceAdd(&pImage->VDIConfig, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
-                            &pThis->VDIConfigCallbacks, pCfgVDConfig, &pImage->pVDIfsImage);
+        pImage->VDIfConfig.pfnAreKeysValid = drvvdCfgAreKeysValid;
+        pImage->VDIfConfig.pfnQuerySize    = drvvdCfgQuerySize;
+        pImage->VDIfConfig.pfnQuery        = drvvdCfgQuery;
+        rc = VDInterfaceAdd(&pImage->VDIfConfig.Core, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
+                            pCfgVDConfig, sizeof(VDINTERFACECONFIG), &pImage->pVDIfsImage);
         AssertRC(rc);
 
         /* Unconditionally insert the TCPNET interface, don't bother to check
          * if an image really needs it. Will be ignored. Since the TCPNET
          * interface is per image we could make this more flexible in the
          * future if we want to. */
-        rc = VDInterfaceAdd(&pImage->VDITcpNet, "DrvVD_TCPNET",
-                            VDINTERFACETYPE_TCPNET, &pThis->VDITcpNetCallbacks,
-                            NULL, &pImage->pVDIfsImage);
+        /* Construct TCPNET callback table depending on the config. This is
+         * done unconditionally, as uninterested backends will ignore it. */
+        if (fHostIP)
+        {
+            pImage->VDIfTcpNet.pfnSocketCreate = drvvdTcpSocketCreate;
+            pImage->VDIfTcpNet.pfnSocketDestroy = drvvdTcpSocketDestroy;
+            pImage->VDIfTcpNet.pfnClientConnect = drvvdTcpClientConnect;
+            pImage->VDIfTcpNet.pfnIsClientConnected = drvvdTcpIsClientConnected;
+            pImage->VDIfTcpNet.pfnClientClose = drvvdTcpClientClose;
+            pImage->VDIfTcpNet.pfnSelectOne = drvvdTcpSelectOne;
+            pImage->VDIfTcpNet.pfnRead = drvvdTcpRead;
+            pImage->VDIfTcpNet.pfnWrite = drvvdTcpWrite;
+            pImage->VDIfTcpNet.pfnSgWrite = drvvdTcpSgWrite;
+            pImage->VDIfTcpNet.pfnReadNB = drvvdTcpReadNB;
+            pImage->VDIfTcpNet.pfnWriteNB = drvvdTcpWriteNB;
+            pImage->VDIfTcpNet.pfnSgWriteNB = drvvdTcpSgWriteNB;
+            pImage->VDIfTcpNet.pfnFlush = drvvdTcpFlush;
+            pImage->VDIfTcpNet.pfnSetSendCoalescing = drvvdTcpSetSendCoalescing;
+            pImage->VDIfTcpNet.pfnGetLocalAddress = drvvdTcpGetLocalAddress;
+            pImage->VDIfTcpNet.pfnGetPeerAddress = drvvdTcpGetPeerAddress;
+
+            /*
+             * There is a 15ms delay between receiving the data and marking the socket
+             * as readable on Windows XP which hurts async I/O performance of
+             * TCP backends badly. Provide a different select method without
+             * using poll on XP.
+             * This is only used on XP because it is not as efficient as the one using poll
+             * and all other Windows versions are working fine.
+             */
+            char szOS[64];
+            memset(szOS, 0, sizeof(szOS));
+            rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, &szOS[0], sizeof(szOS));
+
+            if (RT_SUCCESS(rc) && !strncmp(szOS, "Windows XP", 10))
+            {
+                LogRel(("VD: Detected Windows XP, disabled poll based waiting for TCP\n"));
+                pImage->VDIfTcpNet.pfnSelectOneEx = drvvdTcpSelectOneExNoPoll;
+            }
+            else
+                pImage->VDIfTcpNet.pfnSelectOneEx = drvvdTcpSelectOneExPoll;
+
+            pImage->VDIfTcpNet.pfnPoke = drvvdTcpPoke;
+        }
+        else
+        {
+#ifndef VBOX_WITH_INIP
+            rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
+                                     RT_SRC_POS, N_("DrvVD: Configuration error: TCP over Internal Networking not compiled in"));
+#else /* VBOX_WITH_INIP */
+            pImage->VDIfTcpNet.pfnSocketCreate = drvvdINIPSocketCreate;
+            pImage->VDIfTcpNet.pfnSocketDestroy = drvvdINIPSocketDestroy;
+            pImage->VDIfTcpNet.pfnClientConnect = drvvdINIPClientConnect;
+            pImage->VDIfTcpNet.pfnClientClose = drvvdINIPClientClose;
+            pImage->VDIfTcpNet.pfnIsClientConnected = drvvdINIPIsClientConnected;
+            pImage->VDIfTcpNet.pfnSelectOne = drvvdINIPSelectOne;
+            pImage->VDIfTcpNet.pfnRead = drvvdINIPRead;
+            pImage->VDIfTcpNet.pfnWrite = drvvdINIPWrite;
+            pImage->VDIfTcpNet.pfnSgWrite = drvvdINIPSgWrite;
+            pImage->VDIfTcpNet.pfnFlush = drvvdINIPFlush;
+            pImage->VDIfTcpNet.pfnSetSendCoalescing = drvvdINIPSetSendCoalescing;
+            pImage->VDIfTcpNet.pfnGetLocalAddress = drvvdINIPGetLocalAddress;
+            pImage->VDIfTcpNet.pfnGetPeerAddress = drvvdINIPGetPeerAddress;
+            pImage->VDIfTcpNet.pfnSelectOneEx = drvvdINIPSelectOneEx;
+            pImage->VDIfTcpNet.pfnPoke = drvvdINIPPoke;
+#endif /* VBOX_WITH_INIP */
+        }
+        rc = VDInterfaceAdd(&pImage->VDIfTcpNet.Core, "DrvVD_TCPNET",
+                            VDINTERFACETYPE_TCPNET, NULL,
+                            sizeof(VDINTERFACETCPNET), &pImage->pVDIfsImage);
         AssertRC(rc);
 
         /* Insert the custom I/O interface only if we're told to use new IO.
@@ -2543,9 +2493,24 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
          * flexible in the future if we want to. */
         if (fUseNewIo)
         {
-            rc = VDInterfaceAdd(&pImage->VDIIO, "DrvVD_IO", VDINTERFACETYPE_IO,
-                                &pThis->VDIIOCallbacks, pThis,
-                                &pImage->pVDIfsImage);
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+            pImage->VDIfIo.pfnOpen       = drvvdAsyncIOOpen;
+            pImage->VDIfIo.pfnClose      = drvvdAsyncIOClose;
+            pImage->VDIfIo.pfnGetSize    = drvvdAsyncIOGetSize;
+            pImage->VDIfIo.pfnSetSize    = drvvdAsyncIOSetSize;
+            pImage->VDIfIo.pfnReadSync   = drvvdAsyncIOReadSync;
+            pImage->VDIfIo.pfnWriteSync  = drvvdAsyncIOWriteSync;
+            pImage->VDIfIo.pfnFlushSync  = drvvdAsyncIOFlushSync;
+            pImage->VDIfIo.pfnReadAsync  = drvvdAsyncIOReadAsync;
+            pImage->VDIfIo.pfnWriteAsync = drvvdAsyncIOWriteAsync;
+            pImage->VDIfIo.pfnFlushAsync = drvvdAsyncIOFlushAsync;
+#else /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
+            rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
+                                     RT_SRC_POS, N_("DrvVD: Configuration error: Async Completion Framework not compiled in"));
+#endif /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
+            if (RT_SUCCESS(rc))
+                rc = VDInterfaceAdd(&pImage->VDIfIo.Core, "DrvVD_IO", VDINTERFACETYPE_IO,
+                                    pThis, sizeof(VDINTERFACEIO), &pImage->pVDIfsImage);
             AssertRC(rc);
         }
 
@@ -2619,9 +2584,24 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
          * flexible in the future if we want to. */
         if (fUseNewIo)
         {
-            rc = VDInterfaceAdd(&pThis->VDIIOCache, "DrvVD_IO", VDINTERFACETYPE_IO,
-                                &pThis->VDIIOCallbacks, pThis,
-                                &pThis->pVDIfsCache);
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+            pThis->VDIfIoCache.pfnOpen       = drvvdAsyncIOOpen;
+            pThis->VDIfIoCache.pfnClose      = drvvdAsyncIOClose;
+            pThis->VDIfIoCache.pfnGetSize    = drvvdAsyncIOGetSize;
+            pThis->VDIfIoCache.pfnSetSize    = drvvdAsyncIOSetSize;
+            pThis->VDIfIoCache.pfnReadSync   = drvvdAsyncIOReadSync;
+            pThis->VDIfIoCache.pfnWriteSync  = drvvdAsyncIOWriteSync;
+            pThis->VDIfIoCache.pfnFlushSync  = drvvdAsyncIOFlushSync;
+            pThis->VDIfIoCache.pfnReadAsync  = drvvdAsyncIOReadAsync;
+            pThis->VDIfIoCache.pfnWriteAsync = drvvdAsyncIOWriteAsync;
+            pThis->VDIfIoCache.pfnFlushAsync = drvvdAsyncIOFlushAsync;
+#else /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
+            rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
+                                     RT_SRC_POS, N_("DrvVD: Configuration error: Async Completion Framework not compiled in"));
+#endif /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
+            if (RT_SUCCESS(rc))
+                rc = VDInterfaceAdd(&pThis->VDIfIoCache.Core, "DrvVD_IO", VDINTERFACETYPE_IO,
+                                    pThis, sizeof(VDINTERFACEIO), &pThis->pVDIfsCache);
             AssertRC(rc);
         }
 

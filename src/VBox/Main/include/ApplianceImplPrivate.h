@@ -233,8 +233,8 @@ typedef struct SHA1STORAGE
 PVDINTERFACEIO Sha1CreateInterface();
 PVDINTERFACEIO FileCreateInterface();
 PVDINTERFACEIO TarCreateInterface();
-int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, void *pvUser);
-int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pCallbacks, void *pvUser);
+int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pIfIo, void *pvUser);
+int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser);
 
 #endif // ____H_APPLIANCEIMPLPRIVATE
 

@@ -21,18 +21,26 @@ iorngcreate size=10M mode=manual seed=1234567890
 # Create source disk and fill data
 print msg=Creating_Source_Disk
     createdisk name=source verify=no
-    create disk=source mode=base name=source_base.vdi type=dynamic backend=VDI size=512M
+    create disk=source mode=base name=source_base.vdi type=dynamic backend=VDI size=1G
     io disk=source async=no mode=rnd blocksize=64k off=0-512M size=256M writes=100
 
 # Create 1st snapshot
 print msg=Creating_First_Diff
-    create disk=source mode=diff name=source_diff1.vdi type=dynamic backend=VDI size=512M
-    io disk=source async=no mode=rnd blocksize=64k off=0M-512M size=256M writes=50
+    create disk=source mode=diff name=source_diff1.vdi type=dynamic backend=VDI size=1G
+    io disk=source async=no mode=rnd blocksize=64k off=512M-1G size=256M writes=50
 
 # Create 2nd snapshot
 print msg=Creating_Second_Diff
-    create disk=source mode=diff name=source_diff2.vdi type=dynamic backend=VDI size=512M
-    io disk=source async=no mode=rnd blocksize=64k off=0M-512M size=128M writes=25
+    create disk=source mode=diff name=source_diff2.vdi type=dynamic backend=VDI size=1G
+    io disk=source async=no mode=rnd blocksize=1M off=0M-1G size=45M writes=100
+
+print msg=Creating_Third_Diff
+    create disk=source mode=diff name=source_diff3.vdi type=dynamic backend=VDI size=1G
+    io disk=source async=no mode=rnd blocksize=1M off=0M-1G size=45M writes=100
+
+print msg=Creating_Fourth_Diff
+    create disk=source mode=diff name=source_diff4.vdi type=dynamic backend=VDI size=1G
+    io disk=source async=no mode=rnd blocksize=1M off=0M-1G size=45M writes=100
 
 # Create destination disk
 print msg=Creating_Destination_Disk
@@ -47,9 +55,23 @@ print msg=Copying_First_Diff_optimized
 
 print msg=Copying_Second_Diff_optimized
     copy diskfrom=source diskto=dest imagefrom=2 backend=VDI filename=dest_diff2.vdi fromsame=1 tosame=1
+    copy diskfrom=source diskto=dest imagefrom=3 backend=VDI filename=dest_diff3.vdi fromsame=2 tosame=2
+    copy diskfrom=source diskto=dest imagefrom=4 backend=VDI filename=dest_diff4.vdi fromsame=3 tosame=3
 
 print msg=Comparing_Disks
     comparedisks disk1=source disk2=dest
+
+printfilesize disk=source image=0
+printfilesize disk=source image=1
+printfilesize disk=source image=2
+printfilesize disk=source image=3
+printfilesize disk=source image=4
+
+printfilesize disk=dest image=0
+printfilesize disk=dest image=1
+printfilesize disk=dest image=2
+printfilesize disk=dest image=3
+printfilesize disk=dest image=4
 
 # Cleanup
 print msg=Cleaning_up
@@ -57,17 +79,9 @@ print msg=Cleaning_up
     close disk=dest mode=single delete=yes
     close disk=dest mode=single delete=yes
 
-# Test unoptimized copying now.
-print msg=Copy_Source_into_base_image
-    copy diskfrom=source diskto=dest imagefrom=2 backend=VDI filename=dest_base.vdi
-print msg=Comparing_Disks
-    comparedisks disk1=source disk2=dest
-
-print msg=Final_Cleanup
     close disk=source mode=single delete=yes
     close disk=source mode=single delete=yes
     close disk=source mode=single delete=yes
-    close disk=dest mode=single delete=yes
     destroydisk name=source
     destroydisk name=dest
 

@@ -114,15 +114,11 @@ typedef struct VDTESTGLOB
     /** Memory I/O backend. */
     PVDIOBACKENDMEM  pIoBackend;
     /** Error interface. */
-    VDINTERFACE      VDIError;
-    /** Error interface callbacks. */
-    VDINTERFACEERROR VDIErrorCallbacks;
+    VDINTERFACEERROR VDIfError;
     /** Pointer to the per disk interface list. */
     PVDINTERFACE     pInterfacesDisk;
     /** I/O interface. */
-    VDINTERFACE      VDIIo;
-    /** I/O interface callbacks. */
-    VDINTERFACEIO    VDIIoCallbacks;
+    VDINTERFACEIO    VDIfIo;
     /** Pointer to the per image interface list. */
     PVDINTERFACE     pInterfacesImages;
     /** I/O RNG handle. */
@@ -3042,34 +3038,30 @@ static void tstVDIoScriptRun(const char *pcszFilename)
     if (RT_SUCCESS(rc))
     {
         /* Init global test data. */
-        GlobTest.VDIErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
-        GlobTest.VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-        GlobTest.VDIErrorCallbacks.pfnError     = tstVDError;
-        GlobTest.VDIErrorCallbacks.pfnMessage   = tstVDMessage;
+        GlobTest.VDIfError.pfnError     = tstVDError;
+        GlobTest.VDIfError.pfnMessage   = tstVDMessage;
 
-        rc = VDInterfaceAdd(&GlobTest.VDIError, "tstVDIo_VDIError", VDINTERFACETYPE_ERROR,
-                            &GlobTest.VDIErrorCallbacks, NULL, &GlobTest.pInterfacesDisk);
+        rc = VDInterfaceAdd(&GlobTest.VDIfError.Core, "tstVDIo_VDIError", VDINTERFACETYPE_ERROR,
+                            NULL, sizeof(VDINTERFACEERROR), &GlobTest.pInterfacesDisk);
         AssertRC(rc);
 
-        GlobTest.VDIIoCallbacks.cbSize                 = sizeof(VDINTERFACEIO);
-        GlobTest.VDIIoCallbacks.enmInterface           = VDINTERFACETYPE_IO;
-        GlobTest.VDIIoCallbacks.pfnOpen                = tstVDIoFileOpen;
-        GlobTest.VDIIoCallbacks.pfnClose               = tstVDIoFileClose;
-        GlobTest.VDIIoCallbacks.pfnDelete              = tstVDIoFileDelete;
-        GlobTest.VDIIoCallbacks.pfnMove                = tstVDIoFileMove;
-        GlobTest.VDIIoCallbacks.pfnGetFreeSpace        = tstVDIoFileGetFreeSpace;
-        GlobTest.VDIIoCallbacks.pfnGetModificationTime = tstVDIoFileGetModificationTime;
-        GlobTest.VDIIoCallbacks.pfnGetSize             = tstVDIoFileGetSize;
-        GlobTest.VDIIoCallbacks.pfnSetSize             = tstVDIoFileSetSize;
-        GlobTest.VDIIoCallbacks.pfnWriteSync           = tstVDIoFileWriteSync;
-        GlobTest.VDIIoCallbacks.pfnReadSync            = tstVDIoFileReadSync;
-        GlobTest.VDIIoCallbacks.pfnFlushSync           = tstVDIoFileFlushSync;
-        GlobTest.VDIIoCallbacks.pfnReadAsync           = tstVDIoFileReadAsync;
-        GlobTest.VDIIoCallbacks.pfnWriteAsync          = tstVDIoFileWriteAsync;
-        GlobTest.VDIIoCallbacks.pfnFlushAsync          = tstVDIoFileFlushAsync;
+        GlobTest.VDIfIo.pfnOpen                = tstVDIoFileOpen;
+        GlobTest.VDIfIo.pfnClose               = tstVDIoFileClose;
+        GlobTest.VDIfIo.pfnDelete              = tstVDIoFileDelete;
+        GlobTest.VDIfIo.pfnMove                = tstVDIoFileMove;
+        GlobTest.VDIfIo.pfnGetFreeSpace        = tstVDIoFileGetFreeSpace;
+        GlobTest.VDIfIo.pfnGetModificationTime = tstVDIoFileGetModificationTime;
+        GlobTest.VDIfIo.pfnGetSize             = tstVDIoFileGetSize;
+        GlobTest.VDIfIo.pfnSetSize             = tstVDIoFileSetSize;
+        GlobTest.VDIfIo.pfnWriteSync           = tstVDIoFileWriteSync;
+        GlobTest.VDIfIo.pfnReadSync            = tstVDIoFileReadSync;
+        GlobTest.VDIfIo.pfnFlushSync           = tstVDIoFileFlushSync;
+        GlobTest.VDIfIo.pfnReadAsync           = tstVDIoFileReadAsync;
+        GlobTest.VDIfIo.pfnWriteAsync          = tstVDIoFileWriteAsync;
+        GlobTest.VDIfIo.pfnFlushAsync          = tstVDIoFileFlushAsync;
 
-        rc = VDInterfaceAdd(&GlobTest.VDIIo, "tstVDIo_VDIIo", VDINTERFACETYPE_IO,
-                            &GlobTest.VDIIoCallbacks, &GlobTest, &GlobTest.pInterfacesImages);
+        rc = VDInterfaceAdd(&GlobTest.VDIfIo.Core, "tstVDIo_VDIIo", VDINTERFACETYPE_IO,
+                            &GlobTest, sizeof(VDINTERFACEIO), &GlobTest.pInterfacesImages);
         AssertRC(rc);
 
         /* Init I/O backend. */

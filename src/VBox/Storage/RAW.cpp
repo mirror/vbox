@@ -40,20 +40,15 @@ typedef struct RAWIMAGE
     const char          *pszFilename;
     /** Storage handle. */
     PVDIOSTORAGE        pStorage;
-    /** I/O interface. */
-    PVDINTERFACE        pInterfaceIO;
-    /** Async I/O interface callbacks. */
-    PVDINTERFACEIOINT   pInterfaceIOCallbacks;
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE        pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
     PVDINTERFACE        pVDIfsImage;
-
-    /** Error callback. */
-    PVDINTERFACE        pInterfaceError;
-    /** Opaque data for error callback. */
-    PVDINTERFACEERROR   pInterfaceErrorCallbacks;
+    /** Error interface. */
+    PVDINTERFACEERROR   pIfError;
+    /** I/O interface. */
+    PVDINTERFACEIOINT   pIfIo;
 
     /** Open flags passed by VBoxHD layer. */
     unsigned            uOpenFlags;
@@ -100,139 +95,6 @@ static const VDFILEEXTENSION s_aRawFileExtensions[] =
 *******************************************************************************/
 
 /**
- * Internal: signal an error to the frontend.
- */
-DECLINLINE(int) rawError(PRAWIMAGE pImage, int rc, RT_SRC_POS_DECL,
-                         const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks->pfnError(pImage->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS,
-                                                   pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-/**
- * Internal: signal an informational message to the frontend.
- */
-DECLINLINE(int) rawMessage(PRAWIMAGE pImage, const char *pszFormat, ...)
-{
-    int rc = VINF_SUCCESS;
-    va_list va;
-    va_start(va, pszFormat);
-    if (pImage->pInterfaceError)
-        rc = pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser,
-                                                          pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-
-DECLINLINE(int) rawFileOpen(PRAWIMAGE pImage, const char *pszFilename,
-                            uint32_t fOpen)
-{
-    return pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
-                                                  pszFilename, fOpen,
-                                                  &pImage->pStorage);
-}
-
-DECLINLINE(int) rawFileClose(PRAWIMAGE pImage)
-{
-    return pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
-                                                   pImage->pStorage);
-}
-
-DECLINLINE(int) rawFileDelete(PRAWIMAGE pImage, const char *pszFilename)
-{
-    return pImage->pInterfaceIOCallbacks->pfnDelete(pImage->pInterfaceIO->pvUser,
-                                                    pszFilename);
-}
-
-DECLINLINE(int) rawFileMove(PRAWIMAGE pImage, const char *pszSrc,
-                            const char *pszDst, unsigned fMove)
-{
-    return pImage->pInterfaceIOCallbacks->pfnMove(pImage->pInterfaceIO->pvUser,
-                                                  pszSrc, pszDst, fMove);
-}
-
-DECLINLINE(int) rawFileGetFreeSpace(PRAWIMAGE pImage, const char *pszFilename,
-                                    int64_t *pcbFree)
-{
-    return pImage->pInterfaceIOCallbacks->pfnGetFreeSpace(pImage->pInterfaceIO->pvUser,
-                                                          pszFilename, pcbFree);
-}
-
-DECLINLINE(int) rawFileGetSize(PRAWIMAGE pImage, uint64_t *pcbSize)
-{
-    return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage, pcbSize);
-}
-
-DECLINLINE(int) rawFileSetSize(PRAWIMAGE pImage, uint64_t cbSize)
-{
-    return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage, cbSize);
-}
-
-DECLINLINE(int) rawFileWriteSync(PRAWIMAGE pImage, uint64_t uOffset,
-                                 const void *pvBuffer, size_t cbBuffer,
-                                 size_t *pcbWritten)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage, uOffset,
-                                                       pvBuffer, cbBuffer, pcbWritten);
-}
-
-DECLINLINE(int) rawFileReadSync(PRAWIMAGE pImage, uint64_t uOffset,
-                                void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
-                                                      pImage->pStorage, uOffset,
-                                                      pvBuffer, cbBuffer, pcbRead);
-}
-
-DECLINLINE(int) rawFileFlushSync(PRAWIMAGE pImage)
-{
-    return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage);
-}
-
-DECLINLINE(int) rawFileReadUserAsync(PRAWIMAGE pImage, uint64_t uOffset,
-                                     PVDIOCTX pIoCtx, size_t cbRead)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
-                                                           pImage->pStorage,
-                                                           uOffset, pIoCtx,
-                                                           cbRead);
-}
-
-DECLINLINE(int) rawFileWriteUserAsync(PRAWIMAGE pImage, uint64_t uOffset,
-                                      PVDIOCTX pIoCtx, size_t cbWrite,
-                                      PFNVDXFERCOMPLETED pfnComplete,
-                                      void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
-                                                            pImage->pStorage,
-                                                            uOffset, pIoCtx,
-                                                            cbWrite,
-                                                            pfnComplete,
-                                                            pvCompleteUser);
-}
-
-DECLINLINE(int) rawFileFlushAsync(PRAWIMAGE pImage, PVDIOCTX pIoCtx,
-                                  PFNVDXFERCOMPLETED pfnComplete,
-                                  void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
-                                                        pImage->pStorage,
-                                                        pIoCtx, pfnComplete,
-                                                        pvCompleteUser);
-}
-
-
-/**
  * Internal. Flush image data to disk.
  */
 static int rawFlushImage(PRAWIMAGE pImage)
@@ -241,7 +103,7 @@ static int rawFlushImage(PRAWIMAGE pImage)
 
     if (   pImage->pStorage
         && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = rawFileFlushSync(pImage);
+        rc = vdIfIoIntFileFlushSync(pImage->pIfIo, pImage->pStorage);
 
     return rc;
 }
@@ -283,8 +145,8 @@ static int rawFreeImage(PRAWIMAGE pImage, bool fDelete)
                         unsigned cbChunk = (unsigned)RT_MIN(pImage->cbSize,
                                                             RAW_FILL_SIZE);
 
-                        rc = rawFileWriteSync(pImage, uOff, pvBuf, cbChunk,
-                                              NULL);
+                        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                    uOff, pvBuf, cbChunk, NULL);
                         if (RT_FAILURE(rc))
                             goto out;
 
@@ -297,12 +159,12 @@ out:
                 rawFlushImage(pImage);
             }
 
-            rawFileClose(pImage);
+            vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
 
         if (fDelete && pImage->pszFilename)
-            rawFileDelete(pImage, pImage->pszFilename);
+            vdIfIoIntFileDelete(pImage->pIfIo, pImage->pszFilename);
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -319,22 +181,17 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
     pImage->uOpenFlags = uOpenFlags;
     pImage->fCreate = false;
 
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
-
-    /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
-    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
+    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
+    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
     /*
      * Open the image.
      */
-    rc = rawFileOpen(pImage, pImage->pszFilename,
-                     VDOpenFlagsToFileOpenFlags(uOpenFlags,
-                                                false /* fCreate */));
+    rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename,
+                           VDOpenFlagsToFileOpenFlags(uOpenFlags,
+                                                      false /* fCreate */),
+                           &pImage->pStorage);
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
@@ -342,7 +199,7 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
         goto out;
     }
 
-    rc = rawFileGetSize(pImage, &pImage->cbSize);
+    rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &pImage->cbSize);
     if (RT_FAILURE(rc))
         goto out;
     if (pImage->cbSize % 512)
@@ -374,11 +231,6 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     void *pvBuf = NULL;
     int32_t fOpen;
 
-    if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
-    {
-        rc = rawError(pImage, VERR_VD_RAW_INVALID_TYPE, RT_SRC_POS, N_("Raw: cannot create diff image '%s'"), pImage->pszFilename);
-        goto out;
-    }
     uImageFlags |= VD_IMAGE_FLAGS_FIXED;
 
     pImage->uOpenFlags = uOpenFlags & ~VD_OPEN_FLAGS_READONLY;
@@ -388,24 +240,24 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     pImage->PCHSGeometry = *pPCHSGeometry;
     pImage->LCHSGeometry = *pLCHSGeometry;
 
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
+    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
+    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
-    /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
-    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
+    {
+        rc = vdIfError(pImage->pIfError, VERR_VD_RAW_INVALID_TYPE, RT_SRC_POS, N_("Raw: cannot create diff image '%s'"), pImage->pszFilename);
+        goto out;
+    }
 
     /* Create image file. */
     fOpen = VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags, true /* fCreate */);
     if (uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL)
         fOpen &= ~RTFILE_O_READ;
-    rc = rawFileOpen(pImage, pImage->pszFilename, fOpen);
+    rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename, fOpen, &pImage->pStorage);
     if (RT_FAILURE(rc))
     {
-        rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: cannot create image '%s'"), pImage->pszFilename);
+        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Raw: cannot create image '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -413,19 +265,19 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     {
         /* Check the free space on the disk and leave early if there is not
          * sufficient space available. */
-        rc = rawFileGetFreeSpace(pImage, pImage->pszFilename, &cbFree);
+        rc = vdIfIoIntFileGetFreeSpace(pImage->pIfIo, pImage->pszFilename, &cbFree);
         if (RT_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbSize))
         {
-            rc = rawError(pImage, VERR_DISK_FULL, RT_SRC_POS, N_("Raw: disk would overflow creating image '%s'"), pImage->pszFilename);
+            rc = vdIfError(pImage->pIfError, VERR_DISK_FULL, RT_SRC_POS, N_("Raw: disk would overflow creating image '%s'"), pImage->pszFilename);
             goto out;
         }
 
         /* Allocate & commit whole file if fixed image, it must be more
          * effective than expanding file by write operations. */
-        rc = rawFileSetSize(pImage, cbSize);
+        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, cbSize);
         if (RT_FAILURE(rc))
         {
-            rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: setting image size failed for '%s'"), pImage->pszFilename);
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Raw: setting image size failed for '%s'"), pImage->pszFilename);
             goto out;
         }
 
@@ -446,10 +298,11 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
         {
             unsigned cbChunk = (unsigned)RT_MIN(cbSize, RAW_FILL_SIZE);
 
-            rc = rawFileWriteSync(pImage, uOff, pvBuf, cbChunk, NULL);
+            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, uOff,
+                                        pvBuf, cbChunk, NULL);
             if (RT_FAILURE(rc))
             {
-                rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: writing block failed for '%s'"), pImage->pszFilename);
+                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Raw: writing block failed for '%s'"), pImage->pszFilename);
                 goto out;
             }
 
@@ -495,11 +348,8 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     int rc = VINF_SUCCESS;
     char *pszExtension = NULL;
 
-    /* Get I/O interface. */
-    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIOINT pInterfaceIOCallbacks = VDGetInterfaceIOInt(pInterfaceIO);
-    AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     if (   !VALID_PTR(pszFilename)
         || !*pszFilename)
@@ -513,13 +363,12 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     /*
      * Open the file and read the footer.
      */
-    rc = pInterfaceIOCallbacks->pfnOpen(pInterfaceIO->pvUser, pszFilename,
-                                        VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
-                                                                   false /* fCreate */),
-                                        &pStorage);
+    rc = vdIfIoIntFileOpen(pIfIo, pszFilename,
+                           VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
+                                                      false /* fCreate */),
+                           &pStorage);
     if (RT_SUCCESS(rc))
-        rc = pInterfaceIOCallbacks->pfnGetSize(pInterfaceIO->pvUser, pStorage,
-                                               &cbFile);
+        rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
 
     /* Try to guess the image type based on the extension. */
     if (   RT_SUCCESS(rc)
@@ -560,7 +409,7 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
         rc = VERR_VD_RAW_INVALID_HEADER;
 
     if (pStorage)
-        pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+        vdIfIoIntFileClose(pIfIo, pStorage);
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -629,15 +478,11 @@ static int rawCreate(const char *pszFilename, uint64_t cbSize,
 
     PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
-    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
-                                              VDINTERFACETYPE_PROGRESS);
-    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
     if (pIfProgress)
     {
-        pCbProgress = VDGetInterfaceProgress(pIfProgress);
-        if (pCbProgress)
-            pfnProgress = pCbProgress->pfnProgress;
-        pvUser = pIfProgress->pvUser;
+        pfnProgress = pIfProgress->pfnProgress;
+        pvUser = pIfProgress->Core.pvUser;
     }
 
     /* Check open flags. All valid flags are supported. */
@@ -717,7 +562,7 @@ static int rawRename(void *pBackendData, const char *pszFilename)
         goto out;
 
     /* Rename the file. */
-    rc = rawFileMove(pImage, pImage->pszFilename, pszFilename, 0);
+    rc = vdIfIoIntFileMove(pImage->pIfIo, pImage->pszFilename, pszFilename, 0);
     if (RT_FAILURE(rc))
     {
         /* The move failed, try to reopen the original image. */
@@ -782,7 +627,8 @@ static int rawRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         goto out;
     }
 
-    rc = rawFileReadSync(pImage, uOffset, pvBuf, cbToRead, NULL);
+    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, uOffset, pvBuf,
+                               cbToRead, NULL);
     pImage->offAccess = uOffset + cbToRead;
     if (pcbActuallyRead)
         *pcbActuallyRead = cbToRead;
@@ -826,7 +672,8 @@ static int rawWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         goto out;
     }
 
-    rc = rawFileWriteSync(pImage, uOffset, pvBuf, cbToWrite, NULL);
+    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, uOffset, pvBuf,
+                                cbToWrite, NULL);
     pImage->offAccess = uOffset + cbToWrite;
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
@@ -892,7 +739,7 @@ static uint64_t rawGetFileSize(void *pBackendData)
         uint64_t cbFile;
         if (pImage->pStorage)
         {
-            int rc = rawFileGetSize(pImage, &cbFile);
+            int rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &cbFile);
             if (RT_SUCCESS(rc))
                 cb += cbFile;
         }
@@ -1290,10 +1137,10 @@ static void rawDump(void *pBackendData)
     AssertPtr(pImage);
     if (pImage)
     {
-        rawMessage(pImage, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
-                    pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
-                    pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
-                    pImage->cbSize / 512);
+        vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
+                        pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
+                        pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
+                        pImage->cbSize / 512);
     }
 }
 
@@ -1304,7 +1151,8 @@ static int rawAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
     int rc = VINF_SUCCESS;
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
 
-    rc = rawFileReadUserAsync(pImage, uOffset, pIoCtx, cbRead);
+    rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage, uOffset,
+                                    pIoCtx, cbRead);
     if (RT_SUCCESS(rc))
         *pcbActuallyRead = cbRead;
 
@@ -1320,7 +1168,8 @@ static int rawAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
     int rc = VINF_SUCCESS;
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
 
-    rc = rawFileWriteUserAsync(pImage, uOffset, pIoCtx, cbWrite, NULL, NULL);
+    rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage, uOffset,
+                                     pIoCtx, cbWrite, NULL, NULL);
     if (RT_SUCCESS(rc))
     {
         *pcbWriteProcess = cbWrite;
@@ -1338,7 +1187,8 @@ static int rawAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
     PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
 
     if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = rawFileFlushAsync(pImage, pIoCtx, NULL, NULL);
+        rc = vdIfIoIntFileFlushAsync(pImage->pIfIo, pImage->pStorage, pIoCtx,
+                                     NULL, NULL);
 
     return rc;
 }
