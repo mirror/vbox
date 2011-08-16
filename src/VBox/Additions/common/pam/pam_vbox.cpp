@@ -139,20 +139,42 @@ static int vbox_set_msg(pam_handle_t *hPAM, int iStyle, const char *pszText)
 
     int rc = VINF_SUCCESS;
 
-    struct pam_message msg;
+    pam_message msg;
     msg.msg_style = iStyle;
+#ifdef RT_OS_SOLARIS
+    msg.msg = (char*)pszText;
+#else
     msg.msg = pszText;
+#endif
 
-    const struct pam_conv *conv;
+#ifdef RT_OS_SOLARIS
+    pam_conv *conv = NULL;
+    int pamrc = pam_get_item(hPAM, PAM_CONV, (void **)&conv);
+#else
+    const pam_conv *conv = NULL;
     int pamrc = pam_get_item(hPAM, PAM_CONV, (const void **)&conv);
-    if (pamrc == PAM_SUCCESS)
+#endif
+    if (   pamrc == PAM_SUCCESS
+        && conv)
     {
-        struct pam_response *resp;
-        const struct pam_message *msg_p = &msg;
+        pam_response *resp = NULL;
+#ifdef RT_OS_SOLARIS
+        pam_message *msg_p = &msg;
+#else
+        const pam_message *msg_p = &msg;
+#endif
+        pam_vbox_log(hPAM, "Showing message \"%s\" (type %d)", pszText, iStyle);
+
         pamrc = conv->conv(1 /* One message only */, &msg_p, &resp, conv->appdata_ptr);
-        if (pamrc == PAM_SUCCESS)
+        if (resp != NULL) /* If we use PAM_TEXT_INFO we never will get something back! */
         {
-            pam_vbox_log(hPAM, "Showing message (type %d): %s", msg, pszText);
+            if (resp->resp)
+            {
+                pam_vbox_log(hPAM, "Response to message \"%s\" was \"%s\"",
+                             pszText, resp->resp);
+                /** @todo Save response!  */
+                free(resp->resp);
+            }
             free(resp);
         }
     }
