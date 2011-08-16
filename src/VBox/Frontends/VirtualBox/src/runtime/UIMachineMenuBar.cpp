@@ -192,6 +192,7 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu)
     /* Machine submenu: */
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog));
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot));
+    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeScreenshot));
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_InformationDialog));
     pMenu->addSeparator();
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration));

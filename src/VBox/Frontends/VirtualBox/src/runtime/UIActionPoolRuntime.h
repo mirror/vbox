@@ -29,6 +29,7 @@ enum UIActionIndexRuntime
     UIActionIndexRuntime_Menu_Machine = UIActionIndex_Max + 1,
     UIActionIndexRuntime_Simple_SettingsDialog,
     UIActionIndexRuntime_Simple_TakeSnapshot,
+    UIActionIndexRuntime_Simple_TakeScreenshot,
     UIActionIndexRuntime_Simple_InformationDialog,
     UIActionIndexRuntime_Menu_MouseIntegration,
     UIActionIndexRuntime_Toggle_MouseIntegration,
