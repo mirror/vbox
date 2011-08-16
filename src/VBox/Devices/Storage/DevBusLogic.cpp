@@ -938,7 +938,7 @@ static void buslogicIntiateHardReset(PBUSLOGIC pBusLogic)
  * Send a mailbox with set status codes to the guest.
  *
  * @returns nothing.
- * @param   pBusLogicR                Pointer to the BubLogic device instance.
+ * @param   pBusLogic                 Pointer to the BusLogic device instance.
  * @param   pTaskState                Pointer to the task state with the mailbox to send.
  * @param   uHostAdapterStatus        The host adapter status code to set.
  * @param   uDeviceStatus             The target device status to set.
