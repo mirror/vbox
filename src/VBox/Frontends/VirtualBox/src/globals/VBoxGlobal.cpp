@@ -5666,7 +5666,7 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
 #endif
 }
 
-bool VBoxGlobal::launchMachine(CMachine &machine)
+bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
 {
     if (machine.CanShowConsoleWindow())
         return VBoxGlobal::switchToMachine(machine);
@@ -5702,8 +5702,9 @@ bool VBoxGlobal::launchMachine(CMachine &machine)
     if (xauth)
         env.append(QString("XAUTHORITY=%1\n").arg(xauth));
 #endif
+    const QString strType = fHeadless ? "headless" : "GUI/Qt";
 
-    CProgress progress = machine.LaunchVMProcess(session, "GUI/Qt", env);
+    CProgress progress = machine.LaunchVMProcess(session, strType, env);
     if (   !vbox.isOk()
         || progress.isNull())
     {

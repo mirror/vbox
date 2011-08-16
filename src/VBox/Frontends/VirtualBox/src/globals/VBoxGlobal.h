@@ -158,7 +158,7 @@ public:
     bool processArgs();
 
     bool switchToMachine(CMachine &machine);
-    bool launchMachine(CMachine &machine);
+    bool launchMachine(CMachine &machine, bool fHeadless = false);
 
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
     bool showStartVMErrors() const { return mShowStartVMErrors; }
