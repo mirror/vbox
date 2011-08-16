@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxUpdateDlg class declaration
+ * Update routine related declarations
  */
 
 /*
@@ -16,44 +16,31 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxUpdateDlg_h__
-#define __VBoxUpdateDlg_h__
+#ifndef __UIUpdateDefs_h__
+#define __UIUpdateDefs_h__
 
 /* Global includes: */
 #include <QDate>
-#include <QUrl>
 
-/* Local includes */
-#include "QIWithRetranslateUI.h"
-#include "VBoxUpdateDlg.gen.h"
-
-/* Forward declarations: */
-class QNetworkAccessManager;
-
-/**
- *  This structure is used to store retranslated reminder values.
- */
-struct UpdateDay
+/* This structure is used to store retranslated reminder values. */
+struct VBoxUpdateDay
 {
-    UpdateDay(const QString &strVal, const QString &strKey)
+    VBoxUpdateDay(const QString &strVal, const QString &strKey)
         : val(strVal), key(strKey) {}
 
-    bool operator==(const UpdateDay &other)
-    {
-        return val == other.val || key == other.key;
-    }
+    bool operator==(const VBoxUpdateDay &other) { return val == other.val || key == other.key; }
 
     QString val;
     QString key;
 };
+typedef QList<VBoxUpdateDay> VBoxUpdateDayList;
 
-/**
- *  This class is used to encode/decode the registration data.
- */
+/* This class is used to encode/decode update data. */
 class VBoxUpdateData
 {
 public:
 
+    /* Period types: */
     enum PeriodType
     {
         PeriodNever     = -2,
@@ -70,6 +57,7 @@ public:
         Period1Month    =  9
     };
 
+    /* Branch types: */
     enum BranchType
     {
         BranchStable     = 0,
@@ -77,15 +65,17 @@ public:
         BranchWithBetas  = 2
     };
 
+    /* Public static helpers: */
     static void populate();
     static QStringList list();
 
+    /* Constructors: */
     VBoxUpdateData(const QString &strData);
     VBoxUpdateData(PeriodType periodIndex, BranchType branchIndex);
 
-    bool isNecessary();
-    bool isNoNeedToCheck();
-
+    /* Public helpers: */
+    bool isNoNeedToCheck() const;
+    bool isNeedToCheck() const;
     QString data() const;
     PeriodType periodIndex() const;
     QString date() const;
@@ -94,55 +84,16 @@ public:
 
 private:
 
-    /* Private functions */
+    /* Private helpers: */
     void decode();
     void encode();
 
-    /* Private variables */
-    static QList <UpdateDay> m_dayList;
-
+    /* Private variables: */
+    static VBoxUpdateDayList m_dayList;
     QString m_strData;
     PeriodType m_periodIndex;
     QDate m_date;
     BranchType m_branchIndex;
 };
 
-class VBoxUpdateDlg : public QIWithRetranslateUI<QDialog>, public Ui::VBoxUpdateDlg
-{
-    Q_OBJECT;
-
-public:
-
-    static bool isNecessary();
-
-    VBoxUpdateDlg(VBoxUpdateDlg **ppSelf, bool fForceRun, QWidget *pParent = 0);
-    ~VBoxUpdateDlg();
-
-signals:
-
-    void sigDelayedAcception();
-
-public slots:
-
-    void search();
-
-protected:
-
-    void retranslateUi();
-    void acceptLater() { emit sigDelayedAcception(); }
-
-private slots:
-
-    void accept();
-    void sltHandleReply();
-
-private:
-
-    VBoxUpdateDlg         **m_ppSelf;
-    QNetworkAccessManager  *m_pNetworkManager;
-    QUrl                    m_url;
-    bool                    m_fForceRun;
-};
-
-#endif // __VBoxUpdateDlg_h__
-
+#endif // __UIUpdateDefs_h__

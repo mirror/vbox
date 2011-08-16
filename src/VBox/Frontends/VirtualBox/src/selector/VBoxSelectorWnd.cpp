@@ -21,7 +21,9 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "QISplitter.h"
 #include "UIBar.h"
+#include "UIUpdateManager.h"
 #include "UIDownloaderUserManual.h"
+#include "UIDownloaderExtensionPack.h"
 #include "UIExportApplianceWzd.h"
 #include "UIIconPool.h"
 #include "UIImportApplianceWzd.h"
@@ -41,7 +43,7 @@
 #include "UISelectorShortcuts.h"
 #include "UIDesktopServices.h"
 #include "UIGlobalSettingsExtension.h" /* extension pack installation */
-#include "UIActionPoolSelector.h"
+#include "UIActionPool.h"
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include "VBoxTrayIcon.h"
@@ -93,9 +95,6 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     : QIWithRetranslateUI2<QMainWindow>(aParent, aFlags)
     , mDoneInaccessibleWarningOnce(false)
 {
-    /* Create offline action pool: */
-    UIActionPoolSelector::create();
-
     VBoxGlobalSettings settings = vboxGlobal().settings();
 
     if (aSelf)
@@ -493,7 +492,8 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 #endif
 
     /* Listen to potential downloaders signals: */
-    connect(&msgCenter(), SIGNAL(sigDownloaderUserManualCreated()), this, SLOT(sltDownloaderUserManualEmbed()));
+    connect(&msgCenter(), SIGNAL(sigDownloaderUserManualCreated()), this, SLOT(sltEmbedDownloaderForUserManual()));
+    connect(gUpdateManager, SIGNAL(sigDownloaderCreatedForExtensionPack()), this, SLOT(sltEmbedDownloaderForExtensionPack()));
 
     /* bring the VM list to the focus */
     mVMListView->setFocus();
@@ -562,9 +562,6 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
     /* Delete the items from our model */
     mVMModel->clear();
-
-    /* Delete offline action pool: */
-    UIActionPoolSelector::destroy();
 }
 
 //
@@ -1662,10 +1659,17 @@ void VBoxSelectorWnd::trayIconChanged(bool fEnabled)
 
 #endif /* VBOX_GUI_WITH_SYSTRAY */
 
-void VBoxSelectorWnd::sltDownloaderUserManualEmbed()
+void VBoxSelectorWnd::sltEmbedDownloaderForUserManual()
 {
     /* If there is User Manual downloader created => show the process bar: */
     if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
+        statusBar()->addWidget(pDl->progressWidget(this), 0);
+}
+
+void VBoxSelectorWnd::sltEmbedDownloaderForExtensionPack()
+{
+    /* If there is Extension Pack downloader created => show the process bar: */
+    if (UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::current())
         statusBar()->addWidget(pDl->progressWidget(this), 0);
 }
 
@@ -1769,7 +1773,7 @@ void VBoxSelectorWnd::prepareMenuHelp(QMenu *pMenu)
                         gActionPool->action(UIActionIndex_Simple_Register), SLOT(setEnabled(bool)));
 #endif /* VBOX_WITH_REGISTRATION */
     VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Update), SIGNAL(triggered()),
-                        &vboxGlobal(), SLOT(showUpdateDialog()));
+                        gUpdateManager, SLOT(sltForceCheck()));
     VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
                         &msgCenter(), SLOT(sltShowHelpAboutDialog()));
 }

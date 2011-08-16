@@ -62,8 +62,9 @@ private slots:
     void sltTryClose();
 
     /* Downloader listeners: */
-    void sltDownloaderAdditionsEmbed();
-    void sltDownloaderUserManualEmbed();
+    void sltEmbedDownloaderForAdditions();
+    void sltEmbedDownloaderForUserManual();
+    void sltEmbedDownloaderForExtensionPack();
 
 private:
 

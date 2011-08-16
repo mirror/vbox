@@ -36,8 +36,10 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindowNormal.h"
 #include "UIMachineView.h"
+#include "UIUpdateManager.h"
 #include "UIDownloaderAdditions.h"
 #include "UIDownloaderUserManual.h"
+#include "UIDownloaderExtensionPack.h"
 #ifdef Q_WS_MAC
 # include "UIImageTools.h"
 #endif /* Q_WS_MAC */
@@ -167,17 +169,24 @@ void UIMachineWindowNormal::sltTryClose()
     UIMachineWindow::sltTryClose();
 }
 
-void UIMachineWindowNormal::sltDownloaderAdditionsEmbed()
+void UIMachineWindowNormal::sltEmbedDownloaderForAdditions()
 {
     /* If there is an additions download running show the process bar: */
     if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
         statusBar()->addWidget(pDl->progressWidget(this), 0);
 }
 
-void UIMachineWindowNormal::sltDownloaderUserManualEmbed()
+void UIMachineWindowNormal::sltEmbedDownloaderForUserManual()
 {
     /* If there is an additions download running show the process bar: */
     if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
+        statusBar()->addWidget(pDl->progressWidget(this), 0);
+}
+
+void UIMachineWindowNormal::sltEmbedDownloaderForExtensionPack()
+{
+    /* If there is an extension pack download running show the process bar: */
+    if (UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::current())
         statusBar()->addWidget(pDl->progressWidget(this), 0);
 }
 
@@ -459,11 +468,15 @@ void UIMachineWindowNormal::prepareStatusBar()
 
     /* Add the additions downloader progress bar to the status bar,
      * if a download is actually running: */
-    sltDownloaderAdditionsEmbed();
+    sltEmbedDownloaderForAdditions();
 
     /* Add the user manual progress bar to the status bar,
      * if a download is actually running: */
-    sltDownloaderUserManualEmbed();
+    sltEmbedDownloaderForUserManual();
+
+    /* Add the extension pack progress bar to the status bar,
+     * if a download is actually running: */
+    sltEmbedDownloaderForExtensionPack();
 
     /* Create & start timer to update LEDs: */
     m_pIdleTimer = new QTimer(this);
@@ -482,9 +495,11 @@ void UIMachineWindowNormal::prepareConnections()
     connect(&vboxGlobal().settings(), SIGNAL(propertyChanged(const char *, const char *)),
             this, SLOT(sltProcessGlobalSettingChange(const char *, const char *)));
     /* Setup additions downloader listener: */
-    connect(machineLogic(), SIGNAL(sigDownloaderAdditionsCreated()), this, SLOT(sltDownloaderAdditionsEmbed()));
+    connect(machineLogic(), SIGNAL(sigDownloaderAdditionsCreated()), this, SLOT(sltEmbedDownloaderForAdditions()));
     /* Setup user manual downloader listener: */
-    connect(&msgCenter(), SIGNAL(sigDownloaderUserManualCreated()), this, SLOT(sltDownloaderUserManualEmbed()));
+    connect(&msgCenter(), SIGNAL(sigDownloaderUserManualCreated()), this, SLOT(sltEmbedDownloaderForUserManual()));
+    /* Setup extension pack downloader listener: */
+    connect(gUpdateManager, SIGNAL(sigDownloaderCreatedForExtensionPack()), this, SLOT(sltEmbedDownloaderForExtensionPack()));
 }
 
 void UIMachineWindowNormal::prepareMachineView()

@@ -1026,11 +1026,6 @@ void UISession::reinitMenuPool()
 
 void UISession::preparePowerUp()
 {
-#ifdef VBOX_WITH_UPDATE_REQUEST
-    /* Check for updates if necessary: */
-    vboxGlobal().showUpdateDialog(false /* force request? */);
-#endif
-
     /* Notify user about mouse&keyboard auto-capturing: */
     if (vboxGlobal().settings().autoCapture())
         msgCenter().remindAboutAutoCapture();
