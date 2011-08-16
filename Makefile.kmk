@@ -1280,7 +1280,7 @@ snapshot-ose:
 	$(QUIET)$(MKDIR) -p $(TARBALLPATH)
 	$(QUIET)$(RM) -f $(TARBALLPATH)/$(TARBALLROOT)
 	$(QUIET)$(LN_SYMLINK) $(PATH_ROOT) $(TARBALLPATH)/$(TARBALLROOT)
-	$(QUIET)tar -cjh --owner 0 --group 0 --totals \
+	$(QUIET)tar -cjh --hard-dereference --owner 0 --group 0 --totals \
 	    --exclude=.svn \
 	    --exclude=$(TARBALLROOT)/out \
 	    --exclude=$(TARBALLROOT)/env.sh \
