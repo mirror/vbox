@@ -75,7 +75,7 @@ $$(VBoxKeyboard-Tarball_0_OUTDIR)/vboxkeyboard.tar.bz2: \
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 ifdef VBOX_GTAR
-	$(QUIET)$(VBOX_GTAR) --hard-dereference --owner 0 --group 0 --ignore-failed-read \
+	$(QUIET)$(VBOX_GTAR) --dereference --owner 0 --group 0 --ignore-failed-read \
 		-cjRf $@ \
  		-C $(PATH_STAGE)/$(VBoxKeyboard-Files_INST).. VBoxKeyboard
 else
