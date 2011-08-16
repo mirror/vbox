@@ -896,9 +896,9 @@ void UIMachineLogic::sltTakeScreenshot()
     int i = filters.indexOf(QRegExp(".*png.*", Qt::CaseInsensitive));
     if (i == -1)
     {
-        i = filters.indexOf(QRegExp(".*jpe+g*", Qt::CaseInsensitive));
+        i = filters.indexOf(QRegExp(".*jpe+g.*", Qt::CaseInsensitive));
         if (i == -1)
-            i = filters.indexOf(QRegExp(".*bmp*", Qt::CaseInsensitive));
+            i = filters.indexOf(QRegExp(".*bmp.*", Qt::CaseInsensitive));
     }
     if (i != -1)
         strFilter = filters.at(i);
