@@ -413,13 +413,13 @@ $(VBOX_LNX_ADD_ARCHIVE.$(KBUILD_TARGET_ARCH)): \
 	$(QUIET)$(RM) -f -- $(wildcard $(dir $@)VBoxGuestAdditions-*r*.tar.bz2)
 	$(QUIET)$(MKDIR) -p $(@D)
 ifdef VBOX_USE_PBZIP2
- 	$(QUIET)tar --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
+ 	$(QUIET)tar --hard-dereference --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
  		LICENSE bin init lib sbin share src \
  		$(if $(filter $(KBUILD_TYPE),debug),debug)
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
-	$(QUIET)tar --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
+	$(QUIET)tar --hard-dereference --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
  		LICENSE bin init lib sbin share src \
  		$(if $(filter $(KBUILD_TYPE),debug),debug)
@@ -437,12 +437,12 @@ $(PATH_STAGE_BIN)/additions/VBoxGuestAdditions-dbg.tar.bz2: \
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 ifdef VBOX_USE_PBZIP2
- 	$(QUIET)tar --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
+ 	$(QUIET)tar --hard-dereference --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
  		-C $(VBOX_LNX_ADD_INST_DBG_DIR) \
  		bin lib sbin
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
-	$(QUIET)tar --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
+	$(QUIET)tar --hard-dereference --owner 0 --group 0 --ignore-failed-read -cjRf $@ \
  		-C $(VBOX_LNX_ADD_INST_DBG_DIR) \
  		bin lib sbin
 endif

@@ -396,10 +396,12 @@ $(VBOX_LNX_INST_STAGE_DIR)/VirtualBox.tar.bz2: $(VBOX_LNX_INST_ARCH_DEPS)
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 ifdef VBOX_USE_PBZIP2
-	$(QUIET)tar --owner 0 --group 0 -cRhf $(patsubst %.bz2,%,$@) -C $(VBOX_LNX_INST_OUT_DIR)/archive $(VBOX_LNX_ARCH_FILES)
+	$(QUIET)tar --hard-dereference --owner 0 --group 0 \
+		-cRhf $(patsubst %.bz2,%,$@) -C $(VBOX_LNX_INST_OUT_DIR)/archive $(VBOX_LNX_ARCH_FILES)
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
-	$(QUIET)tar --owner 0 --group 0 -cjRhf $@ -C $(VBOX_LNX_INST_OUT_DIR)/archive $(VBOX_LNX_ARCH_FILES)
+	$(QUIET)tar --hard-dereference --owner 0 --group 0 \
+		-cjRhf $@ -C $(VBOX_LNX_INST_OUT_DIR)/archive $(VBOX_LNX_ARCH_FILES)
 endif
 	$(QUIET)$(CHMOD) 0644 $@
 
@@ -411,11 +413,13 @@ $(PATH_STAGE_BIN)/VirtualBox.tar.bz2: $(VBOX_LNX_INST_ARCH_DEPS)
 	$(QUIET)$(RM) -f -- $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-$(VBOX_VERSION_STRING) $@ $(patsubst %.bz2,%,$@)
 	$(QUIET)$(LN_SYMLINK) $(VBOX_LNX_INST_OUT_DIR)/archive/ $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-$(VBOX_VERSION_STRING)
 ifdef VBOX_USE_PBZIP2
-	$(QUIET)tar --owner 0 --group 0 -cRhf $(patsubst %.bz2,%,$@) -C $(VBOX_LNX_INST_OUT_DIR) \
+	$(QUIET)tar --hard-dereference --owner 0 --group 0 \
+		-cRhf $(patsubst %.bz2,%,$@) -C $(VBOX_LNX_INST_OUT_DIR) \
 		$(addprefix VirtualBox-$(VBOX_VERSION_STRING)/,$(VBOX_LNX_ARCH_FILES))
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
-	$(QUIET)tar --owner 0 --group 0 -cjRhf $@ -C $(VBOX_LNX_INST_OUT_DIR) \
+	$(QUIET)tar --hard-dereference --owner 0 --group 0 \
+		-cjRhf $@ -C $(VBOX_LNX_INST_OUT_DIR) \
 		$(addprefix VirtualBox-$(VBOX_VERSION_STRING)/,$(VBOX_LNX_ARCH_FILES))
 endif
 	$(QUIET)$(RM) -f -- $(VBOX_LNX_INST_OUT_DIR)/VirtualBox-$(VBOX_VERSION_STRING)
@@ -484,11 +488,13 @@ $(PATH_STAGE_BIN)/VirtualBox-dbg.tar.bz2: \
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $@ $(patsubst %.bz2,%,$@)
 ifdef VBOX_USE_PBZIP2
-	$(QUIET)tar --owner 0 --group 0 -cRhf $(patsubst %.bz2,%,$@) -C $(VBOX_LNX_INST_OUT_DIR)/archive-dbg \
+	$(QUIET)tar --hard-dereference --owner 0 --group 0 \
+		-cRhf $(patsubst %.bz2,%,$@) -C $(VBOX_LNX_INST_OUT_DIR)/archive-dbg \
 		$(addprefix $(VBOX_LNX_DBG_PATH)/,$(VBOX_LNX_STRIP_BIN))
 	$(QUIET)pbzip2 $(patsubst %.bz2,%,$@)
 else
-	$(QUIET)tar --owner 0 --group 0 -cjRhf $@ -C $(VBOX_LNX_INST_OUT_DIR)/archive-dbg \
+	$(QUIET)tar --hard-dereference --owner 0 --group 0 \
+		-cjRhf $@ -C $(VBOX_LNX_INST_OUT_DIR)/archive-dbg \
 		$(addprefix $(VBOX_LNX_DBG_PATH)/,$(VBOX_LNX_STRIP_BIN))
 endif
 
