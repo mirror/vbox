@@ -829,7 +829,7 @@ void VBoxSelectorWnd::vmStart(const QString &aUuid /* = QString::null */)
               ("Must NOT be a VM console process"));
 
     CMachine machine = item->machine();
-    vboxGlobal().launchMachine(machine);
+    vboxGlobal().launchMachine(machine, qApp->keyboardModifiers() == Qt::ShiftModifier);
 }
 
 void VBoxSelectorWnd::vmDiscard(const QString &aUuid /* = QString::null */)
