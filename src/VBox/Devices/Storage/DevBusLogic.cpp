@@ -3118,7 +3118,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
 
     /* Initialize task queue. */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 5, 0,
-                              buslogicNotifyQueueConsumer, true, "BugLogicTask", &pThis->pNotifierQueueR3);
+                              buslogicNotifyQueueConsumer, true, "BusLogicTask", &pThis->pNotifierQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pNotifierQueueR0 = PDMQueueR0Ptr(pThis->pNotifierQueueR3);
