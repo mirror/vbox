@@ -833,7 +833,8 @@ $(PATH_STAGE_BIN)/$(DBG_ARCHIVE): \
 		$(SOLARIS_DBG_DEPFILES)
 	$(call MSG_L1,Installing debug binaries $(SOLARIS_DBG_DIR))
 	$(call MSG_L1,Packing $@)
-	$(QUIET)/usr/sfw/bin/gtar --owner 0 --group 0 -cjRhf $(PATH_STAGE_BIN)/$(DBG_ARCHIVE) -C $(SOLARIS_DBG_DIR) $(SOLARIS_DBG_DEPFILES)
+	$(QUIET)/usr/sfw/bin/gtar --dereference --owner 0 --group 0 \
+		-cjRhf $(PATH_STAGE_BIN)/$(DBG_ARCHIVE) -C $(SOLARIS_DBG_DIR) $(SOLARIS_DBG_DEPFILES)
 	$(QUIET)$(CHMOD) 0644 $@
 
 #
