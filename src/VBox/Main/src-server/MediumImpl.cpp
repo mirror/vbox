@@ -152,14 +152,11 @@ struct Medium::Data
 
     Utf8Str vdError;        /*< Error remembered by the VD error callback. */
 
-    VDINTERFACE vdIfError;
-    VDINTERFACEERROR vdIfCallsError;
+    VDINTERFACEERROR vdIfError;
 
-    VDINTERFACE vdIfConfig;
-    VDINTERFACECONFIG vdIfCallsConfig;
+    VDINTERFACECONFIG vdIfConfig;
 
-    VDINTERFACE vdIfTcpNet;
-    VDINTERFACETCPNET vdIfCallsTcpNet;
+    VDINTERFACETCPNET vdIfTcpNet;
 
     PVDINTERFACE vdDiskIfaces;
     PVDINTERFACE vdImageIfaces;
@@ -213,14 +210,12 @@ public:
 
         /* Set up a per-operation progress interface, can be used freely (for
          * binary operations you can use it either on the source or target). */
-        mVDIfCallsProgress.cbSize = sizeof(VDINTERFACEPROGRESS);
-        mVDIfCallsProgress.enmInterface = VDINTERFACETYPE_PROGRESS;
-        mVDIfCallsProgress.pfnProgress = vdProgressCall;
-        int vrc = VDInterfaceAdd(&mVDIfProgress,
+        mVDIfProgress.pfnProgress = vdProgressCall;
+        int vrc = VDInterfaceAdd(&mVDIfProgress.Core,
                                 "Medium::Task::vdInterfaceProgress",
                                 VDINTERFACETYPE_PROGRESS,
-                                &mVDIfCallsProgress,
                                 mProgress,
+                                sizeof(VDINTERFACEPROGRESS),
                                 &mVDOperationIfaces);
         AssertRC(vrc);
         if (RT_FAILURE(vrc))
@@ -261,8 +256,7 @@ private:
 
     static DECLCALLBACK(int) vdProgressCall(void *pvUser, unsigned uPercent);
 
-    VDINTERFACE mVDIfProgress;
-    VDINTERFACEPROGRESS mVDIfCallsProgress;
+    VDINTERFACEPROGRESS mVDIfProgress;
 
     /* Must have a strong VirtualBox reference during a task otherwise the
      * reference count might drop to 0 while a task is still running. This
@@ -590,7 +584,7 @@ public:
                const char *aFilename,
                MediumFormat *aFormat,
                MediumVariant_T aVariant,
-               void *aVDImageIOCallbacks,
+               VDINTERFACEIO *aVDImageIOIf,
                void *aVDImageIOUser,
                MediumLockList *aSourceMediumLockList,
                bool fKeepSourceMediumLockList = false)
@@ -604,11 +598,11 @@ public:
         AssertReturnVoidStmt(aSourceMediumLockList != NULL, mRC = E_FAIL);
 
         mVDImageIfaces = aMedium->m->vdImageIfaces;
-        if (aVDImageIOCallbacks)
+        if (aVDImageIOIf)
         {
-            int vrc = VDInterfaceAdd(&mVDInterfaceIO, "Medium::vdInterfaceIO",
-                                     VDINTERFACETYPE_IO, aVDImageIOCallbacks,
-                                     aVDImageIOUser, &mVDImageIfaces);
+            int vrc = VDInterfaceAdd(&aVDImageIOIf->Core, "Medium::vdInterfaceIO",
+                                     VDINTERFACETYPE_IO, aVDImageIOUser,
+                                     sizeof(VDINTERFACEIO), &mVDImageIfaces);
             AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
         }
     }
@@ -629,7 +623,6 @@ private:
     virtual HRESULT handler();
 
     bool mfKeepSourceMediumLockList;
-    VDINTERFACE mVDInterfaceIO;
 };
 
 class Medium::ImportTask : public Medium::Task
@@ -640,7 +633,7 @@ public:
                const char *aFilename,
                MediumFormat *aFormat,
                MediumVariant_T aVariant,
-               void *aVDImageIOCallbacks,
+               VDINTERFACEIO *aVDImageIOIf,
                void *aVDImageIOUser,
                Medium *aParent,
                MediumLockList *aTargetMediumLockList,
@@ -661,11 +654,11 @@ public:
             return;
 
         mVDImageIfaces = aMedium->m->vdImageIfaces;
-        if (aVDImageIOCallbacks)
+        if (aVDImageIOIf)
         {
-            int vrc = VDInterfaceAdd(&mVDInterfaceIO, "Medium::vdInterfaceIO",
-                                     VDINTERFACETYPE_IO, aVDImageIOCallbacks,
-                                     aVDImageIOUser, &mVDImageIfaces);
+            int vrc = VDInterfaceAdd(&aVDImageIOIf->Core, "Medium::vdInterfaceIO",
+                                     VDINTERFACETYPE_IO, aVDImageIOUser,
+                                     sizeof(VDINTERFACEIO), &mVDImageIfaces);
             AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
         }
     }
@@ -688,7 +681,6 @@ private:
 
     AutoCaller mParentCaller;
     bool mfKeepTargetMediumLockList;
-    VDINTERFACE mVDInterfaceIO;
 };
 
 /**
@@ -845,58 +837,52 @@ HRESULT Medium::FinalConstruct()
     m = new Data;
 
     /* Initialize the callbacks of the VD error interface */
-    m->vdIfCallsError.cbSize = sizeof(VDINTERFACEERROR);
-    m->vdIfCallsError.enmInterface = VDINTERFACETYPE_ERROR;
-    m->vdIfCallsError.pfnError = vdErrorCall;
-    m->vdIfCallsError.pfnMessage = NULL;
+    m->vdIfError.pfnError = vdErrorCall;
+    m->vdIfError.pfnMessage = NULL;
 
     /* Initialize the callbacks of the VD config interface */
-    m->vdIfCallsConfig.cbSize = sizeof(VDINTERFACECONFIG);
-    m->vdIfCallsConfig.enmInterface = VDINTERFACETYPE_CONFIG;
-    m->vdIfCallsConfig.pfnAreKeysValid = vdConfigAreKeysValid;
-    m->vdIfCallsConfig.pfnQuerySize = vdConfigQuerySize;
-    m->vdIfCallsConfig.pfnQuery = vdConfigQuery;
+    m->vdIfConfig.pfnAreKeysValid = vdConfigAreKeysValid;
+    m->vdIfConfig.pfnQuerySize = vdConfigQuerySize;
+    m->vdIfConfig.pfnQuery = vdConfigQuery;
 
     /* Initialize the callbacks of the VD TCP interface (we always use the host
      * IP stack for now) */
-    m->vdIfCallsTcpNet.cbSize = sizeof(VDINTERFACETCPNET);
-    m->vdIfCallsTcpNet.enmInterface = VDINTERFACETYPE_TCPNET;
-    m->vdIfCallsTcpNet.pfnSocketCreate = vdTcpSocketCreate;
-    m->vdIfCallsTcpNet.pfnSocketDestroy = vdTcpSocketDestroy;
-    m->vdIfCallsTcpNet.pfnClientConnect = vdTcpClientConnect;
-    m->vdIfCallsTcpNet.pfnClientClose = vdTcpClientClose;
-    m->vdIfCallsTcpNet.pfnIsClientConnected = vdTcpIsClientConnected;
-    m->vdIfCallsTcpNet.pfnSelectOne = vdTcpSelectOne;
-    m->vdIfCallsTcpNet.pfnRead = vdTcpRead;
-    m->vdIfCallsTcpNet.pfnWrite = vdTcpWrite;
-    m->vdIfCallsTcpNet.pfnSgWrite = vdTcpSgWrite;
-    m->vdIfCallsTcpNet.pfnFlush = vdTcpFlush;
-    m->vdIfCallsTcpNet.pfnSetSendCoalescing = vdTcpSetSendCoalescing;
-    m->vdIfCallsTcpNet.pfnGetLocalAddress = vdTcpGetLocalAddress;
-    m->vdIfCallsTcpNet.pfnGetPeerAddress = vdTcpGetPeerAddress;
-    m->vdIfCallsTcpNet.pfnSelectOneEx = NULL;
-    m->vdIfCallsTcpNet.pfnPoke = NULL;
+    m->vdIfTcpNet.pfnSocketCreate = vdTcpSocketCreate;
+    m->vdIfTcpNet.pfnSocketDestroy = vdTcpSocketDestroy;
+    m->vdIfTcpNet.pfnClientConnect = vdTcpClientConnect;
+    m->vdIfTcpNet.pfnClientClose = vdTcpClientClose;
+    m->vdIfTcpNet.pfnIsClientConnected = vdTcpIsClientConnected;
+    m->vdIfTcpNet.pfnSelectOne = vdTcpSelectOne;
+    m->vdIfTcpNet.pfnRead = vdTcpRead;
+    m->vdIfTcpNet.pfnWrite = vdTcpWrite;
+    m->vdIfTcpNet.pfnSgWrite = vdTcpSgWrite;
+    m->vdIfTcpNet.pfnFlush = vdTcpFlush;
+    m->vdIfTcpNet.pfnSetSendCoalescing = vdTcpSetSendCoalescing;
+    m->vdIfTcpNet.pfnGetLocalAddress = vdTcpGetLocalAddress;
+    m->vdIfTcpNet.pfnGetPeerAddress = vdTcpGetPeerAddress;
+    m->vdIfTcpNet.pfnSelectOneEx = NULL;
+    m->vdIfTcpNet.pfnPoke = NULL;
 
     /* Initialize the per-disk interface chain (could be done more globally,
      * but it's not wasting much time or space so it's not worth it). */
     int vrc;
-    vrc = VDInterfaceAdd(&m->vdIfError,
+    vrc = VDInterfaceAdd(&m->vdIfError.Core,
                          "Medium::vdInterfaceError",
-                         VDINTERFACETYPE_ERROR,
-                         &m->vdIfCallsError, this, &m->vdDiskIfaces);
+                         VDINTERFACETYPE_ERROR, this,
+                         sizeof(VDINTERFACEERROR), &m->vdDiskIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
     /* Initialize the per-image interface chain */
-    vrc = VDInterfaceAdd(&m->vdIfConfig,
+    vrc = VDInterfaceAdd(&m->vdIfConfig.Core,
                          "Medium::vdInterfaceConfig",
-                         VDINTERFACETYPE_CONFIG,
-                         &m->vdIfCallsConfig, this, &m->vdImageIfaces);
+                         VDINTERFACETYPE_CONFIG, this,
+                         sizeof(VDINTERFACECONFIG), &m->vdImageIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
-    vrc = VDInterfaceAdd(&m->vdIfTcpNet,
+    vrc = VDInterfaceAdd(&m->vdIfTcpNet.Core,
                          "Medium::vdInterfaceTcpNet",
-                         VDINTERFACETYPE_TCPNET,
-                         &m->vdIfCallsTcpNet, this, &m->vdImageIfaces);
+                         VDINTERFACETYPE_TCPNET, this,
+                         sizeof(VDINTERFACETCPNET), &m->vdImageIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
     vrc = RTSemEventMultiCreate(&m->queryInfoSem);
@@ -4951,7 +4937,7 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
 HRESULT Medium::exportFile(const char *aFilename,
                            const ComObjPtr<MediumFormat> &aFormat,
                            MediumVariant_T aVariant,
-                           void *aVDImageIOCallbacks, void *aVDImageIOUser,
+                           PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
                            const ComObjPtr<Progress> &aProgress)
 {
     AssertPtrReturn(aFilename, E_INVALIDARG);
@@ -4994,7 +4980,7 @@ HRESULT Medium::exportFile(const char *aFilename,
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::ExportTask(this, aProgress, aFilename, aFormat,
-                                       aVariant, aVDImageIOCallbacks,
+                                       aVariant, aVDImageIOIf,
                                        aVDImageIOUser, pSourceMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
@@ -5029,7 +5015,7 @@ HRESULT Medium::exportFile(const char *aFilename,
 HRESULT Medium::importFile(const char *aFilename,
                            const ComObjPtr<MediumFormat> &aFormat,
                            MediumVariant_T aVariant,
-                           void *aVDImageIOCallbacks, void *aVDImageIOUser,
+                           PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
                            const ComObjPtr<Medium> &aParent,
                            const ComObjPtr<Progress> &aProgress)
 {
@@ -5077,7 +5063,7 @@ HRESULT Medium::importFile(const char *aFilename,
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::ImportTask(this, aProgress, aFilename, aFormat,
-                                       aVariant, aVDImageIOCallbacks,
+                                       aVariant, aVDImageIOIf,
                                        aVDImageIOUser, aParent,
                                        pTargetMediumLockList);
         rc = pTask->rc();

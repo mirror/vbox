@@ -76,15 +76,6 @@ static int tstQuery(void *pvUser, const char *pszName, char *pszValue, size_t cc
     return VINF_SUCCESS;
 }
 
-
-VDINTERFACECONFIG icc = {
-    sizeof(VDINTERFACECONFIG),
-    VDINTERFACETYPE_CONFIG,
-    tstAreKeysValid,
-    tstQuerySize,
-    tstQuery
-};
-
 static const char *tstVDDeviceType(VDTYPE enmType)
 {
     switch (enmType)
@@ -193,12 +184,19 @@ static int tstVDBackendInfo(void)
             RTPrintf("<NONE>");
         RTPrintf("\n");
 
-        VDINTERFACE ic;
-        ic.cbSize = sizeof(ic);
-        ic.enmInterface = VDINTERFACETYPE_CONFIG;
-        ic.pCallbacks = &icc;
+        PVDINTERFACE pVDIfs = NULL;
+        VDINTERFACECONFIG ic;
+
+        ic.pfnAreKeysValid = tstAreKeysValid;
+        ic.pfnQuerySize    = tstQuerySize;
+        ic.pfnQuery        = tstQuery;
+
+        rc = VDInterfaceAdd(&ic.Core, "tstVD-2_Config", VDINTERFACETYPE_CONFIG,
+                            NULL, sizeof(VDINTERFACECONFIG), &pVDIfs);
+        AssertRC(rc);
+
         char *pszLocation, *pszName;
-        rc = aVDInfo[i].pfnComposeLocation(&ic, &pszLocation);
+        rc = aVDInfo[i].pfnComposeLocation(pVDIfs, &pszLocation);
         CHECK("pfnComposeLocation()");
         if (pszLocation)
         {
@@ -209,7 +207,7 @@ static int tstVDBackendInfo(void)
                 return VERR_INTERNAL_ERROR;
             }
         }
-        rc = aVDInfo[i].pfnComposeName(&ic, &pszName);
+        rc = aVDInfo[i].pfnComposeName(pVDIfs, &pszName);
         CHECK("pfnComposeName()");
         if (pszName)
         {

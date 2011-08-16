@@ -22,9 +22,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/vd.h>
-#ifndef VBOX_VDICORE_VD
-# include <VBox/vmm/pdm.h>
-#endif
 #include <VBox/err.h>
 
 #include <VBox/log.h>
@@ -270,7 +267,6 @@ typedef VDIIMAGEBLOCKPOINTER *PVDIIMAGEBLOCKPOINTER;
 #define GET_MAJOR_HEADER_VERSION(ph) (VDI_GET_VERSION_MAJOR((ph)->uVersion))
 #define GET_MINOR_HEADER_VERSION(ph) (VDI_GET_VERSION_MINOR((ph)->uVersion))
 
-#ifdef VBOX_VDICORE_VD
 /** @name VDI image types
  * @{ */
 typedef enum VDIIMAGETYPE
@@ -292,7 +288,6 @@ typedef enum VDIIMAGETYPE
 /** Pointer to VDI image type. */
 typedef VDIIMAGETYPE *PVDIIMAGETYPE;
 /** @} */
-#endif /* VBOX_VDICORE_VD */
 
 /*******************************************************************************
 *   Internal Functions for header access                                       *
@@ -308,7 +303,6 @@ DECLINLINE(VDIIMAGETYPE) getImageType(PVDIHEADER ph)
     return (VDIIMAGETYPE)0;
 }
 
-#ifdef VBOX_VDICORE_VD
 DECLINLINE(unsigned) getImageFlags(PVDIHEADER ph)
 {
     switch (GET_MAJOR_HEADER_VERSION(ph))
@@ -323,18 +317,6 @@ DECLINLINE(unsigned) getImageFlags(PVDIHEADER ph)
     AssertFailed();
     return 0;
 }
-#else /* !VBOX_VDICORE_VD */
-DECLINLINE(unsigned) getImageFlags(PVDIHEADER ph)
-{
-    switch (GET_MAJOR_HEADER_VERSION(ph))
-    {
-        case 0: return ph->u.v0.fFlags;
-        case 1: return ph->u.v1.fFlags;
-    }
-    AssertFailed();
-    return 0;
-}
-#endif /* !VBOX_VDICORE_VD */
 
 DECLINLINE(char *) getImageComment(PVDIHEADER ph)
 {
@@ -528,59 +510,23 @@ DECLINLINE(PRTUUID) getImageParentModificationUUID(PVDIHEADER ph)
     return NULL;
 }
 
-#ifndef VBOX_VDICORE_VD
-/**
- * Default image block size, may be changed by setBlockSize/getBlockSize.
- *
- * Note: for speed reasons block size should be a power of 2 !
- */
-#define VDI_IMAGE_DEFAULT_BLOCK_SIZE            _1M
-#endif /* !VBOX_VDICORE_VD */
-
-#ifndef VBOX_VDICORE_VD
-/**
- * fModified bit flags.
- */
-#define VDI_IMAGE_MODIFIED_FLAG                 RT_BIT(0)
-#define VDI_IMAGE_MODIFIED_FIRST                RT_BIT(1)
-#define VDI_IMAGE_MODIFIED_DISABLE_UUID_UPDATE  RT_BIT(2)
-#endif /* !VBOX_VDICORE_VD */
-
 /**
  * Image structure
  */
 typedef struct VDIIMAGEDESC
 {
-#ifndef VBOX_VDICORE_VD
-    /** Link to parent image descriptor, if any. */
-    struct VDIIMAGEDESC    *pPrev;
-    /** Link to child image descriptor, if any. */
-    struct VDIIMAGEDESC    *pNext;
-#endif /* !VBOX_VDICORE_VD */
     /** Opaque storage handle. */
     PVDIOSTORAGE            pStorage;
-#ifndef VBOX_VDICORE_VD
-    /** True if the image is operating in readonly mode. */
-    bool                    fReadOnly;
-    /** Image open flags, VDI_OPEN_FLAGS_*. */
-    unsigned                fOpen;
-#else /* VBOX_VDICORE_VD */
     /** Image open flags, VD_OPEN_FLAGS_*. */
     unsigned                uOpenFlags;
-#endif /* VBOX_VDICORE_VD */
     /** Image pre-header. */
     VDIPREHEADER            PreHeader;
     /** Image header. */
     VDIHEADER               Header;
     /** Pointer to a block array. */
     PVDIIMAGEBLOCKPOINTER   paBlocks;
-#ifndef VBOX_VDICORE_VD
-    /** fFlags copy from image header, for speed optimization. */
-    unsigned                fFlags;
-#else /* VBOX_VDICORE_VD */
     /** fFlags copy from image header, for speed optimization. */
     unsigned                uImageFlags;
-#endif /* VBOX_VDICORE_VD */
     /** Start offset of block array in image file, here for speed optimization. */
     unsigned                offStartBlocks;
     /** Start offset of data in image file, here for speed optimization. */
@@ -589,19 +535,8 @@ typedef struct VDIIMAGEDESC
     unsigned                uBlockMask;
     /** Block shift value for converting byte hdd offset into paBlock index. */
     unsigned                uShiftOffset2Index;
-#ifndef VBOX_VDICORE_VD
-    /** Block shift value for converting block index into offset in image. */
-    unsigned                uShiftIndex2Offset;
-#endif /* !VBOX_VDICORE_VD */
     /** Offset of data from the beginning of block. */
     unsigned                offStartBlockData;
-#ifndef VBOX_VDICORE_VD
-    /** Image is modified flags (VDI_IMAGE_MODIFIED*). */
-    unsigned                fModified;
-    /** Container filename. (UTF-8)
-     * @todo Make this variable length to save a bunch of bytes. (low prio) */
-    char                    szFilename[RTPATH_MAX];
-#else /* VBOX_VDICORE_VD */
     /** Total size of image block (including the extra data). */
     unsigned                cbTotalBlockData;
     /** Container filename. (UTF-8) */
@@ -613,81 +548,10 @@ typedef struct VDIIMAGEDESC
     /** Pointer to the per-image VD interface list. */
     PVDINTERFACE            pVDIfsImage;
     /** Error interface. */
-    PVDINTERFACE            pInterfaceError;
-    /** Error interface callback table. */
-    PVDINTERFACEERROR       pInterfaceErrorCallbacks;
+    PVDINTERFACEERROR       pIfError;
     /** I/O interface. */
-    PVDINTERFACE            pInterfaceIO;
-    /** I/O interface callbacks. */
-    PVDINTERFACEIOINT       pInterfaceIOCallbacks;
-#endif /* VBOX_VDICORE_VD */
+    PVDINTERFACEIOINT       pIfIo;
 } VDIIMAGEDESC, *PVDIIMAGEDESC;
 
-#ifndef VBOX_VDICORE_VD
-/**
- * Default work buffer size, may be changed by setBufferSize() method.
- *
- * For best speed performance it must be equal to image block size.
- */
-#define VDIDISK_DEFAULT_BUFFER_SIZE   (VDI_IMAGE_DEFAULT_BLOCK_SIZE)
-#endif /* !VBOX_VDICORE_VD */
-
-/** VDIDISK Signature. */
-#define VDIDISK_SIGNATURE (0xbedafeda)
-
-/**
- * VBox HDD Container main structure, private part.
- */
-struct VDIDISK
-{
-    /** Structure signature (VDIDISK_SIGNATURE). */
-    uint32_t        u32Signature;
-
-    /** Number of opened images. */
-    unsigned        cImages;
-
-    /** Base image. */
-    PVDIIMAGEDESC   pBase;
-
-    /** Last opened image in the chain.
-     * The same as pBase if only one image is used or the last opened diff image. */
-    PVDIIMAGEDESC   pLast;
-
-    /** Default block size for newly created images. */
-    unsigned        cbBlock;
-
-    /** Working buffer size, allocated only while committing data,
-     * copying block from primary image to secondary and saving previously
-     * zero block. Buffer deallocated after operation complete.
-     * @remark  For best performance buffer size must be equal to image's
-     *          block size, however it may be decreased for memory saving.
-     */
-    unsigned        cbBuf;
-
-    /** Flag whether zero writes should be handled normally or optimized
-     * away if possible. */
-    bool            fHonorZeroWrites;
-
-#ifndef VBOX_VDICORE_VD
-    /** The media interface. */
-    PDMIMEDIA       IMedia;
-    /** Pointer to the driver instance. */
-    PPDMDRVINS      pDrvIns;
-#endif /* !VBOX_VDICORE_VD */
-};
-
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-RT_C_DECLS_BEGIN
-
-#ifndef VBOX_VDICORE_VD
-VBOXDDU_DECL(void) vdiInitVDIDisk(PVDIDISK pDisk);
-VBOXDDU_DECL(void) VDIFlushImage(PVDIIMAGEDESC pImage);
-VBOXDDU_DECL(int)  vdiChangeImageMode(PVDIIMAGEDESC pImage, bool fReadOnly);
-#endif /* !VBOX_VDICORE_VD */
-
-RT_C_DECLS_END
-
 #endif
+

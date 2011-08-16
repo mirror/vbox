@@ -149,20 +149,15 @@ typedef struct QEDIMAGE
     const char          *pszFilename;
     /** Storage handle. */
     PVDIOSTORAGE        pStorage;
-    /** I/O interface. */
-    PVDINTERFACE        pInterfaceIO;
-    /** Async I/O interface callbacks. */
-    PVDINTERFACEIOINT   pInterfaceIOCallbacks;
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE        pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
     PVDINTERFACE        pVDIfsImage;
-
-    /** Error callback. */
-    PVDINTERFACE        pInterfaceError;
-    /** Opaque data for error callback. */
-    PVDINTERFACEERROR   pInterfaceErrorCallbacks;
+    /** Error interface. */
+    PVDINTERFACEERROR   pIfError;
+    /** I/O interface. */
+    PVDINTERFACEIOINT   pIfIo;
 
     /** Open flags passed by VBoxHD layer. */
     unsigned            uOpenFlags;
@@ -185,11 +180,11 @@ typedef struct QEDIMAGE
     /** Size of the image, multiple of clusters. */
     uint64_t            cbImage;
     /** Cluster size in bytes. */
-    size_t              cbCluster;
+    uint32_t            cbCluster;
     /** Number of entries in the L1 and L2 table. */
     uint32_t            cTableEntries;
     /** Size of an L1 or L2 table rounded to the next cluster size. */
-    size_t              cbTable;
+    uint32_t            cbTable;
     /** Pointer to the L1 table. */
     uint64_t            *paL1Table;
     /** Offset of the L1 table. */
@@ -269,184 +264,6 @@ static const VDFILEEXTENSION s_aQedFileExtensions[] =
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-
-/**
- * Internal: signal an error to the frontend.
- */
-DECLINLINE(int) qedError(PQEDIMAGE pImage, int rc, RT_SRC_POS_DECL,
-                         const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks->pfnError(pImage->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS,
-                                                   pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-/**
- * Internal: signal an informational message to the frontend.
- */
-DECLINLINE(int) qedMessage(PQEDIMAGE pImage, const char *pszFormat, ...)
-{
-    int rc = VINF_SUCCESS;
-    va_list va;
-    va_start(va, pszFormat);
-    if (pImage->pInterfaceError)
-        rc = pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser,
-                                                          pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-
-DECLINLINE(int) qedFileOpen(PQEDIMAGE pImage, const char *pszFilename,
-                            uint32_t fOpen)
-{
-    return pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
-                                                  pszFilename, fOpen,
-                                                  &pImage->pStorage);
-}
-
-DECLINLINE(int) qedFileClose(PQEDIMAGE pImage)
-{
-    return pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
-                                                   pImage->pStorage);
-}
-
-DECLINLINE(int) qedFileDelete(PQEDIMAGE pImage, const char *pszFilename)
-{
-    return pImage->pInterfaceIOCallbacks->pfnDelete(pImage->pInterfaceIO->pvUser,
-                                                    pszFilename);
-}
-
-DECLINLINE(int) qedFileMove(PQEDIMAGE pImage, const char *pszSrc,
-                            const char *pszDst, unsigned fMove)
-{
-    return pImage->pInterfaceIOCallbacks->pfnMove(pImage->pInterfaceIO->pvUser,
-                                                  pszSrc, pszDst, fMove);
-}
-
-DECLINLINE(int) qedFileGetFreeSpace(PQEDIMAGE pImage, const char *pszFilename,
-                                    int64_t *pcbFree)
-{
-    return pImage->pInterfaceIOCallbacks->pfnGetFreeSpace(pImage->pInterfaceIO->pvUser,
-                                                          pszFilename, pcbFree);
-}
-
-DECLINLINE(int) qedFileGetSize(PQEDIMAGE pImage, uint64_t *pcbSize)
-{
-    return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage, pcbSize);
-}
-
-DECLINLINE(int) qedFileSetSize(PQEDIMAGE pImage, uint64_t cbSize)
-{
-    return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage, cbSize);
-}
-
-DECLINLINE(int) qedFileWriteSync(PQEDIMAGE pImage, uint64_t uOffset,
-                                 const void *pvBuffer, size_t cbBuffer,
-                                 size_t *pcbWritten)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage, uOffset,
-                                                       pvBuffer, cbBuffer, pcbWritten);
-}
-
-DECLINLINE(int) qedFileReadSync(PQEDIMAGE pImage, uint64_t uOffset,
-                                void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
-                                                      pImage->pStorage, uOffset,
-                                                      pvBuffer, cbBuffer, pcbRead);
-}
-
-DECLINLINE(int) qedFileFlushSync(PQEDIMAGE pImage)
-{
-    return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage);
-}
-
-DECLINLINE(int) qedFileReadUserAsync(PQEDIMAGE pImage, uint64_t uOffset,
-                                     PVDIOCTX pIoCtx, size_t cbRead)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
-                                                           pImage->pStorage,
-                                                           uOffset, pIoCtx,
-                                                           cbRead);
-}
-
-DECLINLINE(int) qedFileWriteUserAsync(PQEDIMAGE pImage, uint64_t uOffset,
-                                      PVDIOCTX pIoCtx, size_t cbWrite,
-                                      PFNVDXFERCOMPLETED pfnComplete,
-                                      void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
-                                                            pImage->pStorage,
-                                                            uOffset, pIoCtx,
-                                                            cbWrite,
-                                                            pfnComplete,
-                                                            pvCompleteUser);
-}
-
-/**
- * Internal: read metadata (async)
- */
-DECLINLINE(int) qedFileReadMetaAsync(PQEDIMAGE pImage,
-                                     uint64_t uOffset, void *pvBuffer,
-                                     size_t cbBuffer, PVDIOCTX pIoCtx,
-                                     PPVDMETAXFER ppMetaXfer,
-                                     PFNVDXFERCOMPLETED pfnComplete,
-                                     void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
-                                                           pImage->pStorage,
-                                                           uOffset, pvBuffer,
-                                                           cbBuffer, pIoCtx,
-                                                           ppMetaXfer,
-                                                           pfnComplete,
-                                                           pvCompleteUser);
-}
-
-/**
- * Internal: write metadata (async)
- */
-DECLINLINE(int) qedFileWriteMetaAsync(PQEDIMAGE pImage,
-                                      uint64_t uOffset, void *pvBuffer,
-                                      size_t cbBuffer, PVDIOCTX pIoCtx,
-                                      PFNVDXFERCOMPLETED pfnComplete,
-                                      void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pImage->pInterfaceIO->pvUser,
-                                                            pImage->pStorage,
-                                                            uOffset, pvBuffer,
-                                                            cbBuffer, pIoCtx,
-                                                            pfnComplete,
-                                                            pvCompleteUser);
-}
-
-/**
- * Internal: releases a metadata transfer handle (async)
- */
-DECLINLINE(void) qedFileMetaXferRelease(PQEDIMAGE pImage, PVDMETAXFER pMetaXfer)
-{
-    pImage->pInterfaceIOCallbacks->pfnMetaXferRelease(pImage->pInterfaceIO->pvUser,
-                                                      pMetaXfer);
-}
-
-DECLINLINE(int) qedFileFlushAsync(PQEDIMAGE pImage, PVDIOCTX pIoCtx,
-                                  PFNVDXFERCOMPLETED pfnComplete,
-                                  void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
-                                                        pImage->pStorage,
-                                                        pIoCtx, pfnComplete,
-                                                        pvCompleteUser);
-}
-
 
 /**
  * Converts the image header to the host endianess and performs basic checks.
@@ -752,7 +569,8 @@ static int qedL2TblCacheFetch(PQEDIMAGE pImage, uint64_t offL2Tbl, PQEDL2CACHEEN
         {
             /* Read from the image. */
             pL2Entry->offL2Tbl = offL2Tbl;
-            rc = qedFileReadSync(pImage, offL2Tbl, pL2Entry->paL2Tbl, pImage->cbTable, NULL);
+            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offL2Tbl,
+                                       pL2Entry->paL2Tbl, pImage->cbTable, NULL);
             if (RT_SUCCESS(rc))
             {
 #if defined(RT_BIG_ENDIAN)
@@ -801,12 +619,13 @@ static int qedL2TblCacheFetchAsync(PQEDIMAGE pImage, PVDIOCTX pIoCtx,
             PVDMETAXFER pMetaXfer;
 
             pL2Entry->offL2Tbl = offL2Tbl;
-            rc = qedFileReadMetaAsync(pImage, offL2Tbl, pL2Entry->paL2Tbl,
-                                      pImage->cbTable, pIoCtx,
-                                      &pMetaXfer, NULL, NULL);
+            rc = vdIfIoIntFileReadMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                            offL2Tbl, pL2Entry->paL2Tbl,
+                                            pImage->cbTable, pIoCtx,
+                                            &pMetaXfer, NULL, NULL);
             if (RT_SUCCESS(rc))
             {
-                qedFileMetaXferRelease(pImage, pMetaXfer);
+                vdIfIoIntMetaXferRelease(pImage->pIfIo, pMetaXfer);
 #if defined(RT_BIG_ENDIAN)
                 qedTableConvertToHostEndianness(pL2Entry->paL2Tbl, pImage->cTableEntries);
 #endif
@@ -1039,24 +858,26 @@ static int qedFlushImage(PQEDIMAGE pImage)
         {
             qedTableConvertFromHostEndianess(p1L1TblImg, pImage->paL1Table,
                                              pImage->cTableEntries);
-            rc = qedFileWriteSync(pImage, pImage->offL1Table, paL1TblImg,
-                                  pImage->cbTable, NULL);
+            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                        pImage->offL1Table, paL1TblImg,
+                                        pImage->cbTable, NULL);
             RTMemFree(paL1TblImg);
         }
         else
             rc = VERR_NO_MEMORY;
 #else
         /* Write L1 table directly. */
-        rc = qedFileWriteSync(pImage, pImage->offL1Table, pImage->paL1Table,
-                              pImage->cbTable, NULL);
+        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, pImage->offL1Table,
+                                    pImage->paL1Table, pImage->cbTable, NULL);
 #endif
         if (RT_SUCCESS(rc))
         {
             /* Write header. */
             qedHdrConvertFromHostEndianess(pImage, &Header);
-            rc = qedFileWriteSync(pImage, 0, &Header, sizeof(Header), NULL);
+            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, 0, &Header,
+                                        sizeof(Header), NULL);
             if (RT_SUCCESS(rc))
-                rc = qedFileFlushSync(pImage);
+                rc = vdIfIoIntFileFlushSync(pImage->pIfIo, pImage->pStorage);
         }
     }
 
@@ -1086,25 +907,29 @@ static int qedFlushImageAsync(PQEDIMAGE pImage, PVDIOCTX pIoCtx)
         {
             qedTableConvertFromHostEndianess(p1L1TblImg, pImage->paL1Table,
                                              pImage->cTableEntries);
-            rc = qedFileWriteMetaAsync(pImage, pImage->offL1Table, paL1TblImg,
-                                       pImage->cbTable, pIoCtx, NULL, NULL);
+            rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                             pImage->offL1Table, paL1TblImg,
+                                             pImage->cbTable, pIoCtx, NULL, NULL);
             RTMemFree(paL1TblImg);
         }
         else
             rc = VERR_NO_MEMORY;
 #else
         /* Write L1 table directly. */
-        rc = qedFileWriteMetaAsync(pImage, pImage->offL1Table, pImage->paL1Table,
-                                   pImage->cbTable, pIoCtx, NULL, NULL);
+        rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                         pImage->offL1Table, pImage->paL1Table,
+                                         pImage->cbTable, pIoCtx, NULL, NULL);
 #endif
         if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         {
             /* Write header. */
             qedHdrConvertFromHostEndianess(pImage, &Header);
-            rc = qedFileWriteMetaAsync(pImage, 0, &Header, sizeof(Header),
-                                       pIoCtx, NULL, NULL);
+            rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                             0, &Header, sizeof(Header),
+                                             pIoCtx, NULL, NULL);
             if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-                rc = qedFileFlushAsync(pImage, pIoCtx, NULL, NULL);
+                rc = vdIfIoIntFileFlushAsync(pImage->pIfIo, pImage->pStorage,
+                                             pIoCtx, NULL, NULL);
         }
     }
 
@@ -1176,7 +1001,7 @@ static bool qedClusterBitmapCheckAndSet(void *pvClusterBitmap, uint32_t offClust
 static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
 {
     uint64_t cbFile;
-    size_t cbTable;
+    uint32_t cbTable;
     uint32_t cTableEntries;
     uint64_t *paL1Tbl = NULL;
     uint64_t *paL2Tbl = NULL;
@@ -1190,12 +1015,12 @@ static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
 
     do
     {
-        rc = qedFileGetSize(pImage, &cbFile);
+        rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &cbFile);
         if (RT_FAILURE(rc))
         {
-            rc = qedError(pImage, rc, RT_SRC_POS,
-                          N_("Qed: Querying the file size of image '%s' failed"),
-                          pImage->pszFilename);
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                           N_("Qed: Querying the file size of image '%s' failed"),
+                           pImage->pszFilename);
             break;
         }
 
@@ -1203,7 +1028,7 @@ static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
         paL1Tbl = (uint64_t *)RTMemAllocZ(cbTable);
         if (!paL1Tbl)
         {
-            rc = qedError(pImage, VERR_NO_MEMORY, RT_SRC_POS,
+            rc = vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
                           N_("Qed: Allocating memory for the L1 table for image '%s' failed"),
                           pImage->pszFilename);
             break;
@@ -1212,37 +1037,38 @@ static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
         paL2Tbl = (uint64_t *)RTMemAllocZ(cbTable);
         if (!paL2Tbl)
         {
-            rc = qedError(pImage, VERR_NO_MEMORY, RT_SRC_POS,
-                          N_("Qed: Allocating memory for the L2 table for image '%s' failed"),
-                          pImage->pszFilename);
+            rc = vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                           N_("Qed: Allocating memory for the L2 table for image '%s' failed"),
+                           pImage->pszFilename);
             break;
         }
 
         pvClusterBitmap = RTMemAllocZ(cbFile / pHeader->u32ClusterSize / 8);
         if (!pvClusterBitmap)
         {
-            rc = qedError(pImage, VERR_NO_MEMORY, RT_SRC_POS,
-                          N_("Qed: Allocating memory for the cluster bitmap for image '%s' failed"),
-                          pImage->pszFilename);
+            rc = vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                           N_("Qed: Allocating memory for the cluster bitmap for image '%s' failed"),
+                           pImage->pszFilename);
             break;
         }
 
         /* Validate L1 table offset. */
         if (!qedIsTblOffsetValid(pHeader->u64OffL1Table, cbFile, cbTable, pHeader->u32ClusterSize))
         {
-            rc = qedError(pImage, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
-                              N_("Qed: L1 table offset of image '%s' is corrupt (%llu)"),
-                              pImage->pszFilename, pHeader->u64OffL1Table);
+            rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                           N_("Qed: L1 table offset of image '%s' is corrupt (%llu)"),
+                           pImage->pszFilename, pHeader->u64OffL1Table);
             break;
         }
 
         /* Read L1 table. */
-        rc = qedFileReadSync(pImage, pHeader->u64OffL1Table, paL1Tbl, cbTable, NULL);
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                   pHeader->u64OffL1Table, paL1Tbl, cbTable, NULL);
         if (RT_FAILURE(rc))
         {
-            rc = qedError(pImage, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
-                              N_("Qed: Reading the L1 table from image '%s' failed"),
-                              pImage->pszFilename);
+            rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                           N_("Qed: Reading the L1 table from image '%s' failed"),
+                           pImage->pszFilename);
             break;
         }
 
@@ -1262,9 +1088,9 @@ static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
 
             if (!qedIsTblOffsetValid(paL1Tbl[iL1], cbFile, cbTable, pHeader->u32ClusterSize))
             {
-                rc = qedError(pImage, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
-                              N_("Qed: Entry %d of the L1 table from image '%s' is invalid (%llu)"),
-                              iL1, pImage->pszFilename, paL1Tbl[iL1]);
+                rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                               N_("Qed: Entry %d of the L1 table from image '%s' is invalid (%llu)"),
+                               iL1, pImage->pszFilename, paL1Tbl[iL1]);
                 break;
             }
 
@@ -1273,19 +1099,20 @@ static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
             fSet = qedClusterBitmapCheckAndSet(pvClusterBitmap, offClusterStart, offClusterStart + pHeader->u32TableSize);
             if (!fSet)
             {
-                rc = qedError(pImage, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
-                              N_("Qed: Entry %d of the L1 table from image '%s' points to a already used cluster (%llu)"),
-                              iL1, pImage->pszFilename, paL1Tbl[iL1]);
+                rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                               N_("Qed: Entry %d of the L1 table from image '%s' points to a already used cluster (%llu)"),
+                               iL1, pImage->pszFilename, paL1Tbl[iL1]);
                 break;
             }
 
             /* Read the linked L2 table and check it. */
-            rc = qedFileReadSync(pImage, paL1Tbl[iL1], paL2Tbl, cbTable, NULL);
+            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                       paL1Tbl[iL1], paL2Tbl, cbTable, NULL);
             if (RT_FAILURE(rc))
             {
-                rc = qedError(pImage, rc, RT_SRC_POS,
-                              N_("Qed: Reading the L2 table from image '%s' failed"),
-                              pImage->pszFilename);
+                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                               N_("Qed: Reading the L2 table from image '%s' failed"),
+                               pImage->pszFilename);
                 break;
             }
 
@@ -1297,9 +1124,9 @@ static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
 
                 if (!qedIsClusterOffsetValid(paL2Tbl[iL2], cbFile, pHeader->u32ClusterSize))
                 {
-                    rc = qedError(pImage, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
-                                  N_("Qed: Entry %d of the L2 table from image '%s' is invalid (%llu)"),
-                                  iL2, pImage->pszFilename, paL2Tbl[iL2]);
+                    rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                                   N_("Qed: Entry %d of the L2 table from image '%s' is invalid (%llu)"),
+                                   iL2, pImage->pszFilename, paL2Tbl[iL2]);
                     break;
                 }
 
@@ -1308,9 +1135,9 @@ static int qedCheckImage(PQEDIMAGE pImage, PQedHeader pHeader)
                 fSet = qedClusterBitmapCheckAndSet(pvClusterBitmap, offClusterStart, offClusterStart + 1);
                 if (!fSet)
                 {
-                    rc = qedError(pImage, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
-                                  N_("Qed: Entry %d of the L2 table from image '%s' points to a already used cluster (%llu)"),
-                                  iL2, pImage->pszFilename, paL2Tbl[iL2]);
+                    rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
+                                   N_("Qed: Entry %d of the L2 table from image '%s' points to a already used cluster (%llu)"),
+                                   iL2, pImage->pszFilename, paL2Tbl[iL2]);
                     break;
                 }
             }
@@ -1345,7 +1172,7 @@ static int qedFreeImage(PQEDIMAGE pImage, bool fDelete)
             if (!fDelete)
                 qedFlushImage(pImage);
 
-            qedFileClose(pImage);
+            vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
 
@@ -1358,7 +1185,7 @@ static int qedFreeImage(PQEDIMAGE pImage, bool fDelete)
         qedL2TblCacheDestroy(pImage);
 
         if (fDelete && pImage->pszFilename)
-            qedFileDelete(pImage, pImage->pszFilename);
+            vdIfIoIntFileDelete(pImage->pIfIo, pImage->pszFilename);
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -1374,22 +1201,17 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
 
     pImage->uOpenFlags = uOpenFlags;
 
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
-
-    /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
-    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
+    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
+    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
     /*
      * Open the image.
      */
-    rc = qedFileOpen(pImage, pImage->pszFilename,
-                     VDOpenFlagsToFileOpenFlags(uOpenFlags,
-                                                false /* fCreate */));
+    rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename,
+                           VDOpenFlagsToFileOpenFlags(uOpenFlags,
+                                                      false /* fCreate */),
+                           &pImage->pStorage);
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
@@ -1399,12 +1221,12 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
 
     uint64_t cbFile;
     QedHeader Header;
-    rc = qedFileGetSize(pImage, &cbFile);
+    rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &cbFile);
     if (RT_FAILURE(rc))
         goto out;
     if (cbFile > sizeof(Header))
     {
-        rc = qedFileReadSync(pImage, 0, &Header, sizeof(Header), NULL);
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0, &Header, sizeof(Header), NULL);
         if (   RT_SUCCESS(rc)
             && qedHdrConvertToHostEndianess(&Header))
         {
@@ -1417,9 +1239,9 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
                     if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY))
                         rc = qedCheckImage(pImage, &Header);
                     else
-                        rc = qedError(pImage, VERR_NOT_SUPPORTED, RT_SRC_POS,
-                                      N_("Qed: Image '%s' needs checking but is opened readonly"),
-                                      pImage->pszFilename);
+                        rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                       N_("Qed: Image '%s' needs checking but is opened readonly"),
+                                       pImage->pszFilename);
                 }
 
                 if (   RT_SUCCESS(rc)
@@ -1431,8 +1253,9 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
                     {
                         pImage->cbBackingFilename  = Header.u32BackingFilenameSize;
                         pImage->offBackingFilename = Header.u32OffBackingFilename;
-                        rc = qedFileReadSync(pImage, Header.u32OffBackingFilename, pImage->pszBackingFilename,
-                                             Header.u32BackingFilenameSize, NULL);
+                        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                                   Header.u32OffBackingFilename, pImage->pszBackingFilename,
+                                                   Header.u32BackingFilenameSize, NULL);
                     }
                     else
                         rc = VERR_NO_MEMORY;
@@ -1453,8 +1276,9 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
                     if (pImage->paL1Table)
                     {
                         /* Read from the image. */
-                        rc = qedFileReadSync(pImage, pImage->offL1Table, pImage->paL1Table,
-                                             pImage->cbTable, NULL);
+                        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                                   pImage->offL1Table, pImage->paL1Table,
+                                                   pImage->cbTable, NULL);
                         if (RT_SUCCESS(rc))
                         {
                             qedTableConvertToHostEndianess(pImage->paL1Table, pImage->cTableEntries);
@@ -1466,25 +1290,25 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
                                     rc = qedFlushImage(pImage);
                             }
                             else
-                                rc = qedError(pImage, rc, RT_SRC_POS,
-                                              N_("Qed: Creating the L2 table cache for image '%s' failed"),
-                                              pImage->pszFilename);
+                                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                               N_("Qed: Creating the L2 table cache for image '%s' failed"),
+                                               pImage->pszFilename);
                         }
                         else
-                            rc = qedError(pImage, rc, RT_SRC_POS,
-                                          N_("Qed: Reading the L1 table for image '%s' failed"),
-                                          pImage->pszFilename);
+                            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                                           N_("Qed: Reading the L1 table for image '%s' failed"),
+                                           pImage->pszFilename);
                     }
                     else
-                        rc = qedError(pImage, VERR_NO_MEMORY, RT_SRC_POS,
-                                      N_("Qed: Out of memory allocating L1 table for image '%s'"),
-                                      pImage->pszFilename);
+                        rc = vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                                       N_("Qed: Out of memory allocating L1 table for image '%s'"),
+                                       pImage->pszFilename);
                 }
             }
             else
-                rc = qedError(pImage, VERR_NOT_SUPPORTED, RT_SRC_POS,
-                              N_("Qed: The image '%s' makes use of unsupported features"),
-                              pImage->pszFilename);
+                rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                               N_("Qed: The image '%s' makes use of unsupported features"),
+                               pImage->pszFilename);
         }
         else if (RT_SUCCESS(rc))
             rc = VERR_VD_GEN_INVALID_HEADER;
@@ -1509,12 +1333,11 @@ static int qedCreateImage(PQEDIMAGE pImage, uint64_t cbSize,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
     int rc;
-    uint64_t uOff;
     int32_t fOpen;
 
     if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
     {
-        rc = qedError(pImage, VERR_VD_INVALID_TYPE, RT_SRC_POS, N_("Qed: cannot create fixed image '%s'"), pImage->pszFilename);
+        rc = vdIfError(pImage->pIfError, VERR_VD_INVALID_TYPE, RT_SRC_POS, N_("Qed: cannot create fixed image '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -1523,22 +1346,16 @@ static int qedCreateImage(PQEDIMAGE pImage, uint64_t cbSize,
     pImage->PCHSGeometry = *pPCHSGeometry;
     pImage->LCHSGeometry = *pLCHSGeometry;
 
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
-
-    /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
-    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
+    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
+    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
     /* Create image file. */
     fOpen = VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags, true /* fCreate */);
-    rc = qedFileOpen(pImage, pImage->pszFilename, fOpen);
+    rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename, fOpen, &pImage->pStorage);
     if (RT_FAILURE(rc))
     {
-        rc = qedError(pImage, rc, RT_SRC_POS, N_("Qed: cannot create image '%s'"), pImage->pszFilename);
+        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Qed: cannot create image '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -1557,16 +1374,16 @@ static int qedCreateImage(PQEDIMAGE pImage, uint64_t cbSize,
     pImage->paL1Table     = (uint64_t *)RTMemAllocZ(pImage->cbTable);
     if (!pImage->paL1Table)
     {
-        rc = qedError(pImage, VERR_NO_MEMORY, RT_SRC_POS, N_("Qed: cannot allocate memory for L1 table of image '%s'"),
-                      pImage->pszFilename);
+        rc = vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS, N_("Qed: cannot allocate memory for L1 table of image '%s'"),
+                       pImage->pszFilename);
         goto out;
     }
 
     rc = qedL2TblCacheCreate(pImage);
     if (RT_FAILURE(rc))
     {
-        rc = qedError(pImage, rc, RT_SRC_POS, N_("Qed: Failed to create L2 cache for image '%s'"),
-                      pImage->pszFilename);
+        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Qed: Failed to create L2 cache for image '%s'"),
+                       pImage->pszFilename);
         goto out;
     }
 
@@ -1602,7 +1419,7 @@ static int qedAsyncClusterAllocRollback(PQEDIMAGE pImage, PVDIOCTX pIoCtx, PQEDC
         case QEDCLUSTERASYNCALLOCSTATE_L2_LINK:
         {
             /* Assumption right now is that the L1 table is not modified if the link fails. */
-            rc = qedFileSetSize(pImage, pClusterAlloc->cbImageOld);
+            rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->cbImageOld);
             qedL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
             qedL2TblCacheEntryFree(pImage, pClusterAlloc->pL2Entry); /* Free it, it is not in the cache yet. */
         }
@@ -1610,7 +1427,7 @@ static int qedAsyncClusterAllocRollback(PQEDIMAGE pImage, PVDIOCTX pIoCtx, PQEDC
         case QEDCLUSTERASYNCALLOCSTATE_USER_LINK:
         {
             /* Assumption right now is that the L2 table is not modified if the link fails. */
-            rc = qedFileSetSize(pImage, pClusterAlloc->cbImageOld);
+            rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->cbImageOld);
             qedL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
         }
         default:
@@ -1650,9 +1467,10 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
 
             /* Update the link in the on disk L1 table now. */
             pClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_L2_LINK;
-            rc = qedFileWriteMetaAsync(pImage, pImage->offL1Table + pClusterAlloc->idxL1*sizeof(uint64_t),
-                                       &offUpdateLe, sizeof(uint64_t), pIoCtx,
-                                       qedAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                             pImage->offL1Table + pClusterAlloc->idxL1*sizeof(uint64_t),
+                                             &offUpdateLe, sizeof(uint64_t), pIoCtx,
+                                             qedAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1677,8 +1495,9 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
             pClusterAlloc->offClusterNew = offData;
 
             /* Write data. */
-            rc = qedFileWriteUserAsync(pImage, offData, pIoCtx, pClusterAlloc->cbToWrite,
-                                       qedAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
+                                             offData, pIoCtx, pClusterAlloc->cbToWrite,
+                                             qedAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1695,9 +1514,10 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
             pClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_USER_LINK;
 
             /* Link L2 table and update it. */
-            rc = qedFileWriteMetaAsync(pImage, pImage->paL1Table[pClusterAlloc->idxL1] + pClusterAlloc->idxL2*sizeof(uint64_t),
-                                       &offUpdateLe, sizeof(uint64_t), pIoCtx,
-                                       qedAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                             pImage->paL1Table[pClusterAlloc->idxL1] + pClusterAlloc->idxL2*sizeof(uint64_t),
+                                             &offUpdateLe, sizeof(uint64_t), pIoCtx,
+                                             qedAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1734,10 +1554,8 @@ static int qedCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     int rc = VINF_SUCCESS;
 
     /* Get I/O interface. */
-    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIOINT pInterfaceIOCallbacks = VDGetInterfaceIOInt(pInterfaceIO);
-    AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     if (   !VALID_PTR(pszFilename)
         || !*pszFilename)
@@ -1749,21 +1567,19 @@ static int qedCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     /*
      * Open the file and read the footer.
      */
-    rc = pInterfaceIOCallbacks->pfnOpen(pInterfaceIO->pvUser, pszFilename,
-                                        VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
-                                                                   false /* fCreate */),
-                                        &pStorage);
+    rc = vdIfIoIntFileOpen(pIfIo, pszFilename,
+                           VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
+                                                      false /* fCreate */),
+                           &pStorage);
     if (RT_SUCCESS(rc))
-        rc = pInterfaceIOCallbacks->pfnGetSize(pInterfaceIO->pvUser, pStorage,
-                                               &cbFile);
+        rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
 
     if (   RT_SUCCESS(rc)
         && cbFile > sizeof(QedHeader))
     {
         QedHeader Header;
 
-        rc = pInterfaceIOCallbacks->pfnReadSync(pInterfaceIO->pvUser, pStorage, 0, &Header,
-                                                sizeof(Header), NULL);
+        rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0, &Header, sizeof(Header), NULL);
         if (   RT_SUCCESS(rc)
             && qedHdrConvertToHostEndianess(&Header))
         {
@@ -1777,7 +1593,7 @@ static int qedCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
         rc = VERR_VD_GEN_INVALID_HEADER;
 
     if (pStorage)
-        pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+        vdIfIoIntFileClose(pIfIo, pStorage);
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -1847,15 +1663,11 @@ static int qedCreate(const char *pszFilename, uint64_t cbSize,
 
     PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
-    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
-                                              VDINTERFACETYPE_PROGRESS);
-    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
     if (pIfProgress)
     {
-        pCbProgress = VDGetInterfaceProgress(pIfProgress);
-        if (pCbProgress)
-            pfnProgress = pCbProgress->pfnProgress;
-        pvUser = pIfProgress->pvUser;
+        pfnProgress = pIfProgress->pfnProgress;
+        pvUser = pIfProgress->Core.pvUser;
     }
 
     /* Check open flags. All valid flags are supported. */
@@ -1935,7 +1747,7 @@ static int qedRename(void *pBackendData, const char *pszFilename)
         goto out;
 
     /* Rename the file. */
-    rc = qedFileMove(pImage, pImage->pszFilename, pszFilename, 0);
+    rc = vdIfIoIntFileMove(pImage->pIfIo, pImage->pszFilename, pszFilename, 0);
     if (RT_FAILURE(rc))
     {
         /* The move failed, try to reopen the original image. */
@@ -2008,7 +1820,8 @@ static int qedRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     if (RT_SUCCESS(rc))
     {
         LogFlowFunc(("offFile=%llu\n", offFile));
-        rc = qedFileReadSync(pImage, offFile, pvBuf, cbToRead, NULL);
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offFile,
+                                   pvBuf, cbToRead, NULL);
     }
 
     if (   (RT_SUCCESS(rc) || rc == VERR_VD_BLOCK_FREE)
@@ -2061,7 +1874,8 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     /* Get offset in image. */
     rc = qedConvertToImageOffset(pImage, idxL1, idxL2, offCluster, &offImage);
     if (RT_SUCCESS(rc))
-        rc = qedFileWriteSync(pImage, offImage, pvBuf, cbToWrite, NULL);
+        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, offImage,
+                                    pvBuf, cbToWrite, NULL);
     else if (rc == VERR_VD_BLOCK_FREE)
     {
         if (   cbToWrite == pImage->cbCluster
@@ -2098,15 +1912,17 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                      * If something unexpected happens the worst case which can happen
                      * is a leak of some clusters.
                      */
-                    rc = qedFileWriteSync(pImage, offL2Tbl, pL2Entry->paL2Tbl, pImage->cbTable, NULL);
+                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, offL2Tbl,
+                                                pL2Entry->paL2Tbl, pImage->cbTable, NULL);
                     if (RT_FAILURE(rc))
                         break;
 
                     /* Write the L1 link now. */
                     pImage->paL1Table[idxL1] = offL2Tbl;
                     idxUpdateLe = RT_H2LE_U64(offL2Tbl);
-                    rc = qedFileWriteSync(pImage, pImage->offL1Table + idxL1*sizeof(uint64_t),
-                                          &idxUpdateLe, sizeof(uint64_t), NULL);
+                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                pImage->offL1Table + idxL1*sizeof(uint64_t),
+                                                &idxUpdateLe, sizeof(uint64_t), NULL);
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -2119,15 +1935,17 @@ static int qedWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                     uint64_t offData = qedClusterAllocate(pImage, 1);
 
                     /* Write data. */
-                    rc = qedFileWriteSync(pImage, offData, pvBuf, cbToWrite, NULL);
+                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                offData, pvBuf, cbToWrite, NULL);
                     if (RT_FAILURE(rc))
                         break;
 
                     /* Link L2 table and update it. */
                     pL2Entry->paL2Tbl[idxL2] = offData;
                     idxUpdateLe = RT_H2LE_U64(offData);
-                    rc = qedFileWriteSync(pImage, pImage->paL1Table[idxL1] + idxL2*sizeof(uint64_t),
-                                          &idxUpdateLe, sizeof(uint64_t), NULL);
+                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                pImage->paL1Table[idxL1] + idxL2*sizeof(uint64_t),
+                                                &idxUpdateLe, sizeof(uint64_t), NULL);
                     qedL2TblCacheEntryRelease(pL2Entry);
                 }
 
@@ -2209,7 +2027,7 @@ static uint64_t qedGetFileSize(void *pBackendData)
         uint64_t cbFile;
         if (pImage->pStorage)
         {
-            int rc = qedFileGetSize(pImage, &cbFile);
+            int rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &cbFile);
             if (RT_SUCCESS(rc))
                 cb += cbFile;
         }
@@ -2607,10 +2425,10 @@ static void qedDump(void *pBackendData)
     AssertPtr(pImage);
     if (pImage)
     {
-        qedMessage(pImage, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
-                    pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
-                    pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
-                    pImage->cbSize / 512);
+        vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
+                         pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
+                         pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
+                         pImage->cbSize / 512);
     }
 }
 
@@ -2664,13 +2482,16 @@ static int qedSetParentFilename(void *pBackendData, const char *pszParentFilenam
                     Assert((offData & UINT32_MAX) == offData);
                     pImage->offBackingFilename = (uint32_t)offData;
                     pImage->cbBackingFilename  = strlen(pszParentFilename);
-                    rc = qedFileSetSize(pImage, offData + pImage->cbCluster);
+                    rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage,
+                                              offData + pImage->cbCluster);
                 }
 
                 if (RT_SUCCESS(rc))
-                    rc = qedFileWriteSync(pImage, pImage->offBackingFilename,
-                                          pImage->pszBackingFilename, strlen(pImage->pszBackingFilename),
-                                          NULL);
+                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                pImage->offBackingFilename,
+                                                pImage->pszBackingFilename,
+                                                strlen(pImage->pszBackingFilename),
+                                                NULL);
             }
         }
     }
@@ -2719,7 +2540,8 @@ static int qedAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
     rc = qedConvertToImageOffsetAsync(pImage, pIoCtx, idxL1, idxL2, offCluster,
                                       &offFile);
     if (RT_SUCCESS(rc))
-        rc = qedFileReadUserAsync(pImage, offFile, pIoCtx, cbToRead);
+        rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage, offFile,
+                                        pIoCtx, cbToRead);
 
     if (   (   RT_SUCCESS(rc)
             || rc == VERR_VD_BLOCK_FREE
@@ -2780,8 +2602,8 @@ static int qedAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
     rc = qedConvertToImageOffsetAsync(pImage, pIoCtx, idxL1, idxL2, offCluster,
                                       &offImage);
     if (RT_SUCCESS(rc))
-        rc = qedFileWriteUserAsync(pImage, offImage, pIoCtx, cbToWrite,
-                                   NULL, NULL);
+        rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
+                                         offImage, pIoCtx, cbToWrite, NULL, NULL);
     else if (rc == VERR_VD_BLOCK_FREE)
     {
         if (   cbToWrite == pImage->cbCluster
@@ -2836,8 +2658,9 @@ static int qedAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                      * If something unexpected happens the worst case which can happen
                      * is a leak of some clusters.
                      */
-                    rc = qedFileWriteMetaAsync(pImage, offL2Tbl, pL2Entry->paL2Tbl, pImage->cbTable, pIoCtx,
-                                               qedAsyncClusterAllocUpdate, pL2ClusterAlloc);
+                    rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                                     offL2Tbl, pL2Entry->paL2Tbl, pImage->cbTable, pIoCtx,
+                                                     qedAsyncClusterAllocUpdate, pL2ClusterAlloc);
                     if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                         break;
                     else if (RT_FAILURE(rc))
@@ -2878,8 +2701,9 @@ static int qedAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                         pDataClusterAlloc->pL2Entry      = pL2Entry;
 
                         /* Write data. */
-                        rc = qedFileWriteUserAsync(pImage, offData, pIoCtx, cbToWrite,
-                                                   qedAsyncClusterAllocUpdate, pDataClusterAlloc);
+                        rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
+                                                         offData, pIoCtx, cbToWrite,
+                                                         qedAsyncClusterAllocUpdate, pDataClusterAlloc);
                         if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                             break;
                         else if (RT_FAILURE(rc))
@@ -2942,18 +2766,7 @@ static int qedResize(void *pBackendData, uint64_t cbSize,
     PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
-    PFNVDPROGRESS pfnProgress = NULL;
-    void *pvUser = NULL;
-    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
-                                              VDINTERFACETYPE_PROGRESS);
-    PVDINTERFACEPROGRESS pCbProgress = NULL;
-    if (pIfProgress)
-    {
-        pCbProgress = VDGetInterfaceProgress(pIfProgress);
-        if (pCbProgress)
-            pfnProgress = pCbProgress->pfnProgress;
-        pvUser = pIfProgress->pvUser;
-    }
+    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
     /* Making the image smaller is not supported at the moment. */
     if (cbSize < pImage->cbSize)
@@ -2970,9 +2783,9 @@ static int qedResize(void *pBackendData, uint64_t cbSize,
          *        implemented yet and resizing such an image will fail with an error.
          */
         if (qedByte2Cluster(pImage, pImage->cbTable)*pImage->cTableEntries*pImage->cTableEntries*pImage->cbCluster < cbSize)
-            rc = qedError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS,
-                          N_("Qed: Resizing the image '%s' is not supported because it would overflow the L1 and L2 table\n"),
-                          pImage->pszFilename);
+            rc = vdIfError(pImage->pIfError, VERR_BUFFER_OVERFLOW, RT_SRC_POS,
+                           N_("Qed: Resizing the image '%s' is not supported because it would overflow the L1 and L2 table\n"),
+                           pImage->pszFilename);
         else
         {
             uint64_t cbSizeOld = pImage->cbSize;
@@ -2983,8 +2796,8 @@ static int qedResize(void *pBackendData, uint64_t cbSize,
             {
                 pImage->cbSize = cbSizeOld; /* Restore */
 
-                rc = qedError(pImage, rc, RT_SRC_POS, N_("Qed: Resizing the image '%s' failed\n"),
-                              pImage->pszFilename);
+                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Qed: Resizing the image '%s' failed\n"),
+                               pImage->pszFilename);
             }
         }
     }

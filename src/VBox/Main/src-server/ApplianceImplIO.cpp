@@ -467,10 +467,8 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvUser;
 
-    PVDINTERFACE pIO = VDInterfaceGet(pInt->pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pInt->pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
     bool fLoop = true;
@@ -517,7 +515,7 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                             break;
                         size_t cbToWrite = cbMemRead - cbAllWritten;
                         size_t cbWritten = 0;
-                        rc = pCallbacks->pfnWriteSync(pIO->pvUser, pInt->pvStorage, pInt->cbCurFile, &pcBuf[cbAllWritten], cbToWrite, &cbWritten);
+                        rc = vdIfIoFileWriteSync(pIfIo, pInt->pvStorage, pInt->cbCurFile, &pcBuf[cbAllWritten], cbToWrite, &cbWritten);
 //                        RTPrintf ("%lu %lu %lu %Rrc\n", pInt->cbCurFile, cbToRead, cbRead, rc);
                         if (RT_FAILURE(rc))
                         {
@@ -569,7 +567,7 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                             break;
                         size_t cbToRead = cbMemWrite - cbAllRead;
                         size_t cbRead = 0;
-                        rc = pCallbacks->pfnReadSync(pIO->pvUser, pInt->pvStorage, pInt->cbCurFile, &pcBuf[cbAllRead], cbToRead, &cbRead);
+                        rc = vdIfIoFileReadSync(pIfIo, pInt->pvStorage, pInt->cbCurFile, &pcBuf[cbAllRead], cbToRead, &cbRead);
 //                        RTPrintf ("%lu %lu %lu %Rrc\n", pInt->cbCurFile, cbToRead, cbRead, rc);
                         if (RT_FAILURE(rc))
                         {
@@ -669,10 +667,8 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
     AssertReturn((fOpen & RTFILE_O_READWRITE) != RTFILE_O_READWRITE, VERR_INVALID_PARAMETER); /* No read/write allowed */
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
 
@@ -728,9 +724,8 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
             RTSha1Init(&pInt->ctx);
 
         /* Open the file. */
-        rc = pCallbacks->pfnOpen(pIO->pvUser, pszLocation,
-                                 fOpen, pInt->pfnCompleted,
-                                 &pInt->pvStorage);
+        rc = vdIfIoFileOpen(pIfIo, pszLocation, fOpen, pInt->pfnCompleted,
+                            &pInt->pvStorage);
         if (RT_FAILURE(rc))
             break;
 
@@ -772,10 +767,8 @@ static int sha1CloseCallback(void *pvUser, void *pvStorage)
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
 
@@ -812,7 +805,7 @@ static int sha1CloseCallback(void *pvUser, void *pvStorage)
     }
 
     /* Close the file */
-    rc = pCallbacks->pfnClose(pIO->pvUser, pInt->pvStorage);
+    rc = vdIfIoFileClose(pIfIo, pInt->pvStorage);
 
 //    RTPrintf("%lu %lu\n", pInt->calls, pInt->waits);
 
@@ -836,14 +829,12 @@ static int sha1DeleteCallback(void *pvUser, const char *pcszFilename)
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
 
-    return pCallbacks->pfnDelete(pIO->pvUser, pcszFilename);
+    return vdIfIoFileDelete(pIfIo, pcszFilename);
 }
 
 static int sha1MoveCallback(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
@@ -852,14 +843,13 @@ static int sha1MoveCallback(void *pvUser, const char *pcszSrc, const char *pcszD
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+
 
     DEBUG_PRINT_FLOW();
 
-    return pCallbacks->pfnMove(pIO->pvUser, pcszSrc, pcszDst, fMove);
+    return vdIfIoFileMove(pIfIo, pcszSrc, pcszDst, fMove);
 }
 
 static int sha1GetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
@@ -868,14 +858,12 @@ static int sha1GetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int6
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
 
-    return pCallbacks->pfnGetFreeSpace(pIO->pvUser, pcszFilename, pcbFreeSpace);
+    return vdIfIoFileGetFreeSpace(pIfIo, pcszFilename, pcbFreeSpace);
 }
 
 static int sha1GetModificationTimeCallback(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
@@ -884,14 +872,12 @@ static int sha1GetModificationTimeCallback(void *pvUser, const char *pcszFilenam
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
 
-    return pCallbacks->pfnGetModificationTime(pIO->pvUser, pcszFilename, pModificationTime);
+    return vdIfIoFileGetModificationTime(pIfIo, pcszFilename, pModificationTime);
 }
 
 
@@ -902,17 +888,15 @@ static int sha1GetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
 
     DEBUG_PRINT_FLOW();
 
     uint64_t cbSize;
-    int rc = pCallbacks->pfnGetSize(pIO->pvUser, pInt->pvStorage, &cbSize);
+    int rc = vdIfIoFileGetSize(pIfIo, pInt->pvStorage, &cbSize);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -928,16 +912,14 @@ static int sha1SetSizeCallback(void *pvUser, void *pvStorage, uint64_t cbSize)
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
 
     DEBUG_PRINT_FLOW();
 
-    return pCallbacks->pfnSetSize(pIO->pvUser, pInt->pvStorage, cbSize);
+    return vdIfIoFileSetSize(pIfIo, pInt->pvStorage, cbSize);
 }
 
 static int sha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
@@ -948,10 +930,8 @@ static int sha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
 
@@ -976,7 +956,7 @@ static int sha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset
             size_t cbToWrite = RT_MIN(pInt->cbZeroBuf, cbSize - cbAllWritten);
             size_t cbWritten = 0;
             rc = sha1WriteSyncCallback(pvUser, pvStorage, pInt->cbCurAll,
-                                         pInt->pvZeroBuf, cbToWrite, &cbWritten);
+                                       pInt->pvZeroBuf, cbToWrite, &cbWritten);
             if (RT_FAILURE(rc))
                 break;
             cbAllWritten += cbWritten;
@@ -1045,10 +1025,8 @@ static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
 //    DEBUG_PRINT_FLOW();
 
@@ -1134,10 +1112,8 @@ static int sha1FlushSyncCallback(void *pvUser, void *pvStorage)
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
 
@@ -1148,7 +1124,7 @@ static int sha1FlushSyncCallback(void *pvUser, void *pvStorage)
     if (RT_FAILURE(rc))
         return rc;
 
-    return pCallbacks->pfnFlushSync(pIO->pvUser, pInt->pvStorage);
+    return vdIfIoFileFlushSync(pIfIo, pInt->pvStorage);
 }
 
 /******************************************************************************
@@ -1161,8 +1137,6 @@ PVDINTERFACEIO Sha1CreateInterface()
     if (!pCallbacks)
         return NULL;
 
-    pCallbacks->cbSize                 = sizeof(VDINTERFACEIO);
-    pCallbacks->enmInterface           = VDINTERFACETYPE_IO;
     pCallbacks->pfnOpen                = sha1OpenCallback;
     pCallbacks->pfnClose               = sha1CloseCallback;
     pCallbacks->pfnDelete              = sha1DeleteCallback;
@@ -1184,8 +1158,6 @@ PVDINTERFACEIO FileCreateInterface()
     if (!pCallbacks)
         return NULL;
 
-    pCallbacks->cbSize                 = sizeof(VDINTERFACEIO);
-    pCallbacks->enmInterface           = VDINTERFACETYPE_IO;
     pCallbacks->pfnOpen                = fileOpenCallback;
     pCallbacks->pfnClose               = fileCloseCallback;
     pCallbacks->pfnDelete              = fileDeleteCallback;
@@ -1207,8 +1179,6 @@ PVDINTERFACEIO TarCreateInterface()
     if (!pCallbacks)
         return NULL;
 
-    pCallbacks->cbSize                 = sizeof(VDINTERFACEIO);
-    pCallbacks->enmInterface           = VDINTERFACETYPE_IO;
     pCallbacks->pfnOpen                = tarOpenCallback;
     pCallbacks->pfnClose               = tarCloseCallback;
     pCallbacks->pfnDelete              = tarDeleteCallback;
@@ -1224,17 +1194,17 @@ PVDINTERFACEIO TarCreateInterface()
     return pCallbacks;
 }
 
-int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, void *pvUser)
+int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pIfIo, void *pvUser)
 {
     /* Validate input. */
     AssertPtrReturn(ppvBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIfIo, VERR_INVALID_POINTER);
 
     void *pvStorage;
-    int rc = pCallbacks->pfnOpen(pvUser, pcszFilename,
-                                 RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, 0,
-                                 &pvStorage);
+    int rc = pIfIo->pfnOpen(pvUser, pcszFilename,
+                            RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, 0,
+                            &pvStorage);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1254,7 +1224,7 @@ int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINT
         for(;;)
         {
             size_t cbRead = 0;
-            rc = pCallbacks->pfnReadSync(pvUser, pvStorage, cbAllRead, pvTmpBuf, cbTmpSize, &cbRead);
+            rc = pIfIo->pfnReadSync(pvUser, pvStorage, cbAllRead, pvTmpBuf, cbTmpSize, &cbRead);
             if (   RT_FAILURE(rc)
                 || cbRead == 0)
                 break;
@@ -1269,7 +1239,7 @@ int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINT
         }
     }while(0);
 
-    pCallbacks->pfnClose(pvUser, pvStorage);
+    pIfIo->pfnClose(pvUser, pvStorage);
 
     if (rc == VERR_EOF)
         rc = VINF_SUCCESS;
@@ -1290,17 +1260,17 @@ int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINT
     return rc;
 }
 
-int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pCallbacks, void *pvUser)
+int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser)
 {
     /* Validate input. */
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbSize, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pCallbacks, VERR_INVALID_POINTER);
+    AssertPtrReturn(pIfIo, VERR_INVALID_POINTER);
 
     void *pvStorage;
-    int rc = pCallbacks->pfnOpen(pvUser, pcszFilename,
-                                 RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL, 0,
-                                 &pvStorage);
+    int rc = pIfIo->pfnOpen(pvUser, pcszFilename,
+                            RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL, 0,
+                            &pvStorage);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1311,13 +1281,13 @@ int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERF
             break;
         size_t cbToWrite = cbSize - cbAllWritten;
         size_t cbWritten = 0;
-        rc = pCallbacks->pfnWriteSync(pvUser, pvStorage, cbAllWritten, &((char*)pvBuf)[cbAllWritten], cbToWrite, &cbWritten);
+        rc = pIfIo->pfnWriteSync(pvUser, pvStorage, cbAllWritten, &((char*)pvBuf)[cbAllWritten], cbToWrite, &cbWritten);
         if (RT_FAILURE(rc))
             break;
         cbAllWritten += cbWritten;
     }
 
-    pCallbacks->pfnClose(pvUser, pvStorage);
+    pIfIo->pfnClose(pvUser, pvStorage);
 
     return rc;
 }

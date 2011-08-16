@@ -303,20 +303,15 @@ typedef struct DMGIMAGE
     const char         *pszFilename;
     /** Storage handle. */
     PVDIOSTORAGE        pStorage;
-    /** I/O interface. */
-    PVDINTERFACE        pInterfaceIO;
-    /** Async I/O interface callbacks. */
-    PVDINTERFACEIOINT   pInterfaceIOCallbacks;
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE        pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
     PVDINTERFACE        pVDIfsImage;
-
-    /** Error callback. */
-    PVDINTERFACE        pInterfaceError;
-    /** Opaque data for error callback. */
-    PVDINTERFACEERROR   pInterfaceErrorCallbacks;
+    /** Error interface. */
+    PVDINTERFACEERROR   pIfError;
+    /** I/O interface. */
+    PVDINTERFACEIOINT   pIfIo;
 
     /** Flags the image was opened with. */
     uint32_t            uOpenFlags;
@@ -425,106 +420,6 @@ static void dmgUdifCkSumHost2FileEndian(PDMGUDIFCKSUM pCkSum);
 static void dmgUdifCkSumFile2HostEndian(PDMGUDIFCKSUM pCkSum);
 static bool dmgUdifCkSumIsValid(PCDMGUDIFCKSUM pCkSum, const char *pszPrefix);
 
-/**
- * Internal: signal an error to the frontend.
- */
-DECLINLINE(int) dmgError(PDMGIMAGE pThis, int rc, RT_SRC_POS_DECL,
-                         const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    if (pThis->pInterfaceError)
-        pThis->pInterfaceErrorCallbacks->pfnError(pThis->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS,
-                                                  pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-/**
- * Internal: signal an informational message to the frontend.
- */
-DECLINLINE(int) dmgMessage(PDMGIMAGE pThis, const char *pszFormat, ...)
-{
-    int rc = VINF_SUCCESS;
-    va_list va;
-    va_start(va, pszFormat);
-    if (pThis->pInterfaceError)
-        rc = pThis->pInterfaceErrorCallbacks->pfnMessage(pThis->pInterfaceError->pvUser,
-                                                         pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-
-DECLINLINE(int) dmgFileOpen(PDMGIMAGE pThis, const char *pszFilename,
-                            uint32_t fOpen)
-{
-    return pThis->pInterfaceIOCallbacks->pfnOpen(pThis->pInterfaceIO->pvUser,
-                                                 pszFilename, fOpen,
-                                                 &pThis->pStorage);
-}
-
-DECLINLINE(int) dmgFileClose(PDMGIMAGE pThis)
-{
-    return pThis->pInterfaceIOCallbacks->pfnClose(pThis->pInterfaceIO->pvUser,
-                                                  pThis->pStorage);
-}
-
-DECLINLINE(int) dmgFileDelete(PDMGIMAGE pThis, const char *pszFilename)
-{
-    return pThis->pInterfaceIOCallbacks->pfnDelete(pThis->pInterfaceIO->pvUser,
-                                                   pszFilename);
-}
-
-DECLINLINE(int) dmgFileMove(PDMGIMAGE pThis, const char *pszSrc,
-                            const char *pszDst, unsigned fMove)
-{
-    return pThis->pInterfaceIOCallbacks->pfnMove(pThis->pInterfaceIO->pvUser,
-                                                 pszSrc, pszDst, fMove);
-}
-
-DECLINLINE(int) dmgFileGetFreeSpace(PDMGIMAGE pThis, const char *pszFilename,
-                                    int64_t *pcbFree)
-{
-    return pThis->pInterfaceIOCallbacks->pfnGetFreeSpace(pThis->pInterfaceIO->pvUser,
-                                                         pszFilename, pcbFree);
-}
-
-DECLINLINE(int) dmgFileGetSize(PDMGIMAGE pThis, uint64_t *pcbSize)
-{
-    return pThis->pInterfaceIOCallbacks->pfnGetSize(pThis->pInterfaceIO->pvUser,
-                                                    pThis->pStorage, pcbSize);
-}
-
-DECLINLINE(int) dmgFileSetSize(PDMGIMAGE pThis, uint64_t cbSize)
-{
-    return pThis->pInterfaceIOCallbacks->pfnSetSize(pThis->pInterfaceIO->pvUser,
-                                                    pThis->pStorage, cbSize);
-}
-
-DECLINLINE(int) dmgFileWriteSync(PDMGIMAGE pThis, uint64_t uOffset,
-                                 const void *pvBuffer, size_t cbBuffer,
-                                 size_t *pcbWritten)
-{
-    return pThis->pInterfaceIOCallbacks->pfnWriteSync(pThis->pInterfaceIO->pvUser,
-                                                      pThis->pStorage, uOffset,
-                                                      pvBuffer, cbBuffer, pcbWritten);
-}
-
-DECLINLINE(int) dmgFileReadSync(PDMGIMAGE pThis, uint64_t uOffset,
-                                void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
-{
-    return pThis->pInterfaceIOCallbacks->pfnReadSync(pThis->pInterfaceIO->pvUser,
-                                                     pThis->pStorage, uOffset,
-                                                     pvBuffer, cbBuffer, pcbRead);
-}
-
-DECLINLINE(int) dmgFileFlushSync(PDMGIMAGE pThis)
-{
-    return pThis->pInterfaceIOCallbacks->pfnFlushSync(pThis->pInterfaceIO->pvUser,
-                                                      pThis->pStorage);
-}
-
 static DECLCALLBACK(int) dmgFileInflateHelper(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbBuf)
 {
     DMGINFLATESTATE *pInflateState = (DMGINFLATESTATE *)pvUser;
@@ -539,8 +434,10 @@ static DECLCALLBACK(int) dmgFileInflateHelper(void *pvUser, void *pvBuf, size_t 
         return VINF_SUCCESS;
     }
     cbBuf = RT_MIN(cbBuf, pInflateState->cbSize);
-    int rc = dmgFileReadSync(pInflateState->pImage, pInflateState->uFileOffset,
-                             pvBuf, cbBuf, NULL);
+    int rc = vdIfIoIntFileReadSync(pInflateState->pImage->pIfIo,
+                                   pInflateState->pImage->pStorage,
+                                   pInflateState->uFileOffset,
+                                   pvBuf, cbBuf, NULL);
     if (RT_FAILURE(rc))
         return rc;
     pInflateState->uFileOffset += cbBuf;
@@ -843,7 +740,7 @@ static int dmgFreeImage(PDMGIMAGE pThis, bool fDelete)
             if (!fDelete)
                 dmgFlushImage(pThis);
 
-            dmgFileClose(pThis);
+            vdIfIoIntFileClose(pThis->pIfIo, pThis->pStorage);
             pThis->pStorage = NULL;
         }
 
@@ -868,7 +765,7 @@ static int dmgFreeImage(PDMGIMAGE pThis, bool fDelete)
             }
 
         if (fDelete && pThis->pszFilename)
-            dmgFileDelete(pThis, pThis->pszFilename);
+            vdIfIoIntFileDelete(pThis->pIfIo, pThis->pszFilename);
 
         if (pThis->pvDecompExtent)
         {
@@ -1471,19 +1368,14 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
 {
     pThis->uOpenFlags  = uOpenFlags;
 
-    pThis->pInterfaceError = VDInterfaceGet(pThis->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pThis->pInterfaceError)
-        pThis->pInterfaceErrorCallbacks = VDGetInterfaceError(pThis->pInterfaceError);
+    pThis->pIfError = VDIfErrorGet(pThis->pVDIfsDisk);
+    pThis->pIfIo = VDIfIoIntGet(pThis->pVDIfsImage);
+    AssertPtrReturn(pThis->pIfIo, VERR_INVALID_PARAMETER);
 
-    /* Get I/O interface. */
-    pThis->pInterfaceIO = VDInterfaceGet(pThis->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pThis->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pThis->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pThis->pInterfaceIO);
-    AssertPtrReturn(pThis->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
-
-    int rc = dmgFileOpen(pThis, pThis->pszFilename,
-                         VDOpenFlagsToFileOpenFlags(uOpenFlags,
-                                                    false /* fCreate */));
+    int rc = vdIfIoIntFileOpen(pThis->pIfIo, pThis->pszFilename,
+                               VDOpenFlagsToFileOpenFlags(uOpenFlags,
+                                                          false /* fCreate */),
+                               &pThis->pStorage);
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
@@ -1494,12 +1386,14 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
     /*
      * Read the footer.
      */
-    rc = dmgFileGetSize(pThis, &pThis->cbFile);
+    rc = vdIfIoIntFileGetSize(pThis->pIfIo, pThis->pStorage, &pThis->cbFile);
     if (RT_FAILURE(rc))
         return rc;
     if (pThis->cbFile < 1024)
         return VERR_VD_DMG_INVALID_HEADER;
-    rc = dmgFileReadSync(pThis, pThis->cbFile - sizeof(pThis->Ftr), &pThis->Ftr, sizeof(pThis->Ftr), NULL);
+    rc = vdIfIoIntFileReadSync(pThis->pIfIo, pThis->pStorage,
+                               pThis->cbFile - sizeof(pThis->Ftr),
+                               &pThis->Ftr, sizeof(pThis->Ftr), NULL);
     if (RT_FAILURE(rc))
         return rc;
     dmgUdifFtrFile2HostEndian(&pThis->Ftr);
@@ -1529,7 +1423,8 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
     char *pszXml = (char *)RTMemAlloc(cchXml + 1);
     if (!pszXml)
         return VERR_NO_MEMORY;
-    rc = dmgFileReadSync(pThis, pThis->Ftr.offXml, pszXml, cchXml, NULL);
+    rc = vdIfIoIntFileReadSync(pThis->pIfIo, pThis->pStorage, pThis->Ftr.offXml,
+                               pszXml, cchXml, NULL);
     if (RT_SUCCESS(rc))
     {
         pszXml[cchXml] = '\0';
@@ -1604,33 +1499,29 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     uint64_t cbFile, offFtr = 0;
     DMGUDIF Ftr;
 
-    /* Get I/O interface. */
-    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIOINT pInterfaceIOCallbacks = VDGetInterfaceIOInt(pInterfaceIO);
-    AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     /*
      * Open the file and read the footer.
      */
-    rc = pInterfaceIOCallbacks->pfnOpen(pInterfaceIO->pvUser, pszFilename,
-                                        VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
-                                                                   false /* fCreate */),
-                                        &pStorage);
+    rc = vdIfIoIntFileOpen(pIfIo, pszFilename,
+                           VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
+                                                      false /* fCreate */),
+                           &pStorage);
     if (RT_SUCCESS(rc))
-        rc = pInterfaceIOCallbacks->pfnGetSize(pInterfaceIO->pvUser, pStorage,
-                                               &cbFile);
+        rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
     if (RT_SUCCESS(rc))
     {
         offFtr = cbFile - sizeof(Ftr);
-        rc = pInterfaceIOCallbacks->pfnReadSync(pInterfaceIO->pvUser, pStorage,
-                                                offFtr, &Ftr, sizeof(Ftr), NULL);
+        rc = vdIfIoIntFileReadSync(pIfIo, pStorage, offFtr, &Ftr, sizeof(Ftr), NULL);
     }
     else
     {
-        pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+        vdIfIoIntFileClose(pIfIo, pStorage);
         rc = VERR_VD_DMG_INVALID_HEADER;
     }
+
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1656,7 +1547,7 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
             rc = VERR_VD_DMG_INVALID_HEADER;
     }
 
-    pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+    vdIfIoIntFileClose(pIfIo, pStorage);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1800,7 +1691,9 @@ static int dmgRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         {
             case DMGEXTENTTYPE_RAW:
             {
-                rc = dmgFileReadSync(pThis, pExtent->offFileStart + DMG_BLOCK2BYTE(uExtentRel), pvBuf, cbToRead, NULL);
+                rc = vdIfIoIntFileReadSync(pThis->pIfIo, pThis->pStorage,
+                                           pExtent->offFileStart + DMG_BLOCK2BYTE(uExtentRel),
+                                           pvBuf, cbToRead, NULL);
                 break;
             }
             case DMGEXTENTTYPE_ZERO:
@@ -1939,7 +1832,7 @@ static uint64_t dmgGetFileSize(void *pBackendData)
         uint64_t cbFile;
         if (pThis->pStorage)
         {
-            int rc = dmgFileGetSize(pThis, &cbFile);
+            int rc = vdIfIoIntFileGetSize(pThis->pIfIo, pThis->pStorage, &cbFile);
             if (RT_SUCCESS(rc))
                 cb = cbFile;
         }
@@ -2335,10 +2228,10 @@ static void dmgDump(void *pBackendData)
     AssertPtr(pThis);
     if (pThis)
     {
-        dmgMessage(pThis, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
-                    pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors,
-                    pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors,
-                    pThis->cbSize / 512);
+        vdIfErrorMessage(pThis->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
+                         pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors,
+                         pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors,
+                         pThis->cbSize / 512);
     }
 }
 

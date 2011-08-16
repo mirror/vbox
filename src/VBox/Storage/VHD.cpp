@@ -128,19 +128,14 @@ typedef struct VHDIMAGE
     /** Opaque storage handle. */
     PVDIOSTORAGE      pStorage;
 
-    /** I/O interface. */
-    PVDINTERFACE      pInterfaceIO;
-    /** I/O interface callbacks. */
-    PVDINTERFACEIOINT pInterfaceIOCallbacks;
-
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE      pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
     PVDINTERFACE      pVDIfsImage;
     /** Error interface. */
-    PVDINTERFACE      pInterfaceError;
-    /** Error interface callback table. */
-    PVDINTERFACEERROR pInterfaceErrorCallbacks;
+    PVDINTERFACEERROR pIfError;
+    /** I/O interface. */
+    PVDINTERFACEIOINT pIfIo;
 
     /** Open flags passed by VBoxHDD layer. */
     unsigned        uOpenFlags;
@@ -250,182 +245,6 @@ static const VDFILEEXTENSION s_aVhdFileExtensions[] =
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-
-/**
- * Internal: signal an error to the frontend.
- */
-DECLINLINE(int) vhdError(PVHDIMAGE pImage, int rc, RT_SRC_POS_DECL,
-                         const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    if (pImage->pInterfaceError && pImage->pInterfaceErrorCallbacks)
-        pImage->pInterfaceErrorCallbacks->pfnError(pImage->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS,
-                                                   pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-/**
- * Internal: signal an informational message to the frontend.
- */
-DECLINLINE(int) vhdMessage(PVHDIMAGE pImage, const char *pszFormat, ...)
-{
-    int rc = VINF_SUCCESS;
-    va_list va;
-    va_start(va, pszFormat);
-    if (pImage->pInterfaceError && pImage->pInterfaceErrorCallbacks)
-        rc = pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser,
-                                                          pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-
-DECLINLINE(int) vhdFileOpen(PVHDIMAGE pImage, const char *pszFilename,
-                            uint32_t fOpen)
-{
-    return pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
-                                                  pszFilename, fOpen,
-                                                  &pImage->pStorage);
-}
-
-DECLINLINE(int) vhdFileClose(PVHDIMAGE pImage)
-{
-    return pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
-                                                   pImage->pStorage);
-}
-
-DECLINLINE(int) vhdFileDelete(PVHDIMAGE pImage, const char *pszFilename)
-{
-    return pImage->pInterfaceIOCallbacks->pfnDelete(pImage->pInterfaceIO->pvUser,
-                                                    pszFilename);
-}
-
-DECLINLINE(int) vhdFileMove(PVHDIMAGE pImage, const char *pszSrc,
-                            const char *pszDst, unsigned fMove)
-{
-    return pImage->pInterfaceIOCallbacks->pfnMove(pImage->pInterfaceIO->pvUser,
-                                                  pszSrc, pszDst, fMove);
-}
-
-DECLINLINE(int) vhdFileGetFreeSpace(PVHDIMAGE pImage, const char *pszFilename,
-                                    int64_t *pcbFree)
-{
-    return pImage->pInterfaceIOCallbacks->pfnGetFreeSpace(pImage->pInterfaceIO->pvUser,
-                                                          pszFilename, pcbFree);
-}
-
-DECLINLINE(int) vhdFileGetModificationTime(PVHDIMAGE pImage,
-                                           const char *pszFilename,
-                                           PRTTIMESPEC pModificationTime)
-{
-    return pImage->pInterfaceIOCallbacks->pfnGetModificationTime(pImage->pInterfaceIO->pvUser,
-                                                                 pszFilename,
-                                                                 pModificationTime);
-}
-
-DECLINLINE(int) vhdFileGetSize(PVHDIMAGE pImage, uint64_t *pcbSize)
-{
-    return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage, pcbSize);
-}
-
-DECLINLINE(int) vhdFileSetSize(PVHDIMAGE pImage, uint64_t cbSize)
-{
-    return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage, cbSize);
-}
-
-DECLINLINE(int) vhdFileWriteSync(PVHDIMAGE pImage, uint64_t uOffset,
-                                 const void *pvBuffer, size_t cbBuffer,
-                                 size_t *pcbWritten)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage, uOffset,
-                                                       pvBuffer, cbBuffer, pcbWritten);
-}
-
-DECLINLINE(int) vhdFileReadSync(PVHDIMAGE pImage, uint64_t uOffset,
-                                void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
-                                                      pImage->pStorage, uOffset,
-                                                      pvBuffer, cbBuffer, pcbRead);
-}
-
-DECLINLINE(int) vhdFileFlushSync(PVHDIMAGE pImage)
-{
-    return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage);
-}
-
-DECLINLINE(int) vhdFileReadUserAsync(PVHDIMAGE pImage, uint64_t uOffset,
-                                     PVDIOCTX pIoCtx, size_t cbRead)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
-                                                           pImage->pStorage,
-                                                           uOffset, pIoCtx,
-                                                           cbRead);
-}
-
-DECLINLINE(int) vhdFileWriteUserAsync(PVHDIMAGE pImage, uint64_t uOffset,
-                                      PVDIOCTX pIoCtx, size_t cbWrite,
-                                      PFNVDXFERCOMPLETED pfnComplete,
-                                      void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
-                                                            pImage->pStorage,
-                                                            uOffset, pIoCtx,
-                                                            cbWrite,
-                                                            pfnComplete,
-                                                            pvCompleteUser);
-}
-
-DECLINLINE(int) vhdFileReadMetaAsync(PVHDIMAGE pImage, uint64_t uOffset,
-                                     void *pvBuffer, size_t cbBuffer,
-                                     PVDIOCTX pIoCtx, PPVDMETAXFER ppMetaXfer,
-                                     PFNVDXFERCOMPLETED pfnComplete,
-                                     void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
-                                                           pImage->pStorage,
-                                                           uOffset, pvBuffer,
-                                                           cbBuffer, pIoCtx,
-                                                           ppMetaXfer,
-                                                           pfnComplete,
-                                                           pvCompleteUser);
-}
-
-DECLINLINE(int) vhdFileWriteMetaAsync(PVHDIMAGE pImage, uint64_t uOffset,
-                                      void *pvBuffer, size_t cbBuffer,
-                                      PVDIOCTX pIoCtx,
-                                      PFNVDXFERCOMPLETED pfnComplete,
-                                      void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pImage->pInterfaceIO->pvUser,
-                                                            pImage->pStorage,
-                                                            uOffset, pvBuffer,
-                                                            cbBuffer, pIoCtx,
-                                                            pfnComplete,
-                                                            pvCompleteUser);
-}
-
-DECLINLINE(int) vhdFileFlushAsync(PVHDIMAGE pImage, PVDIOCTX pIoCtx,
-                                  PFNVDXFERCOMPLETED pfnComplete,
-                                  void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
-                                                        pImage->pStorage,
-                                                        pIoCtx, pfnComplete,
-                                                        pvCompleteUser);
-}
-
-DECLINLINE(void) vhdFileMetaXferRelease(PVHDIMAGE pImage, PVDMETAXFER pMetaXfer)
-{
-    pImage->pInterfaceIOCallbacks->pfnMetaXferRelease(pImage->pInterfaceIO->pvUser,
-                                                      pMetaXfer);
-}
 
 
 /**
@@ -541,9 +360,10 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
             rc = VERR_NOT_IMPLEMENTED;
             goto out;
     }
-    rc = vhdFileWriteSync(pImage, RT_BE2H_U64(pLocator->u64DataOffset),
-                          pvBuf, RT_BE2H_U32(pLocator->u32DataSpace) * VHD_SECTOR_SIZE,
-                          NULL);
+    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                RT_BE2H_U64(pLocator->u64DataOffset),
+                                pvBuf, RT_BE2H_U32(pLocator->u32DataSpace) * VHD_SECTOR_SIZE,
+                                NULL);
 
 out:
     if (pvBuf)
@@ -562,7 +382,8 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
     if (!pImage)
         return VERR_VD_NOT_OPENED;
 
-    rc = vhdFileReadSync(pImage, pImage->u64DataOffset, &ddh, sizeof(ddh), NULL);
+    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                               pImage->u64DataOffset, &ddh, sizeof(ddh), NULL);
     if (RT_FAILURE(rc))
         return rc;
     if (memcmp(ddh.Cookie, VHD_DYNAMIC_DISK_HEADER_COOKIE, VHD_DYNAMIC_DISK_HEADER_COOKIE_SIZE) != 0)
@@ -611,7 +432,8 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
 
     ddh.Checksum = 0;
     ddh.Checksum = RT_H2BE_U32(vhdChecksum(&ddh, sizeof(ddh)));
-    rc = vhdFileWriteSync(pImage, pImage->u64DataOffset, &ddh, sizeof(ddh), NULL);
+    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                pImage->u64DataOffset, &ddh, sizeof(ddh), NULL);
     return rc;
 }
 
@@ -632,12 +454,13 @@ static int vhdUpdateFooter(PVHDIMAGE pImage)
     pImage->vhdFooterCopy.Checksum = RT_H2BE_U32(vhdChecksum(&pImage->vhdFooterCopy, sizeof(VHDFooter)));
 
     if (pImage->pBlockAllocationTable)
-        rc = vhdFileWriteSync(pImage, 0, &pImage->vhdFooterCopy,
-                              sizeof(VHDFooter), NULL);
+        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, 0,
+                                    &pImage->vhdFooterCopy, sizeof(VHDFooter), NULL);
 
     if (RT_SUCCESS(rc))
-        rc = vhdFileWriteSync(pImage, pImage->uCurrentEndOfFile,
-                              &pImage->vhdFooterCopy, sizeof(VHDFooter), NULL);
+        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                    pImage->uCurrentEndOfFile, &pImage->vhdFooterCopy,
+                                    sizeof(VHDFooter), NULL);
 
     return rc;
 }
@@ -672,9 +495,8 @@ static int vhdFlushImage(PVHDIMAGE pImage)
         /*
          * Write the block allocation table after the copy of the disk footer and the dynamic disk header.
          */
-        vhdFileWriteSync(pImage, pImage->uBlockAllocationTableOffset,
-                         pBlockAllocationTableToWrite,
-                         cbBlockAllocationTableToWrite, NULL);
+        vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, pImage->uBlockAllocationTableOffset,
+                               pBlockAllocationTableToWrite, cbBlockAllocationTableToWrite, NULL);
         if (pImage->fDynHdrNeedsUpdate)
             rc = vhdDynamicHeaderUpdate(pImage);
         RTMemFree(pBlockAllocationTableToWrite);
@@ -684,7 +506,7 @@ static int vhdFlushImage(PVHDIMAGE pImage)
         rc = vhdUpdateFooter(pImage);
 
     if (RT_SUCCESS(rc))
-        rc = vhdFileFlushSync(pImage);
+        rc = vdIfIoIntFileFlushSync(pImage->pIfIo, pImage->pStorage);
 
     return rc;
 }
@@ -707,7 +529,7 @@ static int vhdFreeImage(PVHDIMAGE pImage, bool fDelete)
             if (!fDelete)
                 vhdFlushImage(pImage);
 
-            vhdFileClose(pImage);
+            vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
 
@@ -728,7 +550,7 @@ static int vhdFreeImage(PVHDIMAGE pImage, bool fDelete)
         }
 
         if (fDelete && pImage->pszFilename)
-            rc = vhdFileDelete(pImage, pImage->pszFilename);
+            rc = vdIfIoIntFileDelete(pImage->pIfIo, pImage->pszFilename);
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -793,11 +615,11 @@ static int vhdAsyncExpansionComplete(PVHDIMAGE pImage, PVDIOCTX pIoCtx, PVHDIMAG
              * do anything if this fails. */
             if (uStatus == VHDIMAGEEXPAND_STEP_SUCCESS)
             {
-                rc = vhdFileWriteMetaAsync(pImage,
-                                             pImage->uBlockAllocationTableOffset
-                                           + pExpand->idxBatAllocated * sizeof(uint32_t),
-                                           &pImage->pBlockAllocationTable[pExpand->idxBatAllocated],
-                                           sizeof(uint32_t), pIoCtx, NULL, NULL);
+                rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                                   pImage->uBlockAllocationTableOffset
+                                                 + pExpand->idxBatAllocated * sizeof(uint32_t),
+                                                 &pImage->pBlockAllocationTable[pExpand->idxBatAllocated],
+                                                 sizeof(uint32_t), pIoCtx, NULL, NULL);
                 fIoInProgress |= rc == VERR_VD_ASYNC_IO_IN_PROGRESS;
             }
         }
@@ -805,13 +627,15 @@ static int vhdAsyncExpansionComplete(PVHDIMAGE pImage, PVDIOCTX pIoCtx, PVHDIMAG
         /* Restore old size (including the footer because another application might
          * fill up the free space making it impossible to add the footer)
          * and add the footer at the right place again. */
-        rc = vhdFileSetSize(pImage, pExpand->cbEofOld + sizeof(VHDFooter));
+        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage,
+                                  pExpand->cbEofOld + sizeof(VHDFooter));
         AssertRC(rc);
 
         pImage->uCurrentEndOfFile = pExpand->cbEofOld;
-        rc = vhdFileWriteMetaAsync(pImage, pImage->uCurrentEndOfFile,
-                                   &pImage->vhdFooterCopy, sizeof(VHDFooter),
-                                   pIoCtx, NULL, NULL);
+        rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                         pImage->uCurrentEndOfFile,
+                                         &pImage->vhdFooterCopy, sizeof(VHDFooter),
+                                         pIoCtx, NULL, NULL);
         fIoInProgress |= rc == VERR_VD_ASYNC_IO_IN_PROGRESS;
     }
 
@@ -870,7 +694,7 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
     /*
      * Read the dynamic disk header.
      */
-    rc = vhdFileReadSync(pImage, uDynamicDiskHeaderOffset,
+    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, uDynamicDiskHeaderOffset,
                          &vhdDynamicDiskHeader, sizeof(VHDDynamicDiskHeader),
                          NULL);
     if (memcmp(vhdDynamicDiskHeader.Cookie, VHD_DYNAMIC_DISK_HEADER_COOKIE, VHD_DYNAMIC_DISK_HEADER_COOKIE_SIZE))
@@ -911,10 +735,10 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
     uBlockAllocationTableOffset = RT_BE2H_U64(vhdDynamicDiskHeader.TableOffset);
     LogFlowFunc(("uBlockAllocationTableOffset=%llu\n", uBlockAllocationTableOffset));
     pImage->uBlockAllocationTableOffset = uBlockAllocationTableOffset;
-    rc = vhdFileReadSync(pImage, uBlockAllocationTableOffset,
-                         pBlockAllocationTable,
-                         pImage->cBlockAllocationTableEntries * sizeof(uint32_t),
-                         NULL);
+    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                               uBlockAllocationTableOffset, pBlockAllocationTable,
+                               pImage->cBlockAllocationTableEntries * sizeof(uint32_t),
+                               NULL);
 
     /*
      * Because the offset entries inside the allocation table are stored big endian
@@ -945,22 +769,17 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
 
     pImage->uOpenFlags = uOpenFlags;
 
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
-
-    /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
-    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
+    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
+    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
     /*
      * Open the image.
      */
-    int rc = vhdFileOpen(pImage, pImage->pszFilename,
-                         VDOpenFlagsToFileOpenFlags(uOpenFlags,
-                                                    false /* fCreate */));
+    int rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename,
+                               VDOpenFlagsToFileOpenFlags(uOpenFlags,
+                                                          false /* fCreate */),
+                               &pImage->pStorage);
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
@@ -968,31 +787,25 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
         return rc;
     }
 
-    rc = vhdFileGetSize(pImage, &FileSize);
+    rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &FileSize);
     pImage->uCurrentEndOfFile = FileSize - sizeof(VHDFooter);
 
-    rc = vhdFileReadSync(pImage, pImage->uCurrentEndOfFile,
-                         &vhdFooter, sizeof(VHDFooter), NULL);
+    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, pImage->uCurrentEndOfFile,
+                               &vhdFooter, sizeof(VHDFooter), NULL);
     if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
         return VERR_VD_VHD_INVALID_HEADER;
 
     switch (RT_BE2H_U32(vhdFooter.DiskType))
     {
         case VHD_FOOTER_DISK_TYPE_FIXED:
-            {
-                pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED;
-            }
+            pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED;
             break;
         case VHD_FOOTER_DISK_TYPE_DYNAMIC:
-            {
-                pImage->uImageFlags &= ~VD_IMAGE_FLAGS_FIXED;
-            }
+            pImage->uImageFlags &= ~VD_IMAGE_FLAGS_FIXED;
             break;
         case VHD_FOOTER_DISK_TYPE_DIFFERENCING:
-            {
-                pImage->uImageFlags |= VD_IMAGE_FLAGS_DIFF;
-                pImage->uImageFlags &= ~VD_IMAGE_FLAGS_FIXED;
-            }
+            pImage->uImageFlags |= VD_IMAGE_FLAGS_DIFF;
+            pImage->uImageFlags &= ~VD_IMAGE_FLAGS_FIXED;
             break;
         default:
             return VERR_NOT_IMPLEMENTED;
@@ -1172,7 +985,7 @@ static int vhdCreateDynamicImage(PVHDIMAGE pImage, uint64_t cbSize)
         pImage->cDataBlockBitmapSectors++;
     pImage->pu8Bitmap               = vhdBlockBitmapAllocate(pImage);
     if (!pImage->pu8Bitmap)
-        return vhdError(pImage, VERR_NO_MEMORY, RT_SRC_POS, N_("VHD: cannot allocate memory for bitmap storage"));
+        return vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS, N_("VHD: cannot allocate memory for bitmap storage"));
 
     /* Initialize BAT. */
     pImage->uBlockAllocationTableOffset = (uint64_t)sizeof(VHDFooter) + sizeof(VHDDynamicDiskHeader);
@@ -1180,7 +993,7 @@ static int vhdCreateDynamicImage(PVHDIMAGE pImage, uint64_t cbSize)
     u32BlockAllocationTableSectors = (pImage->cBlockAllocationTableEntries * sizeof(uint32_t) + VHD_SECTOR_SIZE - 1) / VHD_SECTOR_SIZE;
     pImage->pBlockAllocationTable = (uint32_t *)RTMemAllocZ(pImage->cBlockAllocationTableEntries * sizeof(uint32_t));
     if (!pImage->pBlockAllocationTable)
-        return vhdError(pImage, VERR_NO_MEMORY, RT_SRC_POS, N_("VHD: cannot allocate memory for BAT"));
+        return vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS, N_("VHD: cannot allocate memory for BAT"));
 
     for (unsigned i = 0; i < pImage->cBlockAllocationTableEntries; i++)
     {
@@ -1197,14 +1010,14 @@ static int vhdCreateDynamicImage(PVHDIMAGE pImage, uint64_t cbSize)
     /* Set dynamic image size. */
     pvTmp = RTMemTmpAllocZ(pImage->uCurrentEndOfFile + sizeof(VHDFooter));
     if (!pvTmp)
-        return vhdError(pImage, VERR_NO_MEMORY, RT_SRC_POS, N_("VHD: cannot set the file size for '%s'"), pImage->pszFilename);
+        return vdIfError(pImage->pIfError, VERR_NO_MEMORY, RT_SRC_POS, N_("VHD: cannot set the file size for '%s'"), pImage->pszFilename);
 
-    rc = vhdFileWriteSync(pImage, 0, pvTmp,
+    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, 0, pvTmp,
                           pImage->uCurrentEndOfFile + sizeof(VHDFooter), NULL);
     if (RT_FAILURE(rc))
     {
         RTMemTmpFree(pvTmp);
-        return vhdError(pImage, rc, RT_SRC_POS, N_("VHD: cannot set the file size for '%s'"), pImage->pszFilename);
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VHD: cannot set the file size for '%s'"), pImage->pszFilename);
     }
 
     RTMemTmpFree(pvTmp);
@@ -1220,18 +1033,18 @@ static int vhdCreateDynamicImage(PVHDIMAGE pImage, uint64_t cbSize)
     DynamicDiskHeader.Checksum = 0;
     DynamicDiskHeader.Checksum = RT_H2BE_U32(vhdChecksum(&DynamicDiskHeader, sizeof(DynamicDiskHeader)));
 
-    rc = vhdFileWriteSync(pImage, sizeof(VHDFooter), &DynamicDiskHeader,
-                          sizeof(DynamicDiskHeader), NULL);
+    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, sizeof(VHDFooter),
+                                &DynamicDiskHeader, sizeof(DynamicDiskHeader), NULL);
     if (RT_FAILURE(rc))
-        return vhdError(pImage, rc, RT_SRC_POS, N_("VHD: cannot write dynamic disk header to image '%s'"), pImage->pszFilename);
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VHD: cannot write dynamic disk header to image '%s'"), pImage->pszFilename);
 
     /* Write BAT. */
-    rc = vhdFileWriteSync(pImage, pImage->uBlockAllocationTableOffset,
-                          pImage->pBlockAllocationTable,
-                          pImage->cBlockAllocationTableEntries * sizeof(uint32_t),
-                          NULL);
+    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, pImage->uBlockAllocationTableOffset,
+                                pImage->pBlockAllocationTable,
+                                pImage->cBlockAllocationTableEntries * sizeof(uint32_t),
+                                NULL);
     if (RT_FAILURE(rc))
-        return vhdError(pImage, rc, RT_SRC_POS, N_("VHD: cannot write BAT to image '%s'"), pImage->pszFilename);
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VHD: cannot write BAT to image '%s'"), pImage->pszFilename);
 
     return rc;
 }
@@ -1254,15 +1067,14 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
     pImage->uOpenFlags = uOpenFlags;
     pImage->uImageFlags = uImageFlags;
 
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
 
-    rc = vhdFileOpen(pImage, pImage->pszFilename,
-                     VDOpenFlagsToFileOpenFlags(uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
-                                                true /* fCreate */));
+    rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename,
+                           VDOpenFlagsToFileOpenFlags(uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
+                                                      true /* fCreate */),
+                           &pImage->pStorage);
     if (RT_FAILURE(rc))
-        return vhdError(pImage, rc, RT_SRC_POS, N_("VHD: cannot create image '%s'"), pImage->pszFilename);
+        return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VHD: cannot create image '%s'"), pImage->pszFilename);
 
 
     pImage->cbSize = cbSize;
@@ -1303,10 +1115,11 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
         pImage->uCurrentEndOfFile = cbSize;
         /** @todo r=klaus replace this with actual data writes, see the experience
          * with VDI files on Windows, can cause long freezes when writing. */
-        rc = vhdFileSetSize(pImage, pImage->uCurrentEndOfFile + sizeof(VHDFooter));
+        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage,
+                                  pImage->uCurrentEndOfFile + sizeof(VHDFooter));
         if (RT_FAILURE(rc))
         {
-            vhdError(pImage, rc, RT_SRC_POS, N_("VHD: cannot set the file size for '%s'"), pImage->pszFilename);
+            vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VHD: cannot set the file size for '%s'"), pImage->pszFilename);
             goto out;
         }
     }
@@ -1348,11 +1161,11 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
     pImage->vhdFooterCopy = Footer;
 
     /* Store the footer */
-    rc = vhdFileWriteSync(pImage, pImage->uCurrentEndOfFile, &Footer,
-                          sizeof(Footer), NULL);
+    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, pImage->uCurrentEndOfFile,
+                                &Footer, sizeof(Footer), NULL);
     if (RT_FAILURE(rc))
     {
-        vhdError(pImage, rc, RT_SRC_POS, N_("VHD: cannot write footer to image '%s'"), pImage->pszFilename);
+        vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VHD: cannot write footer to image '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -1360,10 +1173,10 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
     if (!(uImageFlags & VD_IMAGE_FLAGS_FIXED))
     {
         /* Write the copy of the footer. */
-        rc = vhdFileWriteSync(pImage, 0, &Footer, sizeof(Footer), NULL);
+        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, 0, &Footer, sizeof(Footer), NULL);
         if (RT_FAILURE(rc))
         {
-            vhdError(pImage, rc, RT_SRC_POS, N_("VHD: cannot write a copy of footer to image '%s'"), pImage->pszFilename);
+            vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VHD: cannot write a copy of footer to image '%s'"), pImage->pszFilename);
             goto out;
         }
     }
@@ -1388,31 +1201,26 @@ static int vhdCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     uint64_t cbFile;
     VHDFooter vhdFooter;
 
-    /* Get I/O interface. */
-    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIOINT pInterfaceIOCallbacks = VDGetInterfaceIOInt(pInterfaceIO);
-    AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
-    rc = pInterfaceIOCallbacks->pfnOpen(pInterfaceIO->pvUser, pszFilename,
-                                        VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
-                                                                   false /* fCreate */),
-                                        &pStorage);
+    rc = vdIfIoIntFileOpen(pIfIo, pszFilename,
+                           VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
+                                                      false /* fCreate */),
+                           &pStorage);
     if (RT_FAILURE(rc))
         goto out;
 
-    rc = pInterfaceIOCallbacks->pfnGetSize(pInterfaceIO->pvUser, pStorage,
-                                           &cbFile);
+    rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
     if (RT_FAILURE(rc))
     {
-        pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+        vdIfIoIntFileClose(pIfIo, pStorage);
         rc = VERR_VD_VHD_INVALID_HEADER;
         goto out;
     }
 
-    rc = pInterfaceIOCallbacks->pfnReadSync(pInterfaceIO->pvUser, pStorage,
-                                            cbFile - sizeof(VHDFooter),
-                                            &vhdFooter, sizeof(VHDFooter), NULL);
+    rc = vdIfIoIntFileReadSync(pIfIo, pStorage, cbFile - sizeof(VHDFooter),
+                               &vhdFooter, sizeof(VHDFooter), NULL);
     if (RT_FAILURE(rc) || (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0))
         rc = VERR_VD_VHD_INVALID_HEADER;
     else
@@ -1421,7 +1229,7 @@ static int vhdCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
         rc = VINF_SUCCESS;
     }
 
-    pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+    vdIfIoIntFileClose(pIfIo, pStorage);
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -1490,15 +1298,11 @@ static int vhdCreate(const char *pszFilename, uint64_t cbSize,
 
     PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
-    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
-                                              VDINTERFACETYPE_PROGRESS);
-    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
     if (pIfProgress)
     {
-        pCbProgress = VDGetInterfaceProgress(pIfProgress);
-        if (pCbProgress)
-            pfnProgress = pCbProgress->pfnProgress;
-        pvUser = pIfProgress->pvUser;
+        pfnProgress = pIfProgress->pfnProgress;
+        pvUser = pIfProgress->Core.pvUser;
     }
 
     /* Check open flags. All valid flags are supported. */
@@ -1522,14 +1326,8 @@ static int vhdCreate(const char *pszFilename, uint64_t cbSize,
     pImage->pVDIfsImage = pVDIfsImage;
 
     /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    if (RT_UNLIKELY(!VALID_PTR(pImage->pInterfaceIO)))
-    {
-        RTMemFree(pImage);
-        return VERR_INVALID_PARAMETER;
-    }
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
-    if (RT_UNLIKELY(!VALID_PTR(pImage->pInterfaceIOCallbacks)))
+    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
+    if (RT_UNLIKELY(!VALID_PTR(pImage->pIfIo)))
     {
         RTMemFree(pImage);
         return VERR_INVALID_PARAMETER;
@@ -1585,7 +1383,7 @@ static int vhdRename(void *pBackendData, const char *pszFilename)
         goto out;
 
     /* Rename the file. */
-    rc = vhdFileMove(pImage, pImage->pszFilename, pszFilename, 0);
+    rc = vdIfIoIntFileMove(pImage->pIfIo, pImage->pszFilename, pszFilename, 0);
     if (RT_FAILURE(rc))
     {
         /* The move failed, try to reopen the original image. */
@@ -1672,10 +1470,10 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         cbBuf = RT_MIN(cbBuf, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE)));
 
         /* Read in the block's bitmap. */
-        rc = vhdFileReadSync(pImage,
-                             ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
-                             pImage->pu8Bitmap, pImage->cbDataBlockBitmap,
-                             NULL);
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                   ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
+                                   pImage->pu8Bitmap, pImage->cbDataBlockBitmap,
+                                   NULL);
         if (RT_SUCCESS(rc))
         {
             uint32_t cSectors = 0;
@@ -1700,7 +1498,8 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                 cbBuf = cSectors * VHD_SECTOR_SIZE;
 
                 LogFlowFunc(("uVhdOffset=%llu cbBuf=%u\n", uVhdOffset, cbBuf));
-                rc = vhdFileReadSync(pImage, uVhdOffset, pvBuf, cbBuf, NULL);
+                rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                           uVhdOffset, pvBuf, cbBuf, NULL);
             }
             else
             {
@@ -1731,9 +1530,7 @@ static int vhdRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
             AssertMsgFailed(("Reading block bitmap failed rc=%Rrc\n", rc));
     }
     else
-    {
-        rc = vhdFileReadSync(pImage, uOffset, pvBuf, cbBuf, NULL);
-    }
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, uOffset, pvBuf, cbBuf, NULL);
 
     if (   RT_SUCCESS(rc)
         || rc == VERR_VD_BLOCK_FREE)
@@ -1817,8 +1614,8 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
             /*
              * Write the new block at the current end of the file.
              */
-            rc = vhdFileWriteSync(pImage, pImage->uCurrentEndOfFile,
-                                  pNewBlock, cbNewBlock, NULL);
+            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, pImage->uCurrentEndOfFile,
+                                        pNewBlock, cbNewBlock, NULL);
             AssertRC(rc);
 
             /*
@@ -1839,13 +1636,14 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * VHD_SECTOR_SIZE;
 
         /* Write data. */
-        vhdFileWriteSync(pImage, uVhdOffset, pvBuf, cbBuf, NULL);
+        vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, uVhdOffset,
+                               pvBuf, cbBuf, NULL);
 
         /* Read in the block's bitmap. */
-        rc = vhdFileReadSync(pImage,
-                             ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
-                             pImage->pu8Bitmap, pImage->cbDataBlockBitmap,
-                             NULL);
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                   ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
+                                   pImage->pu8Bitmap, pImage->cbDataBlockBitmap,
+                                   NULL);
         if (RT_SUCCESS(rc))
         {
             bool fChanged = false;
@@ -1860,16 +1658,16 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
             if (fChanged)
             {
                 /* Write the bitmap back. */
-                rc = vhdFileWriteSync(pImage,
-                                      ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
-                                      pImage->pu8Bitmap, pImage->cbDataBlockBitmap,
-                                      NULL);
+                rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                            ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
+                                            pImage->pu8Bitmap, pImage->cbDataBlockBitmap,
+                                            NULL);
             }
         }
     }
     else
     {
-        rc = vhdFileWriteSync(pImage, uOffset, pvBuf, cbBuf, NULL);
+        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, uOffset, pvBuf, cbBuf, NULL);
     }
 
     if (pcbWriteProcess)
@@ -2348,12 +2146,12 @@ static void vhdDump(void *pBackendData)
     AssertPtr(pImage);
     if (pImage)
     {
-        vhdMessage(pImage, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
-                    pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
-                    pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
-                    VHD_SECTOR_SIZE);
-        vhdMessage(pImage, "Header: uuidCreation={%RTuuid}\n", &pImage->ImageUuid);
-        vhdMessage(pImage, "Header: uuidParent={%RTuuid}\n", &pImage->ParentUuid);
+        vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
+                         pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
+                         pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
+                         VHD_SECTOR_SIZE);
+        vdIfErrorMessage(pImage->pIfError, "Header: uuidCreation={%RTuuid}\n", &pImage->ImageUuid);
+        vdIfErrorMessage(pImage->pIfError, "Header: uuidParent={%RTuuid}\n", &pImage->ParentUuid);
     }
 }
 
@@ -2366,7 +2164,7 @@ static int vhdGetTimeStamp(void *pBackendData, PRTTIMESPEC pTimeStamp)
     AssertPtr(pImage);
 
     if (pImage)
-        rc = vhdFileGetModificationTime(pImage, pImage->pszFilename, pTimeStamp);
+        rc = vdIfIoIntFileGetModificationTime(pImage->pIfIo, pImage->pszFilename, pTimeStamp);
     else
         rc = VERR_VD_NOT_OPENED;
 
@@ -2507,16 +2305,16 @@ static int vhdAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
 
         /* Read in the block's bitmap. */
         PVDMETAXFER pMetaXfer;
-        rc = vhdFileReadMetaAsync(pImage,
-                                  ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
-                                  pImage->pu8Bitmap, pImage->cbDataBlockBitmap,
-                                  pIoCtx, &pMetaXfer, NULL, NULL);
+        rc = vdIfIoIntFileReadMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                        ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
+                                        pImage->pu8Bitmap, pImage->cbDataBlockBitmap,
+                                        pIoCtx, &pMetaXfer, NULL, NULL);
 
         if (RT_SUCCESS(rc))
         {
             uint32_t cSectors = 0;
 
-            vhdFileMetaXferRelease(pImage, pMetaXfer);
+            vdIfIoIntMetaXferRelease(pImage->pIfIo, pMetaXfer);
             if (vhdBlockBitmapSectorContainsData(pImage, cBATEntryIndex))
             {
                 cBATEntryIndex++;
@@ -2537,7 +2335,8 @@ static int vhdAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
                 cbRead = cSectors * VHD_SECTOR_SIZE;
 
                 LogFlowFunc(("uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
-                rc = vhdFileReadUserAsync(pImage, uVhdOffset, pIoCtx, cbRead);
+                rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage,
+                                                uVhdOffset, pIoCtx, cbRead);
             }
             else
             {
@@ -2568,9 +2367,7 @@ static int vhdAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
             AssertMsg(rc == VERR_VD_NOT_ENOUGH_METADATA, ("Reading block bitmap failed rc=%Rrc\n", rc));
     }
     else
-    {
-        rc = vhdFileReadUserAsync(pImage, uOffset, pIoCtx, cbRead);
-    }
+        rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage, uOffset, pIoCtx, cbRead);
 
     if (pcbActuallyRead)
         *pcbActuallyRead = cbRead;
@@ -2655,11 +2452,12 @@ static int vhdAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
                 /*
                  * Start with the sector bitmap.
                  */
-                rc = vhdFileWriteMetaAsync(pImage, pImage->uCurrentEndOfFile,
-                                           pExpand->au8Bitmap,
-                                           pImage->cbDataBlockBitmap, pIoCtx,
-                                           vhdAsyncExpansionDataBlockBitmapComplete,
-                                           pExpand);
+                rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                                 pImage->uCurrentEndOfFile,
+                                                 pExpand->au8Bitmap,
+                                                 pImage->cbDataBlockBitmap, pIoCtx,
+                                                 vhdAsyncExpansionDataBlockBitmapComplete,
+                                                 pExpand);
                 if (RT_SUCCESS(rc))
                     VHDIMAGEEXPAND_STATUS_SET(pExpand->fFlags, VHDIMAGEEXPAND_BLOCKBITMAP_STATUS_SHIFT, VHDIMAGEEXPAND_STEP_SUCCESS);
                 else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -2677,11 +2475,11 @@ static int vhdAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
                 /*
                  * Write the new block at the current end of the file.
                  */
-                rc = vhdFileWriteUserAsync(pImage,
-                                           pImage->uCurrentEndOfFile + pImage->cbDataBlockBitmap,
-                                           pIoCtx, cbWrite,
-                                           vhdAsyncExpansionDataComplete,
-                                           pExpand);
+                rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
+                                                 pImage->uCurrentEndOfFile + pImage->cbDataBlockBitmap,
+                                                 pIoCtx, cbWrite,
+                                                 vhdAsyncExpansionDataComplete,
+                                                 pExpand);
                 if (RT_SUCCESS(rc))
                     VHDIMAGEEXPAND_STATUS_SET(pExpand->fFlags, VHDIMAGEEXPAND_USERBLOCK_STATUS_SHIFT, VHDIMAGEEXPAND_STEP_SUCCESS);
                 else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -2697,12 +2495,12 @@ static int vhdAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
                 /*
                  * Write entry in the BAT.
                  */
-                rc = vhdFileWriteMetaAsync(pImage,
-                                           pImage->uBlockAllocationTableOffset + cBlockAllocationTableEntry * sizeof(uint32_t),
-                                           &pExpand->idxBlockBe,
-                                           sizeof(uint32_t), pIoCtx,
-                                           vhdAsyncExpansionBatUpdateComplete,
-                                           pExpand);
+                rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                                 pImage->uBlockAllocationTableOffset + cBlockAllocationTableEntry * sizeof(uint32_t),
+                                                 &pExpand->idxBlockBe,
+                                                 sizeof(uint32_t), pIoCtx,
+                                                 vhdAsyncExpansionBatUpdateComplete,
+                                                 pExpand);
                 if (RT_SUCCESS(rc))
                     VHDIMAGEEXPAND_STATUS_SET(pExpand->fFlags, VHDIMAGEEXPAND_BAT_STATUS_SHIFT, VHDIMAGEEXPAND_STEP_SUCCESS);
                 else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -2721,11 +2519,12 @@ static int vhdAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
                 pImage->uCurrentEndOfFile += pImage->cbDataBlockBitmap + pImage->cbDataBlock;
 
                 /* Update the footer. */
-                rc = vhdFileWriteMetaAsync(pImage, pImage->uCurrentEndOfFile,
-                                           &pImage->vhdFooterCopy,
-                                           sizeof(VHDFooter), pIoCtx,
-                                           vhdAsyncExpansionFooterUpdateComplete,
-                                           pExpand);
+                rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                                 pImage->uCurrentEndOfFile,
+                                                 &pImage->vhdFooterCopy,
+                                                 sizeof(VHDFooter), pIoCtx,
+                                                 vhdAsyncExpansionFooterUpdateComplete,
+                                                 pExpand);
                 if (RT_SUCCESS(rc))
                     VHDIMAGEEXPAND_STATUS_SET(pExpand->fFlags, VHDIMAGEEXPAND_FOOTER_STATUS_SHIFT, VHDIMAGEEXPAND_STEP_SUCCESS);
                 else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -2752,18 +2551,19 @@ static int vhdAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
 
             /* Read in the block's bitmap. */
             PVDMETAXFER pMetaXfer;
-            rc = vhdFileReadMetaAsync(pImage,
-                                      ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
-                                      pImage->pu8Bitmap,
-                                      pImage->cbDataBlockBitmap, pIoCtx,
-                                      &pMetaXfer, NULL, NULL);
+            rc = vdIfIoIntFileReadMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                            ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
+                                            pImage->pu8Bitmap,
+                                            pImage->cbDataBlockBitmap, pIoCtx,
+                                            &pMetaXfer, NULL, NULL);
             if (RT_SUCCESS(rc))
             {
-                vhdFileMetaXferRelease(pImage, pMetaXfer);
+                vdIfIoIntMetaXferRelease(pImage->pIfIo, pMetaXfer);
 
                 /* Write data. */
-                rc = vhdFileWriteUserAsync(pImage, uVhdOffset, pIoCtx, cbWrite,
-                                           NULL, NULL);
+                rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
+                                                 uVhdOffset, pIoCtx, cbWrite,
+                                                 NULL, NULL);
                 if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 {
                     bool fChanged = false;
@@ -2787,20 +2587,19 @@ static int vhdAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
                          * by the generic VD layer already and we don't need
                          * to rollback anything here.
                          */
-                        rc = vhdFileWriteMetaAsync(pImage,
-                                                   ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
-                                                   pImage->pu8Bitmap,
-                                                   pImage->cbDataBlockBitmap,
-                                                   pIoCtx, NULL, NULL);
+                        rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
+                                                         ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry]) * VHD_SECTOR_SIZE,
+                                                         pImage->pu8Bitmap,
+                                                         pImage->cbDataBlockBitmap,
+                                                         pIoCtx, NULL, NULL);
                     }
                 }
             }
         }
     }
     else
-    {
-        rc = vhdFileWriteUserAsync(pImage, uOffset, pIoCtx, cbWrite, NULL, NULL);
-    }
+        rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
+                                         uOffset, pIoCtx, cbWrite, NULL, NULL);
 
     if (pcbWriteProcess)
         *pcbWriteProcess = cbWrite;
@@ -2819,7 +2618,8 @@ static int vhdAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
 
     /* No need to write anything here. Data is always updated on a write. */
-    return vhdFileFlushAsync(pImage, pIoCtx, NULL, NULL);
+    return vdIfIoIntFileFlushAsync(pImage->pIfIo, pImage->pStorage,
+                                   pIoCtx, NULL, NULL);
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCompact */
@@ -2834,28 +2634,20 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
 
     int (*pfnParentRead)(void *, uint64_t, void *, size_t) = NULL;
     void *pvParent = NULL;
-    PVDINTERFACE pIfParentState = VDInterfaceGet(pVDIfsOperation,
-                                                 VDINTERFACETYPE_PARENTSTATE);
-    PVDINTERFACEPARENTSTATE pCbParentState = NULL;
+    PVDINTERFACEPARENTSTATE pIfParentState = VDIfParentStateGet(pVDIfsOperation);
     if (pIfParentState)
     {
-        pCbParentState = VDGetInterfaceParentState(pIfParentState);
-        if (pCbParentState)
-            pfnParentRead = pCbParentState->pfnParentRead;
-        pvParent = pIfParentState->pvUser;
+        pfnParentRead = pIfParentState->pfnParentRead;
+        pvParent = pIfParentState->Core.pvUser;
     }
 
     PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
-    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
-                                              VDINTERFACETYPE_PROGRESS);
-    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
     if (pIfProgress)
     {
-        pCbProgress = VDGetInterfaceProgress(pIfProgress);
-        if (pCbProgress)
-            pfnProgress = pCbProgress->pfnProgress;
-        pvUser = pIfProgress->pvUser;
+        pfnProgress = pIfProgress->pfnProgress;
+        pvUser = pIfProgress->Core.pvUser;
     }
 
     do
@@ -2939,7 +2731,8 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
 
                 /* Block present in image file, read relevant data. */
                 uint64_t u64Offset = ((uint64_t)paBat[i] + pImage->cDataBlockBitmapSectors) * VHD_SECTOR_SIZE;
-                rc = vhdFileReadSync(pImage, u64Offset, pvBuf, pImage->cbDataBlock, NULL);
+                rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                           u64Offset, pvBuf, pImage->cbDataBlock, NULL);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -2965,9 +2758,9 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
                 }
             }
 
-            if (pCbProgress && pCbProgress->pfnProgress)
+            if (pIfProgress && pIfProgress->pfnProgress)
             {
-                rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                rc = pIfProgress->pfnProgress(pIfProgress->Core.pvUser,
                                               (uint64_t)i * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart);
                 if (RT_FAILURE(rc))
                     break;
@@ -3002,13 +2795,15 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
                         break;
                     uint64_t u64Offset = (uint64_t)uBlockUsedPos * cbBlock
                                        + (offBlocksStart * VHD_SECTOR_SIZE);
-                    rc = vhdFileReadSync(pImage, u64Offset, pvBuf, cbBlock, NULL);
+                    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                               u64Offset, pvBuf, cbBlock, NULL);
                     if (RT_FAILURE(rc))
                         break;
 
                     u64Offset = (uint64_t)i * cbBlock
                                        + (offBlocksStart * VHD_SECTOR_SIZE);
-                    rc = vhdFileWriteSync(pImage, u64Offset, pvBuf, cbBlock, NULL);
+                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                u64Offset, pvBuf, cbBlock, NULL);
                     if (RT_FAILURE(rc))
                         break;
 
@@ -3016,7 +2811,8 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
 
                     /* Truncate the file but leave enough room for the footer to avoid
                      * races if other processes fill the whole harddisk. */
-                    rc = vhdFileSetSize(pImage, pImage->uCurrentEndOfFile - cbBlock + VHD_SECTOR_SIZE);
+                    rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage,
+                                              pImage->uCurrentEndOfFile - cbBlock + VHD_SECTOR_SIZE);
                     if (RT_FAILURE(rc))
                         break;
 
@@ -3033,9 +2829,9 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
                     cBlocksMoved++;
                 }
 
-                if (pCbProgress && pCbProgress->pfnProgress)
+                if (pIfProgress && pIfProgress->pfnProgress)
                 {
-                    rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                    rc = pIfProgress->pfnProgress(pIfProgress->Core.pvUser,
                                                   (uint64_t)(cBlocks + cBlocksMoved) * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart);
 
                     if (RT_FAILURE(rc))
@@ -3055,9 +2851,9 @@ static int vhdCompact(void *pBackendData, unsigned uPercentStart,
     if (pvBuf)
         RTMemTmpFree(pvBuf);
 
-    if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
+    if (RT_SUCCESS(rc) && pIfProgress && pIfProgress->pfnProgress)
     {
-        pCbProgress->pfnProgress(pIfProgress->pvUser,
+        pIfProgress->pfnProgress(pIfProgress->Core.pvUser,
                                  uPercentStart + uPercentSpan);
     }
 
@@ -3077,15 +2873,11 @@ static int vhdResize(void *pBackendData, uint64_t cbSize,
 
     PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
-    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
-                                              VDINTERFACETYPE_PROGRESS);
-    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
     if (pIfProgress)
     {
-        pCbProgress = VDGetInterfaceProgress(pIfProgress);
-        if (pCbProgress)
-            pfnProgress = pCbProgress->pfnProgress;
-        pvUser = pIfProgress->pvUser;
+        pfnProgress = pIfProgress->pfnProgress;
+        pvUser = pIfProgress->Core.pvUser;
     }
 
     /* Making the image smaller is not supported at the moment. */
@@ -3165,16 +2957,19 @@ static int vhdResize(void *pBackendData, uint64_t cbSize,
                         if (pImage->pBlockAllocationTable[idxBlock] == uBlock)
                         {
                             /* Read data and append to the end of the image. */
-                            rc = vhdFileReadSync(pImage, offStartDataNew, pvBuf, cbBlock, NULL);
+                            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                                       offStartDataNew, pvBuf, cbBlock, NULL);
                             if (RT_FAILURE(rc))
                                 break;
 
-                            rc = vhdFileWriteSync(pImage, pImage->uCurrentEndOfFile, pvBuf, cbBlock, NULL);
+                            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                        pImage->uCurrentEndOfFile, pvBuf, cbBlock, NULL);
                             if (RT_FAILURE(rc))
                                 break;
 
                             /* Zero out the old block area. */
-                            rc = vhdFileWriteSync(pImage, offStartDataNew, pvZero, cbBlock, NULL);
+                            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                        offStartDataNew, pvZero, cbBlock, NULL);
                             if (RT_FAILURE(rc))
                                 break;
 
@@ -3222,8 +3017,10 @@ static int vhdResize(void *pBackendData, uint64_t cbSize,
             if (RT_SUCCESS(rc))
             {
                 /* Write the block array before updating the rest. */
-                rc = vhdFileWriteSync(pImage, pImage->uBlockAllocationTableOffset, pImage->pBlockAllocationTable,
-                                      cBlocksNew * sizeof(uint32_t), NULL);
+                rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                            pImage->uBlockAllocationTableOffset,
+                                            pImage->pBlockAllocationTable,
+                                            cBlocksNew * sizeof(uint32_t), NULL);
             }
 
             if (RT_SUCCESS(rc))

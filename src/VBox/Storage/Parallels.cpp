@@ -63,19 +63,14 @@ typedef struct PARALLELSIMAGE
     /** Opaque storage handle. */
     PVDIOSTORAGE        pStorage;
 
-    /** I/O interface. */
-    PVDINTERFACE        pInterfaceIO;
-    /** I/O interface callbacks. */
-    PVDINTERFACEIOINT   pInterfaceIOCallbacks;
-
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE        pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
     PVDINTERFACE        pVDIfsImage;
     /** Error interface. */
-    PVDINTERFACE        pInterfaceError;
-    /** Error interface callbacks. */
-    PVDINTERFACEERROR   pInterfaceErrorCallbacks;
+    PVDINTERFACEERROR   pIfError;
+    /** I/O interface. */
+    PVDINTERFACEIOINT   pIfIo;
 
     /** Open flags passed by VBoxHDD layer. */
     unsigned            uOpenFlags;
@@ -115,146 +110,6 @@ static const VDFILEEXTENSION s_aParallelsFileExtensions[] =
  **************************************************/
 
 /**
- * Internal: signal an error to the frontend.
- */
-DECLINLINE(int) parallelsError(PPARALLELSIMAGE pImage, int rc, RT_SRC_POS_DECL,
-                               const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    if (pImage->pInterfaceError && pImage->pInterfaceErrorCallbacks)
-        pImage->pInterfaceErrorCallbacks->pfnError(pImage->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS,
-                                                   pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-/**
- * Internal: signal an informational message to the frontend.
- */
-DECLINLINE(int) parallelsMessage(PPARALLELSIMAGE pImage, const char *pszFormat, ...)
-{
-    int rc = VINF_SUCCESS;
-    va_list va;
-    va_start(va, pszFormat);
-    if (pImage->pInterfaceError && pImage->pInterfaceErrorCallbacks)
-        rc = pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser,
-                                                          pszFormat, va);
-    va_end(va);
-    return rc;
-}
-
-
-DECLINLINE(int) parallelsFileOpen(PPARALLELSIMAGE pImage, const char *pszFilename,
-                                  uint32_t fOpen)
-{
-    return pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
-                                                  pszFilename, fOpen,
-                                                  &pImage->pStorage);
-}
-
-DECLINLINE(int) parallelsFileClose(PPARALLELSIMAGE pImage)
-{
-    return pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
-                                                   pImage->pStorage);
-}
-
-DECLINLINE(int) parallelsFileDelete(PPARALLELSIMAGE pImage, const char *pszFilename)
-{
-    return pImage->pInterfaceIOCallbacks->pfnDelete(pImage->pInterfaceIO->pvUser,
-                                                    pszFilename);
-}
-
-DECLINLINE(int) parallelsFileMove(PPARALLELSIMAGE pImage, const char *pszSrc,
-                                  const char *pszDst, unsigned fMove)
-{
-    return pImage->pInterfaceIOCallbacks->pfnMove(pImage->pInterfaceIO->pvUser,
-                                                  pszSrc, pszDst, fMove);
-}
-
-DECLINLINE(int) parallelsFileGetSize(PPARALLELSIMAGE pImage, uint64_t *pcbSize)
-{
-    return pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage, pcbSize);
-}
-
-DECLINLINE(int) parallelsFileSetSize(PPARALLELSIMAGE pImage, uint64_t cbSize)
-{
-    return pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
-                                                     pImage->pStorage, cbSize);
-}
-
-DECLINLINE(int) parallelsFileWriteSync(PPARALLELSIMAGE pImage, uint64_t uOffset,
-                                       const void *pvBuffer, size_t cbBuffer,
-                                       size_t *pcbWritten)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage, uOffset,
-                                                       pvBuffer, cbBuffer, pcbWritten);
-}
-
-DECLINLINE(int) parallelsFileReadSync(PPARALLELSIMAGE pImage, uint64_t uOffset,
-                                      void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
-                                                      pImage->pStorage, uOffset,
-                                                      pvBuffer, cbBuffer, pcbRead);
-}
-
-DECLINLINE(int) parallelsFileFlushSync(PPARALLELSIMAGE pImage)
-{
-    return pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
-                                                       pImage->pStorage);
-}
-
-DECLINLINE(int) parallelsFileReadUserAsync(PPARALLELSIMAGE pImage, uint64_t uOffset,
-                                           PVDIOCTX pIoCtx, size_t cbRead)
-{
-    return pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
-                                                           pImage->pStorage,
-                                                           uOffset, pIoCtx,
-                                                           cbRead);
-}
-
-DECLINLINE(int) parallelsFileWriteUserAsync(PPARALLELSIMAGE pImage, uint64_t uOffset,
-                                            PVDIOCTX pIoCtx, size_t cbWrite,
-                                            PFNVDXFERCOMPLETED pfnComplete,
-                                            void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
-                                                            pImage->pStorage,
-                                                            uOffset, pIoCtx,
-                                                            cbWrite,
-                                                            pfnComplete,
-                                                            pvCompleteUser);
-}
-
-DECLINLINE(int) parallelsFileWriteMetaAsync(PPARALLELSIMAGE pImage, uint64_t uOffset,
-                                            void *pvBuffer, size_t cbBuffer,
-                                            PVDIOCTX pIoCtx,
-                                            PFNVDXFERCOMPLETED pfnComplete,
-                                            void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pImage->pInterfaceIO->pvUser,
-                                                            pImage->pStorage,
-                                                            uOffset, pvBuffer,
-                                                            cbBuffer, pIoCtx,
-                                                            pfnComplete,
-                                                            pvCompleteUser);
-}
-
-DECLINLINE(int) parallelsFileFlushAsync(PPARALLELSIMAGE pImage, PVDIOCTX pIoCtx,
-                                        PFNVDXFERCOMPLETED pfnComplete,
-                                        void *pvCompleteUser)
-{
-    return pImage->pInterfaceIOCallbacks->pfnFlushAsync(pImage->pInterfaceIO->pvUser,
-                                                        pImage->pStorage,
-                                                        pIoCtx, pfnComplete,
-                                                        pvCompleteUser);
-}
-
-
-/**
  * Internal. Flush image data to disk.
  */
 static int parallelsFlushImage(PPARALLELSIMAGE pImage)
@@ -269,8 +124,8 @@ static int parallelsFlushImage(PPARALLELSIMAGE pImage)
     {
         pImage->fAllocationBitmapChanged = false;
         /* Write the allocation bitmap to the file. */
-        rc = parallelsFileWriteSync(pImage, sizeof(ParallelsHeader),
-                                    pImage->pAllocationBitmap,
+        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                    sizeof(ParallelsHeader), pImage->pAllocationBitmap,
                                     pImage->cAllocationBitmapEntries * sizeof(uint32_t),
                                     NULL);
         if (RT_FAILURE(rc))
@@ -278,7 +133,7 @@ static int parallelsFlushImage(PPARALLELSIMAGE pImage)
     }
 
     /* Flush file. */
-    rc = parallelsFileFlushSync(pImage);
+    rc = vdIfIoIntFileFlushSync(pImage->pIfIo, pImage->pStorage);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -302,7 +157,7 @@ static int parallelsFreeImage(PPARALLELSIMAGE pImage, bool fDelete)
             if (!fDelete)
                 parallelsFlushImage(pImage);
 
-            parallelsFileClose(pImage);
+            vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
 
@@ -313,7 +168,7 @@ static int parallelsFreeImage(PPARALLELSIMAGE pImage, bool fDelete)
         }
 
         if (fDelete && pImage->pszFilename)
-            parallelsFileDelete(pImage, pImage->pszFilename);
+            vdIfIoIntFileDelete(pImage->pIfIo, pImage->pszFilename);
     }
 
     return rc;
@@ -324,29 +179,24 @@ static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
     int rc = VINF_SUCCESS;
     ParallelsHeader parallelsHeader;
 
-    /* Try to get error interface. */
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
+    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
+    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
+    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
-    /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
-    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
-
-    rc = parallelsFileOpen(pImage, pImage->pszFilename,
+    rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename,
                            VDOpenFlagsToFileOpenFlags(uOpenFlags,
-                                                      false /* fCreate */));
+                                                      false /* fCreate */),
+                           &pImage->pStorage);
     if (RT_FAILURE(rc))
         goto out;
 
-    rc = parallelsFileGetSize(pImage, &pImage->cbFileCurrent);
+    rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &pImage->cbFileCurrent);
     if (RT_FAILURE(rc))
         goto out;
     AssertMsg(pImage->cbFileCurrent % 512 == 0, ("File size is not a multiple of 512\n"));
 
-    rc = parallelsFileReadSync(pImage, 0, &parallelsHeader, sizeof(parallelsHeader), NULL);
+    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0,
+                               &parallelsHeader, sizeof(parallelsHeader), NULL);
     if (RT_FAILURE(rc))
         goto out;
 
@@ -394,8 +244,8 @@ static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
             goto out;
         }
 
-        rc = parallelsFileReadSync(pImage, sizeof(ParallelsHeader),
-                                   pImage->pAllocationBitmap,
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                   sizeof(ParallelsHeader), pImage->pAllocationBitmap,
                                    pImage->cAllocationBitmapEntries * sizeof(uint32_t),
                                    NULL);
         if (RT_FAILURE(rc))
@@ -426,7 +276,7 @@ static int parallelsCreateImage(PPARALLELSIMAGE pImage, uint64_t cbSize,
 
     if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
     {
-        rc = parallelsError(pImage, VERR_VD_INVALID_TYPE, RT_SRC_POS, N_("Parallels: cannot create fixed image '%s'. Create a raw image"), pImage->pszFilename);
+        rc = vdIfError(pImage->pIfError, VERR_VD_INVALID_TYPE, RT_SRC_POS, N_("Parallels: cannot create fixed image '%s'. Create a raw image"), pImage->pszFilename);
         goto out;
     }
 
@@ -443,22 +293,16 @@ static int parallelsCreateImage(PPARALLELSIMAGE pImage, uint64_t cbSize,
         pImage->PCHSGeometry.cCylinders = pImage->cbSize / (512 * pImage->PCHSGeometry.cSectors * pImage->PCHSGeometry.cHeads);
     }
 
-    pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
-    if (pImage->pInterfaceError)
-        pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
-
-    /* Get I/O interface. */
-    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
-    pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
-    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
+    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
+    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
     /* Create image file. */
     fOpen = VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags, true /* fCreate */);
-    rc = parallelsFileOpen(pImage, pImage->pszFilename, fOpen);
+    rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename, fOpen, &pImage->pStorage);
     if (RT_FAILURE(rc))
     {
-        rc = parallelsError(pImage, rc, RT_SRC_POS, N_("Parallels: cannot create image '%s'"), pImage->pszFilename);
+        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Parallels: cannot create image '%s'"), pImage->pszFilename);
         goto out;
     }
 
@@ -493,9 +337,10 @@ static int parallelsCreateImage(PPARALLELSIMAGE pImage, uint64_t cbSize,
         memset(Header.Padding, 0, sizeof(Header.Padding));
 
         /* Write header and allocation bitmap. */
-        rc = parallelsFileSetSize(pImage, pImage->cbFileCurrent);
+        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pImage->cbFileCurrent);
         if (RT_SUCCESS(rc))
-            rc = parallelsFileWriteSync(pImage, 0, &Header, sizeof(Header), NULL);
+            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, 0,
+                                        &Header, sizeof(Header), NULL);
         if (RT_SUCCESS(rc))
             rc = parallelsFlushImage(pImage); /* Writes the allocation bitmap. */
     }
@@ -517,22 +362,18 @@ static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDis
     PVDIOSTORAGE pStorage;
     ParallelsHeader parallelsHeader;
 
-    /* Get I/O interface. */
-    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
-    PVDINTERFACEIOINT pInterfaceIOCallbacks = VDGetInterfaceIOInt(pInterfaceIO);
-    AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
-    rc = pInterfaceIOCallbacks->pfnOpen(pInterfaceIO->pvUser, pszFilename,
-                                        VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
-                                                                   false /* fCreate */),
-                                        &pStorage);
+    rc = vdIfIoIntFileOpen(pIfIo, pszFilename,
+                           VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
+                                                      false /* fCreate */),
+                           &pStorage);
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = pInterfaceIOCallbacks->pfnReadSync(pInterfaceIO->pvUser, pStorage,
-                                            0, &parallelsHeader,
-                                            sizeof(ParallelsHeader), NULL);
+    rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0, &parallelsHeader,
+                               sizeof(ParallelsHeader), NULL);
     if (RT_SUCCESS(rc))
     {
         if (   !memcmp(parallelsHeader.HeaderIdentifier, PARALLELS_HEADER_MAGIC, 16)
@@ -551,11 +392,10 @@ static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDis
             uint64_t cbFile;
             char *pszExtension;
 
-            rc = pInterfaceIOCallbacks->pfnGetSize(pInterfaceIO->pvUser, pStorage,
-                                                   &cbFile);
+            rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
             if (RT_FAILURE(rc) || ((cbFile % 512) != 0))
             {
-                pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+                vdIfIoIntFileClose(pIfIo, pStorage);
                 return VERR_VD_PARALLELS_INVALID_HEADER;
             }
 
@@ -570,7 +410,7 @@ static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDis
     if (RT_SUCCESS(rc))
         *penmType = VDTYPE_HDD;
 
-    pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
+    vdIfIoIntFileClose(pIfIo, pStorage);
     return rc;
 }
 
@@ -639,15 +479,11 @@ static int parallelsCreate(const char *pszFilename, uint64_t cbSize,
 
     PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
-    PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
-                                              VDINTERFACETYPE_PROGRESS);
-    PVDINTERFACEPROGRESS pCbProgress = NULL;
+    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
     if (pIfProgress)
     {
-        pCbProgress = VDGetInterfaceProgress(pIfProgress);
-        if (pCbProgress)
-            pfnProgress = pCbProgress->pfnProgress;
-        pvUser = pIfProgress->pvUser;
+        pfnProgress = pIfProgress->pfnProgress;
+        pvUser = pIfProgress->Core.pvUser;
     }
 
     /* Check open flags. All valid flags are supported. */
@@ -727,7 +563,7 @@ static int parallelsRename(void *pBackendData, const char *pszFilename)
         goto out;
 
     /* Rename the file. */
-    rc = parallelsFileMove(pImage, pImage->pszFilename, pszFilename, 0);
+    rc = vdIfIoIntFileMove(pImage->pIfIo, pImage->pszFilename, pszFilename, 0);
     if (RT_FAILURE(rc))
     {
         /* The move failed, try to reopen the original image. */
@@ -779,7 +615,7 @@ static int parallelsRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     Assert(cbToRead % 512 == 0);
 
     if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
-        rc = parallelsFileReadSync(pImage, uOffset, pvBuf, cbToRead, NULL);
+        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, uOffset, pvBuf, cbToRead, NULL);
     else
     {
         uint64_t uSector;
@@ -807,7 +643,8 @@ static int parallelsRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
             uint64_t uOffsetInFile = ((uint64_t)pImage->pAllocationBitmap[iIndexInAllocationTable] + uSector) * 512;
 
             LogFlowFunc(("uOffsetInFile=%llu\n", uOffsetInFile));
-            rc = parallelsFileReadSync(pImage, uOffsetInFile, pvBuf, cbToRead, NULL);
+            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, uOffsetInFile,
+                                       pvBuf, cbToRead, NULL);
         }
     }
 
@@ -835,7 +672,8 @@ static int parallelsWrite(void *pBackendData, uint64_t uOffset, const void *pvBu
     Assert(cbToWrite % 512 == 0);
 
     if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
-        rc = parallelsFileWriteSync(pImage, uOffset, pvBuf, cbToWrite, NULL);
+        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, uOffset,
+                                    pvBuf, cbToWrite, NULL);
     else
     {
         uint64_t uSector;
@@ -879,8 +717,8 @@ static int parallelsWrite(void *pBackendData, uint64_t uOffset, const void *pvBu
                 /*
                  * Write the new block at the current end of the file.
                  */
-                rc = parallelsFileWriteSync(pImage, uOffsetInFile, pvBuf, cbToWrite,
-                                            NULL);
+                rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                            uOffsetInFile, pvBuf, cbToWrite, NULL);
             }
             else
             {
@@ -896,7 +734,8 @@ static int parallelsWrite(void *pBackendData, uint64_t uOffset, const void *pvBu
             uOffsetInFile = ((uint64_t)pImage->pAllocationBitmap[iIndexInAllocationTable] + uSector) * 512;
 
             LogFlowFunc(("uOffsetInFile=%llu\n", uOffsetInFile));
-            rc = parallelsFileWriteSync(pImage, uOffsetInFile, pvBuf, cbToWrite, NULL);
+            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, uOffsetInFile,
+                                        pvBuf, cbToWrite, NULL);
         }
     }
 
@@ -1354,9 +1193,9 @@ static void parallelsDump(void *pBackendData)
     AssertPtr(pImage);
     if (pImage)
     {
-        parallelsMessage(pImage, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u\n",
-                    pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
-                    pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors);
+        vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u\n",
+                         pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
+                         pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors);
     }
 }
 
@@ -1377,9 +1216,8 @@ static int parallelsAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToR
     Assert(cbToRead % 512 == 0);
 
     if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
-    {
-        rc = parallelsFileReadUserAsync(pImage, uOffset, pIoCtx, cbToRead);
-    }
+        rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage, uOffset,
+                                        pIoCtx, cbToRead);
     else
     {
         /* Calculate offset in the real file. */
@@ -1397,7 +1235,8 @@ static int parallelsAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToR
         else
         {
             uOffsetInFile = (pImage->pAllocationBitmap[iIndexInAllocationTable] + uSector) * 512;
-            rc = parallelsFileReadUserAsync(pImage, uOffsetInFile, pIoCtx, cbToRead);
+            rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage, uOffsetInFile,
+                                            pIoCtx, cbToRead);
         }
     }
 
@@ -1426,9 +1265,8 @@ static int parallelsAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbTo
     Assert(cbToWrite % 512 == 0);
 
     if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
-    {
-        rc = parallelsFileWriteUserAsync(pImage, uOffset, pIoCtx, cbToWrite, NULL, NULL);
-    }
+        rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage, uOffset,
+                                         pIoCtx, cbToWrite, NULL, NULL);
     else
     {
         /* Calculate offset in the real file. */
@@ -1462,12 +1300,13 @@ static int parallelsAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbTo
             /*
              * Write the new block at the current end of the file.
              */
-            rc = parallelsFileWriteUserAsync(pImage, uOffsetInFile, pIoCtx, cbToWrite, NULL, NULL);
+            rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
+                                             uOffsetInFile, pIoCtx, cbToWrite, NULL, NULL);
             if (RT_SUCCESS(rc) || (rc == VERR_VD_ASYNC_IO_IN_PROGRESS))
             {
                 /* Write the changed allocation bitmap entry. */
                 /** @todo: Error handling. */
-                rc = parallelsFileWriteMetaAsync(pImage,
+                rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
                                                  sizeof(ParallelsHeader) + iIndexInAllocationTable * sizeof(uint32_t),
                                                  &pImage->pAllocationBitmap[iIndexInAllocationTable],
                                                  sizeof(uint32_t), pIoCtx,
@@ -1480,7 +1319,8 @@ static int parallelsAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbTo
         else
         {
             uOffsetInFile = (pImage->pAllocationBitmap[iIndexInAllocationTable] + uSector) * 512;
-            rc = parallelsFileWriteUserAsync(pImage, uOffsetInFile, pIoCtx, cbToWrite, NULL, NULL);
+            rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
+                                             uOffsetInFile, pIoCtx, cbToWrite, NULL, NULL);
         }
     }
 
@@ -1500,7 +1340,7 @@ static int parallelsAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
     LogFlowFunc(("pImage=#%p\n", pImage));
 
     /* Flush the file, everything is up to date already. */
-    rc = parallelsFileFlushAsync(pImage, pIoCtx, NULL, NULL);
+    rc = vdIfIoIntFileFlushAsync(pImage->pIfIo, pImage->pStorage, pIoCtx, NULL, NULL);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;

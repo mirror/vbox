@@ -218,8 +218,8 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
     VDGEOMETRY       PCHS = { 0, 0, 0 };
     VDGEOMETRY       LCHS = { 0, 0, 0 };
     PVDINTERFACE     pVDIfs = NULL;
-    VDINTERFACE      VDIError;
-    VDINTERFACEERROR VDIErrorCallbacks;
+    VDINTERFACEERROR VDIfError;
+
     /** Buffer storing the random test pattern. */
     uint8_t *pbTestPattern = NULL;
     /** Number of disk segments */
@@ -265,13 +265,12 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
     } while (0)
 
     /* Create error interface. */
-    VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
-    VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
-    VDIErrorCallbacks.pfnError = tstVDError;
-    VDIErrorCallbacks.pfnMessage = tstVDMessage;
+    /* Create error interface. */
+    VDIfError.pfnError = tstVDError;
+    VDIfError.pfnMessage = tstVDMessage;
 
-    rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
-                        NULL, &pVDIfs);
+    rc = VDInterfaceAdd(&VDIfError.Core, "tstVD_Error", VDINTERFACETYPE_ERROR,
+                        NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(rc);
 
 
