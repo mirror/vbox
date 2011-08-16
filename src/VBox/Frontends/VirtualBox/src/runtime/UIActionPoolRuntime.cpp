@@ -100,7 +100,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionPool", "Take Screensh&ot"), gMS->shortcut(UIMachineShortcuts::TakeScreenshotShortcut)));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionPool", "Take Screensh&ot..."), gMS->shortcut(UIMachineShortcuts::TakeScreenshotShortcut)));
         setStatusTip(QApplication::translate("UIActionPool", "Take a screenshot of the virtual machine"));
     }
 };
