@@ -938,7 +938,7 @@ static void buslogicIntiateHardReset(PBUSLOGIC pBusLogic)
  * Send a mailbox with set status codes to the guest.
  *
  * @returns nothing.
- * @param   pBusLogicR                Pointer to the BubsLogic device instance.
+ * @param   pBusLogicR                Pointer to the BubLogic device instance.
  * @param   pTaskState                Pointer to the task state with the mailbox to send.
  * @param   uHostAdapterStatus        The host adapter status code to set.
  * @param   uDeviceStatus             The target device status to set.
@@ -2406,7 +2406,7 @@ static DECLCALLBACK(bool) buslogicNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQU
  * or loaded from a saved state.
  *
  * @returns nothing.
- * @param   pThis    The LsiLogic device instance.
+ * @param   pThis    The BusLogic device instance.
  */
 static void buslogicKick(PBUSLOGIC pThis)
 {
@@ -2732,7 +2732,7 @@ static DECLCALLBACK(void *) buslogicStatusQueryInterface(PPDMIBASE pInterface, c
  /**
  * Checks if all asynchronous I/O is finished.
  *
- * Used by lsilogicReset, lsilogicSuspend and lsilogicPowerOff.
+ * Used by buslogicReset, buslogicSuspend and buslogicPowerOff.
  *
  * @returns true if quiesced, false if busy.
  * @param   pDevIns         The device instance.
@@ -2755,7 +2755,7 @@ static bool buslogicR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
 }
 
 /**
- * Callback employed by lsilogicR3Suspend and lsilogicR3PowerOff..
+ * Callback employed by buslogicR3Suspend and buslogicR3PowerOff..
  *
  * @returns true if we've quiesced, false if we're still working.
  * @param   pDevIns     The device instance.
