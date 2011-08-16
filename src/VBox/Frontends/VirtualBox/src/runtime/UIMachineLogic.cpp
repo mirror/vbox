@@ -56,9 +56,11 @@
 # include <QX11Info>
 #endif /* Q_WS_X11 */
 
+#include <QDesktopWidget>
 #include <QDir>
 #include <QFileInfo>
-#include <QDesktopWidget>
+#include <QImageWriter>
+#include <QPainter>
 #include <QTimer>
 
 struct MediumTarget
@@ -230,7 +232,7 @@ UIMachineLogic::~UIMachineLogic()
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 }
 
-CSession& UIMachineLogic::session()
+CSession& UIMachineLogic::session() const
 {
     return uisession()->session();
 }
@@ -325,6 +327,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltOpenVMSettingsDialog()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot), SIGNAL(triggered()),
             this, SLOT(sltTakeSnapshot()));
+    connect(gActionPool->action(UIActionIndexRuntime_Simple_TakeScreenshot), SIGNAL(triggered()),
+            this, SLOT(sltTakeScreenshot()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_InformationDialog), SIGNAL(triggered()),
             this, SLOT(sltShowInformationDialog()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration), SIGNAL(toggled(bool)),
@@ -416,6 +420,7 @@ void UIMachineLogic::prepareActionGroups()
     /* Move actions into running-n-paused actions group: */
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeScreenshot));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_InformationDialog));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_MouseIntegration));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration));
@@ -583,28 +588,12 @@ void UIMachineLogic::sltMachineStateChanged()
             /* Prevent machine view from resizing: */
             uisession()->setGuestResizeIgnored(true);
 
-            /* Get console: */
+            /* Get console and log folder. */
             CConsole console = session().GetConsole();
+            const QString &strLogFolder = console.GetMachine().GetLogFolder();
 
             /* Take the screenshot for debugging purposes and save it. */
-            QString strLogFolder = console.GetMachine().GetLogFolder();
-            CDisplay display = console.GetDisplay();
-            int cGuestScreens = uisession()->session().GetMachine().GetMonitorCount();
-            for (int i=0; i < cGuestScreens; ++i)
-            {
-                QString strFileName;
-                if (i == 0)
-                    strFileName = strLogFolder + "/VBox.png";
-                else
-                    strFileName = QString("%1/VBox.%2.png").arg(strLogFolder).arg(i);
-                ULONG width = 0;
-                ULONG height = 0;
-                ULONG bpp = 0;
-                display.GetScreenResolution(i, width, height, bpp);
-                QImage shot = QImage(width, height, QImage::Format_RGB32);
-                display.TakeScreenShot(i, shot.bits(), shot.width(), shot.height());
-                shot.save(QFile::encodeName(strFileName), "PNG");
-            }
+            takeScreenshot(strLogFolder + "/VBox.png", "png");
 
             /* Warn the user about GURU: */
             if (msgCenter().remindAboutGuruMeditation(console, QDir::toNativeSeparators(strLogFolder)))
@@ -888,6 +877,44 @@ void UIMachineLogic::sltTakeSnapshot()
         /* Unpause VM: */
         uisession()->unpause();
     }
+}
+
+void UIMachineLogic::sltTakeScreenshot()
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Which image formats for writing does this Qt version know of? */
+    QList<QByteArray> formats = QImageWriter::supportedImageFormats();
+    QStringList filters;
+    /* Build a filters list out of it. */
+    for (int i = 0; i < formats.size(); ++i)
+        filters << formats.at(i) + " (*." + formats.at(i).toLower() + ")";
+    /* Try to select some common defaults. */
+    QString strFilter;
+    int i = filters.indexOf(QRegExp(".*png.*", Qt::CaseInsensitive));
+    if (i == -1)
+    {
+        i = filters.indexOf(QRegExp(".*jpe+g*", Qt::CaseInsensitive));
+        if (i == -1)
+            i = filters.indexOf(QRegExp(".*bmp*", Qt::CaseInsensitive));
+    }
+    if (i != -1)
+        strFilter = filters.at(i);
+    /* Request the filename from the user. */
+    const CMachine &machine = session().GetMachine();
+    const QString &strStart = machine.GetSettingsFilePath();
+    QString strFilename = QIFileDialog::getSaveFileName(strStart,
+                                                        filters.join(";;"),
+                                                        defaultMachineWindow()->machineWindow(),
+                                                        tr("Select a filename for the screenshot ..."),
+                                                        &strFilter,
+                                                        true /* resolve symlinks */,
+                                                        true /* confirm overwrite */);
+    /* Do the screenshot. */
+    if (!strFilename.isEmpty())
+        takeScreenshot(strFilename, strFilter.split(" ").value(0, "png"));
 }
 
 void UIMachineLogic::sltShowInformationDialog()
@@ -1603,6 +1630,49 @@ int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
         }
     }
     return iMaxIndex;
+}
+
+void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFormat /* = "png" */) const
+{
+    /* Get console: */
+    const CConsole &console = session().GetConsole();
+    CDisplay display = console.GetDisplay();
+    const int cGuestScreens = uisession()->session().GetMachine().GetMonitorCount();
+    QList<QImage> images;
+    ULONG uMaxWidth  = 0;
+    ULONG uMaxHeight = 0;
+    /* First create screenshots of all guest screens and save them in a list.
+     * Also sum the width of all images and search for the biggest image height. */
+    for (int i = 0; i < cGuestScreens; ++i)
+    {
+        ULONG width  = 0;
+        ULONG height = 0;
+        ULONG bpp    = 0;
+        display.GetScreenResolution(i, width, height, bpp);
+        uMaxWidth  += width;
+        uMaxHeight  = RT_MAX(uMaxHeight, height);
+        QImage shot = QImage(width, height, QImage::Format_RGB32);
+        display.TakeScreenShot(i, shot.bits(), shot.width(), shot.height());
+        images << shot;
+    }
+    /* Create a image which will hold all sub images vertically. */
+    QImage bigImg = QImage(uMaxWidth, uMaxHeight, QImage::Format_RGB32);
+    QPainter p(&bigImg);
+    ULONG w = 0;
+    /* Paint them. */
+    for (int i = 0; i < images.size(); ++i)
+    {
+        p.drawImage(w, 0, images.at(i));
+        w += images.at(i).width();
+    }
+    p.end();
+
+    /* Save the big image in the requested format. */
+    const QFileInfo fi(strFile);
+    const QString &strPath   = fi.absolutePath() + "/" + fi.baseName();
+    const QString &strSuffix = fi.suffix().isEmpty() ? strFormat : fi.suffix();
+    bigImg.save(QFile::encodeName(QString("%1.%2").arg(strPath).arg(strSuffix)),
+                strFormat.toAscii().constData());
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

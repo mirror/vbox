@@ -79,8 +79,29 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionPool", "Take &Snapshot..."), gMS->shortcut(UIMachineShortcuts::TakeSnapshotShortcut)));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionPool", "Take Sn&apshot..."), gMS->shortcut(UIMachineShortcuts::TakeSnapshotShortcut)));
         setStatusTip(QApplication::translate("UIActionPool", "Take a snapshot of the virtual machine"));
+    }
+};
+
+class PerformTakeScreenshotAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    PerformTakeScreenshotAction(QObject *pParent)
+        : UISimpleAction(pParent, ":/take_snapshot_16px.png", ":/take_snapshot_dis_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionPool", "Take Screensh&ot"), gMS->shortcut(UIMachineShortcuts::TakeScreenshotShortcut)));
+        setStatusTip(QApplication::translate("UIActionPool", "Take a screenshot of the virtual machine"));
     }
 };
 
@@ -183,7 +204,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionPool", "&Insert Ctrl-Alt-Backspace"), gMS->shortcut(UIMachineShortcuts::TypeCABSShortcut)));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIActionPool", "Ins&ert Ctrl-Alt-Backspace"), gMS->shortcut(UIMachineShortcuts::TypeCABSShortcut)));
         setStatusTip(QApplication::translate("UIActionPool", "Send the Ctrl-Alt-Backspace sequence to the virtual machine"));
     }
 };
@@ -803,6 +824,7 @@ void UIActionPoolRuntime::createActions()
     /* 'Machine' actions: */
     m_pool[UIActionIndexRuntime_Simple_SettingsDialog] = new ShowSettingsDialogAction(this);
     m_pool[UIActionIndexRuntime_Simple_TakeSnapshot] = new PerformTakeSnapshotAction(this);
+    m_pool[UIActionIndexRuntime_Simple_TakeScreenshot] = new PerformTakeScreenshotAction(this);
     m_pool[UIActionIndexRuntime_Simple_InformationDialog] = new ShowInformationDialogAction(this);
     m_pool[UIActionIndexRuntime_Toggle_MouseIntegration] = new ToggleMouseIntegrationAction(this);
     m_pool[UIActionIndexRuntime_Simple_TypeCAD] = new PerformTypeCADAction(this);

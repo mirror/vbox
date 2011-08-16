@@ -37,7 +37,7 @@ public:
 
     static QString getSaveFileName (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
                                     const QString &aCaption, QString *aSelectedFilter = 0,
-                                    bool aResolveSymLinks = true);
+                                    bool aResolveSymLinks = true, bool fConfirmOverwrite = false);
 
     static QString getOpenFileName (const QString &aStartWith, const QString &aFilters, QWidget *aParent,
                                     const QString &aCaption, QString *aSelectedFilter = 0,

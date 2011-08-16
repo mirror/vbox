@@ -399,7 +399,8 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
                                        QWidget       *aParent,
                                        const QString &aCaption,
                                        QString       *aSelectedFilter /* = 0 */,
-                                       bool           aResolveSymlinks /* = true */)
+                                       bool           aResolveSymlinks /* = true */,
+                                       bool           fConfirmOverwrite /* = false */)
 {
 #if defined Q_WS_WIN
 
@@ -426,10 +427,11 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
 
         Thread (QWidget *aParent, QObject *aTarget,
                 const QString &aStartWith, const QString &aFilters,
-                const QString &aCaption) :
+                const QString &aCaption, bool fConfirmOverwrite) :
                 mParent (aParent), mTarget (aTarget),
                 mStartWith (aStartWith), mFilters (aFilters),
-                mCaption (aCaption) {}
+                mCaption (aCaption)
+                m_fConfirmOverwrite(fConfirmOverwrite) {}
 
         virtual void run()
         {
@@ -475,7 +477,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
             ofn.lpstrTitle = (TCHAR *) title.isNull() ? 0 : title.utf16();
             ofn.Flags = (OFN_NOCHANGEDIR | OFN_HIDEREADONLY |
                          OFN_EXPLORER | OFN_ENABLEHOOK |
-                         OFN_NOTESTFILECREATE);
+                         OFN_NOTESTFILECREATE | (m_fConfirmOverwrite ? OFN_OVERWRITEPROMPT : 0));
             ofn.lpfnHook = OFNHookProc;
 
             if (GetSaveFileName (&ofn))
@@ -501,6 +503,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
         QString mStartWith;
         QString mFilters;
         QString mCaption;
+        bool    m_fConfirmOverwrite;
     };
 
     if (aSelectedFilter)
@@ -516,7 +519,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
     if (aParent)
         aParent->setWindowModality (Qt::WindowModal);
 
-    Thread openDirThread (aParent, &loopObject, startWith, aFilters, aCaption);
+    Thread openDirThread (aParent, &loopObject, startWith, aFilters, aCaption, fConfirmOverwrite);
     openDirThread.start();
     loop.exec();
     openDirThread.wait();
@@ -541,7 +544,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
     if (aSelectedFilter)
         dlg.selectFilter (*aSelectedFilter);
     dlg.setResolveSymlinks (aResolveSymlinks);
-    dlg.setConfirmOverwrite (false);
+    dlg.setConfirmOverwrite (fConfirmOverwrite);
     QAction *hidden = dlg.findChild <QAction*> ("qt_show_hidden_action");
     if (hidden)
     {
@@ -566,7 +569,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
     if (aSelectedFilter)
         dlg.selectFilter (*aSelectedFilter);
     dlg.setResolveSymlinks (aResolveSymlinks);
-    dlg.setConfirmOverwrite (false);
+    dlg.setConfirmOverwrite (fConfirmOverwrite);
 
     QEventLoop eventLoop;
     QObject::connect(&dlg, SIGNAL(finished(int)),
@@ -589,7 +592,8 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
 # endif
     if (!aResolveSymlinks)
         o |= QFileDialog::DontResolveSymlinks;
-    o |= QFileDialog::DontConfirmOverwrite;
+    if (!fConfirmOverwrite)
+        o |= QFileDialog::DontConfirmOverwrite;
     return QFileDialog::getSaveFileName (aParent, aCaption, aStartWith,
                                          aFilters, aSelectedFilter, o);
 #endif

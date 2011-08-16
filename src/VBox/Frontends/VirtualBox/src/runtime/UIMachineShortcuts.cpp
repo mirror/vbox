@@ -27,6 +27,7 @@ UIMachineShortcuts::UIMachineShortcuts()
     /* Defaults */
     m_Shortcuts[SettingsDialogShortcut]        = UIKeySequence("SettingsDialog",        "S");
     m_Shortcuts[TakeSnapshotShortcut]          = UIKeySequence("TakeSnapshot",          "T");
+    m_Shortcuts[TakeScreenshotShortcut]        = UIKeySequence("TakeScreenshot",        "E");
     m_Shortcuts[InformationDialogShortcut]     = UIKeySequence("InformationDialog",     "N");
     m_Shortcuts[MouseIntegrationShortcut]      = UIKeySequence("MouseIntegration" ,     "I");
     m_Shortcuts[TypeCADShortcut]               = UIKeySequence("TypeCAD",               "Del");

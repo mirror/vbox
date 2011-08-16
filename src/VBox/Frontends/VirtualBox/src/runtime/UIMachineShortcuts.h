@@ -29,6 +29,7 @@ public:
     {
         SettingsDialogShortcut,
         TakeSnapshotShortcut,
+        TakeScreenshotShortcut,
         InformationDialogShortcut,
         MouseIntegrationShortcut,
         TypeCADShortcut,

@@ -62,7 +62,7 @@ public:
 
     /* Main getters/setters: */
     UISession* uisession() const { return m_pSession; }
-    CSession& session();
+    CSession& session() const;
     UIVisualStateType visualStateType() const { return m_visualStateType; }
     const QList<UIMachineWindow*>& machineWindows() const { return m_machineWindowsList; }
     UIKeyboardHandler* keyboardHandler() const { return m_pKeyboardHandler; }
@@ -156,7 +156,9 @@ private slots:
 #ifdef Q_WS_X11
     void sltTypeCABS();
 #endif
+
     void sltTakeSnapshot();
+    void sltTakeScreenshot();
     void sltShowInformationDialog();
     void sltReset();
     void sltPause(bool fOn);
@@ -194,6 +196,8 @@ private:
     static int searchMaxSnapshotIndex(const CMachine &machine,
                                       const CSnapshot &snapshot,
                                       const QString &strNameTemplate);
+
+    void takeScreenshot(const QString &strFile, const QString &strFormat /* = "png" */) const;
 
     /* Private variables: */
     UISession *m_pSession;
