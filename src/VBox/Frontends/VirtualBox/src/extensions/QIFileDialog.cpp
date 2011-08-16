@@ -430,7 +430,7 @@ QString QIFileDialog::getSaveFileName (const QString &aStartWith,
                 const QString &aCaption, bool fConfirmOverwrite) :
                 mParent (aParent), mTarget (aTarget),
                 mStartWith (aStartWith), mFilters (aFilters),
-                mCaption (aCaption)
+                mCaption (aCaption),
                 m_fConfirmOverwrite(fConfirmOverwrite) {}
 
         virtual void run()
