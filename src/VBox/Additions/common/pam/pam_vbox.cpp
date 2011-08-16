@@ -38,6 +38,7 @@
 
 #include <pwd.h>
 #include <syslog.h>
+#include <stdlib.h>
 
 #include <iprt/assert.h>
 #include <iprt/env.h>
