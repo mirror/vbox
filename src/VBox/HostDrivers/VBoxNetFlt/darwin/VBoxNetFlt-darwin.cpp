@@ -996,7 +996,12 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
         /*
          * Create a mbuf for the gather list and push it onto the wire.
          */
-        if (fDst & INTNETTRUNKDIR_WIRE)
+        /*
+         * If the interface is in the promiscuous mode we need to send
+         * the packet down the stack so it reaches the driver and Berkeley
+         * Packet Filter (see #5817).
+         */
+        if ((fDst & INTNETTRUNKDIR_WIRE) || vboxNetFltDarwinIsPromiscuous(pThis))
         {
             mbuf_t pMBuf = vboxNetFltDarwinMBufFromSG(pThis, pSG);
             if (pMBuf)
