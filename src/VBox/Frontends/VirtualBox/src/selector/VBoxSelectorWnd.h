@@ -74,10 +74,14 @@ public slots:
     void vmStart(const QString & = QString::null);
     void vmDiscard(const QString & = QString::null);
     void vmPause(bool, const QString & = QString::null);
+    void vmReset(const QString & = QString::null);
+    void vmACPIShutdown(const QString &aUuid = QString::null);
+    void vmPowerOff(const QString &aUuid = QString::null);
     void vmRefresh(const QString & = QString::null);
     void vmShowLogs(const QString & = QString::null);
     void vmOpenInFileManager(const QString &aUuid = QString::null);
     void vmCreateShortcut(const QString &aUuid = QString::null);
+    void sltCloseMenuAboutToShow();
 
     void refreshVMList();
     void refreshVMItem(const QString &aID, bool aDetails, bool aSnapshots, bool aDescription);
@@ -99,6 +103,7 @@ public slots:
     const QAction *vmStartAction() const { return mVmStartAction; }
     const QAction *vmDiscardAction() const { return mVmDiscardAction; }
     const QAction *vmPauseAction() const { return mVmPauseAction; }
+    const QAction *vmResetAction() const { return mVmResetAction; }
     const QAction *vmRefreshAction() const { return mVmRefreshAction; }
     const QAction *vmShowLogsAction() const { return mVmShowLogsAction; }
 
@@ -158,6 +163,7 @@ private:
 
     /* VM list context menu */
     QMenu *mVMCtxtMenu;
+    QMenu *mVMCloseMenu;
 
     /* Actions */
     QAction *mFileMediaMgrAction;
@@ -173,6 +179,9 @@ private:
     QAction *mVmStartAction;
     QAction *mVmDiscardAction;
     QAction *mVmPauseAction;
+    QAction *mVmResetAction;
+    QAction *mVmACPIShutdownAction;
+    QAction *mVmPowerOffAction;
     QAction *mVmRefreshAction;
     QAction *mVmShowLogsAction;
     QAction *mVmOpenInFileManagerAction;

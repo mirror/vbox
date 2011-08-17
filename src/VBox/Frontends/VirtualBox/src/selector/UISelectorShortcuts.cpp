@@ -38,6 +38,9 @@ UISelectorShortcuts::UISelectorShortcuts()
     m_Shortcuts[StartVMShortcut]             = UIKeySequence("StartVM");
     m_Shortcuts[DiscardVMShortcut]           = UIKeySequence("DiscardVM",           "Ctrl+J");
     m_Shortcuts[PauseVMShortcut]             = UIKeySequence("PauseVM",             "Ctrl+P");
+    m_Shortcuts[ResetVMShortcut]             = UIKeySequence("ResetVM",             "Ctrl+T");
+    m_Shortcuts[ACPIShutdownVMShortcut]      = UIKeySequence("ACPIShutdownVM",      "Ctrl+U");
+    m_Shortcuts[PowerOffVMShortcut]          = UIKeySequence("PowerOffVM",          "Ctrl+F");
     m_Shortcuts[RefreshVMShortcut]           = UIKeySequence("RefreshVM");
     m_Shortcuts[ShowVMLogShortcut]           = UIKeySequence("ShowVMLog",           "Ctrl+L");
     m_Shortcuts[ShowVMInFileManagerShortcut] = UIKeySequence("ShowVMInFileManager");
