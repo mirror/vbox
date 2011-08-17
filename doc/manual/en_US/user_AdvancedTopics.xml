@@ -330,13 +330,76 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       <computeroutput>pam_vbox.so</computeroutput> statement. Debug log output
       will then be recorded using syslog.</para>
 
-      <para><warning>
-          <para>At present, the GDM display manager only retrieves credentials
-          at startup so unless the credentials have been supplied to the guest
-          before GDM starts, automatic logon will not work. This limitation
-          needs to be addressed by the GDM developers or another display
-          manager must be used.</para>
-        </warning></para>
+      <para><note>
+          <para>By default, pam_vbox will not wait for credentials to arrive from
+          the host, in other words: When a login prompt is shown (for example by
+          GDM/KDM or the text console) and pam_vbox does not yet have credentials
+          it does not wait until they arrive. Instead the next module in the PAM
+          stack (depending on the PAM configuration) will have the chance for
+          authentication.</para>
+        </note></para>
+
+      <para>Starting with VirtualBox 4.1.4 pam_vbox supports various guest property
+      parameters which all reside in <computeroutput>/VirtualBox/GuestAdd/PAM/</computeroutput>.
+      These parameters allow pam_vbox to wait for credentials to be provided by the
+      host and optionally can show a message while waiting for those. The following
+      guest properties can be set:</para>
+
+      <orderedlist>
+
+        <listitem>
+          <para><computeroutput>CredsWait</computeroutput>: Set to "1" if pam_vbox should
+          start waiting until credentials arrive from the host. Until then no other authentication
+          methods such as manually logging in will be available. If this property is empty or get
+          deleted no waiting for credentials will be performed and pam_vbox will act like before (see
+          paragraph above). This property must be set read-only for the guest
+          (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>CredsChanged</computeroutput>: Acts as "beacon" and is also
+          read- and writeable from the guest. If set o any value (e.g. to "1") waiting
+          for credentials will be aborted. If credentials are provided before
+          setting <computeroutput>CredsChanged</computeroutput>, these credentials will be taken for
+          authentication. To disable another round of waiting for new credentials to arrive
+          the property <computeroutput>CredsWait</computeroutput> can be set to empty (deleted) before.</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>CredsWaitTimeout</computeroutput>: Timeout (in seconds) to let pam_vbox
+          wait for credentials to arrive. When no credentials arrive within this timeout, authentication
+          of pam_vbox will be set to failed and the next PAM module in chain will be asked. If this
+          property is not specified, set to "0" or an invalid value, an infinite timeout will be used.
+          This property must be set read-only for the guest (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+        </listitem>
+
+      </orderedlist>
+
+      <para>To customize pam_vbox further there are the following guest properties:</para>
+
+      <orderedlist>
+
+        <listitem>
+          <para><computeroutput>CredsMsgWaiting</computeroutput>: Custom message showed while pam_vbox is
+          waiting for credentials from the host. This property must be set read-only for the guest
+          (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+        </listitem>
+
+        <listitem>
+          <para><computeroutput>CredsMsgWaitTimeout</computeroutput>: Custom message showed when waiting
+          for credentials by pam_vbox timed out, e.g. did not arrive within time. This property must be set
+          read-only for the guest (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+        </listitem>
+
+      </orderedlist>
+
+      <para><note>
+          <para>If a pam_vbox guest property does not have set the right flags (<computeroutput>RDONLYGUEST</computeroutput>)
+          this property will be ignored then and - depending on the property - a default value will be
+          set. This can result in pam_vbox not waiting for credentials. Consult the appropriate syslog file for
+          more information and use the <computeroutput>debug</computeroutput> option.</para>
+        </note></para>
+
     </sect2>
   </sect1>
 
@@ -546,7 +609,7 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
         <para>Experimental support for PCI passthrough was introduced with VirtualBox
         4.1.</para>
     </footnote></para>
-    
+
     <note><para>The PCI passthrough module is shipped as a VirtualBox extension
       package, which must be installed separately. See <xref
       linkend="intro-installing" /> for more information.</para>
@@ -1661,7 +1724,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
       VM can reach the following parameters will be checked in the following
       order:
       <itemizedlist>
-        <listitem>specified via VBoxBalloonCtrl command line parameter 
+        <listitem>specified via VBoxBalloonCtrl command line parameter
           <computeroutput>--balloon-max</computeroutput></listitem>
         <listitem>per-VM parameter using
           <screen>VBoxManage setextradata "VM-Name" VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen></listitem>
