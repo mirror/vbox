@@ -383,20 +383,94 @@ static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint3
     return rc;
 }
 
-static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t clientid, const char *pszKey,
+static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
+                              const char *pszKey, bool fReadOnly,
                               char *pszValue, size_t cbValue)
 {
-    AssertReturn(clientid, VERR_INVALID_PARAMETER);
+    AssertReturn(uClientID, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
     AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
 
-    int rc = VbglR3GuestPropReadValue(clientid, pszKey,
-                                      pszValue, cbValue, NULL /* Actual size, not required. */);
-    pam_vbox_log(hPAM, "pam_vbox_read_prop: read key \"%s\" with rc=%Rrc\n",
-                 pszKey, rc);
+    int rc;
+
+    uint64_t u64Timestamp = 0;
+    char *pszValTemp;
+    char *pszFlags = NULL;
+    /* The buffer for storing the data and its initial size.  We leave a bit
+     * of space here in case the maximum values are raised. */
+    void *pvBuf = NULL;
+    uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + _1K;
+
+    /* Because there is a race condition between our reading the size of a
+     * property and the guest updating it, we loop a few times here and
+     * hope.  Actually this should never go wrong, as we are generous
+     * enough with buffer space. */
+    for (unsigned i = 0; i < 10; i++)
+    {
+        void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
+        if (pvTmpBuf)
+        {
+            pvBuf = pvTmpBuf;
+            rc = VbglR3GuestPropRead(uClientID, pszKey, pvBuf, cbBuf,
+                                     &pszValTemp, &u64Timestamp, &pszFlags,
+                                     &cbBuf);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        switch (rc)
+        {
+            case VERR_BUFFER_OVERFLOW:
+            {
+                /* Buffer too small, try it with a bigger one next time. */
+                cbBuf += _1K;
+                continue; /* Try next round. */
+            }
+
+            default:
+                break;
+        }
+
+        /* Everything except VERR_BUFFER_OVERLOW makes us bail out ... */
+        break;
+    }
+
     if (RT_SUCCESS(rc))
-        pam_vbox_log(hPAM, "pam_vbox_read_prop: key \"%s\"=\"%s\"\n",
-                     pszKey, pszValue);
+    {
+        /* Check security bits. */
+        if (pszFlags)
+        {
+            if (   fReadOnly
+                && !RTStrStr(pszFlags, "RDONLYGUEST"))
+            {
+                /* If we want a property which is read-only on the guest
+                 * and it is *not* marked as such, deny access! */
+                pam_vbox_error(hPAM, "pam_vbox_read_prop: key \"%s\" should be read-only on guest but it is not\n",
+                               pszKey);
+                rc = VERR_ACCESS_DENIED;
+            }
+        }
+        else /* No flags, no access! */
+        {
+            pam_vbox_error(hPAM, "pam_vbox_read_prop: key \"%s\" contains no/wrong flags (%s)\n",
+                           pszKey, pszFlags);
+            rc = VERR_ACCESS_DENIED;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* If everything went well copy property value to our destination buffer. */
+            if (!RTStrPrintf(pszValue, cbValue, "%s", pszValTemp))
+            {
+                pam_vbox_error(hPAM, "pam_vbox_read_prop: could not store value of key \"%s\"\n",
+                               pszKey);
+                rc = VERR_INVALID_PARAMETER;
+            }
+        }
+    }
+
+    pam_vbox_log(hPAM, "pam_vbox_read_prop: read key \"%s\"=\"%s\" with rc=%Rrc\n",
+                 pszKey, pszValue, rc);
     return rc;
 }
 #endif
@@ -433,14 +507,18 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
     if (RT_SUCCESS(rc))
     {
         char szVal[256];
-        rc = pam_vbox_read_prop(hPAM,uClientId, "/VirtualBox/GuestAdd/PAM/CredsWait",
+        rc = pam_vbox_read_prop(hPAM, uClientId,
+                                "/VirtualBox/GuestAdd/PAM/CredsWait",
+                                true /* Read-only on guest */,
                                 szVal, sizeof(szVal));
         if (RT_SUCCESS(rc))
         {
             /* All calls which are checked against rc2 are not critical, e.g. it does
              * not matter if they succeed or not. */
             uint32_t uTimeoutMS = RT_INDEFINITE_WAIT; /* Wait infinite by default. */
-            int rc2 = pam_vbox_read_prop(hPAM, uClientId, "/VirtualBox/GuestAdd/PAM/CredsWaitTimeout",
+            int rc2 = pam_vbox_read_prop(hPAM, uClientId,
+                                         "/VirtualBox/GuestAdd/PAM/CredsWaitTimeout",
+                                         true /* Read-only on guest */,
                                          szVal, sizeof(szVal));
             if (RT_SUCCESS(rc2))
             {
@@ -454,7 +532,9 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
                     uTimeoutMS = uTimeoutMS * 1000; /* Make ms out of s. */
             }
 
-            rc2 = pam_vbox_read_prop(hPAM, uClientId, "/VirtualBox/GuestAdd/PAM/CredsMsgWaiting",
+            rc2 = pam_vbox_read_prop(hPAM, uClientId,
+                                     "/VirtualBox/GuestAdd/PAM/CredsMsgWaiting",
+                                     true /* Read-only on guest */,
                                      szVal, sizeof(szVal));
             const char *pszWaitMsg = NULL;
             if (RT_SUCCESS(rc2))
@@ -484,7 +564,9 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
                     {
                         pam_vbox_log(hPAM, "pam_sm_authenticate: no credentials given within time\n", rc);
 
-                        rc2 = pam_vbox_read_prop(hPAM, uClientId, "/VirtualBox/GuestAdd/PAM/CredsMsgWaitTimeout",
+                        rc2 = pam_vbox_read_prop(hPAM, uClientId,
+                                                 "/VirtualBox/GuestAdd/PAM/CredsMsgWaitTimeout",
+                                                 true /* Read-only on guest */,
                                                  szVal, sizeof(szVal));
                         if (RT_SUCCESS(rc2))
                             rc2 = vbox_set_msg(hPAM, 0 /* Info message */, szVal);
