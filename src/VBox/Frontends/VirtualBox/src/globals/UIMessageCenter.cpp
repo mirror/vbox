@@ -2215,7 +2215,7 @@ bool UIMessageCenter::remindAboutGuruMeditation(const CConsole &console,
 /**
  *  @return @c true if the user has selected to reset the machine.
  */
-bool UIMessageCenter::confirmVMReset(QWidget *pParent)
+bool UIMessageCenter::confirmVMReset(QWidget *pParent /* = 0 */)
 {
     return messageOkCancel(pParent ? pParent : mainMachineWindowShown(), Question,
         tr("<p>Do you really want to reset the virtual machine?</p>"
@@ -2223,6 +2223,16 @@ bool UIMessageCenter::confirmVMReset(QWidget *pParent)
            "it to be lost.</p>"),
         "confirmVMReset" /* pcszAutoConfirmId */,
         tr("Reset", "machine"));
+}
+
+bool UIMessageCenter::confirmVMPowerOff(QWidget *pParent /* = 0 */)
+{
+    return messageOkCancel(pParent ? pParent : mainMachineWindowShown(), Question,
+        tr("<p>Do you really want to power off the virtual machine?</p>"
+           "<p>This will cause any unsaved data in applications running inside "
+           "it to be lost.</p>"),
+        "confirmVMPowerOff" /* pcszAutoConfirmId */,
+        tr("Power Off", "machine"));
 }
 
 void UIMessageCenter::warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName)

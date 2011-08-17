@@ -168,6 +168,15 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
         QSize(32, 32), QSize(16, 16),
         ":/vm_pause_32px.png", ":/pause_16px.png",
         ":/vm_pause_disabled_32px.png", ":/pause_disabled_16px.png"));
+    mVmResetAction = new QAction(this);
+    mVmResetAction->setIcon(UIIconPool::iconSet(
+        ":/reset_16px.png", ":/reset_disabled_16px.png"));
+    mVmACPIShutdownAction = new QAction(this);
+    mVmACPIShutdownAction->setIcon(UIIconPool::iconSet(
+        ":/acpi_16px.png", ":/acpi_disabled_16px.png"));
+    mVmPowerOffAction = new QAction(this);
+    mVmPowerOffAction->setIcon(UIIconPool::iconSet(
+        ":/poweroff_16px.png", ":/poweroff_disabled_16px.png"));
     mVmRefreshAction = new QAction(this);
     mVmRefreshAction->setIcon(UIIconPool::iconSetFull(
         QSize(32, 32), QSize(16, 16),
@@ -288,6 +297,11 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 #endif /* Q_WS_MAC */
     mFileMenu->addAction(mFileExitAction);
 
+    mVMCloseMenu = new QMenu(this);
+    mVMCloseMenu->setIcon(UIIconPool::iconSet(":/exit_16px.png"));
+    mVMCloseMenu->addAction(mVmACPIShutdownAction);
+    mVMCloseMenu->addAction(mVmPowerOffAction);
+
     mVMMenu = menuBar()->addMenu(QString::null);
     mVMMenu->addAction(mVmNewAction);
     mVMMenu->addAction(mVmAddAction);
@@ -298,6 +312,8 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMMenu->addAction(mVmStartAction);
     mVMMenu->addAction(mVmDiscardAction);
     mVMMenu->addAction(mVmPauseAction);
+    mVMMenu->addAction(mVmResetAction);
+    mVMMenu->addMenu(mVMCloseMenu);
     mVMMenu->addSeparator();
     mVMMenu->addAction(mVmRefreshAction);
     mVMMenu->addAction(mVmShowLogsAction);
@@ -317,6 +333,8 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMCtxtMenu->addAction(mVmStartAction);
     mVMCtxtMenu->addAction(mVmDiscardAction);
     mVMCtxtMenu->addAction(mVmPauseAction);
+    mVMCtxtMenu->addAction(mVmResetAction);
+    mVMCtxtMenu->addMenu(mVMCloseMenu);
     mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction(mVmRefreshAction);
     mVMCtxtMenu->addAction(mVmShowLogsAction);
@@ -448,10 +466,15 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect(mVmStartAction, SIGNAL(triggered()), this, SLOT(vmStart()));
     connect(mVmDiscardAction, SIGNAL(triggered()), this, SLOT(vmDiscard()));
     connect(mVmPauseAction, SIGNAL(toggled(bool)), this, SLOT(vmPause(bool)));
+    connect(mVmResetAction, SIGNAL(triggered()), this, SLOT(vmReset()));
+    connect(mVmACPIShutdownAction, SIGNAL(triggered()), this, SLOT(vmACPIShutdown()));
+    connect(mVmPowerOffAction, SIGNAL(triggered()), this, SLOT(vmPowerOff()));
     connect(mVmRefreshAction, SIGNAL(triggered()), this, SLOT(vmRefresh()));
     connect(mVmShowLogsAction, SIGNAL(triggered()), this, SLOT(vmShowLogs()));
     connect(mVmOpenInFileManagerAction, SIGNAL(triggered()), this, SLOT(vmOpenInFileManager()));
     connect(mVmCreateShortcut, SIGNAL(triggered()), this, SLOT(vmCreateShortcut()));
+
+    connect(mVMCloseMenu, SIGNAL(aboutToShow()), this, SLOT(sltCloseMenuAboutToShow()));
 
     connect(mVMListView, SIGNAL(currentChanged()),
             this, SLOT(vmListViewCurrentChanged()));
@@ -899,6 +922,76 @@ void VBoxSelectorWnd::vmPause(bool aPause, const QString &aUuid /* = QString::nu
     session.UnlockMachine();
 }
 
+void VBoxSelectorWnd::vmReset(const QString &aUuid /* = QString::null */)
+{
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+                       mVMModel->itemById(aUuid);
+
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
+
+    /* Confirm/Reset current console: */
+    if (msgCenter().confirmVMReset(this))
+    {
+        CSession session = vboxGlobal().openExistingSession(item->id());
+        if (session.isNull())
+            return;
+
+        CConsole console = session.GetConsole();
+        if (console.isNull())
+            return;
+
+        console.Reset();
+    }
+}
+
+void VBoxSelectorWnd::vmACPIShutdown(const QString &aUuid /* = QString::null */)
+{
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+                       mVMModel->itemById(aUuid);
+
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
+
+    /* Confirm/Reset current console: */
+    if (msgCenter().confirmVMReset(this))
+    {
+        CSession session = vboxGlobal().openExistingSession(item->id());
+        if (session.isNull())
+            return;
+
+        CConsole console = session.GetConsole();
+        if (console.isNull())
+            return;
+
+        console.PowerButton();
+
+        session.UnlockMachine();
+    }
+}
+
+void VBoxSelectorWnd::vmPowerOff(const QString &aUuid /* = QString::null */)
+{
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+                       mVMModel->itemById(aUuid);
+
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
+
+    /* Confirm/Reset current console: */
+    if (msgCenter().confirmVMPowerOff(this))
+    {
+        CSession session = vboxGlobal().openExistingSession(item->id());
+        if (session.isNull())
+            return;
+
+        CConsole console = session.GetConsole();
+        if (console.isNull())
+            return;
+
+        console.PowerDown();
+
+        session.UnlockMachine();
+    }
+}
+
 void VBoxSelectorWnd::vmRefresh(const QString &aUuid /* = QString::null */)
 {
     UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
@@ -943,6 +1036,27 @@ void VBoxSelectorWnd::vmCreateShortcut(const QString &aUuid /* = QString::null *
 
     CMachine machine = item->machine();
     UIDesktopServices::createMachineShortcut(machine.GetSettingsFilePath(), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), machine.GetName(), machine.GetId());
+}
+
+void VBoxSelectorWnd::sltCloseMenuAboutToShow()
+{
+    UIVMItem *pItem = mVMListView->selectedItem();
+    AssertMsgReturnVoid(pItem, ("Item must be always selected here"));
+
+    /* Check if we are entered ACPI mode already. Only than it make sense to
+     * send the ACPI shutdown sequence. */
+    bool fHasACPIMode = false; /* Default is off */
+    CSession session = vboxGlobal().openExistingSession(pItem->id());
+    if (!session.isNull())
+    {
+        CConsole console = session.GetConsole();
+        if (!console.isNull())
+            fHasACPIMode = console.GetGuestEnteredACPIMode();
+
+        session.UnlockMachine();
+    }
+
+    mVmACPIShutdownAction->setEnabled(fHasACPIMode);
 }
 
 void VBoxSelectorWnd::refreshVMList()
@@ -1225,6 +1339,19 @@ void VBoxSelectorWnd::retranslateUi()
     mFileExitAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ExitShortcut));
     mFileExitAction->setStatusTip(tr("Close application"));
 
+    mVMCloseMenu->setTitle(tr("&Close"));
+    mVMCloseMenu->setStatusTip(
+        tr("Close the virtual machine"));
+
+    mVmACPIShutdownAction->setText(tr("ACPI Sh&utdown"));
+    mVmACPIShutdownAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ACPIShutdownVMShortcut));
+    mVmACPIShutdownAction->setStatusTip(
+        tr("Send the ACPI shutdown signal to the virtual machine"));
+    mVmPowerOffAction->setText(tr("Po&wer Off"));
+    mVmPowerOffAction->setShortcut(gSS->keySequence(UISelectorShortcuts::PowerOffVMShortcut));
+    mVmPowerOffAction->setStatusTip(
+        tr("Power off the virtual machine"));
+
     mVmNewAction->setText(tr("&New..."));
     mVmNewAction->setShortcut(gSS->keySequence(UISelectorShortcuts::NewVMShortcut));
     mVmNewAction->setStatusTip(tr("Create a new virtual machine"));
@@ -1262,6 +1389,11 @@ void VBoxSelectorWnd::retranslateUi()
     mVmPauseAction->setText(tr("&Pause"));
     mVmPauseAction->setStatusTip(
         tr("Suspend the execution of the virtual machine"));
+
+    mVmResetAction->setText(tr("Rese&t"));
+    mVmResetAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ResetVMShortcut));
+    mVmResetAction->setStatusTip(
+        tr("Reset the virtual machine"));
 
     mVmRefreshAction->setText(tr("Re&fresh"));
     mVmRefreshAction->setShortcut(gSS->keySequence(UISelectorShortcuts::RefreshVMShortcut));
@@ -1336,8 +1468,14 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
         CMachine m = item->machine();
 
         KMachineState state = item->machineState();
-        bool running = item->sessionState() != KSessionState_Unlocked;
-        bool modifyEnabled = state != KMachineState_Stuck && state != KMachineState_Saved /* for now! */;
+        bool fSessionLocked = item->sessionState() != KSessionState_Unlocked;
+        bool fModifyEnabled = state != KMachineState_Stuck &&
+                              state != KMachineState_Saved /* for now! */;
+        bool fRunning       = state == KMachineState_Running ||
+                              state == KMachineState_Teleporting ||
+                              state == KMachineState_LiveSnapshotting;
+        bool fPaused        = state == KMachineState_Paused ||
+                              state == KMachineState_TeleportingPausedVM; /** @todo Live Migration: does this make sense? */
 
         if (   aRefreshDetails
             || aRefreshDescription)
@@ -1348,16 +1486,16 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
 //            m_pVMDesktop->updateDescription(item, m);
 
         /* enable/disable modify actions */
-        mVmConfigAction->setEnabled(modifyEnabled);
-        mVmCloneAction->setEnabled(!running);
-        mVmDeleteAction->setEnabled(!running);
-        mVmDiscardAction->setEnabled(state == KMachineState_Saved && !running);
-        mVmPauseAction->setEnabled(   state == KMachineState_Running
-                                   || state == KMachineState_Teleporting
-                                   || state == KMachineState_LiveSnapshotting
-                                   || state == KMachineState_Paused
-                                   || state == KMachineState_TeleportingPausedVM /** @todo Live Migration: does this make sense? */
-                                   );
+        mVmConfigAction->setEnabled(fModifyEnabled);
+        mVmCloneAction->setEnabled(!fSessionLocked);
+        mVmDeleteAction->setEnabled(!fSessionLocked);
+        mVmDiscardAction->setEnabled(state == KMachineState_Saved && !fSessionLocked);
+        mVmPauseAction->setEnabled(   fRunning
+                                   || fPaused);
+
+        mVmResetAction->setEnabled(fRunning);
+        mVmACPIShutdownAction->setEnabled(fRunning);
+        mVmPowerOffAction->setEnabled(fRunning);
 
         /* change the Start button text accordingly */
         if (   state == KMachineState_PoweredOff
@@ -1380,7 +1518,7 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
             mVmStartAction->setStatusTip(
                 tr("Start the selected virtual machine"));
 
-            mVmStartAction->setEnabled(!running);
+            mVmStartAction->setEnabled(!fSessionLocked);
         }
         else
         {
@@ -1484,6 +1622,9 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
         mVmDeleteAction->setEnabled(item != NULL);
         mVmDiscardAction->setEnabled(false);
         mVmPauseAction->setEnabled(false);
+        mVmResetAction->setEnabled(false);
+        mVmACPIShutdownAction->setEnabled(false);
+        mVmPowerOffAction->setEnabled(false);
 
         /* change the Start button text accordingly */
         mVmStartAction->setText(tr("S&tart"));

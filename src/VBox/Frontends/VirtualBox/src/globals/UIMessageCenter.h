@@ -344,7 +344,8 @@ public:
     bool remindAboutGuruMeditation(const CConsole &console,
                                    const QString &strLogFolder);
 
-    bool confirmVMReset(QWidget *pParent);
+    bool confirmVMReset(QWidget *pParent = 0);
+    bool confirmVMPowerOff(QWidget *pParent = 0);
 
     void warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName);
     bool confirmHardDisklessMachine(QWidget *pParent);
