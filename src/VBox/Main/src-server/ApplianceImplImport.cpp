@@ -813,42 +813,41 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Callbacks = 0;
-    PVDINTERFACEIO pFileCallbacks = 0;
+    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pFileIo = 0;
     do
     {
-        pSha1Callbacks = Sha1CreateInterface();
-        if (!pSha1Callbacks)
+        pSha1Io = Sha1CreateInterface();
+        if (!pSha1Io)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
-        pFileCallbacks = FileCreateInterface();
-        if (!pFileCallbacks)
+        pFileIo = FileCreateInterface();
+        if (!pFileIo)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
-        VDINTERFACE VDInterfaceIO;
         SHA1STORAGE storage;
         RT_ZERO(storage);
-        int vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IOFile",
-                                 VDINTERFACETYPE_IO, pFileCallbacks,
-                                 0, &storage.pVDImageIfaces);
+        int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
+                                 VDINTERFACETYPE_IO, pFileIo, sizeof(VDINTERFACEIO),
+                                 &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
         {
             rc = E_FAIL;
             break;
         }
 
-        rc = readFSImpl(pTask, pTask->locInfo.strPath, pSha1Callbacks, &storage);
+        rc = readFSImpl(pTask, pTask->locInfo.strPath, pSha1Io, &storage);
     }while(0);
 
     /* Cleanup */
-    if (pSha1Callbacks)
-        RTMemFree(pSha1Callbacks);
-    if (pFileCallbacks)
-        RTMemFree(pFileCallbacks);
+    if (pSha1Io)
+        RTMemFree(pSha1Io);
+    if (pFileIo)
+        RTMemFree(pFileIo);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -1229,27 +1228,26 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Callbacks = 0;
-    PVDINTERFACEIO pFileCallbacks = 0;
+    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pFileIo = 0;
     void *pvMfBuf = 0;
     writeLock.release();
     try
     {
         /* Create the necessary file access interfaces. */
-        pSha1Callbacks = Sha1CreateInterface();
-        if (!pSha1Callbacks)
+        pSha1Io = Sha1CreateInterface();
+        if (!pSha1Io)
             throw E_OUTOFMEMORY;
-        pFileCallbacks = FileCreateInterface();
-        if (!pFileCallbacks)
+        pFileIo = FileCreateInterface();
+        if (!pFileIo)
             throw E_OUTOFMEMORY;
 
-        VDINTERFACE VDInterfaceIO;
         SHA1STORAGE storage;
         RT_ZERO(storage);
         storage.fCreateDigest = true;
-        int vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IOFile",
-                                 VDINTERFACETYPE_IO, pFileCallbacks,
-                                 0, &storage.pVDImageIfaces);
+        int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
+                                 VDINTERFACETYPE_IO, pFileIo, sizeof(VDINTERFACEIO),
+                                 &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
             throw E_FAIL;
 
@@ -1260,13 +1258,13 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         /* Do we need the digest information? */
         storage.fCreateDigest = RTFileExists(strMfFile.c_str());
         /* Now import the appliance. */
-        importMachines(stack, pSha1Callbacks, &storage);
+        importMachines(stack, pSha1Io, &storage);
         /* Read & verify the manifest file, if there is one. */
         if (storage.fCreateDigest)
         {
             /* Add the ovf file to the digest list. */
             stack.llSrcDisksDigest.push_front(STRPAIR(pTask->locInfo.strPath, m->strOVFSHA1Digest));
-            rc = readManifestFile(strMfFile, &pvMfBuf, &cbMfSize, pSha1Callbacks, &storage);
+            rc = readManifestFile(strMfFile, &pvMfBuf, &cbMfSize, pSha1Io, &storage);
             if (FAILED(rc)) throw rc;
             rc = verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
             if (FAILED(rc)) throw rc;
@@ -1281,10 +1279,10 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     /* Cleanup */
     if (pvMfBuf)
         RTMemFree(pvMfBuf);
-    if (pSha1Callbacks)
-        RTMemFree(pSha1Callbacks);
-    if (pFileCallbacks)
-        RTMemFree(pFileCallbacks);
+    if (pSha1Io)
+        RTMemFree(pSha1Io);
+    if (pFileIo)
+        RTMemFree(pFileIo);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
