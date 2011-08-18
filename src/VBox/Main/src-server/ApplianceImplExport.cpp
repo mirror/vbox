@@ -1620,18 +1620,18 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Callbacks = 0;
-    PVDINTERFACEIO pFileCallbacks = 0;
+    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pFileIo = 0;
     do
     {
-        pSha1Callbacks = Sha1CreateInterface();
-        if (!pSha1Callbacks)
+        pSha1Io = Sha1CreateInterface();
+        if (!pSha1Io)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
-        pFileCallbacks = FileCreateInterface();
-        if (!pFileCallbacks)
+        pFileIo = FileCreateInterface();
+        if (!pFileIo)
         {
             rc = E_OUTOFMEMORY;
             break;
@@ -1640,23 +1640,22 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         SHA1STORAGE storage;
         RT_ZERO(storage);
         storage.fCreateDigest = m->fManifest;
-        VDINTERFACE VDInterfaceIO;
-        int vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IOFile",
-                                 VDINTERFACETYPE_IO, pFileCallbacks,
-                                 0, &storage.pVDImageIfaces);
+        int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
+                                 VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
+                                 &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
         {
             rc = E_FAIL;
             break;
         }
-        rc = writeFSImpl(pTask, writeLock, pSha1Callbacks, &storage);
+        rc = writeFSImpl(pTask, writeLock, pSha1Io, &storage);
     }while(0);
 
     /* Cleanup */
-    if (pSha1Callbacks)
-        RTMemFree(pSha1Callbacks);
-    if (pFileCallbacks)
-        RTMemFree(pFileCallbacks);
+    if (pSha1Io)
+        RTMemFree(pSha1Io);
+    if (pFileIo)
+        RTMemFree(pFileIo);
 
     LogFlowFuncLeave();
     return rc;
