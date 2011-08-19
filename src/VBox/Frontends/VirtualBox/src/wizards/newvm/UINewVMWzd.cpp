@@ -85,8 +85,8 @@ static const osTypePattern gs_OSTypePattern[] =
     /* Regular names of Linux distributions */
     { QRegExp("Arc.*64", Qt::CaseInsensitive), "ArchLinux_64" },
     { QRegExp("Arc", Qt::CaseInsensitive), "ArchLinux" },
-    { QRegExp("De.*64", Qt::CaseInsensitive), "Debian_64" },
-    { QRegExp("De", Qt::CaseInsensitive), "Debian" },
+    { QRegExp("Deb.*64", Qt::CaseInsensitive), "Debian_64" },
+    { QRegExp("Deb", Qt::CaseInsensitive), "Debian" },
     { QRegExp("((SU)|(Nov)|(SLE)).*64", Qt::CaseInsensitive), "OpenSUSE_64" },
     { QRegExp("(SU)|(Nov)|(SLE)", Qt::CaseInsensitive), "OpenSUSE" },
     { QRegExp("Fe.*64", Qt::CaseInsensitive), "Fedora_64" },
