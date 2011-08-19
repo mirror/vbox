@@ -29,6 +29,8 @@
 #include <slirp.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/critsect.h>
+#include "zone.h"
 
 #ifdef DEBUG
 void dump_packet(void *, int);
@@ -361,6 +363,46 @@ printSbuf(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     return cb;
 }
 
+/*
+ * Prints zone state
+ */
+static DECLCALLBACK(size_t)
+printMbufZone(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                 const char *pszType, void const *pvValue,
+                 int cchWidth, int cchPrecision, unsigned fFlags,
+                 void *pvUser)
+{
+    size_t cb = 0;
+    const uma_zone_t zone = (const uma_zone_t)pvValue;
+    AssertReturn(RTStrCmp(pszType, "mzone") == 0, 0);
+    if (!zone)
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[zone:NULL]");
+    else
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[zone:%p name:%s, master_zone:%R[mzone]]",
+                          zone, zone->name, zone->master_zone);
+    return cb;
+}
+
+/*
+ * Prints zone's item state
+ */
+static DECLCALLBACK(size_t)
+printMbufZoneItem(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                 const char *pszType, void const *pvValue,
+                 int cchWidth, int cchPrecision, unsigned fFlags,
+                 void *pvUser)
+{
+    size_t cb = 0;
+    const struct item *it = (const struct item *)pvValue;
+    AssertReturn(RTStrCmp(pszType, "mzoneitem") == 0, 0);
+    if (!it)
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[item:NULL]");
+    else
+        cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[iptem:%p ref_count:%d, zone:%R[mzone]]",
+                          it, it->ref_count, it->zone);
+    return cb;
+}
+
 static DECLCALLBACK(size_t)
 print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                     const char *pszType, void const *pvValue,
@@ -419,19 +461,15 @@ debug_init()
     if (!g_fFormatRegistered)
     {
 
-        rc = RTStrFormatTypeRegister("natsock", print_socket, NULL);
-        AssertRC(rc);
+        rc = RTStrFormatTypeRegister("natsock", print_socket, NULL);            AssertRC(rc);
         rc = RTStrFormatTypeRegister("natwinnetevents",
-                                     print_networkevents, NULL);
-        AssertRC(rc);
-        rc = RTStrFormatTypeRegister("tcpcb793", printTcpcbRfc793, NULL);
-        AssertRC(rc);
-        rc = RTStrFormatTypeRegister("tcpseg793", printTcpSegmentRfc793, NULL);
-        AssertRC(rc);
-        rc = RTStrFormatTypeRegister("tcpstate", printTcpState, NULL);
-        AssertRC(rc);
-        rc = RTStrFormatTypeRegister("sbuf", printSbuf, NULL);
-        AssertRC(rc);
+                                     print_networkevents, NULL);                AssertRC(rc);
+        rc = RTStrFormatTypeRegister("tcpcb793", printTcpcbRfc793, NULL);       AssertRC(rc);
+        rc = RTStrFormatTypeRegister("tcpseg793", printTcpSegmentRfc793, NULL); AssertRC(rc);
+        rc = RTStrFormatTypeRegister("tcpstate", printTcpState, NULL);          AssertRC(rc);
+        rc = RTStrFormatTypeRegister("sbuf", printSbuf, NULL);                  AssertRC(rc);
+        rc = RTStrFormatTypeRegister("mzone", printMbufZone, NULL);             AssertRC(rc);
+        rc = RTStrFormatTypeRegister("mzoneitem", printMbufZoneItem, NULL);     AssertRC(rc);
         g_fFormatRegistered = 1;
     }
 

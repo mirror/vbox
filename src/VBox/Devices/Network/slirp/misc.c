@@ -26,6 +26,7 @@
 
 #define WANT_SYS_IOCTL_H
 #include <slirp.h>
+#include "zone.h"
 
 #ifndef HAVE_INET_ATON
 int
@@ -96,39 +97,6 @@ fd_nonblock(int fd)
 }
 
 
-#define ITEM_MAGIC 0xdead0001
-struct item
-{
-    uint32_t magic;
-    uma_zone_t zone;
-    uint32_t ref_count;
-    LIST_ENTRY(item) list;
-};
-
-#define ZONE_MAGIC 0xdead0002
-struct uma_zone
-{
-    uint32_t magic;
-    PNATState pData; /* to minimize changes in the rest of UMA emulation code */
-    RTCRITSECT csZone;
-    const char *name;
-    size_t size; /* item size */
-    ctor_t pfCtor;
-    dtor_t pfDtor;
-    zinit_t pfInit;
-    zfini_t pfFini;
-    uma_alloc_t pfAlloc;
-    uma_free_t pfFree;
-    int max_items;
-    int cur_items;
-    LIST_HEAD(RT_NOTHING, item) used_items;
-    LIST_HEAD(RT_NOTHING, item) free_items;
-    uma_zone_t master_zone;
-    void *area;
-    /** Needs call pfnXmitPending when memory becomes available if @c true.
-     * @remarks Only applies to the master zone (master_zone == NULL) */
-    bool fDoXmitPending;
-};
 
 
 /**
@@ -142,6 +110,7 @@ struct uma_zone
  */
 DECLINLINE(void) slirp_zone_check_and_send_pending(uma_zone_t zone)
 {
+    LogFlowFunc(("ENTER: zone:%R[mzone]\n", zone));
     if (   zone->fDoXmitPending
         && zone->master_zone == NULL)
     {
@@ -153,6 +122,7 @@ DECLINLINE(void) slirp_zone_check_and_send_pending(uma_zone_t zone)
 
         rc2 = RTCritSectEnter(&zone->csZone); AssertRC(rc2);
     }
+    LogFlowFuncLeave();
 }
 
 static void *slirp_uma_alloc(uma_zone_t zone,
@@ -163,6 +133,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     void *ret = NULL;
     int rc;
 
+    LogFlowFunc(("ENTER: %R[mzone], size:%d, pflags:%p, %RTbool\n", zone, size, pflags, fWait));
     RTCritSectEnter(&zone->csZone);
     for (;;)
     {
@@ -228,6 +199,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
             LogRel(("NAT: zone(%s) has reached it maximum\n", zone->name));
     }
     RTCritSectLeave(&zone->csZone);
+    LogFlowFunc(("LEAVE: %p\n", ret));
     return ret;
 }
 
@@ -239,6 +211,7 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
 
     Assert(item);
     it = &((struct item *)item)[-1];
+    LogFlowFunc(("ENTER: item:%p(%R[mzoneitem]), size:%d, flags:%RX8\n", item, it, size, flags));
     Assert(it->magic == ITEM_MAGIC);
     zone = it->zone;
     /* check border magic */
@@ -259,12 +232,16 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
     zone->cur_items--;
     slirp_zone_check_and_send_pending(zone); /* may exit+enter the cs! */
     RTCritSectLeave(&zone->csZone);
+    LogFlowFuncLeave();
 }
 
 uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
                        ctor_t ctor, dtor_t dtor, zinit_t init, zfini_t fini, int flags1, int flags2)
 {
-    uma_zone_t zone = RTMemAllocZ(sizeof(struct uma_zone));
+    uma_zone_t zone = NULL;
+    LogFlowFunc(("ENTER: name:%s size:%d, ctor:%p, dtor:%p, init:%p, fini:%p, flags1:%RX32, flags2:%RX32\n",
+                name, ctor, dtor, init, fini, flags1, flags2));
+    zone = RTMemAllocZ(sizeof(struct uma_zone));
     Assert((pData));
     zone->magic = ZONE_MAGIC;
     zone->pData = pData;
@@ -277,6 +254,7 @@ uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
     zone->pfAlloc = slirp_uma_alloc;
     zone->pfFree = slirp_uma_free;
     RTCritSectInit(&zone->csZone);
+    LogFlowFunc(("LEAVE: %R[mzone]\n", zone));
     return zone;
 
 }
@@ -285,9 +263,14 @@ uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
 {
     uma_zone_t zone;
     Assert(master);
+    LogFlowFunc(("ENTER: name:%s ctor:%p, dtor:%p, init:%p, fini:%p, master:%R[mzone]\n",
+                name, ctor, dtor, init, fini, master));
     zone = RTMemAllocZ(sizeof(struct uma_zone));
     if (zone == NULL)
+    {
+        LogFlowFunc(("LEAVE: %R[mzone]\n", NULL));
         return NULL;
+    }
 
     Assert((master && master->pData));
     zone->magic = ZONE_MAGIC;
@@ -302,6 +285,7 @@ uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
     zone->size = master->size;
     zone->master_zone = master;
     RTCritSectInit(&zone->csZone);
+    LogFlowFunc(("LEAVE: %R[mzone]\n", zone));
     return zone;
 }
 
@@ -309,6 +293,7 @@ void uma_zone_set_max(uma_zone_t zone, int max)
 {
     int i = 0;
     struct item *it;
+    LogFlowFunc(("ENTER: zone:%R[mzone], max:%d\n", zone, max));
     zone->max_items = max;
     zone->area = RTMemAllocZ(max * (sizeof(struct item) + zone->size + sizeof(uint32_t)));
     for (; i < max; ++i)
@@ -319,28 +304,35 @@ void uma_zone_set_max(uma_zone_t zone, int max)
         *(uint32_t *)(((uint8_t *)&it[1]) + zone->size) = 0xabadbabe;
         LIST_INSERT_HEAD(&zone->free_items, it, list);
     }
-
+    LogFlowFuncLeave();
 }
 
 void uma_zone_set_allocf(uma_zone_t zone, uma_alloc_t pfAlloc)
 {
-   zone->pfAlloc = pfAlloc;
+    LogFlowFunc(("ENTER: zone:%R[mzone], pfAlloc:%Rfn\n", zone, pfAlloc));
+    zone->pfAlloc = pfAlloc;
+    LogFlowFuncLeave();
 }
 
 void uma_zone_set_freef(uma_zone_t zone, uma_free_t pfFree)
 {
-   zone->pfFree = pfFree;
+    LogFlowFunc(("ENTER: zone:%R[mzone], pfAlloc:%Rfn\n", zone, pfFree));
+    zone->pfFree = pfFree;
+    LogFlowFuncLeave();
 }
 
 uint32_t *uma_find_refcnt(uma_zone_t zone, void *mem)
 {
     /** @todo (vvl) this function supposed to work with special zone storing
     reference counters */
-    struct item *it = (struct item *)mem; /* 1st element */
+    struct item *it = NULL;
+    LogFlowFunc(("ENTER: zone:%R[mzone], mem:%p\n", zone, mem));
+    it = (struct item *)mem; /* 1st element */
     Assert(mem != NULL);
     Assert(zone->magic == ZONE_MAGIC);
     /* for returning pointer to counter we need get 0 elemnt */
     Assert(it[-1].magic == ITEM_MAGIC);
+    LogFlowFunc(("LEAVE: %p\n", &it[-1].ref_count));
     return &it[-1].ref_count;
 }
 
@@ -348,8 +340,12 @@ void *uma_zalloc_arg(uma_zone_t zone, void *args, int how)
 {
     void *mem;
     Assert(zone->magic == ZONE_MAGIC);
+    LogFlowFunc(("ENTER: zone:%R[mzone], args:%p, how:%RX32\n", zone, args, how));
     if (zone->pfAlloc == NULL)
+    {
+        LogFlowFunc(("LEAVE: NULL\n"));
         return NULL;
+    }
     RTCritSectEnter(&zone->csZone);
     mem = zone->pfAlloc(zone, zone->size, NULL, 0);
     if (mem != NULL)
@@ -358,12 +354,15 @@ void *uma_zalloc_arg(uma_zone_t zone, void *args, int how)
             zone->pfCtor(zone->pData, mem, zone->size, args, M_DONTWAIT);
     }
     RTCritSectLeave(&zone->csZone);
+    LogFlowFunc(("LEAVE: %p\n", mem));
     return mem;
 }
 
 void uma_zfree(uma_zone_t zone, void *item)
 {
+    LogFlowFunc(("ENTER: zone:%R[mzone], item:%p\n", zone, item));
     uma_zfree_arg(zone, item, NULL);
+    LogFlowFuncLeave();
 }
 
 void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
@@ -372,6 +371,7 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
     Assert(zone->magic == ZONE_MAGIC);
     Assert((zone->pfFree));
     Assert((mem));
+    LogFlowFunc(("ENTER: zone:%R[mzone], mem:%p, flags:%p\n", zone, mem, flags));
 
     RTCritSectEnter(&zone->csZone);
     it = &((struct item *)mem)[-1];
@@ -380,14 +380,17 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
 
     zone->pfFree(mem,  0, 0);
     RTCritSectLeave(&zone->csZone);
+    LogFlowFuncLeave();
 }
 
 int uma_zone_exhausted_nolock(uma_zone_t zone)
 {
     int fExhausted;
+    LogFlowFunc(("ENTER: zone:%R[mzone]\n", zone));
     RTCritSectEnter(&zone->csZone);
     fExhausted = (zone->cur_items == zone->max_items);
     RTCritSectLeave(&zone->csZone);
+    LogFlowFunc(("LEAVE: %RTbool\n", fExhausted));
     return fExhausted;
 }
 
@@ -398,6 +401,7 @@ void zone_drain(uma_zone_t zone)
 
     /* vvl: Huh? What to do with zone which hasn't got backstore ? */
     Assert((zone->master_zone));
+    LogFlowFunc(("ENTER: zone:%R[mzone]\n", zone));
     master_zone = zone->master_zone;
     while (!LIST_EMPTY(&zone->free_items))
     {
@@ -417,17 +421,22 @@ void zone_drain(uma_zone_t zone)
         slirp_zone_check_and_send_pending(master_zone); /* may exit+enter the cs! */
         RTCritSectLeave(&master_zone->csZone);
     }
+    LogFlowFuncLeave();
 }
 
 void slirp_null_arg_free(void *mem, void *arg)
 {
     /** @todo (vvl) make it wiser  */
+    LogFlowFunc(("ENTER: mem:%p, arg:%p\n", mem, arg));
     Assert(mem);
     RTMemFree(mem);
+    LogFlowFuncLeave();
 }
 
 void *uma_zalloc(uma_zone_t zone, int len)
 {
+    LogFlowFunc(("ENTER: zone:%R[mzone], len:%d\n", zone, len));
+    LogFlowFunc(("LEAVE: NULL"));
     return NULL;
 }
 
@@ -435,6 +444,7 @@ struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_
 {
     struct mbuf *m;
     size_t size = MCLBYTES;
+    LogFlowFunc(("ENTER: cbMin:%d, ppvBuf:%p, pcbBuf:%p\n", cbMin, ppvBuf, pcbBuf));
     if (cbMin < MSIZE)
         size = MCLBYTES;
     else if (cbMin < MCLBYTES)
@@ -451,36 +461,43 @@ struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_
     {
         *ppvBuf = NULL;
         *pcbBuf = 0;
+        LogFlowFunc(("LEAVE: NULL\n"));
         return NULL;
     }
     m->m_len = size;
     *ppvBuf = mtod(m, void *);
     *pcbBuf = size;
+    LogFlowFunc(("LEAVE: %p\n", m));
     return m;
 }
 
 void slirp_ext_m_free(PNATState pData, struct mbuf *m, uint8_t *pu8Buf)
 {
 
+    LogFlowFunc(("ENTER: m:%p, pu8Buf:%p\n", m, pu8Buf));
     if (   !pu8Buf
         && pu8Buf != mtod(m, uint8_t *))
         RTMemFree(pu8Buf); /* This buffer was allocated on heap */
     m_freem(pData, m);
+    LogFlowFuncLeave();
 }
 
 static void zone_destroy(uma_zone_t zone)
 {
     RTCritSectEnter(&zone->csZone);
+    LogFlowFunc(("ENTER: zone:%R[mzone]\n", zone));
     LogRel(("NAT: zone(nm:%s, used:%d)\n", zone->name, zone->cur_items));
     if (zone->master_zone)
         RTMemFree(zone->area);
     RTCritSectLeave(&zone->csZone);
     RTCritSectDelete(&zone->csZone);
     RTMemFree(zone);
+    LogFlowFuncLeave();
 }
 
 void m_fini(PNATState pData)
 {
+    LogFlowFuncEnter();
     zone_destroy(pData->zone_mbuf);
     zone_destroy(pData->zone_clust);
     zone_destroy(pData->zone_pack);
@@ -488,6 +505,7 @@ void m_fini(PNATState pData)
     zone_destroy(pData->zone_jumbo9);
     zone_destroy(pData->zone_jumbo16);
     /** @todo do finalize here.*/
+    LogFlowFuncLeave();
 }
 
 void
