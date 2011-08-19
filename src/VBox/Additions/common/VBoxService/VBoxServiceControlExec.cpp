@@ -247,6 +247,11 @@ static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint3
         rc2 = RTPipeClose(*phPipeR);
         AssertRC(rc2);
         *phPipeR = NIL_RTPIPE;
+
+        /* Sinc some error occured (or because the pipe simply broke) we
+         * have to set our pipe buffer to disabled so that others don't wait
+         * for new data to arrive anymore. */
+        VBoxServicePipeBufSetStatus(pBuf, false);
     }
     return rc;
 }
