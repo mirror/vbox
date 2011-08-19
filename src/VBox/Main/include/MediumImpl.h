@@ -176,10 +176,9 @@ public:
     MediumType_T getType() const;
     Utf8Str getName();
 
+    /* handles caller/locking itself */
     bool addRegistry(const Guid& id, bool fRecurse);
-private:
-    void addRegistryImpl(const Guid& id, bool fRecurse);
-public:
+    /* handles caller/locking itself */
     bool removeRegistry(const Guid& id, bool fRecurse);
     bool isInRegistry(const Guid& id);
     bool getFirstRegistryMachineId(Guid &uuid) const;
