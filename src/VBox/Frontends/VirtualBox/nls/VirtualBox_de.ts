@@ -6789,7 +6789,7 @@
     </message>
     <message>
         <source>Create Shortcut on Desktop</source>
-        <translation>Verknüpfung auf dem Desktop anlegen</translation>
+        <translation>Desktop-Verknüpfung</translation>
     </message>
     <message>
         <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
