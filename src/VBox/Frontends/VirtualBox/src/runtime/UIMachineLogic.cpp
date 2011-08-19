@@ -890,7 +890,12 @@ void UIMachineLogic::sltTakeScreenshot()
     QStringList filters;
     /* Build a filters list out of it. */
     for (int i = 0; i < formats.size(); ++i)
-        filters << formats.at(i) + " (*." + formats.at(i).toLower() + ")";
+    {
+        const QString &s = formats.at(i) + " (*." + formats.at(i).toLower() + ")";
+        /* Check there isn't an entry already (even if it just uses another capitalization) */
+        if (filters.indexOf(QRegExp(QRegExp::escape(s), Qt::CaseInsensitive)) == -1)
+            filters << s;
+    }
     /* Try to select some common defaults. */
     QString strFilter;
     int i = filters.indexOf(QRegExp(".*png.*", Qt::CaseInsensitive));
