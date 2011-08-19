@@ -7133,7 +7133,6 @@ HRESULT Console::createSharedFolder(const Utf8Str &strName, const SharedFolderDa
     Log(("Adding shared folder '%s' -> '%s'\n", strName.c_str(), aData.m_strHostPath.c_str()));
 
     // check whether the path is valid and exists
-    /* Check whether the path is full (absolute) */
     char hostPathFull[RTPATH_MAX];
     int vrc = RTPathAbsEx(NULL,
                           aData.m_strHostPath.c_str(),
@@ -7143,14 +7142,14 @@ HRESULT Console::createSharedFolder(const Utf8Str &strName, const SharedFolderDa
         return setError(E_INVALIDARG,
                         tr("Invalid shared folder path: '%s' (%Rrc)"),
                         aData.m_strHostPath.c_str(), vrc);
-
-    if (RTPathCompare(aData.m_strHostPath.c_str(), hostPathFull) != 0)
-        return setError(E_INVALIDARG,
-                        tr("Shared folder path '%s' is not absolute"),
-                        aData.m_strHostPath.c_str());
     if (!RTPathExists(hostPathFull))
         return setError(E_INVALIDARG,
                         tr("Shared folder path '%s' does not exist on the host"),
+                        aData.m_strHostPath.c_str());
+    /* Check whether the path is full (absolute) */
+    if (RTPathCompare(aData.m_strHostPath.c_str(), hostPathFull) != 0)
+        return setError(E_INVALIDARG,
+                        tr("Shared folder path '%s' is not absolute"),
                         aData.m_strHostPath.c_str());
 
     // now that we know the path is good, give it to HGCM
