@@ -91,7 +91,7 @@ class PerformTakeScreenshotAction : public UISimpleAction
 public:
 
     PerformTakeScreenshotAction(QObject *pParent)
-        : UISimpleAction(pParent, ":/take_snapshot_16px.png", ":/take_snapshot_dis_16px.png")
+        : UISimpleAction(pParent, ":/take_screenshot_16px.png", ":/take_screenshot_disabled_16px.png")
     {
         retranslateUi();
     }
