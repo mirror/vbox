@@ -3121,9 +3121,7 @@ Utf8Str Medium::getName()
  * one registry, which causes trouble with keeping diff images in sync.
  * See getFirstRegistryMachineId() for details.
  *
- * Must have caller + locking!
- *
- * If fRecurse == true, then additionally the media tree lock must be held for reading.
+ * If fRecurse == true, then the media tree lock must be held for reading.
  *
  * @param id
  * @param fRecurse If true, recurses into child media to make sure the whole tree has registries in sync.
@@ -3131,55 +3129,59 @@ Utf8Str Medium::getName()
  */
 bool Medium::addRegistry(const Guid& id, bool fRecurse)
 {
-    // hard disks cannot be in more than one registry
-    if (    m->devType == DeviceType_HardDisk
-         && m->llRegistryIDs.size() > 0
-       )
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
         return false;
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    bool fAdd = true;
+
+    // hard disks cannot be in more than one registry
+    if (   m->devType == DeviceType_HardDisk
+        && m->llRegistryIDs.size() > 0)
+        fAdd = false;
 
     // no need to add the UUID twice
-    for (GuidList::const_iterator it = m->llRegistryIDs.begin();
-         it != m->llRegistryIDs.end();
-         ++it)
+    if (fAdd)
     {
-        if ((*it) == id)
-            return false;
+        for (GuidList::const_iterator it = m->llRegistryIDs.begin();
+             it != m->llRegistryIDs.end();
+             ++it)
+        {
+            if ((*it) == id)
+            {
+                fAdd = false;
+                break;
+            }
+        }
     }
 
-    addRegistryImpl(id, fRecurse);
-
-    return true;
-}
-
-/**
- * Private implementation for addRegistry() so we can recurse more efficiently.
- * @param id
- * @param fRecurse
- */
-void Medium::addRegistryImpl(const Guid& id, bool fRecurse)
-{
-    m->llRegistryIDs.push_back(id);
+    if (fAdd)
+        m->llRegistryIDs.push_back(id);
 
     if (fRecurse)
     {
-        for (MediaList::iterator it = m->llChildren.begin();
-             it != m->llChildren.end();
+        // Get private list of children and release medium lock straight away.
+        MediaList llChildren(m->llChildren);
+        alock.release();
+
+        for (MediaList::iterator it = llChildren.begin();
+             it != llChildren.end();
              ++it)
         {
             Medium *pChild = *it;
-            // recurse!
-            pChild->addRegistryImpl(id, fRecurse);
+            fAdd |= pChild->addRegistry(id, true);
         }
     }
+
+    return fAdd;
 }
 
 /**
  * Removes the given UUID from the list of media registry UUIDs. Returns true
  * if found or false if not.
  *
- * Must have caller + locking!
- *
- * If fRecurse == true, then additionally the media tree lock must be held for reading.
+ * If fRecurse == true, then the media tree lock must be held for reading.
  *
  * @param id
  * @param fRecurse If true, recurses into child media to make sure the whole tree has registries in sync.
@@ -3187,6 +3189,13 @@ void Medium::addRegistryImpl(const Guid& id, bool fRecurse)
  */
 bool Medium::removeRegistry(const Guid& id, bool fRecurse)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return false;
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    bool fRemove = false;
+
     for (GuidList::iterator it = m->llRegistryIDs.begin();
          it != m->llRegistryIDs.end();
          ++it)
@@ -3194,40 +3203,39 @@ bool Medium::removeRegistry(const Guid& id, bool fRecurse)
         if ((*it) == id)
         {
             m->llRegistryIDs.erase(it);
-
-            if (fRecurse)
-            {
-                for (MediaList::iterator it2 = m->llChildren.begin();
-                     it2 != m->llChildren.end();
-                     ++it2)
-                {
-                    Medium *pChild = *it2;
-                    pChild->removeRegistry(id, true);
-                }
-            }
-
-            return true;
+            fRemove = true;
+            break;
         }
     }
 
-    return false;
+    if (fRecurse)
+    {
+        // Get private list of children and release medium lock straight away.
+        MediaList llChildren(m->llChildren);
+        alock.release();
+
+        for (MediaList::iterator it = llChildren.begin();
+             it != llChildren.end();
+             ++it)
+        {
+            Medium *pChild = *it;
+            fRemove |= pChild->removeRegistry(id, true);
+        }
+    }
+
+    return fRemove;
 }
 
 /**
  * Returns true if id is in the list of media registries for this medium.
  *
- * Must have caller + locking!
+ * Must have caller + read locking!
  *
  * @param id
  * @return
  */
 bool Medium::isInRegistry(const Guid& id)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return false;
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     for (GuidList::const_iterator it = m->llRegistryIDs.begin();
          it != m->llRegistryIDs.end();
          ++it)

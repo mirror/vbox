@@ -3732,7 +3732,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             // image that has not yet been attached (medium then points to the base and we're
             // creating the diff image for the immutable, and the parent is not yet registered);
             // put the parent in the machine registry then
+            mediumLock.release();
             addMediumToRegistry(medium, llRegistriesThatNeedSaving, &uuidRegistryParent);
+            mediumLock.acquire();
         }
         rc = diff->init(mParent,
                         medium->getPreferredDiffFormat(),
@@ -3815,9 +3817,11 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         // here we can fail because of Deleting, or being in process of creating a Diff
         if (FAILED(rc)) return rc;
 
+        mediumLock.release();
         addMediumToRegistry(medium,
                             llRegistriesThatNeedSaving,
                             NULL /* Guid *puuid */);
+        mediumLock.acquire();
     }
 
     /* success: finally remember the attachment */
@@ -4189,7 +4193,9 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         {
             pMedium->addBackReference(mData->mUuid);
 
+            mediumLock.release();
             addMediumToRegistry(pMedium, llRegistriesThatNeedSaving, NULL /* Guid *puuid */ );
+            mediumLock.acquire();
         }
 
         pAttach->updateMedium(pMedium);
@@ -9199,7 +9205,8 @@ HRESULT Machine::saveStateSettings(int aFlags)
  * that registry is added to the given list so that the caller can save the
  * registry.
  *
- * Caller must hold machine read lock!
+ * Caller must hold machine read lock and at least media tree read lock!
+ * Caller must NOT hold any medium locks.
  *
  * @param pMedium
  * @param llRegistriesThatNeedSaving
@@ -9209,6 +9216,11 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium,
                                   GuidList &llRegistriesThatNeedSaving,
                                   Guid *puuid)
 {
+    ComObjPtr<Medium> pBase = pMedium->getBase();
+    /* Paranoia checks: do not hold medium locks. */
+    AssertReturnVoid(!pMedium->isWriteLockOnCurrentThread());
+    AssertReturnVoid(!pBase->isWriteLockOnCurrentThread());
+
     // decide which medium registry to use now that the medium is attached:
     Guid uuid;
     if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
@@ -9217,13 +9229,25 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium,
     else
         uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
 
-    AutoCaller autoCaller(pMedium);
-    if (FAILED(autoCaller.rc())) return;
-    AutoWriteLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
-
+    bool fAdd = false;
     if (pMedium->addRegistry(uuid, false /* fRecurse */))
+    {
         // registry actually changed:
         VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
+        fAdd = true;
+    }
+
+    /* For more complex hard disk structures it can happen that the base
+     * medium isn't yet associated with any medium registry. Do that now. */
+    if (pMedium != pBase)
+    {
+        if (   pBase->addRegistry(uuid, true /* fRecurse */)
+            && !fAdd)
+        {
+            VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
+            fAdd = true;
+        }
+    }
 
     if (puuid)
         *puuid = uuid;
