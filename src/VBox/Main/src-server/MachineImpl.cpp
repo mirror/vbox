@@ -4946,7 +4946,7 @@ STDMETHODIMP Machine::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL 
                             aHostPath,
                             !!aWritable,
                             !!aAutoMount,
-                           true /* fFailOnError */);
+                            true /* fFailOnError */);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_SharedFolders);
@@ -7832,15 +7832,32 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         rc = mAudioAdapter->loadSettings(data.audioAdapter);
         if (FAILED(rc)) return rc;
 
+        /* Shared folders */
         for (settings::SharedFoldersList::const_iterator it = data.llSharedFolders.begin();
              it != data.llSharedFolders.end();
              ++it)
         {
             const settings::SharedFolder &sf = *it;
-            rc = CreateSharedFolder(Bstr(sf.strName).raw(),
-                                    Bstr(sf.strHostPath).raw(),
-                                    sf.fWritable, sf.fAutoMount);
+
+            ComObjPtr<SharedFolder> sharedFolder;
+            /* Check for double entries. Not allowed! */
+            rc = findSharedFolder(sf.strName, sharedFolder, false /* aSetError */);
+            if (SUCCEEDED(rc))
+                return setError(VBOX_E_OBJECT_IN_USE,
+                                tr("Shared folder named '%s' already exists"),
+                                sf.strName.c_str());
+
+            /* Create the new shared folder. Don't break on error. This will be
+             * reported when the machine starts. */
+            sharedFolder.createObject();
+            rc = sharedFolder->init(getMachine(),
+                                    sf.strName,
+                                    sf.strHostPath,
+                                    RT_BOOL(sf.fWritable),
+                                    RT_BOOL(sf.fAutoMount),
+                                    false /* fFailOnError */);
             if (FAILED(rc)) return rc;
+            mHWData->mSharedFolders.push_back(sharedFolder);
         }
 
         // Clipboard
