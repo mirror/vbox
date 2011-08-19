@@ -43,6 +43,7 @@ void fd_nonblock (int);
 
 struct uma_zone;
 typedef struct uma_zone *uma_zone_t;
+
 typedef void *(*uma_alloc_t)(uma_zone_t, int, u_int8_t *, int);
 typedef void (*uma_free_t)(void *, int, u_int8_t);
 
