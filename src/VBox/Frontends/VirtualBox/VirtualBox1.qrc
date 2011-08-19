@@ -148,6 +148,8 @@
     <file alias="take_snapshot_22px.png">images/take_snapshot_22px.png</file>
     <file alias="take_snapshot_dis_16px.png">images/take_snapshot_dis_16px.png</file>
     <file alias="take_snapshot_dis_22px.png">images/take_snapshot_dis_22px.png</file>
+    <file alias="take_screenshot_16px.png">images/take_screenshot_16px.png</file>
+    <file alias="take_screenshot_disabled_16px.png">images/take_screenshot_disabled_16px.png</file>
     <file alias="show_snapshot_details_16px.png">images/show_snapshot_details_16px.png</file>
     <file alias="show_snapshot_details_22px.png">images/show_snapshot_details_22px.png</file>
     <file alias="show_snapshot_details_dis_16px.png">images/show_snapshot_details_dis_16px.png</file>
