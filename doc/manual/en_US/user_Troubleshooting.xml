@@ -464,7 +464,7 @@
       performance and as a consequence cause the guest to time out IDE/SATA
       commands. This is normal behavior and should normally cause no real
       problems, as the guest should repeat commands that have timed out.
-      However some guests (e.g. some Linux versions) have severe problems if a
+      However, some guests (e.g. some Linux versions) have severe problems if a
       write to an image file takes longer than about 15 seconds. Some file
       systems however require more than a minute to complete a single write,
       if the host cache contains a large amount of data that needs to be

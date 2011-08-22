@@ -820,7 +820,7 @@ VBoxManage storageattach "VM name" --controller "SATA" --port 1 --device 0 --typ
 
     <para>All disks in a group share the bandwidth limit, meaning that in the
     example above the bandwidth of both images combined can never exceed 20
-    MB/s. However if one disk doesn't require bandwidth the other can use the
+    MB/s. However, if one disk doesn't require bandwidth the other can use the
     remaining bandwidth of its group.</para>
 
     <para>The limits for each group can be changed while the VM is running,
