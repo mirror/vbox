@@ -550,7 +550,7 @@
             <para>If the <computeroutput>Security/Method</computeroutput> property is
             set to either <computeroutput>Negotiate</computeroutput> or
             <computeroutput>TLS</computeroutput>, the TLS protocol will be automatically
-            used by the server, if the client supports TLS. However in order to use TLS
+            used by the server, if the client supports TLS. However, in order to use TLS
             the server must possess the Server Certificate, the Server Private Key and the
             Certificate Authority (CA) Certificate. The following example shows how to
             generate a server certificate.<orderedlist>
