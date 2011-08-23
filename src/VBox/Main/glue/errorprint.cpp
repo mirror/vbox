@@ -22,6 +22,8 @@
 #include <VBox/com/errorprint.h>
 #include <VBox/log.h>
 
+#include <ProgressImpl.h>
+
 #include <iprt/stream.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
