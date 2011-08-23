@@ -254,7 +254,7 @@ void ErrorInfo::init(IVirtualBoxErrorInfo *info)
     rc = info->COMGETTER(Next)(next.asOutParam());
     if (SUCCEEDED(rc) && !next.isNull())
     {
-        m_pNext = new ErrorInfo(false /* aDummy */);
+        m_pNext = new ErrorInfo(next);
         Assert(m_pNext != NULL);
         if (!m_pNext)
             rc = E_OUTOFMEMORY;
