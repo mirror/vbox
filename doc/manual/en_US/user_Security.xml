@@ -5,6 +5,175 @@
   <title>Security guide</title>
 
   <sect1>
+    <title>Overview</title>
+    <para>
+    </para>
+
+    <sect2>
+      <title>General Security Principles</title>
+
+      <para>The following principles are fundamental to using any application
+        securely.
+        <glosslist>
+          <glossentry>
+            <glossterm>Keep Software Up To Date</glossterm>
+            <glossdef>
+              <para>
+                One of the principles of good security practise is to keep all
+                software versions and patches up to date. Activate the VirtualBox
+                update notification to get notified when a new VirtualBox release
+                is available. When updating VirtualBox, don't forget to update
+                the Guest Additions. Keep the host operating system as well as the
+                guest operating system up to date.
+              </para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>Restrict Network Access to Critical Services</glossterm>
+            <glossdef>
+              <para>
+                Use proper means, for instance a firewall, to protect your computer
+                and your guest(s) from accesses from the outside.
+              </para>
+              <para>
+                The default networking mode for VMs is NAT which means that
+                the VM acts like a computer behind a router, see
+                <xref linkend="network_nat"/>. If bridged networking is used,
+                the VM acts like a computer inside the same network as the host,
+                see <xref linkend="network_bridged"/>. In this case, a firewall
+                might be necessary to protect other computers on the subnet from
+                a potential malicious guest. In some cases it is worth to consider
+                adding a forwarding rule for a specific port in NAT mode instead
+                of using bridged networking.
+              </para>
+              <para>
+                Sometimes a VM doesn't need to be connected to the public network
+                at all. Internal networking (see <xref linkend="network_internal"/>)
+                or host-only networking (see <xref linkend="network_hostonly"/>)
+                are often sufficient to connect VMs among each other or to connect
+                VMs only with the host but not with the public network.
+              </para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>Follow the Principle of Least Privilege</glossterm>
+            <glossdef>
+              <para>
+                The principle of least privilege states that users should be given the
+                least amount of privilege to perform their jobs. We strongly discourage
+                from executing VirtualBox with system privileges.
+              </para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>Monitor System Activity</glossterm>
+            <glossdef>
+              <para>
+                System security stands on three legs: good security protocols, proper
+                system configuration and system monitoring. Auditing and reviewing audit
+                records address this third requirement. Each component within a system
+                has some degree of monitoring capability. Follow audit advice in this
+                document and regularly monitor audit records.
+              </para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm>Keep Up To Date on Latest Security Information</glossterm>
+            <glossdef>
+              <para>
+                Oracle continually improves its software and documentation. Check this
+                note note yearly for revisions.
+              </para>
+            </glossdef>
+          </glossentry>
+
+        </glosslist>
+      </para>
+    </sect2>
+  </sect1>
+
+  <sect1>
+    <title>Secure Installation and Configuration</title>
+  </sect1>
+
+  <sect2>
+    <title>Installation Overview</title>
+    <para>
+      General VirtualBox installation instructions for the supported hosts can
+      be found in <xref linkend="installation"/>. On certain hosts it is possible
+      to omit certain VirtualBox components from installing but the general case
+      is to install the complete VirtualBox package. The installation must be
+      done with system privileges.
+    </para>
+  </sect2>
+
+  <sect2>
+    <title>Post Installation Configuration</title>
+    <para>
+      Normally there is no post installation configuration of VirtualBox components
+      required. However, on Solaris and Linux hosts it is required to configure
+      the proper permissions for users executing VMs which should be able to
+      access certain host resources. Linux users must be member of the
+      <emphasis>vboxusers</emphasis> group to pass USB devices to a guest. If a
+      serial interface should be accessed from a VM, the proper permissions must
+      be granted to the user as well. The same applies to raw partitions which
+      should be accessible for a VM.
+    </para>
+  </sect2>
+
+  <sect1>
+    <title>Security Features</title>
+    <para>This section outlines the specific security mechanisms offered
+      by VirtualBox.</para>
+
+    <sect2>
+      <title>The Security Model</title>
+      <para>
+        One property of virtual machine monitors (VMMs) like VirtualBox is to encapsulate
+        a guest by executing it in a dedicated environment, a virtual machine,
+        running as a user process on the host operating system. The guest cannot
+        communicate directly with the hardware or other computers but only through
+        the VMM. The VMM provides emulated physical resources and devices to the
+        guest which are used by the guest operating system to perform the required
+        tasks. The VM settings control the amount of resources provided to the guest
+        (for example the amount of guest RAM or the number of guest processors, (see
+        <xref linkend="generalsettings"/>) and the selection of features enabled
+        for a specific VM process (for example remote control, see
+        <xref linkend="vrde"/>).
+      </para>
+    </sect2>
+
+    <!--
+    <sect2>
+      <title>Configuring and Using Authentication</title>
+    </sect2>
+
+    <sect2>
+      <title>Configuring and Using Access Control</title>
+    </sect2>
+
+    <sect2>
+      <title>Configuring and Using Security Audit</title>
+    </sect2>
+
+    <sect2>
+      <title>Congiguring and Using Other Security Features</title>
+    </sect2>
+    -->
+
+  </sect1>
+
+  <!--
+  <sect1>
+    <title>Security Considerations for Developers</title>
+  </sect1>
+  -->
+
+  <sect1>
     <title>Potentially insecure operations</title>
 
     <para>The following features of VirtualBox can present security
