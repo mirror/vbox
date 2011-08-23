@@ -39,6 +39,71 @@ namespace com
 {
 
 /**
+ * General discussion:
+ *
+ * In COM all errors are stored on a per thread basis. In general this means
+ * only _one_ active error is possible per thread. A new error will overwrite
+ * the previous one. To prevent this use MultiResult or ErrorInfoKeeper (see
+ * below). The implementations in MSCOM/XPCOM differ slightly, but the details
+ * are handled by this glue code.
+ *
+ * We have different classes which are involved in the error management. I try
+ * to describe them separately to make clear what they are there for.
+ *
+ * ErrorInfo:
+ *
+ *  This class is able to retrieve the per thread error and store it into its
+ *  member variables. This class can also handle non VirtualBox errors (like
+ *  standard COM errors).
+ *
+ * ProgressErrorInfo:
+ *
+ *  This is just a simple wrapper class to get the ErrorInfo stored within a
+ *  IProgress object. That is the error which was stored when the progress
+ *  object was in use and not an error produced by IProgress itself.
+ *
+ * IVirtualBoxErrorInfo:
+ *
+ *  The VirtualBox interface class for accessing error information from Main
+ *  clients. This class is also used for storing the error information in the
+ *  thread context.
+ *
+ * ErrorInfoKeeper:
+ *
+ *  A helper class which stores the current per thread info internally. After
+ *  calling methods which may produce other errors it is possible to restore
+ *  the previous error and therefore restore the situation before calling the
+ *  other methods.
+ *
+ * MultiResult:
+ *
+ *  Creating an instance of MultiResult turns error chain saving on. All errors
+ *  which follow will be saved in a chain for later access.
+ *
+ * COMErrorInfo (Qt/Gui only):
+ *
+ *  The Qt GUI does some additional work for saving errors. Because we create
+ *  wrappers for _every_ COM call, it is possible to automatically save the
+ *  error info after the execution. This allow some additional info like saving
+ *  the callee. Please note that this error info is saved on the client side
+ *  and therefore locally to the object instance. See COMBaseWithEI,
+ *  COMErrorInfo and the generated COMWrappers.cpp in the GUI.
+ *
+ * Errors itself are set in VirtualBoxBase::setErrorInternal. First a
+ * IVirtualBoxErrorInfo object is created and the given error is saved within.
+ * If MultiResult is active the current per thread error is fetched and
+ * attached to the new created IVirtualBoxErrorInfo object. Next this object is
+ * set as the new per thread error.
+ *
+ * Some general hints:
+ *
+ * - Always use setError, especially when you are work in an asynchrony thread,
+ *   to indicate an error. Otherwise the error information itself will not make
+ *   it into the client.
+ *
+ */
+
+/**
  *  The ErrorInfo class provides a convenient way to retrieve error
  *  information set by the most recent interface method, that was invoked on
  *  the current thread and returned an unsuccessful result code.
