@@ -487,8 +487,8 @@ VBoxDispDrvSetPointerShape(SURFOBJ *pso, SURFOBJ *psoMask, SURFOBJ *psoColor, XL
     pDev->pointer.pAttrs->Row = (SHORT) (y - yHot);
 
     pDev->pointer.pAttrs->Enable = VBOX_MOUSE_POINTER_SHAPE;
-    pDev->pointer.pAttrs->Enable |= (xHot & 0xFF) << 24;
-    pDev->pointer.pAttrs->Enable |= (yHot & 0xFF) << 16;
+    pDev->pointer.pAttrs->Enable |= (yHot & 0xFF) << 24;
+    pDev->pointer.pAttrs->Enable |= (xHot & 0xFF) << 16;
 
     if (x!=-1)
     {
