@@ -1352,11 +1352,21 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 else
                 {
                     CHECK_ERROR_RET(pFramebuffer, COMGETTER(WinId)(&winId), rc);
-                    CHECK_ERROR_RET(pFramebuffer, COMGETTER(Width)(&w), rc);
-                    CHECK_ERROR_RET(pFramebuffer, COMGETTER(Height)(&h), rc);
 
-                    rc = crVBoxServerMapScreen(screenId, xo, yo, w, h, winId);
-                    AssertRCReturn(rc, rc);
+                    if (!winId)
+                    {
+                        /* View associated with framebuffer is destroyed, happens with 2d accel enabled */
+                        rc = crVBoxServerUnmapScreen(screenId);
+                        AssertRCReturn(rc, rc);
+                    }
+                    else
+                    {
+                        CHECK_ERROR_RET(pFramebuffer, COMGETTER(Width)(&w), rc);
+                        CHECK_ERROR_RET(pFramebuffer, COMGETTER(Height)(&h), rc);
+
+                        rc = crVBoxServerMapScreen(screenId, xo, yo, w, h, winId);
+                        AssertRCReturn(rc, rc);
+                    }
                 }
 
                 rc = VINF_SUCCESS;

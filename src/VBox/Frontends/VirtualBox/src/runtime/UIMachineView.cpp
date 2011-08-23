@@ -485,6 +485,11 @@ void UIMachineView::cleanupFrameBuffer()
              * 2. make it easier to preserve the current 2D state */
             Assert(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
             m_pFrameBuffer->setView(NULL);
+#ifdef VBOX_WITH_CROGL
+            /* Call SetFramebuffer to ensure 3D gets notified of view being destroyed */
+            CDisplay display = session().GetConsole().GetDisplay();
+            display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
+#endif
         }
         else
 #endif /* VBOX_WITH_VIDEOHWACCEL */

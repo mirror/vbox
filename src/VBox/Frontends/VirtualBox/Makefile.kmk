@@ -145,6 +145,9 @@ ifdef VBOX_WITH_VIDEOHWACCEL
 else ifdef VBOX_GUI_USE_QGL
  VirtualBox_DEFS        += VBOX_GUI_USE_QGL
 endif
+ifdef VBOX_WITH_CROGL
+ VirtualBox_DEFS        += VBOX_WITH_CROGL
+endif
 ifdef VBOX_WITH_VIRTIO
  VirtualBox_DEFS        += VBOX_WITH_VIRTIO
 endif
