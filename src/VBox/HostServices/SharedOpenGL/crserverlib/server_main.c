@@ -1156,6 +1156,8 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount)
 
 DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
 {
+    crDebug("crVBoxServerUnmapScreen(%i)", sIndex);
+
     if (sIndex<0 || sIndex>=cr_server.screenCount)
         return VERR_INVALID_PARAMETER;
 
@@ -1173,7 +1175,7 @@ DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
 
 DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h, uint64_t winID)
 {
-    crDebug("crVBoxServerMapScreen(%i) [%i,%i:%u,%u]", sIndex, x, y, w, h);
+    crDebug("crVBoxServerMapScreen(%i) [%i,%i:%u,%u %x]", sIndex, x, y, w, h, winID);
 
     if (sIndex<0 || sIndex>=cr_server.screenCount)
         return VERR_INVALID_PARAMETER;

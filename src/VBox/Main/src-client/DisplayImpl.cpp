@@ -2991,6 +2991,19 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
         /* Setup the new framebuffer, the resize will lead to an updateDisplayData call. */
         DISPLAYFBINFO *pFBInfo = &that->maFramebuffers[uScreenId];
 
+#if defined(VBOX_WITH_CROGL)
+        /* Leave the lock, because SHCRGL_HOST_FN_SCREEN_CHANGED will read current framebuffer */
+        {
+            BOOL is3denabled;
+            that->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+            if (is3denabled)
+            {
+                alock.leave ();
+            }
+        }
+#endif
+
         if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
         {
             /* This display in VBVA mode. Resize it to the last guest resolution,

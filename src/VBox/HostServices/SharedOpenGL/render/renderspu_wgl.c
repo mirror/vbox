@@ -86,7 +86,7 @@ MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
             break;
 
         case WM_DESTROY:
-            crDebug( "Render SPU: caught WM_DESTROY for our window" );
+            crDebug("Render SPU: caught WM_DESTROY for our window %x", hWnd);
             break;
 
         case WM_NCHITTEST:
