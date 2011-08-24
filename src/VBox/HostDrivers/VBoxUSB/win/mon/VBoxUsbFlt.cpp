@@ -353,7 +353,7 @@ static bool vboxUsbFltDevCanBeCaptured(PVBOXUSBFLT_DEVICE pDevice)
 {
     if (pDevice->bClass == USB_DEVICE_CLASS_HUB)
     {
-        LOG(("device (0x%p), pdo (0x%p) is a hub, can not be captured", pDevice, pDevoce->Pdo));
+        LOG(("device (0x%p), pdo (0x%p) is a hub, can not be captured", pDevice, pDevice->Pdo));
         return false;
     }
     return true;
