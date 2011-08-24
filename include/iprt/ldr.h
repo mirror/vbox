@@ -331,6 +331,81 @@ RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBi
 #define RTLDR_ENUM_SYMBOL_FLAGS_ALL    RT_BIT(1)
 /** @} */
 
+
+/**
+ * Debug info type (as far the loader can tell).
+ */
+typedef enum RTLDRDBGINFOTYPE
+{
+    /** The invalid 0 value. */
+    RTLDRDBGINFOTYPE_INVALID = 0,
+    /** Unknown debug info format. */
+    RTLDRDBGINFOTYPE_UNKNOWN,
+    /** Stabs. */
+    RTLDRDBGINFOTYPE_STABS,
+    /** Debug With Arbitrary Record Format (DWARF). */
+    RTLDRDBGINFOTYPE_DWARF,
+    /** Microsoft Codeview debug info. */
+    RTLDRDBGINFOTYPE_CODEVIEW,
+    /** Watcom debug info. */
+    RTLDRDBGINFOTYPE_WATCOM,
+    /** IBM High Level Language debug info.. */
+    RTLDRDBGINFOTYPE_HLL,
+    /** The end of the valid debug info values (exclusive). */
+    RTLDRDBGINFOTYPE_END,
+    /** Blow the type up to 32-bits. */
+    RTLDRDBGINFOTYPE_32BIT_HACK = 0x7fffffff
+} RTLDRDBGINFOTYPE;
+
+/**
+ * Debug info enumerator callback.
+ *
+ * @returns VINF_SUCCESS to continue the enumeration.  Any other status code
+ *          will cause RTLdrEnumDbgInfo to immediately return with that status.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   iDbgInfo        The debug info ordinal number / id.
+ * @param   enmType         The debug info type.
+ * @param   iMajorVer       The major version number of the debug info format.
+ *                          -1 if unknow - implies invalid iMinorVer.
+ * @param   iMinorVer       The minor version number of the debug info format.
+ *                          -1 when iMajorVer is -1.
+ * @param   pszPartNm       The name of the debug info part, NULL if not
+ *                          applicable.
+ * @param   offFile         The file offset *if* this type has one specific
+ *                          location in the executable image file. This is -1
+ *                          if there isn't any specific file location.
+ * @param   LinkAddress     The link address of the debug info if it's
+ *                          loadable. RTUINTPTR_MAX if not loadable.
+ * @param   cb              The size of the debug information. -1 is used if
+ *                          this isn't applicable.
+ * @param   pszExtFile      This points to the name of an external file
+ *                          containing the debug info.  This is NULL if there
+ *                          isn't any external file.
+ * @param   pvUser          The user parameter specified to RTLdrEnumDbgInfo.
+ */
+typedef DECLCALLBACK(int) FNRTLDRENUMDBG(RTLDRMOD hLdrMod, uint32_t iDbgInfo, RTLDRDBGINFOTYPE enmType,
+                                         uint16_t iMajorVer, uint16_t iMinorVer, const char *pszPartNm,
+                                         RTFOFF offFile, RTUINTPTR LinkAddress, RTUINTPTR cb,
+                                         const char *pszExtFile, void *pvUser);
+/** Pointer to a debug info enumerator callback. */
+typedef FNRTLDRENUMDBG *PFNRTLDRENUMDBG;
+
+
+/**
+ * Enumerate the debug info contained in the executable image.
+ *
+ * @returns IPRT status code or whatever pfnCallback returns.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   pvBits          Optional pointer to bits returned by
+ *                          RTLdrGetBits().  This can be used by some module
+ *                          interpreters to reduce memory consumption.
+ * @param   pfnCallback     The callback function.
+ * @param   pvUser          The user argument.
+ */
+RTDECL(int) RTLdrEnumDbgInfo(RTLDRMOD hLdrMod, const void *pvBits, PFNRTLDRENUMDBG pfnCallback, void *pvUser);
+
 RT_C_DECLS_END
 
 /** @} */

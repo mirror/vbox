@@ -339,7 +339,7 @@ RT_EXPORT_SYMBOL(RTLdrGetSymbolEx);
  */
 RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBits, RTUINTPTR BaseAddress, PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
-    LogFlow(("RTLdrEnumSymbols: hLdrMod=%RTldrm fFlags=%#x pvBit=%p BaseAddress=%RTptr pfnCallback=%p pvUser=%p\n",
+    LogFlow(("RTLdrEnumSymbols: hLdrMod=%RTldrm fFlags=%#x pvBits=%p BaseAddress=%RTptr pfnCallback=%p pvUser=%p\n",
              hLdrMod, fFlags, pvBits, BaseAddress, pfnCallback, pvUser));
 
     /*
@@ -359,4 +359,33 @@ RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBi
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLdrEnumSymbols);
+
+
+RTDECL(int) RTLdrEnumDbgInfo(RTLDRMOD hLdrMod, const void *pvBits, PFNRTLDRENUMDBG pfnCallback, void *pvUser)
+{
+    LogFlow(("RTLdrEnumDbgInfo: hLdrMod=%RTldrm pvBits=%p pfnCallback=%p pvUser=%p\n",
+             hLdrMod, pvBits, pfnCallback, pvUser));
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    AssertMsgReturn(!pvBits || RT_VALID_PTR(pvBits), ("pvBits=%p\n", pvBits), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(RT_VALID_PTR(pfnCallback), ("pfnCallback=%p\n", pfnCallback), VERR_INVALID_PARAMETER);
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+    //AssertMsgReturn(pMod->eState == LDR_STATE_OPENED, ("eState=%d\n", pMod->eState), VERR_WRONG_ORDER);
+
+    /*
+     * Do it.
+     */
+    int rc;
+    if (pMod->pOps->pfnEnumDbgInfo)
+        rc = pMod->pOps->pfnEnumDbgInfo(pMod, pvBits, pfnCallback, pvUser);
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    LogFlow(("RTLdrEnumDbgInfo: returns %Rrc\n", rc));
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLdrEnumDbgInfo);
 
