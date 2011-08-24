@@ -349,8 +349,27 @@ static NTSTATUS vboxUsbFltPdoReplug(PDEVICE_OBJECT pDo)
     return Status;
 }
 
+static bool vboxUsbFltDevCanBeCaptured(PVBOXUSBFLT_DEVICE pDevice)
+{
+    if (pDevice->bClass == USB_DEVICE_CLASS_HUB)
+    {
+        LOG(("device (0x%p), pdo (0x%p) is a hub, can not be captured", pDevice, pDevoce->Pdo));
+        return false;
+    }
+    return true;
+}
+
 static PVBOXUSBFLTCTX vboxUsbFltDevMatchLocked(PVBOXUSBFLT_DEVICE pDevice, uintptr_t *puId, bool fRemoveFltIfOneShot, bool *pfFilter, bool *pfIsOneShot)
 {
+    *puId = 0;
+    *pfFilter = false;
+    *pfIsOneShot = false;
+    if (!vboxUsbFltDevCanBeCaptured(pDevice))
+    {
+        LOG(("vboxUsbFltDevCanBeCaptured returned false"));
+        return NULL;
+    }
+
     USBFILTER DevFlt;
     USBFilterInit(&DevFlt, USBFILTERTYPE_CAPTURE);
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_VENDOR_ID, pDevice->idVendor, true);
@@ -364,9 +383,6 @@ static PVBOXUSBFLTCTX vboxUsbFltDevMatchLocked(PVBOXUSBFLT_DEVICE pDevice, uintp
     USBFilterSetStringExact(&DevFlt, USBFILTERIDX_SERIAL_NUMBER_STR, pDevice->szSerial, true);
 
     /* Run filters on the thing. */
-    *puId = 0;
-    *pfFilter = false;
-    *pfIsOneShot = false;
     PVBOXUSBFLTCTX pOwner = VBoxUSBFilterMatchEx(&DevFlt, puId, fRemoveFltIfOneShot, pfFilter, pfIsOneShot);
     USBFilterDelete(&DevFlt);
     return pOwner;
@@ -766,8 +782,6 @@ static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pFile, PDE
     LOG(("Visiting pFile(0x%p), pTopDo(0x%p), pHubDo(0x%p), oContext(0x%p)", pFile, pTopDo, pHubDo, pContext));
     KIRQL Irql = KeGetCurrentIrql();
     ASSERT_WARN(Irql == PASSIVE_LEVEL, ("unexpected IRQL (%d)", Irql));
-
-
 
     PDEVICE_RELATIONS pDevRelations = NULL;
 
