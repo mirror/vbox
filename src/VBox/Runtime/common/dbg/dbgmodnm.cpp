@@ -463,6 +463,13 @@ static int rtDbgModNmScanFile(PRTDBGMODNM pThis, PRTSTREAM pStrm, bool fAddSymbo
 static DECLCALLBACK(int) rtDbgModNm_TryOpen(PRTDBGMODINT pMod)
 {
     /*
+     * Fend off images.
+     */
+    if (   !pMod->pszDbgFile
+        || pMod->pImgVt)
+        return VERR_DBG_NO_MATCHING_INTERPRETER;
+
+    /*
      * Try open the file and create an instance.
      */
     PRTSTREAM pStrm;

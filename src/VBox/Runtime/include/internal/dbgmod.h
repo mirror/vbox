@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,6 +29,7 @@
 
 #include <iprt/types.h>
 #include <iprt/critsect.h>
+#include <iprt/ldr.h> /* for PFNRTLDRENUMDBG */
 #include "internal/magics.h"
 
 RT_C_DECLS_BEGIN
@@ -49,9 +50,8 @@ typedef struct RTDBGMODVTIMG
 {
     /** Magic number (RTDBGMODVTIMG_MAGIC). */
     uint32_t    u32Magic;
-    /** Mask of supported executable image types, see grp_rt_exe_img_type.
-     * Used to speed up the search for a suitable interpreter. */
-    uint32_t    fSupports;
+    /** Reserved. */
+    uint32_t    fReserved;
     /** The name of the interpreter. */
     const char *pszName;
 
@@ -73,7 +73,7 @@ typedef struct RTDBGMODVTIMG
      *                      around.
      *
      *                      Upon successful return the method is expected to
-     *                      initialize pDbgOps and pvDbgPriv.
+     *                      initialize pImgOps and pvImgPriv.
      */
     DECLCALLBACKMEMBER(int, pfnTryOpen)(PRTDBGMODINT pMod);
 
@@ -87,6 +87,25 @@ typedef struct RTDBGMODVTIMG
      */
     DECLCALLBACKMEMBER(int, pfnClose)(PRTDBGMODINT pMod);
 
+    /**
+     * Enumerate the debug info contained in the executable image.
+     *
+     * Identical to RTLdrEnumDbgInfo.
+     *
+     * @returns IPRT status code or whatever pfnCallback returns.
+     *
+     * @param   hLdrMod         The module handle.
+     * @param   pvBits          Optional pointer to bits returned by
+     *                          RTLdrGetBits().  This can be used by some module
+     *                          interpreters to reduce memory consumption.
+     * @param   pfnCallback     The callback function.  Ignore the module
+     *                          handle argument!
+     * @param   pvUser          The user argument.
+     */
+    DECLCALLBACKMEMBER(int, pfnEnumDbgInfo)(PRTDBGMODINT pMod, PFNRTLDRENUMDBG pfnCallback, void *pvUser);
+
+    /** For catching initialization errors (RTDBGMODVTIMG_MAGIC). */
+    uint32_t    u32EndMagic;
 } RTDBGMODVTIMG;
 /** Pointer to a const RTDBGMODVTIMG. */
 typedef RTDBGMODVTIMG const *PCRTDBGMODVTIMG;
@@ -399,7 +418,9 @@ typedef RTDBGMODINT *PRTDBGMODINT;
 
 
 extern DECLHIDDEN(RTSTRCACHE)           g_hDbgModStrCache;
+extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDwarf;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgNm;
+extern DECLHIDDEN(RTDBGMODVTIMG const)  g_rtDbgModVtImgLdr;
 
 int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cbSeg);
 

@@ -161,7 +161,8 @@ typedef struct RTLDROPS
      * @param   fFlags      Flags indicating what to return and such.
      * @param   pvBits      Pointer to the bits returned by RTLDROPS::pfnGetBits(), optional.
      * @param   BaseAddress The image base addressto use when calculating the symbol values.
-     * @param   pfnCallback The callback function which each symbol is to be feeded to.
+     * @param   pfnCallback The callback function which each symbol is to be
+     *                      fed to.
      * @param   pvUser      User argument to pass to the enumerator.
      * @remark  This is an optional entry point.
      */
@@ -223,6 +224,21 @@ typedef struct RTLDROPS
      * @remark  Extended loader feature.
      */
     DECLCALLBACKMEMBER(int, pfnGetSymbolEx)(PRTLDRMODINTERNAL pMod, const void *pvBits, RTUINTPTR BaseAddress, const char *pszSymbol, RTUINTPTR *pValue);
+
+    /**
+     * Enumerates the debug info contained in the module.
+     *
+     * @returns iprt status code, which might have been returned by pfnCallback.
+     * @param   pMod        Pointer to the loader module structure.
+     * @param   pvBits      Pointer to the bits returned by RTLDROPS::pfnGetBits(), optional.
+     * @param   pfnCallback The callback function which each debug info part is
+     *                      to be fed to.
+     * @param   pvUser      User argument to pass to the enumerator.
+     * @remark  This is an optional entry point that can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnEnumDbgInfo)(PRTLDRMODINTERNAL pMod, const void *pvBits,
+                                            PFNRTLDRENUMDBG pfnCallback, void *pvUser);
+
 
     /** Dummy entry to make sure we've initialized it all. */
     RTUINT uDummy;

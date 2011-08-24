@@ -550,6 +550,7 @@
 # define RTLatin1ToUtf8ExTag                            RT_MANGLER(RTLatin1ToUtf8ExTag)
 # define RTLatin1ToUtf8Tag                              RT_MANGLER(RTLatin1ToUtf8Tag)
 # define RTLdrClose                                     RT_MANGLER(RTLdrClose)
+# define RTLdrEnumDbgInfo                               RT_MANGLER(RTLdrEnumDbgInfo)
 # define RTLdrEnumSymbols                               RT_MANGLER(RTLdrEnumSymbols)
 # define RTLdrGetBits                                   RT_MANGLER(RTLdrGetBits)
 # define RTLdrGetSuff                                   RT_MANGLER(RTLdrGetSuff)

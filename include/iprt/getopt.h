@@ -333,10 +333,12 @@ int main(int argc, char **argv)
 RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion);
 
 /**
- * Fetch an additional value.
+ * Fetch a value.
  *
- * This is used for special cases where an option have more than one value.
- *
+ * Used to retrive a value argument in a manner similar to what RTGetOpt does
+ * (@a fFlags -> @a pValueUnion).  This can be used when handling
+ * VINF_GETOPT_NOT_OPTION, but is equally useful for decoding options that
+ * takes more than one value.
  *
  * @returns VINF_SUCCESS on success.
  * @returns IPRT error status on parse error.
@@ -344,8 +346,8 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion);
  * @returns VERR_GETOPT_UNKNOWN_OPTION when pState->pDef is null.
  * @returns VERR_GETOPT_REQUIRED_ARGUMENT_MISSING if there are no more
  *          available arguments. pValueUnion->pDef is NULL.
- * @returns VERR_GETOPT_INVALID_ARGUMENT_FORMAT and pValueUnion->pDef if
- *          value conversion failed.
+ * @returns VERR_GETOPT_INVALID_ARGUMENT_FORMAT and pValueUnion->pDef is
+ *          unchanged if value conversion failed.
  *
  * @param   pState      The state previously initialized with RTGetOptInit.
  * @param   pValueUnion Union with value; in the event of an error, psz member

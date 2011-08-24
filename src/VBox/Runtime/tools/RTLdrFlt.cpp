@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,7 @@
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
+#include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 
@@ -145,25 +146,29 @@ int main(int argc, char **argv)
         switch (rc)
         {
             case 'h':
-                RTPrintf("help: todo\n");
-                break;
+                RTPrintf("Usage: %s [options] <module> <address> [<module> <address> [..]]\n"
+                         "\n"
+                         "Options:\n"
+                         "  -h, -?, --help\n"
+                         "      Display this help text and exit successfully.\n"
+                         "  -V, --version\n"
+                         "      Display the revision and exit successfully.\n"
+                         , RTPathFilename(argv[0]));
+                return RTEXITCODE_SUCCESS;
 
             case 'V':
-                RTPrintf("$Revision$");
+                RTPrintf("$Revision$\n");
                 return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                /* <address> <module> */
+                /* <module> <address> */
+                const char *pszModule = ValueUnion.psz;
+
                 rc = RTGetOptFetchValue(&GetState, &ValueUnion, RTGETOPT_REQ_UINT64 | RTGETOPT_FLAG_HEX);
                 if (RT_FAILURE(rc))
                     return RTGetOptPrintError(rc, &ValueUnion);
                 uint64_t u64Address = ValueUnion.u64;
-
-                rc = RTGetOptFetchValue(&GetState, &ValueUnion, RTGETOPT_REQ_STRING);
-                if (RT_FAILURE(rc))
-                    return RTGetOptPrintError(rc, &ValueUnion);
-                const char *pszModule = ValueUnion.psz;
 
                 RTDBGMOD hMod;
                 rc = RTDbgModCreateFromImage(&hMod, pszModule, NULL, 0 /*fFlags*/);

@@ -720,7 +720,6 @@ RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion
      * Validate input.
      */
     PCRTGETOPTDEF pOpt = pState->pDef;
-    AssertReturn(pOpt, VERR_GETOPT_UNKNOWN_OPTION);
     AssertReturn(!(fFlags & ~RTGETOPT_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertReturn((fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING, VERR_INVALID_PARAMETER);
 
