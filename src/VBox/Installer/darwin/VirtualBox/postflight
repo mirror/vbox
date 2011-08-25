@@ -68,7 +68,7 @@ VBOXWEBSRV_TRG="${HOME}/Library/LaunchAgents"
 if [[ -e "${VBOXWEBSRV}" && -e "${VBOXWEBSRV_TRG}" ]]; then
     echo "Installing vboxwebsrv launchd file to ${VBOXWEBSRV_TRG}"
     ${CP} "${VBOXWEBSRV}" "${VBOXWEBSRV_TRG}/"
-    /usr/sbin/chown "${USER}" "${VBOXWEBSRV_TRG}/org.virtualbox.vboxwebsrv.plist"
+    [ "x" != "x${USER}" ] && /usr/sbin/chown "${USER}" "${VBOXWEBSRV_TRG}/org.virtualbox.vboxwebsrv.plist"
 fi
 
 #
@@ -84,8 +84,8 @@ fi
 # Register our file extensions
 #
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
-if [ -e ${LSREGISTER} ]; then
-    echo "Register file extensions for $USER"
+if [[ -e "${LSREGISTER}" && "x" != "x${USER}" ]]; then
+    echo "Register file extensions for \"${USER}\""
     /usr/bin/sudo -u "${USER}" ${LSREGISTER} -f /Applications/VirtualBox.app
     /usr/bin/sudo -u "${USER}" ${LSREGISTER} -f /Applications/VirtualBox.app/Contents/Resources/vmstarter.app
 fi
