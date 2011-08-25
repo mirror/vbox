@@ -36,6 +36,11 @@ namespace xml
 class File;
 }
 
+namespace com
+{
+class ErrorInfo;
+}
+
 using namespace com;
 using namespace util;
 
@@ -745,12 +750,14 @@ public:
     static HRESULT setErrorInternal(HRESULT aResultCode,
                                     const GUID &aIID,
                                     const char *aComponent,
-                                    const Utf8Str &aText,
+                                    Utf8Str aText,
                                     bool aWarning,
                                     bool aLogIt);
     static void clearError(void);
 
+    HRESULT setError(HRESULT aResultCode);
     HRESULT setError(HRESULT aResultCode, const char *pcsz, ...);
+    HRESULT setError(const ErrorInfo &ei);
     HRESULT setWarning(HRESULT aResultCode, const char *pcsz, ...);
     HRESULT setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...);
 
