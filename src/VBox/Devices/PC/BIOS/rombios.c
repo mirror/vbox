@@ -11465,7 +11465,7 @@ normal_post:
   ; case 0: normal startup
 
   cli
-  mov  ax, #0xfffe
+  mov  ax, #0x7700
   mov  sp, ax
   xor  ax, ax
   mov  ds, ax
