@@ -1072,27 +1072,26 @@ static int ctrlCopyFileToTarget(PCOPYCONTEXT pContext, const char *pszFileSource
 
     int vrc = VINF_SUCCESS;
     ComPtr<IProgress> progress;
-    HRESULT hr;
+    HRESULT rc;
     if (pContext->fHostToGuest)
     {
-        hr = pContext->pGuest->CopyToGuest(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
+        rc = pContext->pGuest->CopyToGuest(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
                                            Bstr(pContext->pszUsername).raw(), Bstr(pContext->pszPassword).raw(),
                                            fFlags, progress.asOutParam());
     }
     else
     {
-        hr = pContext->pGuest->CopyFromGuest(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
+        rc = pContext->pGuest->CopyFromGuest(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
                                              Bstr(pContext->pszUsername).raw(), Bstr(pContext->pszPassword).raw(),
                                              fFlags, progress.asOutParam());
     }
 
-    if (FAILED(hr))
+    if (FAILED(rc))
         vrc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
     else
     {
-        hr = showProgress(progress);
-        if (FAILED(hr))
-            vrc = ctrlPrintProgressError(progress);
+        rc = showProgress(progress);
+        CHECK_PROGRESS_ERROR(progress, ("File copy failed"));
     }
 
     return vrc;
@@ -2037,9 +2036,9 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
         else
         {
             rc = showProgress(progress);
-            if (FAILED(rc))
-                vrc = ctrlPrintProgressError(progress);
-            else if (fVerbose)
+            CHECK_PROGRESS_ERROR(progress, ("Guest additions update failed"));
+            if (   SUCCEEDED(rc)
+                && fVerbose)
                 RTPrintf("Guest Additions update successful.\n");
         }
     }

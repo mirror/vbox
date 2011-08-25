@@ -2091,6 +2091,93 @@ int CmdGuestStats(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr
     return 0;
 }
 
+#include <VBox/com/array.h>
+int CmdTest(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    /* one parameter, guest name */
+    if (argc < 1)
+        return errorSyntax(USAGE_GUESTSTATS, "Missing VM name/UUID");
+
+    /*
+     * Parse the command.
+     */
+    ULONG aUpdateInterval = 0;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--interval", 'i', RTGETOPT_REQ_UINT32  }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'i':
+                aUpdateInterval = ValueUnion.u32;
+                break;
+
+            default:
+                return errorGetOpt(USAGE_GUESTSTATS , ch, &ValueUnion);
+        }
+    }
+
+    if (argc > 1 && aUpdateInterval == 0)
+        return errorSyntax(USAGE_GUESTSTATS, "Invalid update interval specified");
+
+    RTPrintf("argc=%d interval=%u\n", argc, aUpdateInterval);
+
+    ComPtr<IMachine> ptrMachine;
+    HRESULT rc;
+    CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
+                                             ptrMachine.asOutParam()), 1);
+
+    CHECK_ERROR_RET(ptrMachine, LockMachine(aSession, LockType_Write), 1);
+    Utf8Str trgPath = "/home/poetzsch/downloads/matt_diff.vdi";
+
+    ComPtr<IMedium> sourceImage;
+    ComPtr<IMedium> targetImage;
+    CHECK_ERROR_RET(aVirtualBox, OpenMedium(Bstr("/home/poetzsch/downloads/matt.vdi").raw(), DeviceType_HardDisk, AccessMode_ReadWrite, false, sourceImage.asOutParam()), 1);
+    CHECK_ERROR_RET(aVirtualBox, CreateHardDisk(Bstr("VDI").raw(), Bstr(trgPath).raw(), targetImage.asOutParam()), 1);
+//    sourceImage.lockRead();
+    ComPtr<IProgress> progress;
+    CHECK_ERROR_RET(sourceImage, CreateDiffStorage(targetImage, (long) MediumVariant_Diff, progress.asOutParam()), 1);
+    CHECK_ERROR_RET(progress, WaitForCompletion(-1), 1);
+//    sourceImage.unlockRead();
+    ComPtr<IMedium> targetImage1;
+    CHECK_ERROR_RET(aVirtualBox, OpenMedium(Bstr(trgPath).raw(), DeviceType_HardDisk, AccessMode_ReadWrite, false, targetImage1.asOutParam()), 1);
+
+    {
+        ComPtr<IMachine> mutMachine;
+        CHECK_ERROR_RET(aSession, COMGETTER(Machine)(mutMachine.asOutParam()), 1);
+        CHECK_ERROR_RET(mutMachine, AttachDevice(Bstr("IDE Controller").raw(), 0, 0, DeviceType_HardDisk, targetImage1), 1);
+        CHECK_ERROR_RET(mutMachine, SaveSettings(), 1);
+
+        CHECK_ERROR_RET(aSession, UnlockMachine(), 1);
+    }
+
+    com::SafeIfaceArray<IMedium> mediums;
+    CHECK_ERROR_RET(ptrMachine, Unregister(CleanupMode_Full, ComSafeArrayAsOutParam(mediums)), 1);
+    ComPtr<IProgress> progress1;
+    com::SafeIfaceArray<IMedium> m(0);
+    CHECK_ERROR_RET(ptrMachine, Delete(ComSafeArrayAsInParam(m), progress1.asOutParam()), 1);
+    CHECK_ERROR_RET(progress1, WaitForCompletion(-1), 1);
+    RTPrintf("bla %d\n", mediums.size());
+    for (int i = 0; i < mediums.size(); ++i)
+    {
+//        ComPtr<IMedium> mm = ;
+        Bstr loc;
+        CHECK_ERROR_RET(mediums[i], COMGETTER(Location)(loc.asOutParam()), 1);
+        RTPrintf("%ls\n", loc.raw());
+        CHECK_ERROR_RET(mediums[i], Close(), 1);
+    }
+
+    return 0;
+}
+
 
 /**
  * Wrapper for handling internal commands
@@ -2135,6 +2222,9 @@ int handleInternalCommands(HandlerArg *a)
         return CmdGeneratePasswordHash(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "gueststats"))
         return CmdGuestStats(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
+    if (!strcmp(pszCmd, "test"))
+        return CmdTest(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
+
 
     /* default: */
     return errorSyntax(USAGE_ALL, "Invalid command '%s'", a->argv[0]);

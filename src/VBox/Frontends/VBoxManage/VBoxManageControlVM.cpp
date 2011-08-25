@@ -168,14 +168,7 @@ int handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
 
             rc = showProgress(progress);
-            if (FAILED(rc))
-            {
-                com::ProgressErrorInfo info(progress);
-                if (info.isBasicAvailable())
-                    RTMsgError("Failed to power off machine. Error message: %lS", info.getText().raw());
-                else
-                    RTMsgError("Failed to power off machine. No error message available!");
-            }
+            CHECK_PROGRESS_ERROR(progress, ("Failed to power off machine"));
         }
         else if (!strcmp(a->argv[1], "savestate"))
         {
@@ -206,15 +199,9 @@ int handleControlVM(HandlerArg *a)
             }
 
             rc = showProgress(progress);
+            CHECK_PROGRESS_ERROR(progress, ("Failed to save machine state"));
             if (FAILED(rc))
-            {
-                com::ProgressErrorInfo info(progress);
-                if (info.isBasicAvailable())
-                    RTMsgError("Failed to save machine state. Error message: %lS", info.getText().raw());
-                else
-                    RTMsgError("Failed to save machine state. No error message available!");
                 console->Resume();
-            }
         }
         else if (!strcmp(a->argv[1], "acpipowerbutton"))
         {
@@ -1098,14 +1085,7 @@ int handleControlVM(HandlerArg *a)
             }
 
             rc = showProgress(progress);
-            if (FAILED(rc))
-            {
-                com::ProgressErrorInfo info(progress);
-                if (info.isBasicAvailable())
-                    RTMsgError("Teleportation failed. Error message: %lS", info.getText().raw());
-                else
-                    RTMsgError("Teleportation failed. No error message available!");
-            }
+            CHECK_PROGRESS_ERROR(progress, ("Teleportation failed"));
         }
         else if (!strcmp(a->argv[1], "screenshotpng"))
         {

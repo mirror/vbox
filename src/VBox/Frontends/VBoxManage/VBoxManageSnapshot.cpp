@@ -306,14 +306,7 @@ int handleSnapshot(HandlerArg *a)
                                                     progress.asOutParam()));
 
             rc = showProgress(progress);
-            if (FAILED(rc))
-            {
-                com::ProgressErrorInfo info(progress);
-                if (info.isBasicAvailable())
-                    RTMsgError("Failed to take snapshot. Error message: %lS", info.getText().raw());
-                else
-                    RTMsgError("Failed to take snapshot. No error message available!");
-            }
+            CHECK_PROGRESS_ERROR(progress, ("Failed to take snapshot"));
 
             if (fPause)
             {
@@ -380,14 +373,7 @@ int handleSnapshot(HandlerArg *a)
             }
 
             rc = showProgress(pProgress);
-            if (FAILED(rc))
-            {
-                com::ProgressErrorInfo info(pProgress);
-                if (info.isBasicAvailable())
-                    RTMsgError("Snapshot operation failed. Error message: %lS", info.getText().raw());
-                else
-                    RTMsgError("Snapshot operation failed. No error message available!");
-            }
+            CHECK_PROGRESS_ERROR(pProgress, ("Snapshot operation failed"));
         }
         else if (!strcmp(a->argv[1], "edit"))
         {
