@@ -330,10 +330,6 @@ endif
 ifdef VBOX_DOCS_ONLY # typical mistake.
  $(error It is VBOX_ONLY_DOCS=1 not VBOX_DOCS_ONLY!)
 endif
-ifdef VBOX_OSE
- # Enable any translations in OSE, even partial ones.
- VBOX_WITH_DOCS_TRANSLATIONS=1
-endif
 ## @}
 
 ## @name VMM related settings.
@@ -965,6 +961,8 @@ ifdef VBOX_OSE
   VBOX_WITH_DOCS=
   VBOX_WITH_DOCS_PACKING=
  endif
+ # Enable any translations in OSE, even partial ones.
+ VBOX_WITH_DOCS_TRANSLATIONS=1
  VBOX_WITH_TESTSUITE=
  VBOX_WITH_INTEL_PXE=
  VBOX_WITH_FFMPEG=
