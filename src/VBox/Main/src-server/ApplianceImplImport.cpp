@@ -836,7 +836,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                                  &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
         {
-            rc = E_FAIL;
+            rc = setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
             break;
         }
 
@@ -898,7 +898,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
                              &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
         {
-            rc = E_FAIL;
+            rc = setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
             break;
         }
         rc = readFSImpl(pTask, pszFilename, pSha1Io, &storage);
@@ -1237,10 +1237,10 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         /* Create the necessary file access interfaces. */
         pSha1Io = Sha1CreateInterface();
         if (!pSha1Io)
-            throw E_OUTOFMEMORY;
+            throw setError(E_OUTOFMEMORY);
         pFileIo = FileCreateInterface();
         if (!pFileIo)
-            throw E_OUTOFMEMORY;
+            throw setError(E_OUTOFMEMORY);
 
         SHA1STORAGE storage;
         RT_ZERO(storage);
@@ -1249,7 +1249,7 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                                  VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
                                  &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
-            throw E_FAIL;
+            throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
 
         size_t cbMfSize = 0;
         Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripExt().append(".mf");
@@ -1313,10 +1313,10 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         /* Create the necessary file access interfaces. */
         pSha1Io = Sha1CreateInterface();
         if (!pSha1Io)
-            throw E_OUTOFMEMORY;
+            throw setError(E_OUTOFMEMORY);
         pTarIo = TarCreateInterface();
         if (!pTarIo)
-            throw E_OUTOFMEMORY;
+            throw setError(E_OUTOFMEMORY);
 
         SHA1STORAGE storage;
         RT_ZERO(storage);
@@ -1324,21 +1324,21 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                              VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
                              &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
-            throw setError(E_FAIL,
-                           tr("Internal error (%Rrc)"), vrc);
+            throw setError(VBOX_E_IPRT_ERROR,
+                           tr("Creation of the VD interface failed (%Rrc)"), vrc);
 
         /* Read the file name of the first file (need to be the ovf file). This
          * is how all internal files are named. */
         vrc = RTTarCurrentFile(tar, &pszFilename);
         if (RT_FAILURE(vrc))
-            throw setError(E_FAIL,
-                           tr("Internal error (%Rrc)"), vrc);
+            throw setError(VBOX_E_IPRT_ERROR,
+                           tr("Getting the current file within the archive failed (%Rrc)"), vrc);
         /* Skip the OVF file, cause this was read in IAppliance::Read already. */
         vrc = RTTarSeekNextFile(tar);
         if (   RT_FAILURE(vrc)
             && vrc != VERR_TAR_END_OF_FILE)
-            throw setError(E_FAIL,
-                           tr("Internal error (%Rrc)"), vrc);
+            throw setError(VBOX_E_IPRT_ERROR,
+                           tr("Seeking within the archive failed (%Rrc)"), vrc);
 
         PVDINTERFACEIO pCallbacks = pSha1Io;
         PSHA1STORAGE pStorage = &storage;
@@ -1629,7 +1629,7 @@ HRESULT Appliance::readTarManifestFile(RTTAR tar, const Utf8Str &strFile, void *
         RTStrFree(pszCurFile);
     }
     else if (vrc != VERR_TAR_END_OF_FILE)
-        rc = E_FAIL;
+        rc = setError(VBOX_E_IPRT_ERROR, "Seeking within the archive failed (%Rrc)", vrc);
 
     return rc;
 }
