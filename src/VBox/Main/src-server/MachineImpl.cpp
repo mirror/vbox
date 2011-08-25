@@ -4791,13 +4791,10 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
             LONG iRc;
             rc = pProgress2->COMGETTER(ResultCode)(&iRc);
             if (FAILED(rc)) throw rc;
+            /* If the thread of the progress object has an error, then
+             * retrieve the error info from there, or it'll be lost. */
             if (FAILED(iRc))
-            {
-                /* If the thread of the progress object has an error, then
-                 * retrieve the error info from there, or it'll be lost. */
-                ProgressErrorInfo info(pProgress2);
-                throw setError(iRc, Utf8Str(info.getText()).c_str());
-            }
+                throw setError(ProgressErrorInfo(pProgress2));
         }
         setMachineState(oldState);
         alock.acquire();

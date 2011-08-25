@@ -732,7 +732,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
         /** @todo r=klaus this code cannot deal with someone crazy specifying
          * IMachine corresponding to a mutable machine as d->pSrcMachine */
         if (d->pSrcMachine->isSessionMachine())
-            throw E_FAIL;
+            throw p->setError(E_INVALIDARG, "The source machine is mutable");
 
         /* Handle the special case that someone is requesting a _full_ clone
          * with all snapshots (and the current state), but uses a snapshot
@@ -749,7 +749,6 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
             if (FAILED(rc)) throw rc;
             d->pSrcMachine = (Machine*)(IMachine*)newSrcMachine;
         }
-
         bool fSubtreeIncludesCurrent = false;
         ComObjPtr<Machine> pCurrState;
         if (d->mode == CloneMode_MachineAndChildStates)
@@ -764,18 +763,18 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                 rc = d->pSrcMachine->getVirtualBox()->FindMachine(bstrSrcMachineId.raw(), pCurr.asOutParam());
                 if (FAILED(rc)) throw rc;
                 if (pCurr.isNull())
-                    throw E_FAIL;
+                    throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
                 pCurrState = (Machine *)(IMachine *)pCurr;
                 ComPtr<ISnapshot> pSnapshot;
                 rc = pCurrState->COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam());
                 if (FAILED(rc)) throw rc;
                 if (pSnapshot.isNull())
-                    throw E_FAIL;
+                    throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
                 ComPtr<IMachine> pCurrSnapMachine;
                 rc = pSnapshot->COMGETTER(Machine)(pCurrSnapMachine.asOutParam());
                 if (FAILED(rc)) throw rc;
                 if (pCurrSnapMachine.isNull())
-                    throw E_FAIL;
+                    throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
 
                 /* now check if there is a parent chain which leads to the
                  * snapshot machine defining the subtree. */
@@ -785,7 +784,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                     rc = pSnapshot->COMGETTER(Machine)(pSnapMachine.asOutParam());
                     if (FAILED(rc)) throw rc;
                     if (pSnapMachine.isNull())
-                        throw E_FAIL;
+                        throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
                     if (pSnapMachine == d->pSrcMachine)
                     {
                         fSubtreeIncludesCurrent = true;
@@ -839,7 +838,7 @@ HRESULT MachineCloneVM::start(IProgress **pProgress)
                     if (fSubtreeIncludesCurrent)
                     {
                         if (pCurrState.isNull())
-                            throw E_FAIL;
+                            throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
                         machineList.append(pCurrState);
                     }
                     else
@@ -1048,7 +1047,7 @@ HRESULT MachineCloneVM::run()
                     IMedium *pTmp = pMedium;
                     ComObjPtr<Medium> pLMedium = static_cast<Medium*>(pTmp);
                     if (pLMedium.isNull())
-                        throw E_POINTER;
+                        throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
                     ComObjPtr<Medium> pBase = pLMedium->getBase();
                     if (pBase->isReadOnly())
                     {
@@ -1178,13 +1177,10 @@ HRESULT MachineCloneVM::run()
                         LONG iRc;
                         rc = progress2->COMGETTER(ResultCode)(&iRc);
                         if (FAILED(rc)) throw rc;
+                        /* If the thread of the progress object has an error, then
+                         * retrieve the error info from there, or it'll be lost. */
                         if (FAILED(iRc))
-                        {
-                            /* If the thread of the progress object has an error, then
-                             * retrieve the error info from there, or it'll be lost. */
-                            ProgressErrorInfo info(progress2);
-                            throw p->setError(iRc, Utf8Str(info.getText()).c_str());
-                        }
+                            throw p->setError(ProgressErrorInfo(progress2));
                         /* Remember created medium. */
                         newMedia.append(pTarget);
                         /* Get the medium type from the source and set it to the
@@ -1228,7 +1224,7 @@ HRESULT MachineCloneVM::run()
                 const MEDIUMTASK &mt = mtc.chain.first();
                 ComObjPtr<Medium> pLMedium = static_cast<Medium*>((IMedium*)mt.pMedium);
                 if (pLMedium.isNull())
-                    throw E_POINTER;
+                    throw p->setError(E_POINTER, "Returned object is empty");
                 ComObjPtr<Medium> pBase = pLMedium->getBase();
                 if (pBase->isReadOnly())
                 {
