@@ -113,15 +113,15 @@ VBOXDDU_DECL(int) VSCSIIoReqCompleted(VSCSIIOREQ hVScsiIoReq, int rcIoReq, bool 
 
     /** @todo error reporting */
     if (RT_SUCCESS(rcIoReq))
-        rcReq = vscsiReqSenseOkSet(pVScsiReq);
+        rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
     else if (!fRedoPossible)
     {
         /** @todo Not 100% correct for the write case as the 0x00 ASCQ for write errors
          * is not used for SBC devices. */
-        rcReq = vscsiReqSenseErrorSet(pVScsiReq, SCSI_SENSE_MEDIUM_ERROR,
-                                      pVScsiIoReq->enmTxDir == VSCSIIOREQTXDIR_READ
-                                      ? SCSI_ASC_READ_ERROR
-                                      : SCSI_ASC_WRITE_ERROR);
+        rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_MEDIUM_ERROR,
+                                         pVScsiIoReq->enmTxDir == VSCSIIOREQTXDIR_READ
+                                         ? SCSI_ASC_READ_ERROR
+                                         : SCSI_ASC_WRITE_ERROR);
     }
     else
         rcReq = SCSI_STATUS_CHECK_CONDITION;

@@ -90,7 +90,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             vscsiPadStr(ScsiInquiryReply.achProductLevel, "1.0", 4);
 
             vscsiCopyToIoMemCtx(&pVScsiReq->IoMemCtx, (uint8_t *)&ScsiInquiryReply, sizeof(SCSIINQUIRYDATA));
-            rcReq = vscsiReqSenseOkSet(pVScsiReq);
+            rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             break;
         }
         case SCSI_READ_CAPACITY:
@@ -108,7 +108,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                 vscsiH2BEU32(aReply, pVScsiLunSbc->cSectors - 1);
             vscsiH2BEU32(&aReply[4], 512);
             vscsiCopyToIoMemCtx(&pVScsiReq->IoMemCtx, aReply, sizeof(aReply));
-            rcReq = vscsiReqSenseOkSet(pVScsiReq);
+            rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             break;
         }
         case SCSI_MODE_SENSE_6:
@@ -134,7 +134,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             }
 
             vscsiCopyToIoMemCtx(&pVScsiReq->IoMemCtx, aReply, sizeof(aReply));
-            rcReq = vscsiReqSenseOkSet(pVScsiReq);
+            rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             break;
         }
         case SCSI_READ_6:
@@ -221,7 +221,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                     memset(aReply, 0, sizeof(aReply));
 
                     vscsiCopyToIoMemCtx(&pVScsiReq->IoMemCtx, aReply, sizeof(aReply));
-                    rcReq =  vscsiReqSenseOkSet(pVScsiReq);
+                    rcReq =  vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
                     break;
                 }
                 case 0x1a:
@@ -235,7 +235,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
         case SCSI_VERIFY_10:
         case SCSI_START_STOP_UNIT:
         {
-            rcReq = vscsiReqSenseOkSet(pVScsiReq);
+            rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             break;
         }
         case SCSI_LOG_SENSE:
@@ -257,12 +257,12 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                         aReply[2] = 0;
                         aReply[3] = 0;
                         vscsiCopyToIoMemCtx(&pVScsiReq->IoMemCtx, aReply, sizeof(aReply));
-                        rcReq = vscsiReqSenseOkSet(pVScsiReq);
+                        rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
                         break;
                     }
                 }
                 default:
-                    rcReq = vscsiReqSenseErrorSet(pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
             }
             break;
         }
@@ -280,17 +280,17 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                     /* Leave the rest 0 */
 
                     vscsiCopyToIoMemCtx(&pVScsiReq->IoMemCtx, aReply, sizeof(aReply));
-                    rcReq = vscsiReqSenseOkSet(pVScsiReq);
+                    rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
                     break;
                 }
                 default:
-                    rcReq = vscsiReqSenseErrorSet(pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET); /* Don't know if this is correct */
+                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET); /* Don't know if this is correct */
             }
             break;
         }
         default:
             //AssertMsgFailed(("Command %#x [%s] not implemented\n", pRequest->pbCDB[0], SCSICmdText(pRequest->pbCDB[0])));
-            rcReq = vscsiReqSenseErrorSet(pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
+            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
     }
 
     if (enmTxDir != VSCSIIOREQTXDIR_INVALID)
@@ -300,7 +300,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
 
         if (RT_UNLIKELY(uLbaStart + cSectorTransfer > pVScsiLunSbc->cSectors))
         {
-            rcReq = vscsiReqSenseErrorSet(pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR);
+            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR);
             vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
         }
         else

@@ -21,33 +21,46 @@
 
 #include "VSCSIInternal.h"
 
-int vscsiReqSenseOkSet(PVSCSIREQINT pVScsiReq)
+void vscsiSenseInit(PVSCSISENSE pVScsiSense)
 {
-    if (pVScsiReq->cbSense < 14)
-        return SCSI_STATUS_OK;
+    memset(pVScsiSense->abSenseBuf, 0, sizeof(pVScsiSense->abSenseBuf));
+}
 
-    AssertMsgReturn(pVScsiReq->pbSense, ("Sense buffer pointer is NULL\n"), SCSI_STATUS_OK);
-    memset(pVScsiReq->pbSense, 0, pVScsiReq->cbSense);
+int vscsiReqSenseOkSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq)
+{
+    memset(pVScsiSense->abSenseBuf, 0, sizeof(pVScsiSense->abSenseBuf));
 
-    pVScsiReq->pbSense[0]  = (1 << 7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
-    pVScsiReq->pbSense[2]  = SCSI_SENSE_NONE;
-    pVScsiReq->pbSense[7]  = 10;
-    pVScsiReq->pbSense[12] = SCSI_ASC_NONE;
-    pVScsiReq->pbSense[13] = SCSI_ASC_NONE; /* Should be ASCQ but it has the same value for success. */
+    pVScsiSense->abSenseBuf[0]  = (1 << 7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
+    pVScsiSense->abSenseBuf[2]  = SCSI_SENSE_NONE;
+    pVScsiSense->abSenseBuf[7]  = 10;
+    pVScsiSense->abSenseBuf[12] = SCSI_ASC_NONE;
+    pVScsiSense->abSenseBuf[13] = SCSI_ASC_NONE; /* Should be ASCQ but it has the same value for success. */
+
+    if (pVScsiReq->pbSense && pVScsiReq->cbSense)
+        memcpy(pVScsiReq->pbSense, pVScsiSense->abSenseBuf, RT_MIN(sizeof(pVScsiSense->abSenseBuf), pVScsiReq->cbSense));
 
     return SCSI_STATUS_OK;
 }
 
-int vscsiReqSenseErrorSet(PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC)
+int vscsiReqSenseErrorSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC)
 {
-    AssertMsgReturn(pVScsiReq->cbSense >= 18, ("Sense buffer is not big enough\n"), SCSI_STATUS_OK);
-    AssertMsgReturn(pVScsiReq->pbSense, ("Sense buffer pointer is NULL\n"), SCSI_STATUS_OK);
-    memset(pVScsiReq->pbSense, 0, pVScsiReq->cbSense);
-    pVScsiReq->pbSense[0] = (1 << 7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
-    pVScsiReq->pbSense[2] = uSCSISenseKey;
-    pVScsiReq->pbSense[7]  = 10;
-    pVScsiReq->pbSense[12] = uSCSIASC;
-    pVScsiReq->pbSense[13] = 0x00; /** @todo: Provide more info. */
+    memset(pVScsiSense->abSenseBuf, 0, sizeof(pVScsiSense->abSenseBuf));
+    pVScsiSense->abSenseBuf[0] = (1 << 7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
+    pVScsiSense->abSenseBuf[2] = uSCSISenseKey;
+    pVScsiSense->abSenseBuf[7]  = 10;
+    pVScsiSense->abSenseBuf[12] = uSCSIASC;
+    pVScsiSense->abSenseBuf[13] = 0x00; /** @todo: Provide more info. */
+
+    if (pVScsiReq->pbSense && pVScsiReq->cbSense)
+        memcpy(pVScsiReq->pbSense, pVScsiSense->abSenseBuf, RT_MIN(sizeof(pVScsiSense->abSenseBuf), pVScsiReq->cbSense));
+
     return SCSI_STATUS_CHECK_CONDITION;
+}
+
+int vscsiReqSenseCmd(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq)
+{
+    /* Copy the current sense data to the buffer. */
+    vscsiCopyToIoMemCtx(&pVScsiReq->IoMemCtx, pVScsiSense->abSenseBuf, sizeof(pVScsiSense->abSenseBuf));
+    return vscsiReqSenseOkSet(pVScsiSense, pVScsiReq);
 }
 

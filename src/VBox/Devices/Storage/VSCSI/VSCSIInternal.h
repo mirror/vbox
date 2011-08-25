@@ -35,6 +35,17 @@ typedef struct VSCSILUNDESC   *PVSCSILUNDESC;
 typedef VSCSIREQINT           *PVSCSIREQINT;
 /** Pointer to a virtual SCSI I/O request. */
 typedef VSCSIIOREQINT         *PVSCSIIOREQINT;
+/** Pointer to virtual SCSI sense data state. */
+typedef struct VSCSISENSE     *PVSCSISENSE;
+
+/**
+ * Virtual SCSI sense data handling.
+ */
+typedef struct VSCSISENSE
+{
+    /** Buffer holding the sense data. */
+    uint8_t              abSenseBuf[32];
+} VSCSISENSE;
 
 /**
  * Virtual SCSI device.
@@ -51,6 +62,8 @@ typedef struct VSCSIDEVICEINT
     uint32_t             cLunsMax;
     /** Request cache */
     RTMEMCACHE           hCacheReq;
+    /** Sense data handling. */
+    VSCSISENSE           VScsiSense;
     /** Pointer to the array of LUN handles.
      *  The index is the LUN id. */
     PPVSCSILUNINT        papVScsiLun;
@@ -240,22 +253,41 @@ size_t vscsiCopyToIoMemCtx(PVSCSIIOMEMCTX pIoMemCtx, uint8_t *pbData, size_t cbD
 size_t vscsiCopyFromIoMemCtx(PVSCSIIOMEMCTX pIoMemCtx, uint8_t *pbData, size_t cbData);
 
 /**
+ * Init the sense data state.
+ *
+ * @returns nothing.
+ * @param   pVScsiSense  The SCSI sense data state to init.
+ */
+void vscsiSenseInit(PVSCSISENSE pVScsiSense);
+
+/**
  * Sets a ok sense code.
  *
  * @returns SCSI status code.
+ * @param   pVScsiSense  The SCSI sense state to use.
  * @param   pVScsiReq    The SCSI request.
  */
-int vscsiReqSenseOkSet(PVSCSIREQINT pVScsiReq);
+int vscsiReqSenseOkSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq);
 
 /**
  * Sets a error sense code.
  *
  * @returns SCSI status code.
+ * @param   pVScsiSense   The SCSI sense state to use.
  * @param   pVScsiReq     The SCSI request.
- * @param   uSCSISenseKey The SCSi sense key to set.
+ * @param   uSCSISenseKey The SCSI sense key to set.
  * @param   uSCSIASC      The ASC value.
  */
-int vscsiReqSenseErrorSet(PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC);
+int vscsiReqSenseErrorSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC);
+
+/**
+ * Process a request sense command.
+ *
+ * @returns SCSI status code.
+ * @param   pVScsiSense   The SCSI sense state to use.
+ * @param   pVScsiReq     The SCSI request.
+ */
+int vscsiReqSenseCmd(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq);
 
 /**
  * Enqueues a new flush request
@@ -288,6 +320,13 @@ int vscsiIoReqTransferEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
  */
 uint32_t vscsiIoReqOutstandingCountGet(PVSCSILUNINT pVScsiLun);
 
+/**
+ * Wrapper for the get medium size I/O callback.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun   The LUN.
+ * @param   pcbSize     Where to store the size on success.
+ */
 DECLINLINE(int) vscsiLunMediumGetSize(PVSCSILUNINT pVScsiLun, uint64_t *pcbSize)
 {
     return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunMediumGetSize(pVScsiLun,
@@ -295,12 +334,36 @@ DECLINLINE(int) vscsiLunMediumGetSize(PVSCSILUNINT pVScsiLun, uint64_t *pcbSize)
                                                                      pcbSize);
 }
 
+/**
+ * Wrapper for the I/O request enqueue I/O callback.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun   The LUN.
+ * @param   pVScsiIoReq The I/O request to enqueue.
+ */
 DECLINLINE(int) vscsiLunReqTransferEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIIOREQINT pVScsiIoReq)
 {
     return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunReqTransferEnqueue(pVScsiLun,
                                                                           pVScsiLun->pvVScsiLunUser,
                                                                           pVScsiIoReq);
 }
+
+/**
+ * Wrapper around vscsiReqSenseOkSet()
+ */
+DECLINLINE(int) vscsiLunReqSenseOkSet(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
+{
+    return vscsiReqSenseOkSet(&pVScsiLun->pVScsiDevice->VScsiSense, pVScsiReq);
+}
+
+/**
+ * Wrapper around vscsiReqSenseErrorSet()
+ */
+DECLINLINE(int) vscsiLunReqSenseErrorSet(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC)
+{
+    return vscsiReqSenseErrorSet(&pVScsiLun->pVScsiDevice->VScsiSense, pVScsiReq, uSCSISenseKey, uSCSIASC);
+}
+
 
 #endif /* ___VSCSIInternal_h */
 
