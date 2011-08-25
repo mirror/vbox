@@ -1224,7 +1224,7 @@ HRESULT MachineCloneVM::run()
                 const MEDIUMTASK &mt = mtc.chain.first();
                 ComObjPtr<Medium> pLMedium = static_cast<Medium*>((IMedium*)mt.pMedium);
                 if (pLMedium.isNull())
-                    throw p->setError(E_POINTER, "Returned object is empty");
+                    throw p->setError(VBOX_E_OBJECT_NOT_FOUND);
                 ComObjPtr<Medium> pBase = pLMedium->getBase();
                 if (pBase->isReadOnly())
                 {
