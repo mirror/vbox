@@ -1436,10 +1436,17 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
 
     if (console)
     {
-        ComPtr<IDisplay> display;
-        CHECK_ERROR_RET(console, COMGETTER(Display)(display.asOutParam()), rc);
         do
         {
+            ComPtr<IDisplay> display;
+            rc = console->COMGETTER(Display)(display.asOutParam());
+            if (rc == E_ACCESSDENIED)
+                break; /* VM not powered up */
+            if (FAILED(rc))
+            {
+                com::GlueHandleComError(console, "COMGETTER(Display)(display.asOutParam())", rc, __FILE__, __LINE__);
+                return rc;
+            }
             ULONG xRes, yRes, bpp;
             rc = display->GetScreenResolution(0, &xRes, &yRes, &bpp);
             if (rc == E_ACCESSDENIED)
