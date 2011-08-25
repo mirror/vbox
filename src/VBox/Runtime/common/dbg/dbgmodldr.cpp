@@ -109,6 +109,8 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnTryOpen = */          rtDbgModLdr_TryOpen,
     /*.pfnClose = */            rtDbgModLdr_Close,
     /*.pfnEnumDbgInfo = */      rtDbgModLdr_EnumDbgInfo,
+    /*.pfnMapPart = */          NULL /** @todo*/,
+    /*.pfnUnmapPart = */        NULL /** @todo*/,
 
     /*.u32EndMagic = */         RTDBGMODVTIMG_MAGIC
 };

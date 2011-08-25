@@ -43,22 +43,115 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
+ * DWARF sections.
+ */
+typedef enum krtDbgModDwarfSect
+{
+    krtDbgModDwarfSect_abbrev = 0,
+    krtDbgModDwarfSect_aranges,
+    krtDbgModDwarfSect_frame,
+    krtDbgModDwarfSect_info,
+    krtDbgModDwarfSect_inlined,
+    krtDbgModDwarfSect_line,
+    krtDbgModDwarfSect_loc,
+    krtDbgModDwarfSect_macinfo,
+    krtDbgModDwarfSect_pubnames,
+    krtDbgModDwarfSect_pubtypes,
+    krtDbgModDwarfSect_ranges,
+    krtDbgModDwarfSect_str,
+    krtDbgModDwarfSect_types,
+    /** End of valid parts (exclusive). */
+    krtDbgModDwarfSect_End
+} krtDbgModDwarfSect;
+
+/**
  * The instance data of the DWARF reader.
  */
 typedef struct RTDBGMODDWARF
 {
-    /** Pointer to back to the debug info module.  */
+    /** The debug container containing doing the real work. */
+    RTDBGMOD            hCnt;
+    /** Pointer to back to the debug info module (no reference ofc). */
     PRTDBGMODINT        pMod;
-    /** The number of DWARF sections in the image. */
-    uint32_t            cSections;
 
     /** Total line number count. */
     uint32_t            cLines;
     /** Total symbol count. */
     uint32_t            cSymbols;
+
+    /** DWARF debug info sections. */
+    struct
+    {
+        /** The file offset of the part. */
+        RTFOFF          offFile;
+        /** The size of the part. */
+        size_t          cb;
+        /** The memory mapping of the part. */
+        void const     *pv;
+        /** Set if present. */
+        bool            fPresent;
+    } aSections[krtDbgModDwarfSect_End];
 } RTDBGMODDWARF;
 /** Pointer to instance data of the DWARF reader. */
 typedef RTDBGMODDWARF *PRTDBGMODDWARF;
+
+
+
+/**
+ * Loads a DWARF section from the image file.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The DWARF instance.
+ * @param   enmSect             The section to load.
+ */
+static int rtDbgModDwarfLoadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect enmSect)
+{
+    /*
+     * Don't load stuff twice.
+     */
+    if (pThis->aSections[enmSect].pv)
+        return VINF_SUCCESS;
+
+    /*
+     * Sections that are not present cannot be loaded, treat them like they
+     * are empty
+     */
+    if (!pThis->aSections[enmSect].fPresent)
+    {
+        Assert(pThis->aSections[enmSect].cb);
+        return VINF_SUCCESS;
+    }
+    if (!pThis->aSections[enmSect].cb)
+        return VINF_SUCCESS;
+
+    /*
+     * Sections must be readable with the current image interface.
+     */
+    if (pThis->aSections[enmSect].offFile < 0)
+        return VERR_OUT_OF_RANGE;
+
+    /*
+     * Do the job.
+     */
+    return pThis->pMod->pImgVt->pfnMapPart(pThis->pMod, pThis->aSections[enmSect].offFile, pThis->aSections[enmSect].cb,
+                                           &pThis->aSections[enmSect].pv);
+}
+
+
+/**
+ * Unloads a DWARF section previously mapped by rtDbgModDwarfLoadSection.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The DWARF instance.
+ * @param   enmSect             The section to unload.
+ */
+static int rtDbgModDwarfUnloadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect enmSect)
+{
+    if (!pThis->aSections[enmSect].pv)
+        return VINF_SUCCESS;
+
+    return pThis->pMod->pImgVt->pfnUnmapPart(pThis->pMod, pThis->aSections[enmSect].cb, &pThis->aSections[enmSect].pv);
+}
 
 
 
@@ -67,7 +160,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_LineByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX
                                                   PRTINTPTR poffDisp, PRTDBGLINE pLineInfo)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
-    return VERR_DBG_NO_LINE_NUMBERS;
+    return RTDbgModLineByAddr(pThis->hCnt, iSeg, off, poffDisp, pLineInfo);
 }
 
 
@@ -75,7 +168,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_LineByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX
 static DECLCALLBACK(int) rtDbgModDwarf_LineByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLineInfo)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
-    return VERR_DBG_NO_LINE_NUMBERS;
+    return RTDbgModLineByOrdinal(pThis->hCnt, iOrdinal, pLineInfo);
 }
 
 
@@ -83,7 +176,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_LineByOrdinal(PRTDBGMODINT pMod, uint32_t
 static DECLCALLBACK(uint32_t) rtDbgModDwarf_LineCount(PRTDBGMODINT pMod)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
-    return pThis->cLines;
+    return RTDbgModLineCount(pThis->hCnt);
 }
 
 
@@ -91,7 +184,8 @@ static DECLCALLBACK(uint32_t) rtDbgModDwarf_LineCount(PRTDBGMODINT pMod)
 static DECLCALLBACK(int) rtDbgModDwarf_LineAdd(PRTDBGMODINT pMod, const char *pszFile, size_t cchFile, uint32_t uLineNo,
                                                uint32_t iSeg, RTUINTPTR off, uint32_t *piOrdinal)
 {
-    return VERR_NOT_SUPPORTED;
+    PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
+    return RTDbgModLineAdd(pThis->hCnt, pszFile, uLineNo, iSeg, off, piOrdinal);
 }
 
 
@@ -184,16 +278,48 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModDwarf_RvaToSegOff(PRTDBGMODINT pMod, RT
 static DECLCALLBACK(int) rtDbgModDwarf_Close(PRTDBGMODINT pMod)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
+
+    for (unsigned iSect = 0; iSect < RT_ELEMENTS(pThis->aSections); iSect++)
+        if (pThis->aSections[iSect].pv)
+            pThis->pMod->pImgVt->pfnUnmapPart(pThis->pMod, pThis->aSections[iSect].cb, &pThis->aSections[iSect].pv);
+
+    RTDbgModRelease(pThis->hCnt);
     RTMemFree(pThis);
+
     return VINF_SUCCESS;
 }
 
 
+static int rtDbgModDwarfExplodeLineNumbers(PRTDBGMODDWARF pThis)
+{
+    if (!pThis->aSections[krtDbgModDwarfSect_line].fPresent)
+        return VINF_SUCCESS;
+    int rc = rtDbgModDwarfLoadSection(pThis, krtDbgModDwarfSect_line);
+    if (RT_FAILURE(rc))
+        return rc;
+
+
+    int rc2 = rtDbgModDwarfUnloadSection(pThis, krtDbgModDwarfSect_line);
+    return RT_SUCCESS(rc2) || RT_FAILURE(rc) ? rc : rc2;
+}
+
+
+static int rtDbgModDwarfExtractSymbols(PRTDBGMODDWARF pThis)
+{
+    int rc = rtDbgModDwarfLoadSection(pThis, krtDbgModDwarfSect_info);
+    if (RT_FAILURE(rc))
+        return rc;
+
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 /** @callback_method_impl{FNRTLDRENUMDBG} */
-static DECLCALLBACK(int) rtDbgModDwarf_EnumCallback(RTLDRMOD hLdrMod, uint32_t iDbgInfo, RTLDRDBGINFOTYPE enmType,
-                                                    uint16_t iMajorVer, uint16_t iMinorVer, const char *pszPartNm,
-                                                    RTFOFF offFile, RTUINTPTR LinkAddress, RTUINTPTR cb,
-                                                    const char *pszExtFile, void *pvUser)
+static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, uint32_t iDbgInfo, RTLDRDBGINFOTYPE enmType,
+                                                   uint16_t iMajorVer, uint16_t iMinorVer, const char *pszPartNm,
+                                                   RTFOFF offFile, RTUINTPTR LinkAddress, RTUINTPTR cb,
+                                                   const char *pszExtFile, void *pvUser)
 {
     /*
      * Skip stuff we can't handle.
@@ -203,9 +329,56 @@ static DECLCALLBACK(int) rtDbgModDwarf_EnumCallback(RTLDRMOD hLdrMod, uint32_t i
         || pszExtFile)
         return VINF_SUCCESS;
 
+    /*
+     * Must have a part name starting with debug_ and possibly prefixed by dots
+     * or underscores.
+     */
+    if (!strncmp(pszPartNm, ".debug_", sizeof(".debug_") - 1))
+        pszPartNm += sizeof(".debug_") - 1;
+    else if (!strncmp(pszPartNm, "__debug_", sizeof("__debug_") - 1))
+        pszPartNm += sizeof("__debug_") - 1;
+    else
+        AssertMsgFailedReturn(("%s\n", pszPartNm), VINF_SUCCESS /*ignore*/);
+
+    /*
+     * Figure out which part we're talking about.
+     */
+    krtDbgModDwarfSect enmSect;
+    if (0) { /* dummy */ }
+#define ELSE_IF_STRCMP_SET(a_Name) else if (!strcmp(pszPartNm, #a_Name))  enmSect = krtDbgModDwarfSect_ ## a_Name
+    ELSE_IF_STRCMP_SET(abbrev);
+    ELSE_IF_STRCMP_SET(aranges);
+    ELSE_IF_STRCMP_SET(frame);
+    ELSE_IF_STRCMP_SET(info);
+    ELSE_IF_STRCMP_SET(inlined);
+    ELSE_IF_STRCMP_SET(line);
+    ELSE_IF_STRCMP_SET(loc);
+    ELSE_IF_STRCMP_SET(macinfo);
+    ELSE_IF_STRCMP_SET(pubnames);
+    ELSE_IF_STRCMP_SET(pubtypes);
+    ELSE_IF_STRCMP_SET(ranges);
+    ELSE_IF_STRCMP_SET(str);
+    ELSE_IF_STRCMP_SET(types);
+#undef ELSE_IF_STRCMP_SET
+    else
+    {
+        AssertMsgFailed(("%s\n", pszPartNm));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Record the section.
+     */
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pvUser;
-    pThis->cSections++;
-    /** @todo detect what and record it  */
+    AssertMsgReturn(!pThis->aSections[enmSect].fPresent, ("duplicate %s\n", pszPartNm), VINF_SUCCESS /*ignore*/);
+
+    pThis->aSections[enmSect].fPresent  = true;
+    pThis->aSections[enmSect].offFile   = offFile;
+    pThis->aSections[enmSect].pv        = NULL;
+    pThis->aSections[enmSect].cb        = (size_t)cb;
+    if (pThis->aSections[enmSect].cb != cb)
+        pThis->aSections[enmSect].cb    = ~(size_t)0;
+
     return VINF_SUCCESS;
 }
 
@@ -220,24 +393,40 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod)
         return VERR_DBG_NO_MATCHING_INTERPRETER;
 
     /*
-     * Enumeate the debug info in the module, looking for DWARF bits.
+     * Enumerate the debug info in the module, looking for DWARF bits.
      */
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)RTMemAllocZ(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
     pThis->pMod = pMod;
 
-    int rc = pMod->pImgVt->pfnEnumDbgInfo(pMod, rtDbgModDwarf_EnumCallback, pThis);
+    int rc = pMod->pImgVt->pfnEnumDbgInfo(pMod, rtDbgModDwarfEnumCallback, pThis);
     if (RT_SUCCESS(rc))
     {
-        if (pThis->cSections)
+        if (pThis->aSections[krtDbgModDwarfSect_info].fPresent)
         {
-            pMod->pvDbgPriv = pThis;
-            return VINF_SUCCESS;
-        }
+            /*
+             * Extract / explode the data we want (symbols and line numbers)
+             * storing them in a container module.
+             */
+            rc = RTDbgModCreate(&pThis->hCnt, pMod->pszName, 0 /*cbSeg*/, 0 /*fFlags*/);
+            if (RT_SUCCESS(rc))
+            {
+                rc = rtDbgModDwarfExtractSymbols(pThis);
+                if (RT_SUCCESS(rc))
+                    rc = rtDbgModDwarfExplodeLineNumbers(pThis);
+                if (RT_SUCCESS(rc))
+                {
+                    pMod->pvDbgPriv = pThis;
+                    return VINF_SUCCESS;
+                }
 
-        /* Didn't find any DWARF info, bail out. */
-        rc = VERR_DBG_NO_MATCHING_INTERPRETER;
+                /* bail out. */
+                RTDbgModRelease(pThis->hCnt);
+            }
+        }
+        else
+            rc = VERR_DBG_NO_MATCHING_INTERPRETER;
     }
     RTMemFree(pThis);
 
