@@ -166,24 +166,64 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
  * Check the progress object for an error and if there is one print out the
  * extended error information.
  */
-#define CHECK_PROGRESS_ERROR(progress) \
-    do { \
-        LONG iRc; \
-        rc = progress->COMGETTER(ResultCode)(&iRc); \
-        if (FAILED(iRc)) \
-            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
-    } while (0)
-
-/**
- *  Does the same as CHECK_PROGRESS_ERROR(), but executes the |return ret| statement on
- *  failure.
- */
-#define CHECK_PROGRESS_ERROR_RET(progress, ret) \
+#define CHECK_PROGRESS_ERROR(progress, msg) \
     do { \
         LONG iRc; \
         rc = progress->COMGETTER(ResultCode)(&iRc); \
         if (FAILED(iRc)) \
         { \
+            rc = iRc; \
+            RTMsgError msg; \
+            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
+        } \
+    } while (0)
+
+/**
+ *  Does the same as CHECK_PROGRESS_ERROR(), but executes the |break| statement
+ *  on failure.
+ */
+#ifdef __GNUC__
+# define CHECK_PROGRESS_ERROR_BREAK(progress, msg) \
+    __extension__ \
+    ({ \
+        LONG iRc; \
+        rc = progress->COMGETTER(ResultCode)(&iRc); \
+        if (FAILED(iRc)) \
+        { \
+            rc = iRc; \
+            RTMsgError msg; \
+            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
+            break; \
+        } \
+    })
+#else
+# define CHECK_PROGRESS_ERROR_BREAK(progress, msg) \
+    if (1) \
+    { \
+        LONG iRc; \
+        rc = progress->COMGETTER(ResultCode)(&iRc); \
+        if (FAILED(iRc)) \
+        { \
+            rc = iRc; \
+            RTMsgError msg; \
+            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
+            break; \
+        } \
+    } \
+    else do {} while (0)
+#endif
+
+/**
+ *  Does the same as CHECK_PROGRESS_ERROR(), but executes the |return ret|
+ *  statement on failure.
+ */
+#define CHECK_PROGRESS_ERROR_RET(progress, msg, ret) \
+    do { \
+        LONG iRc; \
+        progress->COMGETTER(ResultCode)(&iRc); \
+        if (FAILED(iRc)) \
+        { \
+            RTMsgError msg; \
             com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
             return (ret); \
         } \
