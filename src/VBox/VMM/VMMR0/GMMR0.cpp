@@ -2550,6 +2550,9 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
 
         /* Free empty chunks. */
         /** @todo  */
+
+        /* return the fail status on failure */
+        return rc;
     }
     return VINF_SUCCESS;
 }
