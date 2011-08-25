@@ -93,6 +93,9 @@ public:
                  const Utf8Str &strText,
                  IVirtualBoxErrorInfo *aNext = NULL);
 
+    HRESULT init(const com::ErrorInfo &ei,
+                 IVirtualBoxErrorInfo *aNext = NULL);
+
     // IVirtualBoxErrorInfo properties
     STDMETHOD(COMGETTER(ResultCode))(LONG *aResultCode);
     STDMETHOD(COMGETTER(InterfaceID))(BSTR *aIID);

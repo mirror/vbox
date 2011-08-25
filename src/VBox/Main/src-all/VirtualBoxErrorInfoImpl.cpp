@@ -18,6 +18,8 @@
 #include "VirtualBoxErrorInfoImpl.h"
 #include "Logging.h"
 
+#include <VBox/com/ErrorInfo.h>
+
 // public initializer/uninitializer for internal purposes only
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -32,6 +34,30 @@ HRESULT VirtualBoxErrorInfo::init(HRESULT aResultCode,
     m_strComponent = pcszComponent;
     m_strText = strText;
     mNext = aNext;
+
+    return S_OK;
+}
+
+HRESULT VirtualBoxErrorInfo::init(const com::ErrorInfo &info,
+                                  IVirtualBoxErrorInfo *aNext)
+{
+    m_resultCode = info.getResultCode();
+    m_IID = info.getInterfaceID();
+    m_strComponent = info.getComponent();
+    m_strText = info.getText();
+
+    /* Recursively create VirtualBoxErrorInfo instances for the next objects. */
+    const com::ErrorInfo *pInfo = info.getNext();
+    if (pInfo)
+    {
+        ComObjPtr<VirtualBoxErrorInfo> nextEI;
+        HRESULT rc = nextEI.createObject();
+        if (FAILED(rc)) return rc;
+        rc = nextEI->init(*pInfo, aNext);
+        if (FAILED(rc)) return rc;
+        mNext = nextEI;
+    }else
+        mNext = aNext;
 
     return S_OK;
 }
