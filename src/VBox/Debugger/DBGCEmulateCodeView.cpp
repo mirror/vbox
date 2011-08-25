@@ -3895,7 +3895,8 @@ static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PVM pVM, PDBGCVAR p
 static int dbgcCmdWorkerSearchMem(PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pAddress, uint64_t cMaxHits, char chType,
                                   PCDBGCVAR paPatArgs, unsigned cPatArgs, PDBGCVAR pResult)
 {
-    DBGCVAR_INIT_GC_FLAT(pResult, 0);
+    if (pResult)
+        DBGCVAR_INIT_GC_FLAT(pResult, 0);
 
     /*
      * Convert the search pattern into bytes and DBGFR3MemScan can deal with.
