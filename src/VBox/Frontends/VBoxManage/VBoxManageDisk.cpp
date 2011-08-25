@@ -354,15 +354,8 @@ int handleCreateHardDisk(HandlerArg *a)
         if (SUCCEEDED(rc) && progress)
         {
             rc = showProgress(progress);
-            if (FAILED(rc))
-            {
-                com::ProgressErrorInfo info(progress);
-                if (info.isBasicAvailable())
-                    RTMsgError("Failed to create hard disk. Error message: %lS", info.getText().raw());
-                else
-                    RTMsgError("Failed to create hard disk. No error message available!");
-            }
-            else
+            CHECK_PROGRESS_ERROR(progress, ("Failed to create hard disk"));
+            if (SUCCEEDED(rc))
             {
                 Bstr uuid;
                 CHECK_ERROR(hardDisk, COMGETTER(Id)(uuid.asOutParam()));
@@ -512,7 +505,7 @@ int handleModifyHardDisk(HandlerArg *a)
             else if (rc == VBOX_E_NOT_SUPPORTED)
                 RTMsgError("Compact hard disk operation for this format is not implemented yet!");
             else
-                com::GluePrintRCMessage(rc);
+                CHECK_PROGRESS_ERROR(progress, ("Failed to compact hard disk"));
         }
     }
 
@@ -529,7 +522,7 @@ int handleModifyHardDisk(HandlerArg *a)
             else if (rc == VBOX_E_NOT_SUPPORTED)
                 RTMsgError("Resize hard disk operation for this format is not implemented yet!");
             else
-                com::GluePrintRCMessage(rc);
+                CHECK_PROGRESS_ERROR(progress, ("Failed to resize hard disk"));
         }
     }
 
@@ -664,15 +657,7 @@ int handleCloneHardDisk(HandlerArg *a)
         CHECK_ERROR_BREAK(srcDisk, CloneTo(dstDisk, DiskVariant, NULL, progress.asOutParam()));
 
         rc = showProgress(progress);
-        if (FAILED(rc))
-        {
-            com::ProgressErrorInfo info(progress);
-            if (info.isBasicAvailable())
-                RTMsgError("Failed to clone hard disk. Error message: %lS", info.getText().raw());
-            else
-                RTMsgError("Failed to clone hard disk. No error message available!");
-            break;
-        }
+        CHECK_PROGRESS_ERROR_BREAK(progress, ("Failed to clone hard disk"));
 
         Bstr uuid;
         CHECK_ERROR_BREAK(dstDisk, COMGETTER(Id)(uuid.asOutParam()));
@@ -1168,14 +1153,7 @@ int handleCloseMedium(HandlerArg *a)
             if (SUCCEEDED(rc))
             {
                 rc = showProgress(progress);
-                if (FAILED(rc))
-                {
-                    com::ProgressErrorInfo info(progress);
-                    if (info.isBasicAvailable())
-                        RTMsgError("Failed to delete medium. Error message: %lS", info.getText().raw());
-                    else
-                        RTMsgError("Failed to delete medium. No error message available!");
-                }
+                CHECK_PROGRESS_ERROR(progress, ("Failed to delete medium"));
             }
             else
                 RTMsgError("Failed to delete medium. Error code %Rrc", rc);

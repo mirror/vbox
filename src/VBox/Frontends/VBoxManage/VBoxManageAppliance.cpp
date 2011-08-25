@@ -303,14 +303,7 @@ int handleImportAppliance(HandlerArg *arg)
         RTStrFree(pszAbsFilePath);
 
         rc = showProgress(progressRead);
-
-        if (FAILED(rc))
-        {
-            com::ProgressErrorInfo info(progressRead);
-            com::GluePrintErrorInfo(info);
-            com::GluePrintErrorContext("ImportAppliance", __FILE__, __LINE__);
-            return 1;
-        }
+        CHECK_PROGRESS_ERROR_RET(progressRead, ("Appliance read failed"), RTEXITCODE_FAILURE);
 
         Bstr path; /* fetch the path, there is stuff like username/password removed if any */
         CHECK_ERROR_BREAK(pAppliance, COMGETTER(Path)(path.asOutParam()));
@@ -746,7 +739,7 @@ int handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_SoundCard:
                             if (fIgnoreThis)
                             {
-                                RTPrintf("%2u: Sound card \"%ls\" -- disabled\n",
+                               RTPrintf("%2u: Sound card \"%ls\" -- disabled\n",
                                          a,
                                          aOvfValues[a]);
                                 aEnabled[a] = false;
@@ -785,21 +778,15 @@ int handleImportAppliance(HandlerArg *arg)
                                   ImportMachines(ComSafeArrayAsInParam(options), progress.asOutParam()));
 
                 rc = showProgress(progress);
+                CHECK_PROGRESS_ERROR_RET(progress, ("Appliance import failed"), RTEXITCODE_FAILURE);
 
-                if (FAILED(rc))
-                {
-                    com::ProgressErrorInfo info(progress);
-                    com::GluePrintErrorInfo(info);
-                    com::GluePrintErrorContext("ImportAppliance", __FILE__, __LINE__);
-                    return 1;
-                }
-                else
+                if (SUCCEEDED(rc))
                     RTPrintf("Successfully imported the appliance.\n");
             }
         } // end if (aVirtualSystemDescriptions.size() > 0)
     } while (0);
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aExportOptions[]
@@ -1051,20 +1038,14 @@ int handleExportAppliance(HandlerArg *a)
         RTStrFree(pszAbsFilePath);
 
         rc = showProgress(progress);
+        CHECK_PROGRESS_ERROR_RET(progress, ("Appliance write failed"), RTEXITCODE_FAILURE);
 
-        if (FAILED(rc))
-        {
-            com::ProgressErrorInfo info(progress);
-            com::GluePrintErrorInfo(info);
-            com::GluePrintErrorContext("Write", __FILE__, __LINE__);
-            return 1;
-        }
-        else
+        if (SUCCEEDED(rc))
             RTPrintf("Successfully exported %d machine(s).\n", llMachines.size());
 
     } while (0);
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 #endif /* !VBOX_ONLY_DOCS */
