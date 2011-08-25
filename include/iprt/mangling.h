@@ -1121,6 +1121,7 @@
 # define RTSgBufReset                                   RT_MANGLER(RTSgBufReset)
 # define RTSgBufSegArrayCreate                          RT_MANGLER(RTSgBufSegArrayCreate)
 # define RTSgBufSet                                     RT_MANGLER(RTSgBufSet)
+# define RTSgBufGetNextSegment                          RT_MANGLER(RTSgBufGetNextSegment)
 # define RTSha1                                         RT_MANGLER(RTSha1)
 # define RTSha1Digest                                   RT_MANGLER(RTSha1Digest)
 # define RTSha1DigestFromFile                           RT_MANGLER(RTSha1DigestFromFile)

@@ -110,6 +110,18 @@ RTDECL(void) RTSgBufClone(PRTSGBUF pSgBufTo, PCRTSGBUF pSgBufFrom)
 }
 
 
+RTDECL(void *) RTSgBufGetNextSegment(PRTSGBUF pSgBuf, size_t *pcbSeg)
+{
+    AssertPtrReturn(pSgBuf, NULL);
+    AssertPtrReturn(pcbSeg, NULL);
+
+    if (!*pcbSeg)
+        *pcbSeg = pSgBuf->cbSegLeft;
+
+    return sgBufGet(pSgBuf, pcbSeg);
+}
+
+
 RTDECL(size_t) RTSgBufCopy(PRTSGBUF pSgBufDst, PRTSGBUF pSgBufSrc, size_t cbCopy)
 {
     AssertPtrReturn(pSgBufDst, 0);
