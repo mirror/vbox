@@ -94,7 +94,7 @@ typedef struct RTDBGMODVTIMG
      *
      * @returns IPRT status code or whatever pfnCallback returns.
      *
-     * @param   hLdrMod         The module handle.
+     * @param   pMod            Pointer to the module structure.
      * @param   pvBits          Optional pointer to bits returned by
      *                          RTLdrGetBits().  This can be used by some module
      *                          interpreters to reduce memory consumption.
@@ -103,6 +103,31 @@ typedef struct RTDBGMODVTIMG
      * @param   pvUser          The user argument.
      */
     DECLCALLBACKMEMBER(int, pfnEnumDbgInfo)(PRTDBGMODINT pMod, PFNRTLDRENUMDBG pfnCallback, void *pvUser);
+
+    /**
+     * Creates a read-only mapping of a part of the image file.
+     *
+     * @returns IPRT status code and *ppvMap set on success.
+     *
+     * @param   pMod            Pointer to the module structure.
+     * @param   off             The offset into the image file.
+     * @param   cb              The number of bytes to map.
+     * @param   ppvMap          Where to return the mapping address on success.
+     */
+    DECLCALLBACKMEMBER(int, pfnMapPart)(PRTDBGMODINT pMod, RTFOFF off, size_t cb, void const **ppvMap);
+
+    /**
+     * Unmaps memory previously mapped by pfnMapPart.
+     *
+     * @returns IPRT status code, *ppvMap set to NULL on success.
+     *
+     * @param   pMod            Pointer to the module structure.
+     * @param   cb              The size of the mapping.
+     * @param   ppvMap          The mapping address on input, NULL on
+     *                          successful return.
+     */
+    DECLCALLBACKMEMBER(int, pfnUnmapPart)(PRTDBGMODINT pMod, size_t cb, void const **ppvMap);
+
 
     /** For catching initialization errors (RTDBGMODVTIMG_MAGIC). */
     uint32_t    u32EndMagic;
