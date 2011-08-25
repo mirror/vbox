@@ -21,6 +21,7 @@ include $(KBUILD_PATH)/subheader.kmk
 VBOX_PATH_STORAGE_SRC := $(PATH_SUB_CURRENT)
 
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+include $(PATH_SUB_CURRENT)/Debug/Makefile.kmk
 
 ifndef VBOX_OSE
  include $(PATH_SUB_CURRENT)/VDFormats/Makefile.kmk
