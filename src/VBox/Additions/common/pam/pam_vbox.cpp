@@ -83,7 +83,7 @@ typedef struct PAMVBOXTHREAD
 /**
  * Write to system log.
  *
- * @param  pszBuf      Buffer to write to the log (NULL-terminated)
+ * @param  pszBuf                   Buffer to write to the log (NULL-terminated)
  */
 static void pam_vbox_writesyslog(char *pszBuf)
 {
@@ -100,8 +100,8 @@ static void pam_vbox_writesyslog(char *pszBuf)
 /**
  * Displays an error message.
  *
- * @param   pszFormat   The message text.
- * @param   ...         Format arguments.
+ * @param   pszFormat               The message text.
+ * @param   ...                     Format arguments.
  */
 static void pam_vbox_error(pam_handle_t *hPAM, const char *pszFormat, ...)
 {
@@ -121,8 +121,8 @@ static void pam_vbox_error(pam_handle_t *hPAM, const char *pszFormat, ...)
 /**
  * Displays a debug message.
  *
- * @param   pszFormat   The message text.
- * @param   ...         Format arguments.
+ * @param   pszFormat               The message text.
+ * @param   ...                     Format arguments.
  */
 static void pam_vbox_log(pam_handle_t *hPAM, const char *pszFormat, ...)
 {
@@ -145,6 +145,15 @@ static void pam_vbox_log(pam_handle_t *hPAM, const char *pszFormat, ...)
 }
 
 
+/**
+ * Sets a message using PAM's conversation function.
+ *
+ * @return  IPRT status code.
+ * @param   hPAM                    PAM handle.
+ * @param   iStyle                  Style of message (0 = Information, 1 = Prompt
+ *                                  echo off, 2 = Prompt echo on, 3 = Error).
+ * @param   pszText                 Message text to set.
+ */
 static int vbox_set_msg(pam_handle_t *hPAM, int iStyle, const char *pszText)
 {
     AssertPtrReturn(hPAM, VERR_INVALID_POINTER);
@@ -200,6 +209,12 @@ static int vbox_set_msg(pam_handle_t *hPAM, int iStyle, const char *pszText)
 }
 
 
+/**
+ * Initializes pam_vbox.
+ *
+ * @return  IPRT status code.
+ * @param   hPAM                    PAM handle.
+ */
 static int pam_vbox_init(pam_handle_t *hPAM)
 {
 #ifdef DEBUG
@@ -264,12 +279,25 @@ static int pam_vbox_init(pam_handle_t *hPAM)
 }
 
 
+/**
+ * Shuts down pam_vbox.
+ *
+ * @return  IPRT status code.
+ * @param   hPAM                    PAM handle.
+ */
 static void pam_vbox_shutdown(pam_handle_t *hPAM)
 {
     VbglR3Term();
 }
 
 
+/**
+ * Checks for credentials provided by the host / HGCM.
+ *
+ * @return  IPRT status code. VERR_NOT_FOUND if no credentials are available,
+ *          VINF_SUCCESS on successful retrieval or another IPRT error.
+ * @param   hPAM                    PAM handle.
+ */
 static int pam_vbox_check_creds(pam_handle_t *hPAM)
 {
     int rc = VbglR3CredentialsQueryAvailability();
@@ -334,6 +362,19 @@ static int pam_vbox_check_creds(pam_handle_t *hPAM)
 
 
 #ifdef VBOX_WITH_GUEST_PROPS
+/**
+ * Reads a guest property.
+ *
+ * @return  IPRT status code.
+ * @param   hPAM                    PAM handle.
+ * @param   uClientID               Guest property service client ID.
+ * @param   pszKey                  Key (name) of guest property to read.
+ * @param   fReadOnly               Indicates whether this key needs to be
+ *                                  checked if it only can be read (and *not* written)
+ *                                  by the guest.
+ * @param   pszValue                Buffer where to store the key's value.
+ * @param   cbValue                 Size of buffer (in bytes).
+ */
 static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
                               const char *pszKey, bool fReadOnly,
                               char *pszValue, size_t cbValue)
@@ -427,6 +468,16 @@ static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
 }
 
 
+/**
+ * Waits for a guest property to be changed.
+ *
+ * @return  IPRT status code.
+ * @param   hPAM                    PAM handle.
+ * @param   uClientID               Guest property service client ID.
+ * @param   pszKey                  Key (name) of guest property to wait for.
+ * @param   uTimeoutMS              Timeout (in ms) to wait for the change. Specify
+ *                                  RT_INDEFINITE_WAIT to wait indefinitly.
+ */
 static int pam_vbox_wait_prop(pam_handle_t *hPAM, uint32_t uClientID,
                               const char *pszKey, uint32_t uTimeoutMS)
 {
@@ -476,6 +527,14 @@ static int pam_vbox_wait_prop(pam_handle_t *hPAM, uint32_t uClientID,
 #endif
 
 
+/**
+ * Thread function waiting for credentials to arrive.
+ *
+ * @return  IPRT status code.
+ * @param   ThreadSelf              Thread struct to this thread.
+ * @param   pvUser                  Pointer to a PAMVBOXTHREAD structure providing
+ *                                  required data used / set by the thread.
+ */
 static DECLCALLBACK(int) pam_vbox_wait_thread(RTTHREAD ThreadSelf, void *pvUser)
 {
     PPAMVBOXTHREAD pUserData = (PPAMVBOXTHREAD)pvUser;
@@ -585,6 +644,16 @@ static DECLCALLBACK(int) pam_vbox_wait_thread(RTTHREAD ThreadSelf, void *pvUser)
 }
 
 
+/**
+ * Waits for credentials to arrive by creating and waiting for a thread.
+ *
+ * @return  IPRT status code.
+ * @param   hPAM                    PAM handle.
+ * @param   uClientID               Guest property service client ID.
+ * @param   pszKey                  Key (name) of guest property to wait for.
+ * @param   uTimeoutMS              Timeout (in ms) to wait for the change. Specify
+ *                                  RT_INDEFINITE_WAIT to wait indefinitly.
+ */
 static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint32_t uTimeoutMS)
 {
     PAMVBOXTHREAD threadData;
@@ -599,6 +668,7 @@ static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint3
     {
         pam_vbox_log(hPAM, "pam_vbox_wait_for_creds: Waiting for credentials (%dms) ...\n", uTimeoutMS);
         /* Wait for thread to initialize. */
+        /** @todo We can do something else here in the meantime later. */
         rc = RTThreadUserWait(threadWait, RT_INDEFINITE_WAIT);
         if (RT_SUCCESS(rc))
             rc = threadData.rc; /* Get back thread result to take further actions. */
@@ -611,11 +681,6 @@ static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint3
 }
 
 
-/**
- * Performs authentication within the PAM framework.
- *
- * @todo
- */
 DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
                                     int argc, const char **argv)
 {
@@ -759,11 +824,6 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
 }
 
 
-/**
- * Modifies / deletes user credentials
- *
- * @todo
- */
 DECLEXPORT(int) pam_sm_setcred(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
     pam_vbox_log(hPAM, "pam_vbox_setcred called\n");
