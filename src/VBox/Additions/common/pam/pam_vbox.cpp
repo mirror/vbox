@@ -46,6 +46,8 @@
 #include <iprt/mem.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
+#include <iprt/time.h>
 
 #include <VBox/VBoxGuestLib.h>
 
@@ -64,6 +66,19 @@ static int g_verbosity = 99;
 #else
 static int g_verbosity = 0;
 #endif
+
+/**
+ * User-provided thread data for the credentials waiting thread.
+ */
+typedef struct PAMVBOXTHREAD
+{
+    /** The PAM handle. */
+    pam_handle_t *hPAM;
+    /** The timeout (in ms) to wait for credentials. */
+    uint32_t      uTimeoutMS;
+    /** The overall result of the thread operation. */
+    int           rc;
+} PAMVBOXTHREAD, *PPAMVBOXTHREAD;
 
 /**
  * Write to system log.
@@ -260,10 +275,12 @@ static int pam_vbox_check_creds(pam_handle_t *hPAM)
     int rc = VbglR3CredentialsQueryAvailability();
     if (RT_FAILURE(rc))
     {
-        if (rc == VERR_NOT_FOUND)
-            pam_vbox_log(hPAM, "pam_vbox_check_creds: no credentials available\n");
-        else
+        if (rc != VERR_NOT_FOUND)
             pam_vbox_error(hPAM, "pam_vbox_check_creds: could not query for credentials! rc=%Rrc. Aborting\n", rc);
+#ifdef DEBUG
+        else
+            pam_vbox_log(hPAM, "pam_vbox_check_creds: no credentials available\n");
+#endif
     }
     else
     {
@@ -299,94 +316,29 @@ static int pam_vbox_check_creds(pam_handle_t *hPAM)
                 if (pamrc != PAM_SUCCESS)
                     pam_vbox_error(hPAM, "pam_vbox_check_creds: could not set password! pamrc=%d, msg=%s. Aborting\n",
                                    pamrc, pam_strerror(hPAM, pamrc));
+
             }
             /** @todo Add handling domains as well. */
-
             VbglR3CredentialsDestroy(pszUsername, pszPassword, pszDomain,
                                      3 /* Three wipe passes */);
-           pam_vbox_log(hPAM, "pam_vbox_check_creds: returned with pamrc=%d, msg=%s\n",
-                        pamrc, pam_strerror(hPAM, pamrc));
+            pam_vbox_log(hPAM, "pam_vbox_check_creds: returned with pamrc=%d, msg=%s\n",
+                         pamrc, pam_strerror(hPAM, pamrc));
         }
     }
 
+#ifdef DEBUG
     pam_vbox_log(hPAM, "pam_vbox_check_creds: returned with rc=%Rrc\n", rc);
+#endif
     return rc;
 }
+
 
 #ifdef VBOX_WITH_GUEST_PROPS
-static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint32_t uTimeoutMS)
-{
-    int rc;
-
-    /* The buffer for storing the data and its initial size.  We leave a bit
-     * of space here in case the maximum values are raised. */
-    void *pvBuf = NULL;
-    uint32_t cbBuf = MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + _1K;
-
-    pam_vbox_log(hPAM, "Waiting for credentials (%dms) ...\n", uTimeoutMS);
-
-    int i;
-    for (i = 0; i < 10; i++)
-    {
-        void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
-        if (pvTmpBuf)
-        {
-            char *pszName = NULL;
-            char *pszValue = NULL;
-            uint64_t u64TimestampOut = 0;
-            char *pszFlags = NULL;
-
-            pvBuf = pvTmpBuf;
-            rc = VbglR3GuestPropWait(uClientID, "/VirtualBox/GuestAdd/PAM/CredsChanged", pvBuf, cbBuf,
-                                     0 /* Last timestamp; just wait for next event */, uTimeoutMS,
-                                     &pszName, &pszValue, &u64TimestampOut,
-                                     &pszFlags, &cbBuf);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-
-        switch (rc)
-        {
-            case VINF_SUCCESS:
-                pam_vbox_error(hPAM, "Got notification for supplied credentials\n");
-                break;
-
-            case VERR_BUFFER_OVERFLOW:
-            {
-                /* Buffer too small, try it with a bigger one next time. */
-                cbBuf += _1K;
-                continue; /* Try next round. */
-            }
-
-            case VERR_INTERRUPTED:
-                pam_vbox_error(hPAM, "The credentials notification request timed out or was interrupted\n");
-                break;
-
-            case VERR_TIMEOUT:
-                pam_vbox_error(hPAM, "Credentials did not arrive within time (%dms)\n", uTimeoutMS);
-                break;
-
-            case VERR_TOO_MUCH_DATA:
-                pam_vbox_error(hPAM, "Temporarily unable to get credentials notification\n");
-                break;
-
-            default:
-                pam_vbox_error(hPAM, "The credentials notification request failed with rc=%Rrc\n", rc);
-                break;
-        }
-
-        /* Everything except VERR_BUFFER_OVERLOW makes us bail out ... */
-        break;
-    }
-
-    pam_vbox_log(hPAM, "Waiting for credentials returned with rc=%Rrc\n", rc);
-    return rc;
-}
-
 static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
                               const char *pszKey, bool fReadOnly,
                               char *pszValue, size_t cbValue)
 {
+    AssertPtrReturn(hPAM, VERR_INVALID_POINTER);
     AssertReturn(uClientID, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
     AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
@@ -473,7 +425,190 @@ static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
                  pszKey, pszValue, rc);
     return rc;
 }
+
+
+static int pam_vbox_wait_prop(pam_handle_t *hPAM, uint32_t uClientID,
+                              const char *pszKey, uint32_t uTimeoutMS)
+{
+    AssertPtrReturn(hPAM, VERR_INVALID_POINTER);
+    AssertReturn(uClientID, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+
+    int rc;
+
+    /* The buffer for storing the data and its initial size.  We leave a bit
+     * of space here in case the maximum values are raised. */
+    void *pvBuf = NULL;
+    uint32_t cbBuf = MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN + _1K;
+
+    for (int i = 0; i < 10; i++)
+    {
+        void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
+        if (pvTmpBuf)
+        {
+            char *pszName = NULL;
+            char *pszValue = NULL;
+            uint64_t u64TimestampOut = 0;
+            char *pszFlags = NULL;
+
+            pvBuf = pvTmpBuf;
+            rc = VbglR3GuestPropWait(uClientID, pszKey, pvBuf, cbBuf,
+                                     0 /* Last timestamp; just wait for next event */, uTimeoutMS,
+                                     &pszName, &pszValue, &u64TimestampOut,
+                                     &pszFlags, &cbBuf);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        if (rc == VERR_BUFFER_OVERFLOW)
+        {
+            /* Buffer too small, try it with a bigger one next time. */
+            cbBuf += _1K;
+            continue; /* Try next round. */
+        }
+
+        /* Everything except VERR_BUFFER_OVERLOW makes us bail out ... */
+        break;
+    }
+
+    return rc;
+}
 #endif
+
+
+static DECLCALLBACK(int) pam_vbox_wait_thread(RTTHREAD ThreadSelf, void *pvUser)
+{
+    PPAMVBOXTHREAD pUserData = (PPAMVBOXTHREAD)pvUser;
+    AssertPtr(pUserData);
+
+    int rc = VINF_SUCCESS;
+    /* Get current time stamp to later calculate rest of timeout left. */
+    uint64_t u64StartMS = RTTimeMilliTS();
+
+#ifdef VBOX_WITH_GUEST_PROPS
+    uint32_t uClientID = 0;
+    rc = VbglR3GuestPropConnect(&uClientID);
+    if (RT_FAILURE(rc))
+    {
+        pam_vbox_error(pUserData->hPAM, "pam_vbox_wait_thread: Unable to connect to guest property service, rc=%Rrc\n", rc);
+    }
+    else
+    {
+        pam_vbox_log(pUserData->hPAM, "pam_vbox_wait_thread: clientID=%u\n", uClientID);
+#endif
+        for (;;)
+        {
+#ifdef VBOX_WITH_GUEST_PROPS
+            if (uClientID)
+            {
+                rc = pam_vbox_wait_prop(pUserData->hPAM, uClientID,
+                                        "/VirtualBox/GuestAdd/PAM/CredsWaitAbort",
+                                        500 /* Wait 500ms, same as VBoxGINA/VBoxCredProv. */);
+                switch (rc)
+                {
+                    case VINF_SUCCESS:
+                        /* Somebody (guest/host) wants to abort waiting for credentials. */
+                        break;
+
+                    case VERR_INTERRUPTED:
+                        pam_vbox_error(pUserData->hPAM, "pam_vbox_wait_thread: The abort notification request timed out or was interrupted\n");
+                        break;
+
+                    case VERR_TIMEOUT:
+                        /* We did not receive an abort message within time. */
+                        break;
+
+                    case VERR_TOO_MUCH_DATA:
+                        pam_vbox_error(pUserData->hPAM, "pam_vbox_wait_thread: Temporarily unable to get abort notification\n");
+                        break;
+
+                    default:
+                        pam_vbox_error(pUserData->hPAM, "pam_vbox_wait_thread: The abort notification request failed with rc=%Rrc\n", rc);
+                        break;
+                }
+
+                if (RT_SUCCESS(rc)) /* Abort waiting. */
+                {
+                    pam_vbox_log(pUserData->hPAM, "pam_vbox_wait_thread: Got notification to abort waiting\n");
+                    rc = VERR_CANCELLED;
+                    break;
+                }
+            }
+#endif
+            if (   RT_SUCCESS(rc)
+                || rc == VERR_TIMEOUT)
+            {
+                rc = pam_vbox_check_creds(pUserData->hPAM);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Credentials retrieved. */
+                    break; /* Thread no longer is required, bail out. */
+                }
+                else if (rc == VERR_NOT_FOUND)
+                {
+                    /* No credentials found, but try next round (if there's
+                     * time left for) ... */
+#ifndef VBOX_WITH_GUEST_PROPS
+                    RTThreadSleep(500); /* Wait 500 ms. */
+#endif
+                }
+                else
+                    break; /* Something bad happend ... */
+            }
+            else
+                break;
+
+            /* Calculate timeout value left after process has been started.  */
+            uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
+            /* Is it time to bail out? */
+            if (pUserData->uTimeoutMS < u64Elapsed)
+            {
+                pam_vbox_log(pUserData->hPAM, "pam_vbox_wait_thread: Waiting thread has reached timeout (%dms), exiting ...\n",
+                             pUserData->uTimeoutMS);
+                rc = VERR_TIMEOUT;
+                break;
+            }
+        }
+#ifdef VBOX_WITH_GUEST_PROPS
+    }
+    VbglR3GuestPropDisconnect(uClientID);
+#endif
+
+    /* Save result. */
+    pUserData->rc = rc; /** @todo Use ASMAtomicXXX? */
+
+    int rc2 = RTThreadUserSignal(RTThreadSelf());
+    AssertRC(rc2);
+
+    pam_vbox_log(pUserData->hPAM, "pam_vbox_wait_thread: Waiting thread returned with rc=%Rrc\n", rc);
+    return rc;
+}
+
+
+static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint32_t uTimeoutMS)
+{
+    PAMVBOXTHREAD threadData;
+    threadData.hPAM = hPAM;
+    threadData.uTimeoutMS = uTimeoutMS;
+
+    RTTHREAD threadWait;
+    int rc = RTThreadCreate(&threadWait, pam_vbox_wait_thread,
+                            (void *)&threadData, 0,
+                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "pam_vbox");
+    if (RT_SUCCESS(rc))
+    {
+        pam_vbox_log(hPAM, "pam_vbox_wait_for_creds: Waiting for credentials (%dms) ...\n", uTimeoutMS);
+        /* Wait for thread to initialize. */
+        rc = RTThreadUserWait(threadWait, RT_INDEFINITE_WAIT);
+        if (RT_SUCCESS(rc))
+            rc = threadData.rc; /* Get back thread result to take further actions. */
+    }
+    else
+        pam_vbox_error(hPAM, "pam_vbox_wait_for_creds: Creating thread failed with rc=%Rrc\n", rc);
+
+    pam_vbox_log(hPAM, "pam_vbox_wait_for_creds: Waiting for credentials returned with rc=%Rrc\n", rc);
+    return rc;
+}
 
 
 /**
@@ -562,14 +697,31 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
                     }
                     else if (rc == VERR_TIMEOUT)
                     {
-                        pam_vbox_log(hPAM, "pam_sm_authenticate: no credentials given within time\n", rc);
+                        pam_vbox_log(hPAM, "pam_sm_authenticate: no credentials given within time\n");
 
                         rc2 = pam_vbox_read_prop(hPAM, uClientId,
                                                  "/VirtualBox/GuestAdd/PAM/CredsMsgWaitTimeout",
                                                  true /* Read-only on guest */,
                                                  szVal, sizeof(szVal));
                         if (RT_SUCCESS(rc2))
+                        {
                             rc2 = vbox_set_msg(hPAM, 0 /* Info message */, szVal);
+                            AssertRC(rc2);
+                        }
+                    }
+                    else if (rc == VERR_CANCELLED)
+                    {
+                        pam_vbox_log(hPAM, "pam_sm_authenticate: waiting aborted\n");
+
+                        rc2 = pam_vbox_read_prop(hPAM, uClientId,
+                                                 "/VirtualBox/GuestAdd/PAM/CredsMsgWaitAbort",
+                                                 true /* Read-only on guest */,
+                                                 szVal, sizeof(szVal));
+                        if (RT_SUCCESS(rc2))
+                        {
+                            rc2 = vbox_set_msg(hPAM, 0 /* Info message */, szVal);
+                            AssertRC(rc2);
+                        }
                     }
                 }
 
