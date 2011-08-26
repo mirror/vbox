@@ -208,7 +208,7 @@ RT_EXPORT_SYMBOL(RTLdrSize);
  * @param   pvUser          User argument for the callback.
  * @remark  Not supported for RTLdrLoad() images.
  */
-RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
+RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
     LogFlow(("RTLdrGetBits: hLdrMod=%RTldrm pvBits=%p BaseAddress=%RTptr pfnGetImport=%p pvUser=%p\n",
              hLdrMod, pvBits, BaseAddress, pfnGetImport, pvUser));
@@ -246,7 +246,7 @@ RT_EXPORT_SYMBOL(RTLdrGetBits);
  * @param   pvUser              User argument for the callback.
  * @remark  Not supported for RTLdrLoad() images.
  */
-RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR NewBaseAddress, RTUINTPTR OldBaseAddress,
+RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR NewBaseAddress, RTLDRADDR OldBaseAddress,
                           PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
     LogFlow(("RTLdrRelocate: hLdrMod=%RTldrm pvBits=%p NewBaseAddress=%RTptr OldBaseAddress=%RTptr pfnGetImport=%p pvUser=%p\n",
@@ -288,7 +288,8 @@ RT_EXPORT_SYMBOL(RTLdrRelocate);
  * @param   pszSymbol       Symbol name.
  * @param   pValue          Where to store the symbol value.
  */
-RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTUINTPTR BaseAddress, const char *pszSymbol, RTUINTPTR *pValue)
+RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR BaseAddress, const char *pszSymbol,
+                             PRTLDRADDR pValue)
 {
     LogFlow(("RTLdrGetSymbolEx: hLdrMod=%RTldrm pvBits=%p BaseAddress=%RTptr pszSymbol=%p:{%s} pValue\n",
              hLdrMod, pvBits, BaseAddress, pszSymbol, pszSymbol, pValue));
@@ -337,7 +338,8 @@ RT_EXPORT_SYMBOL(RTLdrGetSymbolEx);
  * @param   pvUser          User argument for the callback.
  * @remark  Not supported for RTLdrLoad() images.
  */
-RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBits, RTUINTPTR BaseAddress, PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
+RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBits, RTLDRADDR BaseAddress,
+                             PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
     LogFlow(("RTLdrEnumSymbols: hLdrMod=%RTldrm fFlags=%#x pvBits=%p BaseAddress=%RTptr pfnCallback=%p pvUser=%p\n",
              hLdrMod, fFlags, pvBits, BaseAddress, pfnCallback, pvUser));
@@ -388,4 +390,33 @@ RTDECL(int) RTLdrEnumDbgInfo(RTLDRMOD hLdrMod, const void *pvBits, PFNRTLDRENUMD
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLdrEnumDbgInfo);
+
+
+RTDECL(int) RTLdrEnumSegments(RTLDRMOD hLdrMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
+{
+    LogFlow(("RTLdrEnumSegments: hLdrMod=%RTldrm pfnCallback=%p pvUser=%p\n",
+             hLdrMod, pfnCallback, pvUser));
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    AssertMsgReturn(RT_VALID_PTR(pfnCallback), ("pfnCallback=%p\n", pfnCallback), VERR_INVALID_PARAMETER);
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+    //AssertMsgReturn(pMod->eState == LDR_STATE_OPENED, ("eState=%d\n", pMod->eState), VERR_WRONG_ORDER);
+
+    /*
+     * Do it.
+     */
+    int rc;
+    if (pMod->pOps->pfnEnumSegments)
+        rc = pMod->pOps->pfnEnumSegments(pMod, pfnCallback, pvUser);
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    LogFlow(("RTLdrEnumSegments: returns %Rrc\n", rc));
+    return rc;
+
+}
+RT_EXPORT_SYMBOL(RTLdrEnumSegments);
 

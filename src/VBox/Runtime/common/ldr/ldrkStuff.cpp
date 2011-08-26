@@ -628,6 +628,60 @@ static DECLCALLBACK(int) rtkldr_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void *
 }
 
 
+/** @copydoc RTLDROPS::pfnEnumSegments. */
+static DECLCALLBACK(int) rtkldr_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
+{
+    PRTLDRMODKLDR   pThis      = (PRTLDRMODKLDR)pMod;
+    uint32_t const  cSegments  = pThis->pMod->cSegments;
+    PCKLDRSEG       paSegments = &pThis->pMod->aSegments[0];
+
+    for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
+    {
+        RTLDRSEG Seg;
+
+        Seg.pchName     = paSegments[iSeg].pchName;
+        Seg.cchName     = paSegments[iSeg].cchName;
+        Seg.SelFlat     = paSegments[iSeg].SelFlat;
+        Seg.Sel16bit    = paSegments[iSeg].Sel16bit;
+        Seg.fFlags      = paSegments[iSeg].fFlags;
+        AssertCompile(KLDRSEG_FLAG_16BIT          == RTLDRSEG_FLAG_16BIT      );
+        AssertCompile(KLDRSEG_FLAG_OS2_ALIAS16    == RTLDRSEG_FLAG_OS2_ALIAS16);
+        AssertCompile(KLDRSEG_FLAG_OS2_CONFORM    == RTLDRSEG_FLAG_OS2_CONFORM);
+        AssertCompile(KLDRSEG_FLAG_OS2_IOPL       == RTLDRSEG_FLAG_OS2_IOPL   );
+
+        switch (paSegments[iSeg].enmProt)
+        {
+            default:
+                AssertMsgFailed(("%d\n", paSegments[iSeg].enmProt));
+            case KPROT_NOACCESS:
+                Seg.fProt = 0;
+                break;
+
+            case KPROT_READONLY:            Seg.fProt = RTMEM_PROT_READ; break;
+            case KPROT_READWRITE:           Seg.fProt = RTMEM_PROT_READ | RTMEM_PROT_WRITE; break;
+            case KPROT_WRITECOPY:           Seg.fProt = RTMEM_PROT_WRITE; break;
+            case KPROT_EXECUTE:             Seg.fProt = RTMEM_PROT_EXEC; break;
+            case KPROT_EXECUTE_READ:        Seg.fProt = RTMEM_PROT_EXEC | RTMEM_PROT_READ; break;
+            case KPROT_EXECUTE_READWRITE:   Seg.fProt = RTMEM_PROT_EXEC | RTMEM_PROT_READ | RTMEM_PROT_WRITE; break;
+            case KPROT_EXECUTE_WRITECOPY:   Seg.fProt = RTMEM_PROT_EXEC | RTMEM_PROT_WRITE; break;
+        }
+        Seg.cb          = paSegments[iSeg].cb;
+        Seg.Alignment   = paSegments[iSeg].Alignment;
+        Seg.LinkAddress = paSegments[iSeg].LinkAddress;
+        Seg.offFile     = paSegments[iSeg].offFile;
+        Seg.cbFile      = paSegments[iSeg].cbFile;
+        Seg.RVA         = paSegments[iSeg].RVA;
+        Seg.cbMapped    = paSegments[iSeg].cbMapped;
+
+        int rc = pfnCallback(pMod, &Seg, pvUser);
+        if (rc != VINF_SUCCESS)
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Operations for a kLdr module.
  */
@@ -644,6 +698,7 @@ static const RTLDROPS g_rtkldrOps =
     rtkldr_Relocate,
     rtkldr_GetSymbolEx,
     rtkldr_EnumDbgInfo,
+    rtkldr_EnumSegments,
     42
 };
 

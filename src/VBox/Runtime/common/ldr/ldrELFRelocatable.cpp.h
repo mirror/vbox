@@ -695,6 +695,16 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumDbgInfo)(PRTLDRMODINTERNAL pMod, cons
 }
 
 
+/** @copydoc RTLDROPS::pfnEnumSegments. */
+static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
+{
+    PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+
 /**
  * The ELF module operations.
  */
@@ -715,6 +725,7 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
     RTLDRELF_NAME(Relocate),
     RTLDRELF_NAME(GetSymbolEx),
     RTLDRELF_NAME(EnumDbgInfo),
+    RTLDRELF_NAME(EnumSegments),
     42
 };
 

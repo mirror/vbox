@@ -33,6 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
@@ -52,9 +53,57 @@ typedef struct RTDBGMODLDR
 {
     /** The loader handle. */
     RTLDRMOD        hLdrMod;
+    /** File handle for the image. */
+    RTFILE          hFile;
 } RTDBGMODLDR;
 /** Pointer to instance data NM map reader. */
 typedef RTDBGMODLDR *PRTDBGMODLDR;
+
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnUnmapPart} */
+static DECLCALLBACK(int) rtDbgModLdr_UnmapPart(PRTDBGMODINT pMod, size_t cb, void const **ppvMap)
+{
+    RTMemFree((void *)*ppvMap);
+    *ppvMap = NULL;
+    return VINF_SUCCESS;
+}
+
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnMapPart} */
+static DECLCALLBACK(int) rtDbgModLdr_MapPart(PRTDBGMODINT pMod, RTFOFF off, size_t cb, void const **ppvMap)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+
+    void *pvMap = RTMemAlloc(cb);
+    if (!pvMap)
+        return VERR_NO_MEMORY;
+
+    int rc = RTFileReadAt(pThis->hFile, off, pvMap, cb, NULL);
+    if (RT_SUCCESS(rc))
+        *ppvMap = pvMap;
+    else
+    {
+        RTMemFree(pvMap);
+        *ppvMap = NULL;
+    }
+    return rc;
+}
+
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnGetLoadedSize} */
+static DECLCALLBACK(RTUINTPTR) rtDbgModLdr_GetLoadedSize(PRTDBGMODINT pMod)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    return RTLdrSize(pThis->hLdrMod);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnEnumSegments} */
+static DECLCALLBACK(int) rtDbgModLdr_EnumSegments(PRTDBGMODINT pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    return RTLdrEnumSegments(pThis->hLdrMod, pfnCallback, pvUser);
+}
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnEnumDbgInfo} */
@@ -73,6 +122,10 @@ static DECLCALLBACK(int) rtDbgModLdr_Close(PRTDBGMODINT pMod)
 
     int rc = RTLdrClose(pThis->hLdrMod); AssertRC(rc);
     pThis->hLdrMod = NIL_RTLDRMOD;
+
+    rc = RTFileClose(pThis->hFile); AssertRC(rc);
+    pThis->hFile = NIL_RTFILE;
+
     RTMemFree(pThis);
 
     return VINF_SUCCESS;
@@ -82,21 +135,30 @@ static DECLCALLBACK(int) rtDbgModLdr_Close(PRTDBGMODINT pMod)
 /** @interface_method_impl{RTDBGMODVTIMG,pfnTryOpen} */
 static DECLCALLBACK(int) rtDbgModLdr_TryOpen(PRTDBGMODINT pMod)
 {
-    RTLDRMOD hLdrMod;
-    int rc = RTLdrOpen(pMod->pszImgFile, 0 /*fFlags*/, RTLDRARCH_WHATEVER, &hLdrMod);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    PRTDBGMODLDR pThis = (PRTDBGMODLDR)RTMemAllocZ(sizeof(RTDBGMODLDR));
-    if (!pThis)
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pMod->pszImgFile, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN);
+    if (RT_SUCCESS(rc))
     {
-        RTLdrClose(hLdrMod);
-        return VERR_NO_MEMORY;
-    }
+        RTLDRMOD hLdrMod;
+        rc = RTLdrOpen(pMod->pszImgFile, 0 /*fFlags*/, RTLDRARCH_WHATEVER, &hLdrMod);
+        if (RT_SUCCESS(rc))
+        {
+            PRTDBGMODLDR pThis = (PRTDBGMODLDR)RTMemAllocZ(sizeof(RTDBGMODLDR));
+            if (pThis)
+            {
+                pThis->hLdrMod  = hLdrMod;
+                pThis->hFile    = hFile;
+                pMod->pvImgPriv = pThis;
+                return VINF_SUCCESS;
+            }
 
-    pThis->hLdrMod = hLdrMod;
-    pMod->pvImgPriv = pThis;
-    return VINF_SUCCESS;
+            rc = VERR_NO_MEMORY;
+            RTLdrClose(hLdrMod);
+        }
+
+        RTFileClose(hFile);
+    }
+    return rc;
 }
 
 
@@ -109,8 +171,10 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnTryOpen = */          rtDbgModLdr_TryOpen,
     /*.pfnClose = */            rtDbgModLdr_Close,
     /*.pfnEnumDbgInfo = */      rtDbgModLdr_EnumDbgInfo,
-    /*.pfnMapPart = */          NULL /** @todo*/,
-    /*.pfnUnmapPart = */        NULL /** @todo*/,
+    /*.pfnEnumSegments = */     rtDbgModLdr_EnumSegments,
+    /*.pfnGetLoadedSize = */    rtDbgModLdr_GetLoadedSize,
+    /*.pfnMapPart = */          rtDbgModLdr_MapPart,
+    /*.pfnUnmapPart = */        rtDbgModLdr_UnmapPart,
 
     /*.u32EndMagic = */         RTDBGMODVTIMG_MAGIC
 };

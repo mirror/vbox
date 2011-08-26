@@ -775,6 +775,13 @@ static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void 
 }
 
 
+/** @copydoc RTLDROPS::pfnEnumSegments. */
+static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
+{
+    return VINF_NOT_SUPPORTED;
+}
+
+
 /** @copydoc RTLDROPS::pfnDone */
 static DECLCALLBACK(int) rtldrPEDone(PRTLDRMODINTERNAL pMod)
 {
@@ -834,6 +841,7 @@ static const RTLDROPSPE s_rtldrPE32Ops =
         rtldrPERelocate,
         rtldrPEGetSymbolEx,
         rtldrPE_EnumDbgInfo,
+        rtldrPE_EnumSegments,
         42
     },
     rtldrPEResolveImports32,
@@ -858,6 +866,7 @@ static const RTLDROPSPE s_rtldrPE64Ops =
         rtldrPERelocate,
         rtldrPEGetSymbolEx,
         rtldrPE_EnumDbgInfo,
+        rtldrPE_EnumSegments,
         42
     },
     rtldrPEResolveImports64,

@@ -124,10 +124,10 @@ int main(int argc, char **argv)
      * Create an empty address space that we can load modules and stuff into
      * as we parse the parameters.
      */
-    RTDBGAS hAs;
-    rc = RTDbgAsCreate(&hAs, 0, RTUINTPTR_MAX, "");
+    RTDBGAS hDbgAs;
+    rc = RTDbgAsCreate(&hDbgAs, 0, RTUINTPTR_MAX, "");
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDBgAsCreate -> %Rrc\n", rc);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDBgAsCreate -> %Rrc", rc);
 
 
     /*
@@ -135,8 +135,12 @@ int main(int argc, char **argv)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--later", 'l', RTGETOPT_REQ_STRING },
+        { "--input",   'i', RTGETOPT_REQ_STRING },
+        { "--verbose", 'v', RTGETOPT_REQ_NOTHING },
     };
+
+    PRTSTREAM       pInput   = g_pStdIn;
+    bool            fVerbose = false;
 
     RTGETOPTUNION   ValueUnion;
     RTGETOPTSTATE   GetState;
@@ -145,10 +149,24 @@ int main(int argc, char **argv)
     {
         switch (rc)
         {
+            case 'i':
+                rc = RTStrmOpen(ValueUnion.psz, "r", &pInput);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open '%s' for reading: %Rrc", ValueUnion.psz, rc);
+                break;
+
+            case 'v':
+                fVerbose = true;
+                break;
+
             case 'h':
                 RTPrintf("Usage: %s [options] <module> <address> [<module> <address> [..]]\n"
                          "\n"
                          "Options:\n"
+                         "  -i,--input=file\n"
+                         "      Specify a input file instead of standard input.\n"
+                         "  -v, --verbose\n"
+                         "      Display the address space before doing the filtering.\n"
                          "  -h, -?, --help\n"
                          "      Display this help text and exit successfully.\n"
                          "  -V, --version\n"
@@ -173,11 +191,11 @@ int main(int argc, char **argv)
                 RTDBGMOD hMod;
                 rc = RTDbgModCreateFromImage(&hMod, pszModule, NULL, 0 /*fFlags*/);
                 if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgModCreateFromImage(,%s,,) -> %Rrc\n", pszModule, rc);
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgModCreateFromImage(,%s,,) -> %Rrc", pszModule, rc);
 
-                rc = RTDbgAsModuleLink(hAs, hMod, u64Address, 0 /* fFlags */);
+                rc = RTDbgAsModuleLink(hDbgAs, hMod, u64Address, 0 /* fFlags */);
                 if (RT_FAILURE(rc))
-                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgAsModuleLink(,%s,%llx,) -> %Rrc\n", pszModule, u64Address, rc);
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgAsModuleLink(,%s,%llx,) -> %Rrc", pszModule, u64Address, rc);
                 break;
             }
 
@@ -187,13 +205,59 @@ int main(int argc, char **argv)
     }
 
     /*
+     * Display the address space.
+     */
+    if (fVerbose)
+    {
+        RTPrintf("*** Address Space Dump ***\n");
+        uint32_t cModules = RTDbgAsModuleCount(hDbgAs);
+        for (uint32_t iModule = 0; iModule < cModules; iModule++)
+        {
+            RTDBGMOD        hDbgMod = RTDbgAsModuleByIndex(hDbgAs, iModule);
+            RTPrintf("Module #%u: %s\n", iModule, RTDbgModName(hDbgMod));
+
+            RTDBGASMAPINFO  aMappings[128];
+            uint32_t        cMappings = RT_ELEMENTS(aMappings);
+            rc = RTDbgAsModuleQueryMapByIndex(hDbgAs, iModule, &aMappings[0], &cMappings, 0 /*fFlags*/);
+            if (RT_SUCCESS(rc))
+            {
+                for (uint32_t iMapping = 0; iMapping < cMappings; iMapping++)
+                {
+                    if (aMappings[iMapping].iSeg == NIL_RTDBGSEGIDX)
+                        RTPrintf("  mapping #%u: %RTptr-%RTptr\n",
+                                 iMapping,
+                                 aMappings[iMapping].Address,
+                                 aMappings[iMapping].Address + RTDbgModImageSize(hDbgMod) - 1);
+                    else
+                    {
+                        RTDBGSEGMENT SegInfo;
+                        rc = RTDbgModSegmentByIndex(hDbgMod, aMappings[iMapping].iSeg, &SegInfo);
+                        if (RT_SUCCESS(rc))
+                            RTPrintf("  mapping #%u: %RTptr-%RTptr (segment #%u - '%s')",
+                                     iMapping,
+                                     aMappings[iMapping].Address,
+                                     aMappings[iMapping].Address + SegInfo.cb,
+                                     SegInfo.iSeg, SegInfo.szName);
+                        else
+                            RTPrintf("  mapping #%u: %RTptr-???????? (segment #%u)", iMapping, aMappings[iMapping].Address);
+                    }
+                }
+            }
+            else
+                RTMsgError("RTDbgAsModuleQueryMapByIndex failed: %Rrc", rc);
+            RTDbgModRelease(hDbgMod);
+        }
+        RTPrintf("*** End of Address Space Dump ***\n");
+    }
+
+    /*
      * Read text from standard input and see if there is anything we can translate.
      */
     for (;;)
     {
         /* Get a line. */
         char szLine[_64K];
-        rc = RTStrmGetLine(g_pStdIn, szLine, sizeof(szLine));
+        rc = RTStrmGetLine(pInput, szLine, sizeof(szLine));
         if (rc == VERR_EOF)
             break;
         if (RT_FAILURE(rc))
@@ -218,26 +282,54 @@ int main(int argc, char **argv)
                     && TryParseAddress(psz, &cchAddress, &u64Address))
                )
             {
+                /* Print. */
+                psz += cchAddress;
                 if (pszStart != psz)
                     RTStrmWrite(g_pStdOut, pszStart, psz - pszStart);
                 pszStart = psz;
 
-                RTDBGSYMBOL Symbol;
-                RTINTPTR    off;
-                rc = RTDbgAsSymbolByAddr(hAs, u64Address, &off, &Symbol, NULL);
+                /* Try get the module. */
+                RTUINTPTR   uAddr;
+                RTDBGSEGIDX iSeg;
+                RTDBGMOD    hDbgMod;
+                rc = RTDbgAsModuleByAddr(hDbgAs, u64Address, &hDbgMod, &uAddr, &iSeg);
                 if (RT_SUCCESS(rc))
                 {
-                    if (!off)
-                        RTStrmPrintf(g_pStdOut, "%.*s=[%s]", cchAddress, psz, Symbol.szName);
-                    else if (off > 0)
-                        RTStrmPrintf(g_pStdOut, "%.*s=[%s+%#llx]", cchAddress, psz, Symbol.szName, off);
+                    if (iSeg != UINT32_MAX)
+                        RTStrmPrintf(g_pStdOut, "=[%s:%u", RTDbgModName(hDbgMod), iSeg);
                     else
-                        RTStrmPrintf(g_pStdOut, "%.*s=[%s-%#llx]", cchAddress, psz, Symbol.szName, -off);
-                    psz += cchAddress;
-                    pszStart = psz;
+                        RTStrmPrintf(g_pStdOut, "=[%s", RTDbgModName(hDbgMod), iSeg);
+
+                    /*
+                     * Do we have symbols?
+                     */
+                    RTDBGSYMBOL Symbol;
+                    RTINTPTR    offSym;
+                    rc = RTDbgAsSymbolByAddr(hDbgAs, u64Address, &offSym, &Symbol, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (!offSym)
+                            RTStrmPrintf(g_pStdOut, "!%s", Symbol.szName);
+                        else if (offSym > 0)
+                            RTStrmPrintf(g_pStdOut, "!%s+%#llx", Symbol.szName, offSym);
+                        else
+                            RTStrmPrintf(g_pStdOut, "!%s-%#llx", Symbol.szName, -offSym);
+                    }
+                    else
+                        RTStrmPrintf(g_pStdOut, "+%#llx", u64Address - uAddr);
+
+                    /*
+                     * Do we have line numbers?
+                     */
+                    RTDBGLINE   Line;
+                    RTINTPTR    offLine;
+                    rc = RTDbgAsLineByAddr(hDbgAs, u64Address, &offLine, &Line);
+                    if (RT_SUCCESS(rc))
+                        RTStrmPrintf(g_pStdOut, " %Rbn(%u)", Line.szFilename, Line.uLineNo);
+
+                    RTStrmPrintf(g_pStdOut, "]");
+                    RTDbgModRelease(hDbgMod);
                 }
-                else
-                    psz += cchAddress;
             }
             else
                 psz++;
