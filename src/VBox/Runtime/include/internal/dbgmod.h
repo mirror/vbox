@@ -95,14 +95,36 @@ typedef struct RTDBGMODVTIMG
      * @returns IPRT status code or whatever pfnCallback returns.
      *
      * @param   pMod            Pointer to the module structure.
-     * @param   pvBits          Optional pointer to bits returned by
-     *                          RTLdrGetBits().  This can be used by some module
-     *                          interpreters to reduce memory consumption.
      * @param   pfnCallback     The callback function.  Ignore the module
      *                          handle argument!
      * @param   pvUser          The user argument.
      */
     DECLCALLBACKMEMBER(int, pfnEnumDbgInfo)(PRTDBGMODINT pMod, PFNRTLDRENUMDBG pfnCallback, void *pvUser);
+
+    /**
+     * Enumerate the segments in the executable image.
+     *
+     * Identical to RTLdrEnumSegments.
+     *
+     * @returns IPRT status code or whatever pfnCallback returns.
+     *
+     * @param   pMod            Pointer to the module structure.
+     * @param   pfnCallback     The callback function.  Ignore the module
+     *                          handle argument!
+     * @param   pvUser          The user argument.
+     */
+    DECLCALLBACKMEMBER(int, pfnEnumSegments)(PRTDBGMODINT pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser);
+
+    /**
+     * Gets the size of the loaded image.
+     *
+     * Identical to RTLdrSize.
+     *
+     * @returns The size in bytes, RTUINTPTR_MAX on failure.
+     *
+     * @param   pMod            Pointer to the module structure.
+     */
+    DECLCALLBACKMEMBER(RTUINTPTR, pfnImageSize)(PRTDBGMODINT pMod);
 
     /**
      * Creates a read-only mapping of a part of the image file.

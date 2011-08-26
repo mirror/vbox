@@ -38,6 +38,17 @@
 
 RT_C_DECLS_BEGIN
 
+/** Loader address (unsigned integer). */
+typedef RTUINTPTR           RTLDRADDR;
+/** Pointer to a loader address. */
+typedef RTLDRADDR          *PRTLDRADDR;
+/** Pointer to a const loader address. */
+typedef RTLDRADDR const    *PCRTLDRADDR;
+/** The max loader address value. */
+#define RTLDRADDR_MAX       RTUINTPTR_MAX
+/** NIL loader address value. */
+#define NIL_RTLDRADDR       RTLDRADDR_MAX
+
 
 /**
  * Gets the default file suffix for DLL/SO/DYLIB/whatever.
@@ -236,7 +247,8 @@ RTDECL(int) RTLdrGetSymbol(RTLDRMOD hLdrMod, const char *pszSymbol, void **ppvVa
  * @param   pszSymbol       Symbol name.
  * @param   pValue          Where to store the symbol value.
  */
-RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTUINTPTR BaseAddress, const char *pszSymbol, RTUINTPTR *pValue);
+RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR BaseAddress, const char *pszSymbol,
+                             PRTLDRADDR pValue);
 
 /**
  * Gets the size of the loaded image.
@@ -260,7 +272,8 @@ RTDECL(size_t) RTLdrSize(RTLDRMOD hLdrMod);
  * @param   pValue          Where to store the symbol value (address).
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACK(int) RTLDRIMPORT(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
+typedef DECLCALLBACK(int) RTLDRIMPORT(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol,
+                                      PRTLDRADDR pValue, void *pvUser);
 /** Pointer to a FNRTLDRIMPORT() callback function. */
 typedef RTLDRIMPORT *PFNRTLDRIMPORT;
 
@@ -277,7 +290,7 @@ typedef RTLDRIMPORT *PFNRTLDRIMPORT;
  * @param   pvUser          User argument for the callback.
  * @remark  Not supported for RTLdrLoad() images.
  */
-RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser);
+RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR BaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser);
 
 /**
  * Relocates bits after getting them.
@@ -293,7 +306,7 @@ RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR BaseAddress, 
  * @param   pvUser              User argument for the callback.
  * @remark  Not supported for RTLdrLoad() images.
  */
-RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR NewBaseAddress, RTUINTPTR OldBaseAddress,
+RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTLDRADDR NewBaseAddress, RTLDRADDR OldBaseAddress,
                           PFNRTLDRIMPORT pfnGetImport, void *pvUser);
 
 /**
@@ -306,7 +319,7 @@ RTDECL(int) RTLdrRelocate(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR NewBaseAddre
  * @param   Value           Symbol value.
  * @param   pvUser          The user argument specified to RTLdrEnumSymbols().
  */
-typedef DECLCALLBACK(int) RTLDRENUMSYMS(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTUINTPTR Value, void *pvUser);
+typedef DECLCALLBACK(int) RTLDRENUMSYMS(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTLDRADDR Value, void *pvUser);
 /** Pointer to a RTLDRENUMSYMS() callback function. */
 typedef RTLDRENUMSYMS *PFNRTLDRENUMSYMS;
 
@@ -323,7 +336,7 @@ typedef RTLDRENUMSYMS *PFNRTLDRENUMSYMS;
  * @param   pvUser          User argument for the callback.
  * @remark  Not supported for RTLdrLoad() images.
  */
-RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBits, RTUINTPTR BaseAddress, PFNRTLDRENUMSYMS pfnCallback, void *pvUser);
+RTDECL(int) RTLdrEnumSymbols(RTLDRMOD hLdrMod, unsigned fFlags, const void *pvBits, RTLDRADDR BaseAddress, PFNRTLDRENUMSYMS pfnCallback, void *pvUser);
 
 /** @name RTLdrEnumSymbols flags.
  * @{ */
@@ -376,7 +389,7 @@ typedef enum RTLDRDBGINFOTYPE
  *                          location in the executable image file. This is -1
  *                          if there isn't any specific file location.
  * @param   LinkAddress     The link address of the debug info if it's
- *                          loadable. RTUINTPTR_MAX if not loadable.
+ *                          loadable. NIL_RTLDRADDR if not loadable.
  * @param   cb              The size of the debug information. -1 is used if
  *                          this isn't applicable.
  * @param   pszExtFile      This points to the name of an external file
@@ -386,11 +399,10 @@ typedef enum RTLDRDBGINFOTYPE
  */
 typedef DECLCALLBACK(int) FNRTLDRENUMDBG(RTLDRMOD hLdrMod, uint32_t iDbgInfo, RTLDRDBGINFOTYPE enmType,
                                          uint16_t iMajorVer, uint16_t iMinorVer, const char *pszPartNm,
-                                         RTFOFF offFile, RTUINTPTR LinkAddress, RTUINTPTR cb,
+                                         RTFOFF offFile, RTLDRADDR LinkAddress, RTLDRADDR cb,
                                          const char *pszExtFile, void *pvUser);
 /** Pointer to a debug info enumerator callback. */
 typedef FNRTLDRENUMDBG *PFNRTLDRENUMDBG;
-
 
 /**
  * Enumerate the debug info contained in the executable image.
@@ -405,6 +417,93 @@ typedef FNRTLDRENUMDBG *PFNRTLDRENUMDBG;
  * @param   pvUser          The user argument.
  */
 RTDECL(int) RTLdrEnumDbgInfo(RTLDRMOD hLdrMod, const void *pvBits, PFNRTLDRENUMDBG pfnCallback, void *pvUser);
+
+
+/**
+ * Loader segment.
+ */
+typedef struct RTLDRSEG
+{
+    /** The segment name. (Might not be zero terminated!) */
+    const char     *pchName;
+    /** The length of the segment name. */
+    uint32_t        cchName;
+    /** The flat selector to use for the segment (i.e. data/code).
+     * Primarily a way for the user to specify selectors for the LX/LE and NE interpreters. */
+    uint16_t        SelFlat;
+    /** The 16-bit selector to use for the segment.
+     * Primarily a way for the user to specify selectors for the LX/LE and NE interpreters. */
+    uint16_t        Sel16bit;
+    /** Segment flags. */
+    uint32_t        fFlags;
+    /** The segment protection (RTMEM_PROT_XXX). */
+    uint32_t        fProt;
+    /** The size of the segment. */
+    RTLDRADDR       cb;
+    /** The required segment alignment.
+     * The to 0 if the segment isn't supposed to be mapped. */
+    RTLDRADDR       Alignment;
+    /** The link address.
+     * Set to NIL_RTLDRADDR if the segment isn't supposed to be mapped or if
+     * the image doesn't have link addresses. */
+    RTLDRADDR       LinkAddress;
+    /** File offset of the segment.
+     * Set to -1 if no file backing (like BSS). */
+    RTFOFF          offFile;
+    /** Size of the file bits of the segment.
+     * Set to -1 if no file backing (like BSS). */
+    RTFOFF          cbFile;
+    /** The relative virtual address when mapped.
+     * Set to NIL_RTLDRADDR if the segment isn't supposed to be mapped. */
+    RTLDRADDR       RVA;
+    /** The size of the segment including the alignment gap up to the next segment when mapped.
+     * This is set to NIL_RTLDRADDR if not implemented. */
+    RTLDRADDR       cbMapped;
+} RTLDRSEG;
+/** Pointer to a loader segment. */
+typedef RTLDRSEG *PRTLDRSEG;
+/** Pointer to a read only loader segment. */
+typedef RTLDRSEG const *PCRTLDRSEG;
+
+
+/** @name Segment flags
+ * @{ */
+/** The segment is 16-bit. When not set the default of the target architecture is assumed. */
+#define RTLDRSEG_FLAG_16BIT         UINT32_C(1)
+/** The segment requires a 16-bit selector alias. (OS/2) */
+#define RTLDRSEG_FLAG_OS2_ALIAS16   UINT32_C(2)
+/** Conforming segment (x86 weirdness). (OS/2) */
+#define RTLDRSEG_FLAG_OS2_CONFORM   UINT32_C(4)
+/** IOPL (ring-2) segment. (OS/2) */
+#define RTLDRSEG_FLAG_OS2_IOPL      UINT32_C(8)
+/** @} */
+
+/**
+ * Segment enumerator callback.
+ *
+ * @returns VINF_SUCCESS to continue the enumeration.  Any other status code
+ *          will cause RTLdrEnumSegments to immediately return with that
+ *          status.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   pSeg            The segment information.
+ * @param   pvUser          The user parameter specified to RTLdrEnumSegments.
+ */
+typedef DECLCALLBACK(int) FNRTLDRENUMSEGS(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser);
+/** Pointer to a segment enumerator callback. */
+typedef FNRTLDRENUMSEGS *PFNRTLDRENUMSEGS;
+
+/**
+ * Enumerate the debug info contained in the executable image.
+ *
+ * @returns IPRT status code or whatever pfnCallback returns.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   pfnCallback     The callback function.
+ * @param   pvUser          The user argument.
+ */
+RTDECL(int) RTLdrEnumSegments(RTLDRMOD hLdrMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser);
+
 
 RT_C_DECLS_END
 
