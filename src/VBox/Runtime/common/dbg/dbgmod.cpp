@@ -1476,7 +1476,6 @@ RTDECL(int) RTDbgModLineByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUINTPTR off
      */
     PRTDBGMODINT pDbgMod = hDbgMod;
     RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
-    RTDBGMOD_LOCK(pDbgMod);
     AssertPtrNull(poffDisp);
     AssertPtr(pLineInfo);
 
