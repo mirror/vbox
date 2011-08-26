@@ -79,7 +79,7 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
         return false;
     if (RT_UNLIKELY( pGso->offHdr2 <= pGso->offHdr1 ))
         return false;
-    if (RT_UNLIKELY( pGso->cbHdrs  <= pGso->offHdr2 ))
+    if (RT_UNLIKELY( pGso->cbHdrsTotal  <= pGso->offHdr2 ))
         return false;
 
     /* min size of the 1st header(s). */
@@ -112,13 +112,13 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
         case PDMNETWORKGSOTYPE_IPV4_TCP:
         case PDMNETWORKGSOTYPE_IPV6_TCP:
         case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
-            if (RT_UNLIKELY( (unsigned)pGso->cbHdrs - pGso->offHdr2 < RTNETTCP_MIN_LEN ))
+            if (RT_UNLIKELY( (unsigned)pGso->cbHdrsTotal - pGso->offHdr2 < RTNETTCP_MIN_LEN ))
                 return false;
             break;
         case PDMNETWORKGSOTYPE_IPV4_UDP:
         case PDMNETWORKGSOTYPE_IPV6_UDP:
         case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
-            if (RT_UNLIKELY( (unsigned)pGso->cbHdrs - pGso->offHdr2 < RTNETUDP_MIN_LEN ))
+            if (RT_UNLIKELY( (unsigned)pGso->cbHdrsTotal - pGso->offHdr2 < RTNETUDP_MIN_LEN ))
                 return false;
             break;
         case PDMNETWORKGSOTYPE_INVALID:
@@ -128,14 +128,53 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
     }
 
     /* There must be at more than one segment. */
-    if (RT_UNLIKELY( cbFrame <= pGso->cbHdrs ))
+    if (RT_UNLIKELY( cbFrame <= pGso->cbHdrsTotal ))
         return false;
-    if (RT_UNLIKELY( cbFrame - pGso->cbHdrs < pGso->cbMaxSeg ))
+    if (RT_UNLIKELY( cbFrame - pGso->cbHdrsTotal < pGso->cbMaxSeg ))
         return false;
 
     return true;
 }
 
+
+/**
+ * Returns the length of header for a particular segment/fragment.
+ *
+ * We cannot simply treat UDP header as a part of payload because we do not
+ * want to modify the payload but still need to modify the checksum field in
+ * UDP header. So we want to include UDP header when calculating the length
+ * of headers in the first segment getting it copied to a temporary buffer
+ * along with other headers.
+ *
+ * @returns Length of headers (including UDP header for the first fragment).
+ * @param   pGso                The GSO context.
+ * @param   iSeg                The segment index.
+ */
+DECLINLINE(uint8_t) pdmNetSegHdrLen(PCPDMNETWORKGSO pGso, uint32_t iSeg)
+{
+    return iSeg ? pGso->cbHdrsSeg : pGso->cbHdrsTotal;
+}
+
+/**
+ * Returns the length of payload for a particular segment/fragment.
+ *
+ * The first segment does not contain UDP header. The size of UDP header is
+ * determined as the difference between the total headers size and the size
+ * used during segmentation.
+ *
+ * @returns Length of payload (including UDP header for the first fragment).
+ * @param   pGso                The GSO context.
+ * @param   iSeg                The segment that we're carving out (0-based).
+ * @param   cSegs               The number of segments in the GSO frame.
+ * @param   cbFrame             The size of the GSO frame.
+ */
+DECLINLINE(uint32_t) pdmNetSegPayloadLen(PCPDMNETWORKGSO pGso, uint32_t iSeg, uint32_t cSegs, uint32_t cbFrame)
+{
+    if (iSeg + 1 == cSegs)
+        return cbFrame - iSeg * pGso->cbMaxSeg - pdmNetSegHdrLen(pGso, iSeg);
+    else
+        return pGso->cbMaxSeg - (iSeg ? 0 : pGso->cbHdrsTotal - pGso->cbHdrsSeg);
+}
 
 /**
  * Calculates the number of segments a GSO frame will be segmented into.
@@ -148,7 +187,7 @@ DECLINLINE(uint32_t) PDMNetGsoCalcSegmentCount(PCPDMNETWORKGSO pGso, size_t cbFr
 {
     size_t cbPayload;
     Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), cbFrame));
-    cbPayload = cbFrame - pGso->cbHdrs;
+    cbPayload = cbFrame - pGso->cbHdrsSeg;
     return (uint32_t)((cbPayload + pGso->cbMaxSeg - 1) / pGso->cbMaxSeg);
 }
 
@@ -185,7 +224,7 @@ DECLINLINE(void) pdmNetGsoUpdateUdpHdr(uint32_t u32PseudoSum, uint8_t *pbSegHdrs
                                        PDMNETCSUMTYPE enmCsumType)
 {
     PRTNETUDP pUdpHdr = (PRTNETUDP)&pbSegHdrs[offUdpHdr];
-    pUdpHdr->uh_ulen = cbPayload + cbHdrs - offUdpHdr;
+    pUdpHdr->uh_ulen =  RT_H2N_U16(cbPayload + cbHdrs - offUdpHdr);
     switch (enmCsumType)
     {
         case PDMNETCSUMTYPE_NONE:
@@ -201,6 +240,24 @@ DECLINLINE(void) pdmNetGsoUpdateUdpHdr(uint32_t u32PseudoSum, uint8_t *pbSegHdrs
             AssertFailed();
             break;
     }
+}
+
+
+/**
+ * Update an UDP header after carving out an IP fragment
+ *
+ * @param   u32PseudoSum        The pseudo checksum.
+ * @param   pbSegHdrs           Pointer to the header bytes copy
+ * @param   pbFrame             Pointer to the frame start.
+ * @param   offUdpHdr           The offset into @a pbSegHdrs of the UDP header.
+ *
+ * @internal
+ */
+DECLINLINE(void) pdmNetGsoUpdateUdpHdrUfo(uint32_t u32PseudoSum, uint8_t *pbSegHdrs, const uint8_t *pbFrame, uint8_t offUdpHdr)
+{
+    PCRTNETUDP pcUdpHdrOrig = (PCRTNETUDP)&pbFrame[offUdpHdr];
+    PRTNETUDP  pUdpHdr = (PRTNETUDP)&pbSegHdrs[offUdpHdr];
+    pUdpHdr->uh_sum = RTNetUDPChecksum(u32PseudoSum, pcUdpHdrOrig);
 }
 
 
@@ -294,6 +351,28 @@ DECLINLINE(uint32_t) pdmNetGsoUpdateIPv4Hdr(uint8_t *pbSegHdrs, uint8_t offIpHdr
 
 
 /**
+ * Updates a IPv4 header after carving out an IP fragment.
+ *
+ * @param   pbSegHdrs           Pointer to the header bytes.
+ * @param   offIpHdr            The offset into @a pbSegHdrs of the IP header.
+ * @param   cbSegPayload        The amount of segmented payload.
+ * @param   offFragment         The offset of this fragment for reassembly.
+ * @param   iSeg                The segment index.
+ * @param   cbHdrs              The size of all the headers.
+ * @param   fLastFragment       True if this is the last fragment of datagram.
+ * @internal
+ */
+DECLINLINE(void) pdmNetGsoUpdateIPv4HdrUfo(uint8_t *pbSegHdrs, uint8_t offIpHdr, uint32_t cbSegPayload,
+                                           uint32_t offFragment, uint8_t cbHdrs, bool fLastFragment)
+{
+    PRTNETIPV4 pIpHdr = (PRTNETIPV4)&pbSegHdrs[offIpHdr];
+    pIpHdr->ip_len    = RT_H2N_U16(cbHdrs - offIpHdr + cbSegPayload);
+    pIpHdr->ip_off    = RT_H2N_U16((offFragment / 8) | (fLastFragment ? 0 : RTNETIPV4_FLAGS_MF));
+    pIpHdr->ip_sum    = RTNetIPv4HdrChecksum(pIpHdr);
+}
+
+
+/**
  * Carves out the specified segment in a destructive manner.
  *
  * This is for sequentially carving out segments and pushing them along for
@@ -324,11 +403,9 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
      * do the protocol specific carving.
      */
     uint8_t * const pbSegHdrs    = pbFrame + pGso->cbMaxSeg * iSeg;
-    uint8_t * const pbSegPayload = pbSegHdrs + pGso->cbHdrs;
-    uint32_t const  cbSegPayload = iSeg + 1 != cSegs
-                                 ? pGso->cbMaxSeg
-                                 : (uint32_t)(cbFrame - iSeg * pGso->cbMaxSeg - pGso->cbHdrs);
-    uint32_t const  cbSegFrame   = cbSegPayload + pGso->cbHdrs;
+    uint8_t * const pbSegPayload = pbSegHdrs + pGso->cbHdrsSeg;
+    uint32_t const  cbSegPayload = pdmNetSegPayloadLen(pGso, iSeg, cSegs, cbFrame);
+    uint32_t const  cbSegFrame   = cbSegPayload + pGso->cbHdrsSeg;
 
     /*
      * Check assumptions (doing it after declaring the variables because of C).
@@ -341,44 +418,47 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
      * Copy the header and do the protocol specific massaging of it.
      */
     if (iSeg != 0)
-        memcpy(pbSegHdrs, pbHdrScatch, pGso->cbHdrs);
+        memcpy(pbSegHdrs, pbHdrScatch, pGso->cbHdrsSeg);
     else
-        memcpy(pbHdrScatch, pbSegHdrs, pGso->cbHdrs);
+        memcpy(pbHdrScatch, pbSegHdrs, pGso->cbHdrsSeg); /* There is no need to save UDP header */
 
     switch ((PDMNETWORKGSOTYPE)pGso->u8Type)
     {
         case PDMNETWORKGSOTYPE_IPV4_TCP:
-            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs),
+            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrsSeg),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
-                                  pGso->cbHdrs, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
+                                  pGso->cbHdrsSeg, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_IPV4_UDP:
-            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs),
-                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs, PDMNETCSUMTYPE_COMPLETE);
+            if (iSeg == 0)
+                pdmNetGsoUpdateUdpHdrUfo(RTNetIPv4PseudoChecksum((PRTNETIPV4)&pbFrame[pGso->offHdr1]),
+                                         pbSegHdrs, pbFrame, pGso->offHdr2);
+            pdmNetGsoUpdateIPv4HdrUfo(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg * pGso->cbMaxSeg,
+                                      pdmNetSegHdrLen(pGso, iSeg), iSeg + 1 == cSegs);
             break;
         case PDMNETWORKGSOTYPE_IPV6_TCP:
-            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrs,
+            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrsSeg,
                                                          pGso->offHdr2, RTNETIPV4_PROT_TCP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
-                                  pGso->cbHdrs, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
+                                  pGso->cbHdrsSeg, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_IPV6_UDP:
-            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrs,
+            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrsSeg,
                                                          pGso->offHdr2, RTNETIPV4_PROT_UDP),
-                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs, PDMNETCSUMTYPE_COMPLETE);
+                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrsSeg, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
-            pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs);
+            pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrsSeg);
             pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pgmNetGsoCalcIpv6Offset(pbSegHdrs, pGso->offHdr1),
-                                                         cbSegPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_TCP),
+                                                         cbSegPayload, pGso->cbHdrsSeg, pGso->offHdr2, RTNETIPV4_PROT_TCP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
-                                  pGso->cbHdrs, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
+                                  pGso->cbHdrsSeg, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
-            pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs);
+            pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrsSeg);
             pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pgmNetGsoCalcIpv6Offset(pbSegHdrs, pGso->offHdr1),
-                                                         cbSegPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_UDP),
-                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs, PDMNETCSUMTYPE_COMPLETE);
+                                                         cbSegPayload, pGso->cbHdrsSeg, pGso->offHdr2, RTNETIPV4_PROT_UDP),
+                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrsSeg, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_INVALID:
         case PDMNETWORKGSOTYPE_END:
@@ -411,20 +491,22 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
  *                              that's been carved out.  The buffer must be at
  *                              least pGso->cbHdrs in size, using a 256 byte
  *                              buffer is a recommended simplification.
+ * @param   pcbSegHdrs          Where to return the size of the returned
+ *                              segment headers.
  * @param   pcbSegPayload       Where to return the size of the returned
  *                              segment payload.
  */
 DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *pbFrame, size_t cbFrame,
-                                           uint32_t iSeg, uint32_t cSegs, uint8_t *pbSegHdrs, uint32_t *pcbSegPayload)
+                                           uint32_t iSeg, uint32_t cSegs, uint8_t *pbSegHdrs, 
+                                           uint32_t *pcbSegHdrs, uint32_t *pcbSegPayload)
 {
     /*
      * Figure out where the payload is and where the header starts before we
      * do the protocol specific carving.
      */
-    uint8_t const * const pbSegPayload = pbFrame + pGso->cbHdrs + iSeg * pGso->cbMaxSeg;
-    uint32_t const        cbSegPayload = iSeg + 1 != cSegs
-                                       ? pGso->cbMaxSeg
-                                       : (uint32_t)(cbFrame - iSeg * pGso->cbMaxSeg - pGso->cbHdrs);
+    uint32_t const        cbSegHdrs    = pdmNetSegHdrLen(pGso, iSeg);
+    uint8_t const * const pbSegPayload = pbFrame + cbSegHdrs + iSeg * pGso->cbMaxSeg;
+    uint32_t const        cbSegPayload = pdmNetSegPayloadLen(pGso, iSeg, cSegs, cbFrame);
 
     /*
      * Check assumptions (doing it after declaring the variables because of C).
@@ -436,42 +518,45 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
     /*
      * Copy the header and do the protocol specific massaging of it.
      */
-    memcpy(pbSegHdrs, pbFrame, pGso->cbHdrs);
+    memcpy(pbSegHdrs, pbFrame, pGso->cbHdrsTotal); /* include UDP header */
 
     switch ((PDMNETWORKGSOTYPE)pGso->u8Type)
     {
         case PDMNETWORKGSOTYPE_IPV4_TCP:
-            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs),
+            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, cbSegHdrs),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
-                                  pGso->cbHdrs, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
+                                  cbSegHdrs, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_IPV4_UDP:
-            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs),
-                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs, PDMNETCSUMTYPE_COMPLETE);
+            if (iSeg == 0)
+                pdmNetGsoUpdateUdpHdrUfo(RTNetIPv4PseudoChecksum((PRTNETIPV4)&pbFrame[pGso->offHdr1]),
+                                         pbSegHdrs, pbFrame, pGso->offHdr2);
+            pdmNetGsoUpdateIPv4HdrUfo(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg * pGso->cbMaxSeg,
+                                      cbSegHdrs, iSeg + 1 == cSegs);
             break;
         case PDMNETWORKGSOTYPE_IPV6_TCP:
-            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrs,
+            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, cbSegHdrs,
                                                          pGso->offHdr2, RTNETIPV4_PROT_TCP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
-                                  pGso->cbHdrs, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
+                                  cbSegHdrs, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_IPV6_UDP:
-            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrs,
+            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, cbSegHdrs,
                                                          pGso->offHdr2, RTNETIPV4_PROT_UDP),
-                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs, PDMNETCSUMTYPE_COMPLETE);
+                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, cbSegHdrs, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
-            pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs);
+            pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, cbSegHdrs);
             pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pgmNetGsoCalcIpv6Offset(pbSegHdrs, pGso->offHdr1),
-                                                         cbSegPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_TCP),
+                                                         cbSegPayload, cbSegHdrs, pGso->offHdr2, RTNETIPV4_PROT_TCP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
-                                  pGso->cbHdrs, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
+                                  cbSegHdrs, iSeg + 1 == cSegs, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
-            pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs);
+            pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, cbSegHdrs);
             pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pgmNetGsoCalcIpv6Offset(pbSegHdrs, pGso->offHdr1),
-                                                         cbSegPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_UDP),
-                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs, PDMNETCSUMTYPE_COMPLETE);
+                                                         cbSegPayload, cbSegHdrs, pGso->offHdr2, RTNETIPV4_PROT_UDP),
+                                  pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, cbSegHdrs, PDMNETCSUMTYPE_COMPLETE);
             break;
         case PDMNETWORKGSOTYPE_INVALID:
         case PDMNETWORKGSOTYPE_END:
@@ -479,8 +564,9 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
             break;
     }
 
+    *pcbSegHdrs    = cbSegHdrs;
     *pcbSegPayload = cbSegPayload;
-    return pGso->cbHdrs + iSeg * pGso->cbMaxSeg;
+    return cbSegHdrs + iSeg * pGso->cbMaxSeg;
 }
 
 
@@ -500,9 +586,9 @@ DECLINLINE(void) PDMNetGsoPrepForDirectUse(PCPDMNETWORKGSO pGso, void *pvFrame, 
      * do the protocol bits.
      */
     uint8_t * const pbHdrs    = (uint8_t *)pvFrame;
-    uint8_t * const pbPayload = pbHdrs  + pGso->cbHdrs;
+    uint8_t * const pbPayload = pbHdrs  + pGso->cbHdrsTotal;
     uint32_t  const cbFrame32 = (uint32_t)cbFrame;
-    uint32_t  const cbPayload = cbFrame32 - pGso->cbHdrs;
+    uint32_t  const cbPayload = cbFrame32 - pGso->cbHdrsTotal;
 
     /*
      * Check assumptions (doing it after declaring the variables because of C).
@@ -515,34 +601,34 @@ DECLINLINE(void) PDMNetGsoPrepForDirectUse(PCPDMNETWORKGSO pGso, void *pvFrame, 
     switch ((PDMNETWORKGSOTYPE)pGso->u8Type)
     {
         case PDMNETWORKGSOTYPE_IPV4_TCP:
-            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbFrame32 - pGso->cbHdrs, 0, pGso->cbHdrs),
-                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, 0, pGso->cbHdrs, true, enmCsumType);
+            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbFrame32 - pGso->cbHdrsTotal, 0, pGso->cbHdrsTotal),
+                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, 0, pGso->cbHdrsTotal, true, enmCsumType);
             break;
         case PDMNETWORKGSOTYPE_IPV4_UDP:
-            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbFrame32 - pGso->cbHdrs, 0, pGso->cbHdrs),
-                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, pGso->cbHdrs, enmCsumType);
+            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbFrame32 - pGso->cbHdrsTotal, 0, pGso->cbHdrsTotal),
+                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, pGso->cbHdrsTotal, enmCsumType);
             break;
         case PDMNETWORKGSOTYPE_IPV6_TCP:
-            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbHdrs, pGso->offHdr1, cbPayload, pGso->cbHdrs,
+            pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbHdrs, pGso->offHdr1, cbPayload, pGso->cbHdrsTotal,
                                                          pGso->offHdr2, RTNETIPV4_PROT_TCP),
-                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, 0, pGso->cbHdrs, true, enmCsumType);
+                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, 0, pGso->cbHdrsTotal, true, enmCsumType);
             break;
         case PDMNETWORKGSOTYPE_IPV6_UDP:
-            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbHdrs, pGso->offHdr1, cbPayload, pGso->cbHdrs,
+            pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbHdrs, pGso->offHdr1, cbPayload, pGso->cbHdrsTotal,
                                                          pGso->offHdr2, RTNETIPV4_PROT_UDP),
-                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, pGso->cbHdrs, enmCsumType);
+                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, pGso->cbHdrsTotal, enmCsumType);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
-            pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbPayload, 0, pGso->cbHdrs);
+            pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbPayload, 0, pGso->cbHdrsTotal);
             pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbHdrs, pgmNetGsoCalcIpv6Offset(pbHdrs, pGso->offHdr1),
-                                                         cbPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_TCP),
-                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, 0, pGso->cbHdrs, true, enmCsumType);
+                                                         cbPayload, pGso->cbHdrsTotal, pGso->offHdr2, RTNETIPV4_PROT_TCP),
+                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, 0, pGso->cbHdrsTotal, true, enmCsumType);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
-            pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbPayload, 0, pGso->cbHdrs);
+            pdmNetGsoUpdateIPv4Hdr(pbHdrs, pGso->offHdr1, cbPayload, 0, pGso->cbHdrsTotal);
             pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbHdrs, pgmNetGsoCalcIpv6Offset(pbHdrs, pGso->offHdr1),
-                                                         cbPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_UDP),
-                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, pGso->cbHdrs, enmCsumType);
+                                                         cbPayload, pGso->cbHdrsTotal, pGso->offHdr2, RTNETIPV4_PROT_UDP),
+                                  pbHdrs, pGso->offHdr2, pbPayload, cbPayload, pGso->cbHdrsTotal, enmCsumType);
             break;
         case PDMNETWORKGSOTYPE_INVALID:
         case PDMNETWORKGSOTYPE_END:

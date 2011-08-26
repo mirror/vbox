@@ -947,7 +947,7 @@ typedef struct PDMNETWORKGSO
     /** The type of segmentation offloading we're performing (PDMNETWORKGSOTYPE). */
     uint8_t             u8Type;
     /** The total header size. */
-    uint8_t             cbHdrs;
+    uint8_t             cbHdrsTotal;
     /** The max segment size (MSS) to apply. */
     uint16_t            cbMaxSeg;
 
@@ -955,8 +955,10 @@ typedef struct PDMNETWORKGSO
     uint8_t             offHdr1;
     /** Offset of the second header (TCP / UDP).  0 if not not needed. */
     uint8_t             offHdr2;
+    /** The header size used for segmentation (equal to offHdr2 in UFO). */
+    uint8_t             cbHdrsSeg;
     /** Unused. */
-    uint8_t             au8Unused[2];
+    uint8_t             u8Unused;
 } PDMNETWORKGSO;
 /** Pointer to a GSO context. */
 typedef PDMNETWORKGSO *PPDMNETWORKGSO;

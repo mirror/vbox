@@ -74,12 +74,12 @@ DECLINLINE(void) IntNetSgInitTempSegs(PINTNETSG pSG, uint32_t cbTotal, unsigned 
     pSG->cUsers         = 1;
     pSG->fFlags         = INTNETSG_FLAGS_TEMP;
     pSG->GsoCtx.u8Type  = (uint8_t)PDMNETWORKGSOTYPE_INVALID;
-    pSG->GsoCtx.cbHdrs  = 0;
+    pSG->GsoCtx.cbHdrsTotal = 0;
+    pSG->GsoCtx.cbHdrsSeg   = 0;
     pSG->GsoCtx.cbMaxSeg= 0;
     pSG->GsoCtx.offHdr1 = 0;
     pSG->GsoCtx.offHdr2 = 0;
-    pSG->GsoCtx.au8Unused[0] = 0;
-    pSG->GsoCtx.au8Unused[1] = 0;
+    pSG->GsoCtx.u8Unused= 0;
 #if ARCH_BITS == 64
     pSG->uPadding       = 0;
 #endif
@@ -112,12 +112,12 @@ DECLINLINE(void) IntNetSgInitTempSegsGso(PINTNETSG pSG, uint32_t cbTotal, unsign
     pSG->cUsers         = 1;
     pSG->fFlags         = INTNETSG_FLAGS_TEMP;
     pSG->GsoCtx.u8Type  = pGso->u8Type;
-    pSG->GsoCtx.cbHdrs  = pGso->cbHdrs;
+    pSG->GsoCtx.cbHdrsTotal = pGso->cbHdrsTotal;
+    pSG->GsoCtx.cbHdrsSeg   = pGso->cbHdrsSeg;
     pSG->GsoCtx.cbMaxSeg= pGso->cbMaxSeg;
     pSG->GsoCtx.offHdr1 = pGso->offHdr1;
     pSG->GsoCtx.offHdr2 = pGso->offHdr2;
-    pSG->GsoCtx.au8Unused[0] = 0;
-    pSG->GsoCtx.au8Unused[1] = 0;
+    pSG->GsoCtx.u8Unused= 0;
 #if ARCH_BITS == 64
     pSG->uPadding       = 0;
 #endif

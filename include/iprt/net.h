@@ -257,6 +257,14 @@ typedef RTNETIPV4 const *PCRTNETIPV4;
 #define RTNETIPV4_PORT_BOOTPC   (68)
 /** @} */
 
+/** @name IPv4 Flags
+ * @{ */
+/** IPv4: Don't fragment */
+#define RTNETIPV4_FLAGS_DF      (0x4000)
+/** IPv4: More fragments */
+#define RTNETIPV4_FLAGS_MF      (0x2000)
+/** @} */
+
 RTDECL(uint16_t) RTNetIPv4HdrChecksum(PCRTNETIPV4 pIpHdr);
 RTDECL(bool)     RTNetIPv4IsHdrValid(PCRTNETIPV4 pIpHdr, size_t cbHdrMax, size_t cbPktMax, bool fChecksum);
 RTDECL(uint32_t) RTNetIPv4PseudoChecksum(PCRTNETIPV4 pIpHdr);

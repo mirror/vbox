@@ -2942,14 +2942,21 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     if (pCtx->dw2.fIP)
     {
         if (pCtx->dw2.fTCP)
+        {
             pGso->u8Type = PDMNETWORKGSOTYPE_IPV4_TCP;
+            pGso->cbHdrsSeg = pCtx->dw3.u8HDRLEN;
+        }
         else
+        {
             pGso->u8Type = PDMNETWORKGSOTYPE_IPV4_UDP;
+            pGso->cbHdrsSeg = pCtx->tu.u8CSS; /* IP header only */
+        }
         /** @todo Detect IPv4-IPv6 tunneling (need test setup since linux doesn't do
          *        this yet it seems)... */
     }
     else
     {
+        pGso->cbHdrsSeg = pCtx->dw3.u8HDRLEN; /* @todo IPv6 UFO */
         if (pCtx->dw2.fTCP)
             pGso->u8Type = PDMNETWORKGSOTYPE_IPV6_TCP;
         else
@@ -2957,11 +2964,11 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     }
     pGso->offHdr1  = pCtx->ip.u8CSS;
     pGso->offHdr2  = pCtx->tu.u8CSS;
-    pGso->cbHdrs   = pCtx->dw3.u8HDRLEN;
+    pGso->cbHdrsTotal = pCtx->dw3.u8HDRLEN;
     pGso->cbMaxSeg = pCtx->dw3.u16MSS;
     Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), pGso->cbMaxSeg * 5));
-    E1kLog2(("e1kSetupGsoCtx: mss=%#x hdr=%#x hdr1=%#x hdr2=%#x %s\n",
-             pGso->cbMaxSeg, pGso->cbHdrs, pGso->offHdr1, pGso->offHdr2, PDMNetGsoTypeName((PDMNETWORKGSOTYPE)pGso->u8Type) ));
+    E1kLog2(("e1kSetupGsoCtx: mss=%#x hdr=%#x hdrseg=%#x hdr1=%#x hdr2=%#x %s\n",
+             pGso->cbMaxSeg, pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->offHdr1, pGso->offHdr2, PDMNetGsoTypeName((PDMNETWORKGSOTYPE)pGso->u8Type) ));
 }
 
 /**

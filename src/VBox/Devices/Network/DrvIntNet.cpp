@@ -768,9 +768,9 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                                     LogFlow(("drvR3IntNetRecvRun: %-4d bytes at %llu ns  deltas: r=%llu t=%llu; GSO - %u segs\n",
                                              cbFrame, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS, cSegs));
                                     pThis->u64LastReceiveTS = u64Now;
-                                    Log2(("drvR3IntNetRecvRun: cbFrame=%#x type=%d cbHdrs=%#x Hdr1=%#x Hdr2=%#x MMS=%#x\n"
+                                    Log2(("drvR3IntNetRecvRun: cbFrame=%#x type=%d cbHdrsTotal=%#x cbHdrsSeg=%#x Hdr1=%#x Hdr2=%#x MMS=%#x\n"
                                           "%.*Rhxd\n",
-                                          cbFrame, pGso->u8Type, pGso->cbHdrs, pGso->offHdr1, pGso->offHdr2, pGso->cbMaxSeg,
+                                          cbFrame, pGso->u8Type, pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->offHdr1, pGso->offHdr2, pGso->cbMaxSeg,
                                           cbFrame - sizeof(*pGso), pGso + 1));
                                 }
 #endif
@@ -792,8 +792,8 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                         }
                         else
                         {
-                            AssertMsgFailed(("cbFrame=%#x type=%d cbHdrs=%#x Hdr1=%#x Hdr2=%#x MMS=%#x\n",
-                                             cbFrame, pGso->u8Type, pGso->cbHdrs, pGso->offHdr1, pGso->offHdr2, pGso->cbMaxSeg));
+                            AssertMsgFailed(("cbFrame=%#x type=%d cbHdrsTotal=%#x cbHdrsSeg=%#x Hdr1=%#x Hdr2=%#x MMS=%#x\n",
+                                             cbFrame, pGso->u8Type, pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->offHdr1, pGso->offHdr2, pGso->cbMaxSeg));
                             STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
                         }
 
