@@ -1197,7 +1197,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
          * We need to set checksum fields even if the packet goes to the host
          * directly as it may be immediately forwarded by IP layer @bugref{5020}.
          */
-        Assert(skb_headlen(pPkt) >= pSG->GsoCtx.cbHdrs);
+        Assert(skb_headlen(pPkt) >= pSG->GsoCtx.cbHdrsTotal);
         pPkt->ip_summed  = CHECKSUM_PARTIAL;
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
         pPkt->csum_start = skb_headroom(pPkt) + pSG->GsoCtx.offHdr2;
@@ -1459,6 +1459,7 @@ static void vboxNetFltLinuxDestroySG(PINTNETSG pSG)
  */
 static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhere, int iIncrement)
 {
+    int i, offSeg;
     uint8_t *pInt, *pExt;
     static int iPacketNo = 1;
     iPacketNo += iIncrement;
@@ -1478,7 +1479,20 @@ static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhe
          fEgress ? "-->" : "<--", pszWhere,
          pExt[0], pExt[1], pExt[2], pExt[3], pExt[4], pExt[5],
          pSG->cbTotal, iPacketNo));
-    Log3(("%.*Rhxd\n", pSG->aSegs[0].cb, pSG->aSegs[0].pv));
+    if (pSG->cSegsUsed == 1)
+    {
+        Log3(("%.*Rhxd\n", pSG->aSegs[0].cb, pSG->aSegs[0].pv));
+    }
+    else
+    {
+        for (i = 0, offSeg = 0; i < pSG->cSegsUsed; i++)
+        {
+            Log3(("-- segment %d at 0x%x (%d bytes) --\n%.*Rhxd\n",
+                  i, offSeg, pSG->aSegs[i].cb, pSG->aSegs[i].cb, pSG->aSegs[i].pv));
+            offSeg += pSG->aSegs[i].cb;
+        }
+    }
+
 }
 #else
 # define vboxNetFltDumpPacket(a, b, c, d) do {} while (0)
@@ -1662,6 +1676,7 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
         }
 
         cbTransportHdr = pTcp->th_off * 4;
+        pGsoCtx->cbHdrsSeg = offTransport + cbTransportHdr;
         if (RT_UNLIKELY(   cbTransportHdr < RTNETTCP_MIN_LEN
                         || cbTransportHdr > cbTransport
                         || offTransport + cbTransportHdr >= UINT8_MAX
@@ -1676,6 +1691,7 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
     {
         Assert(uProtocol == RTNETIPV4_PROT_UDP);
         cbTransportHdr = sizeof(RTNETUDP);
+        pGsoCtx->cbHdrsSeg = offTransport; /* Exclude UDP header */
         if (RT_UNLIKELY(   offTransport + cbTransportHdr >= UINT8_MAX
                         || offTransport + cbTransportHdr >= pSkb->len ))
         {
@@ -1688,12 +1704,11 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
      * We're good, init the GSO context.
      */
     pGsoCtx->u8Type       = enmGsoType;
-    pGsoCtx->cbHdrs       = offTransport + cbTransportHdr;
+    pGsoCtx->cbHdrsTotal  = offTransport + cbTransportHdr;
     pGsoCtx->cbMaxSeg     = skb_shinfo(pSkb)->gso_size;
     pGsoCtx->offHdr1      = pSkb->mac_len;
     pGsoCtx->offHdr2      = offTransport;
-    pGsoCtx->au8Unused[0] = 0;
-    pGsoCtx->au8Unused[1] = 0;
+    pGsoCtx->u8Unused     = 0;
 
     return true;
 }
@@ -1947,6 +1962,11 @@ static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
             if (fFeatures & NETIF_F_UFO)
                 fGsoCapabilites |= RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP);
 # endif
+            Log3(("vboxNetFltLinuxReportNicGsoCapabilities: reporting wire %s%s%s%s\n",
+                  (fGsoCapabilites & RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_TCP)) ? "tso " : "",
+                  (fGsoCapabilites & RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP)) ? "tso6 " : "",
+                  (fGsoCapabilites & RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_UDP)) ? "ufo " : "",
+                  (fGsoCapabilites & RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP)) ? "ufo6 " : ""));
             pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort, fGsoCapabilites, INTNETTRUNKDIR_WIRE);
         }
 
@@ -2425,12 +2445,13 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
      */
     /** @todo duplicate work here now? Attach */
 #if defined(VBOXNETFLT_WITH_GSO_XMIT_HOST)
+    Log3(("vboxNetFltOsConnectIt: reporting host tso tso6 ufo\n"));
     pThis->pSwitchPort->pfnReportGsoCapabilities(pThis->pSwitchPort,
                                                  0
                                                  | RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_TCP)
                                                  | RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_TCP)
-# if 0 /** @todo GSO: Test UDP offloading (UFO) on linux. */
                                                  | RT_BIT_32(PDMNETWORKGSOTYPE_IPV4_UDP)
+# if 0 /** @todo GSO: Test UDP offloading (UFO) on linux. */
                                                  | RT_BIT_32(PDMNETWORKGSOTYPE_IPV6_UDP)
 # endif
                                                  , INTNETTRUNKDIR_HOST);

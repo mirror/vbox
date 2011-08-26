@@ -400,17 +400,17 @@ static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
             {
                 size_t cbSeg;
                 void  *pvSeg;
-                m = slirp_ext_m_get(pThis->pNATState, pGso->cbHdrs + pGso->cbMaxSeg, &pvSeg, &cbSeg);
+                m = slirp_ext_m_get(pThis->pNATState, pGso->cbHdrsTotal + pGso->cbMaxSeg, &pvSeg, &cbSeg);
                 if (!m)
                     break;
 
 #if 1
-                uint32_t cbPayload;
+                uint32_t cbPayload, cbHdrs;
                 uint32_t offPayload = PDMNetGsoCarveSegment(pGso, pbFrame, pSgBuf->cbUsed,
-                                                            iSeg, cSegs, (uint8_t *)pvSeg, &cbPayload);
-                memcpy((uint8_t *)pvSeg + pGso->cbHdrs, pbFrame + offPayload, cbPayload);
+                                                            iSeg, cSegs, (uint8_t *)pvSeg, &cbHdrs, &cbPayload);
+                memcpy((uint8_t *)pvSeg + cbHdrs, pbFrame + offPayload, cbPayload);
 
-                slirp_input(pThis->pNATState, m, cbPayload + pGso->cbHdrs);
+                slirp_input(pThis->pNATState, m, cbPayload + cbHdrs);
 #else
                 uint32_t cbSegFrame;
                 void *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)pbFrame, pSgBuf->cbUsed, abHdrScratch,

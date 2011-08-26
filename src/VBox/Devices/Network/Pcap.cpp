@@ -156,17 +156,17 @@ int PcapStreamGsoFrame(PRTSTREAM pStream, uint64_t StartNanoTS, PCPDMNETWORKGSO 
     uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
     for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
     {
-        uint32_t cbSegPayload;
-        uint32_t offSegPayload = PDMNetGsoCarveSegment(pGso, pbFrame, cbFrame, iSeg, cSegs, abHdrs, &cbSegPayload);
+        uint32_t cbSegPayload, cbHdrs;
+        uint32_t offSegPayload = PDMNetGsoCarveSegment(pGso, pbFrame, cbFrame, iSeg, cSegs, abHdrs, &cbHdrs, &cbSegPayload);
 
-        pcapUpdateHeader(&Hdr, pGso->cbHdrs + cbSegPayload, cbSegMax);
+        pcapUpdateHeader(&Hdr, cbHdrs + cbSegPayload, cbSegMax);
         int rc = RTStrmWrite(pStream, &Hdr, sizeof(Hdr));
         if (RT_FAILURE(rc))
             return rc;
 
-        rc = RTStrmWrite(pStream, abHdrs, RT_MIN(Hdr.incl_len, pGso->cbHdrs));
-        if (RT_SUCCESS(rc) && Hdr.incl_len > pGso->cbHdrs)
-            rc = RTStrmWrite(pStream, pbFrame + offSegPayload, Hdr.incl_len - pGso->cbHdrs);
+        rc = RTStrmWrite(pStream, abHdrs, RT_MIN(Hdr.incl_len, cbHdrs));
+        if (RT_SUCCESS(rc) && Hdr.incl_len > cbHdrs)
+            rc = RTStrmWrite(pStream, pbFrame + offSegPayload, Hdr.incl_len - cbHdrs);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -236,17 +236,17 @@ int PcapFileGsoFrame(RTFILE File, uint64_t StartNanoTS, PCPDMNETWORKGSO pGso,
     uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
     for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
     {
-        uint32_t cbSegPayload;
-        uint32_t offSegPayload = PDMNetGsoCarveSegment(pGso, pbFrame, cbFrame, iSeg, cSegs, abHdrs, &cbSegPayload);
+        uint32_t cbSegPayload, cbHdrs;
+        uint32_t offSegPayload = PDMNetGsoCarveSegment(pGso, pbFrame, cbFrame, iSeg, cSegs, abHdrs, &cbHdrs, &cbSegPayload);
 
-        pcapUpdateHeader(&Hdr, pGso->cbHdrs + cbSegPayload, cbSegMax);
+        pcapUpdateHeader(&Hdr, cbHdrs + cbSegPayload, cbSegMax);
         int rc = RTFileWrite(File, &Hdr, sizeof(Hdr), NULL);
         if (RT_FAILURE(rc))
             return rc;
 
-        rc = RTFileWrite(File, abHdrs, RT_MIN(Hdr.incl_len, pGso->cbHdrs), NULL);
-        if (RT_SUCCESS(rc) && Hdr.incl_len > pGso->cbHdrs)
-            rc = RTFileWrite(File, pbFrame + offSegPayload, Hdr.incl_len - pGso->cbHdrs, NULL);
+        rc = RTFileWrite(File, abHdrs, RT_MIN(Hdr.incl_len, cbHdrs), NULL);
+        if (RT_SUCCESS(rc) && Hdr.incl_len > cbHdrs)
+            rc = RTFileWrite(File, pbFrame + offSegPayload, Hdr.incl_len - cbHdrs, NULL);
         if (RT_FAILURE(rc))
             return rc;
     }

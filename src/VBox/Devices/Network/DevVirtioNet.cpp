@@ -724,9 +724,9 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb,
 
     if (pGso)
     {
-        Log2(("%s vnetHandleRxPacket: gso type=%x cbHdr=%u mss=%u"
+        Log2(("%s vnetHandleRxPacket: gso type=%x cbHdrsTotal=%u cbHdrsSeg=%u mss=%u"
               " off1=0x%x off2=0x%x\n", INSTANCE(pState), pGso->u8Type,
-              pGso->cbHdrs, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
+              pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
         Hdr.Hdr.u8Flags = VNETHDR_F_NEEDS_CSUM;
         switch (pGso->u8Type)
         {
@@ -745,7 +745,7 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb,
             default:
                 return VERR_INVALID_PARAMETER;
         }
-        Hdr.Hdr.u16HdrLen = pGso->cbHdrs;
+        Hdr.Hdr.u16HdrLen = pGso->cbHdrsTotal;
         Hdr.Hdr.u16GSOSize = pGso->cbMaxSeg;
         Hdr.Hdr.u16CSumStart = pGso->offHdr2;
         STAM_REL_COUNTER_INC(&pState->StatReceiveGSO);
@@ -980,12 +980,15 @@ DECLINLINE(PPDMNETWORKGSO) vnetSetupGsoCtx(PPDMNETWORKGSO pGso, VNETHDR const *p
     {
         case VNETHDR_GSO_TCPV4:
             pGso->u8Type = PDMNETWORKGSOTYPE_IPV4_TCP;
+            pGso->cbHdrsSeg = pHdr->u16HdrLen;
             break;
         case VNETHDR_GSO_TCPV6:
             pGso->u8Type = PDMNETWORKGSOTYPE_IPV6_TCP;
+            pGso->cbHdrsSeg = pHdr->u16HdrLen;
             break;
         case VNETHDR_GSO_UDP:
             pGso->u8Type = PDMNETWORKGSOTYPE_IPV4_UDP;
+            pGso->cbHdrsSeg = pHdr->u16CSumStart;
             break;
         default:
             return NULL;
@@ -997,9 +1000,9 @@ DECLINLINE(PPDMNETWORKGSO) vnetSetupGsoCtx(PPDMNETWORKGSO pGso, VNETHDR const *p
         AssertMsgFailed(("GSO without checksum offloading!\n"));
         return NULL;
     }
-    pGso->offHdr1  = sizeof(RTNETETHERHDR);
-    pGso->cbHdrs   = pHdr->u16HdrLen;
-    pGso->cbMaxSeg = pHdr->u16GSOSize;
+    pGso->offHdr1     = sizeof(RTNETETHERHDR);
+    pGso->cbHdrsTotal = pHdr->u16HdrLen;
+    pGso->cbMaxSeg    = pHdr->u16GSOSize;
     return pGso;
 }
 
@@ -1122,26 +1125,26 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
                         //if (pGso->cbHdrs < Hdr.u16CSumStart + Hdr.u16CSumOffset + 2)
                         {
                             Log4(("%s vnetTransmitPendingPackets: HdrLen before adjustment %d.\n",
-                                  INSTANCE(pState), pGso->cbHdrs));
+                                  INSTANCE(pState), pGso->cbHdrsTotal));
                             switch (pGso->u8Type)
                             {
                                 case PDMNETWORKGSOTYPE_IPV4_TCP:
                                 case PDMNETWORKGSOTYPE_IPV6_TCP:
-                                    pGso->cbHdrs = Hdr.u16CSumStart +
+                                    pGso->cbHdrsTotal = Hdr.u16CSumStart +
                                         ((PRTNETTCP)(((uint8_t*)pSgBuf->aSegs[0].pvSeg) + Hdr.u16CSumStart))->th_off * 4;
                                     break;
                                 case PDMNETWORKGSOTYPE_IPV4_UDP:
-                                    pGso->cbHdrs = Hdr.u16CSumStart + sizeof(RTNETUDP);
+                                    pGso->cbHdrsTotal = Hdr.u16CSumStart + sizeof(RTNETUDP);
                                     break;
                             }
                             /* Update GSO structure embedded into the frame */
-                            ((PPDMNETWORKGSO)pSgBuf->pvUser)->cbHdrs = pGso->cbHdrs;
+                            ((PPDMNETWORKGSO)pSgBuf->pvUser)->cbHdrsTotal = pGso->cbHdrsTotal;
                             Log4(("%s vnetTransmitPendingPackets: adjusted HdrLen to %d.\n",
-                                  INSTANCE(pState), pGso->cbHdrs));
+                                  INSTANCE(pState), pGso->cbHdrsTotal));
                         }
-                        Log2(("%s vnetTransmitPendingPackets: gso type=%x cbHdr=%u mss=%u"
+                        Log2(("%s vnetTransmitPendingPackets: gso type=%x cbHdrsTotal=%u cbHdrsSeg=%u mss=%u"
                               " off1=0x%x off2=0x%x\n", INSTANCE(pState), pGso->u8Type,
-                              pGso->cbHdrs, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
+                              pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
                         STAM_REL_COUNTER_INC(&pState->StatTransmitGSO);
                     }
                     else if (Hdr.u8Flags & VNETHDR_F_NEEDS_CSUM)
