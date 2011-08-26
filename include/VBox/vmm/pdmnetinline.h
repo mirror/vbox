@@ -404,7 +404,7 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
      */
     uint8_t * const pbSegHdrs    = pbFrame + pGso->cbMaxSeg * iSeg;
     uint8_t * const pbSegPayload = pbSegHdrs + pGso->cbHdrsSeg;
-    uint32_t const  cbSegPayload = pdmNetSegPayloadLen(pGso, iSeg, cSegs, cbFrame);
+    uint32_t const  cbSegPayload = pdmNetSegPayloadLen(pGso, iSeg, cSegs, (uint32_t)cbFrame);
     uint32_t const  cbSegFrame   = cbSegPayload + pGso->cbHdrsSeg;
 
     /*
@@ -506,7 +506,7 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
      */
     uint32_t const        cbSegHdrs    = pdmNetSegHdrLen(pGso, iSeg);
     uint8_t const * const pbSegPayload = pbFrame + cbSegHdrs + iSeg * pGso->cbMaxSeg;
-    uint32_t const        cbSegPayload = pdmNetSegPayloadLen(pGso, iSeg, cSegs, cbFrame);
+    uint32_t const        cbSegPayload = pdmNetSegPayloadLen(pGso, iSeg, cSegs, (uint32_t)cbFrame);
 
     /*
      * Check assumptions (doing it after declaring the variables because of C).
