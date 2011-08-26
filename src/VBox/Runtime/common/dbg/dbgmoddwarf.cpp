@@ -31,6 +31,7 @@
 #include <iprt/dbg.h>
 #include "internal/iprt.h"
 
+#include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
@@ -90,6 +91,28 @@ typedef struct RTDBGMODDWARF
 /** Pointer to instance data of the DWARF reader. */
 typedef RTDBGMODDWARF *PRTDBGMODDWARF;
 
+/**
+ * Section reader instance.
+ */
+typedef struct RTDWARFSECTRDR
+{
+    /** The DWARF debug info reader instance. */
+    PRTDBGMODDWARF          pDwarfMod;
+    /** The section we're reading.  */
+    krtDbgModDwarfSect      enmSect;
+    /** The current position. */
+    uint8_t const          *pb;
+    /** The number of bytes left to read. */
+    size_t                  cbLeft;
+    /** Set if this is 64-bit DWARF, clear if 32-bit. */
+    bool                    f64bit;
+    /** Set if the format endian is native, clear if endian needs to be
+     * inverted. */
+    bool                    fNativEndian;
+} RTDWARFSECTRDR;
+/** Pointer to a DWARF section reader. */
+typedef RTDWARFSECTRDR *PRTDWARFSECTRDR;
+
 
 
 /**
@@ -145,11 +168,188 @@ static int rtDbgModDwarfUnloadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect e
     if (!pThis->aSections[enmSect].pv)
         return VINF_SUCCESS;
 
-    int rc =  pThis->pMod->pImgVt->pfnUnmapPart(pThis->pMod, pThis->aSections[enmSect].cb, &pThis->aSections[enmSect].pv);
+    int rc = pThis->pMod->pImgVt->pfnUnmapPart(pThis->pMod, pThis->aSections[enmSect].cb, &pThis->aSections[enmSect].pv);
     AssertRC(rc);
     return rc;
 }
 
+
+/**
+ * Corrects the endianness of a 32-bit unsigned value.
+ *
+ * @returns The corrected value.
+ *
+ * @param   pThis       The DWARF instance.
+ * @param   pu32        The variable to correct.
+ */
+DECLINLINE(uint32_t) rtDbgModDwarfEndianU32(PRTDBGMODDWARF pThis, uint32_t *pu32)
+{
+    return *pu32;
+}
+
+
+/**
+ * Corrects the endianness of a 64-bit unsigned value.
+ *
+ * @returns The corrected value.
+ *
+ * @param   pThis       The DWARF instance.
+ * @param   pu64        The variable to correct.
+ */
+DECLINLINE(uint64_t) rtDbgModDwarfEndianU64(PRTDBGMODDWARF pThis, uint64_t *pu64)
+{
+    return *pu64;
+}
+
+
+static uint8_t rtDwarfSectRdrGetU8(PRTDWARFSECTRDR pSectRdr, uint8_t uErrValue)
+{
+    if (pSectRdr->cbLeft < 1)
+    {
+        pSectRdr->pb    += pSectRdr->cbLeft;
+        pSectRdr->cbLeft = 0;
+        return uErrValue;
+    }
+
+    uint8_t u8 = pSectRdr->pb[0];
+    pSectRdr->pb      += 1;
+    pSectRdr->cbLeft  -= 1;
+    return u8;
+}
+
+
+static uint16_t rtDwarfSectRdrGetU16(PRTDWARFSECTRDR pSectRdr, uint16_t uErrValue)
+{
+    if (pSectRdr->cbLeft < 2)
+    {
+        pSectRdr->pb    += pSectRdr->cbLeft;
+        pSectRdr->cbLeft = 0;
+        return uErrValue;
+    }
+
+    uint16_t u16 = RT_MAKE_U16(pSectRdr->pb[0], pSectRdr->pb[1]);
+    pSectRdr->pb      += 2;
+    pSectRdr->cbLeft  -= 2;
+    if (!pSectRdr->fNativEndian)
+        u16 = RT_BSWAP_U16(u16);
+    return u16;
+}
+
+
+static uint32_t rtDwarfSectRdrGetU32(PRTDWARFSECTRDR pSectRdr, uint32_t uErrValue)
+{
+    if (pSectRdr->cbLeft < 4)
+    {
+        pSectRdr->pb    += pSectRdr->cbLeft;
+        pSectRdr->cbLeft = 0;
+        return uErrValue;
+    }
+
+    uint32_t u32 = RT_MAKE_U32_FROM_U8(pSectRdr->pb[0], pSectRdr->pb[1], pSectRdr->pb[2], pSectRdr->pb[3]);
+    pSectRdr->pb      += 4;
+    pSectRdr->cbLeft  -= 4;
+    if (!pSectRdr->fNativEndian)
+        u32 = RT_BSWAP_U32(u32);
+    return u32;
+}
+
+
+static uint64_t rtDwarfSectRdrGetU64(PRTDWARFSECTRDR pSectRdr, uint64_t uErrValue)
+{
+    if (pSectRdr->cbLeft < 8)
+    {
+        pSectRdr->pb    += pSectRdr->cbLeft;
+        pSectRdr->cbLeft = uErrValue;
+        return 0;
+    }
+
+    uint64_t u64 = RT_MAKE_U64_FROM_U8(pSectRdr->pb[0], pSectRdr->pb[1], pSectRdr->pb[2], pSectRdr->pb[3],
+                                       pSectRdr->pb[4], pSectRdr->pb[5], pSectRdr->pb[6], pSectRdr->pb[7]);
+    pSectRdr->pb      += 8;
+    pSectRdr->cbLeft  -= 8;
+    if (!pSectRdr->fNativEndian)
+        u64 = RT_BSWAP_U64(u64);
+    return u64;
+}
+
+
+static uint16_t rtDwarfSectRdrGetUHalf(PRTDWARFSECTRDR pSectRdr, uint16_t uErrValue)
+{
+    return rtDwarfSectRdrGetU16(pSectRdr, uErrValue);
+}
+
+
+static uint8_t rtDwarfSectRdrGetUByte(PRTDWARFSECTRDR pSectRdr, uint8_t uErrValue)
+{
+    return rtDwarfSectRdrGetU8(pSectRdr, uErrValue);
+}
+
+
+static int8_t rtDwarfSectRdrGetSByte(PRTDWARFSECTRDR pSectRdr, int8_t iErrValue)
+{
+    return (int8_t)rtDwarfSectRdrGetU8(pSectRdr, (uint8_t)iErrValue);
+}
+
+
+static uint64_t rtDwarfSectRdrGetUOff(PRTDWARFSECTRDR pSectRdr, uint64_t uErrValue)
+{
+    if (pSectRdr->f64bit)
+        return rtDwarfSectRdrGetU64(pSectRdr, uErrValue);
+    return rtDwarfSectRdrGetU32(pSectRdr, (uint32_t)uErrValue);
+}
+
+
+/**
+ * Initialize a section reader.
+ *
+ * @returns IPRT status code.
+ * @param   pSectRdr            The section reader.
+ * @param   pThis               The dwarf module.
+ * @param   enmSect             .
+ */
+static int rtDwarfSectRdrInit(PRTDWARFSECTRDR pSectRdr, PRTDBGMODDWARF pThis, krtDbgModDwarfSect enmSect)
+{
+    int rc = rtDbgModDwarfLoadSection(pThis, enmSect);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pSectRdr->pDwarfMod    = pThis;
+    pSectRdr->enmSect      = enmSect;
+    pSectRdr->pb           = (uint8_t const *)pThis->aSections[krtDbgModDwarfSect_line].pv;
+    pSectRdr->cbLeft       = pThis->aSections[krtDbgModDwarfSect_line].cb;
+    pSectRdr->fNativEndian = true; /** @todo endian */
+    pSectRdr->f64bit       = false;
+
+    /*
+     * Read the initial length.
+     */
+    uint64_t cbUnit = rtDwarfSectRdrGetU32(pSectRdr, 0);
+    if (cbUnit == UINT32_C(0xffffffff))
+    {
+        pSectRdr->f64bit = true;
+        cbUnit = rtDwarfSectRdrGetU64(pSectRdr, 0);
+    }
+    if (cbUnit < pSectRdr->cbLeft)
+        pSectRdr->cbLeft = (size_t)cbUnit;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deletes a section reader initialized by rtDwarfSectRdrInit.
+ *
+ * @param   pSectRdr            The section reader.
+ */
+static void rtDwarfSectRdrDelete(PRTDWARFSECTRDR pSectRdr)
+{
+    rtDbgModDwarfUnloadSection(pSectRdr->pDwarfMod, pSectRdr->enmSect);
+
+    /* ... and a drop of poison. */
+    pSectRdr->pb = NULL;
+    pSectRdr->cbLeft = ~(size_t)0;
+    pSectRdr->enmSect = krtDbgModDwarfSect_End;
+}
 
 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnLineByAddr} */
@@ -300,20 +500,36 @@ static DECLCALLBACK(int) rtDbgModDwarf_Close(PRTDBGMODINT pMod)
  */
 static int rtDbgModDwarfExplodeLineNumbers(PRTDBGMODDWARF pThis)
 {
-    int rc = rtDbgModDwarfLoadSection(pThis, krtDbgModDwarfSect_line);
+    if (!pThis->aSections[krtDbgModDwarfSect_line].fPresent)
+        return VINF_SUCCESS;
+
+    RTDWARFSECTRDR SectRdr;
+    int rc = rtDwarfSectRdrInit(&SectRdr, pThis, krtDbgModDwarfSect_line);
     if (RT_FAILURE(rc))
         return rc;
 
-#if 0 /** @todo  */
-    size_t          cbLeft = pThis->aSections[krtDbgModDwarfSect_line].cb;
-    uint8_t const  *pb     = (uint8_t const *)pThis->aSections[krtDbgModDwarfSect_line].pv;
-    while (cbLeft > 0)
+    /*
+     * Parse the header.
+     */
+    uint32_t const uVer           = rtDwarfSectRdrGetUHalf(&SectRdr, 0);
+    uint64_t const cbSkipAfterHdr = rtDwarfSectRdrGetUOff(&SectRdr, 0);
+    uint8_t  const cbMinInstr     = rtDwarfSectRdrGetUByte(&SectRdr, 0);
+    uint8_t  const cbMaxInstr     = rtDwarfSectRdrGetUByte(&SectRdr, 0);
+    uint8_t  const fDefIsStmt     = rtDwarfSectRdrGetUByte(&SectRdr, 0);
+    int8_t   const i8LineBase     = rtDwarfSectRdrGetSByte(&SectRdr, 0);
+    uint8_t  const u8LineRange    = rtDwarfSectRdrGetUByte(&SectRdr, 0);
+    uint8_t  const u8OpcodeBase   = rtDwarfSectRdrGetUByte(&SectRdr, 0);
+    /*...*/
+
+    if (uVer >= 2 && uVer <= 4)
     {
+        /*
+         * Run the program....
+         */
 
     }
-#endif
 
-    rtDbgModDwarfUnloadSection(pThis, krtDbgModDwarfSect_line);
+    rtDwarfSectRdrDelete(&SectRdr);
     return rc;
 }
 
