@@ -822,7 +822,7 @@ typedef struct RTDWARFLINESTATE
     struct
     {
         uint64_t        uAddress;
-        uint32_t        idxOp;
+        uint64_t        idxOp;
         uint32_t        iFile;
         uint32_t        uLine;
         uint32_t        uColumn;
@@ -873,7 +873,7 @@ static int rtDwarfLine_DefineFileName(PRTDWARFLINESTATE pLnState, const char *ps
     /*
      * Resize the array if necessary.
      */
-    size_t iFileName = pLnState->cFileNames;
+    uint32_t iFileName = pLnState->cFileNames;
     if ((iFileName % 2) == 0)
     {
         void *pv = RTMemRealloc(pLnState->papszFileNames, sizeof(pLnState->papszFileNames[0]) * (iFileName + 2));
