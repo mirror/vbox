@@ -308,17 +308,17 @@ static bool qedHdrConvertToHostEndianess(PQedHeader pHeader)
  */
 static void qedHdrConvertFromHostEndianess(PQEDIMAGE pImage, PQedHeader pHeader)
 {
-    pHeader->u32Magic                 = RT_LE2H_U32(QED_MAGIC);
-    pHeader->u32ClusterSize           = RT_LE2H_U32(pImage->cbCluster);
-    pHeader->u32TableSize             = RT_LE2H_U32(pImage->cbTable / pImage->cbCluster);
-    pHeader->u32HeaderSize            = RT_LE2H_U32(1);
-    pHeader->u64FeatureFlags          = RT_LE2H_U64(pImage->pszBackingFilename ? QED_FEATURE_BACKING_FILE : 0);
-    pHeader->u64CompatFeatureFlags    = RT_LE2H_U64(0);
-    pHeader->u64AutoresetFeatureFlags = RT_LE2H_U64(0);
-    pHeader->u64OffL1Table            = RT_LE2H_U64(pImage->offL1Table);
-    pHeader->u64Size                  = RT_LE2H_U64(pImage->cbSize);
-    pHeader->u32OffBackingFilename    = RT_LE2H_U32(pImage->offBackingFilename);
-    pHeader->u32BackingFilenameSize   = RT_LE2H_U32(pImage->cbBackingFilename);
+    pHeader->u32Magic                 = RT_H2LE_U32(QED_MAGIC);
+    pHeader->u32ClusterSize           = RT_H2LE_U32(pImage->cbCluster);
+    pHeader->u32TableSize             = RT_H2LE_U32(pImage->cbTable / pImage->cbCluster);
+    pHeader->u32HeaderSize            = RT_H2LE_U32(1);
+    pHeader->u64FeatureFlags          = RT_H2LE_U64(pImage->pszBackingFilename ? QED_FEATURE_BACKING_FILE : 0);
+    pHeader->u64CompatFeatureFlags    = RT_H2LE_U64(0);
+    pHeader->u64AutoresetFeatureFlags = RT_H2LE_U64(0);
+    pHeader->u64OffL1Table            = RT_H2LE_U64(pImage->offL1Table);
+    pHeader->u64Size                  = RT_H2LE_U64(pImage->cbSize);
+    pHeader->u32OffBackingFilename    = RT_H2LE_U32(pImage->offBackingFilename);
+    pHeader->u32BackingFilenameSize   = RT_H2LE_U32(pImage->cbBackingFilename);
 }
 
 /**
@@ -531,14 +531,24 @@ static void qedL2TblCacheEntryInsert(PQEDIMAGE pImage, PQEDL2CACHEENTRY pL2Entry
     else
     {
         /* Insert into search list. */
-        RTListForEach(&pImage->ListSearch, pIt, QEDL2CACHEENTRY, NodeSearch)
+        pIt = RTListGetFirst(&pImage->ListSearch, QEDL2CACHEENTRY, NodeSearch);
+        if (pIt->offL2Tbl > pL2Entry->offL2Tbl)
+            RTListPrepend(&pImage->ListSearch, &pL2Entry->NodeSearch);
+        else
         {
-            Assert(pIt->offL2Tbl != pL2Entry->offL2Tbl);
-            if (pIt->offL2Tbl < pL2Entry->offL2Tbl)
+            bool fInserted = false;
+
+            RTListForEach(&pImage->ListSearch, pIt, QEDL2CACHEENTRY, NodeSearch)
             {
-                RTListNodeInsertAfter(&pIt->NodeSearch, &pL2Entry->NodeSearch);
-                break;
+                Assert(pIt->offL2Tbl != pL2Entry->offL2Tbl);
+                if (pIt->offL2Tbl < pL2Entry->offL2Tbl)
+                {
+                    RTListNodeInsertAfter(&pIt->NodeSearch, &pL2Entry->NodeSearch);
+                    fInserted = true;
+                    break;
+                }
             }
+             Assert(fInserted);
         }
     }
 }
@@ -574,12 +584,15 @@ static int qedL2TblCacheFetch(PQEDIMAGE pImage, uint64_t offL2Tbl, PQEDL2CACHEEN
             if (RT_SUCCESS(rc))
             {
 #if defined(RT_BIG_ENDIAN)
-                qedTableConvertToHostEndianness(pL2Entry->paL2Tbl, pImage->cTableEntries);
+                qedTableConvertToHostEndianess(pL2Entry->paL2Tbl, pImage->cTableEntries);
 #endif
                 qedL2TblCacheEntryInsert(pImage, pL2Entry);
             }
             else
+            {
+                qedL2TblCacheEntryRelease(pL2Entry);
                 qedL2TblCacheEntryFree(pImage, pL2Entry);
+            }
         }
         else
             rc = VERR_NO_MEMORY;
@@ -627,7 +640,7 @@ static int qedL2TblCacheFetchAsync(PQEDIMAGE pImage, PVDIOCTX pIoCtx,
             {
                 vdIfIoIntMetaXferRelease(pImage->pIfIo, pMetaXfer);
 #if defined(RT_BIG_ENDIAN)
-                qedTableConvertToHostEndianness(pL2Entry->paL2Tbl, pImage->cTableEntries);
+                qedTableConvertToHostEndianess(pL2Entry->paL2Tbl, pImage->cTableEntries);
 #endif
                 qedL2TblCacheEntryInsert(pImage, pL2Entry);
             }
@@ -856,7 +869,7 @@ static int qedFlushImage(PQEDIMAGE pImage)
         uint64_t *paL1TblImg = (uint64_t *)RTMemAllocZ(pImage->cbTable);
         if (paL1TblImg)
         {
-            qedTableConvertFromHostEndianess(p1L1TblImg, pImage->paL1Table,
+            qedTableConvertFromHostEndianess(paL1TblImg, pImage->paL1Table,
                                              pImage->cTableEntries);
             rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
                                         pImage->offL1Table, paL1TblImg,
@@ -905,7 +918,7 @@ static int qedFlushImageAsync(PQEDIMAGE pImage, PVDIOCTX pIoCtx)
         uint64_t *paL1TblImg = (uint64_t *)RTMemAllocZ(pImage->cbTable);
         if (paL1TblImg)
         {
-            qedTableConvertFromHostEndianess(p1L1TblImg, pImage->paL1Table,
+            qedTableConvertFromHostEndianess(paL1TblImg, pImage->paL1Table,
                                              pImage->cTableEntries);
             rc = vdIfIoIntFileWriteMetaAsync(pImage->pIfIo, pImage->pStorage,
                                              pImage->offL1Table, paL1TblImg,
@@ -1422,6 +1435,7 @@ static int qedAsyncClusterAllocRollback(PQEDIMAGE pImage, PVDIOCTX pIoCtx, PQEDC
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->cbImageOld);
             qedL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
             qedL2TblCacheEntryFree(pImage, pClusterAlloc->pL2Entry); /* Free it, it is not in the cache yet. */
+            break;
         }
         case QEDCLUSTERASYNCALLOCSTATE_USER_ALLOC:
         case QEDCLUSTERASYNCALLOCSTATE_USER_LINK:
@@ -1429,6 +1443,7 @@ static int qedAsyncClusterAllocRollback(PQEDIMAGE pImage, PVDIOCTX pIoCtx, PQEDC
             /* Assumption right now is that the L2 table is not modified if the link fails. */
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->cbImageOld);
             qedL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
+            break;
         }
         default:
             AssertMsgFailed(("Invalid cluster allocation state %d\n", pClusterAlloc->enmAllocState));
