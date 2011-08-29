@@ -35,9 +35,40 @@
 #include <iprt/err.h>
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include "internal/dbgmod.h"
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @name Standard DWARF Line Number Opcodes
+ * @{ */
+#define DW_LNS_extended             UINT8_C(0)
+#define DW_LNS_copy                 UINT8_C(1)
+#define DW_LNS_advance_pc           UINT8_C(2)
+#define DW_LNS_advance_line         UINT8_C(3)
+#define DW_LNS_set_file             UINT8_C(4)
+#define DW_LNS_set_column           UINT8_C(5)
+#define DW_LNS_negate_stmt          UINT8_C(6)
+#define DW_LNS_set_basic_block      UINT8_C(7)
+#define DW_LNS_const_add_pc         UINT8_C(8)
+#define DW_LNS_fixed_advance_pc     UINT8_C(9)
+#define DW_LNS_set_prologue_end     UINT8_C(10)
+#define DW_LNS_set_epilogue_begin   UINT8_C(11)
+#define DW_LNS_set_isa              UINT8_C(12)
+/** @} */
+
+
+/** @name Extended DWARF Line Number Opcodes
+ * @{ */
+#define DW_LNE_end_sequence         UINT8_C(1)
+#define DW_LNE_set_address          UINT8_C(2)
+#define DW_LNE_define_file          UINT8_C(3)
+#define DW_LNE_set_descriminator    UINT8_C(4)
+/** @} */
 
 
 /*******************************************************************************
@@ -96,23 +127,33 @@ typedef RTDBGMODDWARF *PRTDBGMODDWARF;
  */
 typedef struct RTDWARFSECTRDR
 {
-    /** The DWARF debug info reader instance. */
-    PRTDBGMODDWARF          pDwarfMod;
-    /** The section we're reading.  */
-    krtDbgModDwarfSect      enmSect;
     /** The current position. */
     uint8_t const          *pb;
     /** The number of bytes left to read. */
     size_t                  cbLeft;
+    /** The number of bytes left to read in the current unit. */
+    size_t                  cbUnitLeft;
+    /** The DWARF debug info reader instance. */
+    PRTDBGMODDWARF          pDwarfMod;
     /** Set if this is 64-bit DWARF, clear if 32-bit. */
-    bool                    f64bit;
+    bool                    f64bitDwarf;
     /** Set if the format endian is native, clear if endian needs to be
      * inverted. */
     bool                    fNativEndian;
-} RTDWARFSECTRDR;
+    /** The size of a native address. */
+    uint8_t                 cbNativeAddr;
+    /** The cursor status code.  This is VINF_SUCCESS until some error
+     *  occurs. */
+    int                     rc;
+} RTDWARFCURSOR;
 /** Pointer to a DWARF section reader. */
-typedef RTDWARFSECTRDR *PRTDWARFSECTRDR;
+typedef RTDWARFCURSOR *PRTDWARFCURSOR;
 
+
+#define VERR_DWARF_BAD_LINE_NUMBER_HEADER   -55555
+#define VERR_DWARF_UNEXPECTED_END           -55554
+#define VERR_DWARF_LEB_OVERFLOW             -55553
+#define VERR_DWARF_BAD_LNE                  -55552
 
 
 /**
@@ -175,127 +216,416 @@ static int rtDbgModDwarfUnloadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect e
 
 
 /**
- * Corrects the endianness of a 32-bit unsigned value.
+ * Converts to UTF-8 or otherwise makes sure it's valid UTF-8.
  *
- * @returns The corrected value.
- *
- * @param   pThis       The DWARF instance.
- * @param   pu32        The variable to correct.
+ * @returns IPRT status code.
+ * @param   pThis               The DWARF instance.
+ * @param   ppsz                Pointer to the string pointer.  May be
+ *                              reallocated (RTStr*).
  */
-DECLINLINE(uint32_t) rtDbgModDwarfEndianU32(PRTDBGMODDWARF pThis, uint32_t *pu32)
+static int rtDbgModDwarfStringToUtf8(PRTDBGMODDWARF pThis, char **ppsz)
 {
-    return *pu32;
+    RTStrPurgeEncoding(*ppsz);
+    return VINF_SUCCESS;
 }
 
 
 /**
- * Corrects the endianness of a 64-bit unsigned value.
+ * Convers a link address into a segment+offset or RVA.
  *
- * @returns The corrected value.
- *
- * @param   pThis       The DWARF instance.
- * @param   pu64        The variable to correct.
+ * @returns IPRT status code.
+ * @param   pThis           The DWARF instance.
+ * @param   LinkAddress     The address to convert..
+ * @param   piSeg           The segment index.
+ * @param   poffSeg         Where to return the segment offset.
  */
-DECLINLINE(uint64_t) rtDbgModDwarfEndianU64(PRTDBGMODDWARF pThis, uint64_t *pu64)
+static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, uint64_t LinkAddress,
+                                               PRTDBGSEGIDX piSeg, PRTUINTPTR poffSeg)
 {
-    return *pu64;
+    /** @todo The image should be doing this conversion, not we. */
+    *piSeg   = RTDBGSEGIDX_RVA;
+    *poffSeg = LinkAddress;
+    return VINF_SUCCESS;
 }
 
 
-static uint8_t rtDwarfSectRdrGetU8(PRTDWARFSECTRDR pSectRdr, uint8_t uErrValue)
+static uint8_t rtDwarfCursor_GetU8(PRTDWARFCURSOR pCursor, uint8_t uErrValue)
 {
-    if (pSectRdr->cbLeft < 1)
+    if (pCursor->cbUnitLeft < 1)
     {
-        pSectRdr->pb    += pSectRdr->cbLeft;
-        pSectRdr->cbLeft = 0;
+        pCursor->rc = VERR_DWARF_UNEXPECTED_END;
         return uErrValue;
     }
 
-    uint8_t u8 = pSectRdr->pb[0];
-    pSectRdr->pb      += 1;
-    pSectRdr->cbLeft  -= 1;
+    uint8_t u8 = pCursor->pb[0];
+    pCursor->pb         += 1;
+    pCursor->cbUnitLeft -= 1;
+    pCursor->cbLeft     -= 1;
     return u8;
 }
 
 
-static uint16_t rtDwarfSectRdrGetU16(PRTDWARFSECTRDR pSectRdr, uint16_t uErrValue)
+static uint16_t rtDwarfCursor_GetU16(PRTDWARFCURSOR pCursor, uint16_t uErrValue)
 {
-    if (pSectRdr->cbLeft < 2)
+    if (pCursor->cbUnitLeft < 2)
     {
-        pSectRdr->pb    += pSectRdr->cbLeft;
-        pSectRdr->cbLeft = 0;
+        pCursor->pb         += pCursor->cbUnitLeft;
+        pCursor->cbLeft     -= pCursor->cbUnitLeft;
+        pCursor->cbUnitLeft  = 0;
+        pCursor->rc          = VERR_DWARF_UNEXPECTED_END;
         return uErrValue;
     }
 
-    uint16_t u16 = RT_MAKE_U16(pSectRdr->pb[0], pSectRdr->pb[1]);
-    pSectRdr->pb      += 2;
-    pSectRdr->cbLeft  -= 2;
-    if (!pSectRdr->fNativEndian)
+    uint16_t u16 = RT_MAKE_U16(pCursor->pb[0], pCursor->pb[1]);
+    pCursor->pb         += 2;
+    pCursor->cbUnitLeft -= 2;
+    pCursor->cbLeft     -= 2;
+    if (!pCursor->fNativEndian)
         u16 = RT_BSWAP_U16(u16);
     return u16;
 }
 
 
-static uint32_t rtDwarfSectRdrGetU32(PRTDWARFSECTRDR pSectRdr, uint32_t uErrValue)
+static uint32_t rtDwarfCursor_GetU32(PRTDWARFCURSOR pCursor, uint32_t uErrValue)
 {
-    if (pSectRdr->cbLeft < 4)
+    if (pCursor->cbUnitLeft < 4)
     {
-        pSectRdr->pb    += pSectRdr->cbLeft;
-        pSectRdr->cbLeft = 0;
+        pCursor->pb         += pCursor->cbUnitLeft;
+        pCursor->cbLeft     -= pCursor->cbUnitLeft;
+        pCursor->cbUnitLeft  = 0;
+        pCursor->rc          = VERR_DWARF_UNEXPECTED_END;
         return uErrValue;
     }
 
-    uint32_t u32 = RT_MAKE_U32_FROM_U8(pSectRdr->pb[0], pSectRdr->pb[1], pSectRdr->pb[2], pSectRdr->pb[3]);
-    pSectRdr->pb      += 4;
-    pSectRdr->cbLeft  -= 4;
-    if (!pSectRdr->fNativEndian)
+    uint32_t u32 = RT_MAKE_U32_FROM_U8(pCursor->pb[0], pCursor->pb[1], pCursor->pb[2], pCursor->pb[3]);
+    pCursor->pb         += 4;
+    pCursor->cbUnitLeft -= 4;
+    pCursor->cbLeft     -= 4;
+    if (!pCursor->fNativEndian)
         u32 = RT_BSWAP_U32(u32);
     return u32;
 }
 
 
-static uint64_t rtDwarfSectRdrGetU64(PRTDWARFSECTRDR pSectRdr, uint64_t uErrValue)
+static uint64_t rtDwarfCursor_GetU64(PRTDWARFCURSOR pCursor, uint64_t uErrValue)
 {
-    if (pSectRdr->cbLeft < 8)
+    if (pCursor->cbUnitLeft < 8)
     {
-        pSectRdr->pb    += pSectRdr->cbLeft;
-        pSectRdr->cbLeft = uErrValue;
-        return 0;
+        pCursor->pb         += pCursor->cbUnitLeft;
+        pCursor->cbLeft     -= pCursor->cbUnitLeft;
+        pCursor->cbUnitLeft  = 0;
+        pCursor->rc          = VERR_DWARF_UNEXPECTED_END;
+        return uErrValue;
     }
 
-    uint64_t u64 = RT_MAKE_U64_FROM_U8(pSectRdr->pb[0], pSectRdr->pb[1], pSectRdr->pb[2], pSectRdr->pb[3],
-                                       pSectRdr->pb[4], pSectRdr->pb[5], pSectRdr->pb[6], pSectRdr->pb[7]);
-    pSectRdr->pb      += 8;
-    pSectRdr->cbLeft  -= 8;
-    if (!pSectRdr->fNativEndian)
+    uint64_t u64 = RT_MAKE_U64_FROM_U8(pCursor->pb[0], pCursor->pb[1], pCursor->pb[2], pCursor->pb[3],
+                                       pCursor->pb[4], pCursor->pb[5], pCursor->pb[6], pCursor->pb[7]);
+    pCursor->pb         += 8;
+    pCursor->cbUnitLeft -= 8;
+    pCursor->cbLeft     -= 8;
+    if (!pCursor->fNativEndian)
         u64 = RT_BSWAP_U64(u64);
     return u64;
 }
 
 
-static uint16_t rtDwarfSectRdrGetUHalf(PRTDWARFSECTRDR pSectRdr, uint16_t uErrValue)
+/**
+ * Gets a unsigned LEB128 encoded number.
+ *
+ * @returns unsigned number.
+ * @param   pCursor             The cursor.
+ * @param   uErrValue           The value to return on error.
+ */
+static uint64_t rtDwarfCursor_GetULeb128(PRTDWARFCURSOR pCursor, uint64_t uErrValue)
 {
-    return rtDwarfSectRdrGetU16(pSectRdr, uErrValue);
+    if (pCursor->cbUnitLeft < 1)
+    {
+        pCursor->rc = VERR_DWARF_UNEXPECTED_END;
+        return uErrValue;
+    }
+
+    /*
+     * Special case - single byte.
+     */
+    uint8_t b = pCursor->pb[0];
+    if (!(b & 0x80))
+    {
+        pCursor->pb         += 1;
+        pCursor->cbUnitLeft -= 1;
+        pCursor->cbLeft     -= 1;
+        return b;
+    }
+
+    /*
+     * Generic case.
+     */
+    /* Decode. */
+    uint32_t off    = 1;
+    uint64_t u64Ret = b & 0x7f;
+    do
+    {
+        if (off == pCursor->cbUnitLeft)
+        {
+            pCursor->rc = VERR_DWARF_UNEXPECTED_END;
+            u64Ret = uErrValue;
+            break;
+        }
+        b = pCursor->pb[off];
+        u64Ret |= (b & 0x7f) << off * 7;
+        off++;
+    } while (b & 0x80);
+
+    /* Update the cursor. */
+    pCursor->pb         += off;
+    pCursor->cbUnitLeft -= off;
+    pCursor->cbLeft     -= off;
+
+    /* Check the range. */
+    uint32_t cBits = off * 7;
+    if (cBits > 64)
+    {
+        pCursor->rc = VERR_DWARF_LEB_OVERFLOW;
+        u64Ret = uErrValue;
+    }
+
+    return u64Ret;
 }
 
 
-static uint8_t rtDwarfSectRdrGetUByte(PRTDWARFSECTRDR pSectRdr, uint8_t uErrValue)
+/**
+ * Gets a signed LEB128 encoded number.
+ *
+ * @returns signed number.
+ * @param   pCursor             The cursor.
+ * @param   sErrValue           The value to return on error.
+ */
+static int64_t rtDwarfCursor_GetSLeb128(PRTDWARFCURSOR pCursor, int64_t sErrValue)
 {
-    return rtDwarfSectRdrGetU8(pSectRdr, uErrValue);
+    if (pCursor->cbUnitLeft < 1)
+    {
+        pCursor->rc = VERR_DWARF_UNEXPECTED_END;
+        return sErrValue;
+    }
+
+    /*
+     * Special case - single byte.
+     */
+    uint8_t b = pCursor->pb[0];
+    if (!(b & 0x80))
+    {
+        pCursor->pb         += 1;
+        pCursor->cbUnitLeft -= 1;
+        pCursor->cbLeft     -= 1;
+        if (b & 0x40)
+            b |= 0x80;
+        return (int8_t)b;
+    }
+
+    /*
+     * Generic case.
+     */
+    /* Decode it. */
+    uint32_t off    = 1;
+    uint64_t u64Ret = b & 0x7f;
+    do
+    {
+        if (off == pCursor->cbUnitLeft)
+        {
+            pCursor->rc = VERR_DWARF_UNEXPECTED_END;
+            u64Ret = (uint64_t)sErrValue;
+            break;
+        }
+        b = pCursor->pb[off];
+        u64Ret |= (b & 0x7f) << off * 7;
+        off++;
+    } while (b & 0x80);
+
+    /* Update cursor. */
+    pCursor->pb         += off;
+    pCursor->cbUnitLeft -= off;
+    pCursor->cbLeft     -= off;
+
+    /* Check the range. */
+    uint32_t cBits = off * 7;
+    if (cBits > 64)
+    {
+        pCursor->rc = VERR_DWARF_LEB_OVERFLOW;
+        u64Ret = (uint64_t)sErrValue;
+    }
+    /* Sign extend the value. */
+    else if (u64Ret & RT_BIT_64(cBits - 1))
+        u64Ret |= ~RT_BIT_64(cBits - 1);
+
+    return (int64_t)u64Ret;
 }
 
 
-static int8_t rtDwarfSectRdrGetSByte(PRTDWARFSECTRDR pSectRdr, int8_t iErrValue)
+/**
+ * Gets a unsigned LEB128 encoded number, max 32-bit width.
+ *
+ * @returns unsigned number.
+ * @param   pCursor             The cursor.
+ * @param   uErrValue           The value to return on error.
+ */
+static uint32_t rtDwarfCursor_GetULeb128AsU32(PRTDWARFCURSOR pCursor, uint32_t uErrValue)
 {
-    return (int8_t)rtDwarfSectRdrGetU8(pSectRdr, (uint8_t)iErrValue);
+    uint64_t u64 = rtDwarfCursor_GetULeb128(pCursor, uErrValue);
+    if (u64 > UINT32_MAX)
+    {
+        pCursor->rc = VERR_DWARF_LEB_OVERFLOW;
+        return uErrValue;
+    }
+    return (uint32_t)u64;
 }
 
 
-static uint64_t rtDwarfSectRdrGetUOff(PRTDWARFSECTRDR pSectRdr, uint64_t uErrValue)
+/**
+ * Gets a signed LEB128 encoded number, max 32-bit width.
+ *
+ * @returns unsigned number.
+ * @param   pCursor             The cursor.
+ * @param   sErrValue           The value to return on error.
+ */
+static int32_t rtDwarfCursor_GetSLeb128AsS32(PRTDWARFCURSOR pCursor, int32_t sErrValue)
 {
-    if (pSectRdr->f64bit)
-        return rtDwarfSectRdrGetU64(pSectRdr, uErrValue);
-    return rtDwarfSectRdrGetU32(pSectRdr, (uint32_t)uErrValue);
+    int64_t s64 = rtDwarfCursor_GetSLeb128(pCursor, sErrValue);
+    if (s64 > INT32_MAX || s64 < INT32_MIN)
+    {
+        pCursor->rc = VERR_DWARF_LEB_OVERFLOW;
+        return sErrValue;
+    }
+    return (int32_t)s64;
+}
+
+
+static int rtDwarfCursor_SkipLeb128(PRTDWARFCURSOR pCursor)
+{
+    if (pCursor->cbUnitLeft < 1)
+        return pCursor->rc = VERR_DWARF_UNEXPECTED_END;
+
+    uint32_t offSkip = 1;
+    if (pCursor->pb[0] & 0x80)
+        do
+        {
+            if (offSkip == pCursor->cbUnitLeft)
+            {
+                pCursor->rc = VERR_DWARF_UNEXPECTED_END;
+                break;
+            }
+        } while (pCursor->pb[offSkip++] & 0x80);
+
+    pCursor->pb         += offSkip;
+    pCursor->cbUnitLeft -= offSkip;
+    pCursor->cbLeft     -= offSkip;
+    return pCursor->rc;
+}
+
+
+
+/**
+ * Reads a zero terminated string, advancing the cursor beyond the terminator.
+ *
+ * @returns Pointer to the string.
+ * @param   pCursor             The cursor.
+ * @param   pszErrValue         What to return if the string isn't terminated
+ *                              before the end of the unit.
+ */
+static const char *rtDwarfCursor_GetSZ(PRTDWARFCURSOR pCursor, const char *pszErrValue)
+{
+    const char *pszRet = (const char *)pCursor->pb;
+    for (;;)
+    {
+        if (!pCursor->cbUnitLeft)
+            return pszErrValue;
+        pCursor->cbUnitLeft--;
+        pCursor->cbLeft--;
+        if (!*pCursor->pb++)
+            break;
+    }
+    return pszRet;
+}
+
+
+
+static uint16_t rtDwarfCursor_GetUHalf(PRTDWARFCURSOR pCursor, uint16_t uErrValue)
+{
+    return rtDwarfCursor_GetU16(pCursor, uErrValue);
+}
+
+
+static uint8_t rtDwarfCursor_GetUByte(PRTDWARFCURSOR pCursor, uint8_t uErrValue)
+{
+    return rtDwarfCursor_GetU8(pCursor, uErrValue);
+}
+
+
+static int8_t rtDwarfCursor_GetSByte(PRTDWARFCURSOR pCursor, int8_t iErrValue)
+{
+    return (int8_t)rtDwarfCursor_GetU8(pCursor, (uint8_t)iErrValue);
+}
+
+
+static uint64_t rtDwarfCursor_GetUOff(PRTDWARFCURSOR pCursor, uint64_t uErrValue)
+{
+    if (pCursor->f64bitDwarf)
+        return rtDwarfCursor_GetU64(pCursor, uErrValue);
+    return rtDwarfCursor_GetU32(pCursor, (uint32_t)uErrValue);
+}
+
+
+/**
+ * Gets the unit length, updating the unit length member and DWARF bitness
+ * members of the cursor.
+ *
+ * @returns The unit length.
+ * @param   pCursor             The cursor.
+ */
+static uint64_t rtDwarfCursor_GetInitalLength(PRTDWARFCURSOR pCursor)
+{
+    /*
+     * Read the initial length.
+     */
+    pCursor->cbUnitLeft = pCursor->cbLeft;
+    uint64_t cbUnit = rtDwarfCursor_GetU32(pCursor, 0);
+    if (cbUnit != UINT32_C(0xffffffff))
+        pCursor->f64bitDwarf = false;
+    else
+    {
+        pCursor->f64bitDwarf = true;
+        cbUnit = rtDwarfCursor_GetU64(pCursor, 0);
+    }
+
+
+    /*
+     * Set the unit length, quitely fixing bad lengths.
+     */
+    pCursor->cbUnitLeft = (size_t)cbUnit;
+    if (   pCursor->cbUnitLeft > pCursor->cbLeft
+        || pCursor->cbUnitLeft != cbUnit)
+        pCursor->cbUnitLeft = pCursor->cbLeft;
+
+    return cbUnit;
+}
+
+
+static bool rtDwarfCursor_IsAtEndOfUnit(PRTDWARFCURSOR pCursor)
+{
+    return pCursor->cbUnitLeft > 0;
+}
+
+
+static int rtDwarfCursor_SkipUnit(PRTDWARFCURSOR pCursor)
+{
+    pCursor->pb        += pCursor->cbUnitLeft;
+    pCursor->cbLeft    -= pCursor->cbUnitLeft;
+    pCursor->cbUnitLeft = 0;
+    return VINF_SUCCESS;
+}
+
+
+static bool rtDwarfCursor_IsAtEnd(PRTDWARFCURSOR pCursor)
+{
+    return pCursor->cbLeft > 0;
 }
 
 
@@ -303,52 +633,45 @@ static uint64_t rtDwarfSectRdrGetUOff(PRTDWARFSECTRDR pSectRdr, uint64_t uErrVal
  * Initialize a section reader.
  *
  * @returns IPRT status code.
- * @param   pSectRdr            The section reader.
+ * @param   pCursor            The section reader.
  * @param   pThis               The dwarf module.
  * @param   enmSect             .
  */
-static int rtDwarfSectRdrInit(PRTDWARFSECTRDR pSectRdr, PRTDBGMODDWARF pThis, krtDbgModDwarfSect enmSect)
+static int rtDwarfCursor_Init(PRTDWARFCURSOR pCursor, PRTDBGMODDWARF pThis, krtDbgModDwarfSect enmSect)
 {
     int rc = rtDbgModDwarfLoadSection(pThis, enmSect);
     if (RT_FAILURE(rc))
         return rc;
 
-    pSectRdr->pDwarfMod    = pThis;
-    pSectRdr->enmSect      = enmSect;
-    pSectRdr->pb           = (uint8_t const *)pThis->aSections[krtDbgModDwarfSect_line].pv;
-    pSectRdr->cbLeft       = pThis->aSections[krtDbgModDwarfSect_line].cb;
-    pSectRdr->fNativEndian = true; /** @todo endian */
-    pSectRdr->f64bit       = false;
+    pCursor->pb           = (uint8_t const *)pThis->aSections[enmSect].pv;
+    pCursor->cbLeft       = pThis->aSections[enmSect].cb;
+    pCursor->cbUnitLeft   = pCursor->cbLeft;
+    pCursor->pDwarfMod    = pThis;
+    pCursor->fNativEndian = true; /** @todo endian */
+    pCursor->f64bitDwarf  = false;
+    pCursor->cbNativeAddr = 4;
+    pCursor->rc           = VINF_SUCCESS;
 
-    /*
-     * Read the initial length.
-     */
-    uint64_t cbUnit = rtDwarfSectRdrGetU32(pSectRdr, 0);
-    if (cbUnit == UINT32_C(0xffffffff))
-    {
-        pSectRdr->f64bit = true;
-        cbUnit = rtDwarfSectRdrGetU64(pSectRdr, 0);
-    }
-    if (cbUnit < pSectRdr->cbLeft)
-        pSectRdr->cbLeft = (size_t)cbUnit;
+    /** @todo ask the image about the endian used as well as the address
+     *        width. */
 
     return VINF_SUCCESS;
 }
 
 
 /**
- * Deletes a section reader initialized by rtDwarfSectRdrInit.
+ * Deletes a section reader initialized by rtDwarfCursor_Init.
  *
- * @param   pSectRdr            The section reader.
+ * @param   pCursor            The section reader.
  */
-static void rtDwarfSectRdrDelete(PRTDWARFSECTRDR pSectRdr)
+static void rtDwarfCursor_Delete(PRTDWARFCURSOR pCursor)
 {
-    rtDbgModDwarfUnloadSection(pSectRdr->pDwarfMod, pSectRdr->enmSect);
-
     /* ... and a drop of poison. */
-    pSectRdr->pb = NULL;
-    pSectRdr->cbLeft = ~(size_t)0;
-    pSectRdr->enmSect = krtDbgModDwarfSect_End;
+    pCursor->pb         = NULL;
+    pCursor->cbLeft     = ~(size_t)0;
+    pCursor->cbUnitLeft = ~(size_t)0;
+    pCursor->pDwarfMod  = NULL;
+    pCursor->rc         = VERR_INTERNAL_ERROR_4;
 }
 
 
@@ -491,6 +814,372 @@ static DECLCALLBACK(int) rtDbgModDwarf_Close(PRTDBGMODINT pMod)
 
 
 /**
+ * DWARF line number program state.
+ */
+typedef struct RTDWARFLINESTATE
+{
+    /** Registers */
+    struct
+    {
+        uint64_t        uAddress;
+        uint32_t        idxOp;
+        uint32_t        iFile;
+        uint32_t        uLine;
+        uint32_t        uColumn;
+        bool            fIsStatement;
+        bool            fBasicBlock;
+        bool            fEndSequence;
+        bool            fPrologueEnd;
+        bool            fEpilogueBegin;
+        uint32_t        uIsa;
+        uint32_t        uDiscriminator;
+    } Regs;
+    /** @} */
+
+    /** @name Header
+     * @{ */
+    uint32_t        uVer;
+    uint64_t        cbSkipAfterHdr;
+    uint8_t         cbMinInstr;
+    uint8_t         cMaxOpsPerInstr;
+    uint8_t         u8DefIsStmt;
+    int8_t          s8LineBase;
+    uint8_t         u8LineRange;
+    uint8_t         u8OpcodeBase;
+    uint8_t const  *pacStdOperands;
+    /** @} */
+
+    /** @name Include Path Table (0-based)
+     * @{ */
+    const char    **papszIncPaths;
+    uint32_t        cIncPaths;
+    /** @} */
+
+    /** @name File Name Table (1-based)
+     * @{ */
+    char          **papszFileNames;
+    uint32_t        cFileNames;
+    /** @} */
+
+    /** The DWARF debug info reader instance. */
+    PRTDBGMODDWARF  pDwarfMod;
+} RTDWARFLINESTATE;
+/** Pointer to a DWARF line number program state. */
+typedef RTDWARFLINESTATE *PRTDWARFLINESTATE;
+
+
+static int rtDwarfLine_DefineFileName(PRTDWARFLINESTATE pLnState, const char *pszFilename, uint64_t idxInc)
+{
+    /*
+     * Resize the array if necessary.
+     */
+    size_t iFileName = pLnState->cFileNames;
+    if ((iFileName % 2) == 0)
+    {
+        void *pv = RTMemRealloc(pLnState->papszFileNames, sizeof(pLnState->papszFileNames[0]) * (iFileName + 2));
+        if (!pv)
+            return VERR_NO_MEMORY;
+        pLnState->papszFileNames = (char **)pv;
+    }
+
+    /*
+     * Add the file name.
+     */
+    if (   pszFilename[0] == '/'
+        || pszFilename[0] == '\\'
+        || (RT_C_IS_ALPHA(pszFilename[0]) && pszFilename[1] == ':') )
+        pLnState->papszFileNames[iFileName] = RTStrDup(pszFilename);
+    else if (idxInc < pLnState->cIncPaths)
+        pLnState->papszFileNames[iFileName] = RTPathJoinA(pLnState->papszIncPaths[idxInc], pszFilename);
+    else
+        return VERR_DWARF_BAD_LINE_NUMBER_HEADER;
+    if (!pLnState->papszFileNames[iFileName])
+        return VERR_NO_STR_MEMORY;
+    pLnState->cFileNames = iFileName + 1;
+
+    /*
+     * Sanitize the name.
+     */
+    return rtDbgModDwarfStringToUtf8(pLnState->pDwarfMod, &pLnState->papszFileNames[iFileName]);
+}
+
+
+static int rtDwarfLine_StdOp_Copy(PRTDWARFLINESTATE pLnState)
+{
+    const char *pszFile = pLnState->Regs.iFile < pLnState->cFileNames
+                        ? pLnState->papszFileNames[pLnState->Regs.iFile]
+                        : "<bad file name index>";
+    RTDBGSEGIDX iSeg;
+    RTUINTPTR   offSeg;
+    int rc = rtDbgModDwarfLinkAddressToSegOffset(pLnState->pDwarfMod, pLnState->Regs.uAddress, &iSeg, &offSeg);
+    if (RT_SUCCESS(rc))
+        rc = RTDbgModLineAdd(pLnState->pDwarfMod->hCnt, pszFile, pLnState->Regs.uLine, iSeg, offSeg, NULL);
+
+    pLnState->Regs.fBasicBlock    = false;
+    pLnState->Regs.fPrologueEnd   = false;
+    pLnState->Regs.fEpilogueBegin = false;
+    pLnState->Regs.uDiscriminator = 0;
+    return rc;
+}
+
+
+/**
+ * Reset the program to the start-of-sequence state.
+ *
+ * @param   pLnState            The line number program state.
+ */
+static void rtDwarfLine_ResetState(PRTDWARFLINESTATE pLnState)
+{
+    pLnState->Regs.uAddress         = 0;
+    pLnState->Regs.idxOp            = 0;
+    pLnState->Regs.iFile            = 1;
+    pLnState->Regs.uLine            = 1;
+    pLnState->Regs.uColumn          = 0;
+    pLnState->Regs.fIsStatement     = RT_BOOL(pLnState->u8DefIsStmt);
+    pLnState->Regs.fBasicBlock      = false;
+    pLnState->Regs.fEndSequence     = false;
+    pLnState->Regs.fPrologueEnd     = false;
+    pLnState->Regs.fEpilogueBegin   = false;
+    pLnState->Regs.uIsa             = 0;
+    pLnState->Regs.uDiscriminator   = 0;
+}
+
+
+/**
+ * Runs the line number program.
+ *
+ * @returns IPRT status code.
+ * @param   pLnState            The line number program state.
+ * @param   pCursor             The cursor.
+ */
+static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCursor)
+{
+    int rc = VINF_SUCCESS;
+    rtDwarfLine_ResetState(pLnState);
+    do
+    {
+        uint8_t bOpCode = rtDwarfCursor_GetUByte(pCursor, 0);
+        if (bOpCode > pLnState->u8OpcodeBase)
+        {
+            /*
+             * Special opcode.
+             */
+            bOpCode -= pLnState->u8OpcodeBase;
+            pLnState->Regs.uLine    += bOpCode % pLnState->u8LineRange + (int32_t)pLnState->s8LineBase;
+            bOpCode /= pLnState->u8LineRange;
+            pLnState->Regs.uAddress += (pLnState->Regs.idxOp + bOpCode) / pLnState->cMaxOpsPerInstr
+                                     * pLnState->cbMinInstr;
+            pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + bOpCode) % pLnState->cMaxOpsPerInstr;
+
+            rc = rtDwarfLine_StdOp_Copy(pLnState);
+        }
+        else
+        {
+            switch (bOpCode)
+            {
+                /*
+                 * Standard opcode.
+                 */
+                case DW_LNS_copy:
+                    rtDwarfLine_StdOp_Copy(pLnState);
+                    break;
+
+                case DW_LNS_advance_pc:
+                {
+                    uint64_t u64Adv = rtDwarfCursor_GetULeb128(pCursor, 0);
+                    pLnState->Regs.uAddress += (pLnState->Regs.idxOp + u64Adv) / pLnState->cMaxOpsPerInstr
+                                             * pLnState->cbMinInstr;
+                    pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + u64Adv) % pLnState->cMaxOpsPerInstr;
+                    break;
+                }
+
+                case DW_LNS_advance_line:
+                    pLnState->Regs.uLine += rtDwarfCursor_GetSLeb128AsS32(pCursor, 0);
+                    break;
+
+                case DW_LNS_set_file:
+                    pLnState->Regs.iFile = rtDwarfCursor_GetULeb128AsU32(pCursor, 0);
+                    break;
+
+                case DW_LNS_set_column:
+                    pLnState->Regs.uColumn = rtDwarfCursor_GetULeb128AsU32(pCursor, 0);
+                    break;
+
+                case DW_LNS_negate_stmt:
+                    pLnState->Regs.fIsStatement = !pLnState->Regs.fIsStatement;
+                    break;
+
+                case DW_LNS_set_basic_block:
+                    pLnState->Regs.fBasicBlock = true;
+                    break;
+
+                case DW_LNS_const_add_pc:
+                    pLnState->Regs.uAddress += (pLnState->Regs.idxOp + 255) / pLnState->cMaxOpsPerInstr
+                                             * pLnState->cbMinInstr;
+                    pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + 255) % pLnState->cMaxOpsPerInstr;
+                    break;
+
+                case DW_LNS_fixed_advance_pc:
+                    pLnState->Regs.uAddress += rtDwarfCursor_GetUHalf(pCursor, 0);
+                    pLnState->Regs.idxOp     = 0;
+                    break;
+
+                case DW_LNS_set_prologue_end:
+                    pLnState->Regs.fPrologueEnd = true;
+                    break;
+
+                case DW_LNS_set_epilogue_begin:
+                    pLnState->Regs.fEpilogueBegin = true;
+                    break;
+
+                case DW_LNS_set_isa:
+                    pLnState->Regs.uIsa = rtDwarfCursor_GetULeb128AsU32(pCursor, 0);
+                    break;
+
+                default:
+                {
+                    unsigned cOpsToSkip = pLnState->pacStdOperands[bOpCode - 1];
+                    while (cOpsToSkip-- > 0)
+                        rc = rtDwarfCursor_SkipLeb128(pCursor);
+                    break;
+                }
+
+                /*
+                 * Extended opcode.
+                 */
+                case DW_LNS_extended:
+                {
+                    uint64_t cbInstr = rtDwarfCursor_GetULeb128(pCursor, UINT64_MAX);
+                    if (cbInstr > pCursor->cbUnitLeft)
+                        return VERR_DWARF_BAD_LNE;
+                    /** @todo continue here. */
+                    bOpCode = rtDwarfCursor_GetUByte(pCursor, 0);
+                    switch (bOpCode)
+                    {
+                        case DW_LNE_end_sequence:
+                        case DW_LNE_set_address:
+                        case DW_LNE_define_file:
+                        case DW_LNE_set_descriminator:
+                            break;
+                    }
+                    break;
+                }
+            }
+        }
+    } while (RT_SUCCESS(rc));
+    return rc;
+}
+
+
+/**
+ * Reads the include directories for a line number unit.
+ *
+ * @returns IPRT status code
+ * @param   pLnState            The line number program state.
+ * @param   pCursor             The cursor.
+ */
+static int rtDwarfLine_ReadFileNames(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCursor)
+{
+    for (;;)
+    {
+        const char *psz = rtDwarfCursor_GetSZ(pCursor, NULL);
+        if (!*psz)
+            break;
+
+        uint64_t idxInc = rtDwarfCursor_GetULeb128(pCursor, UINT64_MAX);
+        rtDwarfCursor_SkipLeb128(pCursor); /* st_mtime */
+        rtDwarfCursor_SkipLeb128(pCursor); /* st_size */
+
+        int rc = rtDwarfLine_DefineFileName(pLnState, psz, idxInc);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Reads the include directories for a line number unit.
+ *
+ * @returns IPRT status code
+ * @param   pLnState            The line number program state.
+ * @param   pCursor             The cursor.
+ */
+static int rtDwarfLine_ReadIncludePaths(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCursor)
+{
+    const char *psz = "";   /* The zeroth is the unit dir. */
+    for (;;)
+    {
+        if ((pLnState->cIncPaths % 2) == 0)
+        {
+            void *pv = RTMemRealloc(pLnState->papszIncPaths, sizeof(pLnState->papszIncPaths[0]) * (pLnState->cIncPaths + 2));
+            if (!pv)
+                return VERR_NO_MEMORY;
+            pLnState->papszIncPaths = (const char **)pv;
+        }
+        pLnState->papszIncPaths[pLnState->cIncPaths] = psz;
+        pLnState->cIncPaths++;
+
+        psz = rtDwarfCursor_GetSZ(pCursor, NULL);
+        if (!*psz)
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+static int rtDbgModDwarfExplodeLineNumbersForUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
+{
+    RTDWARFLINESTATE LnState;
+    RT_ZERO(LnState);
+    LnState.pDwarfMod = pThis;
+
+    /*
+     * Parse the header.
+     */
+    LnState.uVer           = rtDwarfCursor_GetUHalf(pCursor, 0);
+    if (LnState.uVer >= 2 && LnState.uVer <= 4)
+        return rtDwarfCursor_SkipUnit(pCursor);
+    LnState.cbSkipAfterHdr = rtDwarfCursor_GetUOff(pCursor, 0);
+    LnState.cbMinInstr     = rtDwarfCursor_GetUByte(pCursor, 0);
+    LnState.cMaxOpsPerInstr= rtDwarfCursor_GetUByte(pCursor, 0);
+    LnState.u8DefIsStmt    = rtDwarfCursor_GetUByte(pCursor, 0);
+    LnState.s8LineBase     = rtDwarfCursor_GetSByte(pCursor, 0);
+    LnState.u8LineRange    = rtDwarfCursor_GetUByte(pCursor, 0);
+    LnState.u8OpcodeBase   = rtDwarfCursor_GetUByte(pCursor, 0);
+    if (!LnState.u8OpcodeBase)
+        return VERR_DWARF_BAD_LINE_NUMBER_HEADER;
+
+    LnState.pacStdOperands = pCursor->pb;
+    for (uint8_t iStdOpcode = 1; iStdOpcode < LnState.u8OpcodeBase; iStdOpcode++)
+        rtDwarfCursor_GetUByte(pCursor, 0);
+
+    int rc = rtDwarfLine_ReadIncludePaths(&LnState, pCursor);
+    if (RT_SUCCESS(rc))
+        rc = rtDwarfLine_ReadFileNames(&LnState, pCursor);
+
+    /*
+     * Run the program....
+     */
+    if (RT_SUCCESS(rc))
+        rc = rtDwarfLine_RunProgram(&LnState, pCursor);
+
+    /*
+     * Clean up.
+     */
+    size_t i = LnState.cFileNames;
+    while (i-- > 0)
+        RTStrFree(LnState.papszFileNames[i]);
+    RTMemFree(LnState.papszFileNames);
+    RTMemFree(LnState.papszIncPaths);
+
+    Assert(rtDwarfCursor_IsAtEndOfUnit(pCursor) || RT_FAILURE(rc));
+    return rc;
+}
+
+
+/**
  * Explodes the line number table.
  *
  * The line numbers are insered into the debug info container.
@@ -503,33 +1192,17 @@ static int rtDbgModDwarfExplodeLineNumbers(PRTDBGMODDWARF pThis)
     if (!pThis->aSections[krtDbgModDwarfSect_line].fPresent)
         return VINF_SUCCESS;
 
-    RTDWARFSECTRDR SectRdr;
-    int rc = rtDwarfSectRdrInit(&SectRdr, pThis, krtDbgModDwarfSect_line);
+    RTDWARFCURSOR Cursor;
+    int rc = rtDwarfCursor_Init(&Cursor, pThis, krtDbgModDwarfSect_line);
     if (RT_FAILURE(rc))
         return rc;
 
-    /*
-     * Parse the header.
-     */
-    uint32_t const uVer           = rtDwarfSectRdrGetUHalf(&SectRdr, 0);
-    uint64_t const cbSkipAfterHdr = rtDwarfSectRdrGetUOff(&SectRdr, 0);
-    uint8_t  const cbMinInstr     = rtDwarfSectRdrGetUByte(&SectRdr, 0);
-    uint8_t  const cbMaxInstr     = rtDwarfSectRdrGetUByte(&SectRdr, 0);
-    uint8_t  const fDefIsStmt     = rtDwarfSectRdrGetUByte(&SectRdr, 0);
-    int8_t   const i8LineBase     = rtDwarfSectRdrGetSByte(&SectRdr, 0);
-    uint8_t  const u8LineRange    = rtDwarfSectRdrGetUByte(&SectRdr, 0);
-    uint8_t  const u8OpcodeBase   = rtDwarfSectRdrGetUByte(&SectRdr, 0);
-    /*...*/
+    while (   rtDwarfCursor_IsAtEnd(&Cursor)
+           && RT_SUCCESS(rc))
+        rc = rtDbgModDwarfExplodeLineNumbersForUnit(pThis, &Cursor);
 
-    if (uVer >= 2 && uVer <= 4)
-    {
-        /*
-         * Run the program....
-         */
 
-    }
-
-    rtDwarfSectRdrDelete(&SectRdr);
+    rtDwarfCursor_Delete(&Cursor);
     return rc;
 }
 
