@@ -435,6 +435,7 @@ extern VBOXHDDBACKEND g_ParallelsBackend;
 extern VBOXHDDBACKEND g_DmgBackend;
 extern VBOXHDDBACKEND g_ISCSIBackend;
 extern VBOXHDDBACKEND g_QedBackend;
+extern VBOXHDDBACKEND g_QCowBackend;
 
 static unsigned g_cBackends = 0;
 static PVBOXHDDBACKEND *g_apBackends = NULL;
@@ -446,6 +447,7 @@ static PVBOXHDDBACKEND aStaticBackends[] =
     &g_ParallelsBackend,
     &g_DmgBackend,
     &g_QedBackend,
+    &g_QCowBackend,
     &g_RawBackend,
     &g_ISCSIBackend
 };
