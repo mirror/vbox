@@ -22,7 +22,7 @@
                 One of the principles of good security practise is to keep all
                 software versions and patches up to date. Activate the VirtualBox
                 update notification to get notified when a new VirtualBox release
-                is available. When updating VirtualBox, don't forget to update
+                is available. When updating VirtualBox, do not forget to update
                 the Guest Additions. Keep the host operating system as well as the
                 guest operating system up to date.
               </para>
@@ -46,8 +46,8 @@
             <glossdef>
               <para>
                 The principle of least privilege states that users should be given the
-                least amount of privilege to perform their jobs. Execute VirtualBox
-                always as regular user. We strongly discourage from executing
+                least amount of privilege necessary to perform their jobs. Always execute VirtualBox
+                as a regular user. We strongly discourage anyone from executing
                 VirtualBox with system privileges.
               </para>
             </glossdef>
@@ -57,9 +57,9 @@
             <glossterm>Monitor System Activity</glossterm>
             <glossdef>
               <para>
-                System security stands on three legs: good security protocols, proper
+                System security builds on three pillars: good security protocols, proper
                 system configuration and system monitoring. Auditing and reviewing audit
-                records address this third requirement. Each component within a system
+                records address the third requirement. Each component within a system
                 has some degree of monitoring capability. Follow audit advice in this
                 document and regularly monitor audit records.
               </para>
@@ -100,12 +100,12 @@
       to disable certain VirtuallBox components during the installation but the
       regular case is to install the complete VirtualBox package. The installation
       must be done with system privileges. All VirtualBox binaries should be
-      executed as regular user and never as privileged user.
+      executed as a regular user and never as a privileged user.
     </para>
     <para>
       The Oracle VM VirtualBox extension pack provides additional features
       and must be downloaded and installed separately, see
-      <xref linkend="intro-installing"/>. Like the for base package, the SHA256
+      <xref linkend="intro-installing"/>. As for the base package, the SHA256
       checksum of the extension pack should be verified. As the installation
       requires system privileges, the VirtualBox GUI will ask for the system
       password during the installation of the extension pack.
@@ -117,7 +117,7 @@
     <para>
       Normally there is no post installation configuration of VirtualBox components
       required. However, on Solaris and Linux hosts it is necessary to configure
-      the proper permissions for users executing VMs which should be able to
+      the proper permissions for users executing VMs and who should be able to
       access certain host resources. For instance, Linux users must be member of
       the <emphasis>vboxusers</emphasis> group to be able to pass USB devices to a
       guest. If a serial host interface should be accessed from a VM, the proper
@@ -166,7 +166,7 @@
         </para>
         <para>
           If bridged networking is used, the VM acts like a computer inside
-          the same networking as the host, see <xref linkend="network_bridged"/>.
+          the same network as the host, see <xref linkend="network_bridged"/>.
           In this case, the guest has the same network access as the host and
           a firewall might be necessary to protect other computers on the
           subnet from a potential malicious guest as well as to protect the
@@ -175,7 +175,7 @@
           mode instead of using bridged networking.
         </para>
         <para>
-          Some setups don't require a VM to be connected to the public network
+          Some setups do not require a VM to be connected to the public network
           at all. Internal networking (see <xref linkend="network_internal"/>)
           or host-only networking (see <xref linkend="network_hostonly"/>)
           are often sufficient to connect VMs among each other or to connect
@@ -195,12 +195,12 @@
       <sect3>
         <title>Clipboard</title>
         <para>
-          The shared clipboard allows to share data between the host and
+          The shared clipboard allows users to share data between the host and
           the guest. Enabling the clipboard in "Bidirectional" mode allows
           the guest to read and write the host clipboard. The "Host to guest"
           mode and the "Guest to host" mode limit the access to one
           direction. If the guest is able to access the host clipboard it
-          could also access sensitive data from the host which are shared over
+          could also access sensitive data from the host which is shared over
           the clipboard.
         </para>
       </sect3>
@@ -313,7 +313,7 @@
         </listitem>
         
         <listitem>
-          <para>All traffic sent over an UDP Tunnel network attachment is not
+          <para>Traffic sent over a UDP Tunnel network attachment is not
           encrypted. You can either encrypt it on the host network level (with
           IPsec), or use encrypted protocols in the guest network (such as
           SSH). The security properties are similar to bridged Ethernet.</para>
