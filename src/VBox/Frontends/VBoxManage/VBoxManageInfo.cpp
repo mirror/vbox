@@ -1592,6 +1592,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     if (SUCCEEDED(rc))
     {
         BOOL fEnabled;
+        BOOL fEhciEnabled;
         rc = USBCtl->COMGETTER(Enabled)(&fEnabled);
         if (FAILED(rc))
             fEnabled = false;
@@ -1599,6 +1600,14 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             RTPrintf("usb=\"%s\"\n", fEnabled ? "on" : "off");
         else
             RTPrintf("USB:             %s\n", fEnabled ? "enabled" : "disabled");
+
+        rc = USBCtl->COMGETTER(EnabledEhci)(&fEhciEnabled);
+        if (FAILED(rc))
+            fEhciEnabled = false;
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("ehci=\"%s\"\n", fEhciEnabled ? "on" : "off");
+        else
+            RTPrintf("EHCI:            %s\n", fEhciEnabled ? "enabled" : "disabled");
 
         SafeIfaceArray <IUSBDeviceFilter> Coll;
         rc = USBCtl->COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(Coll));
