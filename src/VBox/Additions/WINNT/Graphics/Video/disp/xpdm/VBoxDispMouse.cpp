@@ -45,11 +45,11 @@ static BOOL VBoxDispFillMonoShape(PVBOXDISPDEV pDev, SURFOBJ *psoMask)
 
     for (y=0; y<pAttrs->Height; ++y)
     {
-        memcpy(pDst+y*dstBytesPerLine, pSrc+y*psoMask->lDelta, dstBytesPerLine);
+        memcpy(pDst+y*dstBytesPerLine, pSrc+(LONG)y*psoMask->lDelta, dstBytesPerLine);
     }
 
     /* convert XOR mask to RGB0 DIB, it start in pAttrs->Pixels should be 4bytes aligned */
-    pSrc = (BYTE*)psoMask->pvScan0 + srcMaskH*psoMask->lDelta;
+    pSrc = (BYTE*)psoMask->pvScan0 + (LONG)srcMaskH*psoMask->lDelta;
     pDst = pAttrs->Pixels + RT_ALIGN_T(dstBytesPerLine*pAttrs->Height, 4, ULONG);
     dstBytesPerLine = pAttrs->Width * 4;
 
@@ -59,7 +59,7 @@ static BOOL VBoxDispFillMonoShape(PVBOXDISPDEV pDev, SURFOBJ *psoMask)
         {
             if (0xFF==bit) bit=7;
 
-            *(ULONG*)&pDst[y*dstBytesPerLine+x*4] = (pSrc[y*psoMask->lDelta+x/8] & RT_BIT(bit)) ? 0x00FFFFFF : 0;
+            *(ULONG*)&pDst[y*dstBytesPerLine+x*4] = (pSrc[(LONG)y*psoMask->lDelta+x/8] & RT_BIT(bit)) ? 0x00FFFFFF : 0;
         }
     }
 
@@ -163,12 +163,12 @@ static SURFOBJ *VBoxDispConvSurfTo32BPP(PVBOXDISPDEV pDev, SURFOBJ *psoScreen, S
         {
             for (x=0; x<(ULONG)psoSrc->sizlBitmap.cx; ++x)
             {
-                BYTE bSrc = pSrc[y*psoBitmap->lDelta+x*1];
+                BYTE bSrc = pSrc[(LONG)y*psoBitmap->lDelta+x*1];
 
-                pDst[y*psoRes->lDelta+x*4+0] = pDev->pPalette[bSrc].peBlue;
-                pDst[y*psoRes->lDelta+x*4+1] = pDev->pPalette[bSrc].peGreen;
-                pDst[y*psoRes->lDelta+x*4+2] = pDev->pPalette[bSrc].peRed;
-                pDst[y*psoRes->lDelta+x*4+3] = 0;
+                pDst[(LONG)y*psoRes->lDelta+x*4+0] = pDev->pPalette[bSrc].peBlue;
+                pDst[(LONG)y*psoRes->lDelta+x*4+1] = pDev->pPalette[bSrc].peGreen;
+                pDst[(LONG)y*psoRes->lDelta+x*4+2] = pDev->pPalette[bSrc].peRed;
+                pDst[(LONG)y*psoRes->lDelta+x*4+3] = 0;
             }
         }
     }
@@ -179,12 +179,12 @@ static SURFOBJ *VBoxDispConvSurfTo32BPP(PVBOXDISPDEV pDev, SURFOBJ *psoScreen, S
         {
             for (x=0; x<(ULONG)psoSrc->sizlBitmap.cx; ++x)
             {
-                USHORT usSrc = *(USHORT*)&pSrc[y*psoBitmap->lDelta+x*2];
+                USHORT usSrc = *(USHORT*)&pSrc[(LONG)y*psoBitmap->lDelta+x*2];
 
-                pDst[y*psoRes->lDelta+x*4+0] = (BYTE) (usSrc<<3);
-                pDst[y*psoRes->lDelta+x*4+1] = (BYTE) ((usSrc>>5)<<2);
-                pDst[y*psoRes->lDelta+x*4+2] = (BYTE) ((usSrc>>11)<<3);
-                pDst[y*psoRes->lDelta+x*4+3] = 0;
+                pDst[(LONG)y*psoRes->lDelta+x*4+0] = (BYTE) (usSrc<<3);
+                pDst[(LONG)y*psoRes->lDelta+x*4+1] = (BYTE) ((usSrc>>5)<<2);
+                pDst[(LONG)y*psoRes->lDelta+x*4+2] = (BYTE) ((usSrc>>11)<<3);
+                pDst[(LONG)y*psoRes->lDelta+x*4+3] = 0;
             }
         }
     }
@@ -195,10 +195,10 @@ static SURFOBJ *VBoxDispConvSurfTo32BPP(PVBOXDISPDEV pDev, SURFOBJ *psoScreen, S
         {
             for (x=0; x<(ULONG)psoSrc->sizlBitmap.cx; ++x)
             {
-                pDst[y*psoRes->lDelta+x*4+0] = pSrc[y*psoBitmap->lDelta+x*3+0];
-                pDst[y*psoRes->lDelta+x*4+1] = pSrc[y*psoBitmap->lDelta+x*3+1];
-                pDst[y*psoRes->lDelta+x*4+2] = pSrc[y*psoBitmap->lDelta+x*3+2];
-                pDst[y*psoRes->lDelta+x*4+3] = 0;
+                pDst[(LONG)y*psoRes->lDelta+x*4+0] = pSrc[(LONG)y*psoBitmap->lDelta+x*3+0];
+                pDst[(LONG)y*psoRes->lDelta+x*4+1] = pSrc[(LONG)y*psoBitmap->lDelta+x*3+1];
+                pDst[(LONG)y*psoRes->lDelta+x*4+2] = pSrc[(LONG)y*psoBitmap->lDelta+x*3+2];
+                pDst[(LONG)y*psoRes->lDelta+x*4+3] = 0;
             }
         }
     }
@@ -269,7 +269,7 @@ static BOOL VBoxDispFillColorShape(PVBOXDISPDEV pDev, SURFOBJ *psoScreen, SURFOB
             {
                 if (0xFF==bit) bit=7;
 
-                if (pSrc[y*psoColor->lDelta + x*4 + 3] > 0x7F)
+                if (pSrc[(LONG)y*psoColor->lDelta + x*4 + 3] > 0x7F)
                 {
                     pDst[y*dstBytesPerLine + x/8] &= ~RT_BIT(bit);
                 }
@@ -294,7 +294,7 @@ static BOOL VBoxDispFillColorShape(PVBOXDISPDEV pDev, SURFOBJ *psoScreen, SURFOB
 
         for (y=0; y<pAttrs->Height; ++y)
         {
-            memcpy(pDst+y*dstBytesPerLine, pSrc+y*psoMask->lDelta, dstBytesPerLine);
+            memcpy(pDst+y*dstBytesPerLine, pSrc+(LONG)y*psoMask->lDelta, dstBytesPerLine);
         }
 
         pso32bpp = VBoxDispConvSurfTo32BPP(pDev, psoScreen, psoColor, pxlo, &hSurf32bpp);
@@ -314,7 +314,7 @@ static BOOL VBoxDispFillColorShape(PVBOXDISPDEV pDev, SURFOBJ *psoScreen, SURFOB
 
     for (y=0; y<pAttrs->Height; ++y)
     {
-        memcpy(pDst+y*dstBytesPerLine, pSrc+y*pso32bpp->lDelta, dstBytesPerLine);
+        memcpy(pDst+y*dstBytesPerLine, pSrc+(LONG)y*pso32bpp->lDelta, dstBytesPerLine);
     }
 
     /* deallocate temp surface */
