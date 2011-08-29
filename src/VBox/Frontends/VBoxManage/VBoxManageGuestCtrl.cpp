@@ -882,7 +882,7 @@ static void ctrlCopyContextFree(PCOPYCONTEXT pContext)
  * path.
  *
  * @return  IPRT status code.
- * @param   pszSourceRoot           Source root path.
+ * @param   pszSourceRoot           Source root path. No trailing directory slash!
  * @param   pszSource               Actual source to transform. Must begin with
  *                                  the source root path!
  * @param   pszDest                 Destination path.
@@ -896,10 +896,7 @@ static int ctrlCopyTranslatePath(const char *pszSourceRoot, const char *pszSourc
     AssertPtrReturn(pszSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDest, VERR_INVALID_POINTER);
     AssertPtrReturn(ppszTranslated, VERR_INVALID_POINTER);
-
-    /* Source path must contain the source root! */
-    if (!RTPathStartsWith(pszSource, pszSourceRoot))
-        return VERR_INVALID_PARAMETER;
+    AssertReturn(RTPathStartsWith(pszSource, pszSourceRoot), VERR_INVALID_PARAMETER);
 
     /* Construct the relative dest destination path by "subtracting" the
      * source from the source root, e.g.
@@ -908,18 +905,14 @@ static int ctrlCopyTranslatePath(const char *pszSourceRoot, const char *pszSourc
      * dest = "d:\baz\"
      * translated = "d:\baz\bar\"
      */
-
-    size_t lenRoot = strlen(pszSourceRoot);
-    AssertReturn(lenRoot, VERR_INVALID_PARAMETER);
-    char *pszTranslated = RTStrDup(pszDest);
-    AssertReturn(pszTranslated, VERR_NO_MEMORY);
-    int vrc = RTStrAAppend(&pszTranslated, &pszSource[lenRoot]);
-    if (RT_FAILURE(vrc))
-        return vrc;
-
-    *ppszTranslated = pszTranslated;
-
-    return vrc;
+    char szTranslated[RTPATH_MAX];
+    size_t srcOff = strlen(pszSourceRoot);
+    AssertReturn(srcOff, VERR_INVALID_PARAMETER);
+    int rc = RTPathJoin(szTranslated, sizeof(szTranslated),
+                        pszDest, &pszSource[srcOff]);
+    if (RT_SUCCESS(rc))
+        *ppszTranslated = RTStrDup(szTranslated);
+    return rc;
 }
 
 #ifdef DEBUG_andy
@@ -1001,7 +994,7 @@ static int ctrlCopyDirCreate(PCOPYCONTEXT pContext, const char *pszDir)
     }
     else /* ... or on the host. */
     {
-        rc = RTDirCreate(pszDir, 700);
+        rc = RTDirCreateFullPath(pszDir, 700);
         if (rc == VERR_ALREADY_EXISTS)
             rc = VINF_SUCCESS;
     }
@@ -1213,7 +1206,7 @@ static int ctrlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
 static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
                               const char *pszSource, const char *pszFilter,
                               const char *pszDest, uint32_t fFlags,
-                              const char *pszSubDir /* For recursion */)
+                              const char *pszSubDir /* For recursion. */)
 {
     AssertPtrReturn(pContext, VERR_INVALID_POINTER);
     AssertPtrReturn(pszSource, VERR_INVALID_POINTER);
@@ -1272,9 +1265,12 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
                     {
                         char *pszNewSub = NULL;
                         if (pszSubDir)
-                            RTStrAPrintf(&pszNewSub, "%s/%s", pszSubDir, DirEntry.szName);
+                            pszNewSub = RTPathJoinA(pszSubDir, DirEntry.szName);
                         else
-                            RTStrAPrintf(&pszNewSub, "%s", DirEntry.szName);
+                        {
+                            pszNewSub = RTStrDup(DirEntry.szName);
+                            RTPathStripTrailingSlash(pszNewSub);
+                        }
 
                         if (pszNewSub)
                         {
@@ -1319,9 +1315,8 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
 
                         if (RT_SUCCESS(rc))
                         {
-                            char *pszFileSource;
-                            if (RTStrAPrintf(&pszFileSource, "%s/%s",
-                                             szCurDir, DirEntry.szName))
+                            char *pszFileSource = RTPathJoinA(szCurDir, DirEntry.szName);
+                            if (pszFileSource)
                             {
                                 char *pszFileDest;
                                 rc = ctrlCopyTranslatePath(pszSource, pszFileSource,
@@ -1366,7 +1361,7 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
 static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                              const char *pszSource, const char *pszFilter,
                              const char *pszDest, uint32_t fFlags,
-                             const char *pszSubDir /* For recursion */)
+                             const char *pszSubDir /* For recursion. */)
 {
     AssertPtrReturn(pContext, VERR_INVALID_POINTER);
     AssertPtrReturn(pszSource, VERR_INVALID_POINTER);
@@ -1421,10 +1416,12 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                         Utf8Str strDir(strName);
                         char *pszNewSub = NULL;
                         if (pszSubDir)
-                            RTStrAPrintf(&pszNewSub, "%s/%s", pszSubDir, strDir.c_str());
+                            pszNewSub = RTPathJoinA(pszSubDir, strDir.c_str());
                         else
-                            RTStrAPrintf(&pszNewSub, "%s", strDir.c_str());
-
+                        {
+                            pszNewSub = RTStrDup(strDir.c_str());
+                            RTPathStripTrailingSlash(pszNewSub);
+                        }
                         if (pszNewSub)
                         {
                             rc = ctrlCopyDirToHost(pContext,
@@ -1469,9 +1466,8 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
 
                         if (RT_SUCCESS(rc))
                         {
-                            char *pszFileSource;
-                            if (RTStrAPrintf(&pszFileSource, "%s/%s",
-                                             szCurDir, strFile.c_str()))
+                            char *pszFileSource = RTPathJoinA(szCurDir, strFile.c_str());
+                            if (pszFileSource)
                             {
                                 char *pszFileDest;
                                 rc = ctrlCopyTranslatePath(pszSource, pszFileSource,
@@ -1753,7 +1749,8 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
          */
         for (unsigned long s = 0; s < vecSources.size(); s++)
         {
-            const char *pszSource = vecSources[s].mSource.c_str();
+            char *pszSource = RTStrDup(vecSources[s].mSource.c_str());
+            AssertPtrBreakStmt(pszSource, vrc = VERR_NO_MEMORY);
             const char *pszFilter = vecSources[s].mFilter.c_str();
             if (!strlen(pszFilter))
                 pszFilter = NULL; /* If empty filter then there's no filter :-) */
@@ -1772,36 +1769,32 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
             /** @todo Files with filter?? */
             bool fIsFile = false;
             bool fExists;
-            Utf8Str Utf8CurSource(pszSource);
-            if (   Utf8CurSource.endsWith("/")
-                || Utf8CurSource.endsWith("\\"))
+
+            size_t cchSource = strlen(pszSource);
+            if (   cchSource > 1
+                && RTPATH_IS_SLASH(pszSource[cchSource - 1]))
             {
-#ifndef DEBUG_andy
-                if (pContext->fHostToGuest)
-                {
-#endif
-                    if (pszFilter) /* Directory with filter. */
-                        vrc = ctrlCopyDirExistsOnSource(pContext, pszSourceRoot, &fExists);
-                    else /* Regular directory without filter. */
-                        vrc = ctrlCopyDirExistsOnSource(pContext, pszSource, &fExists);
-#ifndef DEBUG_andy
-                }
-                else
-                {
-                    RTMsgError("Copying of guest directories to the host is not supported yet!\n");
-                    vrc = VERR_NOT_IMPLEMENTED;
-                }
-#endif
+                if (pszFilter) /* Directory with filter (so use source root w/o the actual filter). */
+                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSourceRoot, &fExists);
+                else /* Regular directory without filter. */
+                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSource, &fExists);
+
+                /* Strip trailing slash from our source element so that other functions
+                 * can use this stuff properly (like RTPathStartsWith). */
+                RTPathStripTrailingSlash(pszSource);
             }
             else
             {
                 vrc = ctrlCopyFileExistsOnSource(pContext, pszSource, &fExists);
                 if (   RT_SUCCESS(vrc)
                     && fExists)
+                {
                     fIsFile = true;
+                }
             }
 
-            if (RT_SUCCESS(vrc))
+            if (   RT_SUCCESS(vrc)
+                && fExists)
             {
                 if (fIsFile)
                 {
@@ -1836,15 +1829,18 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
             {
                 RTMsgError("Warning: Source \"%s\" does not exist, skipping!\n",
                            pszSource);
+                RTStrFree(pszSource);
                 continue;
             }
-
-            if (RT_FAILURE(vrc))
+            else if (RT_FAILURE(vrc))
             {
                 RTMsgError("Error processing \"%s\", rc=%Rrc\n",
                            pszSource, vrc);
+                RTStrFree(pszSource);
                 break;
             }
+
+            RTStrFree(pszSource);
         }
     }
 
