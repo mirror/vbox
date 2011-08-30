@@ -127,6 +127,9 @@ public:
     static QString qtCTVersionString();
     static uint qtCTVersion();
 
+    QString vboxVersionString() const;
+    QString vboxVersionStringNormalized() const;
+
     QString versionString() const { return mVerString; }
     bool isBeta() const;
 

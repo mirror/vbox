@@ -375,6 +375,16 @@ uint VBoxGlobal::qtCTVersion()
            ct_ver_str.section ('.', 2, 2).toInt();
 }
 
+QString VBoxGlobal::vboxVersionString() const
+{
+    return mVBox.GetVersion();
+}
+
+QString VBoxGlobal::vboxVersionStringNormalized() const
+{
+    return vboxVersionString().remove(VBOX_BUILD_PUBLISHER);
+}
+
 bool VBoxGlobal::isBeta() const
 {
     return mVBox.GetVersion().contains("BETA", Qt::CaseInsensitive);
