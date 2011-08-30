@@ -361,15 +361,9 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
         </listitem>
 
         <listitem>
-          <para><computeroutput>CredsChanged</computeroutput>: Acts as
-          "beacon" and is also read- and writeable from the guest. If set o
-          any value (e.g. to "1") waiting for credentials will be aborted. If
-          credentials are provided before setting
-          <computeroutput>CredsChanged</computeroutput>, these credentials
-          will be taken for authentication. To disable another round of
-          waiting for new credentials to arrive the property
-          <computeroutput>CredsWait</computeroutput> can be set to empty
-          (deleted) before.</para>
+          <para><computeroutput>CredsWaitAbort</computeroutput>: Aborts waiting
+          for credentials when set to any value. Can be set from host and the
+          guest.</para>
         </listitem>
 
         <listitem>
@@ -505,11 +499,11 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
           </listitem>
 
           <listitem>
-            X11R7.0 (vboxvideo_drv_70.so and vboxmouse_drv_70.so) 
+            X11R7.0 (vboxvideo_drv_70.so and vboxmouse_drv_70.so)
           </listitem>
 
           <listitem>
-            X11R7.1 (vboxvideo_drv_71.so and vboxmouse_drv_71.so) 
+            X11R7.1 (vboxvideo_drv_71.so and vboxmouse_drv_71.so)
           </listitem>
 
           <listitem>
@@ -719,19 +713,19 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
     <para>If the virtual machine has a PCI device attached, certain
     limitations apply: <orderedlist>
         <listitem>
-           Only PCI cards with non-shared interrupts (such as using MSI on host) are supported at the moment. 
+           Only PCI cards with non-shared interrupts (such as using MSI on host) are supported at the moment.
         </listitem>
 
         <listitem>
-           No guest state can be reliably saved/restored (as the internal state of the PCI card could not be retrieved). 
+           No guest state can be reliably saved/restored (as the internal state of the PCI card could not be retrieved).
         </listitem>
 
         <listitem>
-           Teleportation (live migration) doesn't work (for the same reason). 
+           Teleportation (live migration) doesn't work (for the same reason).
         </listitem>
 
         <listitem>
-           No lazy physical memory allocation. The host will preallocate the whole RAM required for the VM on startup (as we cannot catch physical hardware accesses to the physical memory). 
+           No lazy physical memory allocation. The host will preallocate the whole RAM required for the VM on startup (as we cannot catch physical hardware accesses to the physical memory).
         </listitem>
       </orderedlist></para>
   </sect1>
@@ -1735,19 +1729,19 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
     VM can reach the following parameters will be checked in the following
     order: <itemizedlist>
         <listitem>
-          specified via VBoxBalloonCtrl command line parameter 
+          specified via VBoxBalloonCtrl command line parameter
 
           <computeroutput>--balloon-max</computeroutput>
         </listitem>
 
         <listitem>
-          per-VM parameter using 
+          per-VM parameter using
 
           <screen>VBoxManage setextradata "VM-Name" VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen>
         </listitem>
 
         <listitem>
-          global parameter for all VMs using 
+          global parameter for all VMs using
 
           <screen>VBoxManage setextradata global VBoxInternal/Guest/BalloonSizeMax &lt;Size in MB&gt;</screen>
         </listitem>
