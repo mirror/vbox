@@ -4764,6 +4764,7 @@ $(VBOX_PRODUCT_HEADER): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VENDOR "$(VBOX_VENDOR)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VENDOR_SHORT "$(VBOX_VENDOR_SHORT)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_PRODUCT "$(VBOX_PRODUCT)"'
+	$(QUIET)$(APPEND) $@.tmp '#define VBOX_BUILD_PUBLISHER "$(VBOX_BUILD_PUBLISHER)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_C_YEAR "$(VBOX_C_YEAR)"'
 	$(QUIET)$(APPEND) $@.tmp ''
 	$(QUIET)$(APPEND) $@.tmp '#endif'

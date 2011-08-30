@@ -45,7 +45,7 @@
 
 /* Global includes */
 #include <iprt/path.h>
-#include <VBox/VMMDev.h>
+#include <VBox/version.h>
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <iprt/ldr.h>
@@ -1486,7 +1486,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
 
     /* Check for the already registered image */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString name = QString("VBoxGuestAdditions_%1.iso").arg(vbox.GetVersion().remove("_OSE"));
+    const QString &name = QString("VBoxGuestAdditions_%1.iso").arg(vbox.GetVersion().remove(VBOX_BUILD_PUBLISHER));
 
     CMediumVector vec = vbox.GetDVDImages();
     for (CMediumVector::ConstIterator it = vec.begin(); it != vec.end(); ++ it)
@@ -1502,8 +1502,8 @@ void UIMachineLogic::sltInstallGuestAdditions()
     int result = msgCenter().cannotFindGuestAdditions(QDir::toNativeSeparators(strSrc1), QDir::toNativeSeparators(strSrc2));
     if (result == QIMessageBox::Yes)
     {
-        QString source = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vbox.GetVersion().remove("_OSE")) + name;
-        QString target = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(name);
+        const QString &source = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vbox.GetVersion().remove(VBOX_BUILD_PUBLISHER)) + name;
+        const QString &target = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(name);
 
         UIDownloaderAdditions *pDl = UIDownloaderAdditions::create();
         /* Configure the additions downloader. */
