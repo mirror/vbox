@@ -140,6 +140,7 @@ int main(int argc, char **argv)
     };
 
     PRTSTREAM       pInput   = g_pStdIn;
+    PRTSTREAM       pOutput  = g_pStdOut;
     bool            fVerbose = false;
 
     RTGETOPTUNION   ValueUnion;
@@ -285,7 +286,7 @@ int main(int argc, char **argv)
                 /* Print. */
                 psz += cchAddress;
                 if (pszStart != psz)
-                    RTStrmWrite(g_pStdOut, pszStart, psz - pszStart);
+                    RTStrmWrite(pOutput, pszStart, psz - pszStart);
                 pszStart = psz;
 
                 /* Try get the module. */
@@ -296,9 +297,9 @@ int main(int argc, char **argv)
                 if (RT_SUCCESS(rc))
                 {
                     if (iSeg != UINT32_MAX)
-                        RTStrmPrintf(g_pStdOut, "=[%s:%u", RTDbgModName(hDbgMod), iSeg);
+                        RTStrmPrintf(pOutput, "=[%s:%u", RTDbgModName(hDbgMod), iSeg);
                     else
-                        RTStrmPrintf(g_pStdOut, "=[%s", RTDbgModName(hDbgMod), iSeg);
+                        RTStrmPrintf(pOutput, "=[%s", RTDbgModName(hDbgMod), iSeg);
 
                     /*
                      * Do we have symbols?
@@ -309,14 +310,14 @@ int main(int argc, char **argv)
                     if (RT_SUCCESS(rc))
                     {
                         if (!offSym)
-                            RTStrmPrintf(g_pStdOut, "!%s", Symbol.szName);
+                            RTStrmPrintf(pOutput, "!%s", Symbol.szName);
                         else if (offSym > 0)
-                            RTStrmPrintf(g_pStdOut, "!%s+%#llx", Symbol.szName, offSym);
+                            RTStrmPrintf(pOutput, "!%s+%#llx", Symbol.szName, offSym);
                         else
-                            RTStrmPrintf(g_pStdOut, "!%s-%#llx", Symbol.szName, -offSym);
+                            RTStrmPrintf(pOutput, "!%s-%#llx", Symbol.szName, -offSym);
                     }
                     else
-                        RTStrmPrintf(g_pStdOut, "+%#llx", u64Address - uAddr);
+                        RTStrmPrintf(pOutput, "+%#llx", u64Address - uAddr);
 
                     /*
                      * Do we have line numbers?
@@ -325,9 +326,9 @@ int main(int argc, char **argv)
                     RTINTPTR    offLine;
                     rc = RTDbgAsLineByAddr(hDbgAs, u64Address, &offLine, &Line);
                     if (RT_SUCCESS(rc))
-                        RTStrmPrintf(g_pStdOut, " %Rbn(%u)", Line.szFilename, Line.uLineNo);
+                        RTStrmPrintf(pOutput, " %Rbn(%u)", Line.szFilename, Line.uLineNo);
 
-                    RTStrmPrintf(g_pStdOut, "]");
+                    RTStrmPrintf(pOutput, "]");
                     RTDbgModRelease(hDbgMod);
                 }
             }
@@ -336,8 +337,8 @@ int main(int argc, char **argv)
         }
 
         if (pszStart != psz)
-            RTStrmWrite(g_pStdOut, pszStart, psz - pszStart);
-        RTStrmPutCh(g_pStdOut, '\n');
+            RTStrmWrite(pOutput, pszStart, psz - pszStart);
+        RTStrmPutCh(pOutput, '\n');
 
     }
 
