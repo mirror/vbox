@@ -6635,10 +6635,14 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Reset(IWineD3DDevice* iface, WINED3DPRE
                 swapchain_setup_fullscreen_window(swapchain, pPresentationParameters->BackBufferWidth,
                         pPresentationParameters->BackBufferHeight);
             } else {
+#ifndef VBOX_WITH_WDDM
                 /* Fullscreen -> fullscreen mode change */
                 MoveWindow(swapchain->device_window, 0, 0,
                            pPresentationParameters->BackBufferWidth, pPresentationParameters->BackBufferHeight,
                            TRUE);
+#else
+                ERR("reset: fullscreen unexpected!");
+#endif
             }
         }
         else if (!swapchain->presentParms.Windowed)
@@ -6675,14 +6679,17 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Reset(IWineD3DDevice* iface, WINED3DPRE
 
     if(wined3d_settings.offscreen_rendering_mode == ORM_FBO)
     {
+#ifndef VBOX_WITH_WDDM
         RECT client_rect;
         GetClientRect(swapchain->win_handle, &client_rect);
+#endif
 
         if(!swapchain->presentParms.BackBufferCount)
         {
             TRACE("Single buffered rendering\n");
             swapchain->render_to_fbo = FALSE;
         }
+#ifndef VBOX_WITH_WDDM
         else if(swapchain->presentParms.BackBufferWidth  != client_rect.right  ||
                 swapchain->presentParms.BackBufferHeight != client_rect.bottom )
         {
@@ -6692,6 +6699,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Reset(IWineD3DDevice* iface, WINED3DPRE
                     client_rect.right, client_rect.bottom);
             swapchain->render_to_fbo = TRUE;
         }
+#endif
         else
         {
             TRACE("Rendering directly to GL_BACK\n");

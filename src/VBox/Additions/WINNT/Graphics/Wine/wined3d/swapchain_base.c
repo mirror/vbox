@@ -190,10 +190,16 @@ HRESULT WINAPI IWineD3DBaseSwapChainImpl_SetGammaRamp(IWineD3DSwapChain *iface, 
 
     IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *)iface;
     HDC hDC;
+    HWND hWnd;
+#ifndef VBOX_WITH_WDDM
+    hWnd = This->device_window;
+#else
+    hWnd = This->win_handle;
+#endif
     TRACE("(%p) : pRamp@%p flags(%d)\n", This, pRamp, Flags);
-    hDC = GetDC(This->device_window);
+    hDC = GetDC(hWnd);
     SetDeviceGammaRamp(hDC, (LPVOID)pRamp);
-    ReleaseDC(This->device_window, hDC);
+    ReleaseDC(hWnd, hDC);
     return WINED3D_OK;
 
 }
@@ -202,10 +208,16 @@ HRESULT WINAPI IWineD3DBaseSwapChainImpl_GetGammaRamp(IWineD3DSwapChain *iface, 
 
     IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *)iface;
     HDC hDC;
+    HWND hWnd;
+#ifndef VBOX_WITH_WDDM
+    hWnd = This->device_window;
+#else
+    hWnd = This->win_handle;
+#endif
     TRACE("(%p) : pRamp@%p\n", This, pRamp);
-    hDC = GetDC(This->device_window);
+    hDC = GetDC(hWnd);
     GetDeviceGammaRamp(hDC, pRamp);
-    ReleaseDC(This->device_window, hDC);
+    ReleaseDC(hWnd, hDC);
     return WINED3D_OK;
 
 }

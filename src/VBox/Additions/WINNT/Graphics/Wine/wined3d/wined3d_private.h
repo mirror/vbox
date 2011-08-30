@@ -2685,12 +2685,13 @@ struct IWineD3DSwapChainImpl
 #ifndef VBOX_WITH_WDDM
     struct wined3d_context **context;
     unsigned int            num_contexts;
-#endif
-
     HWND                    win_handle;
     HWND device_window;
-#ifdef VBOX_WITH_WDDM
     HDC hDC;
+#else
+    HWND                    win_handle;
+    HDC                     hDC;
+//    WineWndInfo *pWndInfo;
 #endif
 };
 

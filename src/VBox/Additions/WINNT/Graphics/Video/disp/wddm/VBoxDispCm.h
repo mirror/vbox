@@ -30,6 +30,8 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
 
 HRESULT vboxDispCmCmdGet(PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD pCmd, uint32_t cbCmd, DWORD dwMilliseconds);
 
+HRESULT vboxDispCmCmdInterruptWait();
+
 void vboxDispCmLog(LPCSTR pszMsg);
 
 #endif /* #ifdef ___VBoxDispCm_h___ */
