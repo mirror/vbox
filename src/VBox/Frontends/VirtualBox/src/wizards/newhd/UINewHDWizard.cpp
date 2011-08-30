@@ -371,8 +371,6 @@ QString UINewHDWizardPageFormat::fullFormatName(const QString &strBaseFormatName
         return UINewHDWizard::tr("V&MDK (Virtual Machine Disk)");
     else if (strBaseFormatName == "VHD")
         return UINewHDWizard::tr("V&HD (Virtual Hard Disk)");
-    else if (strBaseFormatName == "VHD")
-        return UINewHDWizard::tr("V&HD (Virtual Hard Disk)");
     else if (strBaseFormatName == "Parallels")
         return UINewHDWizard::tr("&Parallels (Parallels Hard Disk)");
     else if (strBaseFormatName == "QED")
