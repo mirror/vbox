@@ -2398,6 +2398,10 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
                     }
                 }
 
+                /* re-use swapchain window
+                 * this will invalidate the previusly used swapchain */
+                Params.hDeviceWindow = pSwapchain->hWnd;
+
                 hr = pDevice->pDevice9If->CreateAdditionalSwapChain(&Params, &pNewIf);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
@@ -5918,7 +5922,15 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
 
                 VBOXVDBG_BREAK_SHARED(pSrcRc);
                 VBOXVDBG_BREAK_SHARED(pDstRc);
-                VBOXVDBG_DUMP_BLT_ENTER(pSrcAlloc, pSrcSurfIf, &pData->SrcRect, pDstAlloc, pDstSurfIf, &pData->DstRect);
+                if (   pSrcAlloc->SurfDesc.width == 658 && pSrcAlloc->SurfDesc.height == 493
+                    && pData->SrcRect.left == 0 && pData->SrcRect.top == 0
+                    && pData->SrcRect.right == 658 && pData->SrcRect.bottom == 493
+                    && pDstAlloc->SurfDesc.width == 756 && pDstAlloc->SurfDesc.height == 493
+                    && pData->DstRect.left == 0 && pData->DstRect.top == 0
+                    && pData->DstRect.right == 658 && pData->DstRect.bottom == 493)
+                {
+                    VBOXVDBG_DUMP_BLT_ENTER(pSrcAlloc, pSrcSurfIf, &pData->SrcRect, pDstAlloc, pDstSurfIf, &pData->DstRect);
+                }
 
                 /* we support only Point & Linear, we ignore [Begin|Continue|End]PresentToDwm */
                 Assert((pData->Flags.Value & (~(0x00000100 | 0x00000200 | 0x00000400 | 0x00000001  | 0x00000002))) == 0);
@@ -5929,7 +5941,15 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
                                     vboxDDI2D3DBltFlags(pData->Flags));
                 Assert(hr == S_OK);
 
-                VBOXVDBG_DUMP_BLT_LEAVE(pSrcAlloc, pSrcSurfIf, &pData->SrcRect, pDstAlloc, pDstSurfIf, &pData->DstRect);
+                if (   pSrcAlloc->SurfDesc.width == 658 && pSrcAlloc->SurfDesc.height == 493
+                    && pData->SrcRect.left == 0 && pData->SrcRect.top == 0
+                    && pData->SrcRect.right == 658 && pData->SrcRect.bottom == 493
+                    && pDstAlloc->SurfDesc.width == 756 && pDstAlloc->SurfDesc.height == 493
+                    && pData->DstRect.left == 0 && pData->DstRect.top == 0
+                    && pData->DstRect.right == 658 && pData->DstRect.bottom == 493)
+                {
+                    VBOXVDBG_DUMP_BLT_LEAVE(pSrcAlloc, pSrcSurfIf, &pData->SrcRect, pDstAlloc, pDstSurfIf, &pData->DstRect);
+                }
 
                 pSrcSurfIf->Release();
             }

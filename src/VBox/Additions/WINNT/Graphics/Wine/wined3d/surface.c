@@ -3190,6 +3190,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_Flip(IWineD3DSurface *iface, IWineD3DS
     /* Flipping a OpenGL surface -> Use WineD3DDevice::Present */
     hr = IWineD3DSwapChain_Present((IWineD3DSwapChain *)swapchain,
             NULL, NULL, swapchain->win_handle, NULL, 0);
+
     IWineD3DSwapChain_Release((IWineD3DSwapChain *) swapchain);
     return hr;
 }
@@ -3646,6 +3647,9 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
     /* The only case where both surfaces on a swapchain are supported is a back buffer -> front buffer blit on the same swapchain */
     if(dstSwapchain && dstSwapchain == srcSwapchain && dstSwapchain->backBuffer &&
        ((IWineD3DSurface *) This == dstSwapchain->frontBuffer) && SrcSurface == dstSwapchain->backBuffer[0]) {
+#ifdef VBOX_WITH_WDDM
+        ERR("should never be here!!");
+#endif
         /* Half-life does a Blt from the back buffer to the front buffer,
          * Full surface size, no flags... Use present instead
          *
@@ -3888,6 +3892,7 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
          * whereas the real gl drawable size is the size of the window.
          */
         if (dstSwapchain && (IWineD3DSurface *)This == dstSwapchain->frontBuffer) {
+#ifndef VBOX_WITH_WDDM
             RECT windowsize;
             POINT offset = {0,0};
             UINT h;
@@ -3903,6 +3908,7 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
             dst_rect.left -= offset.x; dst_rect.right -=offset.x;
             dst_rect.top -= offset.y; dst_rect.bottom -=offset.y;
             dst_rect.top += This->currentDesc.Height - h; dst_rect.bottom += This->currentDesc.Height - h;
+#endif
         }
         else if (surface_is_offscreen((IWineD3DSurface *)This))
         {

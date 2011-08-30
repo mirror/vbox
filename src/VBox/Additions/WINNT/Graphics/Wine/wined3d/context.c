@@ -736,12 +736,21 @@ static BOOL context_set_pixel_format(const struct wined3d_gl_info *gl_info, HDC 
 #ifdef VBOX_WITH_WDDM
 static BOOL swapchain_validate(IWineD3DSwapChainImpl *swapchain)
 {
-    HWND hWnd = WindowFromDC(swapchain->hDC);
-    if (hWnd != swapchain->win_handle)
+    if (!swapchain->hDC)
     {
-        ERR("Unexpected swapchain for dc %p window expected %p, but was %p.\n", swapchain->hDC, swapchain->win_handle, hWnd);
+        ERR("NULL hDC");
         return FALSE;
     }
+
+#ifdef DEBUG
+    {
+        HWND hWnd = WindowFromDC(swapchain->hDC);
+        if (hWnd != swapchain->win_handle)
+        {
+            ERR("Unexpected swapchain for dc %p window expected %p, but was %p.\n", swapchain->hDC, swapchain->win_handle, hWnd);
+        }
+    }
+#endif
     return TRUE;
 }
 

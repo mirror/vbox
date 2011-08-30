@@ -251,6 +251,7 @@ IWineGDISurfaceImpl_Flip(IWineD3DSurface *iface,
 
     hr = IWineD3DSwapChain_Present((IWineD3DSwapChain *)swapchain,
             NULL, NULL, swapchain->win_handle, NULL, 0);
+
     IWineD3DSwapChain_Release((IWineD3DSwapChain *) swapchain);
     return hr;
 }
