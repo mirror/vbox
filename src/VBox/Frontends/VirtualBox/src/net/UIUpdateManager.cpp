@@ -33,6 +33,10 @@
 #include "VBoxUtils.h"
 #include "UIDownloaderExtensionPack.h"
 #include "UIGlobalSettingsExtension.h"
+#include "VBoxDefs.h"
+
+/* Using declarations: */
+using namespace VBoxGlobalDefs;
 
 /* UIUpdateManager stuff: */
 UIUpdateManager* UIUpdateManager::m_pInstance = 0;
@@ -125,8 +129,7 @@ void UIUpdateManager::checkIfUpdateIsNecessaryForExtensionPack(bool /* fForceCal
         return;
 
     /* Get extension pack information: */
-    QString strExtPackName = "Oracle VM VirtualBox Extension Pack";
-    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(strExtPackName);
+    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(UI_ExtPackName);
     /* Check if extension pack is really installed: */
     if (extPack.isNull())
         return;
@@ -134,14 +137,14 @@ void UIUpdateManager::checkIfUpdateIsNecessaryForExtensionPack(bool /* fForceCal
     /* Get VirtualBox version: */
     VBoxVersion vboxVersion(vboxGlobal().vboxVersionStringNormalized());
     /* Get extension pack version: */
-    VBoxVersion expackVersion(extPack.GetVersion().remove(VBOX_BUILD_PUBLISHER));
+    VBoxVersion extPackVersion(extPack.GetVersion().remove(VBOX_BUILD_PUBLISHER));
     /* Check if extension pack version less than required: */
     if ((vboxVersion.z() % 2 != 0) /* Skip unstable VBox version */ ||
-        !(expackVersion < vboxVersion) /* Ext Pack version more or equal to VBox version */)
+        !(extPackVersion < vboxVersion) /* Ext Pack version more or equal to VBox version */)
         return;
 
     /* Ask the user about extension pack downloading: */
-    if (!msgCenter().proposeDownloadExtensionPack())
+    if (!msgCenter().proposeDownloadExtensionPack(UI_ExtPackName))
         return;
 
     /* Run downloader for VirtualBox extension pack: */
@@ -151,7 +154,7 @@ void UIUpdateManager::checkIfUpdateIsNecessaryForExtensionPack(bool /* fForceCal
 void UIUpdateManager::sltHandleDownloadedExtensionPack(const QString &strSource, const QString &strTarget)
 {
     /* Warn the user about extension pack was downloaded and saved, propose to install it: */
-    if (msgCenter().proposeInstallExtentionPack(strSource, QDir::toNativeSeparators(strTarget)))
+    if (msgCenter().proposeInstallExtentionPack(UI_ExtPackName, strSource, QDir::toNativeSeparators(strTarget)))
         UIGlobalSettingsExtension::doInstallation(strTarget, msgCenter().mainWindowShown(), NULL);
 }
 

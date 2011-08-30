@@ -27,6 +27,10 @@
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "QIFileDialog.h"
+#include "VBoxDefs.h"
+
+/* Using declarations: */
+using namespace VBoxGlobalDefs;
 
 /* UIMiniProgressWidget stuff: */
 UIMiniProgressWidgetExtension::UIMiniProgressWidgetExtension(const QString &strSource, QWidget *pParent /* = 0 */)
@@ -38,9 +42,9 @@ UIMiniProgressWidgetExtension::UIMiniProgressWidgetExtension(const QString &strS
 
 void UIMiniProgressWidgetExtension::retranslateUi()
 {
-    setCancelButtonToolTip(tr("Cancel the VirtualBox Extension Pack download"));
-    setProgressBarToolTip(tr("Downloading the VirtualBox Extension Pack from <nobr><b>%1</b>...</nobr>")
-                            .arg(source()));
+    setCancelButtonToolTip(tr("Cancel the <nobr><b>%1</b></nobr> download").arg(UI_ExtPackName));
+    setProgressBarToolTip(tr("Downloading the <nobr><b>%1</b></nobr> from <nobr><b>%2</b>...</nobr>")
+                             .arg(UI_ExtPackName, source()));
 }
 
 /* UIDownloaderExtensionPack stuff: */
@@ -67,8 +71,9 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
         m_pInstance = this;
 
     /* Prepare source/target: */
+    QString strExtPackUnderscoredName(QString(UI_ExtPackName).replace(' ', '_'));
     QString strTemplateSourcePath("http://download.virtualbox.org/virtualbox/%1/");
-    QString strTemplateSourceName("Oracle_VM_VirtualBox_Extension_Pack-%1.vbox-extpack");
+    QString strTemplateSourceName(QString("%1-%2.vbox-extpack").arg(strExtPackUnderscoredName));
     QString strSourcePath(strTemplateSourcePath.arg(vboxGlobal().vboxVersionStringNormalized()));
     QString strSourceName(strTemplateSourceName.arg(vboxGlobal().vboxVersionStringNormalized()));
     QString strSource(strSourcePath + strSourceName);
@@ -98,7 +103,7 @@ UIMiniProgressWidget* UIDownloaderExtensionPack::createProgressWidgetFor(QWidget
 
 bool UIDownloaderExtensionPack::askForDownloadingConfirmation(QNetworkReply *pReply)
 {
-    return msgCenter().confirmDownloadExtensionPack(source(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    return msgCenter().confirmDownloadExtensionPack(UI_ExtPackName, source(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
 void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
@@ -122,12 +127,12 @@ void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
         else
         {
             /* Warn the user about extension pack was downloaded but was NOT saved, explain it: */
-            msgCenter().warnAboutExtentionPackCantBeSaved(source(), QDir::toNativeSeparators(target()));
+            msgCenter().warnAboutExtentionPackCantBeSaved(UI_ExtPackName, source(), QDir::toNativeSeparators(target()));
         }
 
         /* Ask the user for another location for the extension pack file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(), parentWidget(),
-                                                               tr("Select folder to save VirtualBox Extension Pack to"), true);
+                                                               tr("Select folder to save %1 to").arg(UI_ExtPackName), true);
 
         /* Check if user had really set a new target: */
         if (!strTarget.isNull())
@@ -139,6 +144,6 @@ void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
 
 void UIDownloaderExtensionPack::warnAboutNetworkError(const QString &strError)
 {
-    return msgCenter().cannotDownloadExtensionPack(source(), strError);
+    return msgCenter().cannotDownloadExtensionPack(UI_ExtPackName, source(), strError);
 }
 

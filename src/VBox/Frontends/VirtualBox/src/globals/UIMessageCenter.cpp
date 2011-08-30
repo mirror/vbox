@@ -21,6 +21,7 @@
 #include <QDir>
 #include <QDesktopWidget>
 #include <QFileInfo>
+#include <QLocale>
 #include <QThread>
 #ifdef Q_WS_MAC
 # include <QPushButton>
@@ -1702,14 +1703,14 @@ void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName)
                  .arg(strMachineName));
 }
 
-bool UIMessageCenter::confirmDownloadAdditions(const QString &strUrl,
-                                               ulong uSize)
+bool UIMessageCenter::confirmDownloadAdditions(const QString &strUrl, qulonglong uSize)
 {
+    QLocale loc(VBoxGlobal::languageId());
     return messageOkCancel(mainMachineWindowShown(), Question,
         tr("<p>Are you sure you want to download the VirtualBox "
            "Guest Additions CD image from "
            "<nobr><a href=\"%1\">%2</a></nobr> "
-           "(size %3 bytes)?</p>").arg(strUrl).arg(strUrl).arg(uSize),
+           "(size %3 bytes)?</p>").arg(strUrl).arg(strUrl).arg(loc.toString(uSize)),
         0, /* pcszAutoConfirmId */
         tr("Download", "additions"));
 }
@@ -1747,13 +1748,14 @@ bool UIMessageCenter::askAboutUserManualDownload(const QString &strMissedLocatio
                            tr("Download", "additions"));
 }
 
-bool UIMessageCenter::confirmUserManualDownload(const QString &strURL, ulong uSize)
+bool UIMessageCenter::confirmUserManualDownload(const QString &strURL, qulonglong uSize)
 {
+    QLocale loc(VBoxGlobal::languageId());
     return messageOkCancel(mainWindowShown(), Question,
                            tr("<p>Are you sure you want to download the VirtualBox "
                               "User Manual from "
                               "<nobr><a href=\"%1\">%2</a></nobr> "
-                              "(size %3 bytes)?</p>").arg(strURL).arg(strURL).arg(uSize),
+                              "(size %3 bytes)?</p>").arg(strURL).arg(strURL).arg(loc.toString(uSize)),
                            0, /* Auto-confirm Id */
                            tr("Download", "additions"));
 }
@@ -1787,57 +1789,55 @@ void UIMessageCenter::warnAboutUserManualCantBeSaved(const QString &strURL, cons
                .arg(strURL).arg(strURL).arg(strTarget));
 }
 
-bool UIMessageCenter::proposeDownloadExtensionPack()
+bool UIMessageCenter::proposeDownloadExtensionPack(const QString &strExtPackName)
 {
     return messageOkCancel(mainWindowShown(), Question,
-                           tr("<p>You have an old "
-                              "VirtualBox Extension Pack installed.</p>"
-                              "<p>Do you wish to download latest one from the Internet?</p>"),
+                           tr("<p>You have an old <b><nobr>%1</nobr></b> installed.</p>"
+                              "<p>Do you wish to download latest one from the Internet?</p>")
+                              .arg(strExtPackName),
                            0, /* Auto-confirm Id */
                            tr("Download", "extension pack"));
 }
 
-bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strURL, ulong uSize)
+bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize)
 {
+    QLocale loc(VBoxGlobal::languageId());
     return messageOkCancel(mainWindowShown(), Question,
-                           tr("<p>Are you sure you want to download the "
-                              "VirtualBox Extension Pack from "
-                              "<nobr><a href=\"%1\">%2</a></nobr> "
-                              "(size %3 bytes)?</p>").arg(strURL).arg(strURL).arg(uSize),
+                           tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
+                              "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
+                              .arg(strExtPackName, strURL, loc.toString(uSize)),
                            0, /* Auto-confirm Id */
                            tr("Download", "extension pack"));
 }
 
-bool UIMessageCenter::proposeInstallExtentionPack(const QString &strFrom, const QString &strTo)
+bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo)
 {
     return messageOkCancel(mainWindowShown(), Question,
-                           tr("<p>The VirtualBox Extension Pack has been "
-                              "successfully downloaded from "
-                              "<nobr><a href=\"%1\">%2</a></nobr> "
+                           tr("<p>The <b><nobr>%1</nobr></b> has been "
+                              "successfully downloaded from <nobr><a href=\"%2\">%2</a></nobr> "
                               "and saved locally as <nobr><b>%3</b>.</nobr></p>"
                               "<p>Do you wish to install this extension pack?</p>")
-                              .arg(strFrom).arg(strFrom).arg(strTo),
+                              .arg(strExtPackName, strFrom, strTo),
                            0, /* Auto-confirm Id */
                            tr ("Install", "extension pack"));
 }
 
-void UIMessageCenter::warnAboutExtentionPackCantBeSaved(const QString &strFrom, const QString &strTo)
+void UIMessageCenter::warnAboutExtentionPackCantBeSaved(const QString &strExtPackName, const QString &strFrom, const QString &strTo)
 {
     message(mainWindowShown(), Error,
-            tr("<p>The VirtualBox Extension Pack has been "
-               "successfully downloaded from "
-               "<nobr><a href=\"%1\">%2</a></nobr> "
+            tr("<p>The <b><nobr>%1</nobr></b> has been "
+               "successfully downloaded from <nobr><a href=\"%2\">%2</a></nobr> "
                "but can't be saved locally as <nobr><b>%3</b>.</nobr></p>"
                "<p>Please choose another location for that file.</p>")
-               .arg(strFrom).arg(strFrom).arg(strTo));
+               .arg(strExtPackName, strFrom, strTo));
 }
 
-void UIMessageCenter::cannotDownloadExtensionPack(const QString &strFrom, const QString &strError)
+void UIMessageCenter::cannotDownloadExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strError)
 {
     message(mainWindowShown(), Error,
-            tr("<p>Failed to download the VirtualBox Extension Pack "
-               "from <nobr><a href=\"%1\">%2</a>.</nobr></p><p>%3</p>")
-               .arg(strFrom).arg(strFrom).arg(strError));
+            tr("<p>Failed to download the <b><nobr>%1</nobr></b> "
+               "from <nobr><a href=\"%2\">%2</a>.</nobr></p><p>%3</p>")
+               .arg(strExtPackName, strFrom, strError));
 }
 
 void UIMessageCenter::cannotConnectRegister(QWidget *pParent,
