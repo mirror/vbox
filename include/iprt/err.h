@@ -1422,6 +1422,18 @@ RT_C_DECLS_END
 #define VERR_DBG_NOT_LINUX_KALLSYMS             (-666)
 /** No debug module interpreter matching the debug info. */
 #define VERR_DBG_NO_MATCHING_INTERPRETER        (-667)
+/** Bad DWARF line number header. */
+#define VERR_DWARF_BAD_LINE_NUMBER_HEADER       (-668)
+/** Unexpected end of DWARF unit. */
+#define VERR_DWARF_UNEXPECTED_END               (-669)
+/** DWARF LEB value overflows the decoder type. */
+#define VERR_DWARF_LEB_OVERFLOW                 (-670)
+/** Bad DWARF extended line number opcode. */
+#define VERR_DWARF_BAD_LNE                      (-671)
+/** Bad DWARF string. */
+#define VERR_DWARF_BAD_STRING                   (-672)
+/** Bad DWARF position. */
+#define VERR_DWARF_BAD_POS                      (-673)
 /** @} */
 
 /** @name Request Packet Status Codes.
@@ -1639,7 +1651,7 @@ RT_C_DECLS_END
 #define VERR_DVM_MAP_NO_VOLUME                      (-22201)
 /** @} */
 
-/** @name RTDvm status codes
+/** @name Logger status codes
  * @{ */
 /** The internal logger revision did not match. */
 #define VERR_LOG_REVISION_MISMATCH                  (-22300)

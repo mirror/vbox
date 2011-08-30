@@ -28,15 +28,16 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP   RTLOGGROUP_DBG_DWARF
 #include <iprt/dbg.h>
 #include "internal/iprt.h"
 
 #include <iprt/asm.h>
-#include <iprt/err.h>
 #include <iprt/ctype.h>
+#include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
-#include <iprt/stream.h>
 #include <iprt/string.h>
 #include "internal/dbgmod.h"
 
@@ -148,12 +149,6 @@ typedef struct RTDWARFSECTRDR
 } RTDWARFCURSOR;
 /** Pointer to a DWARF section reader. */
 typedef RTDWARFCURSOR *PRTDWARFCURSOR;
-
-
-#define VERR_DWARF_BAD_LINE_NUMBER_HEADER   -55555
-#define VERR_DWARF_UNEXPECTED_END           -55554
-#define VERR_DWARF_LEB_OVERFLOW             -55553
-#define VERR_DWARF_BAD_LNE                  -55552
 
 
 /**
@@ -454,7 +449,7 @@ static int64_t rtDwarfCursor_GetSLeb128(PRTDWARFCURSOR pCursor, int64_t sErrValu
     }
     /* Sign extend the value. */
     else if (u64Ret & RT_BIT_64(cBits - 1))
-        u64Ret |= ~RT_BIT_64(cBits - 1);
+        u64Ret |= ~(RT_BIT_64(cBits - 1) - 1);
 
     return (int64_t)u64Ret;
 }
@@ -536,7 +531,10 @@ static const char *rtDwarfCursor_GetSZ(PRTDWARFCURSOR pCursor, const char *pszEr
     for (;;)
     {
         if (!pCursor->cbUnitLeft)
+        {
+            pCursor->rc = VERR_DWARF_BAD_STRING;
             return pszErrValue;
+        }
         pCursor->cbUnitLeft--;
         pCursor->cbLeft--;
         if (!*pCursor->pb++)
@@ -608,9 +606,60 @@ static uint64_t rtDwarfCursor_GetInitalLength(PRTDWARFCURSOR pCursor)
 }
 
 
+/**
+ * Calculates an absolute cursor position from one relative to the current
+ * cursor position.
+ *
+ * @returns The absolute cursor position.
+ * @param   pCursor             The cursor.
+ * @param   offRelative         The relative position.  Must be a positive
+ *                              offset.
+ */
+static uint8_t const *rtDwarfCursor_CalcPos(PRTDWARFCURSOR pCursor, size_t offRelative)
+{
+    if (offRelative > pCursor->cbUnitLeft)
+    {
+        pCursor->rc = VERR_DWARF_BAD_POS;
+        return NULL;
+    }
+    return pCursor->pb + offRelative;
+}
+
+
+/**
+ * Advances the cursor to the given position.
+ *
+ * @returns IPRT status code.
+ * @param   pCursor             The cursor.
+ * @param   pbNewPos            The new position - returned by
+ *                              rtDwarfCursor_CalcPos().
+ */
+static int rtDwarfCursor_AdvanceToPos(PRTDWARFCURSOR pCursor, uint8_t const *pbNewPos)
+{
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+    AssertPtr(pbNewPos);
+    if ((uintptr_t)pbNewPos < (uintptr_t)pCursor->pb)
+        return pCursor->rc = VERR_DWARF_BAD_POS;
+
+    uintptr_t cbAdj = (uintptr_t)pbNewPos - (uintptr_t)pCursor->pb;
+    if (RT_UNLIKELY(cbAdj > pCursor->cbUnitLeft))
+    {
+        AssertFailed();
+        pCursor->rc = VERR_DWARF_BAD_POS;
+        cbAdj = pCursor->cbUnitLeft;
+    }
+
+    pCursor->cbUnitLeft -= cbAdj;
+    pCursor->cbLeft     -= cbAdj;
+    pCursor->pb         += cbAdj;
+    return pCursor->rc;
+}
+
+
 static bool rtDwarfCursor_IsAtEndOfUnit(PRTDWARFCURSOR pCursor)
 {
-    return pCursor->cbUnitLeft > 0;
+    return !pCursor->cbUnitLeft;
 }
 
 
@@ -625,7 +674,7 @@ static int rtDwarfCursor_SkipUnit(PRTDWARFCURSOR pCursor)
 
 static bool rtDwarfCursor_IsAtEnd(PRTDWARFCURSOR pCursor)
 {
-    return pCursor->cbLeft > 0;
+    return !pCursor->cbLeft;
 }
 
 
@@ -818,7 +867,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_Close(PRTDBGMODINT pMod)
  */
 typedef struct RTDWARFLINESTATE
 {
-    /** Registers */
+    /** Virtual Line Number Machine Registers. */
     struct
     {
         uint64_t        uAddress;
@@ -836,18 +885,19 @@ typedef struct RTDWARFLINESTATE
     } Regs;
     /** @} */
 
-    /** @name Header
-     * @{ */
-    uint32_t        uVer;
-    uint64_t        cbSkipAfterHdr;
-    uint8_t         cbMinInstr;
-    uint8_t         cMaxOpsPerInstr;
-    uint8_t         u8DefIsStmt;
-    int8_t          s8LineBase;
-    uint8_t         u8LineRange;
-    uint8_t         u8OpcodeBase;
-    uint8_t const  *pacStdOperands;
-    /** @} */
+    /** Header. */
+    struct
+    {
+        uint32_t        uVer;
+        uint64_t        offFirstOpcode;
+        uint8_t         cbMinInstr;
+        uint8_t         cMaxOpsPerInstr;
+        uint8_t         u8DefIsStmt;
+        int8_t          s8LineBase;
+        uint8_t         u8LineRange;
+        uint8_t         u8OpcodeBase;
+        uint8_t const  *pacStdOperands;
+    } Hdr;
 
     /** @name Include Path Table (0-based)
      * @{ */
@@ -855,7 +905,7 @@ typedef struct RTDWARFLINESTATE
     uint32_t        cIncPaths;
     /** @} */
 
-    /** @name File Name Table (1-based)
+    /** @name File Name Table (0-based, dummy zero entry)
      * @{ */
     char          **papszFileNames;
     uint32_t        cFileNames;
@@ -900,7 +950,9 @@ static int rtDwarfLine_DefineFileName(PRTDWARFLINESTATE pLnState, const char *ps
     /*
      * Sanitize the name.
      */
-    return rtDbgModDwarfStringToUtf8(pLnState->pDwarfMod, &pLnState->papszFileNames[iFileName]);
+    int rc = rtDbgModDwarfStringToUtf8(pLnState->pDwarfMod, &pLnState->papszFileNames[iFileName]);
+    Log(("  File #%02u = '%s'\n", iFileName, pLnState->papszFileNames[iFileName]));
+    return rc;
 }
 
 
@@ -913,7 +965,14 @@ static int rtDwarfLine_StdOp_Copy(PRTDWARFLINESTATE pLnState)
     RTUINTPTR   offSeg;
     int rc = rtDbgModDwarfLinkAddressToSegOffset(pLnState->pDwarfMod, pLnState->Regs.uAddress, &iSeg, &offSeg);
     if (RT_SUCCESS(rc))
+    {
+        Log2(("rtDwarfLine_StdOp_Copy: %x:%08llx (%#llx) %s(%d)\n", iSeg, offSeg, pLnState->Regs.uAddress, pszFile, pLnState->Regs.uLine));
         rc = RTDbgModLineAdd(pLnState->pDwarfMod->hCnt, pszFile, pLnState->Regs.uLine, iSeg, offSeg, NULL);
+
+        /* Ignore address conflicts for now. */
+        if (rc == VERR_DBG_ADDRESS_CONFLICT)
+            rc = VINF_SUCCESS;
+    }
 
     pLnState->Regs.fBasicBlock    = false;
     pLnState->Regs.fPrologueEnd   = false;
@@ -935,7 +994,7 @@ static void rtDwarfLine_ResetState(PRTDWARFLINESTATE pLnState)
     pLnState->Regs.iFile            = 1;
     pLnState->Regs.uLine            = 1;
     pLnState->Regs.uColumn          = 0;
-    pLnState->Regs.fIsStatement     = RT_BOOL(pLnState->u8DefIsStmt);
+    pLnState->Regs.fIsStatement     = RT_BOOL(pLnState->Hdr.u8DefIsStmt);
     pLnState->Regs.fBasicBlock      = false;
     pLnState->Regs.fEndSequence     = false;
     pLnState->Regs.fPrologueEnd     = false;
@@ -954,22 +1013,35 @@ static void rtDwarfLine_ResetState(PRTDWARFLINESTATE pLnState)
  */
 static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCursor)
 {
+    LogFlow(("rtDwarfLine_RunProgram: cbUnitLeft=%zu\n", pCursor->cbUnitLeft));
+
     int rc = VINF_SUCCESS;
     rtDwarfLine_ResetState(pLnState);
-    do
+
+    while (!rtDwarfCursor_IsAtEndOfUnit(pCursor))
     {
-        uint8_t bOpCode = rtDwarfCursor_GetUByte(pCursor, 0);
-        if (bOpCode > pLnState->u8OpcodeBase)
+        uint8_t bOpCode = rtDwarfCursor_GetUByte(pCursor, DW_LNS_extended);
+        if (bOpCode > pLnState->Hdr.u8OpcodeBase)
         {
             /*
              * Special opcode.
              */
-            bOpCode -= pLnState->u8OpcodeBase;
-            pLnState->Regs.uLine    += bOpCode % pLnState->u8LineRange + (int32_t)pLnState->s8LineBase;
-            bOpCode /= pLnState->u8LineRange;
-            pLnState->Regs.uAddress += (pLnState->Regs.idxOp + bOpCode) / pLnState->cMaxOpsPerInstr
-                                     * pLnState->cbMinInstr;
-            pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + bOpCode) % pLnState->cMaxOpsPerInstr;
+            uint8_t const bLogOpCode = bOpCode; NOREF(bLogOpCode);
+            bOpCode -= pLnState->Hdr.u8OpcodeBase;
+
+            int32_t const cLineDelta = bOpCode % pLnState->Hdr.u8LineRange + (int32_t)pLnState->Hdr.s8LineBase;
+            bOpCode /= pLnState->Hdr.u8LineRange;
+
+            uint64_t uTmp = bOpCode + pLnState->Regs.idxOp + bOpCode;
+            uint64_t const cAddressDelta = uTmp / pLnState->Hdr.cMaxOpsPerInstr * pLnState->Hdr.cbMinInstr;
+            uint64_t const cOpIndexDelta = uTmp % pLnState->Hdr.cMaxOpsPerInstr;
+
+            pLnState->Regs.uLine    += cLineDelta;
+            pLnState->Regs.uAddress += cAddressDelta;
+            pLnState->Regs.idxOp    += cOpIndexDelta;
+            Log2(("DW Special Opcode %#04x: uLine + %d => %u; uAddress + %#llx => %#llx; idxOp + %#llx => %#llx\n",
+                  bLogOpCode, cLineDelta, pLnState->Regs.uLine, cAddressDelta, pLnState->Regs.uAddress,
+                  cOpIndexDelta, pLnState->Regs.idxOp));
 
             rc = rtDwarfLine_StdOp_Copy(pLnState);
         }
@@ -981,64 +1053,80 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                  * Standard opcode.
                  */
                 case DW_LNS_copy:
-                    rtDwarfLine_StdOp_Copy(pLnState);
+                    Log2(("DW_LNS_copy\n"));
+                    rc = rtDwarfLine_StdOp_Copy(pLnState);
                     break;
 
                 case DW_LNS_advance_pc:
                 {
                     uint64_t u64Adv = rtDwarfCursor_GetULeb128(pCursor, 0);
-                    pLnState->Regs.uAddress += (pLnState->Regs.idxOp + u64Adv) / pLnState->cMaxOpsPerInstr
-                                             * pLnState->cbMinInstr;
-                    pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + u64Adv) % pLnState->cMaxOpsPerInstr;
+                    pLnState->Regs.uAddress += (pLnState->Regs.idxOp + u64Adv) / pLnState->Hdr.cMaxOpsPerInstr
+                                             * pLnState->Hdr.cbMinInstr;
+                    pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + u64Adv) % pLnState->Hdr.cMaxOpsPerInstr;
+                    Log2(("DW_LNS_advance_pc\n"));
                     break;
                 }
 
                 case DW_LNS_advance_line:
-                    pLnState->Regs.uLine += rtDwarfCursor_GetSLeb128AsS32(pCursor, 0);
+                {
+                    int32_t cLineDelta = rtDwarfCursor_GetSLeb128AsS32(pCursor, 0);
+                    pLnState->Regs.uLine += cLineDelta;
+                    Log2(("DW_LNS_advance_line: uLine + %d => %u\n", cLineDelta, pLnState->Regs.uLine));
                     break;
+                }
 
                 case DW_LNS_set_file:
                     pLnState->Regs.iFile = rtDwarfCursor_GetULeb128AsU32(pCursor, 0);
+                    Log2(("DW_LNS_set_file: iFile=%u\n", pLnState->Regs.iFile));
                     break;
 
                 case DW_LNS_set_column:
                     pLnState->Regs.uColumn = rtDwarfCursor_GetULeb128AsU32(pCursor, 0);
+                    Log2(("DW_LNS_set_column\n"));
                     break;
 
                 case DW_LNS_negate_stmt:
                     pLnState->Regs.fIsStatement = !pLnState->Regs.fIsStatement;
+                    Log2(("DW_LNS_negate_stmt\n"));
                     break;
 
                 case DW_LNS_set_basic_block:
                     pLnState->Regs.fBasicBlock = true;
+                    Log2(("DW_LNS_set_basic_block\n"));
                     break;
 
                 case DW_LNS_const_add_pc:
-                    pLnState->Regs.uAddress += (pLnState->Regs.idxOp + 255) / pLnState->cMaxOpsPerInstr
-                                             * pLnState->cbMinInstr;
-                    pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + 255) % pLnState->cMaxOpsPerInstr;
+                    pLnState->Regs.uAddress += (pLnState->Regs.idxOp + 255) / pLnState->Hdr.cMaxOpsPerInstr
+                                             * pLnState->Hdr.cbMinInstr;
+                    pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + 255) % pLnState->Hdr.cMaxOpsPerInstr;
+                    Log2(("DW_LNS_const_add_pc\n"));
                     break;
 
                 case DW_LNS_fixed_advance_pc:
                     pLnState->Regs.uAddress += rtDwarfCursor_GetUHalf(pCursor, 0);
                     pLnState->Regs.idxOp     = 0;
+                    Log2(("DW_LNS_fixed_advance_pc\n"));
                     break;
 
                 case DW_LNS_set_prologue_end:
                     pLnState->Regs.fPrologueEnd = true;
+                    Log2(("DW_LNS_set_prologue_end\n"));
                     break;
 
                 case DW_LNS_set_epilogue_begin:
                     pLnState->Regs.fEpilogueBegin = true;
+                    Log2(("DW_LNS_set_epilogue_begin\n"));
                     break;
 
                 case DW_LNS_set_isa:
                     pLnState->Regs.uIsa = rtDwarfCursor_GetULeb128AsU32(pCursor, 0);
+                    Log2(("DW_LNS_set_isa %#x\n", pLnState->Regs.uIsa));
                     break;
 
                 default:
                 {
-                    unsigned cOpsToSkip = pLnState->pacStdOperands[bOpCode - 1];
+                    unsigned cOpsToSkip = pLnState->Hdr.pacStdOperands[bOpCode - 1];
+                    Log2(("rtDwarfLine_RunProgram: Unknown standard opcode %#x, %#x operands\n", bOpCode, cOpsToSkip));
                     while (cOpsToSkip-- > 0)
                         rc = rtDwarfCursor_SkipLeb128(pCursor);
                     break;
@@ -1049,24 +1137,80 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                  */
                 case DW_LNS_extended:
                 {
+                    /* The instruction has a length prefix. */
                     uint64_t cbInstr = rtDwarfCursor_GetULeb128(pCursor, UINT64_MAX);
+                    if (RT_FAILURE(pCursor->rc))
+                        return pCursor->rc;
                     if (cbInstr > pCursor->cbUnitLeft)
                         return VERR_DWARF_BAD_LNE;
-                    /** @todo continue here. */
+                    uint8_t const * const pbEndOfInstr = rtDwarfCursor_CalcPos(pCursor, cbInstr);
+
+                    /* Get the opcode and deal with it if we know it. */
                     bOpCode = rtDwarfCursor_GetUByte(pCursor, 0);
                     switch (bOpCode)
                     {
                         case DW_LNE_end_sequence:
+#if 0 /* No need for this */
+                            pLnState->Regs.fEndSequence = true;
+                            rc = rtDwarfLine_StdOp_Copy(pLnState);
+#endif
+                            rtDwarfLine_ResetState(pLnState);
+                            Log2(("DW_LNE_end_sequence\n"));
+                            break;
+
                         case DW_LNE_set_address:
+                            switch (cbInstr - 1)
+                            {
+                                case 2: pLnState->Regs.uAddress = rtDwarfCursor_GetU16(pCursor, UINT16_MAX); break;
+                                case 4: pLnState->Regs.uAddress = rtDwarfCursor_GetU32(pCursor, UINT32_MAX); break;
+                                case 8: pLnState->Regs.uAddress = rtDwarfCursor_GetU64(pCursor, UINT64_MAX); break;
+                                default:
+                                    AssertMsgFailed(("%d\n", cbInstr));
+                                    pLnState->Regs.uAddress = rtDwarfCursor_GetUOff(pCursor, UINT64_MAX);
+                                    break;
+                            }
+                            pLnState->Regs.idxOp = 0;
+                            Log2(("DW_LNE_set_address: %#llx\n", pLnState->Regs.uAddress));
+                            break;
+
                         case DW_LNE_define_file:
+                        {
+                            const char *pszFilename = rtDwarfCursor_GetSZ(pCursor, NULL);
+                            uint32_t    idxInc      = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
+                            rtDwarfCursor_SkipLeb128(pCursor); /* st_mtime */
+                            rtDwarfCursor_SkipLeb128(pCursor); /* st_size */
+                            Log2(("DW_LNE_define_file: {%d}/%s\n", idxInc, pszFilename));
+
+                            rc = rtDwarfCursor_AdvanceToPos(pCursor, pbEndOfInstr);
+                            if (RT_SUCCESS(rc))
+                                rc = rtDwarfLine_DefineFileName(pLnState, pszFilename, idxInc);
+                        }
+
                         case DW_LNE_set_descriminator:
+                            pLnState->Regs.uDiscriminator = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
+                            Log2(("DW_LNE_set_descriminator: %u\n", pLnState->Regs.uDiscriminator));
+                            break;
+
+                        default:
+                            Log2(("rtDwarfLine_RunProgram: Unknown extended opcode %#x, length %#x\n", bOpCode, cbInstr));
                             break;
                     }
+
+                    /* Advance the cursor to the end of the instruction . */
+                    rtDwarfCursor_AdvanceToPos(pCursor, pbEndOfInstr);
                     break;
                 }
             }
         }
-    } while (RT_SUCCESS(rc));
+
+        /*
+         * Check the status before looping.
+         */
+        if (RT_FAILURE(rc))
+            return rc;
+        if (RT_FAILURE(pCursor->rc))
+            return pCursor->rc;
+    }
     return rc;
 }
 
@@ -1080,6 +1224,10 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
  */
 static int rtDwarfLine_ReadFileNames(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCursor)
 {
+    int rc = rtDwarfLine_DefineFileName(pLnState, "/<bad-zero-file-name-entry>", 0);
+    if (RT_FAILURE(rc))
+        return rc;
+
     for (;;)
     {
         const char *psz = rtDwarfCursor_GetSZ(pCursor, NULL);
@@ -1090,11 +1238,11 @@ static int rtDwarfLine_ReadFileNames(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR 
         rtDwarfCursor_SkipLeb128(pCursor); /* st_mtime */
         rtDwarfCursor_SkipLeb128(pCursor); /* st_size */
 
-        int rc = rtDwarfLine_DefineFileName(pLnState, psz, idxInc);
+        rc = rtDwarfLine_DefineFileName(pLnState, psz, idxInc);
         if (RT_FAILURE(rc))
             return rc;
     }
-    return VINF_SUCCESS;
+    return pCursor->rc;
 }
 
 
@@ -1117,6 +1265,7 @@ static int rtDwarfLine_ReadIncludePaths(PRTDWARFLINESTATE pLnState, PRTDWARFCURS
                 return VERR_NO_MEMORY;
             pLnState->papszIncPaths = (const char **)pv;
         }
+        Log(("  Path #%02u = '%s'\n", pLnState->cIncPaths, psz));
         pLnState->papszIncPaths[pLnState->cIncPaths] = psz;
         pLnState->cIncPaths++;
 
@@ -1125,7 +1274,7 @@ static int rtDwarfLine_ReadIncludePaths(PRTDWARFLINESTATE pLnState, PRTDWARFCURS
             break;
     }
 
-    return VINF_SUCCESS;
+    return pCursor->rc;
 }
 
 
@@ -1138,30 +1287,57 @@ static int rtDbgModDwarfExplodeLineNumbersForUnit(PRTDBGMODDWARF pThis, PRTDWARF
     /*
      * Parse the header.
      */
-    LnState.uVer           = rtDwarfCursor_GetUHalf(pCursor, 0);
-    if (LnState.uVer >= 2 && LnState.uVer <= 4)
+    rtDwarfCursor_GetInitalLength(pCursor);
+    LnState.Hdr.uVer           = rtDwarfCursor_GetUHalf(pCursor, 0);
+    if (   LnState.Hdr.uVer < 2
+        || LnState.Hdr.uVer > 4)
         return rtDwarfCursor_SkipUnit(pCursor);
-    LnState.cbSkipAfterHdr = rtDwarfCursor_GetUOff(pCursor, 0);
-    LnState.cbMinInstr     = rtDwarfCursor_GetUByte(pCursor, 0);
-    LnState.cMaxOpsPerInstr= rtDwarfCursor_GetUByte(pCursor, 0);
-    LnState.u8DefIsStmt    = rtDwarfCursor_GetUByte(pCursor, 0);
-    LnState.s8LineBase     = rtDwarfCursor_GetSByte(pCursor, 0);
-    LnState.u8LineRange    = rtDwarfCursor_GetUByte(pCursor, 0);
-    LnState.u8OpcodeBase   = rtDwarfCursor_GetUByte(pCursor, 0);
-    if (!LnState.u8OpcodeBase)
-        return VERR_DWARF_BAD_LINE_NUMBER_HEADER;
 
-    LnState.pacStdOperands = pCursor->pb;
-    for (uint8_t iStdOpcode = 1; iStdOpcode < LnState.u8OpcodeBase; iStdOpcode++)
+    LnState.Hdr.offFirstOpcode = rtDwarfCursor_GetUOff(pCursor, 0);
+    uint8_t const * const pbFirstOpcode = rtDwarfCursor_CalcPos(pCursor, LnState.Hdr.offFirstOpcode);
+
+    LnState.Hdr.cbMinInstr     = rtDwarfCursor_GetUByte(pCursor, 0);
+    if (LnState.Hdr.uVer >= 4)
+        LnState.Hdr.cMaxOpsPerInstr = rtDwarfCursor_GetUByte(pCursor, 0);
+    else
+        LnState.Hdr.cMaxOpsPerInstr = 1;
+    LnState.Hdr.u8DefIsStmt    = rtDwarfCursor_GetUByte(pCursor, 0);
+    LnState.Hdr.s8LineBase     = rtDwarfCursor_GetSByte(pCursor, 0);
+    LnState.Hdr.u8LineRange    = rtDwarfCursor_GetUByte(pCursor, 0);
+    LnState.Hdr.u8OpcodeBase   = rtDwarfCursor_GetUByte(pCursor, 0);
+
+    if (   !LnState.Hdr.u8OpcodeBase
+        || !LnState.Hdr.cMaxOpsPerInstr
+        || !LnState.Hdr.u8LineRange
+        || LnState.Hdr.u8DefIsStmt > 1)
+        return VERR_DWARF_BAD_LINE_NUMBER_HEADER;
+    Log2(("DWARF Line number header:\n"
+          "    uVer             %d\n"
+          "    offFirstOpcode   %#llx\n"
+          "    cbMinInstr       %u\n"
+          "    cMaxOpsPerInstr  %u\n"
+          "    u8DefIsStmt      %u\n"
+          "    s8LineBase       %d\n"
+          "    u8LineRange      %u\n"
+          "    u8OpcodeBase     %u\n",
+          LnState.Hdr.uVer,    LnState.Hdr.offFirstOpcode, LnState.Hdr.cbMinInstr,  LnState.Hdr.cMaxOpsPerInstr,
+          LnState.Hdr.u8DefIsStmt, LnState.Hdr.s8LineBase, LnState.Hdr.u8LineRange, LnState.Hdr.u8OpcodeBase));
+
+    LnState.Hdr.pacStdOperands = pCursor->pb;
+    for (uint8_t iStdOpcode = 1; iStdOpcode < LnState.Hdr.u8OpcodeBase; iStdOpcode++)
         rtDwarfCursor_GetUByte(pCursor, 0);
 
-    int rc = rtDwarfLine_ReadIncludePaths(&LnState, pCursor);
+    int rc = pCursor->rc;
+    if (RT_SUCCESS(rc))
+        rc = rtDwarfLine_ReadIncludePaths(&LnState, pCursor);
     if (RT_SUCCESS(rc))
         rc = rtDwarfLine_ReadFileNames(&LnState, pCursor);
 
     /*
      * Run the program....
      */
+    if (RT_SUCCESS(rc))
+        rc = rtDwarfCursor_AdvanceToPos(pCursor, pbFirstOpcode);
     if (RT_SUCCESS(rc))
         rc = rtDwarfLine_RunProgram(&LnState, pCursor);
 
@@ -1197,7 +1373,7 @@ static int rtDbgModDwarfExplodeLineNumbers(PRTDBGMODDWARF pThis)
     if (RT_FAILURE(rc))
         return rc;
 
-    while (   rtDwarfCursor_IsAtEnd(&Cursor)
+    while (   !rtDwarfCursor_IsAtEnd(&Cursor)
            && RT_SUCCESS(rc))
         rc = rtDbgModDwarfExplodeLineNumbersForUnit(pThis, &Cursor);
 
@@ -1258,7 +1434,13 @@ static int rtDbgModDwarfLoadAbbreviations(PRTDBGMODDWARF pThis)
 static DECLCALLBACK(int) rtDbgModHlpAddSegmentCallback(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
 {
     PRTDBGMODINT pMod = (PRTDBGMODINT)pvUser;
+    Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
+         pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+#if 0
     return pMod->pDbgVt->pfnSegmentAdd(pMod, pSeg->RVA, pSeg->cb, pSeg->pchName, pSeg->cchName, 0 /*fFlags*/, NULL);
+#else
+    return pMod->pDbgVt->pfnSegmentAdd(pMod, pSeg->LinkAddress, pSeg->cb, pSeg->pchName, pSeg->cchName, 0 /*fFlags*/, NULL);
+#endif
 }
 
 
