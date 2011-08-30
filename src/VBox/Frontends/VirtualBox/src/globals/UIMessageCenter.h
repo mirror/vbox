@@ -299,21 +299,21 @@ public:
     int cannotFindGuestAdditions(const QString &strSrc1, const QString &strSrc2);
     void cannotDownloadGuestAdditions(const QString &strUrl, const QString &strReason);
     void cannotMountGuestAdditions(const QString &strMachineName);
-    bool confirmDownloadAdditions(const QString &strUrl, ulong uSize);
+    bool confirmDownloadAdditions(const QString &strUrl, qulonglong uSize);
     bool confirmMountAdditions(const QString &strUrl, const QString &strSrc);
     void warnAboutAdditionsCantBeSaved(const QString &strTarget);
 
     bool askAboutUserManualDownload(const QString &strMissedLocation);
-    bool confirmUserManualDownload(const QString &strURL, ulong uSize);
+    bool confirmUserManualDownload(const QString &strURL, qulonglong uSize);
     void warnAboutUserManualCantBeDownloaded(const QString &strURL, const QString &strReason);
     void warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget);
     void warnAboutUserManualCantBeSaved(const QString &strURL, const QString &strTarget);
 
-    bool proposeDownloadExtensionPack();
-    bool confirmDownloadExtensionPack(const QString &strURL, ulong uSize);
-    bool proposeInstallExtentionPack(const QString &strFrom, const QString &strTo);
-    void warnAboutExtentionPackCantBeSaved(const QString &strFrom, const QString &strTo);
-    void cannotDownloadExtensionPack(const QString &strFrom, const QString &strError);
+    bool proposeDownloadExtensionPack(const QString &strExtPackName);
+    bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize);
+    bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo);
+    void warnAboutExtentionPackCantBeSaved(const QString &strExtPackName, const QString &strFrom, const QString &strTo);
+    void cannotDownloadExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strError);
 
     void cannotConnectRegister(QWidget *pParent,
                                const QString &strUrl,

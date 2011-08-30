@@ -23,6 +23,10 @@
 /* Global includes */
 #include <QStringList>
 
+/* VBoxGlobalDefs stuff: */
+const char* VBoxGlobalDefs::UI_ExtPackName = "Oracle VM VirtualBox Extension Pack";
+
+/* VBoxDefs stuff: */
 const char* VBoxDefs::GUI_LastWindowPosition = "GUI/LastWindowPosition";
 const char* VBoxDefs::GUI_LastNormalWindowPosition = "GUI/LastNormalWindowPosition";
 const char* VBoxDefs::GUI_LastScaleWindowPosition = "GUI/LastScaleWindowPosition";

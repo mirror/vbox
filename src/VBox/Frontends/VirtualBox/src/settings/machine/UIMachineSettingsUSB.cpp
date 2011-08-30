@@ -17,6 +17,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Global includes */
+#include <QHeaderView>
+
 /* Local includes */
 #include "QIWidgetValidator.h"
 #include "UIIconPool.h"
@@ -25,9 +28,10 @@
 #include "UIToolBar.h"
 #include "UIMachineSettingsUSB.h"
 #include "UIMachineSettingsUSBFilterDetails.h"
+#include "VBoxDefs.h"
 
-/* Global includes */
-#include <QHeaderView>
+/* Using declarations: */
+using namespace VBoxGlobalDefs;
 
 UIMachineSettingsUSB::UIMachineSettingsUSB(UISettingsPageType type)
     : UISettingsPage(type)
@@ -308,8 +312,7 @@ void UIMachineSettingsUSB::putToCache()
             /* USB 1.0 (OHCI): */
             usbData.m_fUSBEnabled = mGbUSB->isChecked();
             /* USB 2.0 (EHCI): */
-            QString strExtPackName = "Oracle VM VirtualBox Extension Pack";
-            CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(strExtPackName);
+            CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(UI_ExtPackName);
             usbData.m_fEHCIEnabled = extPack.isNull() || !extPack.GetUsable() ? false : mCbUSB2->isChecked();
 
             /* Update USB cache: */
@@ -466,8 +469,7 @@ void UIMachineSettingsUSB::setValidator (QIWidgetValidator *aVal)
 bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTitle */)
 {
     /* USB 2.0 Extension Pack presence test: */
-    QString strExtPackName = "Oracle VM VirtualBox Extension Pack";
-    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(strExtPackName);
+    CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(UI_ExtPackName);
     if (mGbUSB->isChecked() && mCbUSB2->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
     {
         strWarningText = tr("USB 2.0 is currently enabled for this virtual machine. "
@@ -475,8 +477,8 @@ bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTi
                             "Please install the Extension Pack from the VirtualBox download site. "
                             "After this you will be able to re-enable USB 2.0. "
                             "It will be disabled in the meantime unless you cancel the current settings changes.")
-                            .arg(strExtPackName);
-        msgCenter().remindAboutUnsupportedUSB2(strExtPackName, this);
+                            .arg(UI_ExtPackName);
+        msgCenter().remindAboutUnsupportedUSB2(UI_ExtPackName, this);
         return true;
     }
     return true;

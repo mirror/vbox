@@ -27,6 +27,10 @@
 #include "QIFileDialog.h"
 #include "UIMessageCenter.h"
 #include "UIMachineSettingsStorage.h"
+#include "VBoxDefs.h"
+
+/* Using declarations: */
+using namespace VBoxGlobalDefs;
 
 /* Globals */
 struct osTypePattern
@@ -763,9 +767,8 @@ bool UINewVMWzdPage5::constructMachine()
          * necessary evil to patch over legacy compatability issues
          * introduced by the new distribution model.
          */
-        static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
         CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
-        if (manager.IsExtPackUsable(s_pszUsbExtPackName))
+        if (manager.IsExtPackUsable(UI_ExtPackName))
             usbController.SetEnabledEhci(true);
     }
 

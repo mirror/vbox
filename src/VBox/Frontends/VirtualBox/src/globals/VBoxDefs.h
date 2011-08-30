@@ -47,6 +47,15 @@
 #define SIZEOF_ARRAY(a) (sizeof(a) / sizeof(a[0]))
 #endif
 
+/**
+ *  Common global VBox namespace.
+ *  Later it will replace VBoxDefs struct used as global VBox namespace.
+ */
+namespace VBoxGlobalDefs
+{
+    extern const char *UI_ExtPackName;
+}
+
 /** Common namespace for all enums */
 struct VBoxDefs
 {
