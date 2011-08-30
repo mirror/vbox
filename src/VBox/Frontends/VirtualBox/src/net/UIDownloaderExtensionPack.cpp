@@ -69,8 +69,8 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
     /* Prepare source/target: */
     QString strTemplateSourcePath("http://download.virtualbox.org/virtualbox/%1/");
     QString strTemplateSourceName("Oracle_VM_VirtualBox_Extension_Pack-%1.vbox-extpack");
-    QString strSourcePath(strTemplateSourcePath.arg(vboxGlobal().virtualBox().GetVersion().remove("_OSE")));
-    QString strSourceName(strTemplateSourceName.arg(vboxGlobal().virtualBox().GetVersion().remove("_OSE")));
+    QString strSourcePath(strTemplateSourcePath.arg(vboxGlobal().vboxVersionStringNormalized()));
+    QString strSourceName(strTemplateSourceName.arg(vboxGlobal().vboxVersionStringNormalized()));
     QString strSource(strSourcePath + strSourceName);
     QString strTargetPath(vboxGlobal().virtualBox().GetHomeFolder());
     QString strTargetName(strSourceName);
