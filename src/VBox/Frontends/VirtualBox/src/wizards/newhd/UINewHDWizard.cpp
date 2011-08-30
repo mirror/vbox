@@ -372,7 +372,7 @@ QString UINewHDWizardPageFormat::fullFormatName(const QString &strBaseFormatName
     else if (strBaseFormatName == "VHD")
         return UINewHDWizard::tr("V&HD (Virtual Hard Disk)");
     else if (strBaseFormatName == "Parallels")
-        return UINewHDWizard::tr("&Parallels (Parallels Hard Disk)");
+        return UINewHDWizard::tr("H&DD (Parallels Hard Disk)");
     else if (strBaseFormatName == "QED")
         return UINewHDWizard::tr("Q&ED (QEMU enhanced disk)");
     else if (strBaseFormatName == "QCOW")
