@@ -49,6 +49,15 @@ class UINewHDWizard : public QIWizard
 
 public:
 
+    enum
+    {
+        PageWelcome,
+        PageFormat,
+        PageVariant,
+        PageOptions,
+        PageSummary
+    };
+
     /* Constructor: */
     UINewHDWizard(QWidget *pParent,
                   const QString &strDefaultName = QString(), const QString &strDefaultPath = QString(),
@@ -154,6 +163,8 @@ private:
 
     /* Completeness validator: */
     bool isComplete() const;
+
+    int nextId() const;
 
     /* Helping stuff: */
     void processFormat(CMediumFormat mediumFormat);
