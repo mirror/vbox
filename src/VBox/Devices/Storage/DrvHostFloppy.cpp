@@ -64,6 +64,42 @@ typedef struct DRVHOSTFLOPPY
 
 
 
+#ifdef RT_OS_WINDOWS
+/**
+ * Get media size - needs a special IOCTL.
+ *
+ * @param   pThis   The instance data.
+ */
+static DECLCALLBACK(int) drvHostFloppyGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
+{
+    DISK_GEOMETRY   geom;
+    DWORD           cbBytesReturned;
+    int             rc;
+    int             cbSectors;
+
+    memset(&geom, 0, sizeof(geom));
+    rc = DeviceIoControl((HANDLE)RTFileToNative(pThis->hFileDevice), IOCTL_DISK_GET_DRIVE_GEOMETRY,
+                         NULL, 0, &geom, sizeof(geom), &cbBytesReturned,  NULL);
+    if (rc) {
+        cbSectors = geom.Cylinders.QuadPart * geom.TracksPerCylinder * geom.SectorsPerTrack;
+        *pcb = cbSectors * geom.BytesPerSector;
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        DWORD   dwLastError;
+
+        dwLastError = GetLastError();
+        rc = RTErrConvertFromWin32(dwLastError);
+        Log(("DrvHostFloppy: IOCTL_DISK_GET_DRIVE_GEOMETRY(%s) failed, LastError=%d rc=%Rrc\n", 
+             pThis->pszDevice, dwLastError, rc));
+        return rc;
+    }
+
+    return rc;
+}
+#endif /* RT_OS_WINDOWS */
+
 #ifdef RT_OS_LINUX
 /**
  * Get media size and do change processing.
@@ -162,6 +198,9 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         /*
          * Override stuff.
          */
+#ifdef RT_OS_WINDOWS
+        pThis->Base.pfnGetMediaSize = drvHostFloppyGetMediaSize;
+#endif
 #ifdef RT_OS_LINUX
         pThis->Base.pfnPoll         = drvHostFloppyPoll;
         pThis->Base.pfnGetMediaSize = drvHostFloppyGetMediaSize;
