@@ -675,6 +675,9 @@
             </Component>
         </Directory> <!-- TARGETDIR -->
 
+        <!-- Note: Feature IDs *must not* be renamed to use any prefixes or such,
+                   otherwise this will break manual selection using the ADDLOCAL= syntax
+                   when using the command line / scripts (see VBox manual). -->
         <Feature Id="VBoxApplication" Title="VirtualBox Application" Level="1"
                  Description="!(loc.VB_App)"
                  ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
@@ -707,7 +710,7 @@
 <?endif?>
             <ComponentRef Id="cp_VBoxDrv" />
 
-            <Feature Id="ft_VBoxUSB" Title="VirtualBox USB Support" Level="1"
+            <Feature Id="VBoxUSB" Title="VirtualBox USB Support" Level="1"
                      Description="!(loc.VB_USBDriver)"
                      ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
                 <ComponentRef Id="cp_USBFilterDriver" />
@@ -715,15 +718,15 @@
             </Feature>
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-            <Feature Id="ft_VBoxNetwork" Title="VirtualBox Networking" Level="1"
+            <Feature Id="VBoxNetwork" Title="VirtualBox Networking" Level="1"
                      Description="!(loc.VB_Network)"
                      ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
-                 <Feature Id="ft_VBoxNetworkFlt" Title="VirtualBox Bridged Networking" Level="1"
+                 <Feature Id="VBoxNetworkFlt" Title="VirtualBox Bridged Networking" Level="1"
                           Description="!(loc.VB_NetFltDriver)"
                           ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
                      <ComponentRef Id="cp_NetFltDriver" />
                  </Feature>
-                 <Feature Id="ft_VBoxNetworkAdp" Title="VirtualBox Host-Only Networking" Level="1"
+                 <Feature Id="VBoxNetworkAdp" Title="VirtualBox Host-Only Networking" Level="1"
                           Description="!(loc.VB_NetAdpDriver)"
                           ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
                      <ComponentRef Id="cp_NetAdpDriver" />
@@ -732,7 +735,7 @@
 <?endif?>
 
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
-            <Feature Id="ft_VBoxPython" Title="VirtualBox Python 2.x Support" Level="1"
+            <Feature Id="VBoxPython" Title="VirtualBox Python 2.x Support" Level="1"
                     Description="!(loc.VB_Python)"
                     ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand" >
                 <ComponentRef Id="cp_VBoxPythonBinding" />
@@ -756,22 +759,22 @@
 
             <Custom Action="ca_UninstallTAPInstances" Before="InstallFiles" >1</Custom>
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-            <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&ft_VBoxNetworkAdp=3]]></Custom>
-            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&ft_VBoxNetworkAdp=3]]></Custom>
+            <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
+            <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
             <Custom Action="ca_RemoveHostOnlyInterfaces" After="ca_UninstallNetFlt" ></Custom>
 
-            <Custom Action="ca_RollbackInstallNetFltArgs" Before="ca_RollbackInstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=3]]></Custom>
-            <Custom Action="ca_RollbackInstallNetFlt" Before="ca_InstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=3]]></Custom>
-            <Custom Action="ca_InstallNetFltArgs" Before="ca_InstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=3]]></Custom>
-            <Custom Action="ca_InstallNetFlt" Before="ca_CreateHostOnlyInterface" ><![CDATA[&ft_VBoxNetworkFlt=3]]></Custom>
+            <Custom Action="ca_RollbackInstallNetFltArgs" Before="ca_RollbackInstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
+            <Custom Action="ca_RollbackInstallNetFlt" Before="ca_InstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
+            <Custom Action="ca_InstallNetFltArgs" Before="ca_InstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
+            <Custom Action="ca_InstallNetFlt" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
 
-            <Custom Action="ca_RollbackUninstallNetFltArgs" Before="ca_RollbackUninstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
-            <Custom Action="ca_RollbackUninstallNetFlt" Before="ca_UninstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
-            <Custom Action="ca_UninstallNetFltArgs" Before="ca_UninstallNetFlt" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
-            <Custom Action="ca_UninstallNetFlt" After="InstallInitialize" ><![CDATA[&ft_VBoxNetworkFlt=2]]></Custom>
+            <Custom Action="ca_RollbackUninstallNetFltArgs" Before="ca_RollbackUninstallNetFlt" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
+            <Custom Action="ca_RollbackUninstallNetFlt" Before="ca_UninstallNetFlt" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
+            <Custom Action="ca_UninstallNetFltArgs" Before="ca_UninstallNetFlt" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
+            <Custom Action="ca_UninstallNetFlt" After="InstallInitialize" ><![CDATA[&VBoxNetworkFlt=2]]></Custom>
 <?endif?>
-            <Custom Action="ca_InstallPythonAPIArgs" Before="ca_InstallPythonAPI" ><![CDATA[&ft_VBoxPython=3]]></Custom>
-            <Custom Action="ca_InstallPythonAPI" Before="InstallFinalize" ><![CDATA[&ft_VBoxPython=3]]></Custom>
+            <Custom Action="ca_InstallPythonAPIArgs" Before="ca_InstallPythonAPI" ><![CDATA[&VBoxPython=3]]></Custom>
+            <Custom Action="ca_InstallPythonAPI" Before="InstallFinalize" ><![CDATA[&VBoxPython=3]]></Custom>
 
             <Custom Action="ca_InstallBrandingArgs" Before="ca_InstallBranding" ><![CDATA[NOT REMOVE]]></Custom>
             <Custom Action="ca_InstallBranding" Before="InstallFinalize" ><![CDATA[NOT REMOVE]]></Custom>

@@ -338,8 +338,8 @@
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17"
                 Default="yes" Cancel="yes" Text="!(loc.ButtonText_Next)">
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
-                <Publish Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg"><![CDATA[(&ft_VBoxNetworkFlt=3) AND NOT(!ft_VBoxNetworkFlt=3)]]></Publish>
-                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&ft_VBoxNetworkFlt<3)]]></Publish>
+                <Publish Event="NewDialog" Value="VBoxWarnDisconNetIfacesDlg"><![CDATA[(&VBoxNetworkFlt=3) AND NOT(!VBoxNetworkFlt=3)]]></Publish>
+                <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg"><![CDATA[(&VBoxNetworkFlt<3)]]></Publish>
 <?else ?>
                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
 <?endif?>
