@@ -1789,12 +1789,12 @@ void UIMessageCenter::warnAboutUserManualCantBeSaved(const QString &strURL, cons
                .arg(strURL).arg(strURL).arg(strTarget));
 }
 
-bool UIMessageCenter::proposeDownloadExtensionPack(const QString &strExtPackName)
+bool UIMessageCenter::proposeDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion)
 {
     return messageOkCancel(mainWindowShown(), Question,
-                           tr("<p>You have an old <b><nobr>%1</nobr></b> installed.</p>"
+                           tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
                               "<p>Do you wish to download latest one from the Internet?</p>")
-                              .arg(strExtPackName),
+                              .arg(strExtPackVersion).arg(strExtPackName),
                            0, /* Auto-confirm Id */
                            tr("Download", "extension pack"));
 }
