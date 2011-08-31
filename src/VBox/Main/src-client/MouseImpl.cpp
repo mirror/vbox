@@ -479,6 +479,13 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
  * value from MOUSE_RANGE_LOWER to MOUSE_RANGE_UPPER.  Sets the optional
  * validity value to false if the pair is not on an active screen and to true
  * otherwise.
+ * @note      since guests with recent versions of X.Org use a different method
+ *            to everyone else to map the valuator value to a screen pixel (they
+ *            multiply by the screen dimension, do a floating point divide by
+ *            the valuator maximum and round the result, while everyone else
+ *            does truncating integer operations) we adjust the value we send
+ *            so that it maps to the right pixel both when the result is rounded
+ *            and when it is truncated.
  *
  * @returns   COM status value
  */
@@ -490,6 +497,10 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
     AssertPtrNullReturn(pfValid, E_POINTER);
     Display *pDisplay = mParent->getDisplay();
     ComAssertRet(pDisplay, E_FAIL);
+    /** The amount to add to the result (multiplied by the screen width/height)
+     * to compensate for differences in guest methods for mapping back to
+     * pixels */
+    enum { ADJUST_RANGE = - 3 * MOUSE_RANGE / 4 };
 
     if (pfValid)
         *pfValid = true;
@@ -502,16 +513,16 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
         if (FAILED(rc))
             return rc;
 
-        *pcX = displayWidth ? (x * MOUSE_RANGE - MOUSE_RANGE / 2) / (LONG) displayWidth: 0;
-        *pcY = displayHeight ? (y * MOUSE_RANGE - MOUSE_RANGE / 2) / (LONG) displayHeight: 0;
+        *pcX = displayWidth ? (x * MOUSE_RANGE + ADJUST_RANGE) / (LONG) displayWidth: 0;
+        *pcY = displayHeight ? (y * MOUSE_RANGE + ADJUST_RANGE) / (LONG) displayHeight: 0;
     }
     else
     {
         int32_t x1, y1, x2, y2;
         /* Takes the display lock */
         pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
-        *pcX = x1 < x2 ? ((x - x1) * MOUSE_RANGE - MOUSE_RANGE / 2) / (x2 - x1) : 0;
-        *pcY = y1 < y2 ? ((y - y1) * MOUSE_RANGE - MOUSE_RANGE / 2) / (y2 - y1) : 0;
+        *pcX = x1 < x2 ? ((x - x1) * MOUSE_RANGE + ADJUST_RANGE) / (x2 - x1) : 0;
+        *pcY = y1 < y2 ? ((y - y1) * MOUSE_RANGE + ADJUST_RANGE) / (y2 - y1) : 0;
         if (   *pcX < MOUSE_RANGE_LOWER || *pcX > MOUSE_RANGE_UPPER
             || *pcY < MOUSE_RANGE_LOWER || *pcY > MOUSE_RANGE_UPPER)
             if (pfValid)
