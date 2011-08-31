@@ -1440,6 +1440,10 @@ RT_C_DECLS_END
 #define VERR_DWARF_BAD_STRING                   (-672)
 /** Bad DWARF position. */
 #define VERR_DWARF_BAD_POS                      (-673)
+/** Bad DWARF info. */
+#define VERR_DWARF_BAD_INFO                     (-674)
+/** Bad DWARF abbreviation data. */
+#define VERR_DWARF_BAD_ABBREV                   (-675)
 /** @} */
 
 /** @name Request Packet Status Codes.
