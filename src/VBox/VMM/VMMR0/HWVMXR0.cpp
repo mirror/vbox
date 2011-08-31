@@ -2159,8 +2159,10 @@ static void vmxR0SetupTLBEPT(PVM pVM, PVMCPU pVCpu)
         /* Force a TLB flush on VM entry. */
         pVCpu->hwaccm.s.fForceTLBFlush = true;
     }
-    else
-        Assert(!pCpu->fFlushTLB);
+    /* Disabled because this has triggered every time I have suspended my
+     * laptop with a VM running for the past three months or more.  */
+    // else
+    //     Assert(!pCpu->fFlushTLB);
 
     /* Check for tlb shootdown flushes. */
     if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
