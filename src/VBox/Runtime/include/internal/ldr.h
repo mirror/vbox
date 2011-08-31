@@ -251,6 +251,57 @@ typedef struct RTLDROPS
      */
     DECLCALLBACKMEMBER(int, pfnEnumSegments)(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser);
 
+    /**
+     * Converts a link address to a segment:offset address.
+     *
+     * @returns IPRT status code.
+     *
+     * @param   pMod            Pointer to the loader module structure.
+     * @param   LinkAddress     The link address to convert.
+     * @param   piSeg           Where to return the segment index.
+     * @param   poffSeg         Where to return the segment offset.
+     * @remark  This is an optional entry point that can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnLinkAddressToSegOffset)(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
+                                                       uint32_t *piSeg, PRTLDRADDR poffSeg);
+
+    /**
+     * Converts a link address to a RVA.
+     *
+     * @returns IPRT status code.
+     *
+     * @param   pMod            Pointer to the loader module structure.
+     * @param   LinkAddress     The link address to convert.
+     * @param   pRva            Where to return the RVA.
+     * @remark  This is an optional entry point that can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnLinkAddressToRva)(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva);
+
+    /**
+     * Converts a segment:offset to a RVA.
+     *
+     * @returns IPRT status code.
+     *
+     * @param   pMod            Pointer to the loader module structure.
+     * @param   iSeg            The segment index.
+     * @param   offSeg          The segment offset.
+     * @param   pRva            Where to return the RVA.
+     * @remark  This is an optional entry point that can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnSegOffsetToRva)(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg, PRTLDRADDR pRva);
+
+    /**
+     * Converts a RVA to a segment:offset.
+     *
+     * @returns IPRT status code.
+     *
+     * @param   pMod            Pointer to the loader module structure.
+     * @param   iSeg            The segment index.
+     * @param   offSeg          The segment offset.
+     * @param   pRva            Where to return the RVA.
+     * @remark  This is an optional entry point that can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnRvaToSegOffset)(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg);
 
     /** Dummy entry to make sure we've initialized it all. */
     RTUINT uDummy;

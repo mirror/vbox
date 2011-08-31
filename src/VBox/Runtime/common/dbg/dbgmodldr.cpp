@@ -98,6 +98,15 @@ static DECLCALLBACK(RTUINTPTR) rtDbgModLdr_GetLoadedSize(PRTDBGMODINT pMod)
 }
 
 
+/** @interface_method_impl{RTDBGMODVTIMG,pfnLinkAddressToSegOffset} */
+static DECLCALLBACK(int) rtDbgModLdr_LinkAddressToSegOffset(PRTDBGMODINT pMod, RTLDRADDR LinkAddress,
+                                                            PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    return RTLdrLinkAddressToSegOffset(pThis->hLdrMod, LinkAddress, piSeg, poffSeg);
+}
+
+
 /** @interface_method_impl{RTDBGMODVTIMG,pfnEnumSegments} */
 static DECLCALLBACK(int) rtDbgModLdr_EnumSegments(PRTDBGMODINT pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
@@ -165,18 +174,19 @@ static DECLCALLBACK(int) rtDbgModLdr_TryOpen(PRTDBGMODINT pMod)
 /** Virtual function table for the RTLdr based image reader. */
 DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
 {
-    /*.u32Magic = */            RTDBGMODVTIMG_MAGIC,
-    /*.fReserved = */           0,
-    /*.pszName = */             "RTLdr",
-    /*.pfnTryOpen = */          rtDbgModLdr_TryOpen,
-    /*.pfnClose = */            rtDbgModLdr_Close,
-    /*.pfnEnumDbgInfo = */      rtDbgModLdr_EnumDbgInfo,
-    /*.pfnEnumSegments = */     rtDbgModLdr_EnumSegments,
-    /*.pfnGetLoadedSize = */    rtDbgModLdr_GetLoadedSize,
-    /*.pfnMapPart = */          rtDbgModLdr_MapPart,
-    /*.pfnUnmapPart = */        rtDbgModLdr_UnmapPart,
+    /*.u32Magic = */                    RTDBGMODVTIMG_MAGIC,
+    /*.fReserved = */                   0,
+    /*.pszName = */                     "RTLdr",
+    /*.pfnTryOpen = */                  rtDbgModLdr_TryOpen,
+    /*.pfnClose = */                    rtDbgModLdr_Close,
+    /*.pfnEnumDbgInfo = */              rtDbgModLdr_EnumDbgInfo,
+    /*.pfnEnumSegments = */             rtDbgModLdr_EnumSegments,
+    /*.pfnGetLoadedSize = */            rtDbgModLdr_GetLoadedSize,
+    /*.pfnLinkAddressToSegOffset = */   rtDbgModLdr_LinkAddressToSegOffset,
+    /*.pfnMapPart = */                  rtDbgModLdr_MapPart,
+    /*.pfnUnmapPart = */                rtDbgModLdr_UnmapPart,
 
-    /*.u32EndMagic = */         RTDBGMODVTIMG_MAGIC
+    /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };
 
 

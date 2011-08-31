@@ -504,6 +504,52 @@ typedef FNRTLDRENUMSEGS *PFNRTLDRENUMSEGS;
  */
 RTDECL(int) RTLdrEnumSegments(RTLDRMOD hLdrMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser);
 
+/**
+ * Converts a link address to a segment:offset address.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   LinkAddress     The link address to convert.
+ * @param   piSeg           Where to return the segment index.
+ * @param   poffSeg         Where to return the segment offset.
+ */
+RTDECL(int) RTLdrLinkAddressToSegOffset(RTLDRMOD hLdrMod, RTLDRADDR LinkAddress, uint32_t *piSeg, PRTLDRADDR poffSeg);
+
+/**
+ * Converts a link address to an image relative virtual address (RVA).
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   LinkAddress     The link address to convert.
+ * @param   pRva            Where to return the RVA.
+ */
+RTDECL(int) RTLdrLinkAddressToRva(RTLDRMOD hLdrMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva);
+
+/**
+ * Converts an image relative virtual address (RVA) to a segment:offset.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   Rva             The link address to convert.
+ * @param   piSeg           Where to return the segment index.
+ * @param   poffSeg         Where to return the segment offset.
+ */
+RTDECL(int) RTLdrSegOffsetToRva(RTLDRMOD hLdrMod, uint32_t iSeg, RTLDRADDR offSeg, PRTLDRADDR pRva);
+
+/**
+ * Converts a segment:offset into an image relative virtual address (RVA).
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   iSeg            The segment index.
+ * @param   offSeg          The segment offset.
+ * @param   pRva            Where to return the RVA.
+ */
+RTDECL(int) RTLdrRvaToSegOffset(RTLDRMOD hLdrMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg);
 
 RT_C_DECLS_END
 

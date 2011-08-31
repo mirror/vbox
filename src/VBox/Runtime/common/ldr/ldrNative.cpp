@@ -74,6 +74,10 @@ static const RTLDROPS s_rtldrNativeOps =
     NULL,
     NULL,
     NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
     42
 };
 

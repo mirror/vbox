@@ -782,6 +782,37 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
 }
 
 
+/** @copydoc RTLDROPS::pfnLinkAddressToSegOffset. */
+static DECLCALLBACK(int) rtldrPE_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
+                                                        uint32_t *piSeg, PRTLDRADDR poffSeg)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @copydoc RTLDROPS::pfnLinkAddressToRva. */
+static DECLCALLBACK(int) rtldrPE_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @copydoc RTLDROPS::pfnSegOffsetToRva. */
+static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg,
+                                                PRTLDRADDR pRva)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @copydoc RTLDROPS::pfnRvaToSegOffset. */
+static DECLCALLBACK(int) rtldrPE_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva,
+                                                uint32_t *piSeg, PRTLDRADDR poffSeg)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 /** @copydoc RTLDROPS::pfnDone */
 static DECLCALLBACK(int) rtldrPEDone(PRTLDRMODINTERNAL pMod)
 {
@@ -842,6 +873,10 @@ static const RTLDROPSPE s_rtldrPE32Ops =
         rtldrPEGetSymbolEx,
         rtldrPE_EnumDbgInfo,
         rtldrPE_EnumSegments,
+        rtldrPE_LinkAddressToSegOffset,
+        rtldrPE_LinkAddressToRva,
+        rtldrPE_SegOffsetToRva,
+        rtldrPE_RvaToSegOffset,
         42
     },
     rtldrPEResolveImports32,
@@ -867,6 +902,10 @@ static const RTLDROPSPE s_rtldrPE64Ops =
         rtldrPEGetSymbolEx,
         rtldrPE_EnumDbgInfo,
         rtldrPE_EnumSegments,
+        rtldrPE_LinkAddressToSegOffset,
+        rtldrPE_LinkAddressToRva,
+        rtldrPE_SegOffsetToRva,
+        rtldrPE_RvaToSegOffset,
         42
     },
     rtldrPEResolveImports64,

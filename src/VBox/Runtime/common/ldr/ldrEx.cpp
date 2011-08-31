@@ -420,3 +420,131 @@ RTDECL(int) RTLdrEnumSegments(RTLDRMOD hLdrMod, PFNRTLDRENUMSEGS pfnCallback, vo
 }
 RT_EXPORT_SYMBOL(RTLdrEnumSegments);
 
+
+RTDECL(int) RTLdrLinkAddressToSegOffset(RTLDRMOD hLdrMod, RTLDRADDR LinkAddress, uint32_t *piSeg, PRTLDRADDR poffSeg)
+{
+    LogFlow(("RTLdrLinkAddressToSegOffset: hLdrMod=%RTldrm LinkAddress=%RTptr piSeg=%p poffSeg=%p\n",
+             hLdrMod, LinkAddress, piSeg, poffSeg));
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    AssertPtrReturn(piSeg, VERR_INVALID_POINTER);
+    AssertPtrReturn(poffSeg, VERR_INVALID_POINTER);
+
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+    //AssertMsgReturn(pMod->eState == LDR_STATE_OPENED, ("eState=%d\n", pMod->eState), VERR_WRONG_ORDER);
+
+    *piSeg   = UINT32_MAX;
+    *poffSeg = ~(RTLDRADDR)0;
+
+    /*
+     * Do it.
+     */
+    int rc;
+    if (pMod->pOps->pfnLinkAddressToSegOffset)
+        rc = pMod->pOps->pfnLinkAddressToSegOffset(pMod, LinkAddress, piSeg, poffSeg);
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    LogFlow(("RTLdrLinkAddressToSegOffset: returns %Rrc %#x:%RTptr\n", rc, *piSeg, *poffSeg));
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLdrLinkAddressToSegOffset);
+
+
+RTDECL(int) RTLdrLinkAddressToRva(RTLDRMOD hLdrMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
+{
+    LogFlow(("RTLdrLinkAddressToRva: hLdrMod=%RTldrm LinkAddress=%RTptr pRva=%p\n",
+             hLdrMod, LinkAddress, pRva));
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    AssertPtrReturn(pRva, VERR_INVALID_POINTER);
+
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+    //AssertMsgReturn(pMod->eState == LDR_STATE_OPENED, ("eState=%d\n", pMod->eState), VERR_WRONG_ORDER);
+
+    *pRva = ~(RTLDRADDR)0;
+
+    /*
+     * Do it.
+     */
+    int rc;
+    if (pMod->pOps->pfnLinkAddressToRva)
+        rc = pMod->pOps->pfnLinkAddressToRva(pMod, LinkAddress, pRva);
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    LogFlow(("RTLdrLinkAddressToRva: returns %Rrc %RTptr\n", rc, *pRva));
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLdrLinkAddressToRva);
+
+
+RTDECL(int) RTLdrSegOffsetToRva(RTLDRMOD hLdrMod, uint32_t iSeg, RTLDRADDR offSeg, PRTLDRADDR pRva)
+{
+    LogFlow(("RTLdrSegOffsetToRva: hLdrMod=%RTldrm LinkAddress=%RTptr iSeg=%#x offSeg=%RTptr pRva=%p\n",
+             hLdrMod, iSeg, offSeg, pRva));
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    AssertPtrReturn(pRva, VERR_INVALID_POINTER);
+
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+    //AssertMsgReturn(pMod->eState == LDR_STATE_OPENED, ("eState=%d\n", pMod->eState), VERR_WRONG_ORDER);
+
+    *pRva = ~(RTLDRADDR)0;
+
+    /*
+     * Do it.
+     */
+    int rc;
+    if (pMod->pOps->pfnSegOffsetToRva)
+        rc = pMod->pOps->pfnSegOffsetToRva(pMod, iSeg, offSeg, pRva);
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    LogFlow(("RTLdrSegOffsetToRva: returns %Rrc %RTptr\n", rc, *pRva));
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLdrSegOffsetToRva);
+
+RTDECL(int) RTLdrRvaToSegOffset(RTLDRMOD hLdrMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg)
+{
+    LogFlow(("RTLdrRvaToSegOffset: hLdrMod=%RTldrm Rva=%RTptr piSeg=%p poffSeg=%p\n",
+             hLdrMod, Rva, piSeg, poffSeg));
+
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
+    AssertPtrReturn(piSeg, VERR_INVALID_POINTER);
+    AssertPtrReturn(poffSeg, VERR_INVALID_POINTER);
+
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+    //AssertMsgReturn(pMod->eState == LDR_STATE_OPENED, ("eState=%d\n", pMod->eState), VERR_WRONG_ORDER);
+
+    *piSeg   = UINT32_MAX;
+    *poffSeg = ~(RTLDRADDR)0;
+
+    /*
+     * Do it.
+     */
+    int rc;
+    if (pMod->pOps->pfnRvaToSegOffset)
+        rc = pMod->pOps->pfnRvaToSegOffset(pMod, Rva, piSeg, poffSeg);
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    LogFlow(("RTLdrRvaToSegOffset: returns %Rrc %#x:%RTptr\n", rc, *piSeg, *poffSeg));
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLdrRvaToSegOffset);
+
+

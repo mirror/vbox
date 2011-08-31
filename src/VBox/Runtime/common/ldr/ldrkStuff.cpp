@@ -682,6 +682,97 @@ static DECLCALLBACK(int) rtkldr_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENU
 }
 
 
+/** @copydoc RTLDROPS::pfnLinkAddressToSegOffset. */
+static DECLCALLBACK(int) rtkldr_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
+                                                       uint32_t *piSeg, PRTLDRADDR poffSeg)
+{
+    PRTLDRMODKLDR   pThis      = (PRTLDRMODKLDR)pMod;
+    uint32_t const  cSegments  = pThis->pMod->cSegments;
+    PCKLDRSEG       paSegments = &pThis->pMod->aSegments[0];
+
+    for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
+    {
+        KLDRADDR offSeg = LinkAddress - paSegments[iSeg].LinkAddress;
+        if (   offSeg < paSegments[iSeg].cbMapped
+            || offSeg < paSegments[iSeg].cb)
+        {
+            *piSeg = iSeg;
+            *poffSeg = offSeg;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_LDR_INVALID_LINK_ADDRESS;
+}
+
+
+/** @copydoc RTLDROPS::pfnLinkAddressToRva. */
+static DECLCALLBACK(int) rtkldr_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
+{
+    PRTLDRMODKLDR   pThis      = (PRTLDRMODKLDR)pMod;
+    uint32_t const  cSegments  = pThis->pMod->cSegments;
+    PCKLDRSEG       paSegments = &pThis->pMod->aSegments[0];
+
+    for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
+    {
+        KLDRADDR offSeg = LinkAddress - paSegments[iSeg].LinkAddress;
+        if (   offSeg < paSegments[iSeg].cbMapped
+            || offSeg < paSegments[iSeg].cb)
+        {
+            *pRva = paSegments[iSeg].RVA + offSeg;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_LDR_INVALID_RVA;
+}
+
+
+/** @copydoc RTLDROPS::pfnSegOffsetToRva. */
+static DECLCALLBACK(int) rtkldr_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg,
+                                               PRTLDRADDR pRva)
+{
+    PRTLDRMODKLDR pThis = (PRTLDRMODKLDR)pMod;
+
+    if (iSeg >= pThis->pMod->cSegments)
+        return VERR_LDR_INVALID_SEG_OFFSET;
+    PCKLDRSEG const pSegment = &pThis->pMod->aSegments[iSeg];
+
+    if (   offSeg > pSegment->cbMapped
+        && offSeg > pSegment->cb
+        && (    pSegment->cbFile < 0
+            ||  offSeg > (uint64_t)pSegment->cbFile))
+        return VERR_LDR_INVALID_SEG_OFFSET;
+
+    *pRva = pSegment->RVA + offSeg;
+    return VINF_SUCCESS;
+}
+
+
+/** @copydoc RTLDROPS::pfnRvaToSegOffset. */
+static DECLCALLBACK(int) rtkldr_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva,
+                                               uint32_t *piSeg, PRTLDRADDR poffSeg)
+{
+    PRTLDRMODKLDR   pThis      = (PRTLDRMODKLDR)pMod;
+    uint32_t const  cSegments  = pThis->pMod->cSegments;
+    PCKLDRSEG       paSegments = &pThis->pMod->aSegments[0];
+
+    for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
+    {
+        KLDRADDR offSeg = Rva - paSegments[iSeg].RVA;
+        if (   offSeg < paSegments[iSeg].cbMapped
+            || offSeg < paSegments[iSeg].cb)
+        {
+            *piSeg = iSeg;
+            *poffSeg = offSeg;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_LDR_INVALID_RVA;
+}
+
+
 /**
  * Operations for a kLdr module.
  */
@@ -699,6 +790,10 @@ static const RTLDROPS g_rtkldrOps =
     rtkldr_GetSymbolEx,
     rtkldr_EnumDbgInfo,
     rtkldr_EnumSegments,
+    rtkldr_LinkAddressToSegOffset,
+    rtkldr_LinkAddressToRva,
+    rtkldr_SegOffsetToRva,
+    rtkldr_RvaToSegOffset,
     42
 };
 
