@@ -60,17 +60,10 @@
 
 enum
 {
-#if ABI_XINPUT_VERSION > SET_ABI_VERSION(2, 0)
-/* The X server does (to my mind) incorrect rounding, so we adjust our range to
- * compensate. */
-    ADJUST_RANGE = 32,
-#else
-    ADJUST_RANGE = 0,
-#endif
     /** The minumum value our device can return */
-    RANGE_MIN = ADJUST_RANGE,
+    RANGE_MIN = 0,
     /** The maximum value our device can return */
-    RANGE_MAX = 0xFFFF + ADJUST_RANGE
+    RANGE_MAX = 0xFFFF
 };
 
 static void
