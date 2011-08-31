@@ -538,7 +538,7 @@ HRESULT Guest::taskCopyFileFromGuest(GuestTask *aTask)
 
                 RTFILE hFileDest;
                 int vrc = RTFileOpen(&hFileDest, aTask->strDest.c_str(),
-                                     RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
+                                     RTFILE_O_WRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
                 if (RT_FAILURE(vrc))
                     rc = GuestTask::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
                                                          Guest::tr("Unable to create/open destination file \"%s\", rc=%Rrc"),
@@ -557,10 +557,18 @@ HRESULT Guest::taskCopyFileFromGuest(GuestTask *aTask)
                         {
                             if (!aOutputData.size())
                             {
-                                if (cbToRead)
+                                /*
+                                 * Only bitch about an unexpected end of a file when there already
+                                 * was data read from that file. If this was the very first read we can
+                                 * be (almost) sure that this file is not meant to be read by the specified user.
+                                 */
+                                if (   cbTransfered
+                                    && cbToRead)
+                                {
                                     rc = GuestTask::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->progress,
-                                                                         Guest::tr("Unexpected end of file \"%s\" (%u bytes left)"),
-                                                                         aTask->strSource.c_str(), cbToRead);
+                                                                         Guest::tr("Unexpected end of file \"%s\" (%u bytes left, %u bytes written)"),
+                                                                         aTask->strSource.c_str(), cbToRead, cbTransfered);
+                                }
                                 break;
                             }
 
