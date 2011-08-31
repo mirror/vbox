@@ -4710,7 +4710,7 @@ endif
 # directory. If you don't run it there, you get a consistent sub-tree only.
 #
 VBOX_BAD_CHAR_SET   = ,;:/\$(SP)$(TAB)$(HASH)=![]@%&''()*""<>?^{}|~
-VBOX_VERSION_STAMP  = $(PATH_OUT)/version-stamp-raw-api-$(translate $(VBOX_VERSION_STRING)-$(VBOX_C_YEAR)-$(VBOX_VENDOR)-$(VBOX_PRODUCT)-$(VBOX_API_VERSION),$(VBOX_BAD_CHAR_SET),,_)
+VBOX_VERSION_STAMP  = $(PATH_OUT)/version-stamp-raw-api-$(translate $(VBOX_VERSION_STRING)-$(VBOX_C_YEAR)-$(VBOX_VENDOR)-$(VBOX_PRODUCT)-$(VBOX_API_VERSION)-$(VBOX_BUILD_PUBLISHER),$(VBOX_BAD_CHAR_SET),,_)
 VBOX_VERSION_HEADER = $(PATH_OUT)/version-generated.h
 VBOX_VERSION_MK     = $(PATH_OUT)/version-generated.mk
 
