@@ -6289,6 +6289,7 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayI
 void Machine::setModified(uint32_t fl)
 {
     mData->flModifications |= fl;
+    mData->mCurrentStateModified = true;
 }
 
 /**
