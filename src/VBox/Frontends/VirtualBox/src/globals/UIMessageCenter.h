@@ -309,7 +309,7 @@ public:
     void warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget);
     void warnAboutUserManualCantBeSaved(const QString &strURL, const QString &strTarget);
 
-    bool proposeDownloadExtensionPack(const QString &strExtPackName);
+    bool proposeDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion);
     bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize);
     bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo);
     void warnAboutExtentionPackCantBeSaved(const QString &strExtPackName, const QString &strFrom, const QString &strTo);

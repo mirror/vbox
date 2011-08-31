@@ -137,14 +137,15 @@ void UIUpdateManager::checkIfUpdateIsNecessaryForExtensionPack(bool /* fForceCal
     /* Get VirtualBox version: */
     VBoxVersion vboxVersion(vboxGlobal().vboxVersionStringNormalized());
     /* Get extension pack version: */
-    VBoxVersion extPackVersion(extPack.GetVersion().remove(VBOX_BUILD_PUBLISHER));
+    QString strExtPackVersion(extPack.GetVersion().remove(VBOX_BUILD_PUBLISHER));
+    VBoxVersion extPackVersion(strExtPackVersion);
     /* Check if extension pack version less than required: */
     if ((vboxVersion.z() % 2 != 0) /* Skip unstable VBox version */ ||
         !(extPackVersion < vboxVersion) /* Ext Pack version more or equal to VBox version */)
         return;
 
     /* Ask the user about extension pack downloading: */
-    if (!msgCenter().proposeDownloadExtensionPack(UI_ExtPackName))
+    if (!msgCenter().proposeDownloadExtensionPack(UI_ExtPackName, strExtPackVersion))
         return;
 
     /* Run downloader for VirtualBox extension pack: */
