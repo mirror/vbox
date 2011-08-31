@@ -3195,6 +3195,9 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_Flip(IWineD3DSurface *iface, IWineD3DS
     return hr;
 }
 
+#ifdef VBOX_WITH_WDDM
+# define VBOX_WINE_TEXDIRECT_USE_RESOURCELOAD
+#endif
 /* Does a direct frame buffer -> texture copy. Stretching is done
  * with single pixel copy calls
  */
@@ -3207,7 +3210,7 @@ static inline BOOL fb_copy_to_texture_direct(IWineD3DSurfaceImpl *This, IWineD3D
     IWineD3DSurfaceImpl *Src = (IWineD3DSurfaceImpl *) SrcSurface;
     struct wined3d_context *context;
     BOOL upsidedown = FALSE;
-    BOOL isOffscreen = surface_is_offscreen(SrcSurface);
+    BOOL isSrcOffscreen = surface_is_offscreen(SrcSurface);
     BOOL fNoStretching = TRUE;
     RECT dst_rect = *dst_rect_in;
 
@@ -3224,7 +3227,7 @@ static inline BOOL fb_copy_to_texture_direct(IWineD3DSurfaceImpl *This, IWineD3D
         upsidedown = TRUE;
     }
 
-    if (isOffscreen)
+    if (isSrcOffscreen)
     {
         upsidedown = !upsidedown;
     }
@@ -3254,20 +3257,41 @@ static inline BOOL fb_copy_to_texture_direct(IWineD3DSurfaceImpl *This, IWineD3D
         return FALSE;
     }
 
+#ifdef VBOX_WINE_TEXDIRECT_USE_RESOURCELOAD
+    if (isSrcOffscreen) context = context_acquire(myDevice, SrcSurface, CTXUSAGE_RESOURCELOAD);
+    else if (!surface_is_offscreen((IWineD3DSurface*)This)) context = context_acquire(myDevice, (IWineD3DSurface *) This, CTXUSAGE_RESOURCELOAD);
+    else context = context_acquire(myDevice, NULL, CTXUSAGE_RESOURCELOAD);
+
+    surface_internal_preload(SrcSurface, SRGB_RGB);
+#else
     context = context_acquire(myDevice, SrcSurface, CTXUSAGE_BLIT);
+#endif
+
     surface_internal_preload((IWineD3DSurface *) This, SRGB_RGB);
     ENTER_GL();
 
     /* Bind the target texture */
     glBindTexture(This->texture_target, This->texture_name);
     checkGLcall("glBindTexture");
-    if(isOffscreen) {
+    if(isSrcOffscreen) {
         TRACE("Reading from an offscreen target\n");
+#ifdef VBOX_WINE_TEXDIRECT_USE_RESOURCELOAD
+        context_bind_fbo(context, GL_READ_FRAMEBUFFER, &context->src_fbo);
+        context_attach_surface_fbo(context, GL_READ_FRAMEBUFFER, 0, (IWineD3DSurfaceImpl *)SrcSurface);
+#endif
         glReadBuffer(myDevice->offscreenBuffer);
+        checkGLcall("glReadBuffer()");
+#ifdef VBOX_WINE_TEXDIRECT_USE_RESOURCELOAD
+        context_attach_depth_stencil_fbo(context, GL_READ_FRAMEBUFFER, NULL, FALSE);
+#endif
     }
     else
     {
+#ifdef VBOX_WINE_TEXDIRECT_USE_RESOURCELOAD
+        context_bind_fbo(context, GL_READ_FRAMEBUFFER, NULL);
+#endif
         glReadBuffer(surface_get_gl_buffer(SrcSurface));
+        checkGLcall("glReadBuffer()");
     }
     checkGLcall("glReadBuffer");
 
