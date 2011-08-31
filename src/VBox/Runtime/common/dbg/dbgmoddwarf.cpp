@@ -1775,7 +1775,7 @@ static int rtDwarfInfo_LoadAll(PRTDBGMODDWARF pThis)
     RTDWARFCURSOR Cursor;
     int rc = rtDwarfCursor_Init(&Cursor, pThis, krtDbgModDwarfSect_info);
     if (RT_FAILURE(rc))
-        return NULL;
+        return rc;
 
     while (   !rtDwarfCursor_IsAtEnd(&Cursor)
            && RT_SUCCESS(rc))
