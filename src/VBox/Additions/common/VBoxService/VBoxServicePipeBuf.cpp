@@ -111,14 +111,11 @@ int VBoxServicePipeBufRead(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
             pBuf->cbOffset += cbToRead;
 
 #ifdef DEBUG_andy
-            VBoxServiceVerbose(4, "Pipe [%u %u 0x%p %s] read pcbToRead=%u, cbSize=%u, cbAlloc=%u, cbOff=%u\n",
+            VBoxServiceVerbose(4, "Pipe [%u %u 0x%p %s] read cbToRead=%u, cbSize=%u, cbAlloc=%u, cbOff=%u\n",
                                pBuf->uPID, pBuf->uPipeId, pBuf, pBuf->fEnabled ? "EN" : "DIS", cbToRead, pBuf->cbSize, pBuf->cbAllocated, pBuf->cbOffset);
 #endif
-            if (pBuf->hEventSem != NIL_RTSEMEVENT)
-            {
-                rc = RTSemEventSignal(pBuf->hEventSem);
-                AssertRC(rc);
-            }
+            /* Don't signal event semaphore here -- we only read out something from
+             * this pipe buffer. */
 
             *pcbToRead = cbToRead;
         }

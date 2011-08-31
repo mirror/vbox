@@ -30,6 +30,7 @@ int VBoxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREADDATAEXEC pData, 
 void VBoxServiceControlExecThreadDataDestroy(PVBOXSERVICECTRLTHREADDATAEXEC pData);
 int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uint32_t uTimeout,
                                           uint8_t *pBuf, uint32_t cbSize, uint32_t *pcbRead);
+int VBoxServiceControlExecThreadRemove(uint32_t uPID);
 int VBoxServiceControlExecThreadSetInput(uint32_t uPID, bool fPendingClose, uint8_t *pBuf,
                                          uint32_t cbSize, uint32_t *pcbWritten);
 int VBoxServiceControlExecThreadStartAllowed(bool *pbAllowed);
