@@ -3863,7 +3863,6 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
 /* static */
 quint64 VBoxGlobal::requiredVideoMemory(const QString &strGuestOSTypeId, int cMonitors /* = 1 */)
 {
-    QSize desktopRes = QApplication::desktop()->screenGeometry().size();
     QDesktopWidget *pDW = QApplication::desktop();
     /* We create a list of the size of all available host monitors. This list
      * is sorted by value and by starting with the biggest one, we calculate
