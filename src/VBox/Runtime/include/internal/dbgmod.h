@@ -127,6 +127,19 @@ typedef struct RTDBGMODVTIMG
     DECLCALLBACKMEMBER(RTUINTPTR, pfnImageSize)(PRTDBGMODINT pMod);
 
     /**
+     * Converts a link address to a segment:offset address (RVA included).
+     *
+     * @returns IPRT status code.
+     *
+     * @param   pMod            Pointer to the module structure.
+     * @param   LinkAddress     The link address to convert.
+     * @param   piSeg           The segment index.
+     * @param   poffSeg         Where to return the segment offset.
+     */
+    DECLCALLBACKMEMBER(int, pfnLinkAddressToSegOffset)(PRTDBGMODINT pMod, RTLDRADDR LinkAddress,
+                                                       PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg);
+
+    /**
      * Creates a read-only mapping of a part of the image file.
      *
      * @returns IPRT status code and *ppvMap set on success.

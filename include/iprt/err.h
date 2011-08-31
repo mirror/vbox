@@ -1371,6 +1371,12 @@ RT_C_DECLS_END
 #define VERR_LDRELF_INVALID_RELOCATION_OFFSET   (-639)
 /** The ELF loader didn't find the symbol/string table for the image. */
 #define VERR_LDRELF_NO_SYMBOL_OR_NO_STRING_TABS (-640)
+/** Invalid link address. */
+#define VERR_LDR_INVALID_LINK_ADDRESS           (-647)
+/** Invalid image relative virtual address. */
+#define VERR_LDR_INVALID_RVA                    (-648)
+/** Invalid segment:offset address. */
+#define VERR_LDR_INVALID_SEG_OFFSET             (-649)
 /** @}*/
 
 /** @name Debug Info Reader Status Codes.
