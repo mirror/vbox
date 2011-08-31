@@ -97,6 +97,25 @@ typedef enum krtDbgModDwarfSect
     krtDbgModDwarfSect_End
 } krtDbgModDwarfSect;
 
+/**
+ * Abbreviation cache entry.
+ */
+typedef struct RTDBGMODDWARFABBREV
+{
+    /** Whether this entry is filled in or not. */
+    bool                fFilled;
+    /** Whether there are children or not. */
+    bool                fChildren;
+    /** The tag.  */
+    uint16_t            uTag;
+    /** Offset into the abbrev section of the specification pairs. */
+    uint32_t            offSpec;
+} RTDBGMODDWARFABBREV;
+/** Pointer to an abbreviation cache entry. */
+typedef RTDBGMODDWARFABBREV *PRTDBGMODDWARFABBREV;
+/** Pointer to a const abbreviation cache entry. */
+typedef RTDBGMODDWARFABBREV const *PCRTDBGMODDWARFABBREV;
+
 
 /**
  * The instance data of the DWARF reader.
@@ -104,22 +123,33 @@ typedef enum krtDbgModDwarfSect
 typedef struct RTDBGMODDWARF
 {
     /** The debug container containing doing the real work. */
-    RTDBGMOD            hCnt;
+    RTDBGMOD                hCnt;
     /** Pointer to back to the debug info module (no reference ofc). */
-    PRTDBGMODINT        pMod;
+    PRTDBGMODINT            pMod;
 
     /** DWARF debug info sections. */
     struct
     {
         /** The file offset of the part. */
-        RTFOFF          offFile;
+        RTFOFF              offFile;
         /** The size of the part. */
-        size_t          cb;
+        size_t              cb;
         /** The memory mapping of the part. */
-        void const     *pv;
+        void const         *pv;
         /** Set if present. */
-        bool            fPresent;
+        bool                fPresent;
     } aSections[krtDbgModDwarfSect_End];
+
+    /** The offset into the abbreviation section of the current cache. */
+    uint32_t                offCachedAbbrev;
+    /** The number of cached abbreviations we've allocated space for. */
+    uint32_t                cCachedAbbrevsAlloced;
+    /** Used for range checking cache lookups. */
+    uint32_t                cCachedAbbrevs;
+    /** Array of cached abbreviations, indexed by code. */
+    PRTDBGMODDWARFABBREV    paCachedAbbrevs;
+    /** Used by rtDwarfAbbrev_Lookup when the result is uncachable. */
+    RTDBGMODDWARFABBREV     LookupAbbrev;
 } RTDBGMODDWARF;
 /** Pointer to instance data of the DWARF reader. */
 typedef RTDBGMODDWARF *PRTDBGMODDWARF;
@@ -150,6 +180,8 @@ typedef struct RTDWARFSECTRDR
     /** The start of the area covered by the cursor.
      * Used for repositioning the cursor relative to the start of a section. */
     uint8_t const          *pbStart;
+    /** The section. */
+    krtDbgModDwarfSect      enmSect;
 } RTDWARFCURSOR;
 /** Pointer to a DWARF section reader. */
 typedef RTDWARFCURSOR *PRTDWARFCURSOR;
@@ -798,6 +830,26 @@ static uint64_t rtDwarfCursor_GetInitalLength(PRTDWARFCURSOR pCursor)
 
 
 /**
+ * Calculates the section offset corresponding to the current cursor position.
+ *
+ * @returns 32-bit section offset. If out of range, RTDWARFCURSOR::rc will be
+ *          set and UINT32_MAX returned.
+ * @param   pCursor             The cursor.
+ */
+static uint32_t rtDwarfCursor_CalcSectOffsetU32(PRTDWARFCURSOR pCursor)
+{
+    size_t off = (uint8_t const *)pCursor->pDwarfMod->aSections[pCursor->enmSect].pv - pCursor->pb;
+    uint32_t offRet = (uint32_t)off;
+    if (offRet != off)
+    {
+        pCursor->rc = VERR_OUT_OF_RANGE;
+        offRet = UINT32_MAX;
+    }
+    return offRet;
+}
+
+
+/**
  * Calculates an absolute cursor position from one relative to the current
  * cursor position.
  *
@@ -902,6 +954,7 @@ static int rtDwarfCursor_Init(PRTDWARFCURSOR pCursor, PRTDBGMODDWARF pThis, krtD
     if (RT_FAILURE(rc))
         return rc;
 
+    pCursor->enmSect          = enmSect;
     pCursor->pbStart          = (uint8_t const *)pThis->aSections[enmSect].pv;
     pCursor->pb               = pCursor->pbStart;
     pCursor->cbLeft           = pThis->aSections[enmSect].cb;
@@ -915,6 +968,34 @@ static int rtDwarfCursor_Init(PRTDWARFCURSOR pCursor, PRTDBGMODDWARF pThis, krtD
     pCursor->rc               = VINF_SUCCESS;
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Initialize a section reader cursor with an offset.
+ *
+ * @returns IPRT status code.
+ * @param   pCursor             The cursor.
+ * @param   pThis               The dwarf module.
+ * @param   enmSect             The name of the section to read.
+ * @param   offSect             The offset into the section.
+ */
+static int rtDwarfCursor_InitWithOffset(PRTDWARFCURSOR pCursor, PRTDBGMODDWARF pThis,
+                                        krtDbgModDwarfSect enmSect, uint32_t offSect)
+{
+    if (offSect > pThis->aSections[enmSect].cb)
+        return VERR_DWARF_BAD_POS;
+
+    int rc = rtDwarfCursor_Init(pCursor, pThis, enmSect);
+    if (RT_SUCCESS(rc))
+    {
+        pCursor->pbStart    += offSect;
+        pCursor->pb         += offSect;
+        pCursor->cbLeft     -= offSect;
+        pCursor->cbUnitLeft -= offSect;
+    }
+
+    return rc;
 }
 
 
@@ -1429,6 +1510,258 @@ static int rtDwarfLine_ExplodeAll(PRTDBGMODDWARF pThis)
 }
 
 
+/*
+ *
+ * DWARF Abbreviations.
+ * DWARF Abbreviations.
+ * DWARF Abbreviations.
+ *
+ */
+
+/**
+ * Deals with a cache miss in rtDwarfAbbrev_Lookup.
+ *
+ * @returns Pointer to abbreviation cache entry (read only).  May be rendered
+ *          invalid by subsequent calls to this function.
+ * @param   pThis               The DWARF instance.
+ * @param   uCode               The abbreviation code to lookup.
+ */
+static PCRTDBGMODDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t uCode)
+{
+    /*
+     * There is no entry with code zero.
+     */
+    if (!uCode)
+        return NULL;
+
+    /*
+     * Resize the cache array if the code is considered cachable.
+     */
+    bool fFillCache = true;
+    if (pThis->cCachedAbbrevsAlloced < uCode)
+    {
+        if (uCode > _64K)
+            fFillCache = false;
+        else
+        {
+            uint32_t cNew = RT_ALIGN(uCode, 64);
+            void *pv = RTMemRealloc(pThis->paCachedAbbrevs, sizeof(pThis->paCachedAbbrevs[0]) * cNew);
+            if (!pv)
+                fFillCache = false;
+            else
+            {
+                pThis->cCachedAbbrevsAlloced = cNew;
+                pThis->paCachedAbbrevs       = (PRTDBGMODDWARFABBREV)pv;
+            }
+        }
+    }
+
+    /*
+     * Walk the abbreviations till we find the desired code.
+     */
+    RTDWARFCURSOR Cursor;
+    int rc = rtDwarfCursor_InitWithOffset(&Cursor, pThis, krtDbgModDwarfSect_abbrev, pThis->offCachedAbbrev);
+    if (RT_FAILURE(rc))
+        return NULL;
+
+    PRTDBGMODDWARFABBREV pRet = NULL;
+    if (fFillCache)
+    {
+        /*
+         * Search for the entry and fill the cache while doing so.
+         */
+        for (;;)
+        {
+            /* Read the 'header'. */
+            uint32_t const uCurCode  = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+            uint32_t const uCurTag   = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+            uint8_t  const uChildren = rtDwarfCursor_GetU8(&Cursor, 0);
+            if (RT_FAILURE(Cursor.rc))
+                break;
+            if (   uCurTag > 0xffff
+                || uChildren > 1)
+            {
+                Cursor.rc = VERR_DWARF_BAD_ABBREV;
+                break;
+            }
+
+            /* Cache it? */
+            if (uCurCode >= pThis->cCachedAbbrevsAlloced)
+            {
+                PRTDBGMODDWARFABBREV pEntry = &pThis->paCachedAbbrevs[uCurCode - 1];
+                while (pThis->cCachedAbbrevs < uCurCode)
+                {
+                    pThis->paCachedAbbrevs[pThis->cCachedAbbrevs].fFilled = false;
+                    pThis->cCachedAbbrevs++;
+                }
+
+                pEntry->fFilled   = true;
+                pEntry->fChildren = RT_BOOL(uChildren);
+                pEntry->uTag      = uCurTag;
+                pEntry->offSpec   = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
+
+                if (uCurCode == uCode)
+                {
+                    pRet = pEntry;
+                    if (uCurCode == pThis->cCachedAbbrevsAlloced)
+                        break;
+                }
+            }
+
+            /* Skip the specification. */
+            uint32_t uAttr, uForm;
+            do
+            {
+                uAttr = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+                uForm = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+            } while (uAttr != 0 && uForm != 0);
+            if (RT_FAILURE(Cursor.rc))
+                break;
+
+            /* Done? (Maximize cache filling.) */
+            if (   pRet != NULL
+                && uCurCode >= pThis->cCachedAbbrevsAlloced)
+                break;
+        }
+    }
+    else
+    {
+        /*
+         * Search for the entry with the desired code, no cache filling.
+         */
+        for (;;)
+        {
+            /* Read the 'header'. */
+            uint32_t const uCurCode  = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+            uint32_t const uCurTag   = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+            uint8_t  const uChildren = rtDwarfCursor_GetU8(&Cursor, 0);
+            if (RT_FAILURE(Cursor.rc))
+                break;
+            if (   uCurTag > 0xffff
+                || uChildren > 1)
+            {
+                Cursor.rc = VERR_DWARF_BAD_ABBREV;
+                break;
+            }
+
+            /* Do we have a match? */
+            if (uCurCode == uCode)
+            {
+                pRet = &pThis->LookupAbbrev;
+                pRet->fFilled   = true;
+                pRet->fChildren = RT_BOOL(uChildren);
+                pRet->uTag      = uCurTag;
+                pRet->offSpec   = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
+                break;
+            }
+
+            /* Skip the specification. */
+            uint32_t uAttr, uForm;
+            do
+            {
+                uAttr = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+                uForm = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+            } while (uAttr != 0 && uForm != 0);
+            if (RT_FAILURE(Cursor.rc))
+                break;
+        }
+    }
+
+    rtDwarfCursor_Delete(&Cursor);
+    return pRet;
+}
+
+
+/**
+ * Looks up an abbreviation.
+ *
+ * @returns Pointer to abbreviation cache entry (read only).  May be rendered
+ *          invalid by subsequent calls to this function.
+ * @param   pThis               The DWARF instance.
+ * @param   uCode               The abbreviation code to lookup.
+ */
+static PCRTDBGMODDWARFABBREV rtDwarfAbbrev_Lookup(PRTDBGMODDWARF pThis, uint32_t uCode)
+{
+    if (   uCode - 1 >= pThis->cCachedAbbrevs
+        || !pThis->paCachedAbbrevs[uCode - 1].fFilled)
+        return rtDwarfAbbrev_LookupMiss(pThis, uCode);
+    return &pThis->paCachedAbbrevs[uCode - 1];
+}
+
+
+/**
+ * Sets the abbreviation offset of the current unit.
+ *
+ * This will flush the cached abbreviation entries if the offset differs from
+ * the previous unit.
+ *
+ * @param   pThis               The DWARF instance.
+ * @param   offAbbrev           The offset into the abbreviation section.
+ */
+static void rtDwarfAbbrev_SetUnitOffset(PRTDBGMODDWARF pThis, uint32_t offAbbrev)
+{
+    if (pThis->offCachedAbbrev != offAbbrev)
+    {
+        pThis->offCachedAbbrev = offAbbrev;
+        pThis->cCachedAbbrevs  = 0;
+    }
+}
+
+
+/*
+ *
+ * DWARF debug_info parser
+ * DWARF debug_info parser
+ * DWARF debug_info parser
+ *
+ */
+
+
+static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
+{
+    /*
+     * Read the compilation unit header.
+     */
+    rtDwarfCursor_GetInitalLength(pCursor);
+    uint16_t const uVer = rtDwarfCursor_GetUHalf(pCursor, 0);
+    if (   uVer < 2
+        || uVer > 4)
+        return rtDwarfCursor_SkipUnit(pCursor);
+    uint64_t const offAbbrev    = rtDwarfCursor_GetUOff(pCursor, UINT64_MAX);
+    uint8_t  const cbNativeAddr = rtDwarfCursor_GetU8(pCursor, UINT8_MAX);
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+
+    /*
+     * Set up the abbreviation cache and store the native address size in the cursor.
+     */
+    if (offAbbrev > UINT32_MAX)
+        return VERR_DWARF_BAD_INFO;
+    rtDwarfAbbrev_SetUnitOffset(pThis, offAbbrev);
+    pCursor->cbNativeAddr = cbNativeAddr;
+
+    /*
+     * Parse DIEs.
+     */
+    int rc = VINF_SUCCESS;
+    while (!rtDwarfCursor_IsAtEndOfUnit(pCursor))
+    {
+        /** @todo The fun starts again here.  */
+        rtDwarfCursor_SkipUnit(pCursor);
+
+        /*
+         * Check status codes before continuing.
+         */
+        if (RT_FAILURE(rc))
+            return rc;
+        if (RT_FAILURE(pCursor->rc))
+            return pCursor->rc;
+    }
+
+    return rc;
+}
+
+
 /**
  * Extracts the symbols.
  *
@@ -1437,43 +1770,22 @@ static int rtDwarfLine_ExplodeAll(PRTDBGMODDWARF pThis)
  * @returns IPRT status code
  * @param   pThis               The DWARF instance.
  */
-static int rtDbgModDwarfExtractSymbols(PRTDBGMODDWARF pThis)
+static int rtDwarfInfo_LoadAll(PRTDBGMODDWARF pThis)
 {
-    int rc = rtDbgModDwarfLoadSection(pThis, krtDbgModDwarfSect_info);
+    RTDWARFCURSOR Cursor;
+    int rc = rtDwarfCursor_Init(&Cursor, pThis, krtDbgModDwarfSect_info);
     if (RT_FAILURE(rc))
-        return rc;
+        return NULL;
 
-    /** @todo  */
+    while (   !rtDwarfCursor_IsAtEnd(&Cursor)
+           && RT_SUCCESS(rc))
+        rc = rtDwarfInfo_LoadUnit(pThis, &Cursor);
 
-    rtDbgModDwarfUnloadSection(pThis, krtDbgModDwarfSect_info);
+    rtDwarfCursor_Delete(&Cursor);
     return rc;
 }
 
 
-/**
- * Loads the abbreviations used to parse the info section.
- *
- * @returns IPRT status code
- * @param   pThis               The DWARF instance.
- */
-static int rtDbgModDwarfLoadAbbreviations(PRTDBGMODDWARF pThis)
-{
-    int rc = rtDbgModDwarfLoadSection(pThis, krtDbgModDwarfSect_abbrev);
-    if (RT_FAILURE(rc))
-        return rc;
-
-#if 0 /** @todo  */
-    size_t          cbLeft = pThis->aSections[krtDbgModDwarfSect_abbrev].cb;
-    uint8_t const  *pb     = (uint8_t const *)pThis->aSections[krtDbgModDwarfSect_abbrev].pv;
-    while (cbLeft > 0)
-    {
-
-    }
-#endif
-
-    rtDbgModDwarfUnloadSection(pThis, krtDbgModDwarfSect_abbrev);
-    return rc;
-}
 
 
 /*
@@ -1617,6 +1929,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_Close(PRTDBGMODINT pMod)
             pThis->pMod->pImgVt->pfnUnmapPart(pThis->pMod, pThis->aSections[iSect].cb, &pThis->aSections[iSect].pv);
 
     RTDbgModRelease(pThis->hCnt);
+    RTMemFree(pThis->paCachedAbbrevs);
     RTMemFree(pThis);
 
     return VINF_SUCCESS;
@@ -1724,13 +2037,23 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod)
 
                 rc = rtDbgModHlpAddSegmentsFromImage(pMod);
                 if (RT_SUCCESS(rc))
-                    rc = rtDbgModDwarfLoadAbbreviations(pThis);
-                if (RT_SUCCESS(rc))
-                    rc = rtDbgModDwarfExtractSymbols(pThis);
+                    rc = rtDwarfInfo_LoadAll(pThis);
                 if (RT_SUCCESS(rc))
                     rc = rtDwarfLine_ExplodeAll(pThis);
                 if (RT_SUCCESS(rc))
                 {
+                    /*
+                     * Free the cached abbreviations and unload all sections.
+                     */
+                    pThis->cCachedAbbrevs = pThis->cCachedAbbrevsAlloced = 0;
+                    RTMemFree(pThis->paCachedAbbrevs);
+
+                    for (unsigned iSect = 0; iSect < RT_ELEMENTS(pThis->aSections); iSect++)
+                        if (pThis->aSections[iSect].pv)
+                            pThis->pMod->pImgVt->pfnUnmapPart(pThis->pMod, pThis->aSections[iSect].cb,
+                                                              &pThis->aSections[iSect].pv);
+
+
                     return VINF_SUCCESS;
                 }
 
@@ -1742,6 +2065,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod)
         else
             rc = VERR_DBG_NO_MATCHING_INTERPRETER;
     }
+    RTMemFree(pThis->paCachedAbbrevs);
     RTMemFree(pThis);
 
     return rc;
