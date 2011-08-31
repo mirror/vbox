@@ -251,6 +251,7 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
     }
 }
 
+
 void VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtrReturnVoid(pThread);
@@ -262,7 +263,8 @@ int VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     int rc = VINF_SUCCESS;
-    if (pThread->Thread != NIL_RTTHREAD)
+    if (   pThread->Thread != NIL_RTTHREAD
+        && !pThread->fShutdown) /* Only shutdown threads which aren't yet. */
     {
         /* Wait a bit ... */
         rc = RTThreadWait(pThread->Thread, 30 * 1000 /* Wait 30 seconds max. */, NULL);

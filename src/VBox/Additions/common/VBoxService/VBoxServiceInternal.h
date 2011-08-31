@@ -157,7 +157,7 @@ typedef struct
     /** The other end of hNotificationPipeW. */
     RTPIPE      hNotificationPipeR;
     /** The event semaphore for getting notified whether something
-     *  has changed, e.g. written or read from this buffer. */
+     *  has changed, e.g. written to this buffer or enabled/disabled it. */
     RTSEMEVENT  hEventSem;
 } VBOXSERVICECTRLEXECPIPEBUF;
 /** Pointer to buffered pipe data. */

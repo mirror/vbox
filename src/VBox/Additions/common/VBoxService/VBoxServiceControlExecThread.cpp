@@ -379,16 +379,17 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
             }
             if (RT_SUCCESS(rc))
             {
-                uint32_t cbRead = cbSize;
+                uint32_t cbRead = cbSize; /* Read as much as possible. */
                 rc = VBoxServicePipeBufRead(pPipeBuf, pBuf, cbSize, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
-#if 0
-                    if (!cbRead)
-                        AssertReleaseMsg(fEnabled == VBoxServicePipeBufIsEnabled(pPipeBuf),
+                    if (   !cbRead
+                        && fEnabled)
+                    {
+                        AssertReleaseMsg(!VBoxServicePipeBufIsEnabled(pPipeBuf),
                                          ("[PID %u]: Waited (%ums) for active pipe buffer %u (%u size, %u bytes left), but nothing read!\n",
                                          uPID, uTimeout, pPipeBuf->uPipeId, pPipeBuf->cbSize, pPipeBuf->cbSize - pPipeBuf->cbOffset));
-#endif
+                    }
                     if (pcbRead)
                         *pcbRead = cbRead;
                 }
@@ -408,6 +409,38 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
 }
 
 
+int VBoxServiceControlExecThreadRemove(uint32_t uPID)
+{
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        PVBOXSERVICECTRLTHREAD pThread = vboxServiceControlExecThreadGetByPID(uPID);
+        if (pThread)
+        {
+            Assert(pThread->fStarted != pThread->fStopped);
+            if (pThread->fStopped) /* Only shut down stopped threads. */
+            {
+                VBoxServiceVerbose(4, "ControlExec: [PID %u]: Removing thread ... \n",
+                                   uPID);
+
+                rc = VBoxServiceControlExecThreadShutdown(pThread);
+
+                RTListNodeRemove(&pThread->Node);
+                RTMemFree(pThread);
+            }
+        }
+        else
+            rc = VERR_NOT_FOUND;
+
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+/* Does not do locking, must be done by the caller! */
 int VBoxServiceControlExecThreadShutdown(const PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
@@ -436,6 +469,8 @@ int VBoxServiceControlExecThreadShutdown(const PVBOXSERVICECTRLTHREAD pThread)
 
 int VBoxServiceControlExecThreadStartAllowed(bool *pbAllowed)
 {
+    AssertPtrReturn(pbAllowed, VERR_INVALID_POINTER);
+
     int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
     if (RT_SUCCESS(rc))
     {
@@ -444,7 +479,7 @@ int VBoxServiceControlExecThreadStartAllowed(bool *pbAllowed)
          * how many guest processes are started and served already.
          */
         bool fLimitReached = false;
-        if (g_GuestControlProcsMaxKept) /* If we allow unlimited processes, take a shortcut. */
+        if (g_GuestControlProcsMaxKept) /* If we allow unlimited processes (=0), take a shortcut. */
         {
             /** @todo Put running/stopped (+ memory alloc) stats into global struct! */
             uint32_t uProcsRunning = 0;
@@ -470,7 +505,8 @@ int VBoxServiceControlExecThreadStartAllowed(bool *pbAllowed)
             int32_t iProcsLeft = (g_GuestControlProcsMaxKept - uProcsRunning - 1);
             if (iProcsLeft < 0)
             {
-                VBoxServiceVerbose(3, "ControlExec: Maximum running guest processes reached\n");
+                VBoxServiceVerbose(3, "ControlExec: Maximum running guest processes reached (%u)\n",
+                                   g_GuestControlProcsMaxKept);
                 fLimitReached = true;
             }
             else if (uProcsStopped > (uint32_t)iProcsLeft)
@@ -489,7 +525,7 @@ int VBoxServiceControlExecThreadStartAllowed(bool *pbAllowed)
                         int rc2 = VBoxServiceControlExecThreadShutdown(pNode);
                         if (RT_FAILURE(rc2))
                         {
-                            VBoxServiceError("ControlExec: Unable to shut down thread due to policy, rc=%Rrc", rc2);
+                            VBoxServiceError("ControlExec: Unable to shut down thread due to policy, rc=%Rrc\n", rc2);
                             if (RT_SUCCESS(rc))
                                 rc = rc2;
                             /* Keep going. */
@@ -499,10 +535,10 @@ int VBoxServiceControlExecThreadStartAllowed(bool *pbAllowed)
                         RTMemFree(pNode);
                         pNode = pNext;
 
+                        Assert(uProcsToKill);
                         uProcsToKill--;
                         if (!uProcsToKill)
                             break;
-
                     }
                 }
                 Assert(uProcsToKill == 0);
