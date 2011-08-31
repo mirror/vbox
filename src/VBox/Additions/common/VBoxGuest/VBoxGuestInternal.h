@@ -153,6 +153,15 @@ typedef struct VBOXGUESTDEVEXT
 #endif
     /** Memory balloon information for RTR0MemObjAllocPhysNC(). */
     VBOXGUESTMEMBALLOON         MemBalloon;
+    /** For each mouse status feature the number of sessions which have
+     * enabled it.  A feature is enabled globally if at least one session has
+     * requested it. */
+    /** @todo can we programmatically determine the size of the array and
+     * still get the following alignment right? */
+    uint32_t volatile           cMouseFeatureUsage[32];
+    /** The mouse feature status matching the counts above.  These are updated
+     * together inside the session spinlock. */
+    uint32_t volatile           fMouseStatus;
     /** Align the next bit on a 64-byte boundary and make sure it starts at the same
      *  offset in both 64-bit and 32-bit builds.
      *
@@ -161,7 +170,7 @@ typedef struct VBOXGUESTDEVEXT
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      */
-    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 24 : 4];
+    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 20 : 0];
 
     /** Windows part. */
     union
@@ -176,6 +185,7 @@ typedef struct VBOXGUESTDEVEXT
 /** Pointer to the VBoxGuest driver data. */
 typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
 
+AssertCompileMemberSizeAlignment(VBOXGUESTDEVEXT, win, 64);
 
 /**
  * The VBoxGuest per session data.
@@ -212,6 +222,9 @@ typedef struct VBOXGUESTSESSION
     /** The last consumed VMMDEV_EVENT_MOUSE_POSITION_CHANGED sequence number.
      * Used to implement polling.  */
     uint32_t volatile           u32MousePosChangedSeq;
+    /** Mouse features supported.  A feature enabled in any guest session will
+     * be enabled for the host. */
+    uint32_t volatile           fMouseStatus;
 
 } VBOXGUESTSESSION;
 
