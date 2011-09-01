@@ -11155,7 +11155,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
 </context>
 <context>
-    <name>VBoxUpdateDlg</name>
+    <name>UIUpdateManager</name>
     <message>
         <source>1 day</source>
         <translation>1 deň</translation>

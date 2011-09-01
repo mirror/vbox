@@ -9790,7 +9790,7 @@ VMM: Floppy Image</comment>
     </message>
 </context>
 <context>
-    <name>VBoxUpdateDlg</name>
+    <name>UIUpdateManager</name>
     <message>
         <source>1 day</source>
         <translation>១ ថ្ងៃ</translation>

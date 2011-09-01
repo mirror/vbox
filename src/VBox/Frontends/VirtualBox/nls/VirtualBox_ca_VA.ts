@@ -12482,7 +12482,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxUpdateDlg</name>
+    <name>UIUpdateManager</name>
     <message>
         <source>1 day</source>
         <translation>1 dia</translation>
