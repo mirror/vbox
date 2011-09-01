@@ -11018,7 +11018,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
 </context>
 <context>
-    <name>VBoxUpdateDlg</name>
+    <name>UIUpdateManager</name>
     <message>
         <source>1 day</source>
         <translation>1 päivä</translation>

@@ -13913,59 +13913,59 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxUpdateDlg</name>
+    <name>UIUpdateManager</name>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="82"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="82"/>
         <source>1 day</source>
         <translation>1日</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="83"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="83"/>
         <source>2 days</source>
         <translation>2日</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="84"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="84"/>
         <source>3 days</source>
         <translation>3日</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="85"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="85"/>
         <source>4 days</source>
         <translation>4日</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="86"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="86"/>
         <source>5 days</source>
         <translation>5日</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="87"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="87"/>
         <source>6 days</source>
         <translation>6日</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="90"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="90"/>
         <source>1 week</source>
         <translation>1週間</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="91"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="91"/>
         <source>2 weeks</source>
         <translation>2週間</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="92"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="92"/>
         <source>3 weeks</source>
         <translation>3週間</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="95"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="95"/>
         <source>1 month</source>
         <translation>1月</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="144"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="144"/>
         <source>Never</source>
         <translation>確認しない</translation>
     </message>
@@ -13978,22 +13978,22 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">サーバー上に最新バージョンが見つかりませんでした(応答: %1)。</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="296"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="296"/>
         <source>Chec&amp;k</source>
         <translation>確認(&amp;K)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="300"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="300"/>
         <source>&amp;Close</source>
         <translation>閉じる(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="293"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="293"/>
         <source>VirtualBox Update Wizard</source>
         <translation>VirtualBox アップデート ウィザード</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="295"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="295"/>
         <source>Check for Updates</source>
         <translation>アップデートを確認</translation>
     </message>
@@ -14004,32 +14004,32 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;p&gt;このウィザードは、VirtualBox Webサイトに接続して、VirtualBoxの新しいバージョンが利用可能かどうか確認します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[確認]&lt;/b&gt;ボタンをクリックして新しいバージョンを今すぐ確認してください。確認しない場合は&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;このウィザードは&lt;b&gt;[ヘルプ]&lt;/b&gt;メニューから&lt;b&gt;[アップデートを確認...]&lt;/b&gt;を選ぶことで、いつでも実行できます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="297"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="297"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="299"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="299"/>
         <source>Summary</source>
         <translation>概要</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="311"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="311"/>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBoxの新しいバージョンがリリースされました！バージョン &lt;b&gt;%1&lt;/b&gt;は&lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;から入手できます。&lt;/p&gt;&lt;p&gt;このリンクから最新バージョンをダウンロードできます。: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="317"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="317"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;ネットワークエラーのため、新しいバージョン情報を取得できません:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="320"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="320"/>
         <source>You are already running the most recent version of VirtualBox.</source>
         <translation>最新バージョンのVirtualBoxがインストールされています。 後でバージョン確認を行ってください。</translation>
     </message>
     <message>
-        <location filename="../src/VBoxUpdateDlg.cpp" line="302"/>
+        <location filename="../src/net/UIUpdateManager.cpp" line="302"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;このウィザードは、VirtualBox Webサイトに接続して、VirtualBoxの新しいバージョンが利用可能かどうか確認します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[確認]&lt;/b&gt;ボタンをクリックして新しいバージョンを今すぐ確認してください。確認しない場合は&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;&lt;p&gt;このウィザードは&lt;b&gt;[ヘルプ]&lt;/b&gt;メニューから&lt;b&gt;[アップデートを確認...]&lt;/b&gt;を選ぶことで、いつでも実行できます。&lt;/p&gt;</translation>
     </message>
