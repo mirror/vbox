@@ -26,6 +26,7 @@
 #define LOG_GROUP LOG_GROUP_SUP_DRV
 #include "the-linux-kernel.h"
 #include "VBoxGuestInternal.h"
+#include <linux/input.h>
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
 #include "version-generated.h"
@@ -135,6 +136,11 @@ static unsigned int             g_iModuleMajor = 0;
 # error "CONFIG_VBOXADD_MAJOR -> CONFIG_VBOXGUEST_MAJOR"
 #endif
 
+/** The input device handle */
+static struct input_dev        *g_pInputDevice = NULL;
+/** Is the input device registered? */
+static bool                     g_fInputDeviceRegistered = false;
+
 /** The file_operations structure. */
 static struct file_operations   g_FileOps =
 {
@@ -197,6 +203,7 @@ static const struct pci_device_id __devinitdata g_VBoxGuestPciId[] =
 };
 MODULE_DEVICE_TABLE(pci, g_VBoxGuestPciId);
 
+static PVBOXGUESTSESSION        g_pKernelSession = NULL;
 
 /**
  * Converts a VBox status code to a linux error code.
@@ -374,6 +381,78 @@ static void vboxguestLinuxTermISR(void)
 }
 
 
+enum
+{
+    /** The minumum value our device can return */
+    RANGE_MIN = 0,
+    /** The maximum value our device can return */
+    RANGE_MAX = 0xFFFF
+};
+
+
+static int vboxguestLinuxSetMouseStatus(uint32_t fStatus)
+{
+    return VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &g_DevExt,
+                                g_pKernelSession, &fStatus, sizeof(fStatus),
+                                NULL);
+}
+
+
+/**
+ * Creates the kernel input device.
+ */
+static int __init vboxguestLinuxCreateInputDevice(void)
+{
+    int rc;
+
+    g_pInputDevice = input_allocate_device();
+    if (!g_pInputDevice)
+        return -ENOMEM;
+    g_pInputDevice->id.bustype = BUS_PCI;
+    g_pInputDevice->id.vendor  = VMMDEV_VENDORID;
+    g_pInputDevice->id.product = VMMDEV_DEVICEID;
+    g_pInputDevice->id.version =   (VBOX_VERSION_MAJOR << 11)
+                                 + (VBOX_VERSION_MINOR << 6)
+                                 + VBOX_VERSION_BUILD;  /** @todo */
+    /** @todo parent (PCI?) device in device model view. */
+    /* g_pInputDevice->dev.parent = */
+    rc = input_register_device(g_pInputDevice);
+    if (!rc)
+        g_fInputDeviceRegistered = true;
+    else
+        return rc;
+    /* Do what one of our competitors apparently does as that works. */
+    g_pInputDevice->evbit[0] = BIT_MASK(EV_ABS) | BIT_MASK(EV_KEY);
+    __set_bit(BTN_MOUSE, g_pInputDevice->keybit);
+    input_set_abs_params(g_pInputDevice, ABS_X, RANGE_MIN, RANGE_MAX, 0, 0);
+    input_set_abs_params(g_pInputDevice, ABS_Y, RANGE_MIN, RANGE_MAX, 0, 0);
+    /** @todo this string should be in a header file somewhere. */
+    g_pInputDevice->name = "VirtualBox mouse integration";
+    vboxguestLinuxSetMouseStatus(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                 | VMMDEV_MOUSE_NEW_PROTOCOL);
+    return rc;
+}
+
+
+/**
+ * Terminates the kernel input device.
+ */
+static void vboxguestLinuxTermInputDevice(void)
+{
+    vboxguestLinuxSetMouseStatus(0);
+    if (g_fInputDeviceRegistered)
+    {
+        input_unregister_device(g_pInputDevice);
+        g_fInputDeviceRegistered = false;
+    }
+    if (g_pInputDevice)
+    {
+        input_free_device(g_pInputDevice);
+        g_pInputDevice = NULL;
+    }
+}
+
+
 /**
  * Creates the device nodes.
  *
@@ -434,7 +513,6 @@ static void vboxguestLinuxTermDeviceNodes(void)
         misc_deregister(&g_MiscDevice);
     misc_deregister(&g_MiscDeviceUser);
 }
-
 
 
 /**
@@ -515,20 +593,42 @@ static int __init vboxguestLinuxModInit(void)
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Finally, create the device nodes.
+                 * Create the kernel session for this driver.
                  */
-                rc = vboxguestLinuxInitDeviceNodes();
-                if (rc >= 0)
+                rc = VBoxGuestCreateKernelSession(&g_DevExt,
+                                                  &g_pKernelSession);
+                if (RT_SUCCESS(rc))
                 {
-                    /* some useful information for the user but don't show this on the console */
-                    LogRel((DEVICE_NAME ": major %d, IRQ %d, I/O port %RTiop, MMIO at %RHp (size 0x%x)\n",
-                            g_iModuleMajor, g_pPciDev->irq, g_IOPortBase, g_MMIOPhysAddr, g_cbMMIO));
-                    printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                           VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
-                    return rc;
-                }
+                    /*
+                     * Create the kernel input device.
+                     */
+                    rc = vboxguestLinuxCreateInputDevice();
+                    if (rc >= 0)
+                    {
+                        /*
+                         * Finally, create the device nodes.
+                         */
+                        rc = vboxguestLinuxInitDeviceNodes();
+                        if (rc >= 0)
+                        {
+                            /* some useful information for the user but don't show this on the console */
+                            LogRel((DEVICE_NAME ": major %d, IRQ %d, I/O port %RTiop, MMIO at %RHp (size 0x%x)\n",
+                                    g_iModuleMajor, g_pPciDev->irq, g_IOPortBase, g_MMIOPhysAddr, g_cbMMIO));
+                            printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
+                                   VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
+                            return rc;
+                        }
 
-                /* bail out */
+                        /* bail out */
+                        vboxguestLinuxTermInputDevice();
+                    }
+                    else
+                    {
+                        LogRel((DEVICE_NAME ": vboxguestCreateInputDevice failed with rc=%Rrc\n", rc));
+                        rc = RTErrConvertFromErrno(rc);
+                    }
+                    VBoxGuestCloseSession(&g_DevExt, g_pKernelSession);
+                }
                 VBoxGuestDeleteDevExt(&g_DevExt);
             }
             else
@@ -556,6 +656,8 @@ static void __exit vboxguestLinuxModExit(void)
      * Inverse order of init.
      */
     vboxguestLinuxTermDeviceNodes();
+    vboxguestLinuxTermInputDevice();
+    VBoxGuestCloseSession(&g_DevExt, g_pKernelSession);
     VBoxGuestDeleteDevExt(&g_DevExt);
     vboxguestLinuxTermISR();
     vboxguestLinuxTermPci();
@@ -775,6 +877,8 @@ static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, lof
 
 void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
+    VMMDevReqMouseStatus *pReq;
+    int rc;
     NOREF(pDevExt);
 
     /*
@@ -785,6 +889,18 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
     wake_up_all(&g_PollEventQueue);
     Log(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
     kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
+    /* Report events to the kernel input device */
+    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_GetMouseStatus);
+    if (RT_SUCCESS(rc))
+    {
+        pReq->mouseFeatures = 0;
+        pReq->pointerXPos = 0;
+        pReq->pointerYPos = 0;
+        rc = VbglGRPerform(&pReq->header);
+        input_report_abs(g_pInputDevice, ABS_X, pReq->pointerXPos);
+        input_report_abs(g_pInputDevice, ABS_Y, pReq->pointerYPos);
+        VbglGRFree(&pReq->header);
+    }
     Log(("VBoxGuestNativeISRMousePollEvent: done\n"));
 }
 
