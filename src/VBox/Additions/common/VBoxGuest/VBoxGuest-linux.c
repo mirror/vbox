@@ -422,7 +422,7 @@ static int __init vboxguestLinuxCreateInputDevice(void)
     else
         return rc;
     /* Do what one of our competitors apparently does as that works. */
-    g_pInputDevice->evbit[0] = BIT_MASK(EV_ABS) | BIT_MASK(EV_KEY);
+    g_pInputDevice->evbit[0] = RT_BIT(EV_ABS) | RT_BIT(EV_KEY);
     __set_bit(BTN_MOUSE, g_pInputDevice->keybit);
     input_set_abs_params(g_pInputDevice, ABS_X, RANGE_MIN, RANGE_MAX, 0, 0);
     input_set_abs_params(g_pInputDevice, ABS_Y, RANGE_MIN, RANGE_MAX, 0, 0);
