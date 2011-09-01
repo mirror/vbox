@@ -170,8 +170,10 @@ typedef struct VBOXGUESTDEVEXT
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      */
-#if HC_ARCH_BITS == 32  /* Disabled for now to prevent a zero-sized array. */
-    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 20 : 0];
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 12 : 52];
+#else
+    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 20 : 4];
 #endif
 
     /** Windows part. */
@@ -187,6 +189,13 @@ typedef struct VBOXGUESTDEVEXT
 /** Pointer to the VBoxGuest driver data. */
 typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
 
+#if defined(VBOXGUEST_USE_DEFERRED_WAKE_UP) && HC_ARCH_BITS == 64
+AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 384);
+#elif HC_ARCH_BITS == 64
+AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 320);
+#else
+AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 256);
+#endif
 AssertCompileMemberSizeAlignment(VBOXGUESTDEVEXT, win, 64);
 
 /**
