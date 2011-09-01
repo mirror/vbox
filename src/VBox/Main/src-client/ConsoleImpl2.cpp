@@ -4067,6 +4067,8 @@ int Console::configNetwork(const char *pszDevice,
                 InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
                 InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure);
                 InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
+                /* Allow other users to connect to the network (#5828) */
+                InsertConfigString(pCfg, "AccessPolicy", "public");
                 char szNetwork[INTNET_MAX_NETWORK_NAME];
                 RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszBridgedIfName);
                 InsertConfigString(pCfg, "Network", szNetwork);
@@ -4404,6 +4406,8 @@ int Console::configNetwork(const char *pszDevice,
                 trunkType   = TRUNKTYPE_NETFLT;
 #endif
                 InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
+                /* Allow other users to connect to the network (#5828) */
+                InsertConfigString(pCfg, "AccessPolicy", "public");
 
 #if !defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
 
