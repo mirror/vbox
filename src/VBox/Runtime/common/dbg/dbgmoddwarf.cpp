@@ -1839,7 +1839,7 @@ static int rtDwarfDieStack_Push(PRTDWARFDIESTACK pStack, uint32_t uAbbrCode, uin
     uint32_t i = pStack->cOnStack;
     if (i == pStack->cAlloced)
     {
-        size_t cNewSize = pStack->cAlloced ? pStack->cAlloced * 2 : 1 /*16*/;
+        uint32_t cNewSize = pStack->cAlloced ? pStack->cAlloced * 2 : 1 /*16*/;
         void *pv = RTMemRealloc(pStack->paEntries, sizeof(pStack->paEntries[0]) * cNewSize);
         if (!pv)
             return VERR_NO_MEMORY;
