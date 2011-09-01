@@ -65,12 +65,77 @@
 
 /** @name Extended DWARF Line Number Opcodes
  * @{ */
-#define DW_LNE_end_sequence         UINT8_C(1)
-#define DW_LNE_set_address          UINT8_C(2)
-#define DW_LNE_define_file          UINT8_C(3)
-#define DW_LNE_set_descriminator    UINT8_C(4)
+#define DW_LNE_end_sequence                 UINT8_C(1)
+#define DW_LNE_set_address                  UINT8_C(2)
+#define DW_LNE_define_file                  UINT8_C(3)
+#define DW_LNE_set_descriminator            UINT8_C(4)
 /** @} */
 
+/** @name DIE Tags.
+ * @{ */
+#define DW_TAG_array_type                   UINT16_C(0x0001)
+#define DW_TAG_class_type                   UINT16_C(0x0002)
+#define DW_TAG_entry_point                  UINT16_C(0x0003)
+#define DW_TAG_enumeration_type             UINT16_C(0x0004)
+#define DW_TAG_formal_parameter             UINT16_C(0x0005)
+#define DW_TAG_imported_declaration         UINT16_C(0x0008)
+#define DW_TAG_label                        UINT16_C(0x000a)
+#define DW_TAG_lexical_block                UINT16_C(0x000b)
+#define DW_TAG_member                       UINT16_C(0x000d)
+#define DW_TAG_pointer_type                 UINT16_C(0x000f)
+#define DW_TAG_reference_type               UINT16_C(0x0010)
+#define DW_TAG_compile_unit                 UINT16_C(0x0011)
+#define DW_TAG_string_type                  UINT16_C(0x0012)
+#define DW_TAG_structure_type               UINT16_C(0x0013)
+#define DW_TAG_subroutine_type              UINT16_C(0x0015)
+#define DW_TAG_typedef                      UINT16_C(0x0016)
+#define DW_TAG_union_type                   UINT16_C(0x0017)
+#define DW_TAG_unspecified_parameters       UINT16_C(0x0018)
+#define DW_TAG_variant                      UINT16_C(0x0019)
+#define DW_TAG_common_block                 UINT16_C(0x001a)
+#define DW_TAG_common_inclusion             UINT16_C(0x001b)
+#define DW_TAG_inheritance                  UINT16_C(0x001c)
+#define DW_TAG_inlined_subroutine           UINT16_C(0x001d)
+#define DW_TAG_module                       UINT16_C(0x001e)
+#define DW_TAG_ptr_to_member_type           UINT16_C(0x001f)
+#define DW_TAG_set_type                     UINT16_C(0x0020)
+#define DW_TAG_subrange_type                UINT16_C(0x0021)
+#define DW_TAG_with_stmt                    UINT16_C(0x0022)
+#define DW_TAG_access_declaration           UINT16_C(0x0023)
+#define DW_TAG_base_type                    UINT16_C(0x0024)
+#define DW_TAG_catch_block                  UINT16_C(0x0025)
+#define DW_TAG_const_type                   UINT16_C(0x0026)
+#define DW_TAG_constant                     UINT16_C(0x0027)
+#define DW_TAG_enumerator                   UINT16_C(0x0028)
+#define DW_TAG_file_type                    UINT16_C(0x0029)
+#define DW_TAG_friend                       UINT16_C(0x002a)
+#define DW_TAG_namelist                     UINT16_C(0x002b)
+#define DW_TAG_namelist_item                UINT16_C(0x002c)
+#define DW_TAG_packed_type                  UINT16_C(0x002d)
+#define DW_TAG_subprogram                   UINT16_C(0x002e)
+#define DW_TAG_template_type_parameter      UINT16_C(0x002f)
+#define DW_TAG_template_value_parameter     UINT16_C(0x0030)
+#define DW_TAG_thrown_type                  UINT16_C(0x0031)
+#define DW_TAG_try_block                    UINT16_C(0x0032)
+#define DW_TAG_variant_part                 UINT16_C(0x0033)
+#define DW_TAG_variable                     UINT16_C(0x0034)
+#define DW_TAG_volatile_type                UINT16_C(0x0035)
+#define DW_TAG_dwarf_procedure              UINT16_C(0x0036)
+#define DW_TAG_restrict_type                UINT16_C(0x0037)
+#define DW_TAG_interface_type               UINT16_C(0x0038)
+#define DW_TAG_namespace                    UINT16_C(0x0039)
+#define DW_TAG_imported_module              UINT16_C(0x003a)
+#define DW_TAG_unspecified_type             UINT16_C(0x003b)
+#define DW_TAG_partial_unit                 UINT16_C(0x003c)
+#define DW_TAG_imported_unit                UINT16_C(0x003d)
+#define DW_TAG_condition                    UINT16_C(0x003f)
+#define DW_TAG_shared_type                  UINT16_C(0x0040)
+#define DW_TAG_type_unit                    UINT16_C(0x0041)
+#define DW_TAG_rvalue_reference_type        UINT16_C(0x0042)
+#define DW_TAG_template_alias               UINT16_C(0x0043)
+#define DW_TAG_lo_user                      UINT16_C(0x4080)
+#define DW_TAG_hi_user                      UINT16_C(0xffff)
+/** @} */
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -100,7 +165,7 @@ typedef enum krtDbgModDwarfSect
 /**
  * Abbreviation cache entry.
  */
-typedef struct RTDBGMODDWARFABBREV
+typedef struct RTDWARFABBREV
 {
     /** Whether this entry is filled in or not. */
     bool                fFilled;
@@ -110,11 +175,11 @@ typedef struct RTDBGMODDWARFABBREV
     uint16_t            uTag;
     /** Offset into the abbrev section of the specification pairs. */
     uint32_t            offSpec;
-} RTDBGMODDWARFABBREV;
+} RTDWARFABBREV;
 /** Pointer to an abbreviation cache entry. */
-typedef RTDBGMODDWARFABBREV *PRTDBGMODDWARFABBREV;
+typedef RTDWARFABBREV *PRTDWARFABBREV;
 /** Pointer to a const abbreviation cache entry. */
-typedef RTDBGMODDWARFABBREV const *PCRTDBGMODDWARFABBREV;
+typedef RTDWARFABBREV const *PCRTDWARFABBREV;
 
 
 /**
@@ -147,9 +212,9 @@ typedef struct RTDBGMODDWARF
     /** Used for range checking cache lookups. */
     uint32_t                cCachedAbbrevs;
     /** Array of cached abbreviations, indexed by code. */
-    PRTDBGMODDWARFABBREV    paCachedAbbrevs;
+    PRTDWARFABBREV           paCachedAbbrevs;
     /** Used by rtDwarfAbbrev_Lookup when the result is uncachable. */
-    RTDBGMODDWARFABBREV     LookupAbbrev;
+    RTDWARFABBREV            LookupAbbrev;
 } RTDBGMODDWARF;
 /** Pointer to instance data of the DWARF reader. */
 typedef RTDBGMODDWARF *PRTDBGMODDWARF;
@@ -903,12 +968,13 @@ static int rtDwarfCursor_AdvanceToPos(PRTDWARFCURSOR pCursor, uint8_t const *pbN
 /**
  * Check if the cursor is at the end of the current DWARF unit.
  *
- * @returns @c true if at the end, @c false if not.
+ * @retval  @c true if at the end or a cursor error is pending.
+ * @retval  @c false if not.
  * @param   pCursor             The cursor.
  */
 static bool rtDwarfCursor_IsAtEndOfUnit(PRTDWARFCURSOR pCursor)
 {
-    return !pCursor->cbUnitLeft;
+    return !pCursor->cbUnitLeft || RT_FAILURE(pCursor->rc);
 }
 
 
@@ -931,12 +997,13 @@ static int rtDwarfCursor_SkipUnit(PRTDWARFCURSOR pCursor)
  * Check if the cursor is at the end of the section (or whatever the cursor is
  * processing).
  *
- * @returns @c true if at the end, @c false if not.
+ * @retval  @c true if at the end or a cursor error is pending.
+ * @retval  @c false if not.
  * @param   pCursor             The cursor.
  */
 static bool rtDwarfCursor_IsAtEnd(PRTDWARFCURSOR pCursor)
 {
-    return !pCursor->cbLeft;
+    return !pCursor->cbLeft || RT_FAILURE(pCursor->rc);
 }
 
 
@@ -1002,16 +1069,22 @@ static int rtDwarfCursor_InitWithOffset(PRTDWARFCURSOR pCursor, PRTDBGMODDWARF p
 /**
  * Deletes a section reader initialized by rtDwarfCursor_Init.
  *
- * @param   pCursor            The section reader.
+ * @returns @a rcOther or RTDWARCURSOR::rc.
+ * @param   pCursor             The section reader.
+ * @param   rcOther             Other error code to be returned if it indicates
+ *                              error or if the cursor status is OK.
  */
-static void rtDwarfCursor_Delete(PRTDWARFCURSOR pCursor)
+static int rtDwarfCursor_Delete(PRTDWARFCURSOR pCursor, int rcOther)
 {
     /* ... and a drop of poison. */
     pCursor->pb         = NULL;
     pCursor->cbLeft     = ~(size_t)0;
     pCursor->cbUnitLeft = ~(size_t)0;
     pCursor->pDwarfMod  = NULL;
+    if (RT_FAILURE(pCursor->rc) && RT_SUCCESS(rcOther))
+        rcOther = pCursor->rc;
     pCursor->rc         = VERR_INTERNAL_ERROR_4;
+    return rcOther;
 }
 
 
@@ -1505,8 +1578,7 @@ static int rtDwarfLine_ExplodeAll(PRTDBGMODDWARF pThis)
            && RT_SUCCESS(rc))
         rc = rtDwarfLine_ExplodeUnit(pThis, &Cursor);
 
-    rtDwarfCursor_Delete(&Cursor);
-    return rc;
+    return rtDwarfCursor_Delete(&Cursor, rc);
 }
 
 
@@ -1526,7 +1598,7 @@ static int rtDwarfLine_ExplodeAll(PRTDBGMODDWARF pThis)
  * @param   pThis               The DWARF instance.
  * @param   uCode               The abbreviation code to lookup.
  */
-static PCRTDBGMODDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t uCode)
+static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t uCode)
 {
     /*
      * There is no entry with code zero.
@@ -1551,7 +1623,7 @@ static PCRTDBGMODDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint
             else
             {
                 pThis->cCachedAbbrevsAlloced = cNew;
-                pThis->paCachedAbbrevs       = (PRTDBGMODDWARFABBREV)pv;
+                pThis->paCachedAbbrevs       = (PRTDWARFABBREV)pv;
             }
         }
     }
@@ -1564,7 +1636,7 @@ static PCRTDBGMODDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint
     if (RT_FAILURE(rc))
         return NULL;
 
-    PRTDBGMODDWARFABBREV pRet = NULL;
+    PRTDWARFABBREV pRet = NULL;
     if (fFillCache)
     {
         /*
@@ -1588,7 +1660,7 @@ static PCRTDBGMODDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint
             /* Cache it? */
             if (uCurCode >= pThis->cCachedAbbrevsAlloced)
             {
-                PRTDBGMODDWARFABBREV pEntry = &pThis->paCachedAbbrevs[uCurCode - 1];
+                PRTDWARFABBREV pEntry = &pThis->paCachedAbbrevs[uCurCode - 1];
                 while (pThis->cCachedAbbrevs < uCurCode)
                 {
                     pThis->paCachedAbbrevs[pThis->cCachedAbbrevs].fFilled = false;
@@ -1667,7 +1739,7 @@ static PCRTDBGMODDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint
         }
     }
 
-    rtDwarfCursor_Delete(&Cursor);
+    rtDwarfCursor_Delete(&Cursor, VINF_SUCCESS);
     return pRet;
 }
 
@@ -1680,7 +1752,7 @@ static PCRTDBGMODDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint
  * @param   pThis               The DWARF instance.
  * @param   uCode               The abbreviation code to lookup.
  */
-static PCRTDBGMODDWARFABBREV rtDwarfAbbrev_Lookup(PRTDBGMODDWARF pThis, uint32_t uCode)
+static PCRTDWARFABBREV rtDwarfAbbrev_Lookup(PRTDBGMODDWARF pThis, uint32_t uCode)
 {
     if (   uCode - 1 >= pThis->cCachedAbbrevs
         || !pThis->paCachedAbbrevs[uCode - 1].fFilled)
@@ -1710,11 +1782,133 @@ static void rtDwarfAbbrev_SetUnitOffset(PRTDBGMODDWARF pThis, uint32_t offAbbrev
 
 /*
  *
+ * DWARF DIE stack (used by the debug_info parser).
+ * DWARF DIE stack (used by the debug_info parser).
+ * DWARF DIE stack (used by the debug_info parser).
+ *
+ */
+
+/**
+ * DWARF DIE stack entry.
+ */
+typedef struct RTDWARFDIESTACKENTRY
+{
+    /** The abbreviation code. */
+    uint32_t        uAbbrCode;
+    /** The tag. */
+    uint16_t        uTag;
+    /** The offset into the debug_info section of the data. */
+    uint32_t        offData;
+    /** The associated name. (Points into some dwarf section.) */
+    const char     *pszName;
+} RTDWARFDIESTACKENTRY;
+/** Pointer to a DIE stack entry. */
+typedef RTDWARFDIESTACKENTRY *PRTDWARFDIESTACKENTRY;
+
+/**
+ * DWARF DIE stack.
+ */
+typedef struct RTDWARFDIESTACK
+{
+    /** The number of items on the stack. */
+    uint32_t                cOnStack;
+    /** The number of stack entries we've allocated. */
+    uint32_t                cAlloced;
+    /** Pointer to the stack entries. */
+    PRTDWARFDIESTACKENTRY   paEntries;
+} RTDWARFDIESTACK;
+/** Pointer to a DIE stack. */
+typedef RTDWARFDIESTACK *PRTDWARFDIESTACK;
+/** Pointer to a const DIE stack. */
+typedef RTDWARFDIESTACK const *PCRTDWARFDIESTACK;
+
+
+static int rtDwarfDieStack_SetName(PRTDWARFDIESTACK pStack, const char *pszName)
+{
+    uint32_t i = pStack->cOnStack;
+    if (i == 0)
+        return VERR_DWARF_BAD_INFO;
+    i--;
+    pStack->paEntries[i].pszName = pszName;
+    return VINF_SUCCESS;
+}
+
+
+static int rtDwarfDieStack_Push(PRTDWARFDIESTACK pStack, uint32_t uAbbrCode, uint16_t uTag, uint32_t offData)
+{
+    uint32_t i = pStack->cOnStack;
+    if (i == pStack->cAlloced)
+    {
+        size_t cNewSize = pStack->cAlloced ? pStack->cAlloced * 2 : 1 /*16*/;
+        void *pv = RTMemRealloc(pStack->paEntries, sizeof(pStack->paEntries[0]) * cNewSize);
+        if (!pv)
+            return VERR_NO_MEMORY;
+        pStack->paEntries = (PRTDWARFDIESTACKENTRY)pv;
+        pStack->cAlloced  = cNewSize;
+    }
+    Assert(i < pStack->cAlloced);
+
+    pStack->paEntries[i].uAbbrCode = uAbbrCode;
+    pStack->paEntries[i].uTag      = uTag;
+    pStack->paEntries[i].offData   = offData;
+    pStack->paEntries[i].pszName   = NULL;
+    pStack->cOnStack = i + 1;
+
+    return VINF_SUCCESS;
+}
+
+
+static int rtDwarfDieStack_Pop(PRTDWARFDIESTACK pStack)
+{
+    if (pStack->cOnStack == 0)
+        return VERR_DWARF_BAD_INFO;
+    pStack->cOnStack--;
+    return VINF_SUCCESS;
+}
+
+
+static void rtDwarfDieStack_Init(PRTDWARFDIESTACK pStack)
+{
+    pStack->cOnStack  = 0;
+    pStack->cAlloced  = 0;
+    pStack->paEntries = NULL;
+}
+
+
+static void rtDwarfDieStack_Delete(PRTDWARFDIESTACK pStack)
+{
+    RTMemFree(pStack->paEntries);
+    pStack->paEntries = NULL;
+}
+
+
+
+/*
+ *
  * DWARF debug_info parser
  * DWARF debug_info parser
  * DWARF debug_info parser
  *
  */
+
+
+/**
+ * Parse a DIE.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The DWARF instance.
+ * @param   pCursor             The debug_info cursor.
+ * @param   pAbbrev             The abbreviation entry.
+ * @param   pAbbrevCursor       The abbreviation cursor.
+ * @param   pStack              The DIE stack.
+ */
+static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor,
+                                PCRTDWARFABBREV pAbbrev, PRTDWARFCURSOR pAbbrevCursor,
+                                PRTDWARFDIESTACK pStack)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 
 
 static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
@@ -1741,24 +1935,65 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
     pCursor->cbNativeAddr = cbNativeAddr;
 
     /*
+     * We want a DIE stack as well.
+     */
+    RTDWARFDIESTACK Stack;
+    rtDwarfDieStack_Init(&Stack);
+
+    /*
      * Parse DIEs.
      */
     int rc = VINF_SUCCESS;
     while (!rtDwarfCursor_IsAtEndOfUnit(pCursor))
     {
-        /** @todo The fun starts again here.  */
-        rtDwarfCursor_SkipUnit(pCursor);
+        uint32_t uAbbrCode = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
 
-        /*
-         * Check status codes before continuing.
-         */
-        if (RT_FAILURE(rc))
-            return rc;
-        if (RT_FAILURE(pCursor->rc))
-            return pCursor->rc;
+        if (!uAbbrCode)
+        {
+            /* End of siblings, pop the stack. */
+            rc = rtDwarfDieStack_Pop(&Stack);
+            if (RT_FAILURE(rc))
+                break;
+        }
+        else
+        {
+            /*
+             * Look up the abbreviation.
+             */
+            PCRTDWARFABBREV pAbbrev = rtDwarfAbbrev_Lookup(pThis, uAbbrCode);
+            if (!pAbbrev)
+            {
+                rc = VERR_DWARF_ABBREV_NOT_FOUND;
+                break;
+            }
+
+            /*
+             * If this DIE has children, push it onto the stack.
+             */
+            if (pAbbrev->fChildren)
+            {
+                rc = rtDwarfDieStack_Push(&Stack, uAbbrCode, pAbbrev->uTag, rtDwarfCursor_CalcSectOffsetU32(pCursor));
+                if (RT_FAILURE(rc))
+                    break;
+            }
+
+            /*
+             * Parse it.
+             */
+            RTDWARFCURSOR AbbrevCursor;
+            rc = rtDwarfCursor_InitWithOffset(&AbbrevCursor, pThis, krtDbgModDwarfSect_abbrev, pAbbrev->offSpec);
+            if (RT_SUCCESS(rc))
+            {
+                rc = rtDwarfInfo_ParseDie(pThis, pCursor, pAbbrev, &AbbrevCursor, &Stack);
+                rc = rtDwarfCursor_Delete(&AbbrevCursor, rc);
+            }
+            if (RT_FAILURE(rc))
+                break;
+        }
     }
 
-    return rc;
+    rtDwarfDieStack_Delete(&Stack);
+    return RT_SUCCESS(rc) ? pCursor->rc : rc;
 }
 
 
@@ -1781,8 +2016,7 @@ static int rtDwarfInfo_LoadAll(PRTDBGMODDWARF pThis)
            && RT_SUCCESS(rc))
         rc = rtDwarfInfo_LoadUnit(pThis, &Cursor);
 
-    rtDwarfCursor_Delete(&Cursor);
-    return rc;
+    return rtDwarfCursor_Delete(&Cursor, rc);
 }
 
 

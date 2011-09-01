@@ -1444,6 +1444,8 @@ RT_C_DECLS_END
 #define VERR_DWARF_BAD_INFO                     (-674)
 /** Bad DWARF abbreviation data. */
 #define VERR_DWARF_BAD_ABBREV                   (-675)
+/** A DWARF abbreviation was not found. */
+#define VERR_DWARF_ABBREV_NOT_FOUND             (-676)
 /** @} */
 
 /** @name Request Packet Status Codes.
