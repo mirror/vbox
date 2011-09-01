@@ -2282,8 +2282,8 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
     do { \
         if (pSession->R0Process != NIL_RTR0PROCESS) \
         { \
-            LogRel(("VBoxGuestCommonIOCtl: " mnemonic ": Ring-0 only, caller is %RTproc/%p\n", \
-                 pSession->Process, (uintptr_t)pSession->R0Process)); \
+            LogFunc((mnemonic ": Ring-0 only, caller is %RTproc/%p\n", \
+                     pSession->Process, (uintptr_t)pSession->R0Process)); \
             return VERR_PERMISSION_DENIED; \
         } \
     } while (0)
@@ -2291,13 +2291,13 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
     do { \
         if (cbData < (cbMin)) \
         { \
-            LogRel(("VBoxGuestCommonIOCtl: " mnemonic ": cbData=%#zx (%zu) min is %#zx (%zu)\n", \
-                 cbData, cbData, (size_t)(cbMin), (size_t)(cbMin))); \
+            LogFunc((mnemonic ": cbData=%#zx (%zu) min is %#zx (%zu)\n", \
+                     cbData, cbData, (size_t)(cbMin), (size_t)(cbMin))); \
             return VERR_BUFFER_OVERFLOW; \
         } \
         if ((cbMin) != 0 && !VALID_PTR(pvData)) \
         { \
-            LogRel(("VBoxGuestCommonIOCtl: " mnemonic ": Invalid pointer %p\n", pvData)); \
+            LogFunc((mnemonic ": Invalid pointer %p\n", pvData)); \
             return VERR_INVALID_POINTER; \
         } \
     } while (0)
