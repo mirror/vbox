@@ -2052,6 +2052,112 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + to->curClientTextureUnit);
     }
 
+    if (CHECKDIRTY(cb->unpack, bitID))
+    {
+        if (from->unpack.rowLength != to->unpack.rowLength)
+        {
+            diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, to->unpack.rowLength);
+            FILLDIRTY(cb->unpack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->unpack.skipRows != to->unpack.skipRows)
+        {
+            diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, to->unpack.skipRows);
+            FILLDIRTY(cb->unpack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->unpack.skipPixels != to->unpack.skipPixels)
+        {
+            diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, to->unpack.skipPixels);
+            FILLDIRTY(cb->unpack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->unpack.alignment != to->unpack.alignment)
+        {
+            diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, to->unpack.alignment);
+            FILLDIRTY(cb->unpack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->unpack.imageHeight != to->unpack.imageHeight)
+        {
+            diff_api.PixelStorei(GL_UNPACK_IMAGE_HEIGHT, to->unpack.imageHeight);
+            FILLDIRTY(cb->unpack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->unpack.skipImages != to->unpack.skipImages)
+        {
+            diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, to->unpack.skipImages);
+            FILLDIRTY(cb->unpack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->unpack.swapBytes != to->unpack.swapBytes)
+        {
+            diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, to->unpack.swapBytes);
+            FILLDIRTY(cb->unpack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->unpack.psLSBFirst != to->unpack.psLSBFirst)
+        {
+            diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, to->unpack.psLSBFirst);
+            FILLDIRTY(cb->unpack);
+            FILLDIRTY(cb->dirty);
+        }
+        CLEARDIRTY2(cb->unpack, bitID);
+    }
+
+    if (CHECKDIRTY(cb->pack, bitID))
+    {
+        if (from->pack.rowLength != to->pack.rowLength)
+        {
+            diff_api.PixelStorei(GL_PACK_ROW_LENGTH, to->pack.rowLength);
+            FILLDIRTY(cb->pack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->pack.skipRows != to->pack.skipRows)
+        {
+            diff_api.PixelStorei(GL_PACK_SKIP_ROWS, to->pack.skipRows);
+            FILLDIRTY(cb->pack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->pack.skipPixels != to->pack.skipPixels)
+        {
+            diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, to->pack.skipPixels);
+            FILLDIRTY(cb->pack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->pack.alignment != to->pack.alignment)
+        {
+            diff_api.PixelStorei(GL_PACK_ALIGNMENT, to->pack.alignment);
+            FILLDIRTY(cb->pack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->pack.imageHeight != to->pack.imageHeight)
+        {
+            diff_api.PixelStorei(GL_PACK_IMAGE_HEIGHT, to->pack.imageHeight);
+            FILLDIRTY(cb->pack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->pack.skipImages != to->pack.skipImages)
+        {
+            diff_api.PixelStorei(GL_PACK_SKIP_IMAGES, to->pack.skipImages);
+            FILLDIRTY(cb->pack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->pack.swapBytes != to->pack.swapBytes)
+        {
+            diff_api.PixelStorei(GL_PACK_SWAP_BYTES, to->pack.swapBytes);
+            FILLDIRTY(cb->pack);
+            FILLDIRTY(cb->dirty);
+        }
+        if (from->pack.psLSBFirst != to->pack.psLSBFirst)
+        {
+            diff_api.PixelStorei(GL_PACK_LSB_FIRST, to->pack.psLSBFirst);
+            FILLDIRTY(cb->pack);
+            FILLDIRTY(cb->dirty);
+        }
+        CLEARDIRTY2(cb->pack, bitID);
+    }
+
     CLEARDIRTY2(cb->dirty, bitID);
 }
 
