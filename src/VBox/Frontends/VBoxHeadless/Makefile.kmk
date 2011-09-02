@@ -63,6 +63,7 @@ VBoxHeadlessC_LIBS += $(PATH_STAGE_LIB)/VBoxHeadless$(VBOX_SUFF_LIB)
 VBoxHeadlessSVC_EXTENDS = VBoxHeadlessC
 VBoxHeadlessSVC_NAME = VBoxHeadlessSVC
 VBoxHeadlessSVC_LDFLAGS.win = /SUBSYSTEM:windows
+VBoxHeadlessSVC_DEFS = VBOX_HEADLESS_SVC
 
 #
 # VBoxHeadless
