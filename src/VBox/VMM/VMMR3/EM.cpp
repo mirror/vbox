@@ -1359,10 +1359,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         {
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
-            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
-             * stopped/reset before the next VM state change is made. We need a better
-             * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
-             * && rc >= VINF_EM_SUSPEND). */
+            /** @todo HACK ALERT! The following test is to make sure EM+TM
+             * thinks the VM is stopped/reset before the next VM state change
+             * is made. We need a better solution for this, or at least make it
+             * possible to do: (rc >= VINF_EM_FIRST && rc <=
+             * VINF_EM_SUSPEND). */
             if (RT_UNLIKELY(rc == VINF_EM_SUSPEND || rc == VINF_EM_RESET || rc == VINF_EM_OFF))
             {
                 Log2(("emR3ForcedActions: returns %Rrc\n", rc));
@@ -1469,10 +1470,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         {
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
-            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
-             * stopped/reset before the next VM state change is made. We need a better
-             * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
-             * && rc >= VINF_EM_SUSPEND). */
+            /** @todo HACK ALERT! The following test is to make sure EM+TM
+             * thinks the VM is stopped/reset before the next VM state change
+             * is made. We need a better solution for this, or at least make it
+             * possible to do: (rc >= VINF_EM_FIRST && rc <=
+             * VINF_EM_SUSPEND). */
             if (RT_UNLIKELY(rc == VINF_EM_SUSPEND || rc == VINF_EM_RESET || rc == VINF_EM_OFF))
             {
                 Log2(("emR3ForcedActions: returns %Rrc\n", rc));
@@ -1494,10 +1496,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 return rc2;
             }
             UPDATE_RC();
-            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
-             * stopped/reset before the next VM state change is made. We need a better
-             * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
-             * && rc >= VINF_EM_SUSPEND). */
+            /** @todo HACK ALERT! The following test is to make sure EM+TM
+             * thinks the VM is stopped/reset before the next VM state change
+             * is made. We need a better solution for this, or at least make it
+             * possible to do: (rc >= VINF_EM_FIRST && rc <=
+             * VINF_EM_SUSPEND). */
             if (RT_UNLIKELY(rc == VINF_EM_SUSPEND || rc == VINF_EM_RESET || rc == VINF_EM_OFF))
             {
                 Log2(("emR3ForcedActions: returns %Rrc\n", rc));
@@ -1545,10 +1548,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 return rc2;
             }
             UPDATE_RC();
-            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
-             * stopped/reset before the next VM state change is made. We need a better
-             * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
-             * && rc >= VINF_EM_SUSPEND). */
+            /** @todo HACK ALERT! The following test is to make sure EM+TM
+             * thinks the VM is stopped/reset before the next VM state change
+             * is made. We need a better solution for this, or at least make it
+             * possible to do: (rc >= VINF_EM_FIRST && rc <=
+             * VINF_EM_SUSPEND). */
             if (RT_UNLIKELY(rc == VINF_EM_SUSPEND || rc == VINF_EM_RESET || rc == VINF_EM_OFF))
             {
                 Log2(("emR3ForcedActions: returns %Rrc\n", rc));
@@ -1577,7 +1581,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
         /*
          * The instruction following an emulated STI should *always* be executed!
-         * 
+         *
          * Note! We intentionally don't clear VM_FF_INHIBIT_INTERRUPTS here if
          *       the eip is the same as the inhibited instr address.  Before we
          *       are able to execute this instruction in raw mode (iret to
@@ -1590,18 +1594,13 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
-            Log(("VMCPU_FF_INHIBIT_INTERRUPTS at %RGv successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVCpu)));
             if (CPUMGetGuestRIP(pVCpu) != EMGetInhibitInterruptsPC(pVCpu))
+            {
+                Log(("Clearing VMCPU_FF_INHIBIT_INTERRUPTS at %RGv - successor %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu), EMGetInhibitInterruptsPC(pVCpu)));
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-
-            if (EMIsSupervisorCodeRecompiled(pVM))
-                rc2 = VINF_EM_RESCHEDULE_REM;
-            else if (HWACCMR3IsActive(pVCpu))
-                rc2 = VINF_EM_RESCHEDULE_HWACC;
+            }
             else
-                rc2 = PATMAreInterruptsEnabled(pVM) ? VINF_EM_RESCHEDULE_RAW : VINF_EM_RESCHEDULE_REM;
-
-            UPDATE_RC();
+                Log(("Leaving VMCPU_FF_INHIBIT_INTERRUPTS set at %RGv\n", (RTGCPTR)CPUMGetGuestRIP(pVCpu)));
         }
 
         /*
@@ -1899,7 +1898,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     /* Don't reschedule in the halted or wait for SIPI case. */
                     if (    pVCpu->em.s.enmPrevState == EMSTATE_WAIT_SIPI
                         ||  pVCpu->em.s.enmPrevState == EMSTATE_HALTED)
+                    {
+                        pVCpu->em.s.enmState = pVCpu->em.s.enmPrevState;
                         break;
+                    }
                     /* fall through and get scheduled. */
 
                 /*
@@ -1936,6 +1938,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_SUSPEND:
                     Log2(("EMR3ExecuteVM: VINF_EM_SUSPEND: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_SUSPENDED));
+                    Assert(pVCpu->em.s.enmState != EMSTATE_SUSPENDED);
                     pVCpu->em.s.enmPrevState = pVCpu->em.s.enmState;
                     pVCpu->em.s.enmState     = EMSTATE_SUSPENDED;
                     break;
@@ -1987,6 +1990,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_NO_MEMORY:
                     Log2(("EMR3ExecuteVM: VINF_EM_NO_MEMORY: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_SUSPENDED));
+                    Assert(pVCpu->em.s.enmState != EMSTATE_SUSPENDED);
                     pVCpu->em.s.enmPrevState = pVCpu->em.s.enmState;
                     pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
                     TMR3NotifySuspend(pVM, pVCpu);
