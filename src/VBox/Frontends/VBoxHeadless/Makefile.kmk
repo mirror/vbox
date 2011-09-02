@@ -32,7 +32,7 @@ ifdef VBOX_WITH_HARDENING
  VBOX_WITH_HEADLESS_DLL = 1
 else
  if "$(KBUILD_TARGET)" == "win"
-  PROGRAMS += VBoxHeadlessW VBoxHeadlessC
+  PROGRAMS += VBoxHeadlessSVC VBoxHeadlessC
   DLLS += VBoxHeadless
   VBOX_WITH_HEADLESS_DLL = 1
  else
@@ -60,9 +60,9 @@ VBoxHeadlessC_LIBS += $(PATH_STAGE_LIB)/VBoxHeadless$(VBOX_SUFF_LIB)
 #
 # Windows subsystem VBoxHeadless.
 #
-VBoxHeadlessW_EXTENDS = VBoxHeadlessC
-VBoxHeadlessW_NAME = VBoxHeadlessW
-VBoxHeadlessW_LDFLAGS.win = /SUBSYSTEM:windows
+VBoxHeadlessSVC_EXTENDS = VBoxHeadlessC
+VBoxHeadlessSVC_NAME = VBoxHeadlessSVC
+VBoxHeadlessSVC_LDFLAGS.win = /SUBSYSTEM:windows
 
 #
 # VBoxHeadless
