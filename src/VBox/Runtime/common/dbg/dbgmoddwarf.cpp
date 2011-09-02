@@ -47,19 +47,20 @@
 *******************************************************************************/
 /** @name Standard DWARF Line Number Opcodes
  * @{ */
-#define DW_LNS_extended             UINT8_C(0)
-#define DW_LNS_copy                 UINT8_C(1)
-#define DW_LNS_advance_pc           UINT8_C(2)
-#define DW_LNS_advance_line         UINT8_C(3)
-#define DW_LNS_set_file             UINT8_C(4)
-#define DW_LNS_set_column           UINT8_C(5)
-#define DW_LNS_negate_stmt          UINT8_C(6)
-#define DW_LNS_set_basic_block      UINT8_C(7)
-#define DW_LNS_const_add_pc         UINT8_C(8)
-#define DW_LNS_fixed_advance_pc     UINT8_C(9)
-#define DW_LNS_set_prologue_end     UINT8_C(10)
-#define DW_LNS_set_epilogue_begin   UINT8_C(11)
-#define DW_LNS_set_isa              UINT8_C(12)
+#define DW_LNS_extended                    UINT8_C(0x00)
+#define DW_LNS_copy                        UINT8_C(0x01)
+#define DW_LNS_advance_pc                  UINT8_C(0x02)
+#define DW_LNS_advance_line                UINT8_C(0x03)
+#define DW_LNS_set_file                    UINT8_C(0x04)
+#define DW_LNS_set_column                  UINT8_C(0x05)
+#define DW_LNS_negate_stmt                 UINT8_C(0x06)
+#define DW_LNS_set_basic_block             UINT8_C(0x07)
+#define DW_LNS_const_add_pc                UINT8_C(0x08)
+#define DW_LNS_fixed_advance_pc            UINT8_C(0x09)
+#define DW_LNS_set_prologue_end            UINT8_C(0x0a)
+#define DW_LNS_set_epilogue_begin          UINT8_C(0x0b)
+#define DW_LNS_set_isa                     UINT8_C(0x0c)
+#define DW_LNS_what_question_mark          UINT8_C(0x0d)
 /** @} */
 
 
@@ -136,6 +137,136 @@
 #define DW_TAG_lo_user                      UINT16_C(0x4080)
 #define DW_TAG_hi_user                      UINT16_C(0xffff)
 /** @} */
+
+
+/** @name DIE Attributes.
+ * @{ */
+#define DW_AT_sibling                       UINT16_C(0x0001)
+#define DW_AT_location                      UINT16_C(0x0002)
+#define DW_AT_name                          UINT16_C(0x0003)
+#define DW_AT_ordering                      UINT16_C(0x0009)
+#define DW_AT_byte_size                     UINT16_C(0x000b)
+#define DW_AT_bit_offset                    UINT16_C(0x000c)
+#define DW_AT_bit_size                      UINT16_C(0x000d)
+#define DW_AT_stmt_list                     UINT16_C(0x0010)
+#define DW_AT_low_pc                        UINT16_C(0x0011)
+#define DW_AT_high_pc                       UINT16_C(0x0012)
+#define DW_AT_language                      UINT16_C(0x0013)
+#define DW_AT_discr                         UINT16_C(0x0015)
+#define DW_AT_discr_value                   UINT16_C(0x0016)
+#define DW_AT_visibility                    UINT16_C(0x0017)
+#define DW_AT_import                        UINT16_C(0x0018)
+#define DW_AT_string_length                 UINT16_C(0x0019)
+#define DW_AT_common_reference              UINT16_C(0x001a)
+#define DW_AT_comp_dir                      UINT16_C(0x001b)
+#define DW_AT_const_value                   UINT16_C(0x001c)
+#define DW_AT_containing_type               UINT16_C(0x001d)
+#define DW_AT_default_value                 UINT16_C(0x001e)
+#define DW_AT_inline                        UINT16_C(0x0020)
+#define DW_AT_is_optional                   UINT16_C(0x0021)
+#define DW_AT_lower_bound                   UINT16_C(0x0022)
+#define DW_AT_producer                      UINT16_C(0x0025)
+#define DW_AT_prototyped                    UINT16_C(0x0027)
+#define DW_AT_return_addr                   UINT16_C(0x002a)
+#define DW_AT_start_scope                   UINT16_C(0x002c)
+#define DW_AT_bit_stride                    UINT16_C(0x002e)
+#define DW_AT_upper_bound                   UINT16_C(0x002f)
+#define DW_AT_abstract_origin               UINT16_C(0x0031)
+#define DW_AT_accessibility                 UINT16_C(0x0032)
+#define DW_AT_address_class                 UINT16_C(0x0033)
+#define DW_AT_artificial                    UINT16_C(0x0034)
+#define DW_AT_base_types                    UINT16_C(0x0035)
+#define DW_AT_calling_convention            UINT16_C(0x0036)
+#define DW_AT_count                         UINT16_C(0x0037)
+#define DW_AT_data_member_location          UINT16_C(0x0038)
+#define DW_AT_decl_column                   UINT16_C(0x0039)
+#define DW_AT_decl_file                     UINT16_C(0x003a)
+#define DW_AT_decl_line                     UINT16_C(0x003b)
+#define DW_AT_declaration                   UINT16_C(0x003c)
+#define DW_AT_discr_list                    UINT16_C(0x003d)
+#define DW_AT_encoding                      UINT16_C(0x003e)
+#define DW_AT_external                      UINT16_C(0x003f)
+#define DW_AT_frame_base                    UINT16_C(0x0040)
+#define DW_AT_friend                        UINT16_C(0x0041)
+#define DW_AT_identifier_case               UINT16_C(0x0042)
+#define DW_AT_macro_info                    UINT16_C(0x0043)
+#define DW_AT_namelist_item                 UINT16_C(0x0044)
+#define DW_AT_priority                      UINT16_C(0x0045)
+#define DW_AT_segment                       UINT16_C(0x0046)
+#define DW_AT_specification                 UINT16_C(0x0047)
+#define DW_AT_static_link                   UINT16_C(0x0048)
+#define DW_AT_type                          UINT16_C(0x0049)
+#define DW_AT_use_location                  UINT16_C(0x004a)
+#define DW_AT_variable_parameter            UINT16_C(0x004b)
+#define DW_AT_virtuality                    UINT16_C(0x004c)
+#define DW_AT_vtable_elem_location          UINT16_C(0x004d)
+#define DW_AT_allocated                     UINT16_C(0x004e)
+#define DW_AT_associated                    UINT16_C(0x004f)
+#define DW_AT_data_location                 UINT16_C(0x0050)
+#define DW_AT_byte_stride                   UINT16_C(0x0051)
+#define DW_AT_entry_pc                      UINT16_C(0x0052)
+#define DW_AT_use_UTF8                      UINT16_C(0x0053)
+#define DW_AT_extension                     UINT16_C(0x0054)
+#define DW_AT_ranges                        UINT16_C(0x0055)
+#define DW_AT_trampoline                    UINT16_C(0x0056)
+#define DW_AT_call_column                   UINT16_C(0x0057)
+#define DW_AT_call_file                     UINT16_C(0x0058)
+#define DW_AT_call_line                     UINT16_C(0x0059)
+#define DW_AT_description                   UINT16_C(0x005a)
+#define DW_AT_binary_scale                  UINT16_C(0x005b)
+#define DW_AT_decimal_scale                 UINT16_C(0x005c)
+#define DW_AT_small                         UINT16_C(0x005d)
+#define DW_AT_decimal_sign                  UINT16_C(0x005e)
+#define DW_AT_digit_count                   UINT16_C(0x005f)
+#define DW_AT_picture_string                UINT16_C(0x0060)
+#define DW_AT_mutable                       UINT16_C(0x0061)
+#define DW_AT_threads_scaled                UINT16_C(0x0062)
+#define DW_AT_explicit                      UINT16_C(0x0063)
+#define DW_AT_object_pointer                UINT16_C(0x0064)
+#define DW_AT_endianity                     UINT16_C(0x0065)
+#define DW_AT_elemental                     UINT16_C(0x0066)
+#define DW_AT_pure                          UINT16_C(0x0067)
+#define DW_AT_recursive                     UINT16_C(0x0068)
+#define DW_AT_signature                     UINT16_C(0x0069)
+#define DW_AT_main_subprogram               UINT16_C(0x006a)
+#define DW_AT_data_bit_offset               UINT16_C(0x006b)
+#define DW_AT_const_expr                    UINT16_C(0x006c)
+#define DW_AT_enum_class                    UINT16_C(0x006d)
+#define DW_AT_linkage_name                  UINT16_C(0x006e)
+#define DW_AT_lo_user                       UINT16_C(0x2000)
+#define DW_AT_hi_user                       UINT16_C(0x3fff)
+/** @} */
+
+/** @name DIE Forms.
+ * @{ */
+#define DW_FORM_addr                        UINT16_C(0x01)
+/* What was 0x02? */
+#define DW_FORM_block2                      UINT16_C(0x03)
+#define DW_FORM_block4                      UINT16_C(0x04)
+#define DW_FORM_data2                       UINT16_C(0x05)
+#define DW_FORM_data4                       UINT16_C(0x06)
+#define DW_FORM_data8                       UINT16_C(0x07)
+#define DW_FORM_string                      UINT16_C(0x08)
+#define DW_FORM_block                       UINT16_C(0x09)
+#define DW_FORM_block1                      UINT16_C(0x0a)
+#define DW_FORM_data1                       UINT16_C(0x0b)
+#define DW_FORM_flag                        UINT16_C(0x0c)
+#define DW_FORM_sdata                       UINT16_C(0x0d)
+#define DW_FORM_strp                        UINT16_C(0x0e)
+#define DW_FORM_udata                       UINT16_C(0x0f)
+#define DW_FORM_ref_addr                    UINT16_C(0x10)
+#define DW_FORM_ref1                        UINT16_C(0x11)
+#define DW_FORM_ref2                        UINT16_C(0x12)
+#define DW_FORM_ref4                        UINT16_C(0x13)
+#define DW_FORM_ref8                        UINT16_C(0x14)
+#define DW_FORM_ref_udata                   UINT16_C(0x15)
+#define DW_FORM_indirect                    UINT16_C(0x16)
+#define DW_FORM_sec_offset                  UINT16_C(0x17)
+#define DW_FORM_exprloc                     UINT16_C(0x18)
+#define DW_FORM_flag_present                UINT16_C(0x19)
+#define DW_FORM_ref_sig8                    UINT16_C(0x20)
+/** @} */
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -730,6 +861,9 @@ static int32_t rtDwarfCursor_GetSLeb128AsS32(PRTDWARFCURSOR pCursor, int32_t sEr
  */
 static int rtDwarfCursor_SkipLeb128(PRTDWARFCURSOR pCursor)
 {
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+
     if (pCursor->cbUnitLeft < 1)
         return pCursor->rc = VERR_DWARF_UNEXPECTED_END;
 
@@ -748,6 +882,29 @@ static int rtDwarfCursor_SkipLeb128(PRTDWARFCURSOR pCursor)
     pCursor->cbUnitLeft -= offSkip;
     pCursor->cbLeft     -= offSkip;
     return pCursor->rc;
+}
+
+
+/**
+ * Advances the cursor a given number of bytes.
+ *
+ * @returns IPRT status code.
+ * @param   pCursor             The cursor.
+ * @param   offSkip             The number of bytes to advance.
+ */
+static int rtDwarfCursor_SkipBytes(PRTDWARFCURSOR pCursor, uint64_t offSkip)
+{
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+    if (pCursor->cbUnitLeft < offSkip)
+        return pCursor->rc = VERR_DWARF_UNEXPECTED_END;
+
+    size_t const offSkipSizeT = (size_t)offSkip;
+    pCursor->cbUnitLeft -= offSkipSizeT;
+    pCursor->cbLeft     -= offSkipSizeT;
+    pCursor->pb         += offSkipSizeT;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -775,6 +932,33 @@ static const char *rtDwarfCursor_GetSZ(PRTDWARFCURSOR pCursor, const char *pszEr
             break;
     }
     return pszRet;
+}
+
+
+/**
+ * Reads a 1, 2, 4 or 8 byte unsgined value.
+ *
+ * @returns 64-bit unsigned value.
+ * @param   pCursor             The cursor.
+ * @param   cbValue             The value size.
+ * @param   uErrValue           The error value.
+ */
+static uint64_t rtDwarfCursor_GetVarSizedU(PRTDWARFCURSOR pCursor, size_t cbValue, uint64_t uErrValue)
+{
+    uint64_t u64Ret;
+    switch (cbValue)
+    {
+        case 1: u64Ret = rtDwarfCursor_GetU8( pCursor, UINT8_MAX); break;
+        case 2: u64Ret = rtDwarfCursor_GetU16(pCursor, UINT16_MAX); break;
+        case 4: u64Ret = rtDwarfCursor_GetU32(pCursor, UINT32_MAX); break;
+        case 8: u64Ret = rtDwarfCursor_GetU64(pCursor, UINT64_MAX); break;
+        default:
+            pCursor->rc = VERR_DWARF_BAD_INFO;
+            return uErrValue;
+    }
+    if (RT_FAILURE(pCursor->rc))
+        return uErrValue;
+    return u64Ret;
 }
 
 
@@ -903,7 +1087,7 @@ static uint64_t rtDwarfCursor_GetInitalLength(PRTDWARFCURSOR pCursor)
  */
 static uint32_t rtDwarfCursor_CalcSectOffsetU32(PRTDWARFCURSOR pCursor)
 {
-    size_t off = (uint8_t const *)pCursor->pDwarfMod->aSections[pCursor->enmSect].pv - pCursor->pb;
+    size_t off = pCursor->pb - (uint8_t const *)pCursor->pDwarfMod->aSections[pCursor->enmSect].pv;
     uint32_t offRet = (uint32_t)off;
     if (offRet != off)
     {
@@ -927,6 +1111,7 @@ static uint8_t const *rtDwarfCursor_CalcPos(PRTDWARFCURSOR pCursor, size_t offRe
 {
     if (offRelative > pCursor->cbUnitLeft)
     {
+        Log(("rtDwarfCursor_CalcPos: bad position %#zx, cbUnitLeft=%#zu\n", offRelative, pCursor->cbUnitLeft));
         pCursor->rc = VERR_DWARF_BAD_POS;
         return NULL;
     }
@@ -948,7 +1133,10 @@ static int rtDwarfCursor_AdvanceToPos(PRTDWARFCURSOR pCursor, uint8_t const *pbN
         return pCursor->rc;
     AssertPtr(pbNewPos);
     if ((uintptr_t)pbNewPos < (uintptr_t)pCursor->pb)
+    {
+        Log(("rtDwarfCursor_AdvanceToPos: bad position %p, current %p\n", pbNewPos, pCursor->pb));
         return pCursor->rc = VERR_DWARF_BAD_POS;
+    }
 
     uintptr_t cbAdj = (uintptr_t)pbNewPos - (uintptr_t)pCursor->pb;
     if (RT_UNLIKELY(cbAdj > pCursor->cbUnitLeft))
@@ -1051,7 +1239,10 @@ static int rtDwarfCursor_InitWithOffset(PRTDWARFCURSOR pCursor, PRTDBGMODDWARF p
                                         krtDbgModDwarfSect enmSect, uint32_t offSect)
 {
     if (offSect > pThis->aSections[enmSect].cb)
+    {
+        Log(("rtDwarfCursor_InitWithOffset: offSect=%#x cb=%#x enmSect=%d\n", offSect, pThis->aSections[enmSect].cb, enmSect));
         return VERR_DWARF_BAD_POS;
+    }
 
     int rc = rtDwarfCursor_Init(pCursor, pThis, enmSect);
     if (RT_SUCCESS(rc))
@@ -1148,8 +1339,10 @@ static int rtDwarfLine_DefineFileName(PRTDWARFLINESTATE pLnState, const char *ps
  *
  * @returns IPRT status code
  * @param   pLnState            The line number program state.
+ * @param   offOpCode           The opcode offset (for logging
+ *                              purposes).
  */
-static int rtDwarfLine_AddLine(PRTDWARFLINESTATE pLnState)
+static int rtDwarfLine_AddLine(PRTDWARFLINESTATE pLnState, uint32_t offOpCode)
 {
     const char *pszFile = pLnState->Regs.iFile < pLnState->cFileNames
                         ? pLnState->papszFileNames[pLnState->Regs.iFile]
@@ -1159,7 +1352,7 @@ static int rtDwarfLine_AddLine(PRTDWARFLINESTATE pLnState)
     int rc = rtDbgModDwarfLinkAddressToSegOffset(pLnState->pDwarfMod, pLnState->Regs.uAddress, &iSeg, &offSeg);
     if (RT_SUCCESS(rc))
     {
-        Log2(("rtDwarfLine_AddLine: %x:%08llx (%#llx) %s(%d)\n", iSeg, offSeg, pLnState->Regs.uAddress, pszFile, pLnState->Regs.uLine));
+        Log2(("rtDwarfLine_AddLine: %x:%08llx (%#llx) %s(%d) [offOpCode=%08x]\n", iSeg, offSeg, pLnState->Regs.uAddress, pszFile, pLnState->Regs.uLine, offOpCode));
         rc = RTDbgModLineAdd(pLnState->pDwarfMod->hCnt, pszFile, pLnState->Regs.uLine, iSeg, offSeg, NULL);
 
         /* Ignore address conflicts for now. */
@@ -1213,8 +1406,13 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
 
     while (!rtDwarfCursor_IsAtEndOfUnit(pCursor))
     {
-        uint8_t bOpCode = rtDwarfCursor_GetUByte(pCursor, DW_LNS_extended);
-        if (bOpCode > pLnState->Hdr.u8OpcodeBase)
+#ifdef LOG_ENABLED
+        uint32_t const offOpCode = rtDwarfCursor_CalcSectOffsetU32(pCursor);
+#else
+        uint32_t const offOpCode = 0;
+#endif
+        uint8_t        bOpCode   = rtDwarfCursor_GetUByte(pCursor, DW_LNS_extended);
+        if (bOpCode >= pLnState->Hdr.u8OpcodeBase)
         {
             /*
              * Special opcode.
@@ -1232,11 +1430,11 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
             pLnState->Regs.uLine    += cLineDelta;
             pLnState->Regs.uAddress += cAddressDelta;
             pLnState->Regs.idxOp    += cOpIndexDelta;
-            Log2(("DW Special Opcode %#04x: uLine + %d => %u; uAddress + %#llx => %#llx; idxOp + %#llx => %#llx\n",
-                  bLogOpCode, cLineDelta, pLnState->Regs.uLine, cAddressDelta, pLnState->Regs.uAddress,
+            Log2(("%08x: DW Special Opcode %#04x: uLine + %d => %u; uAddress + %#llx => %#llx; idxOp + %#llx => %#llx\n",
+                  offOpCode, bLogOpCode, cLineDelta, pLnState->Regs.uLine, cAddressDelta, pLnState->Regs.uAddress,
                   cOpIndexDelta, pLnState->Regs.idxOp));
 
-            rc = rtDwarfLine_AddLine(pLnState);
+            rc = rtDwarfLine_AddLine(pLnState, offOpCode);
         }
         else
         {
@@ -1246,8 +1444,8 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                  * Standard opcode.
                  */
                 case DW_LNS_copy:
-                    Log2(("DW_LNS_copy\n"));
-                    rc = rtDwarfLine_AddLine(pLnState);
+                    Log2(("%08x: DW_LNS_copy\n", offOpCode));
+                    rc = rtDwarfLine_AddLine(pLnState, offOpCode);
                     break;
 
                 case DW_LNS_advance_pc:
@@ -1256,7 +1454,7 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                     pLnState->Regs.uAddress += (pLnState->Regs.idxOp + u64Adv) / pLnState->Hdr.cMaxOpsPerInstr
                                              * pLnState->Hdr.cbMinInstr;
                     pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + u64Adv) % pLnState->Hdr.cMaxOpsPerInstr;
-                    Log2(("DW_LNS_advance_pc\n"));
+                    Log2(("%08x: DW_LNS_advance_pc: u64Adv=%#llx (%lld) )\n", offOpCode, u64Adv, u64Adv));
                     break;
                 }
 
@@ -1264,62 +1462,62 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                 {
                     int32_t cLineDelta = rtDwarfCursor_GetSLeb128AsS32(pCursor, 0);
                     pLnState->Regs.uLine += cLineDelta;
-                    Log2(("DW_LNS_advance_line: uLine + %d => %u\n", cLineDelta, pLnState->Regs.uLine));
+                    Log2(("%08x: DW_LNS_advance_line: uLine + %d => %u\n", offOpCode, cLineDelta, pLnState->Regs.uLine));
                     break;
                 }
 
                 case DW_LNS_set_file:
                     pLnState->Regs.iFile = rtDwarfCursor_GetULeb128AsU32(pCursor, 0);
-                    Log2(("DW_LNS_set_file: iFile=%u\n", pLnState->Regs.iFile));
+                    Log2(("%08x: DW_LNS_set_file: iFile=%u\n", offOpCode, pLnState->Regs.iFile));
                     break;
 
                 case DW_LNS_set_column:
                     pLnState->Regs.uColumn = rtDwarfCursor_GetULeb128AsU32(pCursor, 0);
-                    Log2(("DW_LNS_set_column\n"));
+                    Log2(("%08x: DW_LNS_set_column\n", offOpCode));
                     break;
 
                 case DW_LNS_negate_stmt:
                     pLnState->Regs.fIsStatement = !pLnState->Regs.fIsStatement;
-                    Log2(("DW_LNS_negate_stmt\n"));
+                    Log2(("%08x: DW_LNS_negate_stmt\n", offOpCode));
                     break;
 
                 case DW_LNS_set_basic_block:
                     pLnState->Regs.fBasicBlock = true;
-                    Log2(("DW_LNS_set_basic_block\n"));
+                    Log2(("%08x: DW_LNS_set_basic_block\n", offOpCode));
                     break;
 
                 case DW_LNS_const_add_pc:
                     pLnState->Regs.uAddress += (pLnState->Regs.idxOp + 255) / pLnState->Hdr.cMaxOpsPerInstr
                                              * pLnState->Hdr.cbMinInstr;
                     pLnState->Regs.idxOp    += (pLnState->Regs.idxOp + 255) % pLnState->Hdr.cMaxOpsPerInstr;
-                    Log2(("DW_LNS_const_add_pc\n"));
+                    Log2(("%08x: DW_LNS_const_add_pc\n", offOpCode));
                     break;
 
                 case DW_LNS_fixed_advance_pc:
                     pLnState->Regs.uAddress += rtDwarfCursor_GetUHalf(pCursor, 0);
                     pLnState->Regs.idxOp     = 0;
-                    Log2(("DW_LNS_fixed_advance_pc\n"));
+                    Log2(("%08x: DW_LNS_fixed_advance_pc\n", offOpCode));
                     break;
 
                 case DW_LNS_set_prologue_end:
                     pLnState->Regs.fPrologueEnd = true;
-                    Log2(("DW_LNS_set_prologue_end\n"));
+                    Log2(("%08x: DW_LNS_set_prologue_end\n", offOpCode));
                     break;
 
                 case DW_LNS_set_epilogue_begin:
                     pLnState->Regs.fEpilogueBegin = true;
-                    Log2(("DW_LNS_set_epilogue_begin\n"));
+                    Log2(("%08x: DW_LNS_set_epilogue_begin\n", offOpCode));
                     break;
 
                 case DW_LNS_set_isa:
                     pLnState->Regs.uIsa = rtDwarfCursor_GetULeb128AsU32(pCursor, 0);
-                    Log2(("DW_LNS_set_isa %#x\n", pLnState->Regs.uIsa));
+                    Log2(("%08x: DW_LNS_set_isa %#x\n", offOpCode, pLnState->Regs.uIsa));
                     break;
 
                 default:
                 {
                     unsigned cOpsToSkip = pLnState->Hdr.pacStdOperands[bOpCode - 1];
-                    Log2(("rtDwarfLine_RunProgram: Unknown standard opcode %#x, %#x operands\n", bOpCode, cOpsToSkip));
+                    Log(("rtDwarfLine_RunProgram: Unknown standard opcode %#x, %#x operands, at %08x.\n", bOpCode, cOpsToSkip, offOpCode));
                     while (cOpsToSkip-- > 0)
                         rc = rtDwarfCursor_SkipLeb128(pCursor);
                     break;
@@ -1345,25 +1543,16 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                         case DW_LNE_end_sequence:
 #if 0 /* No need for this, I think. */
                             pLnState->Regs.fEndSequence = true;
-                            rc = rtDwarfLine_AddLine(pLnState);
+                            rc = rtDwarfLine_AddLine(pLnState, offOpCode);
 #endif
                             rtDwarfLine_ResetState(pLnState);
-                            Log2(("DW_LNE_end_sequence\n"));
+                            Log2(("%08x: DW_LNE_end_sequence\n", offOpCode));
                             break;
 
                         case DW_LNE_set_address:
-                            switch (cbInstr - 1)
-                            {
-                                case 2: pLnState->Regs.uAddress = rtDwarfCursor_GetU16(pCursor, UINT16_MAX); break;
-                                case 4: pLnState->Regs.uAddress = rtDwarfCursor_GetU32(pCursor, UINT32_MAX); break;
-                                case 8: pLnState->Regs.uAddress = rtDwarfCursor_GetU64(pCursor, UINT64_MAX); break;
-                                default:
-                                    AssertMsgFailed(("%d\n", cbInstr));
-                                    pLnState->Regs.uAddress = rtDwarfCursor_GetNativeUOff(pCursor, UINT64_MAX);
-                                    break;
-                            }
-                            pLnState->Regs.idxOp = 0;
-                            Log2(("DW_LNE_set_address: %#llx\n", pLnState->Regs.uAddress));
+                            pLnState->Regs.uAddress = rtDwarfCursor_GetVarSizedU(pCursor, cbInstr - 1, UINT64_MAX);
+                            pLnState->Regs.idxOp    = 0;
+                            Log2(("%08x: DW_LNE_set_address: %#llx\n", offOpCode, pLnState->Regs.uAddress));
                             break;
 
                         case DW_LNE_define_file:
@@ -1372,20 +1561,35 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                             uint32_t    idxInc      = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
                             rtDwarfCursor_SkipLeb128(pCursor); /* st_mtime */
                             rtDwarfCursor_SkipLeb128(pCursor); /* st_size */
-                            Log2(("DW_LNE_define_file: {%d}/%s\n", idxInc, pszFilename));
+                            Log2(("%08x: DW_LNE_define_file: {%d}/%s\n", offOpCode, idxInc, pszFilename));
 
                             rc = rtDwarfCursor_AdvanceToPos(pCursor, pbEndOfInstr);
                             if (RT_SUCCESS(rc))
                                 rc = rtDwarfLine_DefineFileName(pLnState, pszFilename, idxInc);
                         }
 
+                        /*
+                         * Note! Was defined in DWARF 4.  But... Watcom used it
+                         *       for setting the segment in DWARF 2, creating
+                         *       an incompatibility with the newer standard.
+                         */
                         case DW_LNE_set_descriminator:
-                            pLnState->Regs.uDiscriminator = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
-                            Log2(("DW_LNE_set_descriminator: %u\n", pLnState->Regs.uDiscriminator));
+                            if (pLnState->Hdr.uVer != 2)
+                            {
+                                Assert(pLnState->Hdr.uVer >= 4);
+                                pLnState->Regs.uDiscriminator = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
+                                Log2(("%08x: DW_LNE_set_descriminator: %u\n", offOpCode, pLnState->Regs.uDiscriminator));
+                            }
+                            else
+                            {
+                                uint64_t uSeg = rtDwarfCursor_GetVarSizedU(pCursor, cbInstr - 1, UINT64_MAX);
+                                Log2(("%08x: DW_LNE_set_segment: %ll#x - Watcom Extension\n", offOpCode, uSeg));
+                                /** @todo make use of this? */
+                            }
                             break;
 
                         default:
-                            Log2(("rtDwarfLine_RunProgram: Unknown extended opcode %#x, length %#x\n", bOpCode, cbInstr));
+                            Log(("rtDwarfLine_RunProgram: Unknown extended opcode %#x, length %#x at %08x\n", bOpCode, cbInstr, offOpCode));
                             break;
                     }
 
@@ -1658,7 +1862,7 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
             }
 
             /* Cache it? */
-            if (uCurCode >= pThis->cCachedAbbrevsAlloced)
+            if (uCurCode <= pThis->cCachedAbbrevsAlloced)
             {
                 PRTDWARFABBREV pEntry = &pThis->paCachedAbbrevs[uCurCode - 1];
                 while (pThis->cCachedAbbrevs < uCurCode)
@@ -1686,7 +1890,7 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
             {
                 uAttr = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
                 uForm = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
-            } while (uAttr != 0 && uForm != 0);
+            } while (uAttr != 0);
             if (RT_FAILURE(Cursor.rc))
                 break;
 
@@ -1733,7 +1937,7 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
             {
                 uAttr = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
                 uForm = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
-            } while (uAttr != 0 && uForm != 0);
+            } while (uAttr != 0);
             if (RT_FAILURE(Cursor.rc))
                 break;
         }
@@ -1893,6 +2097,154 @@ static void rtDwarfDieStack_Delete(PRTDWARFDIESTACK pStack)
 
 
 /**
+ * Resolves a string section (debug_str) reference.
+ *
+ * @returns Pointer to the string (inside the string section).
+ * @param   pThis               The DWARF instance.
+ * @param   pCursor             The cursor.
+ * @param   pszErrValue         What to return on failure (@a
+ *                              pCursor->rc is set).
+ */
+static const char *rtDwarfForm_GetStrp(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, const char *pszErrValue)
+{
+    uint64_t offDebugStr = rtDwarfCursor_GetUOff(pCursor, UINT64_MAX);
+    if (RT_FAILURE(pCursor->rc))
+        return pszErrValue;
+
+    if (offDebugStr >= pThis->aSections[krtDbgModDwarfSect_str].cb)
+    {
+        /* Ugly: Exploit the cursor status field for reporting errors. */
+        pCursor->rc = VERR_DWARF_BAD_INFO;
+        return pszErrValue;
+    }
+
+    if (!pThis->aSections[krtDbgModDwarfSect_str].pv)
+    {
+        int rc = rtDbgModDwarfLoadSection(pThis, krtDbgModDwarfSect_str);
+        if (RT_FAILURE(rc))
+        {
+            /* Ugly: Exploit the cursor status field for reporting errors. */
+            pCursor->rc = rc;
+            return pszErrValue;
+        }
+    }
+
+    return (const char *)pThis->aSections[krtDbgModDwarfSect_str].pv + (size_t)offDebugStr;
+}
+
+static const char *rtDwarfForm_GetString(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, uint16_t uForm, const char *pszErrValue)
+{
+    switch (uForm)
+    {
+        case DW_FORM_string:
+            return rtDwarfCursor_GetSZ(pCursor, pszErrValue);
+
+        case DW_FORM_strp:
+            return rtDwarfForm_GetStrp(pThis, pCursor, pszErrValue);
+
+        default:
+            pCursor->rc = VERR_DWARF_UNEXPECTED_FORM;
+            return pszErrValue;
+    }
+}
+
+
+/**
+ * Skips a form.
+ * @returns IPRT status code
+ * @param   pCursor             The cursor.
+ * @param   uForm               The form to skip.
+ */
+static int rtDwarfInfo_SkipForm(PRTDWARFCURSOR pCursor, uint32_t uForm)
+{
+    switch (uForm)
+    {
+        case DW_FORM_addr:
+            return rtDwarfCursor_SkipBytes(pCursor, pCursor->cbNativeAddr);
+
+        case DW_FORM_block:
+        case DW_FORM_exprloc:
+            return rtDwarfCursor_SkipBytes(pCursor, rtDwarfCursor_GetULeb128(pCursor, 0));
+
+        case DW_FORM_block1:
+            return rtDwarfCursor_SkipBytes(pCursor, rtDwarfCursor_GetU8(pCursor, 0));
+
+        case DW_FORM_block2:
+            return rtDwarfCursor_SkipBytes(pCursor, rtDwarfCursor_GetU16(pCursor, 0));
+
+        case DW_FORM_block4:
+            return rtDwarfCursor_SkipBytes(pCursor, rtDwarfCursor_GetU32(pCursor, 0));
+
+        case DW_FORM_data1:
+        case DW_FORM_ref1:
+        case DW_FORM_flag:
+            return rtDwarfCursor_SkipBytes(pCursor, 1);
+
+        case DW_FORM_data2:
+        case DW_FORM_ref2:
+            return rtDwarfCursor_SkipBytes(pCursor, 2);
+
+        case DW_FORM_data4:
+        case DW_FORM_ref4:
+            return rtDwarfCursor_SkipBytes(pCursor, 4);
+
+        case DW_FORM_data8:
+        case DW_FORM_ref8:
+        case DW_FORM_ref_sig8:
+            return rtDwarfCursor_SkipBytes(pCursor, 8);
+
+        case DW_FORM_udata:
+        case DW_FORM_sdata:
+        case DW_FORM_ref_udata:
+            return rtDwarfCursor_SkipLeb128(pCursor);
+
+        case DW_FORM_string:
+            rtDwarfCursor_GetSZ(pCursor, NULL);
+            return pCursor->rc;
+
+        case DW_FORM_indirect:
+            return rtDwarfInfo_SkipForm(pCursor, rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX));
+
+        case DW_FORM_strp:
+        case DW_FORM_ref_addr:
+        case DW_FORM_sec_offset:
+            return rtDwarfCursor_SkipBytes(pCursor, pCursor->f64bitDwarf ? 8 : 4);
+
+        case DW_FORM_flag_present:
+            return pCursor->rc; /* no data */
+
+        default:
+            return VERR_DWARF_UNKNOWN_FORM;
+    }
+}
+
+
+
+/**
+ * Skips a DIE.
+ *
+ * @returns IPRT status code.
+ * @param   pCursor         The cursor.
+ * @param   pAbbrevCursor   The abbreviation cursor.
+ */
+static int rtDwarfInfo_SkipDie(PRTDWARFCURSOR pCursor, PRTDWARFCURSOR pAbbrevCursor)
+{
+    for (;;)
+    {
+        uint32_t uAttr = rtDwarfCursor_GetULeb128AsU32(pAbbrevCursor, 0);
+        uint32_t uForm = rtDwarfCursor_GetULeb128AsU32(pAbbrevCursor, 0);
+        if (uAttr == 0 && uForm == 0)
+            break;
+
+        int rc = rtDwarfInfo_SkipForm(pCursor, uForm);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    return RT_FAILURE(pCursor->rc) ? pCursor->rc : pAbbrevCursor->rc;
+}
+
+
+/**
  * Parse a DIE.
  *
  * @returns IPRT status code.
@@ -1906,13 +2258,81 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor,
                                 PCRTDWARFABBREV pAbbrev, PRTDWARFCURSOR pAbbrevCursor,
                                 PRTDWARFDIESTACK pStack)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Pick out DIEs which tag we find interesting.
+     */
+    switch (pAbbrev->uTag)
+    {
+        case DW_TAG_compile_unit:
+        case DW_TAG_partial_unit:
+            Log((" - DW_TAG_%s_unit:\n", pAbbrev->uTag == DW_TAG_compile_unit ? "compile" : "partial"));
+            for (;;)
+            {
+                uint32_t uAttr = rtDwarfCursor_GetULeb128AsU32(pAbbrevCursor, 0);
+                uint32_t uForm = rtDwarfCursor_GetULeb128AsU32(pAbbrevCursor, 0);
+                switch (uAttr)
+                {
+                    case 0:
+                        return VINF_SUCCESS;
+
+                    case DW_AT_name:
+                    {
+                        const char *pszName = rtDwarfForm_GetString(pThis, pCursor, uForm, "<error>");
+                        rtDwarfDieStack_SetName(pStack, pszName);
+                        Log4(("%*s   - name=%s\n", pStack->cOnStack*2, "", pszName));
+                        break;
+                    }
+
+                    case DW_AT_stmt_list:
+                        /** @todo  */
+                    default:
+                        Log4(("%*s   - attr=%#x form=%#x\n", pStack->cOnStack*2, "", uAttr, uForm));
+                        rtDwarfInfo_SkipForm(pCursor, uForm);
+                }
+                if (RT_FAILURE(pCursor->rc))
+                    return pCursor->rc;
+            }
+            break; /* not reached. */
+
+        case DW_TAG_subprogram:
+            Log((" - DW_TAG_subprogram:\n"));
+            for (;;)
+            {
+                uint32_t uAttr = rtDwarfCursor_GetULeb128AsU32(pAbbrevCursor, 0);
+                uint32_t uForm = rtDwarfCursor_GetULeb128AsU32(pAbbrevCursor, 0);
+                switch (uAttr)
+                {
+                    case 0:
+                        return VINF_SUCCESS;
+
+                    case DW_AT_name:
+                    {
+                        const char *pszName = rtDwarfForm_GetString(pThis, pCursor, uForm, "<error>");
+                        rtDwarfDieStack_SetName(pStack, pszName);
+                        Log4(("%*s   - name=%s\n", pStack->cOnStack*2, "", pszName));
+                        break;
+                    }
+
+                    default:
+                        Log4(("%*s   - attr=%#x form=%#x\n", pStack->cOnStack*2, "", uAttr, uForm));
+                        rtDwarfInfo_SkipForm(pCursor, uForm);
+                }
+                if (RT_FAILURE(pCursor->rc))
+                    return pCursor->rc;
+            }
+            break; /* not reached. */
+
+    }
+
+    return rtDwarfInfo_SkipDie(pCursor, pAbbrevCursor);
 }
 
 
 
 static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
 {
+    Log(("rtDwarfInfo_LoadUnit: %#x\n", rtDwarfCursor_CalcSectOffsetU32(pCursor)));
+
     /*
      * Read the compilation unit header.
      */
@@ -1925,6 +2345,7 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
     uint8_t  const cbNativeAddr = rtDwarfCursor_GetU8(pCursor, UINT8_MAX);
     if (RT_FAILURE(pCursor->rc))
         return pCursor->rc;
+    Log(("   uVer=%d  offAbbrev=%#llx cbNativeAddr=%d\n", uVer, offAbbrev, cbNativeAddr));
 
     /*
      * Set up the abbreviation cache and store the native address size in the cursor.
@@ -1947,7 +2368,6 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
     while (!rtDwarfCursor_IsAtEndOfUnit(pCursor))
     {
         uint32_t uAbbrCode = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
-
         if (!uAbbrCode)
         {
             /* End of siblings, pop the stack. */
@@ -1966,6 +2386,7 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
                 rc = VERR_DWARF_ABBREV_NOT_FOUND;
                 break;
             }
+            Log4((" %*stag=%#x%s\n", Stack.cOnStack * 2, "", pAbbrev->uTag, pAbbrev->fChildren ? " has children" : ""));
 
             /*
              * If this DIE has children, push it onto the stack.
