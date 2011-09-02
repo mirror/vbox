@@ -90,10 +90,13 @@ static struct
     /* Good stuff, but with a second block -- should be *not* taken into account since
      * we're only interested in parsing/handling the first object. */
     { "t9=t9\0t91=t91\0\0t92=t92\0\0",  sizeof("t9=t9\0t91=t91\0\0t92=t92\0\0"),           0,  sizeof("t9=t9\0t91=t91\0") - 1,            2, VINF_SUCCESS },
+    /* Nasty stuff. */
+    { "הצü=fהצ\0\0",                    sizeof("הצü=fהצ\0\0"),                             0,  sizeof("הצü=fהצ\0") - 1,                   1, VINF_SUCCESS },
+    { "הצü=fהצ\0צצצ=ההה",               sizeof("הצü=fהצ\0צצצ=ההה"),                        0,  sizeof("הצü=fהצ\0") - 1,                   1, VERR_MORE_DATA },
     /* Some "real world" examples. */
     { "hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0\0",
                                         sizeof("hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0\0"),
-                                                                                           0,  sizeof("hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0\0") - 1,
+                                                                                           0,  sizeof("hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0") - 1,
                                                                                                                                           3, VINF_SUCCESS }
 };
 
