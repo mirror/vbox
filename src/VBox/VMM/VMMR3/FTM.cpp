@@ -1232,13 +1232,13 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
     int rc = VINF_SUCCESS;
     bool fSuspended = false;
 
-    /** We don't call VMR3Suspend here to avoid the overhead of state changes and notifications. This
-     *  is only a short suspend.
+    /* We don't call VMR3Suspend here to avoid the overhead of state changes and notifications. This
+     * is only a short suspend.
      */
     STAM_PROFILE_START(&pVM->ftm.s.StatCheckpointPause, a);
     PDMR3Suspend(pVM);
 
-    /** Hack alert: as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
+    /* Hack alert: as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
     EMR3NotifySuspend(pVM);
     STAM_PROFILE_STOP(&pVM->ftm.s.StatCheckpointPause, a);
 
@@ -1270,14 +1270,14 @@ static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU p
     rc = PGMR3PhysWriteProtectRAM(pVM);
     AssertRC(rc);
 
-    /** We don't call VMR3Resume here to avoid the overhead of state changes and notifications. This
-     *  is only a short suspend.
+    /* We don't call VMR3Resume here to avoid the overhead of state changes and notifications. This
+     * is only a short suspend.
      */
     STAM_PROFILE_START(&pVM->ftm.s.StatCheckpointResume, b);
     PGMR3ResetNoMorePhysWritesFlag(pVM);
     PDMR3Resume(pVM);
 
-    /** Hack alert as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
+    /* Hack alert as EM is responsible for dealing with the suspend state. We must do this here ourselves, but only for this EMT.*/
     EMR3NotifyResume(pVM);
     STAM_PROFILE_STOP(&pVM->ftm.s.StatCheckpointResume, b);
 
