@@ -1345,10 +1345,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
 
 #ifndef VBOX_WITH_HARDENING
-/**
- * Main entry point.
+/*
+ * Used by windows exe stub code
  */
-int main(int argc, char **argv, char **envp)
+extern "C" DECLEXPORT(int) ExecTrustedMain(int argc, char **argv, char **envp)
 {
     // initialize VBox Runtime
     int rc = RTR3InitAndSUPLib();
@@ -1369,6 +1369,14 @@ int main(int argc, char **argv, char **envp)
     }
 
     return TrustedMain(argc, argv, envp);
+}
+
+/**
+ * Main entry point.
+ */
+int main(int argc, char **argv, char **envp)
+{
+    return ExecTrustedMain(argc, argv, envp);
 }
 #endif /* !VBOX_WITH_HARDENING */
 
