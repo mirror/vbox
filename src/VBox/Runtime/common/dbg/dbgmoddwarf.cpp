@@ -35,6 +35,7 @@
 #include <iprt/asm.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
+#include <iprt/list.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
@@ -267,10 +268,29 @@
 #define DW_FORM_ref_sig8                    UINT16_C(0x20)
 /** @} */
 
+/** @name Address classes.
+ * @{ */
+#define DW_ADDR_none            UINT8_C(0)
+#define DW_ADDR_i386_near16     UINT8_C(1)
+#define DW_ADDR_i386_far16      UINT8_C(2)
+#define DW_ADDR_i386_huge16     UINT8_C(3)
+#define DW_ADDR_i386_near32     UINT8_C(4)
+#define DW_ADDR_i386_far32      UINT8_C(5)
+/** @}  */
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+/** Pointer to a DWARF section reader. */
+typedef struct RTDWARFCURSOR *PRTDWARFCURSOR;
+/** Pointer to an attribute descriptor. */
+typedef struct RTDWARFATTRDESC const *PCRTDWARFATTRDESC;
+/** Pointer to a DIE. */
+typedef struct RTDWARFDIE *PRTDWARFDIE;
+/** Pointer to a const DIE. */
+typedef struct RTDWARFDIE const *PCRTDWARFDIE;
+
 /**
  * DWARF sections.
  */
@@ -343,9 +363,12 @@ typedef struct RTDBGMODDWARF
     /** Used for range checking cache lookups. */
     uint32_t                cCachedAbbrevs;
     /** Array of cached abbreviations, indexed by code. */
-    PRTDWARFABBREV           paCachedAbbrevs;
+    PRTDWARFABBREV          paCachedAbbrevs;
     /** Used by rtDwarfAbbrev_Lookup when the result is uncachable. */
-    RTDWARFABBREV            LookupAbbrev;
+    RTDWARFABBREV           LookupAbbrev;
+
+    /** The list of compilation units (RTDWARFDIE).   */
+    RTLISTNODE              CompileUnitList;
 } RTDBGMODDWARF;
 /** Pointer to instance data of the DWARF reader. */
 typedef RTDBGMODDWARF *PRTDBGMODDWARF;
@@ -353,7 +376,7 @@ typedef RTDBGMODDWARF *PRTDBGMODDWARF;
 /**
  * DWARF cursor for reading byte data.
  */
-typedef struct RTDWARFSECTRDR
+typedef struct RTDWARFCURSOR
 {
     /** The current position. */
     uint8_t const          *pb;
@@ -379,8 +402,6 @@ typedef struct RTDWARFSECTRDR
     /** The section. */
     krtDbgModDwarfSect      enmSect;
 } RTDWARFCURSOR;
-/** Pointer to a DWARF section reader. */
-typedef RTDWARFCURSOR *PRTDWARFCURSOR;
 
 
 /**
@@ -437,6 +458,296 @@ typedef struct RTDWARFLINESTATE
 } RTDWARFLINESTATE;
 /** Pointer to a DWARF line number program state. */
 typedef RTDWARFLINESTATE *PRTDWARFLINESTATE;
+
+
+/**
+ * Decodes an attribute and stores it in the specified DIE member field.
+ *
+ * @returns IPRT status code.
+ * @param   pDie            Pointer to the DIE structure.
+ * @param   pbMember        Pointer to the first byte in the member.
+ * @param   pDesc           The attribute descriptor.
+ * @param   uForm           The data form.
+ * @param   pDataCursor     The cursor to read data from.
+ */
+typedef DECLCALLBACK(int) FNRTDWARFATTRDECODER(PRTDWARFDIE pDie, uint8_t *pbMember, PCRTDWARFATTRDESC pDesc,
+                                               uint32_t uForm, PRTDWARFCURSOR pCursor);
+/** Pointer to an attribute decoder callback. */
+typedef FNRTDWARFATTRDECODER *PFNRTDWARFATTRDECODER;
+
+/**
+ * Attribute descriptor.
+ */
+typedef struct RTDWARFATTRDESC
+{
+    /** The attribute. */
+    uint8_t                 uAttr;
+    /** The data member size and initialization method. */
+    uint8_t                 cbInit;
+    /** The data member offset. */
+    uint16_t                off;
+    /** The decoder function. */
+    PFNRTDWARFATTRDECODER   pfnDecoder;
+} RTDWARFATTRDESC;
+
+/** Define a attribute entry. */
+#define ATTR_ENTRY(a_uAttr, a_Struct, a_Member, a_Init, a_pfnDecoder) \
+    { \
+        a_uAttr, \
+        a_Init | ((uint8_t)RT_SIZEOFMEMB(a_Struct, a_Member) & ATTR_SIZE_MASK), \
+        (uint16_t)RT_OFFSETOF(a_Struct, a_Member), \
+        a_pfnDecoder\
+    }
+
+/** @name Attribute size and init methods.
+ * @{ */
+#define ATTR_INIT_ZERO      UINT8_C(0x00)
+#define ATTR_INIT_FFFS      UINT8_C(0x40)
+#define ATTR_INIT_ADDRINFO  UINT8_C(0x80)
+#define ATTR_INIT_RESERVED  UINT8_C(0xc0)
+#define ATTR_INIT_MASK      UINT8_C(0xc0)
+#define ATTR_SIZE_MASK      UINT8_C(0x3f)
+#define ATTR_GET_SIZE(a_pAttrDesc)   ((a_pAttrDesc)->cbInit & ATTR_SIZE_MASK)
+/** @} */
+
+
+/**
+ * DIE descriptor.
+ */
+typedef struct RTDWARFDIEDESC
+{
+    /** The number of attributes. */
+    size_t              cAttributes;
+    /** The  */
+    PCRTDWARFATTRDESC   paAttributes;
+} RTDWARFDIEDESC;
+typedef struct RTDWARFDIEDESC const *PCRTDWARFDIEDESC;
+
+
+/**
+ * DIE core structure, all inherits (starts with) this.
+ */
+typedef struct RTDWARFDIE
+{
+    /** Pointer to the parent node. NULL if root unit. */
+    struct RTDWARFDIE  *pParent;
+    /** Our node in the sibling list. */
+    RTLISTNODE          SiblingNode;
+    /** List of children. */
+    RTLISTNODE          ChildList;
+    /** The number of attributes successfully decoded. */
+    uint8_t             cDecodedAttrs;
+    /** The number of unknown or otherwise unhandled attributes. */
+    uint8_t             cUnhandledAttrs;
+    /** The date tag, indicating which union structure to use. */
+    uint16_t            uTag;
+    /** Offset of the abbreviation specification (within debug_abbrev). */
+    uint32_t            offSpec;
+} RTDWARFDIE;
+
+
+/**
+ * DWARF address structure.
+ */
+typedef struct RTDWARFADDR
+{
+    /** The address. */
+    uint64_t            uAddress;
+} RTDWARFADDR;
+
+
+/**
+ * DWARF address range.
+ */
+typedef struct RTDWARFADDRRANGE
+{
+    uint64_t            uLowAddress;
+    uint64_t            uHighAddress;
+    uint8_t const      *pbRanges; /* ?? */
+    bool                fHaveLowAddress  : 1;
+    bool                fHaveHighAddress : 1;
+    bool                fHaveRanges      : 1;
+} RTDWARFADDRRANGE;
+typedef RTDWARFADDRRANGE *PRTDWARFADDRRANGE;
+typedef RTDWARFADDRRANGE const *PCRTDWARFADDRRANGE;
+
+/** What a RTDWARFREF is relative to. */
+typedef enum krtDwarfRef
+{
+    krtDwarfRef_NotSet,
+    krtDwarfRef_LineSection,
+    krtDwarfRef_LocSection,
+    krtDwarfRef_RangesSection,
+    krtDwarfRef_InfoSection,
+    krtDwarfRef_SameUnit,
+    krtDwarfRef_TypeId64
+} krtDwarfRef;
+
+/**
+ * DWARF reference.
+ */
+typedef struct RTDWARFREF
+{
+    /** The offset. */
+    uint64_t        off;
+    /** What the offset is relative to. */
+    krtDwarfRef     enmWrt;
+} RTDWARFREF;
+typedef RTDWARFREF *PRTDWARFREF;
+typedef RTDWARFREF const *PCRTDWARFREF;
+
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static FNRTDWARFATTRDECODER rtDwarfDecode_Bool;
+static FNRTDWARFATTRDECODER rtDwarfDecode_LowHighPc;
+static FNRTDWARFATTRDECODER rtDwarfDecode_Ranges;
+static FNRTDWARFATTRDECODER rtDwarfDecode_Reference;
+static FNRTDWARFATTRDECODER rtDwarfDecode_SectOff;
+static FNRTDWARFATTRDECODER rtDwarfDecode_String;
+static FNRTDWARFATTRDECODER rtDwarfDecode_UnsignedInt;
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/**
+ * DW_TAG_compile_unit & DW_TAG_partial_unit.
+ */
+typedef struct RTDWARFDIECOMPILEUNIT
+{
+    /** The DIE core structure. */
+    RTDWARFDIE          Core;
+    /** The unit name. */
+    const char         *pszName;
+    /** The address range of the code belonging to this unit. */
+    RTDWARFADDRRANGE    PcRange;
+    /** The language name. */
+    uint8_t             uLanguage;
+    /** The identifier case. */
+    uint8_t             uIdentifierCase;
+    /** String are UTF-8 encoded.  If not set, the encoding is
+     * unknown. */
+    bool                fUseUtf8;
+    /** The unit contains main() or equivalent. */
+    bool                fMainFunction;
+    /** The line numbers for this unit. */
+    RTDWARFREF          StmtListRef;
+    /** The macro information for this unit. */
+    RTDWARFREF          MacroInfoRef;
+    /** Reference to the base types. */
+    RTDWARFREF          BaseTypesRef;
+    /** Working directory for the unit. */
+    const char         *pszCurDir;
+    /** The name of the compiler or whatever that produced this unit. */
+    const char         *pszProducer;
+
+    /** @name From the unit header.
+     * @{ */
+    /** The offset into debug_info of this unit (for references). */
+    uint64_t            offUnit;
+    /** The length of this unit. */
+    uint64_t            cbUnit;
+    /** The offset into debug_abbrev of the abbreviation for this unit. */
+    uint64_t            offAbbrev;
+    /** The native address size. */
+    uint8_t             cbNativeAddr;
+    /** The DWARF version. */
+    uint8_t             uDwarfVer;
+    /** @} */
+} RTDWARFDIECOMPILEUNIT;
+typedef RTDWARFDIECOMPILEUNIT *PRTDWARFDIECOMPILEUNIT;
+
+
+/** RTDWARFDIECOMPILEUNIT attributes. */
+static const RTDWARFATTRDESC g_aCompileUnitAttrs[] =
+{
+    ATTR_ENTRY(DW_AT_name,              RTDWARFDIECOMPILEUNIT, pszName,        ATTR_INIT_ZERO, rtDwarfDecode_String),
+    ATTR_ENTRY(DW_AT_high_pc,           RTDWARFDIECOMPILEUNIT, PcRange,        ATTR_INIT_ZERO, rtDwarfDecode_LowHighPc),
+    ATTR_ENTRY(DW_AT_ranges,            RTDWARFDIECOMPILEUNIT, PcRange,        ATTR_INIT_ZERO, rtDwarfDecode_Ranges),
+    ATTR_ENTRY(DW_AT_language,          RTDWARFDIECOMPILEUNIT, uLanguage,      ATTR_INIT_ZERO, rtDwarfDecode_UnsignedInt),
+    ATTR_ENTRY(DW_AT_macro_info,        RTDWARFDIECOMPILEUNIT, MacroInfoRef,   ATTR_INIT_FFFS, rtDwarfDecode_SectOff),
+    ATTR_ENTRY(DW_AT_stmt_list,         RTDWARFDIECOMPILEUNIT, StmtListRef,    ATTR_INIT_FFFS, rtDwarfDecode_SectOff),
+    ATTR_ENTRY(DW_AT_comp_dir,          RTDWARFDIECOMPILEUNIT, pszCurDir,      ATTR_INIT_ZERO, rtDwarfDecode_String),
+    ATTR_ENTRY(DW_AT_producer,          RTDWARFDIECOMPILEUNIT, pszProducer,    ATTR_INIT_ZERO, rtDwarfDecode_String),
+    ATTR_ENTRY(DW_AT_identifier_case,   RTDWARFDIECOMPILEUNIT, uIdentifierCase,ATTR_INIT_ZERO, rtDwarfDecode_UnsignedInt),
+    ATTR_ENTRY(DW_AT_base_types,        RTDWARFDIECOMPILEUNIT, BaseTypesRef,   ATTR_INIT_ZERO, rtDwarfDecode_Reference),
+    ATTR_ENTRY(DW_AT_use_UTF8,          RTDWARFDIECOMPILEUNIT, fUseUtf8,       ATTR_INIT_ZERO, rtDwarfDecode_Bool),
+    ATTR_ENTRY(DW_AT_main_subprogram,   RTDWARFDIECOMPILEUNIT, fMainFunction,  ATTR_INIT_ZERO, rtDwarfDecode_Bool)
+};
+
+/** RTDWARFDIECOMPILEUNIT description. */
+static const RTDWARFDIEDESC  g_aCompileUnitDesc = { RT_ELEMENTS(g_aCompileUnitAttrs),  &g_aCompileUnitAttrs[0] };
+
+
+#ifndef DEFINE_THESE_TAGS_TOO
+#define DW_TAG_array_type                   UINT16_C(0x0001)
+#define DW_TAG_class_type                   UINT16_C(0x0002)
+#define DW_TAG_entry_point                  UINT16_C(0x0003)
+#define DW_TAG_enumeration_type             UINT16_C(0x0004)
+#define DW_TAG_formal_parameter             UINT16_C(0x0005)
+#define DW_TAG_imported_declaration         UINT16_C(0x0008)
+#define DW_TAG_label                        UINT16_C(0x000a)
+#define DW_TAG_lexical_block                UINT16_C(0x000b)
+#define DW_TAG_member                       UINT16_C(0x000d)
+#define DW_TAG_pointer_type                 UINT16_C(0x000f)
+#define DW_TAG_reference_type               UINT16_C(0x0010)
+#define DW_TAG_compile_unit                 UINT16_C(0x0011)
+#define DW_TAG_string_type                  UINT16_C(0x0012)
+#define DW_TAG_structure_type               UINT16_C(0x0013)
+#define DW_TAG_subroutine_type              UINT16_C(0x0015)
+#define DW_TAG_typedef                      UINT16_C(0x0016)
+#define DW_TAG_union_type                   UINT16_C(0x0017)
+#define DW_TAG_unspecified_parameters       UINT16_C(0x0018)
+#define DW_TAG_variant                      UINT16_C(0x0019)
+#define DW_TAG_common_block                 UINT16_C(0x001a)
+#define DW_TAG_common_inclusion             UINT16_C(0x001b)
+#define DW_TAG_inheritance                  UINT16_C(0x001c)
+#define DW_TAG_inlined_subroutine           UINT16_C(0x001d)
+#define DW_TAG_module                       UINT16_C(0x001e)
+#define DW_TAG_ptr_to_member_type           UINT16_C(0x001f)
+#define DW_TAG_set_type                     UINT16_C(0x0020)
+#define DW_TAG_subrange_type                UINT16_C(0x0021)
+#define DW_TAG_with_stmt                    UINT16_C(0x0022)
+#define DW_TAG_access_declaration           UINT16_C(0x0023)
+#define DW_TAG_base_type                    UINT16_C(0x0024)
+#define DW_TAG_catch_block                  UINT16_C(0x0025)
+#define DW_TAG_const_type                   UINT16_C(0x0026)
+#define DW_TAG_constant                     UINT16_C(0x0027)
+#define DW_TAG_enumerator                   UINT16_C(0x0028)
+#define DW_TAG_file_type                    UINT16_C(0x0029)
+#define DW_TAG_friend                       UINT16_C(0x002a)
+#define DW_TAG_namelist                     UINT16_C(0x002b)
+#define DW_TAG_namelist_item                UINT16_C(0x002c)
+#define DW_TAG_packed_type                  UINT16_C(0x002d)
+#define DW_TAG_subprogram                   UINT16_C(0x002e)
+#define DW_TAG_template_type_parameter      UINT16_C(0x002f)
+#define DW_TAG_template_value_parameter     UINT16_C(0x0030)
+#define DW_TAG_thrown_type                  UINT16_C(0x0031)
+#define DW_TAG_try_block                    UINT16_C(0x0032)
+#define DW_TAG_variant_part                 UINT16_C(0x0033)
+#define DW_TAG_variable                     UINT16_C(0x0034)
+#define DW_TAG_volatile_type                UINT16_C(0x0035)
+#define DW_TAG_dwarf_procedure              UINT16_C(0x0036)
+#define DW_TAG_restrict_type                UINT16_C(0x0037)
+#define DW_TAG_interface_type               UINT16_C(0x0038)
+#define DW_TAG_namespace                    UINT16_C(0x0039)
+#define DW_TAG_imported_module              UINT16_C(0x003a)
+#define DW_TAG_unspecified_type             UINT16_C(0x003b)
+#define DW_TAG_partial_unit                 UINT16_C(0x003c)
+#define DW_TAG_imported_unit                UINT16_C(0x003d)
+#define DW_TAG_condition                    UINT16_C(0x003f)
+#define DW_TAG_shared_type                  UINT16_C(0x0040)
+#define DW_TAG_type_unit                    UINT16_C(0x0041)
+#define DW_TAG_rvalue_reference_type        UINT16_C(0x0042)
+#define DW_TAG_template_alias               UINT16_C(0x0043)
+#define DW_TAG_lo_user                      UINT16_C(0x4080)
+#define DW_TAG_hi_user                      UINT16_C(0xffff)
+#endif
+
+
 
 
 /** @callback_method_impl{FNRTLDRENUMSEGS} */
@@ -1984,116 +2295,30 @@ static void rtDwarfAbbrev_SetUnitOffset(PRTDBGMODDWARF pThis, uint32_t offAbbrev
 }
 
 
+
 /*
  *
- * DWARF DIE stack (used by the debug_info parser).
- * DWARF DIE stack (used by the debug_info parser).
- * DWARF DIE stack (used by the debug_info parser).
+ * DIE Attribute Parsers.
+ * DIE Attribute Parsers.
+ * DIE Attribute Parsers.
  *
  */
 
 /**
- * DWARF DIE stack entry.
- */
-typedef struct RTDWARFDIESTACKENTRY
-{
-    /** The abbreviation code. */
-    uint32_t        uAbbrCode;
-    /** The tag. */
-    uint16_t        uTag;
-    /** The offset into the debug_info section of the data. */
-    uint32_t        offData;
-    /** The associated name. (Points into some dwarf section.) */
-    const char     *pszName;
-} RTDWARFDIESTACKENTRY;
-/** Pointer to a DIE stack entry. */
-typedef RTDWARFDIESTACKENTRY *PRTDWARFDIESTACKENTRY;
-
-/**
- * DWARF DIE stack.
- */
-typedef struct RTDWARFDIESTACK
-{
-    /** The number of items on the stack. */
-    uint32_t                cOnStack;
-    /** The number of stack entries we've allocated. */
-    uint32_t                cAlloced;
-    /** Pointer to the stack entries. */
-    PRTDWARFDIESTACKENTRY   paEntries;
-} RTDWARFDIESTACK;
-/** Pointer to a DIE stack. */
-typedef RTDWARFDIESTACK *PRTDWARFDIESTACK;
-/** Pointer to a const DIE stack. */
-typedef RTDWARFDIESTACK const *PCRTDWARFDIESTACK;
-
-
-static int rtDwarfDieStack_SetName(PRTDWARFDIESTACK pStack, const char *pszName)
-{
-    uint32_t i = pStack->cOnStack;
-    if (i == 0)
-        return VERR_DWARF_BAD_INFO;
-    i--;
-    pStack->paEntries[i].pszName = pszName;
-    return VINF_SUCCESS;
-}
-
-
-static int rtDwarfDieStack_Push(PRTDWARFDIESTACK pStack, uint32_t uAbbrCode, uint16_t uTag, uint32_t offData)
-{
-    uint32_t i = pStack->cOnStack;
-    if (i == pStack->cAlloced)
-    {
-        uint32_t cNewSize = pStack->cAlloced ? pStack->cAlloced * 2 : 1 /*16*/;
-        void *pv = RTMemRealloc(pStack->paEntries, sizeof(pStack->paEntries[0]) * cNewSize);
-        if (!pv)
-            return VERR_NO_MEMORY;
-        pStack->paEntries = (PRTDWARFDIESTACKENTRY)pv;
-        pStack->cAlloced  = cNewSize;
-    }
-    Assert(i < pStack->cAlloced);
-
-    pStack->paEntries[i].uAbbrCode = uAbbrCode;
-    pStack->paEntries[i].uTag      = uTag;
-    pStack->paEntries[i].offData   = offData;
-    pStack->paEntries[i].pszName   = NULL;
-    pStack->cOnStack = i + 1;
-
-    return VINF_SUCCESS;
-}
-
-
-static int rtDwarfDieStack_Pop(PRTDWARFDIESTACK pStack)
-{
-    if (pStack->cOnStack == 0)
-        return VERR_DWARF_BAD_INFO;
-    pStack->cOnStack--;
-    return VINF_SUCCESS;
-}
-
-
-static void rtDwarfDieStack_Init(PRTDWARFDIESTACK pStack)
-{
-    pStack->cOnStack  = 0;
-    pStack->cAlloced  = 0;
-    pStack->paEntries = NULL;
-}
-
-
-static void rtDwarfDieStack_Delete(PRTDWARFDIESTACK pStack)
-{
-    RTMemFree(pStack->paEntries);
-    pStack->paEntries = NULL;
-}
-
-
-
-/*
+ * Gets the compilation unit a DIE belongs to.
  *
- * DWARF debug_info parser
- * DWARF debug_info parser
- * DWARF debug_info parser
- *
+ * @returns The compilation unit DIE.
+ * @param   pDie                Some DIE in the unit.
  */
+static PRTDWARFDIECOMPILEUNIT rtDwarfDie_GetCompileUnit(PRTDWARFDIE pDie)
+{
+    while (pDie->pParent)
+        pDie = pDie->pParent;
+    AssertReturn(   pDie->uTag == DW_TAG_compile_unit
+                 || pDie->uTag == DW_TAG_partial_unit,
+                 NULL);
+    return (PRTDWARFDIECOMPILEUNIT)pDie;
+}
 
 
 /**
@@ -2105,7 +2330,7 @@ static void rtDwarfDieStack_Delete(PRTDWARFDIESTACK pStack)
  * @param   pszErrValue         What to return on failure (@a
  *                              pCursor->rc is set).
  */
-static const char *rtDwarfForm_GetStrp(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, const char *pszErrValue)
+static const char *rtDwarfDecode_GetStrp(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, const char *pszErrValue)
 {
     uint64_t offDebugStr = rtDwarfCursor_GetUOff(pCursor, UINT64_MAX);
     if (RT_FAILURE(pCursor->rc))
@@ -2132,6 +2357,298 @@ static const char *rtDwarfForm_GetStrp(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCur
     return (const char *)pThis->aSections[krtDbgModDwarfSect_str].pv + (size_t)offDebugStr;
 }
 
+
+/** @callback_method_impl{FNRTDWARFATTRDECODER} */
+static DECLCALLBACK(int) rtDwarfDecode_Bool(PRTDWARFDIE pDie, uint8_t *pbMember, PCRTDWARFATTRDESC pDesc,
+                                            uint32_t uForm, PRTDWARFCURSOR pCursor)
+{
+    AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(bool), VERR_INTERNAL_ERROR_3);
+
+    bool *pfMember = (bool *)pbMember;
+    switch (uForm)
+    {
+        case DW_FORM_flag:
+        {
+            uint8_t b = rtDwarfCursor_GetU8(pCursor, UINT8_MAX);
+            if (b > 1)
+                return RT_FAILURE(pCursor->rc) ? pCursor->rc : pCursor->rc = VERR_DWARF_BAD_INFO;
+            *pfMember = RT_BOOL(b);
+            break;
+        }
+
+        case DW_FORM_flag_present:
+            *pfMember = true;
+            break;
+
+        default:
+            AssertMsgFailedReturn(("%#x\n", uForm), VERR_DWARF_UNEXPECTED_FORM);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNRTDWARFATTRDECODER} */
+static DECLCALLBACK(int) rtDwarfDecode_LowHighPc(PRTDWARFDIE pDie, uint8_t *pbMember, PCRTDWARFATTRDESC pDesc,
+                                                 uint32_t uForm, PRTDWARFCURSOR pCursor)
+{
+    AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(RTDWARFADDRRANGE), VERR_INTERNAL_ERROR_3);
+    AssertReturn(pDesc->uAttr == DW_AT_low_pc || pDesc->uAttr == DW_AT_high_pc, VERR_INTERNAL_ERROR_3);
+
+    uint64_t uAddr;
+    switch (uForm)
+    {
+        case DW_FORM_addr:  uAddr = rtDwarfCursor_GetNativeUOff(pCursor, 0); break;
+        case DW_FORM_data1: uAddr = rtDwarfCursor_GetU8(pCursor, 0); break;
+        case DW_FORM_data2: uAddr = rtDwarfCursor_GetU16(pCursor, 0); break;
+        case DW_FORM_data4: uAddr = rtDwarfCursor_GetU32(pCursor, 0); break;
+        case DW_FORM_data8: uAddr = rtDwarfCursor_GetU64(pCursor, 0); break;
+        case DW_FORM_udata: uAddr = rtDwarfCursor_GetULeb128(pCursor, 0); break;
+        default:
+            AssertMsgFailedReturn(("%#x\n", uForm), VERR_DWARF_UNEXPECTED_FORM);
+    }
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+
+    PRTDWARFADDRRANGE pRange = (PRTDWARFADDRRANGE)pbMember;
+    if (pDesc->uAttr == DW_AT_low_pc)
+    {
+        pRange->uLowAddress      = uAddr;
+        pRange->fHaveLowAddress  = true;
+    }
+    else
+    {
+        pRange->uHighAddress     = uAddr;
+        pRange->fHaveHighAddress = true;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNRTDWARFATTRDECODER} */
+static DECLCALLBACK(int) rtDwarfDecode_Ranges(PRTDWARFDIE pDie, uint8_t *pbMember, PCRTDWARFATTRDESC pDesc,
+                                              uint32_t uForm, PRTDWARFCURSOR pCursor)
+{
+    AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(RTDWARFADDRRANGE), VERR_INTERNAL_ERROR_3);
+    AssertReturn(pDesc->uAttr == DW_AT_low_pc || pDesc->uAttr == DW_AT_high_pc, VERR_INTERNAL_ERROR_3);
+
+    /* Decode it. */
+    uint64_t off;
+    switch (uForm)
+    {
+        case DW_FORM_addr:  off = rtDwarfCursor_GetNativeUOff(pCursor, 0); break;
+        case DW_FORM_data4: off = rtDwarfCursor_GetU32(pCursor, 0); break;
+        case DW_FORM_data8: off = rtDwarfCursor_GetU64(pCursor, 0); break;
+        default:
+            AssertMsgFailedReturn(("%#x\n", uForm), VERR_DWARF_UNEXPECTED_FORM);
+    }
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+
+    /* Validate the offset and load the ranges. */
+    PRTDBGMODDWARF pThis = pCursor->pDwarfMod;
+    if (off >= pThis->aSections[krtDbgModDwarfSect_ranges].cb)
+        return pCursor->rc = VERR_DWARF_BAD_POS;
+
+    if (!pThis->aSections[krtDbgModDwarfSect_ranges].pv)
+    {
+        int rc = rtDbgModDwarfLoadSection(pThis, krtDbgModDwarfSect_ranges);
+        if (RT_FAILURE(rc))
+            return pCursor->rc = rc;
+    }
+
+    /* Store the result. */
+    PRTDWARFADDRRANGE pRange = (PRTDWARFADDRRANGE)pbMember;
+    pRange->pbRanges    = (uint8_t const *)pThis->aSections[krtDbgModDwarfSect_ranges].pv + (size_t)off;
+    pRange->fHaveRanges = true;
+
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNRTDWARFATTRDECODER} */
+static DECLCALLBACK(int) rtDwarfDecode_Reference(PRTDWARFDIE pDie, uint8_t *pbMember, PCRTDWARFATTRDESC pDesc,
+                                                 uint32_t uForm, PRTDWARFCURSOR pCursor)
+{
+    AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(RTDWARFREF), VERR_INTERNAL_ERROR_3);
+
+    /* Decode it. */
+    uint64_t        off;
+    krtDwarfRef     enmWrt = krtDwarfRef_InfoSection;
+    switch (uForm)
+    {
+        case DW_FORM_ref1:          off = rtDwarfCursor_GetU8(pCursor, 0); break;
+        case DW_FORM_ref2:          off = rtDwarfCursor_GetU16(pCursor, 0); break;
+        case DW_FORM_ref4:          off = rtDwarfCursor_GetU32(pCursor, 0); break;
+        case DW_FORM_ref8:          off = rtDwarfCursor_GetU64(pCursor, 0); break;
+        case DW_FORM_ref_udata:     off = rtDwarfCursor_GetULeb128(pCursor, 0); break;
+
+        case DW_FORM_ref_addr:
+            enmWrt = krtDwarfRef_InfoSection;
+            off = rtDwarfCursor_GetUOff(pCursor, 0);
+            break;
+
+        case DW_FORM_ref_sig8:
+            enmWrt = krtDwarfRef_TypeId64;
+            off = rtDwarfCursor_GetU64(pCursor, 0);
+            break;
+
+        default:
+            AssertMsgFailedReturn(("%#x\n", uForm), VERR_DWARF_UNEXPECTED_FORM);
+    }
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+
+    /* Validate the offset and convert to debug_info relative offsets. */
+    if (enmWrt == krtDwarfRef_InfoSection)
+    {
+        if (off >= pCursor->pDwarfMod->aSections[krtDbgModDwarfSect_info].cb)
+            return pCursor->rc = VERR_DWARF_BAD_POS;
+    }
+    else if (enmWrt == krtDwarfRef_SameUnit)
+    {
+        PRTDWARFDIECOMPILEUNIT pUnit = rtDwarfDie_GetCompileUnit(pDie);
+        if (off >= pUnit->cbUnit)
+            return pCursor->rc = VERR_DWARF_BAD_POS;
+        off += pUnit->offUnit;
+        enmWrt = krtDwarfRef_InfoSection;
+    }
+    /* else: not bother verifying/resolving the indirect type reference yet. */
+
+    /* Store it */
+    PRTDWARFREF pRef = (PRTDWARFREF)pbMember;
+    pRef->enmWrt = enmWrt;
+    pRef->off    = off;
+
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNRTDWARFATTRDECODER} */
+static DECLCALLBACK(int) rtDwarfDecode_SectOff(PRTDWARFDIE pDie, uint8_t *pbMember, PCRTDWARFATTRDESC pDesc,
+                                               uint32_t uForm, PRTDWARFCURSOR pCursor)
+{
+    AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(RTDWARFREF), VERR_INTERNAL_ERROR_3);
+
+    uint64_t off;
+    switch (uForm)
+    {
+        case DW_FORM_data4:         off = rtDwarfCursor_GetU32(pCursor, 0); break;
+        case DW_FORM_data8:         off = rtDwarfCursor_GetU64(pCursor, 0); break;
+        case DW_FORM_sec_offset:    off = rtDwarfCursor_GetUOff(pCursor, 0); break;
+        default:
+            AssertMsgFailedReturn(("%#x\n", uForm), VERR_DWARF_UNEXPECTED_FORM);
+    }
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+
+    krtDbgModDwarfSect  enmSect;
+    krtDwarfRef         enmWrt;
+    switch (pDesc->uAttr)
+    {
+        case DW_AT_stmt_list:   enmSect = krtDbgModDwarfSect_line;    enmWrt = krtDwarfRef_LineSection;     break;
+        case DW_AT_macro_info:  enmSect = krtDbgModDwarfSect_loc;     enmWrt = krtDwarfRef_LocSection;      break;
+        case DW_AT_ranges:      enmSect = krtDbgModDwarfSect_ranges;  enmWrt = krtDwarfRef_RangesSection;  break;
+        default:                AssertMsgFailedReturn(("%u\n", pDesc->uAttr), VERR_INTERNAL_ERROR_4);
+    }
+    if (off > pCursor->pDwarfMod->aSections[enmSect].cb)
+        return pCursor->rc = VERR_DWARF_BAD_POS;
+
+    PRTDWARFREF pRef = (PRTDWARFREF)pbMember;
+    pRef->enmWrt = enmWrt;
+    pRef->off    = off;
+
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNRTDWARFATTRDECODER} */
+static DECLCALLBACK(int) rtDwarfDecode_String(PRTDWARFDIE pDie, uint8_t *pbMember, PCRTDWARFATTRDESC pDesc,
+                                              uint32_t uForm, PRTDWARFCURSOR pCursor)
+{
+    AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(const char *), VERR_INTERNAL_ERROR_3);
+
+    switch (uForm)
+    {
+        case DW_FORM_string:
+            *(const char **)pbMember = rtDwarfCursor_GetSZ(pCursor, NULL);
+            break;
+
+        case DW_FORM_strp:
+            *(const char **)pbMember = rtDwarfDecode_GetStrp(pCursor->pDwarfMod, pCursor, NULL);
+            break;
+
+        default:
+            AssertMsgFailedReturn(("%#x\n", uForm), VERR_DWARF_UNEXPECTED_FORM);
+    }
+
+    return pCursor->rc;
+}
+
+
+/** @callback_method_impl{FNRTDWARFATTRDECODER} */
+static DECLCALLBACK(int) rtDwarfDecode_UnsignedInt(PRTDWARFDIE pDie, uint8_t *pbMember, PCRTDWARFATTRDESC pDesc,
+                                                   uint32_t uForm, PRTDWARFCURSOR pCursor)
+{
+    uint64_t u64Val;
+    switch (uForm)
+    {
+        case DW_FORM_udata: u64Val = rtDwarfCursor_GetULeb128(pCursor, 0); break;
+        case DW_FORM_data1: u64Val = rtDwarfCursor_GetU8(pCursor, 0); break;
+        case DW_FORM_data2: u64Val = rtDwarfCursor_GetU16(pCursor, 0); break;
+        case DW_FORM_data4: u64Val = rtDwarfCursor_GetU32(pCursor, 0); break;
+        case DW_FORM_data8: u64Val = rtDwarfCursor_GetU64(pCursor, 0); break;
+        default:
+            AssertMsgFailedReturn(("%#x\n", uForm), VERR_DWARF_UNEXPECTED_FORM);
+    }
+    if (RT_FAILURE(pCursor->rc))
+        return pCursor->rc;
+
+    switch (ATTR_GET_SIZE(pDesc))
+    {
+        case 1:
+            *pbMember = (uint8_t)u64Val;
+            if (*pbMember != u64Val)
+                return VERR_OUT_OF_RANGE;
+            break;
+
+        case 2:
+            *(uint16_t *)pbMember = (uint16_t)u64Val;
+            if (*(uint16_t *)pbMember != u64Val)
+                return VERR_OUT_OF_RANGE;
+            break;
+
+        case 4:
+            *(uint32_t *)pbMember = (uint32_t)u64Val;
+            if (*(uint32_t *)pbMember != u64Val)
+                return VERR_OUT_OF_RANGE;
+            break;
+
+        case 8:
+            *(uint64_t *)pbMember = (uint64_t)u64Val;
+            if (*(uint64_t *)pbMember != u64Val)
+                return VERR_OUT_OF_RANGE;
+            break;
+
+        default:
+            AssertMsgFailedReturn(("%#x\n", ATTR_GET_SIZE(pDesc)), VERR_INTERNAL_ERROR_2);
+    }
+    return VINF_SUCCESS;
+}
+
+
+
+/*
+ *
+ * DWARF debug_info parser
+ * DWARF debug_info parser
+ * DWARF debug_info parser
+ *
+ */
+
+
+
 static const char *rtDwarfForm_GetString(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, uint16_t uForm, const char *pszErrValue)
 {
     switch (uForm)
@@ -2140,12 +2657,40 @@ static const char *rtDwarfForm_GetString(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pC
             return rtDwarfCursor_GetSZ(pCursor, pszErrValue);
 
         case DW_FORM_strp:
-            return rtDwarfForm_GetStrp(pThis, pCursor, pszErrValue);
+            return rtDwarfDecode_GetStrp(pThis, pCursor, pszErrValue);
 
         default:
             pCursor->rc = VERR_DWARF_UNEXPECTED_FORM;
             return pszErrValue;
     }
+}
+
+
+/**
+ * Creates a new internal DIE structure and links it up.
+ *
+ * @returns Pointer to the new DIE structure.
+ * @param   pThis               The DWARF instance.
+ * @param   cbUnit              The size required for this unit.
+ * @param   pAbbrev             The abbreviation cache entry.
+ * @param   pParent             The parent DIE (NULL if unit).
+ */
+static PRTDWARFDIE rtDwarfInfo_NewDie(PRTDBGMODDWARF pThis, size_t cbUnit, PCRTDWARFABBREV pAbbrev, PRTDWARFDIE pParent)
+{
+    Assert(cbUnit >= sizeof(RTDWARFDIE));
+    PRTDWARFDIE pDie = (PRTDWARFDIE)RTMemAllocZ(cbUnit);
+    if (pDie)
+    {
+        pDie->uTag         = pAbbrev->uTag;
+        pDie->offSpec      = pAbbrev->offSpec;
+        pDie->pParent      = pParent;
+        if (pParent)
+            RTListAppend(&pParent->ChildList, &pDie->SiblingNode);
+        else
+            RTListInit(&pDie->SiblingNode);
+        RTListInit(&pDie->ChildList);
+    }
+    return pDie;
 }
 
 
@@ -2244,6 +2789,7 @@ static int rtDwarfInfo_SkipDie(PRTDWARFCURSOR pCursor, PRTDWARFCURSOR pAbbrevCur
 }
 
 
+#if 0
 /**
  * Parse a DIE.
  *
@@ -2326,6 +2872,7 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor,
 
     return rtDwarfInfo_SkipDie(pCursor, pAbbrevCursor);
 }
+#endif
 
 
 
@@ -2336,7 +2883,9 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
     /*
      * Read the compilation unit header.
      */
-    rtDwarfCursor_GetInitalLength(pCursor);
+    uint64_t offUnit = rtDwarfCursor_CalcSectOffsetU32(pCursor);
+    uint64_t cbUnit  = rtDwarfCursor_GetInitalLength(pCursor);
+    cbUnit += rtDwarfCursor_CalcSectOffsetU32(pCursor) - offUnit;
     uint16_t const uVer = rtDwarfCursor_GetUHalf(pCursor, 0);
     if (   uVer < 2
         || uVer > 4)
@@ -2356,10 +2905,42 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
     pCursor->cbNativeAddr = cbNativeAddr;
 
     /*
-     * We want a DIE stack as well.
+     * The first DIE is a compile or partial unit, parse it here.
      */
-    RTDWARFDIESTACK Stack;
-    rtDwarfDieStack_Init(&Stack);
+    uint32_t uAbbrCode = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
+    if (!uAbbrCode)
+        return VERR_DWARF_BAD_INFO;
+    PCRTDWARFABBREV pAbbrev = rtDwarfAbbrev_Lookup(pThis, uAbbrCode);
+    if (!pAbbrev)
+        return VERR_DWARF_ABBREV_NOT_FOUND;
+    if (   pAbbrev->uTag != DW_TAG_compile_unit
+        && pAbbrev->uTag != DW_TAG_partial_unit)
+    {
+        Log(("Unexpected compile/partial unit tag %#x\n", pAbbrev->uTag));
+        return VERR_DWARF_BAD_INFO;
+    }
+
+    PRTDWARFDIECOMPILEUNIT pUnit = (PRTDWARFDIECOMPILEUNIT)rtDwarfInfo_NewDie(pThis, sizeof(*pUnit), pAbbrev, NULL /*pParent*/);
+    if (!pUnit)
+        return VERR_NO_MEMORY;
+    pUnit->offUnit      = offUnit;
+    pUnit->cbUnit       = cbUnit;
+    pUnit->offAbbrev    = offAbbrev;
+    pUnit->cbNativeAddr = cbNativeAddr;
+    pUnit->uDwarfVer    = uVer;
+    RTListAppend(&pThis->CompileUnitList, &pUnit->Core.SiblingNode);
+
+    /** @todo Parse the DIE data using the descriptor. */
+    RTDWARFCURSOR AbbrevCursor;
+    int rc = rtDwarfCursor_InitWithOffset(&AbbrevCursor, pThis, krtDbgModDwarfSect_abbrev, pAbbrev->offSpec);
+#if 0
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtDwarfInfo_ParseDie(pThis, pCursor, pAbbrev, &AbbrevCursor, &Stack);
+        rc = rtDwarfCursor_Delete(&AbbrevCursor, rc);
+    }
+    if (RT_FAILURE(rc))
+        break;
 
     /*
      * Parse DIEs.
@@ -2414,6 +2995,7 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor)
     }
 
     rtDwarfDieStack_Delete(&Stack);
+#endif
     return RT_SUCCESS(rc) ? pCursor->rc : rc;
 }
 
