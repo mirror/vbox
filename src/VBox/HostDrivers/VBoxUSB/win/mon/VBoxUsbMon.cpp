@@ -560,6 +560,7 @@ VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULON
                     {
                         LOG(("the walker said to stop"));
                         ObDereferenceObject(Data.pDevObj);
+                        ObDereferenceObject(pHubFileObj);
                         break;
                     }
 
