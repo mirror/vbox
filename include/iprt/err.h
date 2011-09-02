@@ -1446,6 +1446,10 @@ RT_C_DECLS_END
 #define VERR_DWARF_BAD_ABBREV                   (-675)
 /** A DWARF abbreviation was not found. */
 #define VERR_DWARF_ABBREV_NOT_FOUND             (-676)
+/** Encountered an unknown attribute form. */
+#define VERR_DWARF_UNKNOWN_FORM                 (-677)
+/** Encountered an unexpected attribute form. */
+#define VERR_DWARF_UNEXPECTED_FORM              (-678)
 /** @} */
 
 /** @name Request Packet Status Codes.
