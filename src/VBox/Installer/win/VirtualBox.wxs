@@ -420,6 +420,8 @@
                               Source="$(env.PATH_OUT)\bin\VBoxManage.exe" />
                         <File Id="file_VBoxHeadless.exe" Name="VBoxHeadless.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxHeadless.exe">
+                        <File Id="file_VBoxHeadlessSVC.exe" Name="VBoxHeadlessSVC.exe"
+                              Source="$(env.PATH_OUT)\bin\VBoxHeadlessSVC.exe">
                             <!-- Create a simple shortcut for VBoxVRDP, which is not present anymore, pointing to VBoxHeadless.exe -->
                        <!--     <Shortcut Id="ShortcutVBoxVRDP" Directory="INSTALLDIR" Name="VBoxVRDP" Show="normal" WorkingDirectory="INSTALLDIR"/> -->
                         </File>
