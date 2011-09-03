@@ -200,6 +200,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 /** Do not load user profile data when executing a process. This bit
  *  at the moment only is valid on Windows. */
 #define RTPROC_FLAGS_NO_PROFILE             RT_BIT(4)
+/** Create process w/o a console window. This bit
+ *  at the moment only is valid on Windows. */
+#define RTPROC_FLAGS_NO_WINDOW              RT_BIT(5)
+
 /** @}  */
 
 
