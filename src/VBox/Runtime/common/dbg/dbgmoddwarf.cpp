@@ -2833,7 +2833,7 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
  */
 static void rtDwarfInfo_InitDie(PRTDWARFDIE pDie, PCRTDWARFDIEDESC pDieDesc)
 {
-    uint32_t i = pDieDesc->cAttributes;
+    size_t i = pDieDesc->cAttributes;
     while (i-- > 0)
     {
         switch (pDieDesc->paAttributes[i].cbInit & ATTR_INIT_MASK)
@@ -3029,7 +3029,7 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWAR
 
         /* Look up the attribute in the descriptor and invoke the decoder. */
         PCRTDWARFATTRDESC pAttr = NULL;
-        uint32_t i = pDieDesc->cAttributes;
+        size_t i = pDieDesc->cAttributes;
         while (i-- > 0)
             if (pDieDesc->paAttributes[i].uAttr == uAttr)
             {
@@ -3098,7 +3098,7 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
      */
     if (offAbbrev > UINT32_MAX)
         return VERR_DWARF_BAD_INFO;
-    rtDwarfAbbrev_SetUnitOffset(pThis, offAbbrev);
+    rtDwarfAbbrev_SetUnitOffset(pThis, (uint32_t)offAbbrev);
     pCursor->cbNativeAddr = cbNativeAddr;
 
     /*
@@ -3125,7 +3125,7 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
     pUnit->cbUnit       = cbUnit;
     pUnit->offAbbrev    = offAbbrev;
     pUnit->cbNativeAddr = cbNativeAddr;
-    pUnit->uDwarfVer    = uVer;
+    pUnit->uDwarfVer    = (uint8_t)uVer;
     RTListAppend(&pThis->CompileUnitList, &pUnit->Core.SiblingNode);
 
     int rc = rtDwarfInfo_ParseDie(pThis, &pUnit->Core, &g_CompileUnitDesc, pCursor, pAbbrev);
