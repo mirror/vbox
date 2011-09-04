@@ -251,7 +251,9 @@ typedef enum AHCITXDIR
     /** Write */
     AHCITXDIR_WRITE,
     /** Flush */
-    AHCITXDIR_FLUSH
+    AHCITXDIR_FLUSH,
+    /** Trim */
+    AHCITXDIR_TRIM
 } AHCITXDIR;
 
 /**
@@ -325,6 +327,10 @@ typedef struct AHCIPORTTASKSTATE
      * If this is set we will use a buffer for the data
      * and the callback copies the data to the destination. */
     PFNAHCIPOSTPROCESS         pfnPostProcess;
+    /** Pointer to the array of PDM ranges. */
+    PPDMRANGE                  paRanges;
+    /** Number of entries in the array. */
+    unsigned                   cRanges;
 } AHCIPORTTASKSTATE;
 
 /**
@@ -874,6 +880,13 @@ AssertCompileSize(SGLEntry, 16);
 #define AHCI_RECFIS_RFIS_OFFSET   0x40 /* D2H Register FIS */
 #define AHCI_RECFIS_SDBFIS_OFFSET 0x58 /* Set Device Bits FIS */
 #define AHCI_RECFIS_UFIS_OFFSET   0x60 /* Unknown FIS type */
+
+/** Mask to get the LBA value from a LBA range. */
+#define AHCI_RANGE_LBA_MASK    UINT64_C(0xffffffffffff)
+/** Mas to get the length value from a LBA range. */
+#define AHCI_RANGE_LENGTH_MASK UINT64_C(0xffff000000000000)
+/** Returns the length of the range in sectors. */
+#define AHCI_RANGE_LENGTH_GET(val) (((val) & AHCI_RANGE_LENGTH_MASK) >> 48)
 
 /**
  * AHCI register operator.
@@ -3062,8 +3075,16 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[66] = RT_H2LE_U16(120); /* recommended DMA multiword tx cycle time */
     p[67] = RT_H2LE_U16(120); /* minimum PIO cycle time without flow control */
     p[68] = RT_H2LE_U16(120); /* minimum PIO cycle time with IORDY flow control */
-    p[80] = RT_H2LE_U16(0x7e); /* support everything up to ATA/ATAPI-6 */
-    p[81] = RT_H2LE_U16(0x22); /* conforms to ATA/ATAPI-6 */
+    if (pAhciPort->pDrvBlock->pfnDiscard)
+    {
+        p[80] = RT_H2LE_U16(0x1f0); /* support everything up to ATA/ATAPI-8 ACS */
+        p[81] = RT_H2LE_U16(0x28); /* conforms to ATA/ATAPI-8 ACS */
+    }
+    else
+    {
+        p[80] = RT_H2LE_U16(0x7e); /* support everything up to ATA/ATAPI-6 */
+        p[81] = RT_H2LE_U16(0x22); /* conforms to ATA/ATAPI-6 */
+    }
     p[82] = RT_H2LE_U16(1 << 3 | 1 << 5 | 1 << 6); /* supports power management,  write cache and look-ahead */
     p[83] = RT_H2LE_U16(1 << 14 | 1 << 10 | 1 << 12 | 1 << 13); /* supports LBA48, FLUSH CACHE and FLUSH CACHE EXT */
     p[84] = RT_H2LE_U16(1 << 14);
@@ -3078,6 +3099,9 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[103] = RT_H2LE_U16(pAhciPort->cTotalSectors >> 48);
     if (pAhciPort->fNonRotational)
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
+
+    if (pAhciPort->pDrvBlock->pfnDiscard) /** @todo: Set bit 14 in word 69 too? (Deterministic read after TRIM). */
+        p[169] = RT_H2LE_U16(1); /* DATA SET MANAGEMENT command supported. */
 
     /* The following are SATA specific */
     p[75] = RT_H2LE_U16(pAhciPort->CTX_SUFF(pAhci)->cCmdSlotsAvail-1); /* Number of commands we support, 0's based */
@@ -5915,7 +5939,6 @@ static void ahciCopyFromSGListIntoBuffer(PPDMDEVINS pDevIns, PAHCIPORTTASKSTATES
     } while (cSGEntriesLeft);
 }
 
-
 /**
  * Copy the content of a buffer to a scatter gather list.
  *
@@ -6206,6 +6229,91 @@ static DECLCALLBACK(int) ahciTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterfa
 }
 
 /**
+ * Creates the array of ranges to trim.
+ *
+ * @returns VBox status code.
+ * @param   pAhciPort             AHCI port state.
+ * @param   pAhciportTaskState    The task state handling the TRIM request.
+ */
+static int ahciTrimRangesCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState)
+{
+    RTSGBUF SgBuf;
+    uint64_t aRanges[64];
+    unsigned cRangesMax;
+    unsigned cRanges = 0;
+    int rc = VINF_SUCCESS;
+
+    /* First check that the trim bit is set and all other bits are 0. */
+    if (   !(pAhciPortTaskState->cmdFis[AHCI_CMDFIS_FET] & UINT16_C(0x01))
+        || (pAhciPortTaskState->cmdFis[AHCI_CMDFIS_FET] & ~UINT16_C(0x1)))
+        return VERR_INVALID_PARAMETER;
+
+    /* The data buffer contains LBA range entries. Each range is 8 bytes big. */
+    cRangesMax = pAhciPortTaskState->cbSGBuffers / 8;
+
+    RTSgBufInit(&SgBuf, pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed);
+
+    do
+    {
+        size_t cbCopied = RTSgBufCopyToBuf(&SgBuf, &aRanges[0], sizeof(aRanges));
+        Assert(cbCopied == sizeof(aRanges));
+
+        /*
+         * Count the number of valid ranges in the buffer.
+         * A length of 0 is invalid and is only used for padding 
+         */
+        for (unsigned i = 0; i < RT_ELEMENTS(aRanges); i++)
+        {
+            aRanges[i] = RT_H2LE_U64(aRanges[i]);
+            if (AHCI_RANGE_LENGTH_GET(aRanges[i]) != 0)
+                cRanges++;
+            else
+                break;
+        }
+
+        cRangesMax -= 64;
+    } while (cRangesMax);
+
+    AssertReturn(cRanges != 0, VERR_INVALID_PARAMETER);
+
+    pAhciPortTaskState->paRanges = (PPDMRANGE)RTMemAllocZ(sizeof(PDMRANGE) * cRanges);
+    if (pAhciPortTaskState->paRanges)
+    {
+        uint32_t idxRange = 0;
+
+        pAhciPortTaskState->cRanges = cRanges;
+        RTSgBufReset(&SgBuf);
+
+        /* Convert the ranges from the guest to our format. */
+        do
+        {
+            size_t cbCopied = RTSgBufCopyToBuf(&SgBuf, &aRanges[0], sizeof(aRanges));
+            Assert(cbCopied == sizeof(aRanges));
+
+            for (unsigned i = 0; i < RT_ELEMENTS(aRanges); i++)
+            {
+                aRanges[i] = RT_H2LE_U64(aRanges[i]);
+                if (AHCI_RANGE_LENGTH_GET(aRanges[i]) != 0)
+                {
+                    pAhciPortTaskState->paRanges[idxRange].offStart = (aRanges[i] & AHCI_RANGE_LBA_MASK) * 512;
+                    pAhciPortTaskState->paRanges[idxRange].cbRange = AHCI_RANGE_LENGTH_GET(aRanges[i]) * 512;
+                    idxRange++;
+                }
+                else
+                    break;
+            }
+        } while (idxRange < cRanges);
+    }
+
+    return rc;
+}
+
+static void ahciTrimRangesDestroy(PAHCIPORTTASKSTATE pAhciPortTaskState)
+{
+    RTMemFree(pAhciPortTaskState->paRanges);
+}
+
+/**
  * Process an non read/write ATA command.
  *
  * @returns The direction of the data transfer
@@ -6478,6 +6586,15 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
             }
 
             break;
+        }
+        case ATA_DATA_SET_MANAGEMENT:
+        {
+            if (pAhciPort->pDrvBlock->pfnDiscard)
+            {
+                rc = AHCITXDIR_TRIM;
+                break;
+            }
+            /* else: fall through and report error to the guest. */
         }
         /* All not implemented commands go below. */
         case ATA_SECURITY_FREEZE_LOCK:
@@ -6858,6 +6975,65 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         && pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
                     {
                         LogRel(("AHCI#%u: Flush returned rc=%Rrc\n",
+                                pAhciPort->iLUN, rc));
+                    }
+
+                    if (RT_FAILURE(rc))
+                    {
+                        if (!ahciIsRedoSetWarning(pAhciPort, rc))
+                        {
+                            pAhciPortTaskState->uATARegError = ID_ERR;
+                            pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+                        }
+                        else
+                        {
+                            /* Add the task to the mask again. */
+                            ASMAtomicOrU32(&pAhciPort->u32TasksNew, (1 << pAhciPortTaskState->uTag));
+                        }
+                    }
+                    else
+                    {
+                        pAhciPortTaskState->uATARegError = 0;
+                        pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+                    }
+
+                    if (!pAhciPort->fRedo)
+                    {
+                        if (pAhciPortTaskState->fQueued)
+                            ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
+                        else
+                        {
+                            /* Task is not queued send D2H FIS */
+                            ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
+                        }
+                    }
+                }
+                else if (enmTxDir == AHCITXDIR_TRIM)
+                {
+                    rc = ahciScatterGatherListCreate(pAhciPort, pAhciPortTaskState, (enmTxDir == AHCITXDIR_READ) ? false : true);
+                    if (RT_FAILURE(rc))
+                        AssertMsgFailed(("%s: Failed to get number of list elments %Rrc\n", __FUNCTION__, rc));
+
+                    rc = ahciTrimRangesCreate(pAhciPort, pAhciPortTaskState);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+                        rc = pAhciPort->pDrvBlock->pfnDiscard(pAhciPort->pDrvBlock, pAhciPortTaskState->paRanges, pAhciPortTaskState->cRanges);
+                        pAhciPort->Led.Actual.s.fWriting = 0;
+                    }
+
+                    /* Cleanup. */
+                    ahciTrimRangesDestroy(pAhciPortTaskState);
+
+                    int rc2 = ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
+                    if (RT_FAILURE(rc2))
+                        AssertMsgFailed(("Destroying task list failed rc=%Rrc\n", rc));
+
+                    /* Log the error. */
+                    if (   RT_FAILURE(rc)
+                        && pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
+                    {
+                        LogRel(("AHCI#%u: Trim returned rc=%Rrc\n",
                                 pAhciPort->iLUN, rc));
                     }
 

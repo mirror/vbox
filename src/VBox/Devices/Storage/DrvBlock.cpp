@@ -285,6 +285,13 @@ static DECLCALLBACK(int) drvblockGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid)
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) drvblockDiscard(PPDMIBLOCK pInterface, PPDMRANGE paRanges, unsigned cRanges)
+{
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
+
+    return pThis->pDrvMedia->pfnDiscard(pThis->pDrvMedia, paRanges, cRanges);
+}
+
 /* -=-=-=-=- IBlockAsync -=-=-=-=- */
 
 /** Makes a PDRVBLOCK out of a PPDMIBLOCKASYNC. */
@@ -967,6 +974,9 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     if (!pThis->pDrvMedia)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
                                 N_("No media or async media interface below"));
+
+    if (pThis->pDrvMedia->pfnDiscard)
+        pThis->IBlock.pfnDiscard = drvblockDiscard;
 
     /* Try to get the optional async interface. */
     pThis->pDrvMediaAsync = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIAASYNC);

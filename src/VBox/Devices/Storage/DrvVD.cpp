@@ -1673,6 +1673,17 @@ static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
     return rc;
 }
 
+static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PPDMRANGE paRanges, unsigned cRanges)
+{
+    LogFlowFunc(("\n"));
+    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
+
+    /** @todo: Fix the cast properly without allocating temporary memory (maybe move the type to IPRT). */
+    int rc = VDDiscardRanges(pThis->pDisk, (PVDRANGE)paRanges, cRanges);
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
 /*******************************************************************************
 *   Async Media interface methods                                              *
 *******************************************************************************/
@@ -2057,7 +2068,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->IMedia.pfnBiosSetPCHSGeometry = drvvdBiosSetPCHSGeometry;
     pThis->IMedia.pfnBiosGetLCHSGeometry = drvvdBiosGetLCHSGeometry;
     pThis->IMedia.pfnBiosSetLCHSGeometry = drvvdBiosSetLCHSGeometry;
-    pThis->IMedia.pfnGetUuid            = drvvdGetUuid;
+    pThis->IMedia.pfnGetUuid             = drvvdGetUuid;
+    pThis->IMedia.pfnDiscard             = drvvdDiscard;
 
     /* IMediaAsync */
     pThis->IMediaAsync.pfnStartRead       = drvvdStartRead;
@@ -2091,6 +2103,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     bool        fHostIP = false;
     bool        fUseNewIo = false;
     bool        fUseBlockCache = false;
+    bool        fDiscard = false;
     unsigned    iLevel = 0;
     PCFGMNODE   pCurNode = pCfg;
     VDTYPE      enmType = VDTYPE_HDD;
@@ -2108,7 +2121,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                           "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
                                           "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
                                           "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0BlockCache\0"
-                                          "CachePath\0CacheFormat\0");
+                                          "CachePath\0CacheFormat\0Discard\0");
         }
         else
         {
@@ -2230,6 +2243,19 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             }
             else
                 rc = VINF_SUCCESS;
+            rc = CFGMR3QueryBoolDef(pCurNode, "Discard", &fDiscard, false);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"Discard\" as boolean failed"));
+                break;
+            }
+            if (fReadOnly && fDiscard)
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
+                                      N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"Discard\" are set"));
+                break;
+            }
 
             char *psz;
             rc = CFGMR3QueryStringAlloc(pCfg, "Type", &psz);
@@ -2528,6 +2554,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             uOpenFlags |= VD_OPEN_FLAGS_ASYNC_IO;
         if (pThis->fShareable)
             uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
+        if (fDiscard && iLevel == 0)
+            uOpenFlags |= VD_OPEN_FLAGS_DISCARD;
 
         /* Try to open backend in async I/O mode first. */
         rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
@@ -2537,6 +2565,16 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             uOpenFlags &= ~VD_OPEN_FLAGS_ASYNC_IO;
             rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
         }
+
+        if (rc == VERR_VD_DISCARD_NOT_SUPPORTED)
+        {
+            fDiscard = false;
+            uOpenFlags &= ~VD_OPEN_FLAGS_DISCARD;
+            rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
+        }
+
+        if (!fDiscard)
+            pThis->IMedia.pfnDiscard = NULL;
 
         if (RT_SUCCESS(rc))
         {

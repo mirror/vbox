@@ -32,7 +32,7 @@ static const char * const g_apszATACmdNames[256] =
     "CFA REQUEST EXTENDED ERROR CODE",     /* 0x03 */
     "",                                    /* 0x04 */
     "",                                    /* 0x05 */
-    "",                                    /* 0x06 */
+    "DATA SET MANAGEMENT",                 /* 0x06 */
     "",                                    /* 0x07 */
     "DEVICE RESET",                        /* 0x08 */
     "",                                    /* 0x09 */
