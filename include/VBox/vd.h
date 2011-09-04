@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -179,8 +179,12 @@ typedef struct VBOXHDDRAW
 /** Ask the backend to switch to sequential accesses if possible. Opening
  * will not fail if it cannot do this, the flag will be simply ignored. */
 #define VD_OPEN_FLAGS_SEQUENTIAL    RT_BIT(6)
+/** Allow the discard operation if supported. Only available if VD_CAP_DISCARD
+ * is set. VDOpen fails with VERR_VD_DISCARD_NOT_SUPPORTED if discarding is not
+ * supported. */
+#define VD_OPEN_FLAGS_DISCARD       RT_BIT(7)
 /** Mask of valid flags. */
-#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL)
+#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_DISCARD)
 /** @}*/
 
 /**
@@ -248,6 +252,8 @@ DECLINLINE(uint32_t) VDOpenFlagsToFileOpenFlags(unsigned uOpenFlags, bool fCreat
 /** The backend supports VFS (virtual filesystem) functionality since it uses
  * VDINTERFACEIO exclusively for all file operations. */
 #define VD_CAP_VFS                  RT_BIT(9)
+/** The backend supports the discard operation. */
+#define VD_CAP_DISCARD              RT_BIT(10)
 /** @}*/
 
 /** @name VBox HDD container type.
@@ -389,6 +395,22 @@ typedef struct VDGEOMETRY
 typedef VDGEOMETRY *PVDGEOMETRY;
 /** Pointer to constant disk geometry. */
 typedef const VDGEOMETRY *PCVDGEOMETRY;
+
+/**
+ * VD range descriptor.
+ */
+typedef struct VDRANGE
+{
+    /** Start offset in bytes, multiple of 512. */
+    uint64_t    offStart;
+    /** Amount of bytes described by this range, multiple of 512. */
+    size_t      cbRange;
+} VDRANGE;
+
+/** Pointer to a range descriptor. */
+typedef VDRANGE *PVDRANGE;
+/** Pointer to a constant range descriptor. */
+typedef const VDRANGE *PCVDRANGE;
 
 /**
  * VBox HDD Container main structure.
@@ -1086,6 +1108,20 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
  * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk);
+
+
+/**
+ * Discards unused ranges given as a list.
+ *
+ * @return  VBox status code.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   paRanges        The array of ranges to discard.
+ * @param   cRanges         Number of entries in the array.
+ *
+ * @note In contrast to VDCompact() the ranges are always discarded even if they
+ *       appear to contain data. This method is mainly used to implement TRIM support.
+ */
+VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCVDRANGE paRanges, unsigned cRanges);
 
 
 /**

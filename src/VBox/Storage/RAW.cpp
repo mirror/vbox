@@ -1289,5 +1289,7 @@ VBOXHDDBACKEND g_RawBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
+    NULL,
+    /* pfnDiscard */
     NULL
 };

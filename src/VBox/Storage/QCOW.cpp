@@ -2744,5 +2744,7 @@ VBOXHDDBACKEND g_QCowBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
+    NULL,
+    /* pfnDiscard */
     NULL
 };
