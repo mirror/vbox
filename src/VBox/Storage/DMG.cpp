@@ -18,7 +18,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DEFAULT /** @todo log group */
+#define LOG_GROUP LOG_GROUP_VD_DMG
 #include <VBox/vd-plugin.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
