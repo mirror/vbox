@@ -337,10 +337,16 @@ typedef enum LOGGROUP
     LOG_GROUP_USB_WEBCAM,
     /** Generic virtual disk layer. */
     LOG_GROUP_VD,
+    /** DMG virtual disk backend. */
+    LOG_GROUP_VD_DMG,
     /** iSCSI virtual disk backend. */
     LOG_GROUP_VD_ISCSI,
     /** Parallels HDD virtual disk backend. */
     LOG_GROUP_VD_PARALLELS,
+    /** QCOW virtual disk backend. */
+    LOG_GROUP_VD_QCOW,
+    /** QED virtual disk backend. */
+    LOG_GROUP_VD_QED,
     /** Raw virtual disk backend. */
     LOG_GROUP_VD_RAW,
     /** VDI virtual disk backend. */
@@ -519,8 +525,11 @@ typedef enum LOGGROUP
     "USB_MSD",      \
     "USB_WEBCAM",   \
     "VD",           \
+    "VD_DMG",       \
     "VD_ISCSI",     \
     "VD_PARALLELS", \
+    "VD_QCOW",      \
+    "VD_QED",       \
     "VD_RAW",       \
     "VD_VDI",       \
     "VD_VHD",       \
