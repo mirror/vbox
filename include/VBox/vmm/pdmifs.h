@@ -912,6 +912,20 @@ typedef enum PDMBLOCKTXDIR
 } PDMBLOCKTXDIR;
 
 
+/**
+ * PDM range.
+ */
+typedef struct PDMRANGE
+{
+    /** Start offset. */
+    uint64_t    offStart;
+    /** Size. */
+    size_t      cbRange;
+} PDMRANGE;
+/** Pointer to a PDM range. */
+typedef PDMRANGE *PPDMRANGE;
+
+
 /** Pointer to a block interface. */
 typedef struct PDMIBLOCK *PPDMIBLOCK;
 /**
@@ -1018,9 +1032,20 @@ typedef struct PDMIBLOCK
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetUuid,(PPDMIBLOCK pInterface, PRTUUID pUuid));
+
+    /**
+     * Discards the given range.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   paRanges        Array of ranges to discard.
+     * @param   cRanges         Number of entries in the array.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDiscard,(PPDMIBLOCK pInterface, PPDMRANGE paRanges, unsigned cRanges));
 } PDMIBLOCK;
 /** PDMIBLOCK interface ID. */
-#define PDMIBLOCK_IID                           "0a5f3156-8b21-4cf5-83fd-e097281d2900"
+#define PDMIBLOCK_IID                           "5e7123dd-8cdf-4a6e-97a5-ab0c68d7e850"
 
 
 /** Pointer to a mount interface. */
@@ -1306,9 +1331,20 @@ typedef struct PDMIMEDIA
      */
     DECLR3CALLBACKMEMBER(int, pfnGetUuid,(PPDMIMEDIA pInterface, PRTUUID pUuid));
 
+    /**
+     * Discards the given range.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   paRanges        Array of ranges to discard.
+     * @param   cRanges         Number of entries in the array.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDiscard,(PPDMIMEDIA pInterface, PPDMRANGE paRanges, unsigned cRanges));
+
 } PDMIMEDIA;
 /** PDMIMEDIA interface ID. */
-#define PDMIMEDIA_IID                           "f5bb07c9-2843-46f8-a56f-cc090b6e5bac"
+#define PDMIMEDIA_IID                           "ec385d21-7aa9-42ca-8cfb-e1388297fa52"
 
 
 /** Pointer to a block BIOS interface. */

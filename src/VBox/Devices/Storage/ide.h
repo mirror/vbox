@@ -53,6 +53,7 @@ typedef enum ATACMD
 {
     ATA_NOP                                 = 0x00,
     ATA_CFA_REQUEST_EXTENDED_ERROR_CODE     = 0x03,
+    ATA_DATA_SET_MANAGEMENT                 = 0x06,
     ATA_DEVICE_RESET                        = 0x08,
     ATA_RECALIBRATE                         = 0x10,
     ATA_READ_SECTORS                        = 0x20,
