@@ -7177,5 +7177,7 @@ VBOXHDDBACKEND g_VmdkBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
+    NULL,
+    /* pfnDiscard */
     NULL
 };

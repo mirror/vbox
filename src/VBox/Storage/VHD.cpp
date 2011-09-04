@@ -3138,5 +3138,7 @@ VBOXHDDBACKEND g_VhdBackend =
     /* pfnCompact */
     vhdCompact,
     /* pfnResize */
-    vhdResize
+    vhdResize,
+    /* pfnDiscard */
+    NULL
 };

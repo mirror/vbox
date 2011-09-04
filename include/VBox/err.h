@@ -1333,6 +1333,10 @@
 #define VERR_VD_CACHE_NOT_FOUND                     (-3275)
 /** The cache is not up to date with the image. */
 #define VERR_VD_CACHE_NOT_UP_TO_DATE                (-3276)
+/** The given range does not meet the required alignment. */
+#define VERR_VD_DISCARD_ALIGNMENT_NOT_MET           (-3277)
+/** The discard operation is not supported for this image. */
+#define VERR_VD_DISCARD_NOT_SUPPORTED               (-3278)
 /** @} */
 
 

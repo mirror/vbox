@@ -2331,5 +2331,7 @@ VBOXHDDBACKEND g_DmgBackend =
     /* pfnCompact */
     NULL,
     /* pfnResize */
+    NULL,
+    /* pfnDiscard */
     NULL
 };

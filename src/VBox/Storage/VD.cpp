@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,6 +50,9 @@
 
 /** Maximum number of segments in one I/O task. */
 #define VD_IO_TASK_SEGMENTS_MAX 64
+
+/** Threshold after not recently used blocks are removed from the list. */
+#define VD_DISCARD_REMOVE_THRESHOLD (10 * _1M) /** @todo: experiment */
 
 /**
  * VD async I/O interface storage descriptor.
@@ -145,12 +148,44 @@ typedef struct VDCACHE
 } VDCACHE, *PVDCACHE;
 
 /**
+ * A block waiting for a discard.
+ */
+typedef struct VDDISCARDBLOCK
+{
+    /** AVL core. */
+    AVLRU64NODECORE    Core;
+    /** LRU list node. */
+    RTLISTNODE         NodeLru;
+    /** Number of bytes to discard. */
+    size_t             cbDiscard;
+    /** Bitmap of allocated sectors. */
+    void              *pbmAllocated;
+} VDDISCARDBLOCK, *PVDDISCARDBLOCK;
+
+/**
+ * VD discard state.
+ */
+typedef struct VDDISCARDSTATE
+{
+    /** Number of bytes waiting for a discard. */
+    size_t              cbDiscarding;
+    /** AVL tree with blocks waiting for a discard.
+     * The uOffset + cbDiscard range is the search key. */
+    PAVLRU64TREE        pTreeBlocks;
+    /** LRU list of the least frequently discarded blocks.
+     * If there are to many blocks waiting the least frequently used
+     * will be removed and the range will be set to 0.
+     */
+    RTLISTNODE          ListLru;
+} VDDISCARDSTATE, *PVDDISCARDSTATE;
+
+/**
  * VBox HDD Container main structure, private part.
  */
 struct VBOXHDD
 {
     /** Structure signature (VBOXHDDDISK_SIGNATURE). */
-    uint32_t            u32Signature;
+    uint32_t               u32Signature;
 
     /** Image type. */
     VDTYPE                 enmType;
@@ -204,6 +239,8 @@ struct VBOXHDD
 
     /** Pointer to the L2 disk cache if any. */
     PVDCACHE               pCache;
+    /** Pointer to the discard state if any. */
+    PVDDISCARDSTATE        pDiscard;
 };
 
 # define VD_THREAD_IS_CRITSECT_OWNER(Disk) \
@@ -933,6 +970,337 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
 {
     return vdReadHelperEx(pDisk, pImage, NULL, uOffset, pvBuf, cbRead,
                           true /* fZeroFreeBlocks */, fUpdateCache, 0);
+}
+
+/**
+ * Creates a new empty discard state.
+ *
+ * @returns Pointer to the new discard state or NULL if out of memory.
+ */
+static PVDDISCARDSTATE vdDiscardStateCreate(void)
+{
+    PVDDISCARDSTATE pDiscard = (PVDDISCARDSTATE)RTMemAllocZ(sizeof(VDDISCARDSTATE));
+
+    if (pDiscard)
+    {
+        RTListInit(&pDiscard->ListLru);
+        pDiscard->pTreeBlocks = (PAVLRU64TREE)RTMemAllocZ(sizeof(AVLRU64TREE));
+        if (!pDiscard->pTreeBlocks)
+        {
+            RTMemFree(pDiscard);
+            pDiscard = NULL;
+        }
+    }
+
+    return pDiscard;
+}
+
+/**
+ * Removes the least recently used blocks from the waiting list until
+ * the new value is reached.
+ *
+ * @returns VBox status code.
+ * @param   pDisk              VD disk container.
+ * @param   pDiscard           The discard state.
+ * @param   cbDiscardingNew    How many bytes should be waiting on success.
+ *                             The number of bytes waiting can be less.
+ */
+static int vdDiscardRemoveBlocks(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, size_t cbDiscardingNew)
+{
+    int rc = VINF_SUCCESS;
+
+    while (pDiscard->cbDiscarding > cbDiscardingNew)
+    {
+        PVDDISCARDBLOCK pBlock = RTListGetLast(&pDiscard->ListLru, VDDISCARDBLOCK, NodeLru);
+
+        Assert(!RTListIsEmpty(&pDiscard->ListLru));
+
+        /* Go over the allocation bitmap and mark all discarded sectors as unused. */
+        uint64_t offStart = pBlock->Core.Key;
+        uint32_t idxStart = 0;
+        size_t cbLeft = pBlock->cbDiscard;
+        bool fAllocated = ASMBitTest(pBlock->pbmAllocated, idxStart);
+        uint32_t cSectors = pBlock->cbDiscard * 8;
+
+        while (cbLeft > 0)
+        {
+            int32_t idxEnd;
+            size_t cbThis = cbLeft;
+
+            if (fAllocated)
+            {
+                /* Check for the first unallocated bit. */
+                idxEnd = ASMBitNextClear(pBlock->pbmAllocated, cSectors, idxStart);
+                if (idxEnd != -1)
+                {
+                    cbThis = (idxEnd - idxStart) * 512;
+                    fAllocated = false;
+                }
+            }
+            else
+            {
+                /* Mark as unused and check for the first set bit. */
+                idxEnd = ASMBitNextSet(pBlock->pbmAllocated, cSectors, idxStart);
+                if (idxEnd != -1)
+                    cbThis = (idxEnd - idxStart) * 512;
+
+                rc = pDisk->pLast->Backend->pfnDiscard(pDisk->pLast->pBackendData, offStart,
+                                                       cbThis, NULL, NULL, &cbThis,
+                                                       NULL, VD_DISCARD_MARK_UNUSED);
+                if (RT_FAILURE(rc))
+                    break;
+
+                fAllocated = true;
+            }
+
+            idxStart  = idxEnd;
+            offStart += cbThis;
+            cbLeft   -= cbThis;
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+
+        PVDDISCARDBLOCK pBlockRemove = (PVDDISCARDBLOCK)RTAvlrU64RangeRemove(pDiscard->pTreeBlocks, pBlock->Core.Key);
+        Assert(pBlockRemove == pBlock);
+        RTListNodeRemove(&pBlock->NodeLru);
+
+        pDiscard->cbDiscarding -= pBlock->cbDiscard;
+        RTMemFree(pBlock->pbmAllocated);
+        RTMemFree(pBlock);
+    }
+
+    Assert(RT_FAILURE(rc) || pDiscard->cbDiscarding <= cbDiscardingNew);
+
+    return rc;
+}
+
+/**
+ * Destroys the current discard state, writing any waiting blocks to the image.
+ *
+ * @returns VBox status code.
+ * @param   pDisk    VD disk container.
+ */
+static int vdDiscardStateDestroy(PVBOXHDD pDisk)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pDisk->pDiscard)
+    {
+        rc = vdDiscardRemoveBlocks(pDisk, pDisk->pDiscard, 0 /* Remove all blocks. */);
+        AssertRC(rc);
+        RTMemFree(pDisk->pDiscard->pTreeBlocks);
+        RTMemFree(pDisk->pDiscard);
+        pDisk->pDiscard = NULL;
+    }
+
+    return rc;
+}
+
+/**
+ * Discards the given range from the underlying block.
+ *
+ * @returns VBox status code.
+ * @param   pDisk      VD container data.
+ * @param   offStart   Where to start discarding.
+ * @param   cbDiscard  How many bytes to discard.
+ */
+static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t offStart, size_t cbDiscard)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pDisk=%#p pDiscard=%#p offStart=%llu cbDiscard=%zu\n",
+                 pDisk, pDiscard, offStart, cbDiscard));
+
+    do
+    {
+        size_t cbThisDiscard;
+
+        /* Look for a matching block in the AVL tree first. */
+        PVDDISCARDBLOCK pBlock = (PVDDISCARDBLOCK)RTAvlrU64GetBestFit(pDiscard->pTreeBlocks, offStart, false);
+        if (!pBlock || pBlock->Core.KeyLast < offStart)
+        {
+            void *pbmAllocated = NULL;
+            size_t cbPreAllocated, cbPostAllocated;
+            PVDDISCARDBLOCK pBlockAbove = (PVDDISCARDBLOCK)RTAvlrU64GetBestFit(pDiscard->pTreeBlocks, offStart, true);
+
+            /* Clip range to remain in the current block. */
+            if (pBlockAbove)
+                cbThisDiscard = RT_MIN(cbDiscard, pBlockAbove->Core.Key - (offStart + cbDiscard - 1));
+            else
+                cbThisDiscard = cbDiscard;
+
+            Assert(cbThisDiscard % 512 == 0);
+
+            /* No block found, try to discard using the backend first. */
+            rc = pDisk->pLast->Backend->pfnDiscard(pDisk->pLast->pBackendData, offStart,
+                                                   cbThisDiscard, &cbPreAllocated,
+                                                   &cbPostAllocated, &cbThisDiscard,
+                                                   &pbmAllocated, 0);
+            if (rc == VERR_VD_DISCARD_ALIGNMENT_NOT_MET)
+            {
+                /* Create new discard block. */
+                pBlock = (PVDDISCARDBLOCK)RTMemAllocZ(sizeof(VDDISCARDBLOCK));
+                if (pBlock)
+                {
+                    pBlock->Core.Key     = offStart + cbPreAllocated;
+                    pBlock->Core.KeyLast = offStart + cbThisDiscard + cbPreAllocated - 1;
+                    pBlock->cbDiscard    = cbThisDiscard;
+                    pBlock->pbmAllocated = pbmAllocated;
+                    bool fInserted = RTAvlrU64Insert(pDiscard->pTreeBlocks, &pBlock->Core);
+                    Assert(fInserted);
+
+                    RTListPrepend(&pDiscard->ListLru, &pBlock->NodeLru);
+                    pDiscard->cbDiscarding += cbThisDiscard;
+                    if (pDiscard->cbDiscarding > VD_DISCARD_REMOVE_THRESHOLD)
+                        rc = vdDiscardRemoveBlocks(pDisk, pDiscard, VD_DISCARD_REMOVE_THRESHOLD);
+                    else
+                        rc = VINF_SUCCESS;
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+        else
+        {
+            /* Range lies partly in the block, update allocation bitmap. */
+            cbThisDiscard = pBlock->Core.KeyLast - offStart + 1;
+            rc = VERR_VD_DISCARD_ALIGNMENT_NOT_MET;
+        }
+
+        if (rc == VERR_VD_DISCARD_ALIGNMENT_NOT_MET)
+        {
+            int32_t idxStart, idxEnd;
+
+            AssertPtr(pBlock);
+
+            Assert(!(cbThisDiscard % 512));
+            Assert(!((offStart - pBlock->Core.Key) % 512));
+
+            idxStart = (offStart - pBlock->Core.Key) / 512;
+            idxEnd = idxStart + (cbThisDiscard / 512);
+
+            ASMBitClearRange(pBlock->pbmAllocated, idxStart, idxEnd);
+
+            /* Call the backend to discard the block if it is completely unallocated now. */
+            if (ASMBitFirstSet((volatile void *)pBlock->pbmAllocated, pBlock->cbDiscard / 512) == -1)
+            {
+                size_t cbPreAllocated, cbPostAllocated, cbActuallyDiscarded;
+
+                rc = pDisk->pLast->Backend->pfnDiscard(pDisk->pLast->pBackendData, pBlock->Core.Key,
+                                                       pBlock->cbDiscard, &cbPreAllocated,
+                                                       &cbPostAllocated, &cbActuallyDiscarded,
+                                                       NULL, 0);
+                Assert(rc != VERR_VD_DISCARD_ALIGNMENT_NOT_MET);
+                Assert(!cbPreAllocated);
+                Assert(!cbPostAllocated);
+                Assert(cbActuallyDiscarded == pBlock->cbDiscard || RT_FAILURE(rc));
+
+                /* Remove the block on success. */
+                if (RT_SUCCESS(rc))
+                {
+                    PVDDISCARDBLOCK pBlockRemove = (PVDDISCARDBLOCK)RTAvlrU64RangeRemove(pDiscard->pTreeBlocks, pBlock->Core.Key);
+                    Assert(pBlockRemove == pBlock);
+
+                    RTListNodeRemove(&pBlock->NodeLru);
+                    RTMemFree(pBlock->pbmAllocated);
+                    RTMemFree(pBlock);
+                }
+            }
+            else
+            {
+                RTListNodeRemove(&pBlock->NodeLru);
+                RTListPrepend(&pDiscard->ListLru, &pBlock->NodeLru);
+            }
+        }
+
+        cbDiscard -= cbThisDiscard;
+        offStart  += cbThisDiscard;
+    } while (cbDiscard != 0 && RT_SUCCESS(rc));
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Discard helper.
+ *
+ * @returns VBox status code.
+ * @param   pDisk    VD container data.
+ * @param   paRanges The array of ranges to discard.
+ * @param   cRanges  The number of ranges in the array.
+ */
+static int vdDiscardHelper(PVBOXHDD pDisk, PCVDRANGE paRanges, unsigned cRanges)
+{
+    int rc = VINF_SUCCESS;
+    PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
+
+    if (RT_UNLIKELY(!pDiscard))
+    {
+        pDiscard = vdDiscardStateCreate();
+        if (!pDiscard)
+            return VERR_NO_MEMORY;
+
+        pDisk->pDiscard = pDiscard;
+    }
+
+    /* Go over the range array and discard individual blocks. */
+    for (unsigned i = 0; i < cRanges; i++)
+    {
+        rc = vdDiscardRange(pDisk, pDiscard, paRanges[i].offStart, paRanges[i].cbRange);
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    return rc;
+}
+
+/**
+ * Marks the given range as allocated in the image.
+ * Required if there are discards in progress and a write to a block which can get discarded
+ * is written to.
+ *
+ * @returns VBox status code.
+ * @param   pDisk    VD container data.
+ * @param   uOffset  First byte to mark as allocated.
+ * @param   cbRange  Number of bytes to mark as allocated.
+ */
+static int vdDiscardSetRangeAllocated(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRange)
+{
+    PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
+    int rc = VINF_SUCCESS;
+
+    if (pDiscard)
+    {
+        do
+        {
+            size_t cbThisRange = cbRange;
+            PVDDISCARDBLOCK pBlock = (PVDDISCARDBLOCK)RTAvlrU64RangeGet(pDiscard->pTreeBlocks, uOffset);
+
+            if (pBlock)
+            {
+                int32_t idxStart, idxEnd;
+
+                Assert(!(cbThisRange % 512));
+                Assert(!((uOffset - pBlock->Core.Key) % 512));
+
+                idxStart = (uOffset - pBlock->Core.Key) / 512;
+                idxEnd = idxStart + (cbThisRange / 512);
+                ASMBitSetRange(pBlock->pbmAllocated, idxStart, idxEnd);
+            }
+            else
+            {
+                pBlock = (PVDDISCARDBLOCK)RTAvlrU64GetBestFit(pDiscard->pTreeBlocks, uOffset, true);
+                if (pBlock)
+                    cbThisRange = RT_MIN(cbThisRange, pBlock->Core.Key - uOffset);
+            }
+
+            uOffset += cbThisRange;
+            cbRange -= cbThisRange;
+        } while (cbRange != 0);
+    }
+
+    return rc;
 }
 
 DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
@@ -1692,6 +2060,9 @@ static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
         && pDisk->pCache
         && fUpdateCache)
         rc = vdCacheWriteHelper(pDisk->pCache, uOffset, pvBuf, cbWrite, NULL);
+
+    if (RT_SUCCESS(rc))
+        rc = vdDiscardSetRangeAllocated(pDisk, uOffset, cbWrite);
 
     return rc;
 }
@@ -4346,6 +4717,21 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                            ("uOpenFlags=%#x\n", uOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
 
+        /*
+         * Destroy the current discard state first which might still have pending blocks
+         * for the currently opened image which will be switched to readonly mode.
+         */
+        /* Lock disk for writing, as we modify pDisk information below. */
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+        rc = vdDiscardStateDestroy(pDisk);
+        if (RT_FAILURE(rc))
+            break;
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = false;
+
         /* Set up image descriptor. */
         pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
         if (!pImage)
@@ -4385,6 +4771,18 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             break;
         }
 
+        /*
+         * Fail if the the backend doesn't support the discard operation but the
+         * flag is set.
+         */
+        if (   !(pImage->Backend->uBackendCaps & VD_CAP_DISCARD)
+            && (uOpenFlags & VD_OPEN_FLAGS_DISCARD))
+        {
+            rc = vdError(pDisk, VERR_VD_DISCARD_NOT_SUPPORTED, RT_SRC_POS,
+                         N_("VD: Backend '%s' does not support discard"), pszBackend);
+            break;
+        }
+
         /* Set up the I/O interface. */
         pImage->VDIo.pInterfaceIo = VDIfIoGet(pVDIfsImage);
         if (!pImage->VDIo.pInterfaceIo)
@@ -4402,7 +4800,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                             &pImage->VDIo, sizeof(VDINTERFACEIOINT), &pImage->pVDIfsImage);
         AssertRC(rc);
 
-        pImage->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
+        pImage->uOpenFlags = uOpenFlags & (VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_DISCARD);
         rc = pImage->Backend->pfnOpen(pImage->pszFilename,
                                       uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
                                       pDisk->pVDIfsDisk,
@@ -5108,6 +5506,21 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         rc2 = vdThreadFinishRead(pDisk);
         AssertRC(rc2);
         fLockRead = false;
+
+        /*
+         * Destroy the current discard state first which might still have pending blocks
+         * for the currently opened image which will be switched to readonly mode.
+         */
+        /* Lock disk for writing, as we modify pDisk information below. */
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+        rc = vdDiscardStateDestroy(pDisk);
+        if (RT_FAILURE(rc))
+            break;
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = false;
 
         /* Set up image descriptor. */
         pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
@@ -6555,6 +6968,12 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
             rc = VERR_VD_NOT_OPENED;
             break;
         }
+
+        /* Destroy the current discard state first which might still have pending blocks. */
+        rc = vdDiscardStateDestroy(pDisk);
+        if (RT_FAILURE(rc))
+            break;
+
         unsigned uOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pBackendData);
         /* Remove image from list of opened images. */
         vdRemoveImageFromList(pDisk, pImage);
@@ -8175,6 +8594,53 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
         rc2 = vdThreadFinishRead(pDisk);
         AssertRC(rc2);
     }
+}
+
+
+VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCVDRANGE paRanges, unsigned cRanges)
+{
+    int rc;
+    int rc2;
+    bool fLockWrite = false;
+
+    LogFlowFunc(("pDisk=%#p paRanges=%#p cRanges=%u\n",
+                 pDisk, paRanges, cRanges));
+    do
+    {
+        /* sanity check */
+        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        /* Check arguments. */
+        AssertMsgBreakStmt(cRanges,
+                           ("cRanges=%u\n", cRanges),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(VALID_PTR(paRanges),
+                           ("paRanges=%#p\n", paRanges),
+                           rc = VERR_INVALID_PARAMETER);
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
+        AssertPtrBreakStmt(pDisk->pLast, rc = VERR_VD_NOT_OPENED);
+
+        AssertMsgBreakStmt(pDisk->pLast->uOpenFlags & VD_OPEN_FLAGS_DISCARD,
+                           ("Discarding not supported\n"),
+                           rc = VERR_NOT_SUPPORTED);
+
+        vdSetModifiedFlag(pDisk);
+        rc = vdDiscardHelper(pDisk, paRanges, cRanges);
+    } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 

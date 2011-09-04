@@ -295,6 +295,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
 static DECLCALLBACK(int) vdScriptHandlerFlush(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerMerge(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerCompact(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
+static DECLCALLBACK(int) vdScriptHandlerDiscard(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerCopy(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerClose(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
 static DECLCALLBACK(int) vdScriptHandlerPrintFileSize(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs);
@@ -332,7 +333,8 @@ const VDSCRIPTARGDESC g_aArgOpen[] =
     {"backend",    'b', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
     {"async",      'a', VDSCRIPTARGTYPE_BOOL,            0},
     {"shareable",  's', VDSCRIPTARGTYPE_BOOL,            0},
-    {"readonly",   'r', VDSCRIPTARGTYPE_BOOL,            0}
+    {"readonly",   'r', VDSCRIPTARGTYPE_BOOL,            0},
+    {"discard",    'i', VDSCRIPTARGTYPE_BOOL,            0},
 };
 
 /* I/O action */
@@ -373,6 +375,15 @@ const VDSCRIPTARGDESC g_aArgCompact[] =
     /* pcszName    chId enmType                          fFlags */
     {"disk",       'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
     {"image",      'i', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
+};
+
+/* Discard a part of a disk */
+const VDSCRIPTARGDESC g_aArgDiscard[] =
+{
+    /* pcszName    chId enmType                          fFlags */
+    {"disk",       'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"off",        'o', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"size",       's', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
 };
 
 /* Compact a disk */
@@ -503,6 +514,7 @@ const VDSCRIPTACTION g_aScriptActions[] =
     {"printfilesize",              g_aArgPrintFileSize,               RT_ELEMENTS(g_aArgPrintFileSize),              vdScriptHandlerPrintFileSize},
     {"merge",                      g_aArgMerge,                       RT_ELEMENTS(g_aArgMerge),                      vdScriptHandlerMerge},
     {"compact",                    g_aArgCompact,                     RT_ELEMENTS(g_aArgCompact),                    vdScriptHandlerCompact},
+    {"discard",                    g_aArgDiscard,                     RT_ELEMENTS(g_aArgDiscard),                    vdScriptHandlerDiscard},
     {"copy",                       g_aArgCopy,                        RT_ELEMENTS(g_aArgCopy),                       vdScriptHandlerCopy},
     {"iorngcreate",                g_aArgIoRngCreate,                 RT_ELEMENTS(g_aArgIoRngCreate),                vdScriptHandlerIoRngCreate},
     {"iorngdestroy",               NULL,                              0,                                             vdScriptHandlerIoRngDestroy},
@@ -653,6 +665,7 @@ static DECLCALLBACK(int) vdScriptHandlerOpen(PVDTESTGLOB pGlob, PVDSCRIPTARG paS
     bool fShareable = false;
     bool fReadonly = false;
     bool fAsyncIo  = true;
+    bool fDiscard  = false;
 
     for (unsigned i = 0; i < cScriptArgs; i++)
     {
@@ -688,6 +701,11 @@ static DECLCALLBACK(int) vdScriptHandlerOpen(PVDTESTGLOB pGlob, PVDSCRIPTARG paS
                 fAsyncIo = paScriptArgs[i].u.fFlag;
                 break;
             }
+            case 'i':
+            {
+                fDiscard = paScriptArgs[i].u.fFlag;
+                break;
+            }
             default:
                 AssertMsgFailed(("Invalid argument given!\n"));
         }
@@ -709,6 +727,8 @@ static DECLCALLBACK(int) vdScriptHandlerOpen(PVDTESTGLOB pGlob, PVDSCRIPTARG paS
                 fOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
             if (fReadonly)
                 fOpenFlags |= VD_OPEN_FLAGS_READONLY;
+            if (fDiscard)
+                fOpenFlags |= VD_OPEN_FLAGS_DISCARD;
 
             rc = VDOpen(pDisk->pVD, pcszBackend, pcszImage, fOpenFlags, pGlob->pInterfacesImages);
         }
@@ -1221,6 +1241,79 @@ static DECLCALLBACK(int) vdScriptHandlerCompact(PVDTESTGLOB pGlob, PVDSCRIPTARG 
              * doesn't corrupt the data.
              */
             rc = VDCompact(pDisk->pVD, nImage, NULL);
+        }
+    }
+
+    return rc;
+}
+
+static DECLCALLBACK(int) vdScriptHandlerDiscard(PVDTESTGLOB pGlob, PVDSCRIPTARG paScriptArgs, unsigned cScriptArgs)
+{
+    int rc = VINF_SUCCESS;
+    const char *pcszDisk = NULL;
+    PVDDISK pDisk = NULL;
+    uint64_t off;
+    size_t cbDiscard;
+
+    for (unsigned i = 0; i < cScriptArgs; i++)
+    {
+        switch (paScriptArgs[i].chId)
+        {
+            case 'd':
+            {
+                pcszDisk = paScriptArgs[i].u.pcszString;
+                break;
+            }
+            case 'o':
+            {
+                off = paScriptArgs[i].u.u64;
+                break;
+            }
+            case 's':
+            {
+                cbDiscard = paScriptArgs[i].u.u64;
+                break;
+            }
+
+            default:
+                AssertMsgFailed(("Invalid argument given!\n"));
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
+        if (!pDisk)
+            rc = VERR_NOT_FOUND;
+        else
+        {
+            VDRANGE Range;
+
+            Range.offStart = off;
+            Range.cbRange = cbDiscard;
+
+            rc = VDDiscardRanges(pDisk->pVD, &Range, 1);
+            if (   RT_SUCCESS(rc)
+                && pDisk->pMemDiskVerify)
+            {
+                void *pv = RTMemAllocZ(cbDiscard);
+                if (pv)
+                {
+                    RTSGSEG SgSeg;
+                    RTSGBUF SgBuf;
+
+                    SgSeg.pvSeg = pv;
+                    SgSeg.cbSeg = cbDiscard;
+                    RTSgBufInit(&SgBuf, &SgSeg, 1);
+                    rc = VDMemDiskWrite(pDisk->pMemDiskVerify, off, cbDiscard, &SgBuf);
+                    RTMemFree(pv);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
         }
     }
 
