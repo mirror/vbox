@@ -307,6 +307,9 @@ AssertCompileSize(VBoxGuestChangeBalloonInfo, 16);
 /** IOCTL to VBoxGuest to write guest core. */
 #define VBOXGUEST_IOCTL_WRITE_CORE_DUMP             VBOXGUEST_IOCTL_CODE(9, sizeof(VBoxGuestWriteCoreDump))
 
+/** IOCTL to VBoxGuest to update the mouse status features. */
+# define VBOXGUEST_IOCTL_SET_MOUSE_STATUS         VBOXGUEST_IOCTL_CODE_(10, sizeof(uint32_t))
+
 /** Input and output buffer layout of the VBOXGUEST_IOCTL_WRITE_CORE
  *  request. */
 typedef struct VBoxGuestWriteCoreDump
@@ -350,8 +353,6 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 /** IOCTL to VBoxGuest to make a connect to the clipboard service.
  * @todo Seems this is no longer is use. Try remove it. */
 # define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT        VBOXGUEST_IOCTL_CODE_(19, sizeof(uint32_t))
-/** IOCTL to VBoxGuest to update the mouse status features. */
-# define VBOXGUEST_IOCTL_SET_MOUSE_STATUS         VBOXGUEST_IOCTL_CODE_(21, sizeof(uint32_t))
 
 #endif /* VBOX_WITH_HGCM */
 
