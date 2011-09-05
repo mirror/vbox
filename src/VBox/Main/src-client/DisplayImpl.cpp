@@ -2192,7 +2192,8 @@ int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_
 {
     int rc;
     pDisplay->vbvaLock();
-    if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    if (   aScreenId == VBOX_VIDEO_PRIMARY_SCREEN
+        && pDisplay->maFramebuffers[aScreenId].fVBVAEnabled == false) /* A non-VBVA mode. */
     {
         rc = pDisplay->mpDrv->pUpPort->pfnTakeScreenshot(pDisplay->mpDrv->pUpPort, ppu8Data, pcbData, pu32Width, pu32Height);
     }
