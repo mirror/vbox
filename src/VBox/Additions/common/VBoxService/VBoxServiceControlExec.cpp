@@ -611,6 +611,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                                                         cbOffset, &cbRead, &cbLeft))
                    && cbRead)
             {
+                VBoxServiceVerbose(5, "[%u]: %s\n", pData->uPID, szBuf);
                 cbOffset += cbRead;
                 if (!cbLeft)
                     break;
