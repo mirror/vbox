@@ -607,7 +607,8 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
     int rc = RTPathAbs(pszDir, szPathAbs, sizeof(szPathAbs));
     if (RT_FAILURE(rc))
     {
-        RTMsgError("Failed to retrieve absolute path of '%s', rc=%Rrc\n", pszDir, rc);
+        if (!(uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+            RTMsgError("Failed to retrieve absolute path of '%s', rc=%Rrc\n", pszDir, rc);
         return rc;
     }
 
@@ -615,7 +616,8 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
     rc = RTDirOpen(&pDir, szPathAbs);
     if (RT_FAILURE(rc))
     {
-        RTMsgError("Failed to open directory '%s', rc=%Rrc\n", szPathAbs, rc);
+        if (!(uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+            RTMsgError("Failed to open directory '%s', rc=%Rrc\n", szPathAbs, rc);
         return rc;
     }
 
@@ -649,8 +651,9 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
     int rc2 = RTDirClose(pDir);
     if (RT_FAILURE(rc2))
     {
-        RTMsgError("Failed to close dir '%s', rc=%Rrc\n",
-                   pszDir, rc2);
+        if (!(uOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+            RTMsgError("Failed to close dir '%s', rc=%Rrc\n",
+                       pszDir, rc2);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -837,8 +840,9 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
                                             RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /* @todo Follow link? */);
                 if (RT_FAILURE(rc2))
                 {
-                    RTMsgError("Cannot access '%s': No such file or directory\n",
-                               pNodeIt->pszName);
+                    if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+                        RTMsgError("Cannot access '%s': No such file or directory\n",
+                                   pNodeIt->pszName);
                     rc = VERR_FILE_NOT_FOUND;
                     /* Do not break here -- process every element in the list
                      * and keep failing rc. */
@@ -1069,8 +1073,9 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
                                         RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /* @todo Follow link? */);
             if (RT_FAILURE(rc2))
             {
-                RTMsgError("Cannot stat for '%s': No such file or directory\n",
-                           pNodeIt->pszName);
+                if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
+                    RTMsgError("Cannot stat for '%s': No such file or directory\n",
+                               pNodeIt->pszName);
                 rc = VERR_FILE_NOT_FOUND;
                 /* Do not break here -- process every element in the list
                  * and keep failing rc. */
