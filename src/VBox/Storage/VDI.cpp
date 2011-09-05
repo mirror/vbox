@@ -722,7 +722,7 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
             unsigned cBlocksAllocated = getImageBlocksAllocated(&pImage->Header);
             unsigned cBlocks = getImageBlocks(&pImage->Header);
 
-            for (unsigned i = 0; i < cBlocksAllocated; i++)
+            for (unsigned i = 0; i < cBlocks; i++)
                 pImage->paBlocksRev[i] = VDI_IMAGE_BLOCK_FREE;
 
             for (unsigned i = 0; i < cBlocks; i++)
@@ -2616,6 +2616,7 @@ static DECLCALLBACK(int) vdiDiscard(void *pBackendData,
                 uint64_t cbImage;
                 unsigned idxLastBlock = getImageBlocksAllocated(&pImage->Header) - 1;
                 unsigned uBlockLast = pImage->paBlocksRev[idxLastBlock];
+                VDIIMAGEBLOCKPOINTER ptrBlockDiscard = pImage->paBlocks[uBlock];
 
                 pImage->paBlocksRev[idxLastBlock] = VDI_IMAGE_BLOCK_FREE;
 
@@ -2623,8 +2624,11 @@ static DECLCALLBACK(int) vdiDiscard(void *pBackendData,
                  * The block is empty, remove it.
                  * Read the last block of the image first.
                  */
-                if (idxLastBlock != pImage->paBlocks[uBlock])
+                if (idxLastBlock != ptrBlockDiscard)
                 {
+                    LogFlowFunc(("Moving block [%u]=%u into [%u]=%u\n",
+                                 uBlockLast, idxLastBlock, uBlock, pImage->paBlocks[uBlock]));
+
                     u64Offset = (uint64_t)idxLastBlock * pImage->cbTotalBlockData + pImage->offStartData;
                     rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, u64Offset,
                                                pvBlock, pImage->cbTotalBlockData, NULL);
@@ -2632,18 +2636,21 @@ static DECLCALLBACK(int) vdiDiscard(void *pBackendData,
                         break;
 
                     /* Write to the now unallocated block. */
-                    u64Offset = (uint64_t)pImage->paBlocks[uBlock] * pImage->cbTotalBlockData + pImage->offStartData;
+                    u64Offset = (uint64_t)ptrBlockDiscard * pImage->cbTotalBlockData + pImage->offStartData;
                     rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, u64Offset,
                                                 pvBlock, pImage->cbTotalBlockData, NULL);
                     if (RT_FAILURE(rc))
                         break;
 
                     /* Update block and reverse block tables. */
-                    pImage->paBlocks[uBlockLast] = pImage->paBlocks[uBlock];
+                    pImage->paBlocks[uBlockLast] = ptrBlockDiscard;
+                    pImage->paBlocksRev[ptrBlockDiscard] = uBlockLast;
                     rc = vdiUpdateBlockInfo(pImage, uBlockLast);
                     if (RT_FAILURE(rc))
                         break;
                 }
+                else
+                    LogFlowFunc(("Discard last block [%u]=%u\n", uBlock, pImage->paBlocks[uBlock]));
 
                 pImage->paBlocks[uBlock] = VDI_IMAGE_BLOCK_ZERO;
 
@@ -2658,6 +2665,7 @@ static DECLCALLBACK(int) vdiDiscard(void *pBackendData,
                 if (RT_FAILURE(rc))
                     break;
 
+                LogFlowFunc(("Set new size %llu\n", cbImage - pImage->cbTotalBlockData));
                 rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, cbImage - pImage->cbTotalBlockData);
             }
             else /* if (fDiscard & VD_DISCARD_MARK_UNUSED) */
