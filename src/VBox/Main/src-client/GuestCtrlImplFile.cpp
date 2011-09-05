@@ -86,7 +86,7 @@ HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPas
                 break;
 
             case VERR_NOT_FOUND:
-                rc = setError(VBOX_E_IPRT_ERROR,
+                hr = setError(VBOX_E_IPRT_ERROR,
                               Guest::tr("Unable to query file existence"));
                 break;
 
