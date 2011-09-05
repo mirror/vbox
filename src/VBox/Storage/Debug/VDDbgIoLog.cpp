@@ -62,17 +62,31 @@ typedef struct IoLogHeader
 typedef struct IoLogEntryStart
 {
     /** Event type. */
-    uint8_t     u8Type;
+    uint32_t    u32Type;
+    /** Transfer type. */
+    uint32_t    u32ReqType;
     /** Flag whether this is a sync or async request. */
     uint8_t     u8AsyncIo;
     /** Id of the entry. */
     uint64_t    u64Id;
-    /** Transfer direction. */
-    uint8_t     u8TxDir;
-    /** Start offset. */
-    uint64_t    u64Off;
-    /** Size of the request. */
-    uint64_t    u64IoSize;
+    /** Type dependent data. */
+    union
+    {
+        /** I/O. */
+        struct
+        {
+            /** Start offset. */
+            uint64_t    u64Off;
+            /** Size of the request. */
+            uint64_t    u64IoSize;
+        } Io;
+        /** Discard */
+        struct
+        {
+            /** Number of ranges to discard. */
+            uint32_t    cRanges;
+        } Discard;
+    };
 } IoLogEntryStart;
 #pragma pack()
 
@@ -83,7 +97,7 @@ typedef struct IoLogEntryStart
 typedef struct IoLogEntryComplete
 {
     /** Event type. */
-    uint8_t     u8Type;
+    uint8_t     u32Type;
     /** Id of the matching start entry. */
     uint64_t    u64Id;
     /** Status code the request completed with */
@@ -93,6 +107,16 @@ typedef struct IoLogEntryComplete
     /** Number of bytes of data following this entry. */
     uint64_t    u64IoBuffer;
 } IoLogEntryComplete;
+#pragma pack()
+
+#pragma pack(1)
+typedef struct IoLogEntryDiscard
+{
+    /** Start offset. */
+    uint64_t    u64Off;
+    /** Number of bytes to discard. */
+    uint32_t    u32Discard;
+} IoLogEntryDiscard;
 #pragma pack()
 
 /*******************************************************************************
@@ -119,7 +143,9 @@ typedef struct VDIOLOGGERINT
     /** Mutex section protecting the logger. */
     RTSEMFASTMUTEX hMtx;
     /** Cached event type of the next event. */
-    uint8_t        u8EventTypeNext;
+    uint32_t       u32EventTypeNext;
+    /** Cached request type of the next request. */
+    VDDBGIOLOGREQ  enmReqTypeNext;
 } VDIOLOGGERINT;
 /** Pointer to the internal I/O logger instance data. */
 typedef VDIOLOGGERINT *PVDIOLOGGERINT;
@@ -347,7 +373,7 @@ VBOXDDU_DECL(uint32_t) VDDbgIoLogGetFlags(VDIOLOGGER hIoLogger)
     return pIoLogger->fFlags;
 }
 
-VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGTXDIR enmTxDir, uint64_t off, size_t cbIo, PCRTSGBUF pSgBuf,
+VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGREQ enmTxDir, uint64_t off, size_t cbIo, PCRTSGBUF pSgBuf,
                                   PVDIOLOGENT phIoLogEntry)
 {
     int rc = VINF_SUCCESS;
@@ -356,7 +382,7 @@ VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGT
 
     AssertPtrReturn(pIoLogger, VERR_INVALID_HANDLE);
     AssertPtrReturn(phIoLogEntry, VERR_INVALID_POINTER);
-    AssertReturn(enmTxDir > VDDBGIOLOGTXDIR_INVALID && enmTxDir <= VDDBGIOLOGTXDIR_FLUSH, VERR_INVALID_PARAMETER);
+    AssertReturn(enmTxDir > VDDBGIOLOGREQ_INVALID && enmTxDir <= VDDBGIOLOGREQ_FLUSH, VERR_INVALID_PARAMETER);
 
     rc = RTSemFastMutexRequest(pIoLogger->hMtx);
     AssertRCReturn(rc, rc);
@@ -368,12 +394,12 @@ VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGT
 
         pIoLogEntry->idStart = pIoLogger->idNext++;
 
-        Entry.u8Type    = VDIOLOG_EVENT_START;
-        Entry.u8AsyncIo = fAsync ? 1 : 0;
-        Entry.u8TxDir   = (uint8_t)enmTxDir;
-        Entry.u64Off    = RT_H2LE_U64(off);
-        Entry.u64IoSize = RT_H2LE_U64(cbIo);
-        Entry.u64Id     = RT_H2LE_U64(pIoLogEntry->idStart);
+        Entry.u32Type       = VDIOLOG_EVENT_START;
+        Entry.u8AsyncIo    = fAsync ? 1 : 0;
+        Entry.u32ReqType   = enmTxDir;
+        Entry.u64Id        = RT_H2LE_U64(pIoLogEntry->idStart);
+        Entry.Io.u64Off    = RT_H2LE_U64(off);
+        Entry.Io.u64IoSize = RT_H2LE_U64(cbIo);
 
         /* Write new entry. */
         rc = RTFileWriteAt(pIoLogger->hFile, pIoLogger->offWriteNext, &Entry, sizeof(Entry), NULL);
@@ -381,7 +407,7 @@ VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGT
         {
             pIoLogger->offWriteNext += sizeof(Entry);
 
-            if (   enmTxDir == VDDBGIOLOGTXDIR_WRITE
+            if (   enmTxDir == VDDBGIOLOGREQ_WRITE
                 && (pIoLogger->fFlags & VDDBG_IOLOG_LOG_DATA_WRITTEN))
             {
                 /* Write data. */
@@ -400,11 +426,83 @@ VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGT
         {
             pIoLogEntry->tsStart = RTTimeProgramMilliTS();
 
-            if (   enmTxDir == VDDBGIOLOGTXDIR_READ
+            if (   enmTxDir == VDDBGIOLOGREQ_READ
                 && (pIoLogger->fFlags & VDDBG_IOLOG_LOG_DATA_READ))
                 pIoLogEntry->cbIo = cbIo;
             else
                 pIoLogEntry->cbIo = 0;
+
+            *phIoLogEntry = pIoLogEntry;
+        }
+        else
+        {
+            pIoLogger->idNext--;
+            RTMemCacheFree(pIoLogger->hMemCacheIoLogEntries, pIoLogEntry);
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    RTSemFastMutexRelease(pIoLogger->hMtx);
+    return rc;
+}
+
+VBOXDDU_DECL(int) VDDbgIoLogStartDiscard(VDIOLOGGER hIoLogger, bool fAsync, PVDRANGE paRanges, unsigned cRanges,
+                                         PVDIOLOGENT phIoLogEntry)
+{
+    int rc = VINF_SUCCESS;
+    PVDIOLOGGERINT pIoLogger = hIoLogger;
+    PVDIOLOGENTINT pIoLogEntry = NULL;
+
+    AssertPtrReturn(pIoLogger, VERR_INVALID_HANDLE);
+    AssertPtrReturn(phIoLogEntry, VERR_INVALID_POINTER);
+
+    rc = RTSemFastMutexRequest(pIoLogger->hMtx);
+    AssertRCReturn(rc, rc);
+
+    pIoLogEntry = (PVDIOLOGENTINT)RTMemCacheAlloc(pIoLogger->hMemCacheIoLogEntries);
+    if (pIoLogEntry)
+    {
+        IoLogEntryStart Entry;
+
+        pIoLogEntry->idStart = pIoLogger->idNext++;
+
+        Entry.u32Type          = VDIOLOG_EVENT_START;
+        Entry.u8AsyncIo       = fAsync ? 1 : 0;
+        Entry.u32ReqType      = VDDBGIOLOGREQ_DISCARD;
+        Entry.Discard.cRanges = RT_H2LE_U32(cRanges);
+
+        /* Write new entry. */
+        rc = RTFileWriteAt(pIoLogger->hFile, pIoLogger->offWriteNext, &Entry, sizeof(Entry), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            pIoLogger->offWriteNext += sizeof(Entry);
+
+            IoLogEntryDiscard DiscardRange;
+
+            for (unsigned i = 0; i < cRanges; i++)
+            {
+                DiscardRange.u64Off = RT_H2LE_U64(paRanges[i].offStart);
+                DiscardRange.u32Discard = RT_H2LE_U32(paRanges[i].cbRange);
+                rc = RTFileWriteAt(pIoLogger->hFile, pIoLogger->offWriteNext + i*sizeof(DiscardRange),
+                                   &DiscardRange, sizeof(DiscardRange), NULL);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                pIoLogger->offWriteNext -= sizeof(Entry);
+                rc = RTFileSetSize(pIoLogger->hFile, pIoLogger->offWriteNext);
+            }
+            else
+                pIoLogger->offWriteNext += cRanges * sizeof(DiscardRange);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            pIoLogEntry->tsStart = RTTimeProgramMilliTS();
+            pIoLogEntry->cbIo = 0;
 
             *phIoLogEntry = pIoLogEntry;
         }
@@ -435,7 +533,7 @@ VBOXDDU_DECL(int) VDDbgIoLogComplete(VDIOLOGGER hIoLogger, VDIOLOGENT hIoLogEntr
 
     IoLogEntryComplete Entry;
 
-    Entry.u8Type      = VDIOLOG_EVENT_COMPLETE;
+    Entry.u32Type     = VDIOLOG_EVENT_COMPLETE;
     Entry.u64Id       = RT_H2LE_U64(pIoLogEntry->idStart);
     Entry.msDuration  = RTTimeProgramMilliTS() - RT_H2LE_U64(pIoLogEntry->tsStart);
     Entry.i32Rc       = (int32_t)RT_H2LE_U32((uint32_t)rcReq);
@@ -483,14 +581,22 @@ VBOXDDU_DECL(int) VDDbgIoLogEventTypeGetNext(VDIOLOGGER hIoLogger, VDIOLOGEVENT 
         return VINF_SUCCESS;
     }
 
-    if (!pIoLogger->u8EventTypeNext)
-        rc = RTFileReadAt(pIoLogger->hFile, pIoLogger->offReadNext, &pIoLogger->u8EventTypeNext, sizeof(uint8_t), NULL);
+    if (!pIoLogger->u32EventTypeNext)
+    {
+        uint32_t abBuf[2];
+        rc = RTFileReadAt(pIoLogger->hFile, pIoLogger->offReadNext, &abBuf, sizeof(abBuf), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            pIoLogger->u32EventTypeNext = (VDIOLOGEVENT)abBuf[0];
+            pIoLogger->enmReqTypeNext   = (VDDBGIOLOGREQ)abBuf[1];
+        }
+    }
 
     if (RT_SUCCESS(rc))
     {
-        Assert(pIoLogger->u8EventTypeNext != 0);
+        Assert(pIoLogger->u32EventTypeNext != VDIOLOGEVENT_INVALID);
 
-        switch (pIoLogger->u8EventTypeNext)
+        switch (pIoLogger->u32EventTypeNext)
         {
             case VDIOLOG_EVENT_START:
                 *penmEvent = VDIOLOGEVENT_START;
@@ -499,7 +605,7 @@ VBOXDDU_DECL(int) VDDbgIoLogEventTypeGetNext(VDIOLOGGER hIoLogger, VDIOLOGEVENT 
                 *penmEvent = VDIOLOGEVENT_COMPLETE;
                 break;
             default:
-                AssertMsgFailed(("Invalid event type %d\n", pIoLogger->u8EventTypeNext));
+                AssertMsgFailed(("Invalid event type %d\n", pIoLogger->u32EventTypeNext));
         }
     }
 
@@ -507,7 +613,35 @@ VBOXDDU_DECL(int) VDDbgIoLogEventTypeGetNext(VDIOLOGGER hIoLogger, VDIOLOGEVENT 
     return rc;
 }
 
-VBOXDDU_DECL(int) VDDbgIoLogEventGetStart(VDIOLOGGER hIoLogger, uint64_t *pidEvent, bool *pfAsync, PVDDBGIOLOGTXDIR penmTxDir,
+VBOXDDU_DECL(int) VDDbgIoLogReqTypeGetNext(VDIOLOGGER hIoLogger, PVDDBGIOLOGREQ penmReq)
+{
+    int rc = VINF_SUCCESS;
+    PVDIOLOGGERINT pIoLogger = hIoLogger;
+
+    AssertPtrReturn(pIoLogger, VERR_INVALID_HANDLE);
+    AssertPtrReturn(penmReq, VERR_INVALID_POINTER);
+
+    rc = RTSemFastMutexRequest(pIoLogger->hMtx);
+    AssertRCReturn(rc, rc);
+
+    if (pIoLogger->offReadNext == pIoLogger->offWriteNext)
+    {
+        *penmReq = VDDBGIOLOGREQ_INVALID;
+        RTSemFastMutexRelease(pIoLogger->hMtx);
+        return VERR_INVALID_STATE;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pIoLogger->enmReqTypeNext != VDDBGIOLOGREQ_INVALID);
+        *penmReq = pIoLogger->enmReqTypeNext;
+    }
+
+    RTSemFastMutexRelease(pIoLogger->hMtx);
+    return rc;
+}
+
+VBOXDDU_DECL(int) VDDbgIoLogEventGetStart(VDIOLOGGER hIoLogger, uint64_t *pidEvent, bool *pfAsync,
                                           uint64_t *poff, size_t *pcbIo, size_t cbBuf, void *pvBuf)
 {
     int rc = VINF_SUCCESS;
@@ -516,26 +650,24 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetStart(VDIOLOGGER hIoLogger, uint64_t *pidEve
     AssertPtrReturn(pIoLogger, VERR_INVALID_HANDLE);
     AssertPtrReturn(pidEvent, VERR_INVALID_POINTER);
     AssertPtrReturn(pfAsync, VERR_INVALID_POINTER);
-    AssertPtrReturn(penmTxDir, VERR_INVALID_POINTER);
     AssertPtrReturn(poff, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbIo, VERR_INVALID_POINTER);
 
     rc = RTSemFastMutexRequest(pIoLogger->hMtx);
     AssertRCReturn(rc, rc);
 
-    if (pIoLogger->u8EventTypeNext == VDIOLOG_EVENT_START)
+    if (pIoLogger->u32EventTypeNext == VDIOLOG_EVENT_START)
     {
         IoLogEntryStart Entry;
         rc = RTFileReadAt(pIoLogger->hFile, pIoLogger->offReadNext, &Entry, sizeof(Entry), NULL);
         if (RT_SUCCESS(rc))
         {
-            *penmTxDir = (VDDBGIOLOGTXDIR)Entry.u8TxDir;
             *pfAsync   = (bool)Entry.u8AsyncIo;
             *pidEvent  = RT_LE2H_U64(Entry.u64Id);
-            *poff      = RT_LE2H_U64(Entry.u64Off);
-            *pcbIo     = RT_LE2H_U64(Entry.u64IoSize);
+            *poff      = RT_LE2H_U64(Entry.Io.u64Off);
+            *pcbIo     = RT_LE2H_U64(Entry.Io.u64IoSize);
 
-            if (   *penmTxDir == VDDBGIOLOGTXDIR_WRITE
+            if (   pIoLogger->enmReqTypeNext == VDDBGIOLOGREQ_WRITE
                 && (pIoLogger->fFlags & VDDBG_IOLOG_LOG_DATA_WRITTEN))
             {
                 /* Read data. */
@@ -558,6 +690,68 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetStart(VDIOLOGGER hIoLogger, uint64_t *pidEve
     return rc;
 }
 
+VBOXDDU_DECL(int) VDDbgIoLogEventGetStartDiscard(VDIOLOGGER hIoLogger, uint64_t *pidEvent, bool *pfAsync,
+                                                 PVDRANGE *ppaRanges, unsigned *pcRanges)
+{
+    int rc = VINF_SUCCESS;
+    PVDIOLOGGERINT pIoLogger = hIoLogger;
+
+    AssertPtrReturn(pIoLogger, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pidEvent, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfAsync, VERR_INVALID_POINTER);
+
+    rc = RTSemFastMutexRequest(pIoLogger->hMtx);
+    AssertRCReturn(rc, rc);
+
+    if (   pIoLogger->u32EventTypeNext == VDIOLOG_EVENT_START
+        && pIoLogger->enmReqTypeNext == VDDBGIOLOGREQ_DISCARD)
+    {
+        IoLogEntryStart Entry;
+        rc = RTFileReadAt(pIoLogger->hFile, pIoLogger->offReadNext, &Entry, sizeof(Entry), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            PVDRANGE paRanges = NULL;
+            IoLogEntryDiscard DiscardRange;
+
+            pIoLogger->offReadNext += sizeof(Entry);
+            *pfAsync   = (bool)Entry.u8AsyncIo;
+            *pidEvent  = RT_LE2H_U64(Entry.u64Id);
+            *pcRanges  = RT_LE2H_U32(Entry.Discard.cRanges);
+
+            paRanges = (PVDRANGE)RTMemAllocZ(*pcRanges * sizeof(VDRANGE));
+            if (paRanges)
+            {
+                for (unsigned i = 0; i < *pcRanges; i++)
+                {
+                    rc = RTFileReadAt(pIoLogger->hFile, pIoLogger->offReadNext + i*sizeof(DiscardRange),
+                                      &DiscardRange, sizeof(DiscardRange), NULL);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    paRanges[i].offStart = RT_LE2H_U64(DiscardRange.u64Off);
+                    paRanges[i].cbRange  = RT_LE2H_U32(DiscardRange.u32Discard);
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    pIoLogger->offReadNext += *pcRanges * sizeof(DiscardRange);
+                    *ppaRanges = paRanges;
+                }
+                else
+                    pIoLogger->offReadNext -= sizeof(Entry);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    }
+    else
+        rc = VERR_INVALID_STATE;
+
+    RTSemFastMutexRelease(pIoLogger->hMtx);
+    return rc;
+
+}
+
 VBOXDDU_DECL(int) VDDbgIoLogEventGetComplete(VDIOLOGGER hIoLogger, uint64_t *pidEvent, int *pRc,
                                              uint64_t *pmsDuration, size_t *pcbIo, size_t cbBuf, void *pvBuf)
 {
@@ -572,7 +766,7 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetComplete(VDIOLOGGER hIoLogger, uint64_t *pid
     rc = RTSemFastMutexRequest(pIoLogger->hMtx);
     AssertRCReturn(rc, rc);
 
-    if (pIoLogger->u8EventTypeNext == VDIOLOG_EVENT_COMPLETE)
+    if (pIoLogger->u32EventTypeNext == VDIOLOG_EVENT_COMPLETE)
     {
         IoLogEntryComplete Entry;
         rc = RTFileReadAt(pIoLogger->hFile, pIoLogger->offReadNext, &Entry, sizeof(Entry), NULL);
