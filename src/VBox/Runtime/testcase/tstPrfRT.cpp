@@ -100,7 +100,7 @@ int main()
     uint64_t    u64MaxTS;
     unsigned    i;
 
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     RTPrintf("tstPrfRT: TESTING...\n");
 
     /*

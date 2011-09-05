@@ -857,11 +857,10 @@ EXPORTS
     RTProcTerminate
     RTProcWait
     RTProcWaitNoResume
-    RTR3Init
-    RTR3InitAndSUPLib
-    RTR3InitAndSUPLibWithProgramPath
+    RTR3InitDll
+    RTR3InitExe
+    RTR3InitExeNoArguments
     RTR3InitEx
-    RTR3InitWithProgramPath
     RTRandAdvBytes
     RTRandAdvCreateParkMiller
     RTRandAdvCreateSystemFaster

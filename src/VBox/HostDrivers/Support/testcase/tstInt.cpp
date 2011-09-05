@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     /*
      * Init.
      */
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     PSUPDRVSESSION pSession;
     rc = SUPR3Init(&pSession);
     rcRet += rc != 0;

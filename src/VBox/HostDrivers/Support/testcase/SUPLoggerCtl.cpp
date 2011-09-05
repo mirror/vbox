@@ -57,7 +57,7 @@ static int usage(void)
 
 int main(int argc, char **argv)
 {
-    RTR3InitAndSUPLib();
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
 
     /*
      * Options are mandatory.

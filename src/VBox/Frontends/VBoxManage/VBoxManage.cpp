@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
      * Before we do anything, init the runtime without loading
      * the support driver.
      */
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     /*
      * Parse the global options
@@ -328,24 +328,6 @@ int main(int argc, char *argv[])
     HRESULT hrc = com::Initialize();
     if (FAILED(hrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM!");
-
-    /*
-     * The input is ASSUMED to be in the current process codeset (NT guarantees
-     * ACP, unixy systems doesn't guarantee anything).  This loop converts all
-     * the argv[*] strings to UTF-8, which is a tad ugly but who cares.
-     * (As a rule all strings in VirtualBox are UTF-8.)
-     */
-    for (int i = iCmdArg; i < argc; i++)
-    {
-        char *pszConverted;
-        int rc = RTStrCurrentCPToUtf8(&pszConverted, argv[i]);
-        if (RT_SUCCESS(rc))
-            argv[i] = pszConverted;
-        else
-            /* Conversion was not possible,probably due to invalid characters.
-             * Keep in mind that we do RTStrFree on the whole array below. */
-            argv[i] = RTStrDup(argv[i]);
-    }
 
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
     do
@@ -498,15 +480,6 @@ int main(int argc, char *argv[])
     } while (0);
 
     com::Shutdown();
-
-    /*
-     * Free converted argument vector
-     */
-    for (int i = iCmdArg; i < argc; i++)
-    {
-        RTStrFree(argv[i]);
-        argv[i] = NULL;
-    }
 
     return rcExit;
 #else  /* VBOX_ONLY_DOCS */

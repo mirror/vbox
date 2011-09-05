@@ -567,11 +567,7 @@ int main (int argc, char **argv, char **envp)
         }
     }
 
-    int rc;
-    if (!fInitSUPLib)
-        rc = RTR3Init();
-    else
-        rc = RTR3InitAndSUPLib();
+    int rc = RTR3InitExe(argc, &argv, fInitSUPLib ? RTR3INIT_FLAGS_SUPLIB : 0);
     if (RT_FAILURE(rc))
     {
         QApplication a (argc, &argv[0]);

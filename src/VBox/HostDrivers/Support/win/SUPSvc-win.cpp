@@ -774,10 +774,10 @@ int main(int argc, char **argv)
     RTEnvSet("VBOX_LOG_DEST", "file=E:\\temp\\VBoxSupSvc.log");
     RTEnvSet("VBOX_LOG_FLAGS", "unbuffered thread msprog");
 #endif
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
     {
-        supSvcLogError("RTR3Init failed with rc=%Rrc", rc);
+        supSvcLogError("RTR3InitExe failed with rc=%Rrc", rc);
         return 1;
     }
 

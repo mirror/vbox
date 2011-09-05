@@ -1541,7 +1541,7 @@ int main(int argc, char **argv)
     /** Will we be executing a command or just printing information? */
     bool fOnlyInfo = false;
 
-    rrc = RTR3Init();
+    rrc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rrc))
         return RTMsgInitFailure(rrc);
 

@@ -79,7 +79,7 @@ RT_EXPORT_SYMBOL(RTTimeProgramMilliTS);
  */
 RTDECL(uint32_t)  RTTimeProgramSecTS(void)
 {
-    AssertMsg(g_u64ProgramStartMilliTS, ("RTR3Init hasn't been called!\n"));
+    AssertMsg(g_u64ProgramStartMilliTS, ("rtR3Init hasn't been called!\n"));
     return (uint32_t)(RTTimeProgramMilliTS() / 1000);
 }
 RT_EXPORT_SYMBOL(RTTimeProgramSecTS);

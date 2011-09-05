@@ -224,7 +224,7 @@ static void DisasFunction(const char *pszName, PFNRT pv)
 
 int main()
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitExeNoArguments(0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 

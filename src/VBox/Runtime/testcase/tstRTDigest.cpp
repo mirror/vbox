@@ -62,7 +62,7 @@ static int Error(const char *pszFormat, ...)
 
 int main(int argc, char **argv)
 {
-     RTR3Init();
+     RTR3InitExe(argc, &argv, 0);
 
      enum
      {

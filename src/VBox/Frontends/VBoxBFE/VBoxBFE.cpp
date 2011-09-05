@@ -913,9 +913,9 @@ int main(int argc, char **argv)
     /*
      * Before we do *anything*, we initialize the runtime.
      */
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
-        return FatalError("RTR3Init failed rc=%Rrc\n", rc);
+        return FatalError("RTR3InitExe failed rc=%Rrc\n", rc);
 
     return TrustedMain(argc, argv, NULL);
 }

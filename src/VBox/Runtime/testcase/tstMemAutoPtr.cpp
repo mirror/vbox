@@ -124,7 +124,7 @@ void *tstMemAutoPtrAllocatorNoZero(void *pvOld, size_t cbNew, const char *pszTag
 
 int main()
 {
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     RTPrintf("tstMemAutoPtr: TESTING...\n");
 
 #define CHECK_EXPR(expr) \

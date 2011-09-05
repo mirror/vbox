@@ -534,7 +534,7 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
 #if 0
 VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInit()
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitDll(0);
     if (rc != VINF_SUCCESS)
     {
         LogRel(("Could not init IPRT!, rc (%d)\n", rc));

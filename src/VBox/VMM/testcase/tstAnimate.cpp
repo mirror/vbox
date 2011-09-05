@@ -614,7 +614,7 @@ int main(int argc, char **argv)
 {
     int rcRet = 1;
     int rc;
-    RTR3InitAndSUPLib();
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
 
     /*
      * Parse input.

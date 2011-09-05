@@ -38,6 +38,7 @@
 #include <iprt/getopt.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
+#include <iprt/message.h>
 #include <iprt/req.h>
 #include <iprt/file.h>
 #include <iprt/semaphore.h>
@@ -560,12 +561,9 @@ static DECLCALLBACK(int) natUrgSndThread(RTTHREAD pThread, void *pvUser)
 
 int main(int argc, char **argv, char **envp)
 {
-    int rc = RTR3InitAndSUPLib();
+    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
     if (RT_FAILURE(rc))
-    {
-        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: RTR3InitAndSupLib failed, rc=%Rrc\n", rc);
-        return 1;
-    }
+        return RTMsgInitFailure(rc);
 
     return TrustedMain(argc, argv, envp);
 }

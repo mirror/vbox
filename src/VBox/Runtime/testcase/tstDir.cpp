@@ -34,7 +34,7 @@
 int main(int argc, char **argv)
 {
     int rcRet = 0;
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     /*
      * Iterate arguments.

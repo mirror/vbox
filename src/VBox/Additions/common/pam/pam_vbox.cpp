@@ -226,7 +226,7 @@ static int pam_vbox_init(pam_handle_t *hPAM)
      * This could result in not able to log into the system anymore. */
     RTAssertSetMayPanic(false);
 
-    int rc = RTR3Init();
+    int rc = RTR3InitDll(0);
     if (RT_FAILURE(rc))
     {
         pam_vbox_error(hPAM, "pam_vbox_init: could not init runtime! rc=%Rrc. Aborting\n", rc);

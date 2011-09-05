@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 {
     int     rcRet = 0;                  /* error count. */
 
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     RTPrintf("tstInstrEmul: TESTING...\n");
 
     uint32_t eax, edx, ebx, ecx, eflags;

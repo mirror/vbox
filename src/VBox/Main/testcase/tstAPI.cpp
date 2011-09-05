@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
      * Initialize the VBox runtime without loading
      * the support driver.
      */
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     HRESULT rc;
 

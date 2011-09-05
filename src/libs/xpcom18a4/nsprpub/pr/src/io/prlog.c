@@ -50,7 +50,7 @@
  */
 
 #if defined(VBOX) && defined(DEBUG)
-# include <iprt/initterm.h> /* for RTR3Init */
+# include <iprt/initterm.h> /* for RTR3InitDll */
 # include <iprt/log.h>
 #endif
 #ifdef VBOX_USE_IPRT_IN_NSPR
@@ -423,7 +423,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 #if defined(VBOX) && defined(DEBUG)
     if (strcmp(file, "IPRT") == 0) {
         /* initialize VBox Runtime */
-        RTR3Init();
+        RTR3InitDll(0);
         newLogFile = IPRT_DEBUG_FILE;
     }
     else
@@ -464,7 +464,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 #if defined(VBOX) && defined(DEBUG)
     if (strcmp(file, "IPRT") == 0) {
         /* initialize VBox Runtime */
-        RTR3Init();
+        RTR3InitDll(0);
         logFile = IPRT_DEBUG_FILE;
         return PR_TRUE;
     }

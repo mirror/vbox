@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 {
     int cErrors = 0;
 
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     RTPrintf("tstRTPRocIsRunningByName: TESTING...\n");
 
     /*

@@ -37,7 +37,7 @@
 int main(int argc, char **argv)
 {
     int rc;
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     rc = SUPR3Init(NULL);
     if (RT_SUCCESS(rc))
     {

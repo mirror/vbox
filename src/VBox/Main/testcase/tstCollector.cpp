@@ -147,10 +147,10 @@ int main(int argc, char *argv[])
      * Initialize the VBox runtime without loading
      * the support driver.
      */
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("tstCollector: RTR3Init() -> %d\n", rc);
+        RTPrintf("tstCollector: RTR3InitExe() -> %d\n", rc);
         return 1;
     }
     if (argc > 1 && !strcmp(argv[1], "-child"))

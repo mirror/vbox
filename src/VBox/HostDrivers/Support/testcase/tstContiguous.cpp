@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     int rc;
     int rcRet = 0;
 
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     rc = SUPR3Init(NULL);
     RTPrintf("tstContiguous: SUPR3Init -> rc=%Rrc\n", rc);
     rcRet += rc != 0;

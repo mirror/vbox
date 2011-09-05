@@ -29,6 +29,7 @@
 #include <iprt/critsect.h>
 #include <iprt/env.h>
 #include <iprt/initterm.h>
+#include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
 #include <iprt/stream.h>
@@ -158,7 +159,12 @@ void vboxClientUsage(const char *pcszFileName)
  */
 int main(int argc, char *argv[])
 {
-    int rcClipboard, rc;
+    /* Initialise our runtime before all else. */
+    int rc = RTR3InitExe(argc, &argv, 0);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+
+    int rcClipboard;
     const char *pszFileName = RTPathFilename(argv[0]);
     bool fDaemonise = true;
     /* Have any fatal errors occurred yet? */
@@ -169,22 +175,13 @@ int main(int argc, char *argv[])
     if (NULL == pszFileName)
         pszFileName = "VBoxClient";
 
-    /* Initialise our runtime before all else. */
-    rc = RTR3Init();
-    if (RT_FAILURE(rc))
-    {
-        /* Of course, this should never happen. */
-        RTPrintf("%s: Failed to initialise the run-time library, rc=%Rrc\n", pszFileName, rc);
-        exit(1);
-    }
-
     /* Initialise our global clean-up critical section */
     rc = RTCritSectInit(&g_critSect);
     if (RT_FAILURE(rc))
     {
         /* Of course, this should never happen. */
         RTPrintf("%s: Failed to initialise the global critical section, rc=%Rrc\n", pszFileName, rc);
-        exit(1);
+        return 1;
     }
 
     /* Parse our option(s) */
@@ -224,19 +221,19 @@ int main(int argc, char *argv[])
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pszFileName);
-            exit(0);
+            return 0;
         }
         else
         {
             RTPrintf("%s: unrecognized option `%s'\n", pszFileName, argv[i]);
             RTPrintf("Try `%s --help' for more information\n", pszFileName);
-            exit(1);
+            return 1;
         }
     }
     if (!fSuccess || !g_pService)
     {
         vboxClientUsage(pszFileName);
-        exit(1);
+        return 1;
     }
     /* Get the path for the pidfiles */
     rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));

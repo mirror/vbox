@@ -684,7 +684,7 @@ static unsigned smlsDoFixture(SMLSFIXTURE *pFixture, const char *pszDesc)
 
 int main( int argc, char **argv)
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     unsigned cErrs = 0;
     g_pszTestName = RTPathFilename(argv[0]);
 

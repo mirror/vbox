@@ -3972,7 +3972,7 @@ static int scmProcessSomething(const char *pszSomething, PSCMSETTINGS pSettingsS
 
 int main(int argc, char **argv)
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return 1;
 

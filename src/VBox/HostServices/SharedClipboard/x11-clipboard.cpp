@@ -508,7 +508,7 @@ int main()
 {
     VBOXCLIPBOARDCLIENTDATA client;
     unsigned cErrors = 0;
-    int rc = RTR3Init();
+    int rc = RTR3InitExeNoArguments(0);
     RTPrintf(TEST_NAME ": TESTING\n");
     AssertRCReturn(rc, 1);
     rc = vboxClipboardConnect(&client, false);

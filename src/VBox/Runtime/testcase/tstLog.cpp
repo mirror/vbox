@@ -35,7 +35,7 @@
 
 int main()
 {
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     printf("tstLog: Requires manual inspection of the log output!\n");
     RTLogPrintf("%%Rrc %d: %Rrc\n", VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER);
     RTLogPrintf("%%Rrs %d: %Rrs\n", VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER);

@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 {
     int rc = 0;
 
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     if(argc < 2)
     {

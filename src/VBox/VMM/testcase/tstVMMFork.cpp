@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
     /*
      * Initialize the runtime.
      */
-    RTR3InitAndSUPLib();
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
 
 #ifndef AUTO_TEST_ARGS
     if (argc < 2)

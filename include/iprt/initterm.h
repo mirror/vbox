@@ -40,41 +40,47 @@ RT_C_DECLS_BEGIN
  */
 
 #ifdef IN_RING3
+/** @name RTR3Init flags (RTR3INIT_XXX).
+ * @{ */
+/** Try initialize SUPLib. */
+#define RTR3INIT_FLAGS_SUPLIB       RT_BIT(0)
+/** Initializing IPRT from a DLL. */
+#define RTR3INIT_FLAGS_DLL          RT_BIT(1)
+/** @} */
+
+/** @name RTR3InitEx version
+ * @{ */
+/** Version 1. */
+#define RTR3INIT_VER_1              UINT32_C(1)
+/** The current version. */
+#define RTR3INIT_VER_CUR            RTR3INIT_VER_1
+/** @} */
+
 /**
  * Initializes the runtime library.
  *
  * @returns iprt status code.
+ * @param   fFlags          Flags, see RTR3INIT_XXX.
  */
-RTR3DECL(int) RTR3Init(void);
-
-
-/**
- * Initializes the runtime library and try initialize SUPLib too.
- *
- * @returns IPRT status code.
- *
- * @remarks Failure to initialize SUPLib is ignored.
- */
-RTR3DECL(int) RTR3InitAndSUPLib(void);
+RTR3DECL(int) RTR3InitExeNoArguments(uint32_t fFlags);
 
 /**
- * Initializes the runtime library passing it the program path.
+ * Initializes the runtime library.
  *
- * @returns IPRT status code.
- * @param   pszProgramPath      The path to the program file.
+ * @returns iprt status code.
+ * @param   cArgs           Pointer to the argument count.
+ * @param   ppapszArgs      Pointer to the argument vector pointer.
+ * @param   fFlags          Flags, see RTR3INIT_XXX.
  */
-RTR3DECL(int) RTR3InitWithProgramPath(const char *pszProgramPath);
+RTR3DECL(int) RTR3InitExe(int cArgs, char ***papszArgs, uint32_t fFlags);
 
 /**
- * Initializes the runtime library passing it the program path,
- * and try initialize SUPLib too (failures ignored).
+ * Initializes the runtime library.
  *
- * @returns IPRT status code.
- * @param   pszProgramPath      The path to the program file.
- *
- * @remarks Failure to initialize SUPLib is ignored.
+ * @returns iprt status code.
+ * @param   fFlags          Flags, see RTR3INIT_XXX.
  */
-RTR3DECL(int) RTR3InitAndSUPLibWithProgramPath(const char *pszProgramPath);
+RTR3DECL(int) RTR3InitDll(uint32_t fFlags);
 
 /**
  * Initializes the runtime library and possibly also SUPLib too.
@@ -83,10 +89,14 @@ RTR3DECL(int) RTR3InitAndSUPLibWithProgramPath(const char *pszProgramPath);
  *
  * @returns IPRT status code.
  * @param   iVersion        The interface version. Must be 0 atm.
- * @param   pszProgramPath  The program path. Pass NULL if we're to figure it out ourselves.
- * @param   fInitSUPLib     Whether to initialize the support library or not.
+ * @param   fFlags          Flags, see RTR3INIT_XXX.
+ * @param   cArgs           Pointer to the argument count.
+ * @param   ppapszArgs      Pointer to the argument vector pointer. NULL
+ *                          allowed if @a cArgs is 0.
+ * @param   pszProgramPath  The program path.  Pass NULL if we're to figure it
+ *                          out ourselves.
  */
-RTR3DECL(int) RTR3InitEx(uint32_t iVersion, const char *pszProgramPath, bool fInitSUPLib);
+RTR3DECL(int) RTR3InitEx(uint32_t iVersion, uint32_t fFlags, int cArgs, char ***papszArgs, const char *pszProgramPath);
 
 /**
  * Terminates the runtime library.

@@ -3196,7 +3196,7 @@ static const RTGETOPTDEF g_aOptions[] =
 
 int main(int argc, char *argv[])
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     int rc;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;

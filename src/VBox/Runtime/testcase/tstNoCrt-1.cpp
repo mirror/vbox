@@ -118,7 +118,7 @@ int main()
     /*
      * Prologue.
      */
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     RTPrintf("tstNoCrt-1: TESTING...\n");
 
     /*

@@ -118,7 +118,7 @@ static int tstVDCreateShareDelete(const char *pszBackend, const char *pszFilenam
 
 int main(int argc, char *argv[])
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     int rc;
 
     RTPrintf("tstVD: TESTING...\n");

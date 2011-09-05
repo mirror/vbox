@@ -102,7 +102,7 @@ static void stubCheckWindowState(WindowInfo *window, GLboolean bFlushOnChange)
 
         devMode.dmSize = sizeof(DEVMODE);
         EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &devMode);
-        
+
         if (devMode.dmPelsWidth!=window->dmPelsWidth || devMode.dmPelsHeight!=window->dmPelsHeight)
         {
             crDebug("Resolution changed(%d,%d), forcing window Pos/Size update", devMode.dmPelsWidth, devMode.dmPelsHeight);
@@ -326,7 +326,7 @@ static void stubSPUTearDown(void)
 #ifdef CR_NEWWINTRACK
     ASMAtomicWriteBool(&stub.bShutdownSyncThread, true);
 #endif
-  
+
     //delete all created contexts
     stubMakeCurrent( NULL, NULL);
     crHashtableWalk(stub.contextTable, hsWalkStubDestroyContexts, NULL);
@@ -408,7 +408,7 @@ static void stubSPUSafeTearDown(void)
 
             /*Same issue as on linux, RTThreadWait exits before system thread is terminated, which leads
              * to issues as our dll goes to be unloaded.
-             *@todo 
+             *@todo
              *We usually call this function from DllMain which seems to be holding some lock and thus we have to
              * kill thread via TerminateThread.
              */
@@ -652,7 +652,7 @@ LookupMothershipConfig(const char *procName)
         fgets(line, 999, f);
         line[crStrlen(line) - 1] = 0; /* remove trailing newline */
         if (crStrncmp(line, procName, procNameLen) == 0 &&
-            (line[procNameLen] == ' ' || line[procNameLen] == '\t')) 
+            (line[procNameLen] == ' ' || line[procNameLen] == '\t'))
         {
             crWarning("Using Chromium configuration for %s from %s",
                                 procName, configPath);
@@ -887,7 +887,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
 
         if (pWindow->hVisibleRegion!=INVALID_HANDLE_VALUE)
         {
-            CombineRgn(hNewRgn, pWindow->hVisibleRegion, hNewRgn, 
+            CombineRgn(hNewRgn, pWindow->hVisibleRegion, hNewRgn,
                        pRegions->pRegions->fFlags.bAddHiddenRects ? RGN_DIFF:RGN_OR);
 
             if (!EqualRgn(pWindow->hVisibleRegion, hNewRgn))
@@ -1104,12 +1104,12 @@ bool
 stubInit(void)
 {
     /* Here is where we contact the mothership to find out what we're supposed
-     * to  be doing.  Networking code in a DLL initializer.  I sure hope this 
-     * works :) 
-     * 
+     * to  be doing.  Networking code in a DLL initializer.  I sure hope this
+     * works :)
+     *
      * HOW can I pass the mothership address to this if I already know it?
      */
-    
+
     CRConnection *conn = NULL;
     char response[1024];
     char **spuchain;
@@ -1199,7 +1199,7 @@ stubInit(void)
 
     crSPUInitDispatchTable( &glim );
 
-    /* This is unlikely to change -- We still want to initialize our dispatch 
+    /* This is unlikely to change -- We still want to initialize our dispatch
      * table with the functions of the first SPU in the chain. */
     stubInitSPUDispatch( stub.spu );
 
@@ -1224,7 +1224,7 @@ raise(SIGINT);*/
     {
         int rc;
 
-        RTR3Init();
+        RTR3InitDll(0);
 
         if (!disable_sync)
         {
@@ -1257,11 +1257,11 @@ raise(SIGINT);*/
     return true;
 }
 
-/* Sigh -- we can't do initialization at load time, since Windows forbids 
+/* Sigh -- we can't do initialization at load time, since Windows forbids
  * the loading of other libraries from DLLMain. */
 
 #ifdef LINUX
-/* GCC crap 
+/* GCC crap
  *void (*stub_init_ptr)(void) __attribute__((section(".ctors"))) = __stubInit; */
 #endif
 
@@ -1274,7 +1274,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 {
     (void) lpvReserved;
 
-    switch (fdwReason) 
+    switch (fdwReason)
     {
     case DLL_PROCESS_ATTACH:
     {

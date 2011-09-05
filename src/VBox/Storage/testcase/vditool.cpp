@@ -378,7 +378,7 @@ int main(int argc, char **argv)
     putenv((char*)"VBOX_LOG_DEST=stdout");
     putenv((char*)"VBOX_LOG_FLAGS=");
 
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     RTPrintf("vditool -- for internal use only!\n"
              "Copyright (c) 2009 Oracle Corporation\n\n");
 

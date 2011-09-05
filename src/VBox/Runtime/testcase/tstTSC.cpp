@@ -405,7 +405,7 @@ static int tstTSCCalcFrequency(uint32_t cMsDuration)
 
 int main(int argc, char **argv)
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     /*
      * Parse arguments.

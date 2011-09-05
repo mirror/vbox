@@ -345,7 +345,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     }
 
     /* Init IPRT. */
-    int vrc = RTR3Init();
+    int vrc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(vrc))
         return vrc;
 

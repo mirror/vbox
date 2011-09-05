@@ -106,7 +106,7 @@ static PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_
  * Internally IPRT keeps track of threads by means of the RTTHREADINT structure.
  * All the RTTHREADINT structures are kept in a AVL tree which is protected by a
  * read/write lock for efficient access. A thread is inserted into the tree in
- * three places in the code. The main thread is 'adopted' by IPRT on RTR3Init()
+ * three places in the code. The main thread is 'adopted' by IPRT on rtR3Init()
  * by rtThreadAdopt(). When creating a new thread there the child and the parent
  * race inserting the thread, this is rtThreadMain() and RTThreadCreate.
  *
@@ -980,7 +980,7 @@ RT_EXPORT_SYMBOL(RTThreadSetName);
  *
  * @param   hThread     The thread handle.
  *
- * @remarks This function may not return the correct value when RTR3Init was
+ * @remarks This function may not return the correct value when rtR3Init was
  *          called on a thread of the than the main one.  This could for
  *          instance happen when the DLL/DYLIB/SO containing IPRT is dynamically
  *          loaded at run time by a different thread.

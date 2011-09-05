@@ -29,7 +29,7 @@ VBoxCredProv::VBoxCredProv(void) :
 {
     LONG l = DllAddRef();
 
-    int rc = RTR3Init(); /* Never terminate the runtime! */
+    int rc = RTR3InitDll(0); /* Never terminate the runtime! */
     if (RT_FAILURE(rc))
         LogRel(("VBoxCredProv: Could not init runtime! rc = %Rrc\n", rc));
     rc = VbglR3Init();

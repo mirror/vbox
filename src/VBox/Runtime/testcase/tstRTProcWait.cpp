@@ -58,7 +58,7 @@ DECLCALLBACK(int) SpawnerThread(RTTHREAD Thread, void *pvUser)
 
 int main(int argc, char **argv)
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     if (argc == 2 && !strcmp(argv[1], "child"))
         return 42;
 

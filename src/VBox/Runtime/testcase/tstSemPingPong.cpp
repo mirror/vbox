@@ -85,7 +85,7 @@ static DECLCALLBACK(int) tstSemPingPongThread(RTTHREAD hThread, void *pvPP)
 
 int main()
 {
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
 
     /*
      * Create a ping pong and kick off a second thread which we'll

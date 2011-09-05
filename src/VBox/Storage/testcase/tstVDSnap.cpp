@@ -377,7 +377,7 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
 
 int main(int argc, char *argv[])
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     int rc;
     VDSNAPTEST Test;
 

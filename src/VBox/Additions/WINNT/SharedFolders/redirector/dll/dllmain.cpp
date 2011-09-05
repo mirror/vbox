@@ -36,7 +36,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
 
-        RTR3Init();
+        RTR3InitDll(0);
         VbglR3Init();
         LogRel(("VBOXNP: DLL loaded.\n"));
         break;

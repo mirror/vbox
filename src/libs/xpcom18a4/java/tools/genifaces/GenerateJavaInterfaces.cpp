@@ -873,18 +873,18 @@ int main(int argc, char** argv)
 
 #ifdef VBOX
 #if defined(VBOX_PATH_APP_PRIVATE_ARCH) && defined(VBOX_PATH_SHARED_LIBS)
-    rv = RTR3Init();
+  rv = RTR3InitExe(argc, &argv, 0);
 #else
-    const char *home = getenv("VBOX_PROGRAM_PATH");
-    if (home) {
-      size_t len = strlen(home);
-      char *exepath = (char *)alloca(len + 32);
-      memcpy(exepath, home, len);
-      memcpy(exepath + len, "/pythonfake", sizeof("/pythonfake"));
-      rv = RTR3InitWithProgramPath(exepath);
-    } else {
-      rv = RTR3Init();
-    }
+  const char *pszHome = getenv("VBOX_PROGRAM_PATH");
+  if (pszHome) {
+    size_t cchHome = strlen(pszHome);
+    char *pszExePath = (char *)alloca(cchHome + 32);
+    memcpy(pszExePath, pszHome, cchHome);
+    memcpy(pszExePath + cchHome, "/pythonfake", sizeof("/pythonfake"));
+    rc = RTR3InitEx(RTR3INIT_VER_CUR, 0, argc, &argv, pszExePath);
+  } else {
+    rv = RTR3InitExe(argc, &argv, 0);
+  }
 #endif
 #endif
 

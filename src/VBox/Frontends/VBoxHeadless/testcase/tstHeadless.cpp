@@ -40,7 +40,7 @@ using namespace com;
 int main (int argc, char **argv)
 {
     // initialize VBox Runtime
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     // the below cannot be Bstr because on Linux Bstr doesn't work
     // until XPCOM (nsMemory) is initialized
