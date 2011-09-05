@@ -464,6 +464,8 @@ HRESULT Guest::taskCopyFileFromGuest(GuestTask *aTask)
                                                      Guest::tr("Source file \"%s\" does not exist, or is not a file"),
                                                      aTask->strSource.c_str());
         }
+        else
+            rc = GuestTask::setProgressErrorInfo(rc, aTask->progress, pGuest);
 
         /* Query file size to make an estimate for our progress object. */
         if (SUCCEEDED(rc))
