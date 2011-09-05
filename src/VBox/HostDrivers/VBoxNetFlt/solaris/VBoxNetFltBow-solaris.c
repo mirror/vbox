@@ -225,12 +225,15 @@ typedef struct VBOXNETFLTVNIC
     mac_client_handle_t         hClient;
     /** The unicast address handle. */
     mac_unicast_handle_t        hUnicast;
+    /** The promiscuous handle. */
+    mac_promisc_handle_t        hPromisc;
     /* The VNIC name. */
     char                        szName[MAXLINKNAMESPECIFIER];
     /** Handle to the next VNIC in the list. */
     list_node_t                 hNode;
 } VBOXNETFLTVNIC;
 typedef struct VBOXNETFLTVNIC *PVBOXNETFLTVNIC;
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -981,6 +984,7 @@ LOCAL PVBOXNETFLTVNIC vboxNetFltSolarisAllocVNIC(void)
     pVNIC->hLinkId         = DATALINK_INVALID_LINKID;
     pVNIC->hClient         = NULL;
     pVNIC->hUnicast        = NULL;
+    pVNIC->hPromisc        = NULL;
     RT_ZERO(pVNIC->szName);
     list_link_init(&pVNIC->hNode);
     return pVNIC;
@@ -1016,6 +1020,12 @@ LOCAL void vboxNetFltSolarisDestroyVNIC(PVBOXNETFLTVNIC pVNIC)
             {
                 mac_unicast_remove(pVNIC->hClient, pVNIC->hUnicast);
                 pVNIC->hUnicast = NULL;
+            }
+
+            if (pVNIC->hPromisc)
+            {
+                mac_promisc_remove(pVNIC->hPromisc);
+                pVNIC->hPromisc = NULL;
             }
 
             mac_rx_clear(pVNIC->hClient);
@@ -1205,6 +1215,45 @@ LOCAL inline int vboxNetFltSolarisGetLinkId(const char *pszMacName, datalink_id_
 }
 
 
+/**
+ * Set the promiscuous mode RX hook.
+ *
+ * @param    pThis          The VM connection instance.
+ * @param    pVNIC          Pointer to the VNIC.
+ *
+ * @returns VBox status code.
+ */
+LOCAL inline int vboxNetFltSolarisSetPromisc(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC pVNIC)
+{
+    int rc = VINF_SUCCESS;
+    if (!pVNIC->hPromisc)
+    {
+        rc = mac_promisc_add(pVNIC->hClient, MAC_CLIENT_PROMISC_FILTERED, vboxNetFltSolarisRecv, pThis, &pVNIC->hPromisc,
+                             MAC_PROMISC_FLAGS_NO_TX_LOOP | MAC_PROMISC_FLAGS_VLAN_TAG_STRIP | MAC_PROMISC_FLAGS_NO_PHYS);
+        if (RT_UNLIKELY(rc))
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisSetPromisc failed. rc=%d\n", rc));
+        rc = RTErrConvertFromErrno(rc);
+    }
+    return rc;
+}
+
+
+/**
+ * Clear the promiscuous mode RX hook.
+ *
+ * @param   pThis           The VM connection instance.
+ * @param   pVNIC           Pointer to the VNIC.
+ */
+LOCAL inline void vboxNetFltSolarisRemovePromisc(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC pVNIC)
+{
+    if (pVNIC->hPromisc)
+    {
+        mac_promisc_remove(pVNIC->hPromisc);
+        pVNIC->hPromisc = NULL;
+    }
+}
+
+
 /* -=-=-=-=-=- Common Hooks -=-=-=-=-=- */
 
 
@@ -1220,13 +1269,23 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     {
         for (; pVNIC != NULL; pVNIC = list_next(&pThis->u.s.hVNICs, pVNIC))
             if (pVNIC->hClient)
+            {
+#if 0
                 mac_rx_set(pVNIC->hClient, vboxNetFltSolarisRecv, pThis);
+#endif
+                vboxNetFltSolarisSetPromisc(pThis, pVNIC);
+            }
     }
     else
     {
         for (; pVNIC != NULL; pVNIC = list_next(&pThis->u.s.hVNICs, pVNIC))
             if (pVNIC->hClient)
+            {
+#if 0
                 mac_rx_clear(pVNIC->hClient);
+#endif
+                vboxNetFltSolarisRemovePromisc(pThis, pVNIC);
+            }
     }
 }
 
@@ -1410,7 +1469,7 @@ void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRT
     if (RT_LIKELY(!rc))
     {
         /*
-         * Remove existing unicast address and the RX hook.
+         * Remove existing unicast address, promisc. and the RX hook.
          */
         if (pVNIC->hUnicast)
         {
@@ -1419,21 +1478,36 @@ void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRT
             pVNIC->hUnicast = NULL;
         }
 
-        /*
-         * Add the primary unicast address and set the RX hook.
-         */
+        if (pVNIC->hPromisc)
+        {
+            mac_promisc_remove(pVNIC->hPromisc);
+            pVNIC->hPromisc = NULL;
+        }
+
         mac_diag_t MacDiag = MAC_DIAG_NONE;
         /* uint16_t uVLANId = pVNIC->pVNICTemplate ? pVNIC->pVNICTemplate->uVLANId : 0; */
+#if 0
         rc = mac_unicast_add(pVNIC->hClient, NULL, MAC_UNICAST_PRIMARY, &pVNIC->hUnicast, 0 /* VLAN Id */, &MacDiag);
+#endif
         if (RT_LIKELY(!rc))
         {
-            /*
-             * Set the RX receive function.
-             * This shouldn't be necessary as vboxNetFltPortOsSetActive() will be invoked after this, but in the future,
-             * if the guest NIC changes MAC address this may not be followed by a vboxNetFltPortOsSetActive() call, so set it here anyway.
-             */
-            mac_rx_set(pVNIC->hClient, vboxNetFltSolarisRecv, pThis);
-            LogFlow((DEVICE_NAME ":vboxNetFltPortOsNotifyMacAddress successfully added unicast address %.6Rhxs\n", pMac));
+            rc = vboxNetFltSolarisSetPromisc(pThis, pVNIC);
+#if 0
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Set the RX receive function.
+                 * This shouldn't be necessary as vboxNetFltPortOsSetActive() will be invoked after this, but in the future,
+                 * if the guest NIC changes MAC address this may not be followed by a vboxNetFltPortOsSetActive() call, so set it here anyway.
+                 */
+                mac_rx_set(pVNIC->hClient, vboxNetFltSolarisRecv, pThis);
+                LogFlow((DEVICE_NAME ":vboxNetFltPortOsNotifyMacAddress successfully added unicast address %.6Rhxs\n", pMac));
+            }
+            else
+                LogRel((DEVICE_NAME ":vboxNetFltPortOsNotifyMacAddress failed to set promiscuous mode. rc=%d\n", rc));
+            mac_unicast_remove(pVNIC->hClient,  pVNIC->hUnicast);
+            pVNIC->hUnicast = NULL;
+#endif
         }
         else
             LogRel((DEVICE_NAME ":vboxNetFltPortOsNotifyMacAddress failed to add primary unicast address. rc=%d Diag=%d\n", rc, MacDiag));
