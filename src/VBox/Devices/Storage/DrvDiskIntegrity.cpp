@@ -568,7 +568,7 @@ static DECLCALLBACK(int) drvdiskintRead(PPDMIMEDIA pInterface,
 
     if (pThis->hIoLogger)
     {
-        rc = VDDbgIoLogStart(pThis->hIoLogger, false, VDDBGIOLOGTXDIR_READ, off,
+        rc = VDDbgIoLogStart(pThis->hIoLogger, false, VDDBGIOLOGREQ_READ, off,
                              cbRead, NULL, &hIoLogEntry);
         AssertRC(rc);
     }
@@ -621,7 +621,7 @@ static DECLCALLBACK(int) drvdiskintWrite(PPDMIMEDIA pInterface,
         Seg.cbSeg = cbWrite;
         RTSgBufInit(&SgBuf, &Seg, 1);
 
-        rc = VDDbgIoLogStart(pThis->hIoLogger, false, VDDBGIOLOGTXDIR_WRITE, off,
+        rc = VDDbgIoLogStart(pThis->hIoLogger, false, VDDBGIOLOGREQ_WRITE, off,
                              cbWrite, &SgBuf, &hIoLogEntry);
         AssertRC(rc);
     }
@@ -664,7 +664,7 @@ static DECLCALLBACK(int) drvdiskintStartRead(PPDMIMEDIAASYNC pInterface, uint64_
 
     if (pThis->hIoLogger)
     {
-        int rc2 = VDDbgIoLogStart(pThis->hIoLogger, true, VDDBGIOLOGTXDIR_READ, uOffset,
+        int rc2 = VDDbgIoLogStart(pThis->hIoLogger, true, VDDBGIOLOGREQ_READ, uOffset,
                                   cbRead, NULL, &pIoReq->hIoLogEntry);
         AssertRC(rc2);
     }
@@ -720,7 +720,7 @@ static DECLCALLBACK(int) drvdiskintStartWrite(PPDMIMEDIAASYNC pInterface, uint64
 
         RTSgBufInit(&SgBuf, paSeg, cSeg);
 
-        int rc2 = VDDbgIoLogStart(pThis->hIoLogger, true, VDDBGIOLOGTXDIR_WRITE, uOffset,
+        int rc2 = VDDbgIoLogStart(pThis->hIoLogger, true, VDDBGIOLOGREQ_WRITE, uOffset,
                                   cbWrite, &SgBuf, &pIoReq->hIoLogEntry);
         AssertRC(rc2);
     }
@@ -767,7 +767,7 @@ static DECLCALLBACK(int) drvdiskintStartFlush(PPDMIMEDIAASYNC pInterface, void *
 
     if (pThis->hIoLogger)
     {
-        rc = VDDbgIoLogStart(pThis->hIoLogger, true, VDDBGIOLOGTXDIR_FLUSH, 0,
+        rc = VDDbgIoLogStart(pThis->hIoLogger, true, VDDBGIOLOGREQ_FLUSH, 0,
                              0, NULL, &pIoReq->hIoLogEntry);
         AssertRC(rc);
     }
@@ -800,7 +800,7 @@ static DECLCALLBACK(int) drvdiskintFlush(PPDMIMEDIA pInterface)
 
     if (pThis->hIoLogger)
     {
-        rc = VDDbgIoLogStart(pThis->hIoLogger, false, VDDBGIOLOGTXDIR_FLUSH, 0,
+        rc = VDDbgIoLogStart(pThis->hIoLogger, false, VDDBGIOLOGREQ_FLUSH, 0,
                              0, NULL, &hIoLogEntry);
         AssertRC(rc);
     }
@@ -867,6 +867,30 @@ static DECLCALLBACK(int) drvdiskintGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
     return pThis->pDrvMedia->pfnGetUuid(pThis->pDrvMedia, pUuid);
+}
+
+/** @copydoc PDMIMEDIA::pfnDiscard */
+static DECLCALLBACK(int) drvdiskintDiscard(PPDMIMEDIA pInterface, PPDMRANGE paRanges, unsigned cRanges)
+{
+    int rc = VINF_SUCCESS;
+    VDIOLOGENT hIoLogEntry;
+    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
+
+    if (pThis->hIoLogger)
+    {
+        rc = VDDbgIoLogStartDiscard(pThis->hIoLogger, false, (PVDRANGE)paRanges, cRanges, &hIoLogEntry);
+        AssertRC(rc);
+    }
+
+    rc = pThis->pDrvMedia->pfnDiscard(pThis->pDrvMedia, paRanges, cRanges);
+
+    if (pThis->hIoLogger)
+    {
+        int rc2 = VDDbgIoLogComplete(pThis->hIoLogger, hIoLogEntry, rc, NULL);
+        AssertRC(rc2);
+    }
+
+    return rc;
 }
 
 /* -=-=-=-=- IMediaAsyncPort -=-=-=-=- */
@@ -1096,6 +1120,9 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                                 N_("No media or async media interface below"));
 
     pThis->pDrvMediaAsync = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIAASYNC);
+
+    if (pThis->pDrvMedia->pfnDiscard)
+        pThis->IMedia.pfnDiscard = drvdiskintDiscard;
 
     if (pThis->fCheckConsistency)
     {
