@@ -2921,7 +2921,12 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
             throw rc;
         }
 
+        /* Temporary leave this lock, cause IMedium::LockWrite, will wait for
+         * an running IMedium::queryInfo. If there is one running it might be
+         * it tries to acquire a MediaTreeLock as well -> dead-lock. */
+        multilock.leave();
         rc = pMediumLockList->Lock();
+        multilock.enter();
         if (FAILED(rc))
         {
             delete pMediumLockList;
