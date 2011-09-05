@@ -979,11 +979,10 @@
 # define RTR0ProcHandleSelf                             RT_MANGLER(RTR0ProcHandleSelf)         /* r0drv */
 # define RTR0Term                                       RT_MANGLER(RTR0Term)                   /* r0drv */
 # define RTR0TermForced                                 RT_MANGLER(RTR0TermForced)             /* r0drv */
-# define RTR3Init                                       RT_MANGLER(RTR3Init)
-# define RTR3InitAndSUPLib                              RT_MANGLER(RTR3InitAndSUPLib)
-# define RTR3InitAndSUPLibWithProgramPath               RT_MANGLER(RTR3InitAndSUPLibWithProgramPath)
+# define RTR3InitDll                                    RT_MANGLER(RTR3InitDll)
+# define RTR3InitExe                                    RT_MANGLER(RTR3InitExe)
+# define RTR3InitExeNoArguments                         RT_MANGLER(RTR3InitExeNoArguments)
 # define RTR3InitEx                                     RT_MANGLER(RTR3InitEx)
-# define RTR3InitWithProgramPath                        RT_MANGLER(RTR3InitWithProgramPath)
 # define rtR3MemAlloc                                   RT_MANGLER(rtR3MemAlloc)
 # define rtR3MemFree                                    RT_MANGLER(rtR3MemFree)
 # define rtR3MemRealloc                                 RT_MANGLER(rtR3MemRealloc)

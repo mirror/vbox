@@ -679,7 +679,7 @@ int main(int argc, char **argv)
     /*
      * Init runtime and static data.
      */
-    RTR3InitAndSUPLib();
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
     RTPrintf("tstSSM: TESTING...\n");
     initBigMem();
     const char *pszFilename = "SSMTestSave#1";

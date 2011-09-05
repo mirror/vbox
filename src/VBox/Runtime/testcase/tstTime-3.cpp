@@ -68,7 +68,7 @@ DECLINLINE(uint64_t) OSNanoTS(void)
 
 int main(int argc, char **argv)
 {
-    RTR3InitAndSUPLib();
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
 
     if (argc <= 1)
     {

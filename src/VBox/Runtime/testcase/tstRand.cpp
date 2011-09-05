@@ -353,7 +353,7 @@ static int tstRandAdv(RTRAND hRand)
 
 int main()
 {
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     RTPrintf("tstRand: TESTING...\n");
 
     /*

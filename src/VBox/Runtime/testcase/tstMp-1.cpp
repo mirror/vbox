@@ -43,7 +43,7 @@ static unsigned g_cErrors = 0;
 
 int main()
 {
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     RTPrintf("tstMp-1: TESTING...\n");
 
     /*

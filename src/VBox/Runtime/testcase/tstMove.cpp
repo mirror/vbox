@@ -54,7 +54,7 @@ static bool HasHelpOption(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     /*
      * Arguments or any -? or --help?

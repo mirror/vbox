@@ -146,9 +146,9 @@ nsresult
 InitXPCOMVBox_Impl(JNIEnv* env, jobject aVBoxBinDirectory)
 {
 #if defined(VBOX_PATH_APP_PRIVATE_ARCH) && defined(VBOX_PATH_SHARED_LIBS)
-    rv = RTR3Init();
+    rv = RTR3InitDll(0);
 #else
-    const char *home  = nsnull;
+    const char *pszHome  = nsnull;
     const char *jhome = nsnull;
     jstring path = nsnull;
 
@@ -163,20 +163,20 @@ InitXPCOMVBox_Impl(JNIEnv* env, jobject aVBoxBinDirectory)
         )
     {
         path = (jstring)env->CallObjectMethod(aVBoxBinDirectory, getPathMID);
-        home = jhome = env->GetStringUTFChars(path, nsnull);
+        pszHome = jhome = env->GetStringUTFChars(path, nsnull);
     }
 
-    if (home == nsnull)
-        home = getenv("VBOX_PROGRAM_PATH");
+    if (pszHome == nsnull)
+        pszHome = getenv("VBOX_PROGRAM_PATH");
 
-    if (home) {
-      size_t len = strlen(home);
-      char *exepath = (char *)alloca(len + 32);
-      memcpy(exepath, home, len);
-      memcpy(exepath + len, "/javafake", sizeof("/javafake"));
-      rv = RTR3InitWithProgramPath(exepath);
+    if (pszHome) {
+      size_t cchHome = strlen(pszHome);
+      char *pszExePath = (char *)alloca(cchHome + 32);
+      memcpy(pszExePath, pszHome, cchHome);
+      memcpy(pszExePath + cchHome, "/javafake", sizeof("/javafake"));
+      rv = RTR3InitEx(RTR3INIT_VER_CUR, RTR3INIT_FLAGS_DLL, 0, NULL, pszExePath);
     } else {
-      rv = RTR3Init();
+      rv = RTR3InitDll(0);
     }
 
     if (jhome)

@@ -281,7 +281,7 @@ void copyDummyDiskImage(const char *pcszPrefix,
  */
 int main(int argc, char *argv[])
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     HRESULT rc = S_OK;
 

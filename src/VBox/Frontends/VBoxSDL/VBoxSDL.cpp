@@ -66,6 +66,7 @@ using namespace com;
 #include <iprt/file.h>
 #include <iprt/ldr.h>
 #include <iprt/initterm.h>
+#include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/semaphore.h>
@@ -2911,12 +2912,9 @@ int main(int argc, char **argv)
     /*
      * Before we do *anything*, we initialize the runtime.
      */
-    int rcRT = RTR3InitAndSUPLib();
-    if (RT_FAILURE(rcRT))
-    {
-        RTPrintf("Error: RTR3Init failed rcRC=%d\n", rcRT);
-        return 1;
-    }
+    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
     return TrustedMain(argc, argv, NULL);
 }
 #endif /* !VBOX_WITH_HARDENING */

@@ -40,7 +40,7 @@ static int Usage(void)
 
 int main(int argc, char **argv)
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     /*
      * Parse args, building the request as we do so.

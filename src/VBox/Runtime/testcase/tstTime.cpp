@@ -38,7 +38,8 @@ int main()
 {
     unsigned cErrors = 0;
     int i;
-    RTR3InitAndSUPLib();
+
+    RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
     RTPrintf("tstTime: TESTING...\n");
 
     /*

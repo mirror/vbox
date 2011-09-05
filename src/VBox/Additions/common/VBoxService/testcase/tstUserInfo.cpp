@@ -40,7 +40,7 @@ int main()
     /*
      * Init globals and such.
      */
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
 
     int rc = VbglR3Init();
     if (RT_FAILURE(rc))

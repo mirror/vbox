@@ -45,7 +45,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
         DisableThreadLibraryCalls(hInstance);
 
         // idempotent, so doesn't harm, and needed for COM embedding scenario
-        RTR3Init();
+        RTR3InitDll(0);
     }
     else if (dwReason == DLL_PROCESS_DETACH)
     {

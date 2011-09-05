@@ -1272,7 +1272,7 @@ int main(int argc, char *argv[])
      * Before we do anything, init the runtime without loading
      * the support driver.
      */
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 

@@ -38,9 +38,9 @@
 int main(int argc, char **argv)
 {
     int cErrors = 0;
-    int rc = 0;
-    RTR3InitAndSUPLib();
-    rc = SUPR3Init(NULL);
+
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    int rc = SUPR3Init(NULL);
     cErrors += rc != 0;
     if (!rc)
     {

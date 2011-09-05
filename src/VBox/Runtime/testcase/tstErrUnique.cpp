@@ -62,7 +62,7 @@ static bool strIsPermissibleDuplicate(const RTSTATUSMSG *msg)
 int main()
 {
     int         cErrors = 0;
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     RTPrintf("tstErrUnique: TESTING\n");
 
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aErrorMessages) - 1; i++)

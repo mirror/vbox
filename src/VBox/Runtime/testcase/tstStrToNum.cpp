@@ -91,7 +91,7 @@ struct TstU32
 
 int main()
 {
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
 
     int cErrors = 0;
     static const struct TstU64 aTstU64[] =

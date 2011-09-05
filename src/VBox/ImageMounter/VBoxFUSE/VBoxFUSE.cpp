@@ -1420,10 +1420,10 @@ int main(int argc, char **argv)
     /*
      * Initialize the runtime and VD.
      */
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(g_pStdErr, "VBoxFUSE: RTR3Init failed, rc=%Rrc\n", rc);
+        RTStrmPrintf(g_pStdErr, "VBoxFUSE: RTR3InitExe failed, rc=%Rrc\n", rc);
         return 1;
     }
     RTPrintf("VBoxFUSE: Hello...\n");

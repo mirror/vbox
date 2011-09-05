@@ -158,7 +158,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 {
     LPCTSTR lpCmdLine = GetCommandLine(); /* this line necessary for _ATL_MIN_CRT */
 
-    /* Need to parse the command line before initializing the VBox runtime. */
+    /*
+     * Need to parse the command line before initializing the VBox runtime.
+     */
     TCHAR szTokens[] = _T("-/");
     LPCTSTR lpszToken = FindOneOf(lpCmdLine, szTokens);
     while (lpszToken != NULL)
@@ -187,7 +189,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
      * Initialize the VBox runtime without loading
      * the support driver.
      */
-    RTR3Init();
+    int    argc = __argc;
+    char **argv = __argv;
+    RTR3InitExe(argc, &argv, 0);
 
     /* Note that all options are given lowercase/camel case/uppercase to
      * approximate case insensitive matching, which RTGetOpt doesn't offer. */
@@ -232,7 +236,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
     uint64_t        uHistoryFileSize = 100 * _1M;   // max 100MB per file
 
     RTGETOPTSTATE   GetOptState;
-    int vrc = RTGetOptInit(&GetOptState, __argc, __argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
+    int vrc = RTGetOptInit(&GetOptState, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
     AssertRC(vrc);
 
     RTGETOPTUNION   ValueUnion;

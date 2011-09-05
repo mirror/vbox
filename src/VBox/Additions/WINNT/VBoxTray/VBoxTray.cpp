@@ -679,7 +679,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     LogRel(("VBoxTray: %s r%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
 
-    int rc = RTR3Init();
+    int rc = RTR3InitExeNoArguments(0);
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3Init();

@@ -842,7 +842,7 @@ static void tstVmdk()
 
 int main(int argc, char *argv[])
 {
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
     int rc;
 
     uint32_t u32Seed = 0; // Means choose random

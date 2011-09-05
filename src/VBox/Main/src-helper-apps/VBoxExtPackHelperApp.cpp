@@ -1745,7 +1745,7 @@ int main(int argc, char **argv)
     /*
      * Initialize IPRT and check that we're correctly installed.
      */
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
@@ -1884,7 +1884,7 @@ extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPST
     g_hInstance = hInstance;
     NOREF(hPrevInstance); NOREF(nShowCmd); NOREF(lpCmdLine);
 
-    int rc = RTR3Init();
+    int rc = RTR3InitExeNoArguments(0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 

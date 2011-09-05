@@ -780,7 +780,7 @@ initVBoxPython() {
     int rc = 0;
 
 #if defined(VBOX_PATH_APP_PRIVATE_ARCH) && defined(VBOX_PATH_SHARED_LIBS)
-    rc = RTR3Init();
+    rc = RTR3InitDll(0);
 #else
     const char *home = getenv("VBOX_PROGRAM_PATH");
     if (home) {
@@ -788,9 +788,9 @@ initVBoxPython() {
       char *exepath = (char *)alloca(len + 32);
       memcpy(exepath, home, len);
       memcpy(exepath + len, "/pythonfake", sizeof("/pythonfake"));
-      rc = RTR3InitWithProgramPath(exepath);
+      rc = RTR3InitEx(RTR3INIT_VER_CUR, RTR3INIT_FLAGS_DLL, 0, NULL, exepath);
     } else {
-      rc = RTR3Init();
+      rc = RTR3InitDll(0);
     }
 #endif
 

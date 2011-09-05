@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     int rcRet2;
     int rc;
     unsigned cMatch;
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     const char *pszTestDir = ".";
 

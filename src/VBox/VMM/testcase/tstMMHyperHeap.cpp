@@ -43,7 +43,7 @@ int main(int argc, char **argv)
     /*
      * Init runtime.
      */
-    RTR3Init();
+    RTR3InitExe(argc, &argv, 0);
 
     /*
      * Create empty VM structure and call MMR3Init().

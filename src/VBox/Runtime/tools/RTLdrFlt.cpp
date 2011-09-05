@@ -116,7 +116,7 @@ static bool TryParseAddress(const char *psz, size_t *pcchAddress, uint64_t *pu64
 
 int main(int argc, char **argv)
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 

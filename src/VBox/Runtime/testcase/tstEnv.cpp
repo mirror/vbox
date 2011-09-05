@@ -36,7 +36,7 @@
 
 int main()
 {
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     RTPrintf("tstEnv: TESTING...\n");
 
     int cErrors = 0;

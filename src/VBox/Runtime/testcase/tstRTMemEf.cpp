@@ -59,7 +59,7 @@ static int tstMemAllocEfAccess()
 
 int main()
 {
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     RTPrintf("tstRTMemEf: TESTING...\n");
 
 #define CHECK_EXPR(expr) \

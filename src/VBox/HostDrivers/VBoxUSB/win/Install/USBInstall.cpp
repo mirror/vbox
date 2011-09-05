@@ -58,7 +58,7 @@ int usblibOsCreateService(void);
 
 int __cdecl main(int argc, char **argv)
 {
-    if (RTR3Init() != VINF_SUCCESS)
+    if (RTR3InitExe(argc, &argv, 0) != VINF_SUCCESS)
     {
         printf("Could not init IPRT!\n");
         return 1;

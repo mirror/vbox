@@ -1184,43 +1184,11 @@ bool VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
     }
 
     /*
-     * The input is ASSUMED to be in the current process codeset (NT guarantees
-     * ACP, unixy systems doesn't guarantee anything).  This loop converts all
-     * the argv[*] strings to UTF-8, which is a tad ugly but who cares.
-     * (As a rule all strings in VirtualBox are UTF-8.)
-     */
-    for (int i = 0; i < argc; i++)
-    {
-        char *pszConverted;
-        int rc = RTStrCurrentCPToUtf8(&pszConverted, argv[i]);
-        if (RT_SUCCESS(rc))
-            argv[i] = pszConverted;
-        else
-        {
-            RTMsgError("Failed to convert argument %d to UTF-8, rc=%Rrc\n",
-                       i + 1, rc);
-
-            /* Conversion was not possible,probably due to invalid characters.
-             * Keep in mind that we do RTStrFree on the whole array below. */
-            argv[i] = RTStrDup(argv[i]);
-        }
-    }
-
-    /*
      * Invoke the handler.
      */
     RTMsgSetProgName("VBoxService/%s", pszTool);
     *prcExit = pfnHandler(argc, argv);
 
-    /*
-     * Free converted argument vector
-     */
-    for (int i = 0; i < argc; i++)
-    {
-        RTStrFree(argv[i]);
-        argv[i] = NULL;
-    }
     return true;
-
 }
 

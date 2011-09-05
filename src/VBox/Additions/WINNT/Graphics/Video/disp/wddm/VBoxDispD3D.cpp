@@ -2830,7 +2830,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 #ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
             vboxVDbgVEHandlerRegister();
 #endif
-            int rc = RTR3Init();
+            int rc = RTR3InitDll(0);
             AssertRC(rc);
             if (RT_SUCCESS(rc))
             {

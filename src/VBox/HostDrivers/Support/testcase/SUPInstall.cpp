@@ -36,7 +36,7 @@
 
 int main(int argc, char **argv)
 {
-    RTR3Init();
+    RTR3InitExeNoArguments(0);
     int rc = SUPR3Install();
     if (RT_SUCCESS(rc))
     {

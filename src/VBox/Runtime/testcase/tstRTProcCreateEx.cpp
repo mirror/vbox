@@ -73,7 +73,7 @@ static const char * const g_apszArgs4[] =
 
 static int tstRTCreateProcEx5Child(int argc, char **argv)
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitExeNoArguments(0);
     if (rc)
         return RTMsgInitFailure(rc);
 
@@ -172,7 +172,7 @@ static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
 
 static int tstRTCreateProcEx4Child(int argc, char **argv)
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitExeNoArguments(0);
     if (rc)
         return RTMsgInitFailure(rc);
 
@@ -207,7 +207,7 @@ static void tstRTCreateProcEx4(void)
 
 static int tstRTCreateProcEx3Child(void)
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitExeNoArguments(0);
     if (rc)
         return RTMsgInitFailure(rc);
 
@@ -277,7 +277,7 @@ static void tstRTCreateProcEx3(void)
 
 static int tstRTCreateProcEx2Child(void)
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitExeNoArguments(0);
     if (rc)
         return RTMsgInitFailure(rc);
 
@@ -344,7 +344,7 @@ static void tstRTCreateProcEx2(void)
 
 static int tstRTCreateProcEx1Child(void)
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitExeNoArguments(0);
     if (rc)
         return RTMsgInitFailure(rc);
     RTPrintf("it works");

@@ -144,7 +144,7 @@ int main()
      */
     RTTEST hTest;
     int rc;
-    if (    RT_FAILURE(rc = RTR3Init())
+    if (    RT_FAILURE(rc = RTR3InitExeNoArguments(0))
         ||  RT_FAILURE(rc = RTTestCreate("tstVMMR0CallHost-1", &hTest)))
     {
         RTStrmPrintf(g_pStdErr, "tstVMMR0CallHost-1: Fatal error during init: %Rrc\n", rc);

@@ -31,7 +31,7 @@
 
 int main(int argc, char **argv)
 {
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     AssertReleaseRCReturn(rc, 1);
 
     /*

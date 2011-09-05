@@ -783,7 +783,7 @@ static CComModule _Module;
 int main(int argc, char *argv[])
 {
     // initialize runtime
-    int rc = RTR3Init();
+    int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
