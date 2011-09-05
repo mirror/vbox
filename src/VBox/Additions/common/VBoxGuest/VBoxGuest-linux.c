@@ -137,6 +137,9 @@ static unsigned int             g_iModuleMajor = 0;
 #endif
 
 /** The input device handle */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
+static struct input_dev         g_InputDevice;
+#endif
 static struct input_dev        *g_pInputDevice = NULL;
 /** Is the input device registered? */
 static bool                     g_fInputDeviceRegistered = false;
@@ -390,6 +393,8 @@ enum
 };
 
 
+/** Calls the kernel IOCtl to report mouse status to the host on behalf of
+ * our kernel session. */
 static int vboxguestLinuxSetMouseStatus(uint32_t fStatus)
 {
     return VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &g_DevExt,
@@ -398,39 +403,89 @@ static int vboxguestLinuxSetMouseStatus(uint32_t fStatus)
 }
 
 
+/** Called when the input device is first opened.  Sets up absolute reporting.
+ */
+static int vboxguestOpenInputDevice(struct input_dev *pDev)
+{
+    NOREF(pDev);
+    if (RT_FAILURE(vboxguestLinuxSetMouseStatus
+                                   (  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                    | VMMDEV_MOUSE_NEW_PROTOCOL)))
+        return ENODEV;
+    return 0;
+}
+
+
+/** Called if all open handles to the device are closed, disables absolute
+ * reporting. */
+static void vboxguestCloseInputDevice(struct input_dev *pDev)
+{
+    NOREF(pDev);
+    vboxguestLinuxSetMouseStatus(0);
+}
+
+
 /**
  * Creates the kernel input device.
  */
 static int __init vboxguestLinuxCreateInputDevice(void)
 {
-    int rc;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 29)
+# define INPUT_DEV_ID(val) id.val
+#else
+# define INPUT_DEV_ID(val) id##val
+#endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
     g_pInputDevice = input_allocate_device();
     if (!g_pInputDevice)
         return -ENOMEM;
-    g_pInputDevice->id.bustype = BUS_PCI;
-    g_pInputDevice->id.vendor  = VMMDEV_VENDORID;
-    g_pInputDevice->id.product = VMMDEV_DEVICEID;
-    g_pInputDevice->id.version =   (VBOX_VERSION_MAJOR << 11)
-                                 + (VBOX_VERSION_MINOR << 6)
-                                 + VBOX_VERSION_BUILD;  /** @todo */
+    g_pInputDevice->INPUT_DEV_ID(bustype) = BUS_PCI;
+#else
+    g_pInputDevice = &g_InputDevice;
+    g_pInputDevice->INPUT_DEV_ID(bus)     = BUS_PCI;
+#endif
+    g_pInputDevice->INPUT_DEV_ID(vendor)  = VMMDEV_VENDORID;
+    g_pInputDevice->INPUT_DEV_ID(product) = VMMDEV_DEVICEID;
+    g_pInputDevice->INPUT_DEV_ID(version) =   (VBOX_VERSION_MAJOR << 11)
+                                            + (VBOX_VERSION_MINOR << 6)
+                                            + VBOX_VERSION_BUILD;  /** @todo */
+    g_pInputDevice->open                  = vboxguestOpenInputDevice;
+    g_pInputDevice->close                 = vboxguestCloseInputDevice;
     /** @todo parent (PCI?) device in device model view. */
     /* g_pInputDevice->dev.parent = */
-    rc = input_register_device(g_pInputDevice);
-    if (!rc)
-        g_fInputDeviceRegistered = true;
-    else
-        return rc;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
+    {
+        int rc = input_register_device(g_pInputDevice);
+        if (rc)
+        {
+            input_free_device(g_pInputDevice);
+            return rc;
+        }
+    }
+#else
+    input_register_device(g_pInputDevice);
+#endif
     /* Do what one of our competitors apparently does as that works. */
-    g_pInputDevice->evbit[0] = RT_BIT(EV_ABS) | RT_BIT(EV_KEY);
-    __set_bit(BTN_MOUSE, g_pInputDevice->keybit);
+    ASMBitSet(g_pInputDevice->evbit, EV_ABS);
+    ASMBitSet(g_pInputDevice->evbit, EV_KEY);
+#ifdef EV_SYN
+    ASMBitSet(g_pInputDevice->evbit, EV_SYN);
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 7)
     input_set_abs_params(g_pInputDevice, ABS_X, RANGE_MIN, RANGE_MAX, 0, 0);
     input_set_abs_params(g_pInputDevice, ABS_Y, RANGE_MIN, RANGE_MAX, 0, 0);
+#else
+    ASMBitSet(g_pInputDevice->absbit, ABS_X);
+    ASMBitSet(g_pInputDevice->absbit, ABS_Y);
+    ASMBitSet(g_pInputDevice->keybit, BTN_MOUSE);
+    g_pInputDevice->absmin[ABS_X] = g_pInputDevice->absmin[ABS_Y] = RANGE_MIN;
+    g_pInputDevice->absmax[ABS_X] = g_pInputDevice->absmax[ABS_Y] = RANGE_MAX;
+#endif
     /** @todo this string should be in a header file somewhere. */
     g_pInputDevice->name = "VirtualBox mouse integration";
-    vboxguestLinuxSetMouseStatus(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                 | VMMDEV_MOUSE_NEW_PROTOCOL);
-    return rc;
+    return 0;
+#undef INPUT_DEV_ID
 }
 
 
@@ -439,15 +494,12 @@ static int __init vboxguestLinuxCreateInputDevice(void)
  */
 static void vboxguestLinuxTermInputDevice(void)
 {
-    vboxguestLinuxSetMouseStatus(0);
-    if (g_fInputDeviceRegistered)
-    {
-        input_unregister_device(g_pInputDevice);
-        g_fInputDeviceRegistered = false;
-    }
     if (g_pInputDevice)
     {
+        input_unregister_device(g_pInputDevice);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
         input_free_device(g_pInputDevice);
+#endif
         g_pInputDevice = NULL;
     }
 }
@@ -899,6 +951,9 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
         rc = VbglGRPerform(&pReq->header);
         input_report_abs(g_pInputDevice, ABS_X, pReq->pointerXPos);
         input_report_abs(g_pInputDevice, ABS_Y, pReq->pointerYPos);
+#ifdef EV_SYN
+        input_sync(g_pInputDevice);
+#endif
         VbglGRFree(&pReq->header);
     }
     Log(("VBoxGuestNativeISRMousePollEvent: done\n"));
