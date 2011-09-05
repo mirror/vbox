@@ -29,15 +29,8 @@ endif
 ifdef VBOX_WITH_HARDENING
  PROGRAMS += VBoxHeadlessHardened
  DLLS += VBoxHeadless
- VBOX_WITH_HEADLESS_DLL = 1
 else
- if "$(KBUILD_TARGET)" == "win"
-  PROGRAMS += VBoxHeadlessSVC VBoxHeadlessC
-  DLLS += VBoxHeadless
-  VBOX_WITH_HEADLESS_DLL = 1
- else
-  PROGRAMS += VBoxHeadless
- endif
+ PROGRAMS += VBoxHeadless
 endif
 
 
@@ -48,27 +41,11 @@ VBoxHeadlessHardened_TEMPLATE = VBOXR3HARDENEDEXE
 VBoxHeadlessHardened_SOURCES = VBoxHeadlessHardened.cpp
 VBoxHeadlessHardened_NAME = VBoxHeadless
 
-#
-# Console subsystem VBoxHeadless.
-#
-VBoxHeadlessC_TEMPLATE = VBOXMAINCLIENTEXE
-VBoxHeadlessC_SOURCES = VBoxHeadless-win.cpp
-VBoxHeadlessC_NAME = VBoxHeadless
-VBoxHeadlessC_LDFLAGS.win = /SUBSYSTEM:console
-VBoxHeadlessC_LIBS += $(PATH_STAGE_LIB)/VBoxHeadless$(VBOX_SUFF_LIB)
-
-#
-# Windows subsystem VBoxHeadless.
-#
-VBoxHeadlessSVC_EXTENDS = VBoxHeadlessC
-VBoxHeadlessSVC_NAME = VBoxHeadlessSVC
-VBoxHeadlessSVC_LDFLAGS.win = /SUBSYSTEM:windows
-VBoxHeadlessSVC_DEFS = VBOX_HEADLESS_SVC
 
 #
 # VBoxHeadless
 #
-VBoxHeadless_TEMPLATE  := $(if $(VBOX_WITH_HEADLESS_DLL),VBOXMAINCLIENTDLL,VBOXMAINCLIENTEXE)
+VBoxHeadless_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBOXMAINCLIENTDLL,VBOXMAINCLIENTEXE)
 VBoxHeadless_DEFS       = VBOX_FFMPEG
 VBoxHeadless_SOURCES    = VBoxHeadless.cpp
 VBoxHeadless_SOURCES  += Framebuffer.cpp
