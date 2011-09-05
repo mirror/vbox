@@ -8,7 +8,7 @@
   system, we provide installation instructions in four separate chapters for
   Windows, Mac OS X, Linux and Solaris, respectively.</para>
 
-  <sect1>
+  <sect1 id="installation_windows">
     <title>Installing on Windows hosts</title>
 
     <sect2>
