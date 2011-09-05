@@ -77,7 +77,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
     {
         case DLL_PROCESS_ATTACH:
         {
-            RTR3InitDll();
+            RTR3InitDll(0);
             VbglR3Init();
             LogRel(("VBoxGINA: DLL loaded.\n"));
 
