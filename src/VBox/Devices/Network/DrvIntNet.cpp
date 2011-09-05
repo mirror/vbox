@@ -1454,6 +1454,30 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"RestrictAccess\" value"));
 
+    /** @cfgm{RequireExactPolicyMatch, boolean, false}
+     * Whether to require that the current security and promiscuous policies of
+     * the network is exactly as the ones specified in this open network
+     * request.  Use this with RequireAsRestrictivePolicy to prevent
+     * restrictions from being lifted.  If no further policy changes are
+     * desired, apply the relevant fixed flags. */
+    rc = CFGMR3QueryBoolDef(pCfg, "RequireExactPolicyMatch", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"RequireExactPolicyMatch\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_REQUIRE_EXACT;
+
+    /** @cfgm{RequireAsRestrictivePolicy, boolean, false}
+     * Whether to require that the security and promiscuous policies of the
+     * network is at least as restrictive as specified this request specifies
+     * and prevent them  being lifted later on.
+     */
+    rc = CFGMR3QueryBoolDef(pCfg, "RequireAsRestrictivePolicy", &f, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"RequireAsRestrictivePolicy\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_REQUIRE_AS_RESTRICTIVE_POLICIES;
 
     /** @cfgm{AccessPolicy, string, "none"}
      * The access policy of the network:
