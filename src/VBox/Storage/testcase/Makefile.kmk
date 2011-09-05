@@ -52,7 +52,9 @@ ifdef VBOX_WITH_TESTCASES
 	VDIoBackendMem.cpp \
 	VDMemDisk.cpp \
 	VDIoRnd.cpp
- tstVDIo_LIBS = $(LIB_DDU)
+ tstVDIo_LIBS = \
+ 	$(LIB_DDU) \
+ 	$(PATH_STAGE_LIB)/StorageDbgLib$(VBOX_SUFF_LIB)
 
  tstVDSetUuid_TEMPLATE = VBOXR3TSTEXE
  tstVDSetUuid_LIBS = $(LIB_DDU)

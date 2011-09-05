@@ -97,7 +97,7 @@ typedef struct IoLogEntryStart
 typedef struct IoLogEntryComplete
 {
     /** Event type. */
-    uint8_t     u32Type;
+    uint32_t    u32Type;
     /** Id of the matching start entry. */
     uint64_t    u64Id;
     /** Status code the request completed with */
@@ -327,6 +327,7 @@ VBOXDDU_DECL(int) VDDbgIoLogOpen(PVDIOLOGGER phIoLogger, const char *pszFilename
                 pIoLogger->offWriteNext = cbLog;
                 pIoLogger->offReadNext  = sizeof(Hdr);
                 pIoLogger->idNext       = RT_LE2H_U64(Hdr.u64Id);
+                *phIoLogger = pIoLogger;
             }
             else if (RT_SUCCESS(rc))
                 rc = VERR_INVALID_PARAMETER;
@@ -467,9 +468,10 @@ VBOXDDU_DECL(int) VDDbgIoLogStartDiscard(VDIOLOGGER hIoLogger, bool fAsync, PVDR
 
         pIoLogEntry->idStart = pIoLogger->idNext++;
 
-        Entry.u32Type          = VDIOLOG_EVENT_START;
+        Entry.u32Type         = VDIOLOG_EVENT_START;
         Entry.u8AsyncIo       = fAsync ? 1 : 0;
         Entry.u32ReqType      = VDDBGIOLOGREQ_DISCARD;
+        Entry.u64Id           = RT_H2LE_U64(pIoLogEntry->idStart);
         Entry.Discard.cRanges = RT_H2LE_U32(cRanges);
 
         /* Write new entry. */
@@ -587,7 +589,7 @@ VBOXDDU_DECL(int) VDDbgIoLogEventTypeGetNext(VDIOLOGGER hIoLogger, VDIOLOGEVENT 
         rc = RTFileReadAt(pIoLogger->hFile, pIoLogger->offReadNext, &abBuf, sizeof(abBuf), NULL);
         if (RT_SUCCESS(rc))
         {
-            pIoLogger->u32EventTypeNext = (VDIOLOGEVENT)abBuf[0];
+            pIoLogger->u32EventTypeNext = abBuf[0];
             pIoLogger->enmReqTypeNext   = (VDDBGIOLOGREQ)abBuf[1];
         }
     }
@@ -686,6 +688,9 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetStart(VDIOLOGGER hIoLogger, uint64_t *pidEve
     else
         rc = VERR_INVALID_STATE;
 
+    if (RT_SUCCESS(rc))
+        pIoLogger->u32EventTypeNext = 0;
+
     RTSemFastMutexRelease(pIoLogger->hMtx);
     return rc;
 }
@@ -747,6 +752,9 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetStartDiscard(VDIOLOGGER hIoLogger, uint64_t 
     else
         rc = VERR_INVALID_STATE;
 
+    if (RT_SUCCESS(rc))
+        pIoLogger->u32EventTypeNext = 0;
+
     RTSemFastMutexRelease(pIoLogger->hMtx);
     return rc;
 
@@ -794,6 +802,9 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetComplete(VDIOLOGGER hIoLogger, uint64_t *pid
     }
     else
         rc = VERR_INVALID_STATE;
+
+    if (RT_SUCCESS(rc))
+        pIoLogger->u32EventTypeNext = 0;
 
     RTSemFastMutexRelease(pIoLogger->hMtx);
     return rc;

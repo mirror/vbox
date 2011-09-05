@@ -1161,7 +1161,7 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     if (pszIoLogFilename)
     {
         rc = VDDbgIoLogCreate(&pThis->hIoLogger, pszIoLogFilename, VDDBG_IOLOG_LOG_DATA);
-        RTStrFree(pszIoLogFilename);
+        MMR3HeapFree(pszIoLogFilename);
     }
 
     return rc;
