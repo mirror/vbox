@@ -29,6 +29,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/err.h>
+#include <VBox/vd.h> /* for VDRANGE */
 #include <iprt/sg.h>
 
 RT_C_DECLS_BEGIN
@@ -66,21 +67,23 @@ typedef VDIOLOGENT *PVDIOLOGENT;
 /**
  * I/O direction.
  */
-typedef enum VDDBGIOLOGTXDIR
+typedef enum VDDBGIOLOGREQ
 {
     /** Invalid direction. */
-    VDDBGIOLOGTXDIR_INVALID = 0,
+    VDDBGIOLOGREQ_INVALID = 0,
     /** Read. */
-    VDDBGIOLOGTXDIR_READ,
+    VDDBGIOLOGREQ_READ,
     /** Write. */
-    VDDBGIOLOGTXDIR_WRITE,
+    VDDBGIOLOGREQ_WRITE,
     /** Flush. */
-    VDDBGIOLOGTXDIR_FLUSH,
+    VDDBGIOLOGREQ_FLUSH,
+    /** Discard. */
+    VDDBGIOLOGREQ_DISCARD,
     /** 32bit hack. */
-    VDDBGIOLOGTXDIR_32BIT_HACK = 0x7fffffff
-} VDDBGIOLOGTXDIR;
+    VDDBGIOLOGREQ_32BIT_HACK = 0x7fffffff
+} VDDBGIOLOGREQ;
 /** Pointer to a I/O direction. */
-typedef VDDBGIOLOGTXDIR *PVDDBGIOLOGTXDIR;
+typedef VDDBGIOLOGREQ *PVDDBGIOLOGREQ;
 
 /**
  * I/O log event types.
@@ -158,8 +161,21 @@ VBOXDDU_DECL(uint32_t) VDDbgIoLogGetFlags(VDIOLOGGER hIoLogger);
  *                       or a flush request is logged.
  * @param   phIoLogEntry Where to store the I/O log entry handle on success.
  */
-VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGTXDIR enmTxDir, uint64_t off, size_t cbIo, PCRTSGBUF pSgBuf,
+VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGREQ enmTxDir, uint64_t off, size_t cbIo, PCRTSGBUF pSgBuf,
                                   PVDIOLOGENT phIoLogEntry);
+
+/**
+ * Starts logging of a discard request.
+ *
+ * @returns VBox status code.
+ * @param   hIoLogger    The I/O logger to use.
+ * @param   fAsync       Flag whether the request is synchronous or asynchronous.
+ * @param   paRanges     The array of ranges to discard.
+ * @param   cRanges      Number of rnages in the array.
+ * @param   phIoLogEntry Where to store the I/O log entry handle on success.
+ */
+VBOXDDU_DECL(int) VDDbgIoLogStartDiscard(VDIOLOGGER hIoLogger, bool fAsync, PVDRANGE paRanges, unsigned cRanges,
+                                         PVDIOLOGENT phIoLogEntry);
 
 /**
  * Marks the given I/O log entry as completed.
@@ -182,28 +198,52 @@ VBOXDDU_DECL(int) VDDbgIoLogComplete(VDIOLOGGER hIoLogger, VDIOLOGENT hIoLogEntr
 VBOXDDU_DECL(int) VDDbgIoLogEventTypeGetNext(VDIOLOGGER hIoLogger, VDIOLOGEVENT *penmEvent);
 
 /**
+ * Gets the next request type from the I/O log.
+ *
+ * @returns VBox status code.
+ * @param   hIoLogger    The I/O logger to use.
+ * @param   penmEvent    Where to store the next event on success.
+ */
+VBOXDDU_DECL(int) VDDbgIoLogReqTypeGetNext(VDIOLOGGER hIoLogger, PVDDBGIOLOGREQ penmReq);
+
+/**
  * Returns the start event from the I/O log.
  *
  * @returns VBox status code.
- * @retval  VERR_EOF if the end of the log is reached
+ * @retval  VERR_EOF if the end of the log is reached.
  * @retval  VERR_BUFFER_OVERFLOW if the provided data buffer can't hold the data.
  *                               pcbIo will hold the required buffer size on return.
  * @param   hIoLogger    The I/O logger to use.
  * @param   pidEvent     The ID of the event to identify the corresponding complete event.
- * @param   penmTxDir    Where to store the transfer direction of the next I/O log entry on success.
- * @param   pfAsync      Where to store the flag whether the request is 
+ * @param   pfAsync      Where to store the flag whether the request is
  * @param   poff         Where to store the offset of the next I/O log entry on success.
  * @param   pcbIo        Where to store the transfer size of the next I/O log entry on success.
  * @param   cbBuf        Size of the provided data buffer.
  * @param   pvBuf        Where to store the data of the next I/O log entry on success.
  */
-VBOXDDU_DECL(int) VDDbgIoLogEventGetStart(VDIOLOGGER hIoLogger, uint64_t *pidEvent, bool *pfAsync, PVDDBGIOLOGTXDIR penmTxDir,
+VBOXDDU_DECL(int) VDDbgIoLogEventGetStart(VDIOLOGGER hIoLogger, uint64_t *pidEvent, bool *pfAsync,
                                           uint64_t *poff, size_t *pcbIo, size_t cbBuf, void *pvBuf);
+
+/**
+ * Returns the discard start event from the I/O log.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_EOF if the end of the log is reached.
+ * @retval  VERR_BUFFER_OVERFLOW if the provided data buffer can't hold the data.
+ *                               pcbIo will hold the required buffer size on return.
+ * @param   hIoLogger    The I/O logger to use.
+ * @param   pidEvent     The ID of the event to identify the corresponding complete event.
+ * @param   pfAsync      Where to store the flag whether the request is
+ * @param   ppaRanges    Where to store the pointer to the range array on success.
+ * @param   pcRanges     Where to store the number of entries in the array on success.
+ */
+VBOXDDU_DECL(int) VDDbgIoLogEventGetStartDiscard(VDIOLOGGER hIoLogger, uint64_t *pidEvent, bool *pfAsync,
+                                                 PVDRANGE *ppaRanges, unsigned *pcRanges);
 
 /**
  * Returns the complete from the I/O log.
  *
- * @returns VBox status code. 
+ * @returns VBox status code.
  * @retval  VERR_EOF if the end of the log is reached
  * @retval  VERR_BUFFER_OVERFLOW if the provided data buffer can't hold the data.
  *                               pcbIo will hold the required buffer size on return.
