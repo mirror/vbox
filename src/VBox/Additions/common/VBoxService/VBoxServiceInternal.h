@@ -275,6 +275,9 @@ extern VBOXSERVICE  g_PageSharing;
 #ifdef VBOX_WITH_SHARED_FOLDERS
 extern VBOXSERVICE  g_AutoMount;
 #endif
+#ifdef DEBUG
+extern RTCRITSECT   g_csLog; /* For guest process stdout dumping. */
+#endif
 
 extern RTEXITCODE   VBoxServiceSyntax(const char *pszFormat, ...);
 extern RTEXITCODE   VBoxServiceError(const char *pszFormat, ...);

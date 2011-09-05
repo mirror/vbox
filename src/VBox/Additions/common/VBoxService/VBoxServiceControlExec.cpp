@@ -611,7 +611,18 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                                                         cbOffset, &cbRead, &cbLeft))
                    && cbRead)
             {
-                VBoxServiceVerbose(5, "[%u]: %s\n", pData->uPID, szBuf);
+#ifdef DEBUG
+                int rc2 = RTCritSectEnter(&g_csLog);
+                if (RT_SUCCESS(rc2))
+                {
+#endif
+                    RTStrmWriteEx(g_pStdOut, szBuf, cbRead, NULL /* No partial write. */);
+#ifdef DEBUG
+                    rc2 = RTCritSectLeave(&g_csLog);
+                    if (RT_SUCCESS(rc))
+                        rc = rc2;
+                }
+#endif
                 cbOffset += cbRead;
                 if (!cbLeft)
                     break;
