@@ -586,6 +586,8 @@ VBoxDrvResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
         VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
         VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_DISABLED);
 
+#if 0
+        /* ResetHW is not the place to do such cleanup. See MSDN. */
         if (pExt->u.primary.pvReqFlush != NULL)
         {
             VbglGRFree((VMMDevRequestHeader *)pExt->u.primary.pvReqFlush);
@@ -595,6 +597,7 @@ VBoxDrvResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
         VbglTerminate();
 
         VBoxFreeDisplaysHGSMI(VBoxCommonFromDeviceExt(pExt));
+#endif
     }
     else
     {
@@ -602,7 +605,8 @@ VBoxDrvResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
     }
 
     LOGF_LEAVE();
-    return TRUE;
+    /* Tell the system to use VGA BIOS to set the text video mode. */
+    return FALSE;
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
