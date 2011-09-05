@@ -89,7 +89,7 @@ static VMMDevReqMouseStatus *g_vmmreqMouseStatus = NULL;
  */
 int VBoxMouseInit(void)
 {
-    VMMDevReqMouseStatus req;
+    uint32_t fFeatures;
 
     /* return immediately if already initialized */
     if (g_vboxguestHandle != -1)
@@ -114,12 +114,10 @@ int VBoxMouseInit(void)
     vmmdevInitRequest((VMMDevRequestHeader*)g_vmmreqMouseStatus, VMMDevReq_GetMouseStatus);
 
     /* tell the host that we want absolute coordinates */
-    vmmdevInitRequest((VMMDevRequestHeader*)&req, VMMDevReq_SetMouseStatus);
-    req.mouseFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
-    req.pointerXPos = 0;
-    req.pointerYPos = 0;
+    fFeatures = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
 /** @todo r=bird: Michael, I thought we decided a long time ago that all these should be replaced by VbglR3. I assume this is just a leftover... */
-    if (ioctl(g_vboxguestHandle, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(req)), (void*)&req) < 0)
+    if (ioctl(g_vboxguestHandle, VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &fFeatures)
+        < 0)
     {
         ErrorF("Error sending mouse pointer capabilities to VMM! rc = %d (%s)\n",
                errno, strerror(errno));
@@ -174,18 +172,8 @@ int VBoxMouseFini(void)
     /* If we are not initialised, there is nothing to do */
     if (g_vboxguestHandle < 0)
         return 0;
-    /* tell VMM that we no longer support absolute mouse handling */
-    vmmdevInitRequest((VMMDevRequestHeader*)&req, VMMDevReq_SetMouseStatus);
-    req.mouseFeatures = 0;
-    req.pointerXPos = 0;
-    req.pointerYPos = 0;
-/** @todo r=bird: Michael, ditto. */
-    if (ioctl(g_vboxguestHandle, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(req)), (void*)&req) < 0)
-    {
-        ErrorF("ioctl to vboxguest module failed, rc = %d (%s)\n",
-               errno, strerror(errno));
-    }
-
+    /* Tell VMM that we no longer support absolute mouse handling - done
+     * automatically when we close the handle. */
     free(g_vmmreqMouseStatus);
     g_vmmreqMouseStatus = NULL;
     close(g_vboxguestHandle);

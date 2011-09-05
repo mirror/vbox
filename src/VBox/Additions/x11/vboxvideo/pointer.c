@@ -188,13 +188,6 @@ vbox_init(int scrnIndex, VBOXPtr pVBox)
         rc = FALSE;
     }
     pVBox->useDevice = rc;
-    /* We can't switch to a software cursor at will without help from
-     * VBoxClient.  So tell that to the host and wait for VBoxClient to
-     * change this. */
-    vrc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
-    if (RT_SUCCESS(vrc))
-        VbglR3SetMouseStatus(  fMouseFeatures
-                             | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     return rc;
 }
 
