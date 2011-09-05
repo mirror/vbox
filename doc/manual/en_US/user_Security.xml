@@ -95,12 +95,26 @@
       checksum which can be found on the official website.
     </para>
     <para>
-      General VirtualBox installation instructions for the supported hosts can
-      be found in <xref linkend="installation"/>. On some hosts it is possible
-      to disable certain VirtuallBox components during the installation but the
-      regular case is to install the complete VirtualBox package. The installation
-      must be done with system privileges. All VirtualBox binaries should be
-      executed as a regular user and never as a privileged user.
+      General VirtualBox installation instructions for the supported hosts
+      can be found in <xref linkend="installation"/>.
+    </para>
+    <para>
+      On Windows hosts, the installer allows to disable USB support, support
+      for bridged networking, support for host-only networking and the Python
+      language bindings, see <xref linkend="installation_windows"/>.
+      All these features are enabled by default but disabling some
+      of them could be appropriate if the corresponding functionality is not
+      required by any virtual machine. The Python language bindings are only
+      required if the VirtualBox API should be used by external Python
+      applications. In particular USB support and support
+      for the two networking modes induce the installation of Windows kernel
+      drivers at the host. Therefore disabling those selected features can
+      not only be used to restrict the user to a certain functionality but
+      also to minimize the surfaces provided to a potential attacker.     </para>
+    <para>
+      The regular case is to install the complete VirtualBox package. The
+      installation must be done with system privileges. All VirtualBox binaries
+      should be executed as a regular user and never as a privileged user.
     </para>
     <para>
       The Oracle VM VirtualBox extension pack provides additional features
