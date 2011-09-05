@@ -33,6 +33,7 @@
 
 #ifdef RT_OS_WINDOWS
 # include <process.h>
+# include <Windows.h>
 #else
 # include <unistd.h>
 # ifndef RT_OS_OS2
@@ -315,6 +316,18 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const cha
      * paths or we'll end up using the "C" locale for path conversion.
      */
     setlocale(LC_CTYPE, "");
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * On windows, make sure we talk CP_ACP to the console. It frequently uses
+     * a different code page, which would cause %[lL]S to fail.
+     */
+    if (!(fFlags & RTR3INIT_FLAGS_DLL))
+    {
+        SetConsoleCP(GetACP());
+        SetConsoleOutputCP(GetACP());
+    }
+#endif
 
     /*
      * The Process ID.
