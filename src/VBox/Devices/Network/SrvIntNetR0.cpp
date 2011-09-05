@@ -5624,15 +5624,18 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
                 | INTNET_OPEN_FLAGS_IF_PROMISC_NO_TRUNK
                 | INTNET_OPEN_FLAGS_REQUIRE_AS_RESTRICTIVE_POLICIES
                 | INTNET_OPEN_FLAGS_REQUIRE_EXACT);
-    uint32_t const  fDefFlags = INTNET_OPEN_FLAGS_ACCESS_RESTRICTED
-                              | INTNET_OPEN_FLAGS_PROMISC_ALLOW_CLIENTS
-                              | INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_HOST
-                              | INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_WIRE
-                              | INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED
-                              | INTNET_OPEN_FLAGS_TRUNK_HOST_CHASTE_MODE
-                              | INTNET_OPEN_FLAGS_TRUNK_WIRE_ENABLED
-                              | INTNET_OPEN_FLAGS_TRUNK_WIRE_CHASTE_MODE
-                              ;
+    uint32_t fDefFlags = INTNET_OPEN_FLAGS_PROMISC_ALLOW_CLIENTS
+                       | INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_HOST
+                       | INTNET_OPEN_FLAGS_PROMISC_ALLOW_TRUNK_WIRE
+                       | INTNET_OPEN_FLAGS_TRUNK_HOST_ENABLED
+                       | INTNET_OPEN_FLAGS_TRUNK_HOST_CHASTE_MODE
+                       | INTNET_OPEN_FLAGS_TRUNK_WIRE_ENABLED
+                       | INTNET_OPEN_FLAGS_TRUNK_WIRE_CHASTE_MODE;
+    if (   enmTrunkType == kIntNetTrunkType_WhateverNone
+        || enmTrunkType == kIntNetTrunkType_None)
+        fDefFlags |= INTNET_OPEN_FLAGS_ACCESS_RESTRICTED;
+    else
+        fDefFlags |= INTNET_OPEN_FLAGS_ACCESS_PUBLIC;
     for (uint32_t i = 0; i < RT_ELEMENTS(g_afIntNetOpenNetworkNetFlags); i++)
         if (!(fFlags & g_afIntNetOpenNetworkNetFlags[i].fPair))
             fFlags |= g_afIntNetOpenNetworkNetFlags[i].fPair & fDefFlags;
