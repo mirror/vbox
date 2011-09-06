@@ -1183,12 +1183,16 @@ $</screen>
             disabled by default and must be <emphasis role="bold">manually
             enabled</emphasis> in the VM settings (see <xref
             linkend="generalsettings" />).<note>
-                <para>Enabling 3D acceleration may expose security holes to
-                malicious software running in the guest. The third-party code
-                that VirtualBox uses for this purpose (Chromium) is not
-                hardened enough to prevent every risky 3D operation on the
-                host.</para>
-              </note></para>
+            <para>
+              Enabling 3D acceleration may expose security holes to malicious
+              software running in the guest. The 3D host graphics drivers
+              are often known to contain bugs and might crash with certain
+              operations. VirtualBox is not hardened enough to prevent every
+              risky 3D operation on the host. But a VirtualBox guest can not induce
+              any more harm to the host than any other malicious host application
+              using the 3D graphics API.
+            </para>
+            </note></para>
           </listitem>
         </orderedlist></para>
 
