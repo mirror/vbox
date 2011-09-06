@@ -974,7 +974,7 @@ static void ataPIOTransferStart(ATADevState *s, uint32_t start, uint32_t size)
     Log2(("%s: LUN#%d start %d size %d\n", __FUNCTION__, s->iLUN, start, size));
     s->iIOBufferPIODataStart = start;
     s->iIOBufferPIODataEnd = start + size;
-    ataSetStatus(s, ATA_STAT_DRQ);
+    ataSetStatus(s, ATA_STAT_DRQ | ATA_STAT_SEEK);
 }
 
 
