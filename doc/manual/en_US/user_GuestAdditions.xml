@@ -1184,13 +1184,16 @@ $</screen>
             enabled</emphasis> in the VM settings (see <xref
             linkend="generalsettings" />).<note>
             <para>
-              Enabling 3D acceleration may expose security holes to malicious
-              software running in the guest. The 3D host graphics drivers
-              are often known to contain bugs and might crash with certain
-              operations. VirtualBox is not hardened enough to prevent every
-              risky 3D operation on the host. But a VirtualBox guest can not induce
-              any more harm to the host than any other malicious host application
-              using the 3D graphics API.
+              Untrusted guest systems should not be allowed to use
+              VirtualBox's 3D acceleration features, just as untrusted host
+              software should not be allowed to use 3D acceleration.  Drivers
+              for 3D hardware are generally too complex to be made properly
+              secure and any software which is allowed to access them may be
+              able able to compromise the operating system running them.  In
+              addition, enabling 3D acceleration gives the guest direct access
+              to a large body of additional program code in the VirtualBox
+              host process which it might conceivably be able to use to crash
+              the virtual machine.
             </para>
             </note></para>
           </listitem>
