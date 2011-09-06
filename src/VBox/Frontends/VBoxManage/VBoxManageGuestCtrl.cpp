@@ -72,6 +72,7 @@ typedef struct COPYCONTEXT
 {
     IGuest *pGuest;
     bool fVerbose;
+    bool fDryRun;
     bool fHostToGuest;
     char *pszUsername;
     char *pszPassword;
@@ -820,13 +821,15 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
  * @return  IPRT status code.
  * @param   pGuest                  Pointer to IGuest interface to use.
  * @param   fVerbose                Flag indicating if we want to run in verbose mode.
+ * @param   fDryRun                 Flag indicating if we want to run a dry run only.
  * @param   fHostToGuest            Flag indicating if we want to copy from host to guest
  *                                  or vice versa.
  * @param   pszUsername             Username of account to use on the guest side.
  * @param   pszPassword             Password of account to use.
  * @param   ppContext               Pointer which receives the allocated copy context.
  */
-static int ctrlCopyContextCreate(IGuest *pGuest, bool fVerbose, bool fHostToGuest,
+static int ctrlCopyContextCreate(IGuest *pGuest, bool fVerbose, bool fDryRun,
+                                 bool fHostToGuest,
                                  const char *pszUsername, const char *pszPassword,
                                  PCOPYCONTEXT *ppContext)
 {
@@ -838,6 +841,7 @@ static int ctrlCopyContextCreate(IGuest *pGuest, bool fVerbose, bool fHostToGues
     AssertPtrReturn(pContext, VERR_NO_MEMORY);
     pContext->pGuest = pGuest;
     pContext->fVerbose = fVerbose;
+    pContext->fDryRun = fDryRun;
     pContext->fHostToGuest = fHostToGuest;
 
     pContext->pszUsername = RTStrDup(pszUsername);
@@ -982,6 +986,12 @@ static int ctrlCopyDirCreate(PCOPYCONTEXT pContext, const char *pszDir)
 {
     AssertPtrReturn(pContext, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
+
+    if (pContext->fVerbose)
+        RTPrintf("Creating directory \"%s\" ...\n", pszDir);
+
+    if (pContext->fDryRun)
+        return VINF_SUCCESS;
 
     int rc = VINF_SUCCESS;
     if (pContext->fHostToGuest) /* We want to create directories on the guest. */
@@ -1159,10 +1169,11 @@ static int ctrlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
     AssertReturn(!fFlags, VERR_INVALID_POINTER); /* No flags supported yet. */
 
     if (pContext->fVerbose)
-    {
         RTPrintf("Copying \"%s\" to \"%s\" ...\n",
                  pszFileSource, pszFileDest);
-    }
+
+    if (pContext->fDryRun)
+        return VINF_SUCCESS;
 
     int vrc = VINF_SUCCESS;
     ComPtr<IProgress> progress;
@@ -1224,6 +1235,9 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
     if (RT_SUCCESS(rc) && pszSubDir)
         rc = RTPathAppend(szCurDir, sizeof(szCurDir), pszSubDir);
 
+    if (pContext->fVerbose)
+        RTPrintf("Processing directory: %s\n", szCurDir);
+
     /* Flag indicating whether the current directory was created on the
      * target or not. */
     bool fDirCreated = false;
@@ -1263,6 +1277,9 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
                         || !strcmp(DirEntry.szName, ".."))
                         break;
 
+                    if (pContext->fVerbose)
+                        RTPrintf("Directory: %s\n", DirEntry.szName);
+
                     if (fFlags & CopyFileFlag_Recursive)
                     {
                         char *pszNewSub = NULL;
@@ -1298,39 +1315,44 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
 
                 case RTDIRENTRYTYPE_FILE:
                 {
-                    if (   !pszFilter
-                        || RTStrSimplePatternMatch(pszFilter, DirEntry.szName))
+                    if (   pszFilter
+                        && !RTStrSimplePatternMatch(pszFilter, DirEntry.szName))
                     {
-                        if (!fDirCreated)
-                        {
-                            char *pszDestDir;
-                            rc = ctrlCopyTranslatePath(pszSource, szCurDir,
-                                                       pszDest, &pszDestDir);
-                            if (RT_SUCCESS(rc))
-                            {
-                                rc = ctrlCopyDirCreate(pContext, pszDestDir);
-                                RTStrFree(pszDestDir);
+                        break; /* Filter does not match. */
+                    }
 
-                                fDirCreated = true;
-                            }
-                        }
+                    if (pContext->fVerbose)
+                        RTPrintf("File: %s\n", DirEntry.szName);
 
+                    if (!fDirCreated)
+                    {
+                        char *pszDestDir;
+                        rc = ctrlCopyTranslatePath(pszSource, szCurDir,
+                                                   pszDest, &pszDestDir);
                         if (RT_SUCCESS(rc))
                         {
-                            char *pszFileSource = RTPathJoinA(szCurDir, DirEntry.szName);
-                            if (pszFileSource)
+                            rc = ctrlCopyDirCreate(pContext, pszDestDir);
+                            RTStrFree(pszDestDir);
+
+                            fDirCreated = true;
+                        }
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        char *pszFileSource = RTPathJoinA(szCurDir, DirEntry.szName);
+                        if (pszFileSource)
+                        {
+                            char *pszFileDest;
+                            rc = ctrlCopyTranslatePath(pszSource, pszFileSource,
+                                                       pszDest, &pszFileDest);
+                            if (RT_SUCCESS(rc))
                             {
-                                char *pszFileDest;
-                                rc = ctrlCopyTranslatePath(pszSource, pszFileSource,
-                                                           pszDest, &pszFileDest);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    rc = ctrlCopyFileToDest(pContext, pszFileSource,
-                                                            pszFileDest, 0 /* Flags */);
-                                    RTStrFree(pszFileDest);
-                                }
-                                RTStrFree(pszFileSource);
+                                rc = ctrlCopyFileToDest(pContext, pszFileSource,
+                                                        pszFileDest, 0 /* Flags */);
+                                RTStrFree(pszFileDest);
                             }
+                            RTStrFree(pszFileSource);
                         }
                     }
                     break;
@@ -1382,6 +1404,9 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
     if (RT_FAILURE(rc))
         return rc;
 
+    if (pContext->fVerbose)
+        RTPrintf("Processing directory: %s\n", szCurDir);
+
     /* Flag indicating whether the current directory was created on the
      * target or not. */
     bool fDirCreated = false;
@@ -1412,6 +1437,12 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                     if (   !strName.compare(Bstr("."))
                         || !strName.compare(Bstr("..")))
                         break;
+
+                    if (pContext->fVerbose)
+                    {
+                        Utf8Str Utf8Dir(strName);
+                        RTPrintf("Directory: %s\n", Utf8Dir.c_str());
+                    }
 
                     if (fFlags & CopyFileFlag_Recursive)
                     {
@@ -1449,42 +1480,47 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                 case GuestDirEntryType_File:
                 {
                     Utf8Str strFile(strName);
-                    if (   !pszFilter
-                        || RTStrSimplePatternMatch(pszFilter, strFile.c_str()))
+                    if (   pszFilter
+                        && !RTStrSimplePatternMatch(pszFilter, strFile.c_str()))
                     {
-                        if (!fDirCreated)
-                        {
-                            char *pszDestDir;
-                            rc = ctrlCopyTranslatePath(pszSource, szCurDir,
-                                                       pszDest, &pszDestDir);
-                            if (RT_SUCCESS(rc))
-                            {
-                                rc = ctrlCopyDirCreate(pContext, pszDestDir);
-                                RTStrFree(pszDestDir);
+                        break; /* Filter does not match. */
+                    }
 
-                                fDirCreated = true;
-                            }
-                        }
+                    if (pContext->fVerbose)
+                        RTPrintf("File: %s\n", strFile.c_str());
 
+                    if (!fDirCreated)
+                    {
+                        char *pszDestDir;
+                        rc = ctrlCopyTranslatePath(pszSource, szCurDir,
+                                                   pszDest, &pszDestDir);
                         if (RT_SUCCESS(rc))
                         {
-                            char *pszFileSource = RTPathJoinA(szCurDir, strFile.c_str());
-                            if (pszFileSource)
-                            {
-                                char *pszFileDest;
-                                rc = ctrlCopyTranslatePath(pszSource, pszFileSource,
-                                                           pszDest, &pszFileDest);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    rc = ctrlCopyFileToDest(pContext, pszFileSource,
-                                                            pszFileDest, 0 /* Flags */);
-                                    RTStrFree(pszFileDest);
-                                }
-                                RTStrFree(pszFileSource);
-                            }
-                            else
-                                rc = VERR_NO_MEMORY;
+                            rc = ctrlCopyDirCreate(pContext, pszDestDir);
+                            RTStrFree(pszDestDir);
+
+                            fDirCreated = true;
                         }
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        char *pszFileSource = RTPathJoinA(szCurDir, strFile.c_str());
+                        if (pszFileSource)
+                        {
+                            char *pszFileDest;
+                            rc = ctrlCopyTranslatePath(pszSource, pszFileSource,
+                                                       pszDest, &pszFileDest);
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = ctrlCopyFileToDest(pContext, pszFileSource,
+                                                        pszFileDest, 0 /* Flags */);
+                                RTStrFree(pszFileDest);
+                            }
+                            RTStrFree(pszFileSource);
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
                     }
                     break;
                 }
@@ -1723,7 +1759,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
     /* Create the copy context -- it contains all information
      * the routines need to know when handling the actual copying. */
     PCOPYCONTEXT pContext;
-    vrc = ctrlCopyContextCreate(guest, fVerbose, fHostToGuest,
+    vrc = ctrlCopyContextCreate(guest, fVerbose, fDryRun, fHostToGuest,
                                 Utf8UserName.c_str(), Utf8Password.c_str(),
                                 &pContext);
     if (RT_FAILURE(vrc))
@@ -1781,9 +1817,12 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
                 else /* Regular directory without filter. */
                     vrc = ctrlCopyDirExistsOnSource(pContext, pszSource, &fExists);
 
-                /* Strip trailing slash from our source element so that other functions
-                 * can use this stuff properly (like RTPathStartsWith). */
-                RTPathStripTrailingSlash(pszSource);
+                if (fExists)
+                {
+                    /* Strip trailing slash from our source element so that other functions
+                     * can use this stuff properly (like RTPathStartsWith). */
+                    RTPathStripTrailingSlash(pszSource);
+                }
             }
             else
             {
@@ -1811,10 +1850,8 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
                         RTStrFree(pszDestFile);
                     }
                     else
-                    {
                         RTMsgError("Unable to translate path for \"%s\", rc=%Rrc\n",
                                    pszSource, vrc);
-                    }
                 }
                 else
                 {
