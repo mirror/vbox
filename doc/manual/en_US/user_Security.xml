@@ -315,7 +315,10 @@
           machine's memory contents are transferred from one host to another
           is not encrypted. A third party with access to the network through
           which the data is transferred could therefore intercept that
-          data.</para>
+          data. An SSH tunnel could be used to secure the connection between
+          the two host. But when considering to teleport a VM over an untrusted
+          network the first question to answer is how both VMs can securely
+          access the same virtual disk image(s) with a reasonable performance. </para>
         </listitem>
 
         <listitem>
