@@ -1450,13 +1450,10 @@ DECLINLINE(char *) RTLatin1PrevCp(const char *psz)
  *                length restriction (precision).
  *      - \%ls  - Same as \%s except that the input is UTF-16 (output UTF-8).
  *      - \%Ls  - Same as \%s except that the input is UCS-32 (output UTF-8).
- *      - \%S   - R3: Same as \%s except it is printed in the current codeset
- *                instead of UTF-8 (source is still UTF-8).
- *                Other contexts: Same as \%s.
- *      - \%lS  - Same as \%S except that the input is UTF-16 (output current
- *                codeset).
- *      - \%LS  - Same as \%S except that the input is UCS-32 (output current
- *                codeset).
+ *      - \%S   - Same as \%s, used to convert to current codeset but this is
+ *                now done by the streams code.  Deprecated, use \%s.
+ *      - \%lS  - Ditto. Deprecated, use \%ls.
+ *      - \%LS  - Ditto. Deprecated, use \%Ls.
  *      - \%c   - Takes a char and prints it.
  *      - \%d   - Takes a signed integer and prints it as decimal. Thousand
  *                separator (\'), zero padding (0), adjustment (-+), width,

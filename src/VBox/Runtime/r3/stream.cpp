@@ -52,6 +52,11 @@
 
 #include <stdio.h>
 #include <errno.h>
+#ifdef RT_OS_WINDOWS
+# include <io.h>
+# include <fcntl.h>
+# include <Windows.h>
+#endif
 
 
 /*******************************************************************************
@@ -68,6 +73,12 @@ typedef struct RTSTREAM
     int32_t volatile    i32Error;
     /** Pointer to the LIBC file stream. */
     FILE               *pFile;
+    /** Stream is using the current process code set. */
+    bool                fCurrentCodeSet;
+    /** Whether the stream was opened in binary mode. */
+    bool                fBinary;
+    /** Whether to recheck the stream mode before writing.. */
+    bool                fRecheckMode;
 #ifndef HAVE_FWRITE_UNLOCKED
     /** Critical section for serializing access to the stream. */
     PRTCRITSECT         pCritSect;
@@ -83,7 +94,10 @@ static RTSTREAM    g_StdIn =
 {
     RTSTREAM_MAGIC,
     0,
-    stdin
+    stdin,
+    true, 
+    /*.fBinary = */ false,
+    /*.fRecheckMode = */ true
 #ifndef HAVE_FWRITE_UNLOCKED
     , NULL
 #endif
@@ -94,7 +108,10 @@ static RTSTREAM    g_StdErr =
 {
     RTSTREAM_MAGIC,
     0,
-    stderr
+    stderr, 
+    true,
+    /*.fBinary = */ false,
+    /*.fRecheckMode = */ true
 #ifndef HAVE_FWRITE_UNLOCKED
     , NULL
 #endif
@@ -105,7 +122,10 @@ static RTSTREAM    g_StdOut =
 {
     RTSTREAM_MAGIC,
     0,
-    stdout
+    stdout,
+    true,
+    /*.fBinary = */ false,
+    /*.fRecheckMode = */ true
 #ifndef HAVE_FWRITE_UNLOCKED
     , NULL
 #endif
@@ -222,6 +242,7 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
         return VERR_INVALID_PARAMETER;
     }
     bool fOk = true;
+    bool fBinary = false;
     switch (*pszMode)
     {
         case 'a':
@@ -231,21 +252,33 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
             {
                 case '\0':
                     break;
+
                 case '+':
                     switch (pszMode[2])
                     {
                         case '\0':
-                        //case 't':
-                        case 'b':
                             break;
+
+                        //case 't':
+                        //    break;
+
+                        case 'b':
+                            fBinary = true;
+                            break;
+
                         default:
                             fOk = false;
                             break;
                     }
                     break;
+
                 //case 't':
+                //    break;
+
                 case 'b':
+                    fBinary = true;
                     break;
+
                 default:
                     fOk = false;
                     break;
@@ -269,6 +302,8 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
     {
         pStream->u32Magic = RTSTREAM_MAGIC;
         pStream->i32Error = VINF_SUCCESS;
+        pStream->fCurrentCodeSet = false;
+        pStream->fBinary  = fBinary;
 #ifndef HAVE_FWRITE_UNLOCKED
         pStream->pCritSect = NULL;
 #endif /* HAVE_FWRITE_UNLOCKED */
@@ -338,33 +373,29 @@ RTR3DECL(int) RTStrmOpenF(const char *pszMode, PRTSTREAM *ppStream, const char *
  */
 RTR3DECL(int) RTStrmClose(PRTSTREAM pStream)
 {
-    if (pStream && pStream->u32Magic == RTSTREAM_MAGIC)
-    {
-        if (!fclose(pStream->pFile))
-        {
-            pStream->u32Magic = 0xdeaddead;
-            pStream->pFile = NULL;
-#ifndef HAVE_FWRITE_UNLOCKED
-            if (pStream->pCritSect)
-            {
-                RTCritSectEnter(pStream->pCritSect);
-                RTCritSectLeave(pStream->pCritSect);
-                RTCritSectDelete(pStream->pCritSect);
-                RTMemFree(pStream->pCritSect);
-                pStream->pCritSect = NULL;
-            }
-#endif
-            RTMemFree(pStream);
-            return VINF_SUCCESS;
-        }
+    if (!pStream)
+        return VINF_SUCCESS;
+    AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
 
-        return RTErrConvertFromErrno(errno);
-    }
-    else
+    if (!fclose(pStream->pFile))
     {
-        AssertMsgFailed(("Invalid stream!\n"));
-        return VERR_INVALID_PARAMETER;
+        pStream->u32Magic = 0xdeaddead;
+        pStream->pFile = NULL;
+#ifndef HAVE_FWRITE_UNLOCKED
+        if (pStream->pCritSect)
+        {
+            RTCritSectEnter(pStream->pCritSect);
+            RTCritSectLeave(pStream->pCritSect);
+            RTCritSectDelete(pStream->pCritSect);
+            RTMemFree(pStream->pCritSect);
+            pStream->pCritSect = NULL;
+        }
+#endif
+        RTMemFree(pStream);
+        return VINF_SUCCESS;
     }
+
+    return RTErrConvertFromErrno(errno);
 }
 
 
@@ -376,15 +407,8 @@ RTR3DECL(int) RTStrmClose(PRTSTREAM pStream)
  */
 RTR3DECL(int) RTStrmError(PRTSTREAM pStream)
 {
-    int rc;
-    if (pStream && pStream->u32Magic == RTSTREAM_MAGIC)
-        rc = pStream->i32Error;
-    else
-    {
-        AssertMsgFailed(("Invalid stream!\n"));
-        rc = VERR_INVALID_PARAMETER;
-    }
-    return rc;
+    AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
+    return pStream->i32Error;
 }
 
 
@@ -399,19 +423,11 @@ RTR3DECL(int) RTStrmError(PRTSTREAM pStream)
  */
 RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream)
 {
-    int rc;
-    if (pStream && pStream->u32Magic == RTSTREAM_MAGIC)
-    {
-        clearerr(pStream->pFile);
-        ASMAtomicXchgS32(&pStream->i32Error, VINF_SUCCESS);
-        rc = VINF_SUCCESS;
-    }
-    else
-    {
-        AssertMsgFailed(("Invalid stream!\n"));
-        rc = VERR_INVALID_PARAMETER;
-    }
-    return rc;
+    AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
+
+    clearerr(pStream->pFile);
+    ASMAtomicWriteS32(&pStream->i32Error, VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
 
@@ -437,16 +453,42 @@ RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream)
     errno = 0;
     if (!fseek(pStream->pFile, 0, SEEK_SET))
     {
-        ASMAtomicXchgS32(&pStream->i32Error, VINF_SUCCESS);
+        ASMAtomicWriteS32(&pStream->i32Error, VINF_SUCCESS);
         rc = VINF_SUCCESS;
     }
     else
     {
         rc = RTErrConvertFromErrno(errno);
-        ASMAtomicXchgS32(&pStream->i32Error, rc);
+        ASMAtomicWriteS32(&pStream->i32Error, rc);
     }
 
     return rc;
+}
+
+
+/**
+ * Recheck the stream mode. 
+ *  
+ * @param   pStream             The stream (locked).
+ */
+static void rtStreamRecheckMode(PRTSTREAM pStream)
+{
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    int fh = fileno(pStream->pFile);
+    if (fh >= 0)
+    {
+        int fExpected = pStream->fBinary ? _O_BINARY : _O_TEXT;
+        int fActual   = _setmode(fh, fExpected);
+        if (fActual != -1 && fExpected != (fActual & (_O_BINARY | _O_TEXT)))
+        {
+            _setmode(fh, fActual & (_O_BINARY | _O_TEXT));
+            pStream->fBinary = !(fActual & _O_TEXT);
+        }
+    }
+#else
+    NOREF(pStream);
+#endif
+    pStream->fRecheckMode = false;
 }
 
 
@@ -463,62 +505,323 @@ RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream)
  */
 RTR3DECL(int) RTStrmReadEx(PRTSTREAM pStream, void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
-    int rc;
-    if (pStream && pStream->u32Magic == RTSTREAM_MAGIC)
+    AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
+
+    int rc = pStream->i32Error;
+    if (RT_SUCCESS(rc))
     {
-        rc = pStream->i32Error;
-        if (RT_SUCCESS(rc))
+        if (pStream->fRecheckMode)
+            rtStreamRecheckMode(pStream);
+
+        if (pcbRead)
         {
-            if (pcbRead)
+            /*
+             * Can do with a partial read.
+             */
+            *pcbRead = fread(pvBuf, 1, cbRead, pStream->pFile);
+            if (    *pcbRead == cbRead
+                || !ferror(pStream->pFile))
+                return VINF_SUCCESS;
+            if (feof(pStream->pFile))
             {
-                /*
-                 * Can do with a partial read.
-                 */
-                *pcbRead = fread(pvBuf, 1, cbRead, pStream->pFile);
-                if (    *pcbRead == cbRead
-                    || !ferror(pStream->pFile))
-                    return VINF_SUCCESS;
-                if (feof(pStream->pFile))
-                {
-                    if (*pcbRead)
-                        return VINF_EOF;
-                    rc = VERR_EOF;
-                }
-                else if (ferror(pStream->pFile))
-                    rc = VERR_READ_ERROR;
-                else
-                {
-                    AssertMsgFailed(("This shouldn't happen\n"));
-                    rc = VERR_INTERNAL_ERROR;
-                }
+                if (*pcbRead)
+                    return VINF_EOF;
+                rc = VERR_EOF;
             }
+            else if (ferror(pStream->pFile))
+                rc = VERR_READ_ERROR;
             else
             {
-                /*
-                 * Must read it all!
-                 */
-                if (fread(pvBuf, cbRead, 1, pStream->pFile) == 1)
-                    return VINF_SUCCESS;
-
-                /* possible error/eof. */
-                if (feof(pStream->pFile))
-                    rc = VERR_EOF;
-                else if (ferror(pStream->pFile))
-                    rc = VERR_READ_ERROR;
-                else
-                {
-                    AssertMsgFailed(("This shouldn't happen\n"));
-                    rc = VERR_INTERNAL_ERROR;
-                }
+                AssertMsgFailed(("This shouldn't happen\n"));
+                rc = VERR_INTERNAL_ERROR;
             }
-            ASMAtomicXchgS32(&pStream->i32Error, rc);
         }
+        else
+        {
+            /*
+             * Must read it all!
+             */
+            if (fread(pvBuf, cbRead, 1, pStream->pFile) == 1)
+                return VINF_SUCCESS;
+
+            /* possible error/eof. */
+            if (feof(pStream->pFile))
+                rc = VERR_EOF;
+            else if (ferror(pStream->pFile))
+                rc = VERR_READ_ERROR;
+            else
+            {
+                AssertMsgFailed(("This shouldn't happen\n"));
+                rc = VERR_INTERNAL_ERROR;
+            }
+        }
+        ASMAtomicWriteS32(&pStream->i32Error, rc);
+    }
+    return rc;
+}
+
+
+/**
+ * Check if the input text is valid UTF-8. 
+ *  
+ * @returns true/false.
+ * @param   pvBuf               Pointer to the buffer.
+ * @param   cbBuf               Size of the buffer.
+ */
+static bool rtStrmIsUtf8Text(const void *pvBuf, size_t cbBuf)
+{
+    NOREF(pvBuf);
+    NOREF(cbBuf);
+    /** @todo not sure this is a good idea... Better redefine RTStrmWrite. */
+    return false;
+}
+
+
+#ifdef RT_OS_WINDOWS
+/**
+ * Check if the stream is for a Window console. 
+ *  
+ * @returns true / false.
+ * @param   pStream             The stream.
+ * @param   phCon               Where to return the console handle.
+ */
+static bool rtStrmIsConsoleUnlocked(PRTSTREAM pStream, HANDLE *phCon)
+{
+    int fh = fileno(pStream->pFile);
+    if (isatty(fh))
+    {
+        DWORD dwMode;
+        HANDLE hCon = (HANDLE)_get_osfhandle(fh);
+        if (GetConsoleMode(hCon, &dwMode))
+        {
+            *phCon = hCon;
+            return true;
+        }
+    }
+    return false;
+}
+#endif /* RT_OS_WINDOWS */
+
+
+/**
+ * Internal write API, stream lock already held. 
+ *  
+ * @returns IPRT status code.
+ * @param   pStream             The stream.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How much to write.
+ * @param   pcbWritten          Where to optionally return the number of bytes 
+ *                              written.
+ * @param   fSureIsText         Set if we're sure this is UTF-8 text already.
+ */
+static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite, size_t *pcbWritten, 
+                              bool fSureIsText)
+{
+    int rc = pStream->i32Error;
+    if (RT_FAILURE(rc))
+        return rc;
+    if (pStream->fRecheckMode)
+        rtStreamRecheckMode(pStream);
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * Use the unicode console API when possible in order to avoid stuff 
+     * getting lost in unnecessary code page translations.
+     */
+    HANDLE hCon;
+    if (rtStrmIsConsoleUnlocked(pStream, &hCon))
+    {
+# ifdef HAVE_FWRITE_UNLOCKED
+        if (!fflush_unlocked(pStream->pFile))
+# else
+        if (!fflush(pStream->pFile))
+# endif
+        {
+            /** @todo Consider buffering later. For now, we'd rather correct output than
+             *        fast output. */
+            DWORD    cwcWritten = 0;
+            PRTUTF16 pwszSrc = NULL;
+            size_t   cwcSrc = 0;
+            rc = RTStrToUtf16Ex((const char *)pvBuf, cbWrite, &pwszSrc, 0, &cwcSrc);
+            if (RT_SUCCESS(rc))
+            {
+                if (!WriteConsoleW(hCon, pwszSrc, (DWORD)cwcSrc, &cwcWritten, NULL))
+                {
+                    /* try write char-by-char to avoid heap problem. */
+                    cwcWritten = 0;
+                    while (cwcWritten != cwcSrc)
+                    {
+                        DWORD cwcThis;
+                        if (!WriteConsoleW(hCon, &pwszSrc[cwcWritten], 1, &cwcThis, NULL))
+                        {
+                            if (!pcbWritten || cwcWritten == 0) 
+                                rc = RTErrConvertFromErrno(GetLastError());
+                            break;
+                        }
+                        if (cwcThis != 0)
+                            break;
+                        cwcWritten++;
+                    }
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    if (cwcWritten == cwcSrc)
+                    {
+                        if (pcbWritten)
+                            *pcbWritten = cbWrite;
+                    }
+                    else if (pcbWritten)
+                    {
+                        PCRTUTF16   pwszCur = pwszSrc;
+                        const char *pszCur  = (const char *)pvBuf;
+                        while ((uintptr_t)(pwszCur - pwszSrc) < cwcWritten)
+                        {
+                            RTUNICP CpIgnored;
+                            RTUtf16GetCpEx(&pwszCur, &CpIgnored);
+                            RTStrGetCpEx(&pszCur, &CpIgnored);
+                        }
+                        *pcbWritten = pszCur - (const char *)pvBuf;
+                    }
+                    else
+                        rc = VERR_WRITE_ERROR;
+                }
+                RTUtf16Free(pwszSrc);
+            }
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+        if (RT_FAILURE(rc))
+            ASMAtomicWriteS32(&pStream->i32Error, rc);
+        return rc;
+    }
+#endif /* RT_OS_WINDOWS */ 
+
+    /*
+     * If we're sure it's text output, convert it from UTF-8 to the current 
+     * code page before printing it. 
+     *  
+     * Note! Partial writes are not supported in this scenario because we 
+     *       cannot easily report back a written length matching the input.
+     */
+    /** @todo Skip this if the current code set is UTF-8. */
+    if (   pStream->fCurrentCodeSet
+        && !pStream->fBinary
+        && (   fSureIsText 
+            || rtStrmIsUtf8Text(pvBuf, cbWrite))
+       )
+    {
+        char       *pszSrcFree = NULL;
+        const char *pszSrc     = (const char *)pvBuf;
+        if (pszSrc[cbWrite])
+        {
+            pszSrc = pszSrcFree = RTStrDupN(pszSrc, cbWrite);
+            if (pszSrc == NULL)
+                rc = VERR_NO_STR_MEMORY;
+        }
+        if (RT_SUCCESS(rc))
+        {
+            char *pszSrcCurCP;
+            rc = RTStrUtf8ToCurrentCP(&pszSrcCurCP, pszSrc);
+            if (RT_SUCCESS(rc))
+            {
+                size_t  cchSrcCurCP = strlen(pszSrcCurCP);
+                IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc / mempcpy again */
+#ifdef HAVE_FWRITE_UNLOCKED
+                ssize_t cbWritten = fwrite_unlocked(pszSrcCurCP, cchSrcCurCP, 1, pStream->pFile);
+#else
+                ssize_t cbWritten = fwrite(pszSrcCurCP, cchSrcCurCP, 1, pStream->pFile);
+#endif
+                IPRT_ALIGNMENT_CHECKS_ENABLE();
+                if (cbWritten == 1)
+                {
+                    if (pcbWritten)
+                        *pcbWritten = cbWrite;
+                }
+#ifdef HAVE_FWRITE_UNLOCKED
+                else if (!ferror_unlocked(pStream->pFile))
+#else
+                else if (!ferror(pStream->pFile))
+#endif
+                {
+                    if (pcbWritten)
+                        *pcbWritten = 0;
+                }
+                else
+                    rc = VERR_WRITE_ERROR;
+                RTStrFree(pszSrcCurCP);
+            }
+            RTStrFree(pszSrcFree);
+        }
+
+        if (RT_FAILURE(rc))
+            ASMAtomicWriteS32(&pStream->i32Error, rc);
+        return rc;
+    }
+
+    /*
+     * Otherwise, just write it as-is. 
+     */
+    if (pcbWritten)
+    {
+        IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc / mempcpy again */
+#ifdef HAVE_FWRITE_UNLOCKED
+        *pcbWritten = fwrite_unlocked(pvBuf, 1, cbWrite, pStream->pFile);
+#else
+        *pcbWritten = fwrite(pvBuf, 1, cbWrite, pStream->pFile);
+#endif
+        IPRT_ALIGNMENT_CHECKS_ENABLE();
+        if (    *pcbWritten == cbWrite
+#ifdef HAVE_FWRITE_UNLOCKED
+            ||  !ferror_unlocked(pStream->pFile))
+#else
+            ||  !ferror(pStream->pFile))
+#endif
+            return VINF_SUCCESS;
+        rc = VERR_WRITE_ERROR;
     }
     else
     {
-        AssertMsgFailed(("Invalid stream!\n"));
-        rc = VERR_INVALID_PARAMETER;
+        /* Must write it all! */
+        IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc / mempcpy again */
+#ifdef HAVE_FWRITE_UNLOCKED
+        size_t cbWritten = fwrite_unlocked(pvBuf, cbWrite, 1, pStream->pFile);
+#else
+        size_t cbWritten = fwrite(pvBuf, cbWrite, 1, pStream->pFile);
+#endif
+        IPRT_ALIGNMENT_CHECKS_ENABLE();
+        if (cbWritten == 1)
+            return VINF_SUCCESS;
+#ifdef HAVE_FWRITE_UNLOCKED
+        if (!ferror_unlocked(pStream->pFile))
+#else
+        if (!ferror(pStream->pFile))
+#endif
+            return VINF_SUCCESS; /* WEIRD! But anyway... */
+
+        rc = VERR_WRITE_ERROR;
     }
+    ASMAtomicWriteS32(&pStream->i32Error, rc);
+
+    return rc;
+}
+
+
+/**
+ * Internal write API. 
+ *  
+ * @returns IPRT status code.
+ * @param   pStream             The stream.
+ * @param   pvBuf               What to write.
+ * @param   cbWrite             How much to write.
+ * @param   pcbWritten          Where to optionally return the number of bytes 
+ *                              written.
+ * @param   fSureIsText         Set if we're sure this is UTF-8 text already.
+ */
+static int rtStrmWrite(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite, size_t *pcbWritten, bool fSureIsText)
+{
+    rtStrmLock(pStream);
+    int rc = rtStrmWriteLocked(pStream, pvBuf, cbWrite, pcbWritten, fSureIsText);
+    rtStrmUnlock(pStream);
     return rc;
 }
 
@@ -535,46 +838,8 @@ RTR3DECL(int) RTStrmReadEx(PRTSTREAM pStream, void *pvBuf, size_t cbRead, size_t
  */
 RTR3DECL(int) RTStrmWriteEx(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
 {
-    int rc;
-    if (pStream && pStream->u32Magic == RTSTREAM_MAGIC)
-    {
-        rc = pStream->i32Error;
-        if (RT_SUCCESS(rc))
-        {
-            if (pcbWritten)
-            {
-                IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc / mempcpy again */
-                *pcbWritten = fwrite(pvBuf, 1, cbWrite, pStream->pFile);
-                IPRT_ALIGNMENT_CHECKS_ENABLE();
-                if (    *pcbWritten == cbWrite
-                    ||  !ferror(pStream->pFile))
-                    return VINF_SUCCESS;
-                rc = VERR_WRITE_ERROR;
-            }
-            else
-            {
-                /*
-                 * Must write it all!
-                 */
-                IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc / mempcpy again */
-                size_t cbWritten = fwrite(pvBuf, cbWrite, 1, pStream->pFile);
-                IPRT_ALIGNMENT_CHECKS_ENABLE();
-                if (cbWritten == 1)
-                    return VINF_SUCCESS;
-                if (!ferror(pStream->pFile))
-                    return VINF_SUCCESS; /* WEIRD! But anyway... */
-
-                rc = VERR_WRITE_ERROR;
-            }
-            ASMAtomicXchgS32(&pStream->i32Error, rc);
-        }
-    }
-    else
-    {
-        AssertMsgFailed(("Invalid stream!\n"));
-        rc = VERR_INVALID_PARAMETER;
-    }
-    return rc;
+    AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
+    return rtStrmWrite(pStream, pvBuf, cbWrite, pcbWritten, false);
 }
 
 
@@ -604,7 +869,7 @@ RTR3DECL(int) RTStrmGetCh(PRTSTREAM pStream)
  */
 RTR3DECL(int) RTStrmPutCh(PRTSTREAM pStream, int ch)
 {
-    return RTStrmWriteEx(pStream, &ch, 1, NULL);
+    return rtStrmWrite(pStream, &ch, 1, NULL, true /*fSureIsText*/);
 }
 
 
@@ -620,7 +885,7 @@ RTR3DECL(int) RTStrmPutCh(PRTSTREAM pStream, int ch)
 RTR3DECL(int) RTStrmPutStr(PRTSTREAM pStream, const char *pszString)
 {
     size_t cch = strlen(pszString);
-    return RTStrmWriteEx(pStream, pszString, cch, NULL);
+    return rtStrmWrite(pStream, pszString, cch, NULL, true /*fSureIsText*/);
 }
 
 
@@ -637,72 +902,65 @@ RTR3DECL(int) RTStrmPutStr(PRTSTREAM pStream, const char *pszString)
  */
 RTR3DECL(int) RTStrmGetLine(PRTSTREAM pStream, char *pszString, size_t cchString)
 {
+    AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
     int rc;
-    if (pStream && pStream->u32Magic == RTSTREAM_MAGIC)
+    if (pszString && cchString > 1)
     {
-        if (pszString && cchString > 1)
+        rc = pStream->i32Error;
+        if (RT_SUCCESS(rc))
         {
-            rc = pStream->i32Error;
-            if (RT_SUCCESS(rc))
+            cchString--;            /* save space for the terminator. */
+            rtStrmLock(pStream);
+            for (;;)
             {
-                cchString--;            /* save space for the terminator. */
-                rtStrmLock(pStream);
-                for (;;)
-                {
 #ifdef HAVE_FWRITE_UNLOCKED /** @todo darwin + freebsd(?) has fgetc_unlocked but not fwrite_unlocked, optimize... */
-                    int ch = fgetc_unlocked(pStream->pFile);
+                int ch = fgetc_unlocked(pStream->pFile);
 #else
-                    int ch = fgetc(pStream->pFile);
+                int ch = fgetc(pStream->pFile);
 #endif
-                    if (ch == EOF)
+                if (ch == EOF)
+                {
+#ifdef HAVE_FWRITE_UNLOCKED
+                    if (feof_unlocked(pStream->pFile))
+#else
+                    if (feof(pStream->pFile))
+#endif
                     {
-#ifdef HAVE_FWRITE_UNLOCKED
-                        if (feof_unlocked(pStream->pFile))
-#else
-                        if (feof(pStream->pFile))
-#endif
-                        {
-                            rc = VERR_EOF;
-                            break;
-                        }
-#ifdef HAVE_FWRITE_UNLOCKED
-                        if (ferror_unlocked(pStream->pFile))
-#else
-                        if (ferror(pStream->pFile))
-#endif
-                            rc = VERR_READ_ERROR;
-                        else
-                        {
-                            AssertMsgFailed(("This shouldn't happen\n"));
-                            rc = VERR_INTERNAL_ERROR;
-                        }
+                        rc = VERR_EOF;
                         break;
                     }
-                    if (ch == '\0' || ch == '\n' || ch == '\r')
-                        break;
-                    *pszString++ = ch;
-                    if (--cchString <= 0)
+#ifdef HAVE_FWRITE_UNLOCKED
+                    if (ferror_unlocked(pStream->pFile))
+#else
+                    if (ferror(pStream->pFile))
+#endif
+                        rc = VERR_READ_ERROR;
+                    else
                     {
-                        rc = VINF_BUFFER_OVERFLOW;
-                        break;
+                        AssertMsgFailed(("This shouldn't happen\n"));
+                        rc = VERR_INTERNAL_ERROR;
                     }
+                    break;
                 }
-                rtStrmUnlock(pStream);
-
-                *pszString = '\0';
-                if (RT_FAILURE(rc))
-                    ASMAtomicXchgS32(&pStream->i32Error, rc);
+                if (ch == '\0' || ch == '\n' || ch == '\r')
+                    break;
+                *pszString++ = ch;
+                if (--cchString <= 0)
+                {
+                    rc = VINF_BUFFER_OVERFLOW;
+                    break;
+                }
             }
-        }
-        else
-        {
-            AssertMsgFailed(("no buffer or too small buffer!\n"));
-            rc = VERR_INVALID_PARAMETER;
+            rtStrmUnlock(pStream);
+
+            *pszString = '\0';
+            if (RT_FAILURE(rc))
+                ASMAtomicWriteS32(&pStream->i32Error, rc);
         }
     }
     else
     {
-        AssertMsgFailed(("Invalid stream!\n"));
+        AssertMsgFailed(("no buffer or too small buffer!\n"));
         rc = VERR_INVALID_PARAMETER;
     }
     return rc;
@@ -734,21 +992,7 @@ RTR3DECL(int) RTStrmFlush(PRTSTREAM pStream)
 static DECLCALLBACK(size_t) rtstrmOutput(void *pvArg, const char *pachChars, size_t cchChars)
 {
     if (cchChars)
-    {
-        PRTSTREAM pStream = (PRTSTREAM)pvArg;
-        int rc = pStream->i32Error;
-        if (RT_SUCCESS(rc))
-        {
-            IPRT_ALIGNMENT_CHECKS_DISABLE(); /* glibc / mempcpy again */
-#ifdef HAVE_FWRITE_UNLOCKED
-            if (fwrite_unlocked(pachChars, cchChars, 1, pStream->pFile) != 1)
-#else
-            if (fwrite(pachChars, cchChars, 1, pStream->pFile) != 1)
-#endif
-                ASMAtomicXchgS32(&pStream->i32Error, VERR_WRITE_ERROR);
-            IPRT_ALIGNMENT_CHECKS_ENABLE();
-        }
-    }
+        rtStrmWriteLocked((PRTSTREAM)pvArg, pachChars, cchChars, NULL, true /*fSureIsText*/);
     /* else: ignore termination call. */
     return cchChars;
 }
@@ -764,25 +1008,18 @@ static DECLCALLBACK(size_t) rtstrmOutput(void *pvArg, const char *pachChars, siz
  */
 RTR3DECL(int) RTStrmPrintfV(PRTSTREAM pStream, const char *pszFormat, va_list args)
 {
-    int rc;
-    if (pStream && pStream->u32Magic == RTSTREAM_MAGIC)
+    AssertReturn(RT_VALID_PTR(pStream) && pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_PARAMETER);
+    int rc = pStream->i32Error;
+    if (RT_SUCCESS(rc))
     {
-        rc = pStream->i32Error;
-        if (RT_SUCCESS(rc))
-        {
-            rtStrmLock(pStream);
-            rc = (int)RTStrFormatV(rtstrmOutput, pStream, NULL, NULL, pszFormat, args);
-            rtStrmUnlock(pStream);
-            Assert(rc >= 0);
-        }
-        else
-            rc = -1;
+        rtStrmLock(pStream);
+//        pStream->fShouldFlush = true;
+        rc = (int)RTStrFormatV(rtstrmOutput, pStream, NULL, NULL, pszFormat, args);
+        rtStrmUnlock(pStream);
+        Assert(rc >= 0);
     }
     else
-    {
-        AssertMsgFailed(("Invalid stream!\n"));
         rc = -1;
-    }
     return rc;
 }
 
