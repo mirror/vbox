@@ -3535,11 +3535,11 @@ static inline void fb_copy_to_texture_hwstretch(IWineD3DSurfaceImpl *This, IWine
 
         /* top left */
         glTexCoord2f(left, top);
-        glVertex2i(0, fbheight - dst_rect.bottom - dst_rect.top);
+        glVertex2i(0, fbheight - (dst_rect.bottom - dst_rect.top));
 
         /* top right */
         glTexCoord2f(right, top);
-        glVertex2i(dst_rect.right - dst_rect.left, fbheight - dst_rect.bottom - dst_rect.top);
+        glVertex2i(dst_rect.right - dst_rect.left, fbheight - (dst_rect.bottom - dst_rect.top));
 
         /* bottom right */
         glTexCoord2f(right, bottom);
