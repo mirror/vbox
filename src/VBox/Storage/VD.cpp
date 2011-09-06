@@ -1009,6 +1009,9 @@ static int vdDiscardRemoveBlocks(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, size_
 {
     int rc = VINF_SUCCESS;
 
+    LogFlowFunc(("pDisk=%#p pDiscard=%#p cbDiscardingNew=%zu\n",
+                 pDisk, pDiscard, cbDiscardingNew));
+
     while (pDiscard->cbDiscarding > cbDiscardingNew)
     {
         PVDDISCARDBLOCK pBlock = RTListGetLast(&pDiscard->ListLru, VDDISCARDBLOCK, NodeLru);
@@ -1020,7 +1023,7 @@ static int vdDiscardRemoveBlocks(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, size_
         uint32_t idxStart = 0;
         size_t cbLeft = pBlock->cbDiscard;
         bool fAllocated = ASMBitTest(pBlock->pbmAllocated, idxStart);
-        uint32_t cSectors = pBlock->cbDiscard * 8;
+        uint32_t cSectors = pBlock->cbDiscard / 512;
 
         while (cbLeft > 0)
         {
@@ -1072,6 +1075,7 @@ static int vdDiscardRemoveBlocks(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, size_
 
     Assert(RT_FAILURE(rc) || pDiscard->cbDiscarding <= cbDiscardingNew);
 
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1126,11 +1130,11 @@ static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t off
 
             /* Clip range to remain in the current block. */
             if (pBlockAbove)
-                cbThisDiscard = RT_MIN(cbDiscard, pBlockAbove->Core.Key - (offStart + cbDiscard - 1));
+                cbThisDiscard = RT_MIN(cbDiscard, pBlockAbove->Core.KeyLast - offStart + 1);
             else
                 cbThisDiscard = cbDiscard;
 
-            Assert(cbThisDiscard % 512 == 0);
+            Assert(!(cbThisDiscard % 512));
 
             /* No block found, try to discard using the backend first. */
             rc = pDisk->pLast->Backend->pfnDiscard(pDisk->pLast->pBackendData, offStart,
@@ -1143,9 +1147,9 @@ static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t off
                 pBlock = (PVDDISCARDBLOCK)RTMemAllocZ(sizeof(VDDISCARDBLOCK));
                 if (pBlock)
                 {
-                    pBlock->Core.Key     = offStart + cbPreAllocated;
-                    pBlock->Core.KeyLast = offStart + cbThisDiscard + cbPreAllocated - 1;
-                    pBlock->cbDiscard    = cbThisDiscard;
+                    pBlock->Core.Key     = offStart - cbPreAllocated;
+                    pBlock->Core.KeyLast = offStart + cbThisDiscard + cbPostAllocated - 1;
+                    pBlock->cbDiscard    = cbPreAllocated + cbThisDiscard + cbPostAllocated;
                     pBlock->pbmAllocated = pbmAllocated;
                     bool fInserted = RTAvlrU64Insert(pDiscard->pTreeBlocks, &pBlock->Core);
                     Assert(fInserted);
@@ -1164,9 +1168,11 @@ static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t off
         else
         {
             /* Range lies partly in the block, update allocation bitmap. */
-            cbThisDiscard = pBlock->Core.KeyLast - offStart + 1;
+            cbThisDiscard = RT_MIN(cbDiscard, pBlock->Core.KeyLast - offStart + 1);
             rc = VERR_VD_DISCARD_ALIGNMENT_NOT_MET;
         }
+
+        Assert(cbDiscard >= cbThisDiscard);
 
         if (rc == VERR_VD_DISCARD_ALIGNMENT_NOT_MET)
         {
@@ -1211,8 +1217,11 @@ static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t off
             {
                 RTListNodeRemove(&pBlock->NodeLru);
                 RTListPrepend(&pDiscard->ListLru, &pBlock->NodeLru);
+                rc = VINF_SUCCESS;
             }
         }
+
+        Assert(cbDiscard >= cbThisDiscard);
 
         cbDiscard -= cbThisDiscard;
         offStart  += cbThisDiscard;
@@ -1284,6 +1293,8 @@ static int vdDiscardSetRangeAllocated(PVBOXHDD pDisk, uint64_t uOffset, size_t c
                 Assert(!(cbThisRange % 512));
                 Assert(!((uOffset - pBlock->Core.Key) % 512));
 
+                cbThisRange = RT_MIN(cbThisRange, pBlock->Core.KeyLast - uOffset + 1);
+
                 idxStart = (uOffset - pBlock->Core.Key) / 512;
                 idxEnd = idxStart + (cbThisRange / 512);
                 ASMBitSetRange(pBlock->pbmAllocated, idxStart, idxEnd);
@@ -1294,6 +1305,8 @@ static int vdDiscardSetRangeAllocated(PVBOXHDD pDisk, uint64_t uOffset, size_t c
                 if (pBlock)
                     cbThisRange = RT_MIN(cbThisRange, pBlock->Core.Key - uOffset);
             }
+
+            Assert(cbRange >= cbThisRange);
 
             uOffset += cbThisRange;
             cbRange -= cbThisRange;
