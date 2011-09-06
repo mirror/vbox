@@ -3732,7 +3732,7 @@ DxgkDdiEscape(
                     PVBOXDISPIFESCAPE_DBGPRINT pDbgPrint = (PVBOXDISPIFESCAPE_DBGPRINT)pEscapeHdr;
                     /* ensure the last char is \0*/
                     *((uint8_t*)pDbgPrint + pEscape->PrivateDriverDataSize - 1) = '\0';
-#ifdef DEBUG_misha
+#if defined(DEBUG_misha) || defined(DEBUG_leo)
                     DbgPrint("%s", pDbgPrint->aStringBuf);
 #else
                     LOGREL(("%s", pDbgPrint->aStringBuf));
