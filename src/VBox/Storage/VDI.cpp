@@ -889,6 +889,45 @@ static int vdiFlushImageAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
     return rc;
 }
 
+/**
+ * Internal: Creates a allocation bitmap from the given data.
+ * Sectors which contain only 0 are marked as unallocated and sectors with
+ * other data as allocated.
+ *
+ * @returns Pointer to the allocation bitmap or NULL on failure.
+ * @param   pvData    The data to create the allocation bitmap for.
+ * @param   cbData    Number of bytes in the buffer.
+ */
+static void *vdiAllocationBitmapCreate(void *pvData, size_t cbData)
+{
+    unsigned cSectors = cbData / 512;
+    unsigned uSectorCur = 0;
+    void *pbmAllocationBitmap = NULL;
+
+    Assert(!(cbData % 512));
+    Assert(!(cSectors % 8));
+
+    pbmAllocationBitmap = RTMemAllocZ(cSectors / 8);
+
+    while (uSectorCur < cSectors)
+    {
+        int idxSet = ASMBitFirstSet((uint8_t *)pvData + uSectorCur * 512, cbData * 8);
+
+        if (idxSet != -1)
+        {
+            unsigned idxSectorAlloc = idxSet / 8 / 512;
+            ASMBitSet(pbmAllocationBitmap, uSectorCur + idxSectorAlloc);
+
+            uSectorCur += idxSectorAlloc + 1;
+            cbData     -= (idxSectorAlloc + 1) * 512;
+        }
+        else
+            break;
+    }
+
+    return pbmAllocationBitmap;
+}
+
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
 static int vdiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
@@ -2559,6 +2598,14 @@ static DECLCALLBACK(int) vdiDiscard(void *pBackendData,
     Assert(!(uOffset % 512));
     Assert(!(cbDiscard % 512));
 
+    AssertMsgReturn(!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY),
+                    ("Image is readonly\n"), VERR_VD_IMAGE_READ_ONLY);
+    AssertMsgReturn(   uOffset + cbDiscard <= getImageDiskSize(&pImage->Header)
+                    && cbDiscard,
+                    ("Invalid parameters uOffset=%llu cbDiscard=%zu\n",
+                     uOffset, cbDiscard),
+                     VERR_INVALID_PARAMETER);
+
     do
     {
         AssertMsgBreakStmt(!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY),
@@ -2668,25 +2715,23 @@ static DECLCALLBACK(int) vdiDiscard(void *pBackendData,
                 LogFlowFunc(("Set new size %llu\n", cbImage - pImage->cbTotalBlockData));
                 rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, cbImage - pImage->cbTotalBlockData);
             }
-            else /* if (fDiscard & VD_DISCARD_MARK_UNUSED) */
+            else if (fDiscard & VD_DISCARD_MARK_UNUSED)
             {
                 /* Write changed data to the image. */
                 rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, u64Offset + offDiscard,
                                             pbBlockData + offDiscard, cbDiscard, NULL);
             }
-#if 0
             else
             {
                 /* Block has data, create allocation bitmap. */
                 *pcbPreAllocated = cbPreAllocated;
                 *pcbPostAllocated = cbPostAllocated;
-                *ppbmAllocationBitmap = vdAllocationBitmapCreate(pvBlock, getImageBlockSize(&pImage->Header));
+                *ppbmAllocationBitmap = vdiAllocationBitmapCreate(pbBlockData, getImageBlockSize(&pImage->Header));
                 if (RT_UNLIKELY(!*ppbmAllocationBitmap))
                     rc = VERR_NO_MEMORY;
                 else
                     rc = VERR_VD_DISCARD_ALIGNMENT_NOT_MET;
             }
-#endif
         }
         /* else: nothing to do. */
     } while (0);
