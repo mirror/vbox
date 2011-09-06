@@ -1189,7 +1189,7 @@ $</screen>
               software should not be allowed to use 3D acceleration.  Drivers
               for 3D hardware are generally too complex to be made properly
               secure and any software which is allowed to access them may be
-              able able to compromise the operating system running them.  In
+              able to compromise the operating system running them.  In
               addition, enabling 3D acceleration gives the guest direct access
               to a large body of additional program code in the VirtualBox
               host process which it might conceivably be able to use to crash
