@@ -482,12 +482,8 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                         break;
                     }
 
-#ifndef IN_RING3
-                    case 'S':   /* Unicode string as current code page -> Unicode as UTF-8 in GC/R0. */
-                        chArgSize = 'l'; /** @todo this is nonsensical, isn't it? */
-                        /* fall thru */
-#endif
-                    case 's':   /* Unicode string as utf8 */
+                    case 'S':   /* Legacy, conversion done by streams now. */
+                    case 's':
                     {
                         if (chArgSize == 'l')
                         {
@@ -507,7 +503,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             cchWidth -= cchStr;
                             while (cchStr-- > 0)
                             {
-#ifdef IN_RING3
+#ifndef IN_RC
                                 RTUNICP Cp;
                                 RTUtf16GetCpEx(&pwszStr, &Cp);
                                 char szUtf8[8]; /* Cp=0x7fffffff -> 6 bytes. */
@@ -540,7 +536,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                             cchWidth -= cchStr;
                             while (cchStr-- > 0)
                             {
-#ifdef IN_RING3
+#ifndef IN_RC
                                 char szUtf8[8]; /* Cp=0x7fffffff -> 6 bytes. */
                                 char *pszEnd = RTStrPutCp(szUtf8, *puszStr++);
                                 cch += pfnOutput(pvArgOutput, szUtf8, pszEnd - szUtf8);
@@ -571,100 +567,6 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                         }
                         break;
                     }
-
-#ifdef IN_RING3
-                    case 'S':   /* Unicode string as current code page. */
-                    {
-                        if (chArgSize == 'l')
-                        {
-                            /* UTF-16 */
-                            int       cchStr;
-                            PCRTUTF16 pwsz2Str = va_arg(args, PRTUTF16);
-                            if (!VALID_PTR(pwsz2Str))
-                            {
-                                static RTUTF16  s_wsz2Null[] = {'<', 'N', 'U', 'L', 'L', '>', '\0' };
-                                pwsz2Str = s_wsz2Null;
-                            }
-
-                            cchStr = _strnlenUtf16(pwsz2Str, (unsigned)cchPrecision);
-                            if (!(fFlags & RTSTR_F_LEFT))
-                                while (--cchWidth >= cchStr)
-                                    cch += pfnOutput(pvArgOutput, " ", 1);
-
-                            if (cchStr)
-                            {
-                                /* allocate temporary buffer. */
-                                PRTUTF16 pwsz2Tmp = (PRTUTF16)RTMemTmpAlloc((cchStr + 1) * sizeof(RTUTF16));
-                                memcpy(pwsz2Tmp, pwsz2Str, cchStr * sizeof(RTUTF16));
-                                pwsz2Tmp[cchStr] = '\0';
-
-                                char *pszUtf8;
-                                int rc = RTUtf16ToUtf8(pwsz2Tmp, &pszUtf8);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    char *pszCurCp;
-                                    rc = RTStrUtf8ToCurrentCP(&pszCurCp, pszUtf8);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        cch += pfnOutput(pvArgOutput, pszCurCp, strlen(pszCurCp));
-                                        RTStrFree(pszCurCp);
-                                    }
-                                    RTStrFree(pszUtf8);
-                                }
-                                if (RT_FAILURE(rc))
-                                    while (cchStr-- > 0)
-                                        cch += pfnOutput(pvArgOutput, "\x7f", 1);
-                                RTMemTmpFree(pwsz2Tmp);
-                            }
-
-                            while (--cchWidth >= cchStr)
-                                cch += pfnOutput(pvArgOutput, " ", 1);
-                        }
-                        else if (chArgSize == 'L')
-                        {
-                            /* UCS-32 */
-                            AssertMsgFailed(("Not implemented yet\n"));
-                        }
-                        else
-                        {
-                            /* UTF-8 */
-                            int   cchStr;
-                            const char *pszStr = va_arg(args, char *);
-
-                            if (!VALID_PTR(pszStr))
-                                pszStr = "<NULL>";
-                            cchStr = _strnlen(pszStr, (unsigned)cchPrecision);
-                            if (!(fFlags & RTSTR_F_LEFT))
-                                while (--cchWidth >= cchStr)
-                                    cch += pfnOutput(pvArgOutput, " ", 1);
-
-                            if (cchStr)
-                            {
-                                /* allocate temporary buffer. */
-                                char *pszTmp = (char *)RTMemTmpAlloc(cchStr + 1);
-                                memcpy(pszTmp, pszStr, cchStr);
-                                pszTmp[cchStr] = '\0';
-
-                                char *pszCurCp;
-                                int rc = RTStrUtf8ToCurrentCP(&pszCurCp, pszTmp);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    cch += pfnOutput(pvArgOutput, pszCurCp, strlen(pszCurCp));
-                                    RTStrFree(pszCurCp);
-                                }
-                                else
-                                    while (cchStr-- > 0)
-                                        cch += pfnOutput(pvArgOutput, "\x7f", 1);
-                                RTMemTmpFree(pszTmp);
-                            }
-
-                            while (--cchWidth >= cchStr)
-                                cch += pfnOutput(pvArgOutput, " ", 1);
-                        }
-                        break;
-                    }
-#endif
-
 
                     /*-----------------*/
                     /* integer/pointer */
