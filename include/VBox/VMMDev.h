@@ -138,9 +138,34 @@ typedef enum
     VMMDevReq_ReportGuestInfo            = 50,
     VMMDevReq_ReportGuestInfo2           = 58, /* since version 3.2.0 */
     VMMDevReq_ReportGuestStatus          = 59, /* since version 3.2.8 */
+    /**
+     * Retrieve a display resize request sent by the host using
+     * @a IDisplay:setVideoModeHint.  Deprecated.
+     *
+     * Similar to @a VMMDevReq_GetDisplayChangeRequest2, except that it only
+     * considers host requests sent for the first virtual display.  This guest
+     * request should not be used in new guest code, and the results are
+     * undefined if a guest mixes calls to this and
+     * @a VMMDevReq_GetDisplayChangeRequest2.
+     */
     VMMDevReq_GetDisplayChangeRequest    = 51,
     VMMDevReq_VideoModeSupported         = 52,
     VMMDevReq_GetHeightReduction         = 53,
+    /**
+     * Retrieve a display resize request sent by the host using
+     * @a IDisplay:setVideoModeHint.
+     *
+     * Queries a display resize request sent from the host.  If the
+     * @a eventAck member is sent to true and there is an unqueried
+     * request available for one of the virtual display then that request will
+     * be returned.  If several displays have unqueried requests the lowest
+     * numbered display will be chosen first.  Only the most recent unseen
+     * request for each display is remembered.
+     * If @a eventAck is set to false, the last host request queried with
+     * @a eventAck set is resent, or failing that the most recent received from
+     * the host.  If no host request was ever received then all zeros are
+     * returned.
+     */
     VMMDevReq_GetDisplayChangeRequest2   = 54,
     VMMDevReq_ReportGuestCapabilities    = 55,
     VMMDevReq_SetGuestCapabilities       = 56,
