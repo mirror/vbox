@@ -66,7 +66,7 @@ int main(int argc, char **argv)
                         RTPrintf("?");
                         break;
                 }
-                RTPrintf(" %#18llx  %3d %s\n", (uint64_t)DirEntry.INodeId,
+                RTPrintf(" %#18llx  %3d %S\n", (uint64_t)DirEntry.INodeId,
                          DirEntry.cbName, DirEntry.szName);
             }
 
