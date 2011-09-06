@@ -99,20 +99,20 @@
       can be found in <xref linkend="installation"/>.
     </para>
     <para>
-      On Windows hosts, the installer allows to disable USB support, support
+      On Windows hosts, the installer allows for disabling USB support, support
       for bridged networking, support for host-only networking and the Python
       language bindings, see <xref linkend="installation_windows"/>.
       All these features are enabled by default but disabling some
       of them could be appropriate if the corresponding functionality is not
       required by any virtual machine. The Python language bindings are only
-      required if the VirtualBox API should be used by external Python
+      required if the VirtualBox API is to be used by external Python
       applications. In particular USB support and support
-      for the two networking modes induce the installation of Windows kernel
-      drivers at the host. Therefore disabling those selected features can
-      not only be used to restrict the user to a certain functionality but
-      also to minimize the surfaces provided to a potential attacker.     </para>
+      for the two networking modes require the installation of Windows kernel
+      drivers on the host. Therefore disabling those selected features can
+      not only be used to restrict the user to certain functionality but
+      also to minimize the surface provided to a potential attacker.     </para>
     <para>
-      The regular case is to install the complete VirtualBox package. The
+      The general case is to install the complete VirtualBox package. The
       installation must be done with system privileges. All VirtualBox binaries
       should be executed as a regular user and never as a privileged user.
     </para>
@@ -121,7 +121,7 @@
       and must be downloaded and installed separately, see
       <xref linkend="intro-installing"/>. As for the base package, the SHA256
       checksum of the extension pack should be verified. As the installation
-      requires system privileges, the VirtualBox GUI will ask for the system
+      requires system privileges, VirtualBox will ask for the system
       password during the installation of the extension pack.
     </para>
   </sect2>
@@ -316,7 +316,7 @@
           is not encrypted. A third party with access to the network through
           which the data is transferred could therefore intercept that
           data. An SSH tunnel could be used to secure the connection between
-          the two host. But when considering to teleport a VM over an untrusted
+          the two hosts. But when considering teleporting a VM over an untrusted
           network the first question to answer is how both VMs can securely
           access the same virtual disk image(s) with a reasonable performance. </para>
         </listitem>
