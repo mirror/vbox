@@ -195,7 +195,7 @@ AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 384);
 AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 320);
 #endif
 AssertCompileMemberAlignment(VBOXGUESTDEVEXT, win, 64);
-AssertCompileMemberSize(VBOXGUESTDEVEXT, win, 256);
+AssertCompileMembersSameSize(VBOXGUESTDEVEXT, win, VBOXGUESTDEVEXT, win.padding);
 
 /**
  * The VBoxGuest per session data.
