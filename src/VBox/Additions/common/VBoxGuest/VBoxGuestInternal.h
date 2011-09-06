@@ -171,9 +171,9 @@ typedef struct VBOXGUESTDEVEXT
      *          following it (to grow into and align the struct size).
      */
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 12 : 52];
+    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 140 : 52];
 #else
-    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 20 : 4];
+    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 84 : 4];
 #endif
 
     /** Windows part. */
@@ -182,21 +182,19 @@ typedef struct VBOXGUESTDEVEXT
 #ifdef ___VBoxGuest_win_h
         VBOXGUESTDEVEXTWIN          s;
 #endif
-        uint8_t                     padding[384];      /* Multiple of 64; fix me! */
+        uint8_t                     padding[256];      /* Multiple of 64; fix me! */
     } win;
 
 } VBOXGUESTDEVEXT;
 /** Pointer to the VBoxGuest driver data. */
 typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
 
-#if defined(VBOXGUEST_USE_DEFERRED_WAKE_UP) && HC_ARCH_BITS == 64
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
 AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 384);
-#elif HC_ARCH_BITS == 64
-AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 320);
 #else
-AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 256);
+AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 320);
 #endif
-AssertCompileMemberSizeAlignment(VBOXGUESTDEVEXT, win, 64);
+AssertCompileMemberAlignment(VBOXGUESTDEVEXT, win, 64);
 
 /**
  * The VBoxGuest per session data.
