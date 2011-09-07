@@ -259,6 +259,13 @@ static void drvdiskintIoReqFree(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq)
         RTMemFree(pIoReq);
 }
 
+static void drvdiskintIoLogEntryRelease(PIOLOGENT pIoLogEnt)
+{
+    pIoLogEnt->cRefs--;
+    if (!pIoLogEnt->cRefs)
+        RTMemFree(pIoLogEnt);
+}
+
 /**
  * Record a successful write to the virtual disk.
  *
@@ -464,6 +471,148 @@ static int drvdiskintReadVerify(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsign
         cbLeft  -= cbRange;
     }
 
+    return rc;
+}
+
+/**
+ * Discards the given ranges from the disk.
+ *
+ * @returns VBox status code.
+ * @param   pThis    Disk integrity driver instance data.
+ * @param   paRanges Array of ranges to discard.
+ * @param   cRanges  Number of ranges in the array.
+ */
+static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PPDMRANGE paRanges, unsigned cRanges)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pThis=%#p paRanges=%#p cRanges=%u\n", pThis, paRanges, cRanges));
+
+    for (unsigned i = 0; i < cRanges; i++)
+    {
+        uint64_t offStart = paRanges[i].offStart;
+        size_t cbLeft = paRanges[i].cbRange;
+
+        LogFlowFunc(("Discarding off=%llu cbRange=%zu\n", offStart, cbLeft));
+
+        while (cbLeft)
+        {
+            size_t cbRange;
+            PDRVDISKSEGMENT pSeg = (PDRVDISKSEGMENT)RTAvlrFileOffsetRangeGet(pThis->pTreeSegments, offStart);
+
+            if (!pSeg)
+            {
+                /* Get next segment */
+                pSeg = (PDRVDISKSEGMENT)RTAvlrFileOffsetGetBestFit(pThis->pTreeSegments, offStart, true);
+                if (   !pSeg
+                    || (RTFOFF)offStart + (RTFOFF)cbLeft <= pSeg->Core.Key)
+                    cbRange = cbLeft;
+                else
+                    cbRange = pSeg->Core.Key - offStart;
+
+                Assert(!(cbRange % 512));
+            }
+            else
+            {
+                size_t cbPreLeft, cbPostLeft;
+
+                cbRange    = RT_MIN(cbRange, pSeg->Core.KeyLast - offStart + 1);
+                cbPreLeft  = offStart - pSeg->Core.Key;
+                cbPostLeft = pSeg->cbSeg - cbRange - cbPreLeft;
+
+                Assert(!(cbRange % 512));
+                Assert(!(cbPreLeft % 512));
+                Assert(!(cbPostLeft % 512));
+
+                LogFlowFunc(("cbRange=%zu cbPreLeft=%zu cbPostLeft=%zu\n",
+                             cbRange, cbPreLeft, cbPostLeft));
+
+                RTAvlrFileOffsetRemove(pThis->pTreeSegments, pSeg->Core.Key);
+
+                if (!cbPreLeft && !cbPostLeft)
+                {
+                    /* Just free the whole segment. */
+                    LogFlowFunc(("Freeing whole segment pSeg=%#p\n", pSeg));
+                    RTMemFree(pSeg->pbSeg);
+                    for (unsigned idx = 0; idx < pSeg->cIoLogEntries; idx++)
+                        drvdiskintIoLogEntryRelease(pSeg->apIoLog[idx]);
+                    RTMemFree(pSeg);
+                }
+                else if (cbPreLeft && !cbPostLeft)
+                {
+                    /* Realloc to new size and insert. */
+                    LogFlowFunc(("Realloc segment pSeg=%#p\n", pSeg));
+                    pSeg->pbSeg = (uint8_t *)RTMemRealloc(pSeg->pbSeg, cbPreLeft);
+                    for (unsigned idx = cbPreLeft / 512; idx < pSeg->cIoLogEntries; idx++)
+                        drvdiskintIoLogEntryRelease(pSeg->apIoLog[idx]);
+                    pSeg = (PDRVDISKSEGMENT)RTMemRealloc(pSeg, RT_OFFSETOF(DRVDISKSEGMENT, apIoLog[cbPreLeft / 512]));
+                    pSeg->Core.KeyLast = pSeg->Core.Key + cbPreLeft - 1;
+                    pSeg->cbSeg = cbPreLeft;
+                    pSeg->cIoLogEntries = cbPreLeft / 512;
+                    bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
+                    Assert(fInserted);
+                }
+                else if (!cbPreLeft && cbPostLeft)
+                {
+                    /* Move data to the front and realloc. */
+                    LogFlowFunc(("Move data and realloc segment pSeg=%#p\n", pSeg));
+                    memmove(pSeg->pbSeg, pSeg->pbSeg + cbRange, cbPostLeft);
+                    for (unsigned idx = 0; idx < cbRange / 512; idx++)
+                        drvdiskintIoLogEntryRelease(pSeg->apIoLog[idx]);
+                    for (unsigned idx = 0; idx < cbPostLeft /512; idx++)
+                        pSeg->apIoLog[idx] = pSeg->apIoLog[(cbRange / 512) + idx];
+                    pSeg = (PDRVDISKSEGMENT)RTMemRealloc(pSeg, RT_OFFSETOF(DRVDISKSEGMENT, apIoLog[cbPostLeft / 512]));
+                    pSeg->pbSeg = (uint8_t *)RTMemRealloc(pSeg->pbSeg, cbPostLeft);
+                    pSeg->Core.Key += cbRange;
+                    pSeg->cbSeg = cbPostLeft;
+                    pSeg->cIoLogEntries = cbPostLeft / 512;
+                    bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
+                    Assert(fInserted);
+                }
+                else
+                {
+                    /* Split the segment into 2 new segments. */
+                    LogFlowFunc(("Split segment pSeg=%#p\n", pSeg));
+                    PDRVDISKSEGMENT pSegPost = (PDRVDISKSEGMENT)RTMemAllocZ(RT_OFFSETOF(DRVDISKSEGMENT, apIoLog[cbPostLeft / 512]));
+                    if (pSegPost)
+                    {
+                        pSegPost->Core.Key      = pSeg->Core.Key + cbPreLeft + cbRange;
+                        pSegPost->Core.KeyLast  = pSeg->Core.KeyLast;
+                        pSegPost->cbSeg         = cbPostLeft;
+                        pSegPost->pbSeg         = (uint8_t *)RTMemAllocZ(cbPostLeft);
+                        pSegPost->cIoLogEntries = cbPostLeft / 512;
+                        if (!pSegPost->pbSeg)
+                            RTMemFree(pSegPost);
+                        else
+                        {
+                            memcpy(pSegPost->pbSeg, pSeg->pbSeg + cbPreLeft + cbRange, cbPostLeft);
+                            for (unsigned idx = 0; idx < cbPostLeft / 512; idx++)
+                                pSegPost->apIoLog[idx] = pSeg->apIoLog[((cbPreLeft + cbRange) / 512) + idx];
+
+                            bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSegPost->Core);
+                            Assert(fInserted);
+                        }
+                    }
+
+                    /* Shrink the current segment. */
+                    pSeg->pbSeg = (uint8_t *)RTMemRealloc(pSeg->pbSeg, cbPreLeft);
+                    for (unsigned idx = cbPreLeft / 512; idx < (cbPreLeft + cbRange) / 512; idx++)
+                        drvdiskintIoLogEntryRelease(pSeg->apIoLog[idx]);
+                    pSeg = (PDRVDISKSEGMENT)RTMemRealloc(pSeg, RT_OFFSETOF(DRVDISKSEGMENT, apIoLog[cbPreLeft / 512]));
+                    pSeg->Core.KeyLast = pSeg->Core.Key + cbPreLeft - 1;
+                    pSeg->cbSeg = cbPreLeft;
+                    pSeg->cIoLogEntries = cbPreLeft / 512;
+                    bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
+                    Assert(fInserted);
+                } /* if (cbPreLeft && cbPostLeft) */
+            }
+
+            offStart += cbRange;
+            cbLeft   -= cbRange;
+        }
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -889,6 +1038,9 @@ static DECLCALLBACK(int) drvdiskintDiscard(PPDMIMEDIA pInterface, PPDMRANGE paRa
         int rc2 = VDDbgIoLogComplete(pThis->hIoLogger, hIoLogEntry, rc, NULL);
         AssertRC(rc2);
     }
+
+    if (pThis->fCheckConsistency)
+        rc = drvdiskintDiscardRecords(pThis, paRanges, cRanges);
 
     return rc;
 }
