@@ -198,7 +198,7 @@ vbi_get_ctf_member_offset(ctf_file_t *ctfp, const char *structname, const char *
 		if (ctf_member_info(ctfp, typeident, membername, &memberinfo) != CTF_ERR)
 		{
 			*offset = (memberinfo.ctm_offset >> 3);
-			cmn_err(CE_NOTE, "%s::%s at %d\n", structname, membername, *offset);
+			cmn_err(CE_CONT, "!%s::%s at %d\n", structname, membername, *offset);
 			return (0);
 		}
 		else
