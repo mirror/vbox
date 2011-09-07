@@ -303,7 +303,7 @@ DECLINLINE(int) iomRamWrite(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDs
 }
 
 
-#if defined(IOM_WITH_MOVS_SUPPORT) && 0 /* locking prevents this from working */
+#if defined(IOM_WITH_MOVS_SUPPORT) && 0 /* locking prevents this from working. has buggy ecx handling. */
 /**
  * [REP] MOVSB
  * [REP] MOVSW
@@ -547,6 +547,25 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
 
 
 /**
+ * Gets the address / opcode mask corresponding to the given CPU mode.
+ *
+ * @returns Mask.
+ * @param   enmCpuMode          CPU mode.
+ */
+static uint64_t iomDisModeToMask(DISCPUMODE enmCpuMode)
+{
+    switch (enmCpuMode)
+    {
+        case CPUMODE_16BIT: return UINT16_MAX;
+        case CPUMODE_32BIT: return UINT32_MAX;
+        case CPUMODE_64BIT: return UINT64_MAX;
+        default:
+            AssertFailedReturn(UINT32_MAX);
+    }
+}
+
+
+/**
  * [REP] STOSB
  * [REP] STOSW
  * [REP] STOSD
@@ -571,9 +590,10 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         return VINF_IOM_HC_MMIO_READ_WRITE; /** @todo -> REM instead of HC */
 
     /*
-     * Get bytes/words/dwords count to copy.
+     * Get bytes/words/dwords/qwords count to copy.
      */
-    uint32_t cTransfers = 1;
+    uint64_t const fAddrMask = iomDisModeToMask(pCpu->addrmode);
+    RTGCUINTREG cTransfers = 1;
     if (pCpu->prefix & PREFIX_REP)
     {
 #ifndef IN_RC
@@ -582,10 +602,7 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
             return VINF_EM_RAW_EMULATE_INSTR;
 #endif
 
-        cTransfers = pRegFrame->ecx;
-        if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_16BIT)
-            cTransfers &= 0xffff;
-
+        cTransfers = pRegFrame->rcx & fAddrMask;
         if (!cTransfers)
             return VINF_SUCCESS;
     }
@@ -606,9 +623,9 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
 
 
     RTGCPHYS    Phys    = GCPhysFault;
-    uint32_t    u32Data = pRegFrame->eax;
     int rc;
-    if (pRange->CTX_SUFF(pfnFillCallback))
+    if (   pRange->CTX_SUFF(pfnFillCallback)
+        && cb <= 4 /* can only fill 32-bit values */)
     {
         /*
          * Use the fill callback.
@@ -617,25 +634,30 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
         if (offIncrement > 0)
         {
             /* addr++ variant. */
-            rc = pRange->CTX_SUFF(pfnFillCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), Phys, u32Data, cb, cTransfers);
+            rc = pRange->CTX_SUFF(pfnFillCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), Phys,
+                                                   pRegFrame->eax, cb, cTransfers);
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
-                pRegFrame->rdi += cTransfers << SIZE_2_SHIFT(cb);
+                pRegFrame->rdi = ((pRegFrame->rdi + (cTransfers << SIZE_2_SHIFT(cb))) & fAddrMask)
+                               | (pRegFrame->rdi & ~fAddrMask);
                 if (pCpu->prefix & PREFIX_REP)
-                    pRegFrame->ecx = 0;
+                    pRegFrame->rcx &= ~fAddrMask;
             }
         }
         else
         {
             /* addr-- variant. */
-            rc = pRange->CTX_SUFF(pfnFillCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), Phys - ((cTransfers - 1) << SIZE_2_SHIFT(cb)), u32Data, cb, cTransfers);
+            rc = pRange->CTX_SUFF(pfnFillCallback)(pRange->CTX_SUFF(pDevIns),  pRange->CTX_SUFF(pvUser),
+                                                   Phys - ((cTransfers - 1) << SIZE_2_SHIFT(cb)),
+                                                   pRegFrame->eax, cb, cTransfers);
             if (rc == VINF_SUCCESS)
             {
                 /* Update registers. */
-                pRegFrame->rdi -= cTransfers << SIZE_2_SHIFT(cb);
+                pRegFrame->rdi = ((pRegFrame->rdi - (cTransfers << SIZE_2_SHIFT(cb))) & fAddrMask)
+                               | (pRegFrame->rdi & ~fAddrMask);
                 if (pCpu->prefix & PREFIX_REP)
-                    pRegFrame->ecx = 0;
+                    pRegFrame->rcx &= ~fAddrMask;
             }
         }
     }
@@ -645,22 +667,25 @@ static int iomInterpretSTOS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
          * Use the write callback.
          */
         Assert(pRange->CTX_SUFF(pfnWriteCallback) || !pRange->pfnWriteCallbackR3);
+        uint64_t u64Data = pRegFrame->rax;
 
         /* fill loop. */
         do
         {
-            rc = iomMMIODoWrite(pVM, pRange, Phys, &u32Data, cb);
+            rc = iomMMIODoWrite(pVM, pRange, Phys, &u64Data, cb);
             if (rc != VINF_SUCCESS)
                 break;
 
             Phys           += offIncrement;
-            pRegFrame->rdi += offIncrement;
+            pRegFrame->rdi  = ((pRegFrame->rdi + offIncrement) & fAddrMask)
+                            | (pRegFrame->rdi & ~fAddrMask);
             cTransfers--;
         } while (cTransfers);
 
-        /* Update ecx on exit. */
+        /* Update rcx on exit. */
         if (pCpu->prefix & PREFIX_REP)
-            pRegFrame->ecx = cTransfers;
+            pRegFrame->rcx = (cTransfers & fAddrMask)
+                           | (pRegFrame->rcx & ~fAddrMask);
     }
 
     /*
@@ -710,7 +735,11 @@ static int iomInterpretLODS(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
      */
     int rc = iomMMIODoRead(pVM, pRange, GCPhysFault, &pRegFrame->rax, cb);
     if (rc == VINF_SUCCESS)
-        pRegFrame->rsi += offIncrement;
+    {
+        uint64_t const fAddrMask = iomDisModeToMask(pCpu->addrmode);
+        pRegFrame->rsi = ((pRegFrame->rsi + offIncrement) & fAddrMask)
+                       | (pRegFrame->rsi & ~fAddrMask);
+    }
 
     /*
      * Work statistics and return.
@@ -1657,9 +1686,11 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
  * @param   uPort           IO Port
  * @param   uPrefix         IO instruction prefix
+ * @param   enmAddrMode     The address mode.
  * @param   cbTransfer      Size of transfer unit
  */
-VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
+VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix,
+                                        DISCPUMODE enmAddrMode, uint32_t cbTransfer)
 {
     STAM_COUNTER_INC(&pVM->iom.s.StatInstIns);
 
@@ -1676,6 +1707,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
     /*
      * Get bytes/words/dwords count to transfer.
      */
+    uint64_t const fAddrMask = iomDisModeToMask(enmAddrMode);
     RTGCUINTREG cTransfers = 1;
     if (uPrefix & PREFIX_REP)
     {
@@ -1684,18 +1716,14 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
 #endif
-        cTransfers = pRegFrame->ecx;
-
-        if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_16BIT)
-            cTransfers &= 0xffff;
-
+        cTransfers = pRegFrame->rcx & fAddrMask;
         if (!cTransfers)
             return VINF_SUCCESS;
     }
 
     /* Convert destination address es:edi. */
     RTGCPTR GCPtrDst;
-    int rc2 = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->rdi,
+    int rc2 = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, pRegFrame->rdi & fAddrMask,
                            SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                            &GCPtrDst);
     if (RT_FAILURE(rc2))
@@ -1705,8 +1733,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
     }
 
     /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
-    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
-
+    uint32_t const cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
     rc2 = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrDst, cTransfers * cbTransfer,
                           X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
     if (rc2 != VINF_SUCCESS)
@@ -1724,7 +1751,8 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
         const RTGCUINTREG cTransfersOrg = cTransfers;
         rcStrict = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbTransfer);
         AssertRC(VBOXSTRICTRC_VAL(rcStrict)); Assert(cTransfers <= cTransfersOrg);
-        pRegFrame->rdi += (cTransfersOrg - cTransfers) * cbTransfer;
+        pRegFrame->rdi  = ((pRegFrame->rdi + (cTransfersOrg - cTransfers) * cbTransfer) & fAddrMask)
+                        | (pRegFrame->rdi & ~fAddrMask);
     }
 
 #ifdef IN_RC
@@ -1739,16 +1767,18 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
         rc2 = iomRamWrite(pVCpu, pRegFrame, GCPtrDst, &u32Value, cbTransfer);
         Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
         GCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCPtrDst + cbTransfer);
-        pRegFrame->rdi += cbTransfer;
+        pRegFrame->rdi  = ((pRegFrame->rdi + cbTransfer) & fAddrMask)
+                        | (pRegFrame->rdi & ~fAddrMask);
         cTransfers--;
     }
 #ifdef IN_RC
     MMGCRamDeregisterTrapHandler(pVM);
 #endif
 
-    /* Update ecx on exit. */
+    /* Update rcx on exit. */
     if (uPrefix & PREFIX_REP)
-        pRegFrame->ecx = cTransfers;
+        pRegFrame->rcx = (cTransfers & fAddrMask)
+                       | (pRegFrame->rcx & ~fAddrMask);
 
     AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IOM_HC_IOPORT_READ || (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST) || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
@@ -1794,7 +1824,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
         return rcStrict;
     }
 
-    return IOMInterpretINSEx(pVM, pRegFrame, Port, pCpu->prefix, cb);
+    return IOMInterpretINSEx(pVM, pRegFrame, Port, pCpu->prefix, pCpu->addrmode, cb);
 }
 
 
@@ -1818,9 +1848,11 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUST
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
  * @param   uPort           IO Port
  * @param   uPrefix         IO instruction prefix
+ * @param   enmAddrMode     The address mode.
  * @param   cbTransfer      Size of transfer unit
  */
-VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
+VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix,
+                                         DISCPUMODE enmAddrMode, uint32_t cbTransfer)
 {
     STAM_COUNTER_INC(&pVM->iom.s.StatInstOuts);
 
@@ -1837,6 +1869,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
     /*
      * Get bytes/words/dwords count to transfer.
      */
+    uint64_t const fAddrMask = iomDisModeToMask(enmAddrMode);
     RTGCUINTREG cTransfers = 1;
     if (uPrefix & PREFIX_REP)
     {
@@ -1845,17 +1878,14 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
             &&  pRegFrame->rcx >= _4G)
             return VINF_EM_RAW_EMULATE_INSTR;
 #endif
-        cTransfers = pRegFrame->ecx;
-        if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid) == CPUMODE_16BIT)
-            cTransfers &= 0xffff;
-
+        cTransfers = pRegFrame->rcx & fAddrMask;
         if (!cTransfers)
             return VINF_SUCCESS;
     }
 
     /* Convert source address ds:esi. */
     RTGCPTR GCPtrSrc;
-    int rc2 = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->rsi,
+    int rc2 = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, pRegFrame->rsi & fAddrMask,
                            SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                            &GCPtrSrc);
     if (RT_FAILURE(rc2))
@@ -1865,7 +1895,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
     }
 
     /* Access verification first; we currently can't recover properly from traps inside this instruction */
-    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+    uint32_t const cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
     rc2 = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbTransfer,
                           (cpl == 3) ? X86_PTE_US : 0);
     if (rc2 != VINF_SUCCESS)
@@ -1885,7 +1915,8 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
         const RTGCUINTREG cTransfersOrg = cTransfers;
         rcStrict = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
         AssertRC(VBOXSTRICTRC_VAL(rcStrict)); Assert(cTransfers <= cTransfersOrg);
-        pRegFrame->rsi += (cTransfersOrg - cTransfers) * cbTransfer;
+        pRegFrame->rsi  = ((pRegFrame->rsi + (cTransfersOrg - cTransfers) * cbTransfer) & fAddrMask)
+                        | (pRegFrame->rsi & ~fAddrMask);
     }
 
 #ifdef IN_RC
@@ -1902,7 +1933,8 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
         if (!IOM_SUCCESS(rcStrict))
             break;
         GCPtrSrc = (RTGCPTR)((RTUINTPTR)GCPtrSrc + cbTransfer);
-        pRegFrame->rsi += cbTransfer;
+        pRegFrame->rsi  = ((pRegFrame->rsi + cbTransfer) & fAddrMask)
+                        | (pRegFrame->rsi & ~fAddrMask);
         cTransfers--;
     }
 
@@ -1910,9 +1942,10 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
     MMGCRamDeregisterTrapHandler(pVM);
 #endif
 
-    /* Update ecx on exit. */
+    /* Update rcx on exit. */
     if (uPrefix & PREFIX_REP)
-        pRegFrame->ecx = cTransfers;
+        pRegFrame->rcx = (cTransfers & fAddrMask)
+                       | (pRegFrame->rcx & ~fAddrMask);
 
     AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IOM_HC_IOPORT_WRITE || (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST) || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
@@ -1960,7 +1993,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
         return rcStrict;
     }
 
-    return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->prefix, cb);
+    return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->prefix, pCpu->addrmode, cb);
 }
 
 #ifndef IN_RC

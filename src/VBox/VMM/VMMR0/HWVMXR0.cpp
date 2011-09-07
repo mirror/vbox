@@ -3857,13 +3857,13 @@ ResumeExecution:
                 {
                     Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->prefix, cbSize);
+                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->prefix, pDis->addrmode, cbSize);
                 }
                 else
                 {
                     Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->prefix, cbSize);
+                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->prefix, pDis->addrmode, cbSize);
                 }
             }
             else
