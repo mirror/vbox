@@ -1155,7 +1155,7 @@ static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t off
                     Assert(fInserted);
 
                     RTListPrepend(&pDiscard->ListLru, &pBlock->NodeLru);
-                    pDiscard->cbDiscarding += cbThisDiscard;
+                    pDiscard->cbDiscarding += pBlock->cbDiscard;
                     if (pDiscard->cbDiscarding > VD_DISCARD_REMOVE_THRESHOLD)
                         rc = vdDiscardRemoveBlocks(pDisk, pDiscard, VD_DISCARD_REMOVE_THRESHOLD);
                     else
@@ -1208,6 +1208,7 @@ static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t off
                     PVDDISCARDBLOCK pBlockRemove = (PVDDISCARDBLOCK)RTAvlrU64RangeRemove(pDiscard->pTreeBlocks, pBlock->Core.Key);
                     Assert(pBlockRemove == pBlock);
 
+                    pDiscard->cbDiscarding -= pBlock->cbDiscard;
                     RTListNodeRemove(&pBlock->NodeLru);
                     RTMemFree(pBlock->pbmAllocated);
                     RTMemFree(pBlock);
