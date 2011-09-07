@@ -70,8 +70,8 @@ int vscsiIoReqTransferEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
     pVScsiIoReq->enmTxDir   = enmTxDir;
     pVScsiIoReq->uOffset    = uOffset;
     pVScsiIoReq->cbTransfer = cbTransfer;
-    pVScsiIoReq->paSeg      = pVScsiReq->IoMemCtx.paDataSeg;
-    pVScsiIoReq->cSeg       = pVScsiReq->IoMemCtx.cSegments;
+    pVScsiIoReq->paSeg      = pVScsiReq->SgBuf.paSegs;
+    pVScsiIoReq->cSeg       = pVScsiReq->SgBuf.cSegs;
 
     ASMAtomicIncU32(&pVScsiLun->IoReq.cReqOutstanding);
 
