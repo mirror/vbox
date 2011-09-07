@@ -20,6 +20,7 @@
 #include <VBox/vscsi.h>
 #include <VBox/scsi.h>
 #include <iprt/memcache.h>
+#include <iprt/sg.h>
 
 #include "VSCSIInline.h"
 
@@ -91,25 +92,6 @@ typedef struct VSCSILUNINT
 } VSCSILUNINT;
 
 /**
- * VSCSI Scatter/gather list handling
- */
-typedef struct VSCSIIOMEMCTX
-{
-    /** Pointer to the scatter/gather list. */
-    PCRTSGSEG      paDataSeg;
-    /** Number of segments. */
-    size_t         cSegments;
-    /** Current segment we are in. */
-    unsigned       iSegIdx;
-    /** Pointer to the current buffer. */
-    uint8_t       *pbBuf;
-    /** Number of bytes left in the current buffer. */
-    size_t         cbBufLeft;
-} VSCSIIOMEMCTX;
-/** Pointer to a I/O memory context. */
-typedef VSCSIIOMEMCTX *PVSCSIIOMEMCTX;
-
-/**
  * Virtual SCSI request.
  */
 typedef struct VSCSIREQINT
@@ -120,8 +102,8 @@ typedef struct VSCSIREQINT
     uint8_t             *pbCDB;
     /** Size of the CDB */
     size_t               cbCDB;
-    /** I/O memory context */
-    VSCSIIOMEMCTX        IoMemCtx;
+    /** S/G buffer. */
+    RTSGBUF              SgBuf;
     /** Pointer to the sense buffer. */
     uint8_t             *pbSense;
     /** Size of the sense buffer */
@@ -208,49 +190,6 @@ typedef struct VSCSILUNDESC
  */
 void vscsiDeviceReqComplete(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVScsiReq,
                             int rcScsiCode, bool fRedoPossible, int rcReq);
-
-/**
- * Initialize a I/O memory context.
- *
- * @returns nothing
- * @param   pIoMemCtx    Pointer to a unitialized I/O memory context.
- * @param   paDataSeg    Pointer to the S/G list.
- * @param   cSegments    Number of segments in the S/G list.
- */
-void vscsiIoMemCtxInit(PVSCSIIOMEMCTX pIoMemCtx, PCRTSGSEG paDataSeg, size_t cSegments);
-
-/**
- * Return a buffer from the I/O memory context.
- *
- * @returns Pointer to the buffer
- * @param   pIoMemCtx    Pointer to the I/O memory context.
- * @param   pcbData      Pointer to the amount of byte requested.
- *                       If the current buffer doesn't have enough bytes left
- *                       the amount is returned in the variable.
- */
-uint8_t *vscsiIoMemCtxGetBuffer(PVSCSIIOMEMCTX pIoMemCtx, size_t *pcbData);
-
-/**
- * Copies data to a buffer described by a I/O memory context.
- *
- * @returns The amount of data copied before we run out of either
- *          I/O memory or src data.
- * @param   pIoMemCtx    The I/O memory context to copy the data into.
- * @param   pbData       Pointer to the data data to copy.
- * @param   cbData       Amount of data to copy.
- */
-size_t vscsiCopyToIoMemCtx(PVSCSIIOMEMCTX pIoMemCtx, uint8_t *pbData, size_t cbData);
-
-/**
- * Copies data from a buffer described by a I/O memory context.
- *
- * @returns The amount of data copied before we run out of either
- *          I/O memory or dst data.
- * @param   pIoMemCtx    The I/O memory context to copy the data from.
- * @param   pbData       Pointer to the destination buffer.
- * @param   cbData       Amount of data to copy.
- */
-size_t vscsiCopyFromIoMemCtx(PVSCSIIOMEMCTX pIoMemCtx, uint8_t *pbData, size_t cbData);
 
 /**
  * Init the sense data state.
