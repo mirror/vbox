@@ -612,7 +612,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                    && cbRead)
             {
 #ifdef DEBUG
-                int rc2 = RTCritSectEnter(&g_csLog);
+                rc2 = RTCritSectEnter(&g_csLog);
                 if (RT_SUCCESS(rc2))
                 {
 #endif
