@@ -8075,6 +8075,11 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
         AssertRC(rc2);
         fLockWrite = true;
 
+        /* Destroy any discard state because the image might be changed to readonly mode. */
+        rc = vdDiscardStateDestroy(pDisk);
+        if (RT_FAILURE(rc))
+            break;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
