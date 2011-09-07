@@ -71,7 +71,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/VSCSI/VSCSILun.cpp \
  	Storage/VSCSI/VSCSILunSbc.cpp \
  	Storage/VSCSI/VSCSISense.cpp \
- 	Storage/VSCSI/VSCSISgBuf.cpp \
  	Storage/VSCSI/VSCSIIoReq.cpp \
  	build/VBoxDDUDeps.cpp
  ifdef VBOX_WITH_USB
