@@ -7983,7 +7983,7 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
                  pAhciPort->PCHSGeometry.cHeads, pAhciPort->PCHSGeometry.cSectors,
                  pAhciPort->cTotalSectors));
         if (pAhciPort->pDrvBlock->pfnDiscard)
-            LogRel(("AHCI: LUN#%d: Enabled TRIM support\n"));
+            LogRel(("AHCI: LUN#%d: Enabled TRIM support\n", pAhciPort->iLUN));
     }
     return rc;
 }
