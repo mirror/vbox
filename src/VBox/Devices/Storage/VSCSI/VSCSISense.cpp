@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,14 +42,14 @@ int vscsiReqSenseOkSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq)
     return SCSI_STATUS_OK;
 }
 
-int vscsiReqSenseErrorSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC)
+int vscsiReqSenseErrorSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t uSCSIASC, uint8_t uSCSIASCQ)
 {
     memset(pVScsiSense->abSenseBuf, 0, sizeof(pVScsiSense->abSenseBuf));
     pVScsiSense->abSenseBuf[0] = (1 << 7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
     pVScsiSense->abSenseBuf[2] = uSCSISenseKey;
     pVScsiSense->abSenseBuf[7]  = 10;
     pVScsiSense->abSenseBuf[12] = uSCSIASC;
-    pVScsiSense->abSenseBuf[13] = 0x00; /** @todo: Provide more info. */
+    pVScsiSense->abSenseBuf[13] = uSCSIASCQ;
 
     if (pVScsiReq->pbSense && pVScsiReq->cbSense)
         memcpy(pVScsiReq->pbSense, pVScsiSense->abSenseBuf, RT_MIN(sizeof(pVScsiSense->abSenseBuf), pVScsiReq->cbSense));

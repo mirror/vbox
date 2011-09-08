@@ -115,11 +115,12 @@ typedef enum SCSICMD
     SCSI_WRITE_16                       = 0x8a,
     SCSI_READ_6                         = 0x08,
     SCSI_WRITE_6                        = 0x0a,
-    SCSI_LOG_SENSE                      = 0x4d
+    SCSI_LOG_SENSE                      = 0x4d,
+    SCSI_UNMAP                          = 0x42
 } SCSICMD;
 
 /**
- * Service action in opcoe identifiers
+ * Service action in opcode identifiers
  */
 typedef enum SCSISVCACTIONIN
 {
@@ -177,18 +178,22 @@ typedef enum SCSISVCACTIONIN
 
 
 /* additional sense keys */
-#define SCSI_ASC_NONE                               0x00
-#define SCSI_ASC_WRITE_ERROR                        0x0c
-#define SCSI_ASC_READ_ERROR                         0x11
-#define SCSI_ASC_ILLEGAL_OPCODE                     0x20
-#define SCSI_ASC_LOGICAL_BLOCK_OOR                  0x21
-#define SCSI_ASC_INV_FIELD_IN_CMD_PACKET            0x24
-#define SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED            0x28
-#define SCSI_ASC_MEDIUM_NOT_PRESENT                 0x3a
-#define SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED    0x39
-#define SCSI_ASC_INVALID_MESSAGE                    0x49
-#define SCSI_ASC_MEDIA_LOAD_OR_EJECT_FAILED         0x53
+#define SCSI_ASC_NONE                                       0x00
+#define SCSI_ASC_WRITE_ERROR                                0x0c
+#define SCSI_ASC_READ_ERROR                                 0x11
+#define SCSI_ASC_ILLEGAL_OPCODE                             0x20
+#define SCSI_ASC_LOGICAL_BLOCK_OOR                          0x21
+#define SCSI_ASC_INV_FIELD_IN_CMD_PACKET                    0x24
+#define SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED                    0x28
+#define SCSI_ASC_MEDIUM_NOT_PRESENT                         0x3a
+#define SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED            0x39
+#define SCSI_ASC_INVALID_MESSAGE                            0x49
+#define SCSI_ASC_MEDIA_LOAD_OR_EJECT_FAILED                 0x53
 #define SCSI_ASC_LOGICAL_UNIT_DOES_NOT_RESPOND_TO_SELECTION 0x00
+#define SCSI_ASC_SYSTEM_RESOURCE_FAILURE                    0x55
+
+/** Additional sense code qualifiers (ASCQ). */
+#define SCSI_ASCQ_SYSTEM_BUFFER_FULL                        0x01
 
 /** @name SCSI_INQUIRY
  * @{

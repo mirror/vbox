@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,6 +67,8 @@ typedef enum VSCSIIOREQTXDIR
     VSCSIIOREQTXDIR_WRITE,
     /** Flush */
     VSCSIIOREQTXDIR_FLUSH,
+    /** Unmap */
+    VSCSIIOREQTXDIR_UNMAP,
     /** 32bit hack */
     VSCSIIOREQTXDIR_32BIT_HACK = 0x7fffffff
 } VSCSIIOREQTXDIR;
@@ -91,6 +93,24 @@ typedef enum VSCSILUNTYPE
 } VSCSILUNTYPE;
 /** Pointer to a SCSI LUN type */
 typedef VSCSILUNTYPE *PVSCSILUNTYPE;
+
+/**
+ * Range descriptor.
+ */
+typedef struct VSCSIRANGE
+{
+    /** Start offset. */
+    uint64_t offStart;
+    /** Size of the range. */
+    size_t   cbRange;
+} VSCSIRANGE;
+/** Pointer to a range descriptor. */
+typedef VSCSIRANGE *PVSCSIRANGE;
+
+/** The LUN can handle the UNMAP command. */
+#define VSCSI_LUN_FEATURE_UNMAP          RT_BIT(0)
+/** The LUN has a non rotational medium. */
+#define VSCSI_LUN_FEATURE_NON_ROTATIONAL RT_BIT(1)
 
 /**
  * Virtual SCSI LUN I/O Callback table.
@@ -123,6 +143,20 @@ typedef struct VSCSILUNIOCALLBACKS
     DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqTransferEnqueue, (VSCSILUN hVScsiLun,
                                                               void *pvScsiLunUser,
                                                               VSCSIIOREQ hVScsiIoReq));
+
+    /**
+     * Returns flags of supported features.
+     *
+     * @returns VBox status status code.
+     * @param   hVScsiLun             Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser         Opaque user data which may
+     *                                be used to identify the medium.
+     * @param   hVScsiIoReq           Virtual SCSI I/O request handle.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunGetFeatureFlags, (VSCSILUN hVScsiLun,
+                                                           void *pvScsiLunUser,
+                                                           uint64_t *pfFeatures));
+
 
 } VSCSILUNIOCALLBACKS;
 /** Pointer to a virtual SCSI LUN I/O callback table. */
@@ -282,6 +316,17 @@ VBOXDDU_DECL(VSCSIIOREQTXDIR) VSCSIIoReqTxDirGet(VSCSIIOREQ hVScsiIoReq);
 VBOXDDU_DECL(int) VSCSIIoReqParamsGet(VSCSIIOREQ hVScsiIoReq, uint64_t *puOffset,
                                       size_t *pcbTransfer, unsigned *pcSeg,
                                       size_t *pcbSeg, PCRTSGSEG *ppaSeg);
+
+/**
+ * Query unmap parameters.
+ *
+ * @returns VBox status code.
+ * @param   hVScsiIoReq    The SCSI I/O request handle.
+ * @param   ppaRanges      Where to store the pointer to the range array on success.
+ * @param   pcRanges       Where to store the number of ranges on success.
+ */
+VBOXDDU_DECL(int) VSCSIIoReqUnmapParamsGet(VSCSIIOREQ hVScsiIoReq, PVSCSIRANGE *ppaRanges,
+                                           unsigned *pcRanges);
 
 RT_C_DECLS_END
 

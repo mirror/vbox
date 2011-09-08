@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -65,13 +65,45 @@ int vscsiIoReqTransferEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
     if (!pVScsiIoReq)
         return VERR_NO_MEMORY;
 
-    pVScsiIoReq->pVScsiReq  = pVScsiReq;
-    pVScsiIoReq->pVScsiLun  = pVScsiLun;
-    pVScsiIoReq->enmTxDir   = enmTxDir;
-    pVScsiIoReq->uOffset    = uOffset;
-    pVScsiIoReq->cbTransfer = cbTransfer;
-    pVScsiIoReq->paSeg      = pVScsiReq->SgBuf.paSegs;
-    pVScsiIoReq->cSeg       = pVScsiReq->SgBuf.cSegs;
+    pVScsiIoReq->pVScsiReq       = pVScsiReq;
+    pVScsiIoReq->pVScsiLun       = pVScsiLun;
+    pVScsiIoReq->enmTxDir        = enmTxDir;
+    pVScsiIoReq->u.Io.uOffset    = uOffset;
+    pVScsiIoReq->u.Io.cbTransfer = cbTransfer;
+    pVScsiIoReq->u.Io.paSeg      = pVScsiReq->SgBuf.paSegs;
+    pVScsiIoReq->u.Io.cSeg       = pVScsiReq->SgBuf.cSegs;
+
+    ASMAtomicIncU32(&pVScsiLun->IoReq.cReqOutstanding);
+
+    rc = vscsiLunReqTransferEnqueue(pVScsiLun, pVScsiIoReq);
+    if (RT_FAILURE(rc))
+    {
+        ASMAtomicDecU32(&pVScsiLun->IoReq.cReqOutstanding);
+        RTMemFree(pVScsiIoReq);
+    }
+
+    return rc;
+}
+
+
+int vscsiIoReqUnmapEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
+                           PVSCSIRANGE paRanges, unsigned cRanges)
+{
+    int rc = VINF_SUCCESS;
+    PVSCSIIOREQINT pVScsiIoReq = NULL;
+
+    LogFlowFunc(("pVScsiLun=%#p pVScsiReq=%#p paRanges=%#p cRanges=%u\n",
+                 pVScsiLun, pVScsiReq, paRanges, cRanges));
+
+    pVScsiIoReq = (PVSCSIIOREQINT)RTMemAllocZ(sizeof(VSCSIIOREQINT));
+    if (!pVScsiIoReq)
+        return VERR_NO_MEMORY;
+
+    pVScsiIoReq->pVScsiReq        = pVScsiReq;
+    pVScsiIoReq->pVScsiLun        = pVScsiLun;
+    pVScsiIoReq->enmTxDir         = VSCSIIOREQTXDIR_UNMAP;
+    pVScsiIoReq->u.Unmap.paRanges = paRanges;
+    pVScsiIoReq->u.Unmap.cRanges  = cRanges;
 
     ASMAtomicIncU32(&pVScsiLun->IoReq.cReqOutstanding);
 
@@ -111,7 +143,6 @@ VBOXDDU_DECL(int) VSCSIIoReqCompleted(VSCSIIOREQ hVScsiIoReq, int rcIoReq, bool 
 
     ASMAtomicDecU32(&pVScsiLun->IoReq.cReqOutstanding);
 
-    /** @todo error reporting */
     if (RT_SUCCESS(rcIoReq))
         rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
     else if (!fRedoPossible)
@@ -121,10 +152,14 @@ VBOXDDU_DECL(int) VSCSIIoReqCompleted(VSCSIIOREQ hVScsiIoReq, int rcIoReq, bool 
         rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_MEDIUM_ERROR,
                                          pVScsiIoReq->enmTxDir == VSCSIIOREQTXDIR_READ
                                          ? SCSI_ASC_READ_ERROR
-                                         : SCSI_ASC_WRITE_ERROR);
+                                         : SCSI_ASC_WRITE_ERROR,
+                                         0x00);
     }
     else
         rcReq = SCSI_STATUS_CHECK_CONDITION;
+
+    if (pVScsiIoReq->enmTxDir == VSCSIIOREQTXDIR_UNMAP)
+        RTMemFree(pVScsiIoReq->u.Unmap.paRanges);
 
     /* Free the I/O request */
     RTMemFree(pVScsiIoReq);
@@ -153,13 +188,29 @@ VBOXDDU_DECL(int) VSCSIIoReqParamsGet(VSCSIIOREQ hVScsiIoReq, uint64_t *puOffset
     PVSCSIIOREQINT pVScsiIoReq = hVScsiIoReq;
 
     AssertPtrReturn(pVScsiIoReq, VERR_INVALID_HANDLE);
-    AssertReturn(pVScsiIoReq->enmTxDir != VSCSIIOREQTXDIR_FLUSH, VERR_NOT_SUPPORTED);
+    AssertReturn(   pVScsiIoReq->enmTxDir != VSCSIIOREQTXDIR_FLUSH
+                 && pVScsiIoReq->enmTxDir != VSCSIIOREQTXDIR_UNMAP,
+                 VERR_NOT_SUPPORTED);
 
-    *puOffset    = pVScsiIoReq->uOffset;
-    *pcbTransfer = pVScsiIoReq->cbTransfer;
-    *pcSeg       = pVScsiIoReq->cSeg;
-    *pcbSeg      = pVScsiIoReq->cbSeg;
-    *ppaSeg      = pVScsiIoReq->paSeg;
+    *puOffset    = pVScsiIoReq->u.Io.uOffset;
+    *pcbTransfer = pVScsiIoReq->u.Io.cbTransfer;
+    *pcSeg       = pVScsiIoReq->u.Io.cSeg;
+    *pcbSeg      = pVScsiIoReq->u.Io.cbSeg;
+    *ppaSeg      = pVScsiIoReq->u.Io.paSeg;
+
+    return VINF_SUCCESS;
+}
+
+VBOXDDU_DECL(int) VSCSIIoReqUnmapParamsGet(VSCSIIOREQ hVScsiIoReq, PVSCSIRANGE *ppaRanges,
+                                           unsigned *pcRanges)
+{
+    PVSCSIIOREQINT pVScsiIoReq = hVScsiIoReq;
+
+    AssertPtrReturn(pVScsiIoReq, VERR_INVALID_HANDLE);
+    AssertReturn(pVScsiIoReq->enmTxDir == VSCSIIOREQTXDIR_UNMAP, VERR_NOT_SUPPORTED);
+
+    *ppaRanges = pVScsiIoReq->u.Unmap.paRanges;
+    *pcRanges  = pVScsiIoReq->u.Unmap.cRanges;
 
     return VINF_SUCCESS;
 }

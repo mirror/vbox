@@ -104,6 +104,8 @@ typedef struct DRVSCSI
     volatile uint32_t       StatIoDepth;
     /** Errors printed in the release log. */
     unsigned                cErrors;
+    /** Mark the drive as having a non-rotational medium (i.e. as a SSD). */
+    bool                    fNonRotational;
 } DRVSCSI, *PDRVSCSI;
 
 /** Converts a pointer to DRVSCSI::ISCSIConnector to a PDRVSCSI. */
@@ -187,6 +189,19 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
 
             break;
         }
+        case VSCSIIOREQTXDIR_UNMAP:
+        {
+            PVSCSIRANGE paRanges;
+            unsigned cRanges;
+
+            rc = VSCSIIoReqUnmapParamsGet(hVScsiIoReq, &paRanges, &cRanges);
+            AssertRC(rc);
+
+            pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
+            rc = pThis->pDrvBlock->pfnDiscard(pThis->pDrvBlock, (PPDMRANGE)paRanges, cRanges);
+            pThis->pLed->Actual.s.fWriting = 0;
+            break;
+        }
         default:
             AssertMsgFailed(("Invalid transfer direction %d\n", enmTxDir));
     }
@@ -199,7 +214,7 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
     return VINF_SUCCESS;
 }
 
-static int drvscsiGetSize(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pcbSize)
+static DECLCALLBACK(int) drvscsiGetSize(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pcbSize)
 {
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
@@ -258,9 +273,9 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
     return VINF_SUCCESS;
 }
 
-static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
-                                     void *pvScsiLunUser,
-                                     VSCSIIOREQ hVScsiIoReq)
+static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
+                                                   void *pvScsiLunUser,
+                                                   VSCSIIOREQ hVScsiIoReq)
 {
     int rc = VINF_SUCCESS;
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
@@ -369,6 +384,24 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
     }
 
     return rc;
+}
+
+static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun,
+                                                void *pvScsiLunUser,
+                                                uint64_t *pfFeatures)
+{
+    int rc = VINF_SUCCESS;
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+
+    *pfFeatures = 0;
+
+    if (pThis->pDrvBlock->pfnDiscard)
+        *pfFeatures |= VSCSI_LUN_FEATURE_UNMAP;
+
+    if (pThis->fNonRotational)
+        *pfFeatures |= VSCSI_LUN_FEATURE_NON_ROTATIONAL;
+
+    return VINF_SUCCESS;
 }
 
 static void drvscsiVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
@@ -740,6 +773,18 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
+     * Validate and read configuration.
+     */
+    if (!CFGMR3AreValuesValid(pCfg, "NonRotationalMedium\0"))
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("SCSI configuration error: unknown option specified"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "NonRotationalMedium", &pThis->fNonRotational, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                    N_("SCSI configuration error: failed to read \"NonRotationalMedium\" as boolean"));
+
+    /*
      * Initialize the instance data.
      */
     pThis->pDrvIns                           = pDrvIns;
@@ -802,6 +847,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /* Create VSCSI device and LUN. */
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumGetSize      = drvscsiGetSize;
     pThis->VScsiIoCallbacks.pfnVScsiLunReqTransferEnqueue = drvscsiReqTransferEnqueue;
+    pThis->VScsiIoCallbacks.pfnVScsiLunGetFeatureFlags    = drvscsiGetFeatureFlags;
 
     rc = VSCSIDeviceCreate(&pThis->hVScsiDevice, drvscsiVScsiReqCompleted, pThis);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI device rc=%Rrc\n"), rc);
