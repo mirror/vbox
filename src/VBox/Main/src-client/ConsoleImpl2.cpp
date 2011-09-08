@@ -232,7 +232,10 @@ static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str *
     AssertComRCReturn(hrc, Global::vboxStatusCodeFromCOM(hrc));
 
     if (!fPresent)
+    {
+        LogRel(("Failed to find an EFI ROM file.\n"));
         return VERR_FILE_NOT_FOUND;
+    }
 
     *pEfiRomFile = Utf8Str(aFilePath);
 
