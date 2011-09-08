@@ -3760,7 +3760,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
                 if (pfnProgress)
                 {
                     rc = pfnProgress(pvUser,
-                                     uPercentStart + uOff * uPercentSpan / cbExtent);
+                                     uPercentStart + (cbOffset + uOff) * uPercentSpan / cbSize);
                     if (RT_FAILURE(rc))
                     {
                         RTMemFree(pvBuf);
@@ -3827,11 +3827,12 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
                 return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: could not create new grain directory in '%s'"), pExtent->pszFullname);
         }
 
+        cbOffset += cbExtent;
+
         if (RT_SUCCESS(rc) && pfnProgress)
-            pfnProgress(pvUser, uPercentStart + i * uPercentSpan / cExtents);
+            pfnProgress(pvUser, uPercentStart + cbOffset * uPercentSpan / cbSize);
 
         cbRemaining -= cbExtent;
-        cbOffset += cbExtent;
     }
 
     if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_ESX)
