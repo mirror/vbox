@@ -605,6 +605,10 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../rdesktop-vrdp-keymaps                                            $(SOLARIS_VBOXINST_DIR_64)/rdesktop-vrdp-keymaps,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_32)/additions,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_64)/additions,)
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI32.fd                                             $(SOLARIS_VBOXINST_DIR_32)/,)
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI32.fd                                             $(SOLARIS_VBOXINST_DIR_64)/,)
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI64.fd                                             $(SOLARIS_VBOXINST_DIR_32)/,)
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI64.fd                                             $(SOLARIS_VBOXINST_DIR_64)/,)
 else
  ifndef VBOX_OSE
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2    $(SOLARIS_VBOXINST_DIR_ISA)/libSDL-1.2.so.0,)
@@ -618,6 +622,8 @@ else
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN)/VBoxISAExec                                                            $(SOLARIS_VBOXINST_DIR)/VBoxISAExec
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../rdesktop-vrdp-keymaps                                            $(SOLARIS_VBOXINST_DIR_ISA)/rdesktop-vrdp-keymaps,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_ISA)/additions,)
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI32.fd                                             $(SOLARIS_VBOXINST_DIR_ISA)/,)
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI64.fd                                             $(SOLARIS_VBOXINST_DIR_ISA)/,)
 endif
 	$(QUIET)$(LN_SYMLINK) -f ./pkginstall.sh                                                                             $(SOLARIS_VBOXINST_DIR)/ipsinstall.sh
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh                            $(SOLARIS_USRBIN_DIR)/VBoxQtconfig,)
