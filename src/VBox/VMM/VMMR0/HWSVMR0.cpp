@@ -49,9 +49,9 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int svmR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID);
-static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-static void svmR0SetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite);
+static int  hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID);
+static int  hmR0SvmEmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -368,16 +368,16 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         /* The following MSRs are saved automatically by vmload/vmsave, so we allow the guest
          * to modify them directly.
          */
-        svmR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
-        svmR0SetMSRPermission(pVCpu, MSR_K8_CSTAR, true, true);
-        svmR0SetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
-        svmR0SetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
-        svmR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
-        svmR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
-        svmR0SetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
-        svmR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_CS, true, true);
-        svmR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_ESP, true, true);
-        svmR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_EIP, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_CSTAR, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_IA32_SYSENTER_CS, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_IA32_SYSENTER_ESP, true, true);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_IA32_SYSENTER_EIP, true, true);
     }
 
     return rc;
@@ -392,7 +392,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
  * @param   fRead       Reading allowed/disallowed
  * @param   fWrite      Writing allowed/disallowed
  */
-static void svmR0SetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite)
+static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite)
 {
     unsigned ulBit;
     uint8_t *pMSRBitmap = (uint8_t *)pVCpu->hwaccm.s.svm.pMSRBitmap;
@@ -443,7 +443,7 @@ static void svmR0SetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool
  * @param   pCtx        CPU Context
  * @param   pIntInfo    SVM interrupt info
  */
-inline void SVMR0InjectEvent(PVMCPU pVCpu, SVM_VMCB *pVMCB, CPUMCTX *pCtx, SVM_EVENT* pEvent)
+DECLINLINE(void) hmR0SvmInjectEvent(PVMCPU pVCpu, SVM_VMCB *pVMCB, CPUMCTX *pCtx, SVM_EVENT *pEvent)
 {
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pVCpu->hwaccm.s.paStatInjectedIrqsR0[pEvent->n.u8Vector & MASK_INJECT_IRQ_STAT]);
@@ -477,7 +477,7 @@ inline void SVMR0InjectEvent(PVMCPU pVCpu, SVM_VMCB *pVMCB, CPUMCTX *pCtx, SVM_E
  * @param   pVMCB       SVM control block
  * @param   pCtx        CPU Context
  */
-static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
+static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
 {
     int rc;
 
@@ -489,7 +489,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
         Log(("Reinjecting event %08x %08x at %RGv\n", pVCpu->hwaccm.s.Event.intInfo, pVCpu->hwaccm.s.Event.errCode, (RTGCPTR)pCtx->rip));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatIntReinject);
         Event.au64[0] = pVCpu->hwaccm.s.Event.intInfo;
-        SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+        hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
 
         pVCpu->hwaccm.s.Event.fPending = false;
         return VINF_SUCCESS;
@@ -508,7 +508,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
             Event.n.u32ErrorCode = 0;
             Event.n.u3Type       = SVM_EVENT_NMI;
 
-            SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+            hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
             return VINF_SUCCESS;
         }
 
@@ -615,7 +615,7 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
             Event.n.u3Type = SVM_EVENT_EXTERNAL_IRQ;
 
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatIntInject);
-        SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+        hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
     } /* if (interrupts can be dispatched) */
 
     return VINF_SUCCESS;
@@ -1087,7 +1087,7 @@ ResumeExecution:
      *
      * Interrupts are disabled before the call to make sure we don't miss any interrupt
      * that would flag preemption (IPI, timer tick, ++). (Would've been nice to do this
-     * further down, but SVMR0CheckPendingInterrupt makes that impossible.)
+     * further down, but hmR0SvmCheckPendingInterrupt makes that impossible.)
      *
      * Note! Interrupts must be disabled done *before* we check for TLB flushes; TLB
      *       shootdowns rely on this.
@@ -1104,7 +1104,7 @@ ResumeExecution:
 
     /* When external interrupts are pending, we should exit the VM when IF is set. */
     /* Note! *After* VM_FF_INHIBIT_INTERRUPTS check!!! */
-    rc = SVMR0CheckPendingInterrupt(pVM, pVCpu, pVMCB, pCtx);
+    rc = hmR0SvmCheckPendingInterrupt(pVM, pVCpu, pVMCB, pCtx);
     if (RT_FAILURE(rc))
         goto end;
 
@@ -1128,13 +1128,13 @@ ResumeExecution:
             if (fPending)
             {
                 /* A TPR change could activate a pending interrupt, so catch lstar writes. */
-                svmR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, false);
+                hmR0SvmSetMSRPermission(pVCpu, MSR_K8_LSTAR, true, false);
             }
             else
                 /* No interrupts are pending, so we don't need to be explicitely notified.
                  * There are enough world switches for detecting pending interrupts.
                  */
-                svmR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
+                hmR0SvmSetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
         }
         else
         {
@@ -1633,7 +1633,7 @@ ResumeExecution:
                 Event.n.u1Valid  = 1;
                 Event.n.u8Vector = X86_XCPT_DB;
 
-                SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+                hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
                 goto ResumeExecution;
             }
             /* Return to ring 3 to deal with the debug exit code. */
@@ -1667,7 +1667,7 @@ ResumeExecution:
             Event.n.u1Valid  = 1;
             Event.n.u8Vector = X86_XCPT_NM;
 
-            SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+            hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
             goto ResumeExecution;
         }
 
@@ -1694,7 +1694,7 @@ ResumeExecution:
                 Event.n.u1ErrorCodeValid    = 1;
                 Event.n.u32ErrorCode        = errCode;
 
-                SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+                hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
                 goto ResumeExecution;
             }
 #endif
@@ -1767,7 +1767,7 @@ ResumeExecution:
                 Event.n.u1ErrorCodeValid    = 1;
                 Event.n.u32ErrorCode        = errCode;
 
-                SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+                hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
                 goto ResumeExecution;
             }
 #ifdef VBOX_STRICT
@@ -1796,7 +1796,7 @@ ResumeExecution:
             Event.n.u1Valid  = 1;
             Event.n.u8Vector = X86_XCPT_MF;
 
-            SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+            hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
             goto ResumeExecution;
         }
 
@@ -1841,7 +1841,7 @@ ResumeExecution:
                 break;
             }
             Log(("Trap %x at %04x:%RGv esi=%x\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip, pCtx->esi));
-            SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+            hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
             goto ResumeExecution;
         }
 #endif
@@ -2032,7 +2032,7 @@ ResumeExecution:
         Assert(!pVM->hwaccm.s.fNestedPaging);
 
         /* Truly a pita. Why can't SVM give the same information as VT-x? */
-        rc = svmR0InterpretInvpg(pVM, pVCpu, CPUMCTX2CORE(pCtx), pVMCB->ctrl.TLBCtrl.n.u32ASID);
+        rc = hmR0SvmInterpretInvpg(pVM, pVCpu, CPUMCTX2CORE(pCtx), pVMCB->ctrl.TLBCtrl.n.u32ASID);
         if (rc == VINF_SUCCESS)
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushPageInvlpg);
@@ -2322,7 +2322,7 @@ ResumeExecution:
                             Event.n.u1Valid  = 1;
                             Event.n.u8Vector = X86_XCPT_DB;
 
-                            SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+                            hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
                             goto ResumeExecution;
                         }
                     }
@@ -2393,7 +2393,7 @@ ResumeExecution:
 
 
     case SVM_EXIT_VMMCALL:
-        rc = svmR0EmulateTprVMMCall(pVM, pVCpu, pCtx);
+        rc = hmR0SvmEmulateTprVMMCall(pVM, pVCpu, pCtx);
         if (rc == VINF_SUCCESS)
         {
             goto ResumeExecution;   /* rip already updated. */
@@ -2418,7 +2418,7 @@ ResumeExecution:
         Event.n.u8Vector = X86_XCPT_UD;
 
         Log(("Forced #UD trap at %RGv\n", (RTGCPTR)pCtx->rip));
-        SVMR0InjectEvent(pVCpu, pVMCB, pCtx, &Event);
+        hmR0SvmInjectEvent(pVCpu, pVMCB, pCtx, &Event);
         goto ResumeExecution;
     }
 
@@ -2568,7 +2568,7 @@ end:
  * @param   pVCpu       The VM CPU to operate on.
  * @param   pCtx        CPU context
  */
-static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmEmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     int rc;
 
@@ -2686,7 +2686,7 @@ VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
-static int svmR0InterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
+static int hmR0svmInterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
 {
     OP_PARAMVAL param1;
     RTGCPTR     addr;
@@ -2733,7 +2733,7 @@ static int svmR0InterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pR
  *
  *                      Updates the EIP if an instruction was executed successfully.
  */
-static int svmR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
+static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID)
 {
     /*
      * Only allow 32 & 64 bits code.
@@ -2755,7 +2755,7 @@ static int svmR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, ui
             if (RT_SUCCESS(rc) && pDis->pCurInstr->opcode == OP_INVLPG)
             {
                 Assert(cbOp == pDis->opsize);
-                rc = svmR0InterpretInvlPg(pVCpu, pDis, pRegFrame, uASID);
+                rc = hmR0svmInterpretInvlPg(pVCpu, pDis, pRegFrame, uASID);
                 if (RT_SUCCESS(rc))
                     pRegFrame->rip += cbOp; /* Move on to the next instruction. */
 
@@ -2881,3 +2881,4 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 }
 
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) */
+

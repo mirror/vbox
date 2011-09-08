@@ -245,7 +245,7 @@ typedef FNHWACCMSWITCHERHC *PFNHWACCMSWITCHERHC;
 
 /**
  * HWACCM VM Instance data.
- * Changes to this must checked against the padding of the cfgm union in VM!
+ * Changes to this must checked against the padding of the hwaccm union in VM!
  */
 typedef struct HWACCM
 {
