@@ -34,9 +34,9 @@ typedef struct VSCSIVPDPAGESUPPORTEDPAGES
     /** Qualifier. */
     unsigned u3PeripheralQualifier  : 3;
     /** Page number. */
-    uint8_t  u8PageCode;
+    unsigned u8PageCode             : 8;
     /** Page size (Big endian) */
-    uint16_t u16PageLength;
+    unsigned u16PageLength          : 16;
     /** Supported pages array - variable. */
     uint8_t  abVpdPages[1];
 } VSCSIVPDPAGESUPPORTEDPAGES;
@@ -60,13 +60,13 @@ typedef struct VSCSIVPDPAGEBLOCKCHARACTERISTICS
     /** Qualifier. */
     unsigned u3PeripheralQualifier  : 3;
     /** Page number. */
-    uint8_t  u8PageCode;
+    unsigned u8PageCode             : 8;
     /** Page size (Big endian) */
-    uint16_t u16PageLength;
+    unsigned u16PageLength          : 16;
     /** Medium rotation rate. */
-    uint16_t u16MediumRotationRate;
+    unsigned u16MediumRotationRate  : 16;
     /** Reserved. */
-    uint8_t  u8Reserved;
+    unsigned u8Reserved             : 8;
     /** Nominal form factor. */
     unsigned u4NominalFormFactor    : 4;
     /** Reserved */
@@ -97,9 +97,9 @@ typedef struct VSCSIVPDPAGEBLOCKLIMITS
     /** Qualifier. */
     unsigned u3PeripheralQualifier  : 3;
     /** Page number. */
-    uint8_t  u8PageCode;
+    unsigned u8PageCode             : 8;
     /** Page size (Big endian) */
-    uint16_t u16PageLength;
+    unsigned u16PageLength          : 16;
     /** Reserved. */
     uint8_t  u8Reserved;
     /** Maximum compare and write length. */
@@ -143,11 +143,11 @@ typedef struct VSCSIVPDPAGEBLOCKPROV
     /** Qualifier. */
     unsigned u3PeripheralQualifier  : 3;
     /** Page number. */
-    uint8_t  u8PageCode;
+    unsigned u8PageCode             : 8;
     /** Page size (Big endian) */
-    uint16_t u16PageLength;
+    unsigned u16PageLength          : 16;
     /** Threshold exponent. */
-    uint8_t  u8ThresholdExponent;
+    unsigned u8ThresholdExponent    : 8;
     /** Descriptor present. */
     bool     fDP                    : 1;
     /** Anchored LBAs supported. */
@@ -163,7 +163,7 @@ typedef struct VSCSIVPDPAGEBLOCKPROV
     /** Reserved. */
     unsigned u5Reserved             : 5;
     /** Reserved. */
-    uint8_t  u8Reserved;
+    unsigned u8Reserved             : 8;
 } VSCSIVPDPAGEBLOCKPROV;
 #pragma pack()
 AssertCompileSize(VSCSIVPDPAGEBLOCKPROV, VSCSI_VPD_BLOCK_PROV_SIZE);
