@@ -63,6 +63,23 @@ static int vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
     if (RT_SUCCESS(rc))
         rc = vscsiVpdPagePoolInit(&pVScsiLunSbc->VpdPagePool);
 
+    /* Create device identification page - mandatory. */
+    if (RT_SUCCESS(rc))
+    {
+        PVSCSIVPDPAGEDEVID pDevIdPage;
+
+        rc = vscsiVpdPagePoolAllocNewPage(&pVScsiLunSbc->VpdPagePool, VSCSI_VPD_DEVID_NUMBER,
+                                          VSCSI_VPD_DEVID_SIZE, (uint8_t **)&pDevIdPage);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo: Not conforming to the SPC spec but Solaris needs at least a stub to work. */
+            pDevIdPage->u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
+            pDevIdPage->u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
+            pDevIdPage->u16PageLength          = RT_H2BE_U16(0x0);
+            cVpdPages++;
+        }
+    }
+
     if (   RT_SUCCESS(rc)
         && (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_UNMAP))
     {
@@ -136,6 +153,8 @@ static int vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
             pVpdPages->u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
             pVpdPages->u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
             pVpdPages->u16PageLength          = RT_H2BE_U16(cVpdPages);
+
+            pVpdPages->abVpdPages[idxVpdPage++] = VSCSI_VPD_DEVID_NUMBER;
 
             if (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_UNMAP)
             {
@@ -478,6 +497,12 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
         if (RT_UNLIKELY(uLbaStart + cSectorTransfer > pVScsiLunSbc->cSectors))
         {
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
+            vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
+        }
+        else if (!cSectorTransfer)
+        {
+            /* A 0 transfer length is not an error. */
+            rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
         }
         else
