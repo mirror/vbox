@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,11 +23,16 @@
 #include <VBox/err.h>
 #include <VBox/types.h>
 #include <VBox/vscsi.h>
+#include <iprt/cdefs.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
 #include "VSCSIInternal.h"
+
+/** Maximum of amount of LBAs to unmap with one command. */
+#define VSCSI_UNMAP_LBAS_MAX ((10*_1M) / 512)
 
 /**
  * SBC LUN instance
@@ -38,6 +43,8 @@ typedef struct VSCSILUNSBC
     VSCSILUNINT    Core;
     /** Size of the virtual disk. */
     uint64_t       cSectors;
+    /** VPD page pool. */
+    VSCSIVPDPOOL   VpdPagePool;
 } VSCSILUNSBC;
 /** Pointer to a SBC LUN instance */
 typedef VSCSILUNSBC *PVSCSILUNSBC;
@@ -47,10 +54,99 @@ static int vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
     PVSCSILUNSBC pVScsiLunSbc = (PVSCSILUNSBC)pVScsiLun;
     uint64_t cbDisk = 0;
     int rc = VINF_SUCCESS;
+    int cVpdPages = 0;
 
     rc = vscsiLunMediumGetSize(pVScsiLun, &cbDisk);
     if (RT_SUCCESS(rc))
         pVScsiLunSbc->cSectors = cbDisk / 512; /* Fixed sector size */
+
+    if (RT_SUCCESS(rc))
+        rc = vscsiVpdPagePoolInit(&pVScsiLunSbc->VpdPagePool);
+
+    if (   RT_SUCCESS(rc)
+        && (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_UNMAP))
+    {
+        PVSCSIVPDPAGEBLOCKLIMITS pBlkPage;
+        PVSCSIVPDPAGEBLOCKPROV   pBlkProvPage;
+
+        /* Create the page and fill it. */
+        rc = vscsiVpdPagePoolAllocNewPage(&pVScsiLunSbc->VpdPagePool, VSCSI_VPD_BLOCK_LIMITS_NUMBER,
+                                          VSCSI_VPD_BLOCK_LIMITS_SIZE, (uint8_t **)&pBlkPage);
+        if (RT_SUCCESS(rc))
+        {
+                pBlkPage->u5PeripheralDeviceType       = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
+                pBlkPage->u3PeripheralQualifier        = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
+                pBlkPage->u16PageLength                = RT_H2BE_U16(0x3c);
+                pBlkPage->u8MaxCmpWriteLength          = 0;
+                pBlkPage->u16OptTrfLengthGran          = 0;
+                pBlkPage->u32MaxTrfLength              = 0;
+                pBlkPage->u32OptTrfLength              = 0;
+                pBlkPage->u32MaxPreXdTrfLength         = 0;
+                pBlkPage->u32MaxUnmapLbaCount          = RT_H2BE_U32(VSCSI_UNMAP_LBAS_MAX);
+                pBlkPage->u32MaxUnmapBlkDescCount      = UINT32_C(0xffffffff);
+                pBlkPage->u32OptUnmapGranularity       = 0;
+                pBlkPage->u32UnmapGranularityAlignment = 0;
+                cVpdPages++;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            rc = vscsiVpdPagePoolAllocNewPage(&pVScsiLunSbc->VpdPagePool, VSCSI_VPD_BLOCK_PROV_NUMBER,
+                                              VSCSI_VPD_BLOCK_PROV_SIZE, (uint8_t **)&pBlkProvPage);
+            if (RT_SUCCESS(rc))
+            {
+                pBlkProvPage->u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
+                pBlkProvPage->u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
+                pBlkProvPage->u16PageLength          = RT_H2BE_U16(0x4);
+                pBlkProvPage->u8ThresholdExponent    = 1;
+                pBlkProvPage->fLBPU                  = true;
+                cVpdPages++;
+            }
+        }
+    }
+
+    if (   RT_SUCCESS(rc)
+        && (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_NON_ROTATIONAL))
+    {
+        PVSCSIVPDPAGEBLOCKCHARACTERISTICS pBlkPage;
+
+        /* Create the page and fill it. */
+        rc = vscsiVpdPagePoolAllocNewPage(&pVScsiLunSbc->VpdPagePool, VSCSI_VPD_BLOCK_CHARACTERISTICS_NUMBER,
+                                          VSCSI_VPD_BLOCK_CHARACTERISTICS_SIZE, (uint8_t **)&pBlkPage);
+        if (RT_SUCCESS(rc))
+        {
+                pBlkPage->u5PeripheralDeviceType       = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
+                pBlkPage->u3PeripheralQualifier        = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
+                pBlkPage->u16PageLength                = RT_H2BE_U16(0x3c);
+                pBlkPage->u16MediumRotationRate        = RT_H2BE_U16(VSCSI_VPD_BLOCK_CHARACT_MEDIUM_ROTATION_RATE_NON_ROTATING);
+                cVpdPages++;
+        }
+    }
+
+    if (   RT_SUCCESS(rc)
+        && cVpdPages)
+    {
+        PVSCSIVPDPAGESUPPORTEDPAGES pVpdPages;
+
+        rc = vscsiVpdPagePoolAllocNewPage(&pVScsiLunSbc->VpdPagePool, VSCSI_VPD_SUPPORTED_PAGES_NUMBER,
+                                          VSCSI_VPD_SUPPORTED_PAGES_SIZE + cVpdPages - 1, (uint8_t **)&pVpdPages);
+        if (RT_SUCCESS(rc))
+        {
+            unsigned idxVpdPage = 0;
+            pVpdPages->u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
+            pVpdPages->u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
+            pVpdPages->u16PageLength          = RT_H2BE_U16(cVpdPages);
+
+            if (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_UNMAP)
+            {
+                pVpdPages->abVpdPages[idxVpdPage++] = VSCSI_VPD_BLOCK_LIMITS_NUMBER;
+                pVpdPages->abVpdPages[idxVpdPage++] = VSCSI_VPD_BLOCK_PROV_NUMBER;
+            }
+
+            if (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_NON_ROTATIONAL)
+                pVpdPages->abVpdPages[idxVpdPage++] = VSCSI_VPD_BLOCK_CHARACTERISTICS_NUMBER;
+        }
+    }
 
     return rc;
 }
@@ -58,6 +154,8 @@ static int vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
 static int vscsiLunSbcDestroy(PVSCSILUNINT pVScsiLun)
 {
     PVSCSILUNSBC pVScsiLunSbc = (PVSCSILUNSBC)pVScsiLun;
+
+    vscsiVpdPagePoolDestroy(&pVScsiLunSbc->VpdPagePool);
 
     return VINF_SUCCESS;
 }
@@ -75,22 +173,41 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
     {
         case SCSI_INQUIRY:
         {
-            SCSIINQUIRYDATA ScsiInquiryReply;
+            /* Check for EVPD bit. */
+            if (pVScsiReq->pbCDB[1] & 0x1)
+            {
+                rc = vscsiVpdPagePoolQueryPage(&pVScsiLunSbc->VpdPagePool, pVScsiReq, pVScsiReq->pbCDB[2]);
+                if (RT_UNLIKELY(rc == VERR_NOT_FOUND))
+                {
+                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                     SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+                    rc = VINF_SUCCESS;
+                }
+                else
+                    rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+            }
+            else if (pVScsiReq->pbCDB[2] != 0) /* A non zero page code is an error. */
+                rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                 SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+            else
+            {
+                SCSIINQUIRYDATA ScsiInquiryReply;
 
-            memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
+                memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
 
-            ScsiInquiryReply.cbAdditional           = 31;
-            ScsiInquiryReply.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
-            ScsiInquiryReply.u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
-            ScsiInquiryReply.u3AnsiVersion          = 0x05; /* SPC-4 compliant */
-            ScsiInquiryReply.fCmdQue                = 1;    /* Command queuing supported. */
-            ScsiInquiryReply.fWBus16                = 1;
-            vscsiPadStr(ScsiInquiryReply.achVendorId, "VBOX", 8);
-            vscsiPadStr(ScsiInquiryReply.achProductId, "HARDDISK", 16);
-            vscsiPadStr(ScsiInquiryReply.achProductLevel, "1.0", 4);
+                ScsiInquiryReply.cbAdditional           = 31;
+                ScsiInquiryReply.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
+                ScsiInquiryReply.u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
+                ScsiInquiryReply.u3AnsiVersion          = 0x05; /* SPC-4 compliant */
+                ScsiInquiryReply.fCmdQue                = 1;    /* Command queuing supported. */
+                ScsiInquiryReply.fWBus16                = 1;
+                vscsiPadStr(ScsiInquiryReply.achVendorId, "VBOX", 8);
+                vscsiPadStr(ScsiInquiryReply.achProductId, "HARDDISK", 16);
+                vscsiPadStr(ScsiInquiryReply.achProductLevel, "1.0", 4);
 
-            RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, (uint8_t *)&ScsiInquiryReply, sizeof(SCSIINQUIRYDATA));
-            rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+                RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, (uint8_t *)&ScsiInquiryReply, sizeof(SCSIINQUIRYDATA));
+                rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+            }
             break;
         }
         case SCSI_READ_CAPACITY:
@@ -262,7 +379,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                     }
                 }
                 default:
-                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
             }
             break;
         }
@@ -277,6 +394,8 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                     memset(aReply, 0, sizeof(aReply));
                     vscsiH2BEU64(aReply, pVScsiLunSbc->cSectors - 1);
                     vscsiH2BEU32(&aReply[8], 512);
+                    if (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_UNMAP)
+                        aReply[14] = 0x80; /* LPME enabled */
                     /* Leave the rest 0 */
 
                     RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
@@ -284,13 +403,71 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                     break;
                 }
                 default:
-                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET); /* Don't know if this is correct */
+                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00); /* Don't know if this is correct */
             }
+            break;
+        }
+        case SCSI_UNMAP:
+        {
+            if (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_UNMAP)
+            {
+                uint8_t abHdr[8];
+                size_t cbCopied;
+                size_t cbList = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
+
+                /* Copy the header. */
+                cbCopied = RTSgBufCopyToBuf(&pVScsiReq->SgBuf, &abHdr[0], sizeof(abHdr));
+
+                /* Using the anchor bit is not supported. */
+                if (   !(pVScsiReq->pbCDB[1] & 0x01)
+                    && cbCopied == sizeof(abHdr)
+                    && cbList >= 8)
+                {
+                    size_t cBlkDesc = vscsiBE2HU16(&abHdr[2]) / 16;
+
+                    if (cBlkDesc)
+                    {
+                        PVSCSIRANGE paRanges;
+
+                        paRanges = (PVSCSIRANGE)RTMemAllocZ(cBlkDesc * sizeof(PVSCSIRANGE));
+                        if (paRanges)
+                        {
+                            for (unsigned i = 0; i < cBlkDesc; i++)
+                            {
+                                uint8_t abBlkDesc[16];
+
+                                cbCopied = RTSgBufCopyToBuf(&pVScsiReq->SgBuf, &abBlkDesc[0], sizeof(abBlkDesc));
+                                if (RT_UNLIKELY(cbCopied != sizeof(abBlkDesc)))
+                                {
+                                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+                                    break;
+                                }
+
+                                paRanges[i].offStart = vscsiBE2HU64(&abBlkDesc[0]) * 512;
+                                paRanges[i].cbRange = vscsiBE2HU32(&abBlkDesc[8]) * 512;
+                            }
+
+                            if (rcReq == SCSI_STATUS_OK)
+                                rc = vscsiIoReqUnmapEnqueue(pVScsiLun, pVScsiReq, paRanges, cBlkDesc);
+                        }
+                        else /* Out of memory. */
+                            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_HARDWARE_ERROR, SCSI_ASC_SYSTEM_RESOURCE_FAILURE,
+                                                             SCSI_ASCQ_SYSTEM_BUFFER_FULL);
+                    }
+                    else /* No block descriptors is not an error condition. */
+                        rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+                }
+                else /* Invalid CDB. */
+                    rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+            }
+            else
+                rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+
             break;
         }
         default:
             //AssertMsgFailed(("Command %#x [%s] not implemented\n", pRequest->pbCDB[0], SCSICmdText(pRequest->pbCDB[0])));
-            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
+            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE, 0x00);
     }
 
     if (enmTxDir != VSCSIIOREQTXDIR_INVALID)
@@ -300,7 +477,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
 
         if (RT_UNLIKELY(uLbaStart + cSectorTransfer > pVScsiLunSbc->cSectors))
         {
-            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR);
+            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
             vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
         }
         else
@@ -315,7 +492,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
         /* Enqueue flush */
         rc = vscsiIoReqFlushEnqueue(pVScsiLun, pVScsiReq);
     }
-    else /* Request completed */
+    else if (pVScsiReq->pbCDB[0] !=  SCSI_UNMAP) /* Request completed */
         vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
 
     return rc;

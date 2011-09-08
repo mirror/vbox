@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,6 +14,9 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VSCSI
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -80,7 +83,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
              * to return an error.
              */
             if (vscsiBE2HU32(&pVScsiReq->pbCDB[6]) < 16)
-                *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
             else
             {
                 size_t cbData;
@@ -90,7 +93,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
                 vscsiH2BEU32(&aReply[0], 8); /* List length starts at position 0. */
                 cbData = RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
                 if (cbData < 16)
-                    *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                    *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
                 else
                     *prcReq = vscsiReqSenseOkSet(&pVScsiDevice->VScsiSense, pVScsiReq);
             }
@@ -105,7 +108,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         {
             /* Descriptor format sense data is not supported and results in an error. */
             if ((pVScsiReq->pbCDB[1] & 0x1) != 0)
-                *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
             else
                 *prcReq = vscsiReqSenseCmd(&pVScsiDevice->VScsiSense, pVScsiReq);
         }
@@ -292,7 +295,8 @@ VBOXDDU_DECL(int) VSCSIDeviceReqEnqueue(VSCSIDEVICE hVScsiDevice, VSCSIREQ hVScs
             /* LUN not present, report error. */
             vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq,
                                   SCSI_SENSE_ILLEGAL_REQUEST,
-                                  SCSI_ASC_LOGICAL_UNIT_DOES_NOT_RESPOND_TO_SELECTION);
+                                  SCSI_ASC_LOGICAL_UNIT_DOES_NOT_RESPOND_TO_SELECTION,
+                                  0x00);
 
             vscsiDeviceReqComplete(pVScsiDevice, pVScsiReq,
                                    SCSI_STATUS_CHECK_CONDITION, false, VINF_SUCCESS);
@@ -332,7 +336,8 @@ VBOXDDU_DECL(int) VSCSIDeviceReqCreate(VSCSIDEVICE hVScsiDevice, PVSCSIREQ phVSc
     pVScsiReq->cbSense        = cbSense;
     pVScsiReq->pvVScsiReqUser = pvVScsiReqUser;
 
-    RTSgBufInit(&pVScsiReq->SgBuf, paSGList, cSGListEntries);
+    if (cSGListEntries)
+        RTSgBufInit(&pVScsiReq->SgBuf, paSGList, cSGListEntries);
 
     *phVScsiReq = pVScsiReq;
 

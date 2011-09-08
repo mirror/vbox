@@ -70,12 +70,15 @@ VBOXDDU_DECL(int) VSCSILunCreate(PVSCSILUN phVScsiLun, VSCSILUNTYPE enmLunType,
     pVScsiLun->pVScsiLunIoCallbacks = pVScsiLunIoCallbacks;
     pVScsiLun->pVScsiLunDesc        = pVScsiLunDesc;
 
-    int rc = pVScsiLunDesc->pfnVScsiLunInit(pVScsiLun);
+    int rc = vscsiLunGetFeatureFlags(pVScsiLun, &pVScsiLun->fFeatures);
     if (RT_SUCCESS(rc))
     {
-        /** @todo Init other stuff */
-        *phVScsiLun = pVScsiLun;
-        return VINF_SUCCESS;
+        rc = pVScsiLunDesc->pfnVScsiLunInit(pVScsiLun);
+        if (RT_SUCCESS(rc))
+        {
+            *phVScsiLun = pVScsiLun;
+            return VINF_SUCCESS;
+        }
     }
 
     RTMemFree(pVScsiLun);
