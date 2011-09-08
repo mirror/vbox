@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HWACCM AMD-V - Internal header file.
+ * HM SVM (AMD-V) - Internal header file.
  */
 
 /*
