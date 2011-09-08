@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * HWACCM VMX - Host Context Ring 0.
+ * HM VMX (VT-x) - Host Context Ring 0.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;

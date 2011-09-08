@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Hardware Assisted Virtualization Manager - Host Context Ring-0.
+ * Hardware Assisted Virtualization Manager (HM) - Host Context Ring-0.
  */
 
 /*

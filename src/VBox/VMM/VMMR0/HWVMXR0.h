@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * HWACCM VT-x - Internal header file.
+ * HM VMX (VT-x) - Internal header file.
  */
 
 /*
