@@ -149,15 +149,15 @@ typedef struct VSCSIVPDPAGEBLOCKPROV
     /** Threshold exponent. */
     unsigned u8ThresholdExponent    : 8;
     /** Descriptor present. */
-    bool     fDP                    : 1;
+    unsigned fDP                    : 1;
     /** Anchored LBAs supported. */
-    bool     fAncSup                : 1;
+    unsigned fAncSup                : 1;
     /** Reserved. */
     unsigned u4Reserved             : 4;
     /** WRITE SAME command supported. */
-    bool     fLBPWS                 : 1;
+    unsigned fLBPWS                 : 1;
     /** UNMAP command supported. */
-    bool     fLBPU                  : 1;
+    unsigned fLBPU                  : 1;
     /** Provisioning type. */
     unsigned u3ProvType             : 3;
     /** Reserved. */
