@@ -53,12 +53,12 @@ namespace com
  * ErrorInfo:
  *
  *  This class is able to retrieve the per thread error and store it into its
- *  member variables. This class can also handle non VirtualBox errors (like
+ *  member variables. This class can also handle non-VirtualBox errors (like
  *  standard COM errors).
  *
  * ProgressErrorInfo:
  *
- *  This is just a simple wrapper class to get the ErrorInfo stored within a
+ *  This is just a simple wrapper class to get the ErrorInfo stored within an
  *  IProgress object. That is the error which was stored when the progress
  *  object was in use and not an error produced by IProgress itself.
  *
@@ -97,7 +97,7 @@ namespace com
  *
  * Some general hints:
  *
- * - Always use setError, especially when you are work in an asynchrony thread,
+ * - Always use setError, especially when you are working in an asynchronous thread
  *   to indicate an error. Otherwise the error information itself will not make
  *   it into the client.
  *
