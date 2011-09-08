@@ -471,9 +471,11 @@ else
  xpidl_CFLAGS = \
 	$(libIDL_config_cflags)
  xpidl_LDFLAGS = \
-	$(libIDL_config_libs)
+	$(filter-out -l%,$(libIDL_config_libs))
  xpidl_LDFLAGS.linux = \
 	$(VBOX_LD_as_needed)
+ xpidl_LIBS.linux += \
+	$(subst -l,,$(filter -l%,$(libIDL_config_libs)))
 endif
 
 #
