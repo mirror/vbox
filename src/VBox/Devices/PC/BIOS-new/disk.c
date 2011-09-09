@@ -67,16 +67,17 @@
 
 void BIOSCALL int13_harddisk(disk_regs_t r)
 {
-    uint32_t    lba;
-    uint16_t    ebda_seg=read_word(0x0040,0x000E);
-    uint16_t    cylinder, head, sector;
-    uint16_t    npc, nph, npspt, nlc, nlh, nlspt;
-    uint16_t    count;
-    uint8_t     device, status;
-    uint8_t     scsi_device;
+    uint32_t            lba;
+    uint16_t            cylinder, head, sector;
+    uint16_t            npc, nph, npspt, nlc, nlh, nlspt;
+    uint16_t            count;
+    uint8_t             device, status;
+    uint8_t             scsi_device;
+    ebda_data_t __far   *ebda_data;
 
     BX_DEBUG_INT13_HD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
-    
+
+    ebda_data = read_word(0x0040,0x000E) :> 0;
     write_byte(0x0040, 0x008e, 0);  // clear completion flag
     
     // basic check : device has to be defined
@@ -86,7 +87,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
     }
     
     // Get the ata channel
-    device=read_byte(ebda_seg,(uint16_t)&EbdaData->ata.hdidmap[GET_ELDL()-0x80]);
+    device = ebda_data->ata.hdidmap[GET_ELDL()-0x80];
     
     // basic check : device has to be valid
     if (device >= BX_MAX_STORAGE_DEVICES) {
@@ -134,17 +135,17 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
         {
-            nlc   = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].lchs.cylinders);
-            nlh   = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].lchs.heads);
-            nlspt = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].lchs.spt);
+            nlc   = ebda_data->ata.devices[device].lchs.cylinders;
+            nlh   = ebda_data->ata.devices[device].lchs.heads;
+            nlspt = ebda_data->ata.devices[device].lchs.spt;
         }
 #ifdef VBOX_WITH_SCSI
         else {
             scsi_device = VBOX_GET_SCSI_DEVICE(device);
     
-            nlc   = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.lchs.cylinders);
-            nlh   = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.lchs.heads);
-            nlspt = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.lchs.spt);
+            nlc   = ebda_data->scsi.devices[scsi_device].device_info.lchs.cylinders;
+            nlh   = ebda_data->scsi.devices[scsi_device].device_info.lchs.heads;
+            nlspt = ebda_data->scsi.devices[scsi_device].device_info.lchs.spt;
         }
 #endif
 
@@ -162,14 +163,14 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
         {
-            nph   = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].pchs.heads);
-            npspt = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].pchs.spt);
+            nph   = ebda_data->ata.devices[device].pchs.heads;
+            npspt = ebda_data->ata.devices[device].pchs.spt;
         }
 #ifdef VBOX_WITH_SCSI
         else {
             scsi_device = VBOX_GET_SCSI_DEVICE(device);
-            nph   = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.pchs.heads);
-            npspt = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.pchs.spt);
+            nph   = ebda_data->scsi.devices[scsi_device].device_info.pchs.heads;
+            npspt = ebda_data->scsi.devices[scsi_device].device_info.pchs.spt;
         }
 #endif
 
@@ -194,9 +195,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
             else
 #endif
             {
-                write_word(ebda_seg,(uint16_t)&EbdaData->ata.devices[device].blksize,count * 0x200);
+                ebda_data->ata.devices[device].blksize = count * 0x200;
                 status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, cylinder, head, sector, lba, MK_FP(ES, BX));
-                write_word(ebda_seg,(uint16_t)&EbdaData->ata.devices[device].blksize,0x200);
+                ebda_data->ata.devices[device].blksize = 0x200;
             }
         } else {
 #ifdef VBOX_WITH_SCSI
@@ -208,7 +209,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         }
 
         // Set nb of sector transferred
-        SET_AL(read_word(ebda_seg, (uint16_t)&EbdaData->ata.trsfsectors));
+        SET_AL(ebda_data->ata.trsfsectors);
         
         if (status != 0) {
             BX_INFO("%s: function %02x, error %02x !\n", __func__, GET_AH(), status);
@@ -232,20 +233,20 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
         {
-            nlc   = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].lchs.cylinders);
-            nlh   = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].lchs.heads);
-            nlspt = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].lchs.spt);
+            nlc   = ebda_data->ata.devices[device].lchs.cylinders;
+            nlh   = ebda_data->ata.devices[device].lchs.heads;
+            nlspt = ebda_data->ata.devices[device].lchs.spt;
         }
 #ifdef VBOX_WITH_SCSI
         else {
             scsi_device = VBOX_GET_SCSI_DEVICE(device);
-            nlc   = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.lchs.cylinders);
-            nlh   = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.lchs.heads);
-            nlspt = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.lchs.spt);
+            nlc   = ebda_data->scsi.devices[scsi_device].device_info.lchs.cylinders;
+            nlh   = ebda_data->scsi.devices[scsi_device].device_info.lchs.heads;
+            nlspt = ebda_data->scsi.devices[scsi_device].device_info.lchs.spt;
         }
 #endif
 
-        count = read_byte(ebda_seg, (uint16_t)&EbdaData->ata.hdcount);
+        count = ebda_data->ata.hdcount;
         /* Maximum cylinder number is just one less than the number of cylinders. */
         nlc = nlc - 1; /* 0 based , last sector not used */
         SET_AL(0);
@@ -264,7 +265,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         // should look at 40:8E also???
 
         // Read the status from controller
-        status = inb(read_word(ebda_seg, (uint16_t)&EbdaData->ata.channels[device/2].iobase1) + ATA_CB_STAT);
+        status = inb(ebda_data->ata.channels[device/2].iobase1 + ATA_CB_STAT);
         if ( (status & ( ATA_CB_STAT_BSY | ATA_CB_STAT_RDY )) == ATA_CB_STAT_RDY ) {
             goto int13_success;
         } else {
@@ -280,16 +281,16 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
         {
-            npc   = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].pchs.cylinders);
-            nph   = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].pchs.heads);
-            npspt = read_word(ebda_seg, (uint16_t)&EbdaData->ata.devices[device].pchs.spt);
+            npc   = ebda_data->ata.devices[device].pchs.cylinders;
+            nph   = ebda_data->ata.devices[device].pchs.heads;
+            npspt = ebda_data->ata.devices[device].pchs.spt;
         }
 #ifdef VBOX_WITH_SCSI
         else {
             scsi_device = VBOX_GET_SCSI_DEVICE(device);
-            npc   = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.pchs.cylinders);
-            nph   = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.pchs.heads);
-            npspt = read_word(ebda_seg, (uint16_t)&EbdaData->scsi.devices[scsi_device].device_info.pchs.spt);
+            npc   = ebda_data->scsi.devices[scsi_device].device_info.pchs.cylinders;
+            nph   = ebda_data->scsi.devices[scsi_device].device_info.pchs.heads;
+            npspt = ebda_data->scsi.devices[scsi_device].device_info.pchs.spt;
         }
 #endif
 
