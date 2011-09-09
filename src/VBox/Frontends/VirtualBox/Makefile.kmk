@@ -267,7 +267,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIArrowSplitter.h \
 	src/extensions/QIDialog.h \
 	src/extensions/QIFileDialog.h \
-	src/extensions/QIHttp.h \
 	src/extensions/QILabel.h \
 	src/extensions/QILabelSeparator.h \
 	src/extensions/QIListView.h \
