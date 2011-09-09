@@ -269,7 +269,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  DevicesR3_DEFS         += \
  	VBOX_HGCM_HOST_CODE \
  	VBOX_WITH_HGCM \
- 	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,)
+ 	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
+	VBOX_WITH_DMI_OEMSTRINGS
 
  DevicesR3_DEFS.linux   += _GNU_SOURCE
  DevicesR3_DEFS.l4      += _GNU_SOURCE
