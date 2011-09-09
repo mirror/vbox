@@ -1243,6 +1243,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 #endif
             pPGM->apGstPaePDsRC[i]             = NIL_RTRCPTR;
             pPGM->aGCPhysGstPaePDs[i]          = NIL_RTGCPHYS;
+            pPGM->aGstPaePdpeRegs[i].u         = UINT64_MAX;
             pPGM->aGCPhysGstPaePDsMonitored[i] = NIL_RTGCPHYS;
         }
 

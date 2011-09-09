@@ -1235,29 +1235,56 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 }
 
 /**
- * Prefetch the 4 PDPT pointers (PAE and nested paging only)
+ * Loads the 4 PDPEs into the guest state when nested paging is used and the
+ * guest operates in PAE mode.
  *
  * @returns VINF_SUCCESS or fatal error.
- * @param   pVM         The VM to operate on.
  * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        Guest context
  */
-static int hmR0VmxPrefetchPAEPdptrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0VmxLoadPaePdpes(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     if (CPUMIsGuestInPAEModeEx(pCtx))
     {
-        for (unsigned i=0;i<4;i++)
-        {
-            X86PDPE Pdpe;
-            int rc = PGMGstQueryPaePDPtr(pVCpu, i, &Pdpe);
-            AssertRCReturn(rc, rc);
+        X86PDPE aPdpes[4];
+        int rc = PGMGstGetPaePdpes(pVCpu, &aPdpes[0]);
+        AssertRCReturn(rc, rc);
 
-            rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR0_FULL + i*2, Pdpe.u);
-            AssertRC(rc);
-        }
+        rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR0_FULL, aPdpes[0].u); AssertRCReturn(rc, rc);
+        rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR1_FULL, aPdpes[1].u); AssertRCReturn(rc, rc);
+        rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR2_FULL, aPdpes[2].u); AssertRCReturn(rc, rc);
+        rc = VMXWriteVMCS64(VMX_VMCS_GUEST_PDPTR3_FULL, aPdpes[3].u); AssertRCReturn(rc, rc);
     }
     return VINF_SUCCESS;
 }
+
+/**
+ * Saves the 4 PDPEs into the guest state when nested paging is used and the
+ * guest operates in PAE mode.
+ *
+ * @returns VINF_SUCCESS or fatal error.
+ * @param   pVCpu       The VMCPU to operate on.
+ * @param   pCtx        Guest context
+ *
+ * @remarks Tell PGM about CR3 changes before calling this helper.
+ */
+static int hmR0VmxSavePaePdpes(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    if (CPUMIsGuestInPAEModeEx(pCtx))
+    {
+        int rc;
+        X86PDPE aPdpes[4];
+        rc = VMXReadVMCS64(VMX_VMCS_GUEST_PDPTR0_FULL, &aPdpes[0].u); AssertRCReturn(rc, rc);
+        rc = VMXReadVMCS64(VMX_VMCS_GUEST_PDPTR1_FULL, &aPdpes[1].u); AssertRCReturn(rc, rc);
+        rc = VMXReadVMCS64(VMX_VMCS_GUEST_PDPTR2_FULL, &aPdpes[2].u); AssertRCReturn(rc, rc);
+        rc = VMXReadVMCS64(VMX_VMCS_GUEST_PDPTR3_FULL, &aPdpes[3].u); AssertRCReturn(rc, rc);
+
+        rc = PGMGstUpdatePaePdpes(pVCpu, &aPdpes[0]);
+        AssertRCReturn(rc, rc);
+    }
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Update the exception bitmap according to the current CPU state
@@ -1752,8 +1779,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             {
                 /* Save the real guest CR3 in VMX_VMCS_GUEST_CR3 */
                 val = pCtx->cr3;
-                /* Prefetch the four PDPT entries in PAE mode. */
-                rc = hmR0VmxPrefetchPAEPdptrs(pVM, pVCpu, pCtx);
+                rc = hmR0VmxLoadPaePdpes(pVCpu, pCtx);
                 AssertRCReturn(rc, rc);
             }
         }
@@ -2027,8 +2053,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             CPUMSetGuestCR3(pVCpu, val);
             PGMUpdateCR3(pVCpu, val);
         }
-        /* Prefetch the four PDPT entries in PAE mode. */
-        rc = hmR0VmxPrefetchPAEPdptrs(pVM, pVCpu, pCtx);
+        rc = hmR0VmxSavePaePdpes(pVCpu, pCtx);
         AssertRCReturn(rc, rc);
     }
 
