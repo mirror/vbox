@@ -8,19 +8,24 @@
 #  -zu  assume that SS != DS (required)
 #  -ecc default to __cdecl calling convention (bad idea)
 #
+!ifdef __UNIX__
+QUOTE=\"
+!else
+QUOTE="
+!endif
 CFLAGS = -q -0 -wx -zu -s -oas -d1 -ms
-DEFS   = -DVBOX -DVBOX_LANBOOT_SEG=0xE200 -DVBOX_VERSION_STRING="0.9" &
+DEFS   = -DVBOX -DVBOX_LANBOOT_SEG=0xE200 -DVBOX_VERSION_STRING=$(QUOTE)0.9$(QUOTE) &
  -DVBOX_WITH_SCSI
 
 AFLAGS = -q -0 -wx
 
-INCLS  = -I"../../../../../include"
+INCLS  = -I$(QUOTE)../../../../../include$(QUOTE)
 
 .c.obj : .autodepend
-	wcc $(CFLAGS) $(DEFS) $<
+	wcc -fo=.obj $(CFLAGS) $(DEFS) $<
 
 .asm.obj : .autodepend
-	wasm $(AFLAGS) $(DEFS) $<
+	wasm -fo=.obj $(AFLAGS) $(DEFS) $<
 
 OBJS = 	bios.obj print.obj ata.obj floppy.obj eltorito.obj boot.obj &
 	keyboard.obj disk.obj serial.obj system.obj timepci.obj &
@@ -43,7 +48,7 @@ vbxbios.bin : $(OBJS) $(__MAKEFILES__)
 	 disable 1014, 1023, 2120
 
 logo.obj : logo.c
-	wcc $(INCLS) $(CFLAGS) $(DEFS) -DVBOX_PC_BIOS $<
+	wcc -fo=.obj $(INCLS) $(CFLAGS) $(DEFS) -DVBOX_PC_BIOS $<
 
 clean : .symbolic
 	@rm -f *.obj *.err
