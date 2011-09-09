@@ -1,0 +1,67 @@
+
+ Notes on BIOS usage
+ -------------------
+
+- DOS (including 6.22/7.1) does not need INT 15h or INT 1Ah. Most other
+  operating systems require INT 15h to detect installed memory.
+
+- OS/2 (WSeB/MCP/ACP) appears to be one of the very few operating systems
+  which use the El Torito floppy emulation.
+
+- MS-DOS 6.2/V is a rare user of the INT 15h keyboard intercept routines.
+
+- Some software uses the model byte at F000:FFFE to determine the system
+  type (PC-DOS 3.0, Norton Utilities 8). Other software first tries INT 15h,
+  fn C0h instead (PC-DOS 3.1, MSD).
+
+- DOS 4.01 (both IBM and Microsoft) calls INT 13h to read from disk with less
+  than 100 bytes of stack space early in the boot sequence.
+
+- Very few guests use the 32-bit BIOS interface. One is OS/2 (but falls back),
+  another is Etherboot.
+
+- OS/2 is the only known guest which can run the 16-bit PCI BIOS in protected
+  mode (but only if the 32-bit PCI BIOS is unavailable).
+
+
+ Notes on BIOS implementation
+ ----------------------------
+
+- To return values from functions not declared as __interrupt, the arguments
+  may need to be declared volatile (not ideal, but does the job).
+
+- The way the POST code selectively clears or doesn't clear memory
+  is extremely suspect and will need reworking.
+
+- Need to review string routines wrt direction flag (should be OK now).
+
+- Need to review CMOS access wrt interrupts (possible index reg change by
+  an interrupt handler).
+
+- The POST code zeroes the entire BDA, and then various bits zero specific
+  parts of the BDA again. That's a waste of time.
+
+- After a reset, all interrupts are unmasked. Not sure if that's OK.
+
+- BCC mishandles the following (where buf is an uint8_t array):
+  lba=buf[0x2B]*0x1000000+buf[0x2A]*0x10000+buf[0x29]*0x100+buf[0x28];
+  The buf[x]*100 expression should end up being of type signed int, which
+  causes the sign to be incorrectly propagated. BCC incorrectly keeps
+  the type unsigned.
+
+
+
+ Code size notes (code as of 7/6/2011):
+
+ The following values are the size of the _TEXT segment, i.e. only C code;
+data defined in C is not included, neither are assembly modules.
+
+ Options:                Size (hex):
+ --------                -----------
+ -0 -zu -s -oas -ecc     631A
+ -3 -zu -s -oas -ecc     5C1E
+ -0 -zu -s -oas          578A
+ -3 -zu -s -oas          5452
+ 
+ Both generating 386 code and using register-based calling convention for
+internal functions brings significant size savings (15% when combined).

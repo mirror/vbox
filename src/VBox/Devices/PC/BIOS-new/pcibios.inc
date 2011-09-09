@@ -1,0 +1,564 @@
+;;
+;; Copyright (C) 2006-2011 Oracle Corporation
+;;
+;; This file is part of VirtualBox Open Source Edition (OSE), as
+;; available from http://www.virtualbox.org. This file is free software;
+;; you can redistribute it and/or modify it under the terms of the GNU
+;; General Public License (GPL) as published by the Free Software
+;; Foundation, in version 2 as it comes in the "COPYING" file of the
+;; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+;; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;; --------------------------------------------------------------------
+;;
+;; This code is based on:
+;;
+;;  ROM BIOS for use with Bochs/Plex86/QEMU emulation environment
+;;
+;;  Copyright (C) 2002  MandrakeSoft S.A.
+;;
+;;    MandrakeSoft S.A.
+;;    43, rue d'Aboukir
+;;    75002 Paris - France
+;;    http://www.linux-mandrake.com/
+;;    http://www.mandrakesoft.com/
+;;
+;;  This library is free software; you can redistribute it and/or
+;;  modify it under the terms of the GNU Lesser General Public
+;;  License as published by the Free Software Foundation; either
+;;  version 2 of the License, or (at your option) any later version.
+;;
+;;  This library is distributed in the hope that it will be useful,
+;;  but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;;  Lesser General Public License for more details.
+;;
+;;  You should have received a copy of the GNU Lesser General Public
+;;  License along with this library; if not, write to the Free Software
+;;  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+;;
+;;
+
+include	pcicfg.inc
+
+if BX_PCIBIOS
+
+extrn		pcibios_protected:near	; in a 32-bit segment
+
+.386
+pcibios_real:
+		push	eax
+		push	dx
+ifdef PCI_FIXED_HOST_BRIDGE_1
+		mov	eax, 80000000h
+		mov	dx, PCI_CFG1
+		out	dx, eax
+		mov	dx, PCI_CFG2
+		in	eax, dx
+		cmp	eax, PCI_FIXED_HOST_BRIDGE_1
+		je	pci_present
+endif
+
+ifdef PCI_FIXED_HOST_BRIDGE_2
+		; 1Eh << 11
+		mov	eax, 8000f000h
+		mov	dx, PCI_CFG1
+		out	dx, eax
+		mov	dx, PCI_CFG2
+		in	eax, dx
+		cmp	eax, PCI_FIXED_HOST_BRIDGE_2
+		je	pci_present
+endif
+		pop	dx
+		pop	eax
+		mov	ah, 0FFh
+		stc
+		ret
+pci_present:
+		pop	dx
+		pop	eax
+		cmp	al, 1		; installation check
+		jne pci_real_f02
+		mov	ax, 0001h
+		mov	bx, 0210h
+		mov	cx, 0
+		mov	edx, ' ICP'	; #0x20494350 "PCI "
+;; @todo!
+if 0
+		mov	edi, 0f0000h
+		mov	di, pcibios_protected
+else
+		mov	edi, pcibios_protected
+endif
+		clc
+		ret
+
+pci_real_f02: ;; find pci device
+		push	esi
+		push	edi
+		push	edx
+		cmp	al, 2
+		jne	pci_real_f03
+
+		shl	ecx, 16
+		mov	cx, dx
+		xor	ebx, ebx
+		mov	di, 0
+pci_real_devloop:
+		call	pci_real_select_reg
+		mov	dx, PCI_CFG2
+		in	eax, dx
+		cmp	eax, ecx
+		jne	pci_real_nextdev
+
+		cmp	si, 0
+		je	pci_real_ok
+
+		dec	si
+pci_real_nextdev:
+		inc	ebx
+		cmp	ebx, 10000h
+		jne	pci_real_devloop
+
+		mov	dx, cx
+		shr	ecx, 16
+		mov	ax, 8602h
+		jmp	pci_real_fail
+pci_real_f03: ;; find class code
+		cmp	al, 3
+		jne	pci_real_f08
+		xor	ebx, ebx
+		mov	di, 8
+pci_real_devloop2:
+		call	pci_real_select_reg
+		mov	dx, PCI_CFG2
+		in	eax, dx
+		shr	eax, 8
+		cmp	eax, ecx
+		jne	pci_real_nextdev2
+
+		cmp	si, 0
+		je	pci_real_ok
+
+		dec	si
+pci_real_nextdev2:
+		inc	ebx
+		cmp	ebx, 10000h
+		jne	pci_real_devloop2
+
+		mov	ax, 8603h
+		jmp	pci_real_fail
+
+pci_real_f08: ;; read configuration byte
+		cmp	al, 8
+		jne	pci_real_f09
+
+		call	pci_real_select_reg
+		push	dx
+		mov	dx, di
+		and	dx, 3
+		add	dx, PCI_CFG2
+		in	al, dx
+		pop	dx
+		mov	cl, al
+		jmp	pci_real_ok
+
+pci_real_f09: ;; read configuration word
+		cmp	al, 9
+		jne	pci_real_f0a
+
+		call	pci_real_select_reg
+		push	dx
+		mov	dx, di
+		and	dx, 2
+		add	dx, PCI_CFG2
+		in	ax, dx
+		pop	dx
+		mov	cx, ax
+		jmp	pci_real_ok
+pci_real_f0a: ;; read configuration dword
+		cmp	al, 0Ah
+		jne	pci_real_f0b
+
+		call	pci_real_select_reg
+		push	dx
+		mov	dx, PCI_CFG2
+		in	eax, dx
+		pop	dx
+		mov	ecx, eax
+		jmp	pci_real_ok
+
+pci_real_f0b: ;; write configuration byte
+		cmp	al, 0Bh
+		jne	pci_real_f0c
+
+		call	pci_real_select_reg
+		push	dx
+		mov	dx, di
+		and	dx, 3
+		add	dx, PCI_CFG2
+		mov	al, cl
+		out	dx, al
+		pop	dx
+		jmp	pci_real_ok
+
+pci_real_f0c: ;; write configuration word
+		cmp	al, 0Ch
+		jne	pci_real_f0d
+
+		call	pci_real_select_reg
+		push	dx
+		mov	dx, di
+		and	dx, 2
+		add	dx, PCI_CFG2
+		mov	ax, cx
+		out	dx, ax
+		pop	dx
+		jmp	pci_real_ok
+
+pci_real_f0d: ;; write configuration dword
+		cmp	al, 0Dh
+		jne	pci_real_f0e
+
+		call	pci_real_select_reg
+		push	dx
+		mov	dx, PCI_CFG2
+		mov	eax, ecx
+		out	dx, eax
+		pop	dx
+		jmp	pci_real_ok
+
+pci_real_f0e: ;; get irq routing options
+		cmp	al, 0Eh
+		jne	pci_real_unknown
+
+		cmp	word ptr es:[di], pci_routing_table_structure_end - pci_routing_table_structure_start
+		jb	pci_real_too_small
+
+		mov	word ptr es:[di], pci_routing_table_structure_end - pci_routing_table_structure_start
+		pushf
+		push	ds
+		push	es
+		push	cx
+		push	si
+		push	di
+		cld
+		mov	si, pci_routing_table_structure_start
+		push	cs
+		pop	ds
+		mov	cx, es:[di+2]
+		mov	es, es:[di+4]
+		mov	di, cx
+		mov	cx, pci_routing_table_structure_end - pci_routing_table_structure_start
+		rep	movsb
+		pop	di
+		pop	si
+		pop	cx
+		pop	es
+		pop	ds
+		popf
+		mov	bx, (1 shl 9) or (1 shl 11) ; #(1 << 9) | (1 << 11)   ;; irq 9 and 11 are used
+		jmp	pci_real_ok
+
+pci_real_too_small:
+		mov	word ptr es:[di], pci_routing_table_structure_end - pci_routing_table_structure_start
+		mov	ah, 89h
+		jmp	pci_real_fail
+
+pci_real_unknown:
+		mov	ah, 81h
+pci_real_fail:
+		pop	edx
+		pop	edi
+		pop	esi
+		stc
+		ret
+pci_real_ok:
+		xor	ah, ah
+		pop	edx
+		pop	edi
+		pop	esi
+		clc
+		ret
+
+;; prepare from reading the PCI config space; on input:
+;; bx = bus/dev/fn
+;; di = offset into config space header
+;; destroys eax and may modify di
+pci_real_select_reg:
+		push	dx
+		mov	eax, 800000h
+		mov	ax,  bx
+		shl	eax, 8
+		and	di,  0FFh
+		or	ax,  di
+		and	al,  0FCh
+		mov	dx,  PCI_CFG1
+		out	dx,  eax
+		pop	dx
+		ret
+
+if not BX_ROMBIOS32
+pci_irq_list:
+		db 11, 10, 9, 5;
+
+pcibios_init_sel_reg:
+		push	eax
+		mov	eax, 800000h
+		mov	ax,  bx
+		shl	eax, 8
+		and	dl,  0FCh
+		or	al,  dl
+		mov	dx,  PCI_CFG1
+		out	dx,  eax
+		pop	eax
+		ret
+
+pcibios_init_iomem_bases:
+		push	bp
+		mov	bp, sp
+		mov	eax, 0E0000000h	; base for memory init
+		push	eax
+		mov	ax, 0C000h	; base for i/o init
+		push	ax
+		mov	ax, 010h	; start at base address #0
+		push	ax
+		mov	bx, 8
+pci_init_io_loop1:
+		mov	dl, 0
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		in	ax, dx
+		cmp	ax, 0FFFFh
+		jz	next_pci_dev
+
+ifndef VBOX ; This currently breaks restoring a previously saved state. */
+		mov	dl, 4	; disable i/o and memory space access
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		in	al, dx
+		and	al, 0FCh
+		out	dx, al
+pci_init_io_loop2:
+		mov	dl, [bp-8]
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		in	eax, dx
+		test	al, 1
+		jnz	init_io_base
+
+		mov	ecx, eax
+		mov	eax, 0FFFFFFFFh
+		out	dx, eax
+		in	eax, dx
+		cmp	eax, ecx
+		je	next_pci_base
+		xor	eax, 0FFFFFFFFh
+		mov	ecx, eax
+		mov	eax, [bp-4]
+		out	dx, eax
+		add	eax, ecx	; calculate next free mem base
+		add	eax, 01000000h
+		and	eax, 0FF000000h
+		mov	[bp-4], eax
+		jmp	next_pci_base
+
+init_io_base:
+		mov	cx, ax
+		mov	ax, 0FFFFh
+		out	dx, ax
+		in	ax, dx
+		cmp	ax, cx
+		je	next_pci_base
+
+		xor	ax, 0FFFEh
+		mov	cx, ax
+		mov	ax, [bp-6]
+		out	dx, ax
+		add	ax, cx	; calculate next free i/o base
+		add	ax, 00100h
+		and	ax, 0FF00h
+		mov	[bp-6], ax
+next_pci_base:
+		mov	al, [bp-8]
+		add	al, 4
+		cmp	al, 28h
+		je	enable_iomem_space
+
+		mov	byte ptr[bp-8], al
+		jmp	pci_init_io_loop2
+endif ; !VBOX
+
+enable_iomem_space:
+		mov	dl, 4 ;; enable i/o and memory space access if available
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		in	al, dx
+		or	al, 7
+		out	dx, al
+ifdef VBOX
+		mov	dl, 0	; check if PCI device is AMD PCNet
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		in	eax, dx
+		cmp	eax, 020001022h
+		jne	next_pci_dev
+
+		mov	dl, 10h	; get I/O address
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		in	ax, dx
+		and	ax, 0FFFCh
+		mov	cx, ax
+		mov	dx, cx
+		add	dx, 14h	; reset register if PCNet is in word I/O mode
+		in	ax, dx	; reset is performed by reading the reset register
+		mov	dx, cx
+		add	dx, 18h	; reset register if PCNet is in word I/O mode
+		in	eax, dx	; reset is performed by reading the reset register
+endif ; VBOX 
+next_pci_dev:
+		mov	byte ptr[bp-8], 10h
+		inc	bx
+		cmp	bx, 0100h
+		jne	pci_init_io_loop1
+		mov	sp, bp
+		pop	bp
+		ret
+
+pcibios_init_set_elcr:
+		push	ax
+		push	cx
+		mov	dx, 04D0h
+		test	al, 8
+		jz	is_master_pic
+
+		inc	dx
+		and	al, 7
+is_master_pic:
+		mov	cl, al
+		mov	bl, 1
+		shl	bl, cl
+		in	al, dx
+		or	al, bl
+		out	dx, al
+		pop	cx
+		pop	ax
+		ret
+
+pcibios_init_irqs:
+		push	ds
+		push	bp
+		mov	ax, 0F000h
+		mov	ds, ax
+		mov	dx, 04D0h ;; reset ELCR1 + ELCR2
+		mov	al, 0
+		out	dx, al
+		inc	dx
+		out	dx, al
+		mov	si, pci_routing_table_structure
+		mov	bh, [si+8]
+		mov	bl, [si+9]
+		mov	dl, 0
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		in	eax, dx
+		cmp	eax, [si+12] ;; check irq router
+		jne	pci_init_end
+
+		mov	dl, [si+34]
+		call	pcibios_init_sel_reg
+		push	bx ;; save irq router bus + devfunc
+		mov	dx, PCI_CFG2
+		mov	ax, 8080h
+		out	dx, ax ;; reset PIRQ route control
+		add	dx, 2
+		out	dx, ax
+		mov	ax, [si+6]
+		sub	ax, 20h
+		shr	ax, 4
+		mov	cx, ax
+		add	si, 20h ;; set pointer to 1st entry
+		mov	bp, sp
+		mov	ax, pci_irq_list
+		push	ax
+		xor	ax, ax
+		push	ax
+pci_init_irq_loop1:
+		mov	bh, [si]
+		mov	bl, [si+1]
+pci_init_irq_loop2:
+		mov	dl, 0
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		in	ax, dx
+		cmp	ax, 0FFFFh
+		jnz	pci_test_int_pin
+
+		test	bl, 7
+		jz	next_pir_entry
+
+		jmp	next_pci_func
+
+pci_test_int_pin:
+		mov	dl, 3Ch
+		call pcibios_init_sel_reg
+		mov	dx, PCI_CFG2 + 1 ; TODO: was #0x0cfd - is that right?
+		in	al, dx
+		and	al, 7
+		jz	next_pci_func
+
+		dec	al ;; determine pirq reg
+		mov	dl, 3
+		mul	dl
+		add	al, 2
+		xor	ah, ah
+		mov	bx, ax
+		mov	al, [si+bx]
+		mov	dl, al
+		mov	bx, [bp]
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		and	al, 3
+		add	dl, al
+		in	al, dx
+		cmp	al, 80h
+		jb	pirq_found
+
+		mov	bx, [bp-2] ;; pci irq list pointer
+		mov	al, [bx]
+		out	dx, al
+		inc	bx
+		mov	[bp-2], bx
+		call	pcibios_init_set_elcr
+pirq_found:
+		mov	bh, [si]
+		mov	bl, [si+1]
+		add	bl, [bp-3] ;; pci function number
+		mov	dl, 3Ch
+		call	pcibios_init_sel_reg
+		mov	dx, PCI_CFG2
+		out	dx, al
+next_pci_func:
+		inc	byte ptr[bp-3]
+		inc	bl
+		test	bl, 7
+		jnz	pci_init_irq_loop2
+
+next_pir_entry:
+		add	si, 10h
+		mov	byte ptr[bp-3], 0
+		loop	pci_init_irq_loop1
+
+		mov	sp, bp
+		pop	bx
+pci_init_end:
+		pop		bp
+		pop		ds
+		ret
+
+.286
+
+endif		 ; !BX_ROMBIOS32
+
+endif		 ; BX_PCIBIOS
+
