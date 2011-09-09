@@ -87,7 +87,7 @@ struct Medium::Data
           size(0),
           readers(0),
           preLockState(MediumState_NotCreated),
-          queryInfoSem(NIL_RTSEMEVENTMULTI),
+          queryInfoSem(NIL_RTSEMRW),
           queryInfoRunning(false),
           type(MediumType_Normal),
           devType(DeviceType_HardDisk),
@@ -123,7 +123,12 @@ struct Medium::Data
     size_t readers;
     MediumState_T preLockState;
 
-    RTSEMEVENTMULTI queryInfoSem;
+    /** Special synchronization for operations which must wait for queryInfo()
+     * in another thread to complete. Using a SemRW is not quite ideal, but at
+     * least it is subject to the lock validator, unlike the SemEventMulti
+     * which we had here for many years. Catching possible deadlocks is more
+     * important than a tiny bit of efficiency. */
+    RTSEMRW queryInfoSem;
     bool queryInfoRunning : 1;
 
     const Utf8Str strFormat;
@@ -885,9 +890,7 @@ HRESULT Medium::FinalConstruct()
                          sizeof(VDINTERFACETCPNET), &m->vdImageIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
-    vrc = RTSemEventMultiCreate(&m->queryInfoSem);
-    AssertRCReturn(vrc, E_FAIL);
-    vrc = RTSemEventMultiSignal(m->queryInfoSem);
+    vrc = RTSemRWCreate(&m->queryInfoSem);
     AssertRCReturn(vrc, E_FAIL);
 
     return BaseFinalConstruct();
@@ -1368,9 +1371,8 @@ void Medium::uninit()
         }
     }
 
-    RTSemEventMultiSignal(m->queryInfoSem);
-    RTSemEventMultiDestroy(m->queryInfoSem);
-    m->queryInfoSem = NIL_RTSEMEVENTMULTI;
+    RTSemRWDestroy(m->queryInfoSem);
+    m->queryInfoSem = NIL_RTSEMRW;
 
     unconst(m->pVirtualBox) = NULL;
 }
@@ -2093,7 +2095,8 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
     while (m->queryInfoRunning)
     {
         alock.leave();
-        RTSemEventMultiWait(m->queryInfoSem, RT_INDEFINITE_WAIT);
+        RTSemRWRequestRead(m->queryInfoSem, RT_INDEFINITE_WAIT);
+        RTSemRWReleaseRead(m->queryInfoSem);
         alock.enter();
     }
 
@@ -2199,7 +2202,8 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
     while (m->queryInfoRunning)
     {
         alock.leave();
-        RTSemEventMultiWait(m->queryInfoSem, RT_INDEFINITE_WAIT);
+        RTSemRWRequestRead(m->queryInfoSem, RT_INDEFINITE_WAIT);
+        RTSemRWReleaseRead(m->queryInfoSem);
         alock.enter();
     }
 
@@ -5277,11 +5281,14 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         Assert(   m->state == MediumState_LockedRead
                || m->state == MediumState_LockedWrite);
 
-        alock.leave();
-        vrc = RTSemEventMultiWait(m->queryInfoSem, RT_INDEFINITE_WAIT);
-        alock.enter();
-
-        AssertRC(vrc);
+        while (m->queryInfoRunning)
+        {
+            alock.leave();
+            vrc = RTSemRWRequestRead(m->queryInfoSem, RT_INDEFINITE_WAIT);
+            RTSemRWReleaseRead(m->queryInfoSem);
+            AssertRC(vrc);
+            alock.enter();
+        }
 
         return S_OK;
     }
@@ -5334,11 +5341,16 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
      * need repairing after it was closed again. */
     bool fRepairImageZeroParentUuid = false;
 
-    /* leave the lock before a lengthy operation */
-    vrc = RTSemEventMultiReset(m->queryInfoSem);
-    AssertRCReturn(vrc, E_FAIL);
+    /* leave the object lock before a lengthy operation */
     m->queryInfoRunning = true;
     alock.leave();
+    /* Note that taking the queryInfoSem after leaving the object lock above
+     * can lead to short spinning of the loops waiting for queryInfo() to
+     * complete. This is unavoidable since the other order causes a lock order
+     * violation: here it would be requesting the object lock (at the beginning
+     * of the method), then SemRW, and below the other way round. */
+    vrc = RTSemRWRequestWrite(m->queryInfoSem, RT_INDEFINITE_WAIT);
+    AssertRCReturn(vrc, E_FAIL);
 
     try
     {
@@ -5569,8 +5581,8 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                         rc, vrc));
     }
 
-    /* inform other callers if there are any */
-    RTSemEventMultiSignal(m->queryInfoSem);
+    /* unblock anyone waiting for the queryInfo results */
+    RTSemRWReleaseWrite(m->queryInfoSem);
     m->queryInfoRunning = false;
 
     /* Set the proper state according to the result of the check */
