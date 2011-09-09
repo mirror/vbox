@@ -35,8 +35,8 @@ vbxbios.rom : vbxbios.bin
 	biossums $< $@
 
 vbxbios.bin : $(OBJS) $(__MAKEFILES__)
-	wlink name $@ system dos option quiet &
-	 option nofarcalls, map, verbose, statics &
+	wlink name $@ system dos debug all option quiet &
+	 option nofarcalls, map, verbose, statics, symfile &
 	 output raw offset=0xF0000 order &
 	 clname DATA segaddr=0xF000 segment _DATA &
 	 clname CODE &
