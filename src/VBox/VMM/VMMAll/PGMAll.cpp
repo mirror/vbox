@@ -1623,21 +1623,57 @@ int pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4)
 }
 #endif
 
+
 /**
- * Gets the specified page directory pointer table entry.
+ * Gets the PAE PDPEs values cached by the CPU.
  *
- * @returns PDP entry
- * @param   pVCpu       VMCPU handle.
- * @param   iPdpt       PDPT index
+ * @returns VBox status code.
+ * @param   pVCpu               The virtual CPU.
+ * @param   paPdpes             Where to return the four PDPEs.  The array
+ *                              pointed to must have 4 entries.
  */
-VMMDECL(int)  PGMGstQueryPaePDPtr(PVMCPU pVCpu, unsigned iPdpt, PX86PDPE pPdpe)
+VMM_INT_DECL(int) PGMGstGetPaePdpes(PVMCPU pVCpu, PX86PDPE paPdpes)
 {
-    Assert(iPdpt <= 3);
-    PX86PDPT pPdpt;
-    int rc = pgmGstGetPaePDPTPtrEx(pVCpu, &pPdpt);
-    if (RT_SUCCESS(rc))
-        *pPdpe = pPdpt->a[iPdpt & 3];
-    return rc;
+    Assert(pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
+
+    paPdpes[0] = pVCpu->pgm.s.aGstPaePdpeRegs[0];
+    paPdpes[1] = pVCpu->pgm.s.aGstPaePdpeRegs[1];
+    paPdpes[2] = pVCpu->pgm.s.aGstPaePdpeRegs[2];
+    paPdpes[3] = pVCpu->pgm.s.aGstPaePdpeRegs[3];
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Sets the PAE PDPEs values cached by the CPU.
+ *
+ * @remarks This must be called *AFTER* PGMUpdateCR3.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu               The virtual CPU.
+ * @param   paPdpes             The four PDPE values.  The array pointed to
+ *                              must have exactly 4 entries.
+ */
+VMM_INT_DECL(int) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
+{
+    Assert(pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.aGstPaePdpeRegs); i++)
+    {
+        if (pVCpu->pgm.s.aGstPaePdpeRegs[i].u != paPdpes[i].u)
+        {
+            pVCpu->pgm.s.aGstPaePdpeRegs[i] = paPdpes[i];
+
+            /* Force lazy remapping if it changed in any way. */
+            pVCpu->pgm.s.apGstPaePDsR3[i]     = 0;
+#  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pVCpu->pgm.s.apGstPaePDsR0[i]     = 0;
+#  endif
+            pVCpu->pgm.s.apGstPaePDsRC[i]     = 0;
+            pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = NIL_RTGCPHYS;
+        }
+    }
+    return VINF_SUCCESS;
 }
 
 

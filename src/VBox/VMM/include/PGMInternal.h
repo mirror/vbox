@@ -3648,8 +3648,11 @@ typedef struct PGMCPU
      * Unlike the R3/R0 array the first entry can be accessed as a 2048 entry PD.
      * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
     RCPTRTYPE(PX86PDPAE)            apGstPaePDsRC[4];
-    /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC. */
+    /** The physical addresses of the guest page directories (PAE) pointed to by apGstPagePDsHC/GC.
+     * @todo Remove this and use aGstPaePdpeRegs instead? */
     RTGCPHYS                        aGCPhysGstPaePDs[4];
+    /** The values of the 4 PDPE CPU registers (PAE). */
+    X86PDPE                         aGstPaePdpeRegs[4];
     /** The physical addresses of the monitored guest page directories (PAE). */
     RTGCPHYS                        aGCPhysGstPaePDsMonitored[4];
     /** Mask containing the MBZ PTE bits. */

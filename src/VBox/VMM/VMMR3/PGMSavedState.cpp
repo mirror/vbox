@@ -45,9 +45,10 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Saved state data unit version.
- * @todo remove the guest mappings from the saved state at next version change! */
-#define PGM_SAVED_STATE_VERSION                 13
+/** Saved state data unit version.  */
+#define PGM_SAVED_STATE_VERSION                 14
+/** Saved state data unit version before the PAE PDPE registers. */
+#define PGM_SAVED_STATE_VERSION_PRE_PAE         13
 /** Saved state data unit version after this includes ballooned page flags in
  *  the state (see #5515). */
 #define PGM_SAVED_STATE_VERSION_BALLOON_BROKEN  12
@@ -150,6 +151,18 @@ static const SSMFIELD s_aPGMFieldsPreBalloon[] =
 };
 
 static const SSMFIELD s_aPGMCpuFields[] =
+{
+    SSMFIELD_ENTRY(         PGMCPU, fA20Enabled),
+    SSMFIELD_ENTRY_GCPHYS(  PGMCPU, GCPhysA20Mask),
+    SSMFIELD_ENTRY(         PGMCPU, enmGuestMode),
+    SSMFIELD_ENTRY(         PGMCPU, aGCPhysGstPaePDs[0]),
+    SSMFIELD_ENTRY(         PGMCPU, aGCPhysGstPaePDs[1]),
+    SSMFIELD_ENTRY(         PGMCPU, aGCPhysGstPaePDs[2]),
+    SSMFIELD_ENTRY(         PGMCPU, aGCPhysGstPaePDs[3]),
+    SSMFIELD_ENTRY_TERM()
+};
+
+static const SSMFIELD s_aPGMCpuFieldsPrePae[] =
 {
     SSMFIELD_ENTRY(         PGMCPU, fA20Enabled),
     SSMFIELD_ENTRY_GCPHYS(  PGMCPU, GCPhysA20Mask),
@@ -2030,9 +2043,8 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 {
-    int         rc;
-    unsigned    i;
-    PPGM        pPGM = &pVM->pgm.s;
+    int     rc   = VINF_SUCCESS;
+    PPGM    pPGM = &pVM->pgm.s;
 
     /*
      * Lock PGM and set the no-more-writes indicator.
@@ -2049,20 +2061,7 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     pVM->pgm.s.fMappingsFixed  = fMappingsFixed;
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        SSMR3PutStruct(pSSM, &pVM->aCpus[idCpu].pgm.s, &s_aPGMCpuFields[0]);
-
-    /*
-     * The guest mappings.
-     */
-    i = 0;
-    for (PPGMMAPPING pMapping = pPGM->pMappingsR3; pMapping; pMapping = pMapping->pNextR3, i++)
-    {
-        SSMR3PutU32(      pSSM, i);
-        SSMR3PutStrZ(     pSSM, pMapping->pszDesc); /* This is the best unique id we have... */
-        SSMR3PutGCPtr(    pSSM, pMapping->GCPtr);
-        SSMR3PutGCUIntPtr(pSSM, pMapping->cPTs);
-    }
-    rc = SSMR3PutU32(pSSM, ~0); /* terminator. */
+        rc = SSMR3PutStruct(pSSM, &pVM->aCpus[idCpu].pgm.s, &s_aPGMCpuFields[0]);
 
     /*
      * Save the (remainder of the) memory.
@@ -2948,7 +2947,10 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
 
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
-            rc = SSMR3GetStruct(pSSM, &pVM->aCpus[i].pgm.s, &s_aPGMCpuFields[0]);
+            if (uVersion <= PGM_SAVED_STATE_VERSION_PRE_PAE)
+                rc = SSMR3GetStruct(pSSM, &pVM->aCpus[i].pgm.s, &s_aPGMCpuFieldsPrePae[0]);
+            else
+                rc = SSMR3GetStruct(pSSM, &pVM->aCpus[i].pgm.s, &s_aPGMCpuFields[0]);
             AssertLogRelRCReturn(rc, rc);
         }
     }
@@ -3004,25 +3006,27 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     /*
      * The guest mappings - skipped now, see re-fixation in the caller.
      */
-    uint32_t i = 0;
-    for (;; i++)
+    if (uVersion <= PGM_SAVED_STATE_VERSION_PRE_PAE)
     {
-        rc = SSMR3GetU32(pSSM, &u32Sep);        /* sequence number */
-        if (RT_FAILURE(rc))
-            return rc;
-        if (u32Sep == ~0U)
-            break;
-        AssertMsgReturn(u32Sep == i, ("u32Sep=%#x i=%#x\n", u32Sep, i), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        for (uint32_t i = 0; ; i++)
+        {
+            rc = SSMR3GetU32(pSSM, &u32Sep);        /* sequence number */
+            if (RT_FAILURE(rc))
+                return rc;
+            if (u32Sep == ~0U)
+                break;
+            AssertMsgReturn(u32Sep == i, ("u32Sep=%#x i=%#x\n", u32Sep, i), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-        char szDesc[256];
-        rc = SSMR3GetStrZ(pSSM, szDesc, sizeof(szDesc));
-        if (RT_FAILURE(rc))
-            return rc;
-        RTGCPTR GCPtrIgnore;
-        SSMR3GetGCPtr(pSSM, &GCPtrIgnore);      /* GCPtr */
-        rc = SSMR3GetGCPtr(pSSM, &GCPtrIgnore); /* cPTs  */
-        if (RT_FAILURE(rc))
-            return rc;
+            char szDesc[256];
+            rc = SSMR3GetStrZ(pSSM, szDesc, sizeof(szDesc));
+            if (RT_FAILURE(rc))
+                return rc;
+            RTGCPTR GCPtrIgnore;
+            SSMR3GetGCPtr(pSSM, &GCPtrIgnore);      /* GCPtr */
+            rc = SSMR3GetGCPtr(pSSM, &GCPtrIgnore); /* cPTs  */
+            if (RT_FAILURE(rc))
+                return rc;
+        }
     }
 
     /*
@@ -3081,10 +3085,12 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
      */
     if (   (   uPass != SSM_PASS_FINAL
             && uVersion != PGM_SAVED_STATE_VERSION
+            && uVersion != PGM_SAVED_STATE_VERSION_PRE_PAE
             && uVersion != PGM_SAVED_STATE_VERSION_BALLOON_BROKEN
             && uVersion != PGM_SAVED_STATE_VERSION_PRE_BALLOON
             && uVersion != PGM_SAVED_STATE_VERSION_NO_RAM_CFG)
         || (   uVersion != PGM_SAVED_STATE_VERSION
+            && uVersion != PGM_SAVED_STATE_VERSION_PRE_PAE
             && uVersion != PGM_SAVED_STATE_VERSION_BALLOON_BROKEN
             && uVersion != PGM_SAVED_STATE_VERSION_PRE_BALLOON
             && uVersion != PGM_SAVED_STATE_VERSION_NO_RAM_CFG
@@ -3140,6 +3146,11 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
                 pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
+                /** @todo For guest PAE, we might get the wrong
+                 *        aGCPhysGstPaePDs values now. We should used the
+                 *        saved ones... Postponing this since it nothing new
+                 *        and PAE/PDPTR needs some general readjusting, see
+                 *        @bugref{#5880}. */
             }
 
             pgmR3HandlerPhysicalUpdateAll(pVM);
