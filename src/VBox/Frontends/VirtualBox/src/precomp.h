@@ -167,7 +167,6 @@
 #if 0
 #include "QIHotKeyEdit.h"
 #endif
-#include "QIHttp.h"
 #include "QILabel.h"
 #include "QILabelSeparator.h"
 #include "QILineEdit.h"
@@ -232,7 +231,6 @@
 #include "VBoxOSTypeSelectorWidget.h"
 #include "UIMessageCenter.h"
 #include "VBoxProgressDialog.h"
-#include "VBoxRegistrationDlg.h"
 #include "VBoxSelectorWnd.h"
 #include "UISettingsDialog.h"
 #include "UISettingsDialogSpecific.h"
