@@ -92,13 +92,6 @@
 #endif
 
 /**
- * Chunk unmapping code activated on 32-bit hosts for > 1.5/2 GB guest memory support
- */
-#if (HC_ARCH_BITS == 32) && !defined(RT_OS_DARWIN)
-# define PGM_WITH_LARGE_ADDRESS_SPACE_ON_32_BIT_HOST
-#endif
-
-/**
  * Sync N pages instead of a whole page table
  */
 #define PGM_SYNC_N_PAGES
