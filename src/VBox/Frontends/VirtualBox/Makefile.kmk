@@ -80,11 +80,6 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd os2) # X11 + os2 ## @todo 
  VirtualBox_SDKS += LIBSDL
 endif
 
-ifdef VBOX_WITH_ICHAT_THEATER
- # For testing iChat Theater stuff change the sdk path (HACK ALERT!)
- VBOX_PATH_MACOSX_SDK = /Developer/SDKs/MacOSX10.5.sdk
-endif
-
 VirtualBox_DEFS           =
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_GUI_USE_QIMAGE
@@ -114,6 +109,10 @@ VirtualBox_DEFS          += \
 	$(if $(VBOX_WITH_VDE),VBOX_WITH_VDE) \
 	$(if $(VBOX_WITH_UDPTUNNEL),VBOX_WITH_UDPTUNNEL) \
 	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI) \
+	$(if $(VBOX_WITH_CRHGSMI),VBOX_WITH_CRHGSMI) \
+	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO) \
+	$(if $(VBOX_WITH_WDDM),VBOX_WITH_WDDM) \
+	$(if $(VBOX_WITH_CROGL),VBOX_WITH_CROGL) \
 	$(if $(VBOX_GUI_WITH_PIDFILE),VBOX_GUI_WITH_PIDFILE) \
 	$(if $(VBOX_GUI_WITH_KEYS_RESET_HANDLER),VBOX_GUI_WITH_KEYS_RESET_HANDLER) \
 	$(if $(VBOX_GUI_WITH_CUSTOMIZATIONS1),VBOX_GUI_WITH_CUSTOMIZATIONS1)
@@ -129,18 +128,6 @@ ifdef VBOX_WITH_VIDEOHWACCEL
 else ifdef VBOX_GUI_USE_QGL
  VirtualBox_DEFS        += VBOX_GUI_USE_QGL
 endif
-ifdef VBOX_WITH_CROGL
- VirtualBox_DEFS        += VBOX_WITH_CROGL
-endif
-ifdef VBOX_WITH_VIRTIO
- VirtualBox_DEFS        += VBOX_WITH_VIRTIO
-endif
-ifdef VBOX_WITH_WDDM
- VirtualBox_DEFS        += VBOX_WITH_WDDM
-endif
-ifdef VBOX_WITH_CRHGSMI
- VirtualBox_DEFS        += VBOX_WITH_CRHGSMI
-endif
 ifdef VBOX_BLEEDING_EDGE
 VirtualBox_src/selector/VBoxSelectorWnd.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
@@ -155,29 +142,29 @@ endif
 
 VBOX_GUI_INC_DIRS = \
 	./src \
+	./src/extensions \
 	./src/globals \
+	./src/net \
 	./src/platform \
-	./src/platform/x11 \
 	./src/platform/darwin \
 	./src/platform/win \
-	./src/extensions \
-	./src/settings \
-	./src/settings/global \
-	./src/settings/machine \
-	./src/wizards/clonevm \
-	./src/wizards/newvm \
-	./src/wizards/newhd \
-	./src/wizards/firstrun \
-	./src/wizards/exportappliance \
-	./src/wizards/importappliance \
-	./src/widgets \
-	./src/net \
-	./src/selector \
+	./src/platform/x11 \
 	./src/runtime \
 	./src/runtime/fullscreen \
 	./src/runtime/normal \
 	./src/runtime/scale \
-	./src/runtime/seamless
+	./src/runtime/seamless \
+	./src/selector \
+	./src/settings \
+	./src/settings/global \
+	./src/settings/machine \
+	./src/widgets \
+	./src/wizards/clonevm \
+	./src/wizards/exportappliance \
+	./src/wizards/firstrun \
+	./src/wizards/importappliance \
+	./src/wizards/newhd \
+	./src/wizards/newvm
 
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
@@ -187,7 +174,7 @@ VirtualBox_INCS = \
 VirtualBox_LIBS = $(LIB_DDU)
 
 # This library is required for multi-monitor support
-VirtualBox_LIBS.linux += Xinerama
+VirtualBox_LIBS.linux   += Xinerama
 VirtualBox_LIBS.solaris += Xinerama
 VirtualBox_LIBS.freebsd += Xinerama
 
@@ -200,14 +187,10 @@ ifdef VBOX_WITH_VIDEOHWACCEL
 VirtualBox_LIBS += $(LIB_VMM)
 endif
 ifeq ($(KBUILD_TYPE),release)
- VirtualBox_LDFLAGS.win  += /SUBSYSTEM:windows
+ VirtualBox_LDFLAGS.win   += /SUBSYSTEM:windows
 else
- VirtualBox_LDFLAGS.linux+= -rdynamic # for backtrace_symbols()
- ifeq ($(USERNAME),dmik)
-  VirtualBox_LDFLAGS.win += /SUBSYSTEM:windows
- else
-  VirtualBox_LDFLAGS.win += /SUBSYSTEM:console
- endif
+ VirtualBox_LDFLAGS.linux += -rdynamic # for backtrace_symbols()
+ VirtualBox_LDFLAGS.win   += /SUBSYSTEM:console
 endif
 
 # delay loading causes VM process crashes due to the misbehave of the current QtOpenGLVBox4.dll we use
@@ -225,9 +208,6 @@ VirtualBox_LDFLAGS.darwin = \
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
- VirtualBox_LDFLAGS.darwin += -framework OpenGL
-endif
 
 VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
@@ -238,29 +218,24 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
 endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
- VirtualBox_LIBS.win     += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
- VirtualBox_LIBS.solaris += GL
- VirtualBox_LIBS.linux   += GL
- VirtualBox_LIBS.freebsd += GL
+ VirtualBox_LIBS.win       += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
+ VirtualBox_LIBS.solaris   += GL
+ VirtualBox_LIBS.linux     += GL
+ VirtualBox_LIBS.freebsd   += GL
+ VirtualBox_LDFLAGS.darwin += -framework OpenGL
 endif
 
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCHDRS = \
+	src/UIMediumTypeChangeDialog.h \
 	src/VBoxAboutDlg.h \
 	src/VBoxGlobalSettings.h \
+	src/VBoxLicenseViewer.h \
 	src/VBoxMediaManagerDlg.h \
-	src/UIMediumTypeChangeDialog.h \
 	src/VBoxSnapshotDetailsDlg.h \
 	src/VBoxTakeSnapshotDlg.h \
 	src/VBoxVMInformationDlg.h \
 	src/VBoxVMLogViewer.h \
-	src/VBoxLicenseViewer.h \
-	src/globals/VBoxGlobal.h \
-	src/globals/UIMessageCenter.h \
-	src/globals/VBoxUtils.h \
-	src/globals/UIMainEventListener.h \
-	src/globals/UIExtraDataEventHandler.h \
-	src/globals/UIActionPool.h \
 	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
@@ -277,74 +252,24 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIStateIndicator.h \
 	src/extensions/QIStatusBar.h \
 	src/extensions/QITabWidget.h \
-	src/extensions/QIToolButton.h \
 	src/extensions/QITableView.h \
+	src/extensions/QIToolButton.h \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
 	src/extensions/QIWizard.h \
-	src/settings/UISettingsDialog.h \
-	src/settings/UISettingsDialogSpecific.h \
-	src/settings/UISettingsPage.h \
-	src/settings/VBoxSettingsSelector.h \
-	src/settings/global/UIGlobalSettingsGeneral.h \
-	src/settings/global/UIGlobalSettingsInput.h \
-	src/settings/global/UIGlobalSettingsUpdate.h \
-	src/settings/global/UIGlobalSettingsLanguage.h \
-	src/settings/global/UIGlobalSettingsNetwork.h \
-	src/settings/global/UIGlobalSettingsNetworkDetails.h \
-	src/settings/global/UIGlobalSettingsExtension.h \
-	src/settings/global/UIGlobalSettingsProxy.h \
-	src/settings/machine/UIMachineSettingsGeneral.h \
-	src/settings/machine/UIMachineSettingsSystem.h \
-	src/settings/machine/UIMachineSettingsDisplay.h \
-	src/settings/machine/UIMachineSettingsStorage.h \
-	src/settings/machine/UIMachineSettingsAudio.h \
-	src/settings/machine/UIMachineSettingsNetwork.h \
-	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
-	src/settings/machine/UIMachineSettingsSerial.h \
-	src/settings/machine/UIMachineSettingsParallel.h \
-	src/settings/machine/UIMachineSettingsUSB.h \
-	src/settings/machine/UIMachineSettingsUSBFilterDetails.h \
-	src/settings/machine/UIMachineSettingsSF.h \
-	src/settings/machine/UIMachineSettingsSFDetails.h \
-	src/wizards/clonevm/UICloneVMWizard.h \
-	src/wizards/newvm/UINewVMWzd.h \
-	src/wizards/newhd/UINewHDWizard.h \
-	src/wizards/firstrun/UIFirstRunWzd.h \
-	src/wizards/exportappliance/UIExportApplianceWzd.h \
-	src/wizards/importappliance/UIImportApplianceWzd.h \
-	src/widgets/UIBar.h \
-	src/widgets/UIBootTable.h \
-	src/widgets/UIHotKeyEditor.h \
-	src/widgets/UIPopupBox.h \
-	src/widgets/UIProgressDialog.h \
-	src/widgets/UISpacerWidgets.h \
-	src/widgets/UISpecialControls.h \
-	src/widgets/UIApplianceEditorWidget.h \
-	src/widgets/UIApplianceExportEditorWidget.h \
-	src/widgets/UIApplianceImportEditorWidget.h \
-	src/widgets/VBoxFilePathSelectorWidget.h \
-	src/widgets/UILineTextEdit.h \
-	src/widgets/VBoxMediaComboBox.h \
-	src/widgets/VBoxMiniToolBar.h \
-	src/widgets/VBoxOSTypeSelectorButton.h \
-	src/widgets/VBoxOSTypeSelectorWidget.h \
-	src/widgets/VBoxWarningPane.h \
-	src/net/UINetworkManager.h \
-	src/net/UIUpdateManager.h \
+	src/globals/UIActionPool.h \
+	src/globals/UIExtraDataEventHandler.h \
+	src/globals/UIMainEventListener.h \
+	src/globals/UIMessageCenter.h \
+	src/globals/VBoxGlobal.h \
+	src/globals/VBoxUtils.h \
 	src/net/UIDownloader.h \
 	src/net/UIDownloaderAdditions.h \
-	src/net/UIDownloaderUserManual.h \
 	src/net/UIDownloaderExtensionPack.h \
-	src/selector/UIActionPoolSelector.h \
-	src/selector/UIVMDesktop.h \
-	src/selector/UIVMListView.h \
-	src/selector/UIVMPreviewWindow.h \
-	src/selector/UIVMItem.h \
-	src/selector/UIVirtualBoxEventHandler.h \
-	src/selector/VBoxSelectorWnd.h \
-	src/selector/VBoxSnapshotsWgt.h \
+	src/net/UIDownloaderUserManual.h \
+	src/net/UINetworkManager.h \
+	src/net/UIUpdateManager.h \
 	src/runtime/UIActionPoolRuntime.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -371,7 +296,63 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/seamless/UIKeyboardHandlerSeamless.h \
 	src/runtime/seamless/UIMachineLogicSeamless.h \
 	src/runtime/seamless/UIMachineViewSeamless.h \
-	src/runtime/seamless/UIMachineWindowSeamless.h
+	src/runtime/seamless/UIMachineWindowSeamless.h \
+	src/selector/UIActionPoolSelector.h \
+	src/selector/UIVMDesktop.h \
+	src/selector/UIVMItem.h \
+	src/selector/UIVMListView.h \
+	src/selector/UIVMPreviewWindow.h \
+	src/selector/UIVirtualBoxEventHandler.h \
+	src/selector/VBoxSelectorWnd.h \
+	src/selector/VBoxSnapshotsWgt.h \
+	src/settings/UISettingsDialog.h \
+	src/settings/UISettingsDialogSpecific.h \
+	src/settings/UISettingsPage.h \
+	src/settings/VBoxSettingsSelector.h \
+	src/settings/global/UIGlobalSettingsExtension.h \
+	src/settings/global/UIGlobalSettingsGeneral.h \
+	src/settings/global/UIGlobalSettingsInput.h \
+	src/settings/global/UIGlobalSettingsLanguage.h \
+	src/settings/global/UIGlobalSettingsNetwork.h \
+	src/settings/global/UIGlobalSettingsNetworkDetails.h \
+	src/settings/global/UIGlobalSettingsProxy.h \
+	src/settings/global/UIGlobalSettingsUpdate.h \
+	src/settings/machine/UIMachineSettingsAudio.h \
+	src/settings/machine/UIMachineSettingsDisplay.h \
+	src/settings/machine/UIMachineSettingsGeneral.h \
+	src/settings/machine/UIMachineSettingsNetwork.h \
+	src/settings/machine/UIMachineSettingsParallel.h \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
+	src/settings/machine/UIMachineSettingsSF.h \
+	src/settings/machine/UIMachineSettingsSFDetails.h \
+	src/settings/machine/UIMachineSettingsSerial.h \
+	src/settings/machine/UIMachineSettingsStorage.h \
+	src/settings/machine/UIMachineSettingsSystem.h \
+	src/settings/machine/UIMachineSettingsUSB.h \
+	src/settings/machine/UIMachineSettingsUSBFilterDetails.h \
+	src/widgets/UIApplianceEditorWidget.h \
+	src/widgets/UIApplianceExportEditorWidget.h \
+	src/widgets/UIApplianceImportEditorWidget.h \
+	src/widgets/UIBar.h \
+	src/widgets/UIBootTable.h \
+	src/widgets/UIHotKeyEditor.h \
+	src/widgets/UILineTextEdit.h \
+	src/widgets/UIPopupBox.h \
+	src/widgets/UIProgressDialog.h \
+	src/widgets/UISpacerWidgets.h \
+	src/widgets/UISpecialControls.h \
+	src/widgets/VBoxFilePathSelectorWidget.h \
+	src/widgets/VBoxMediaComboBox.h \
+	src/widgets/VBoxMiniToolBar.h \
+	src/widgets/VBoxOSTypeSelectorButton.h \
+	src/widgets/VBoxOSTypeSelectorWidget.h \
+	src/widgets/VBoxWarningPane.h \
+	src/wizards/clonevm/UICloneVMWizard.h \
+	src/wizards/exportappliance/UIExportApplianceWzd.h \
+	src/wizards/firstrun/UIFirstRunWzd.h \
+	src/wizards/importappliance/UIImportApplianceWzd.h \
+	src/wizards/newhd/UINewHDWizard.h \
+	src/wizards/newvm/UINewVMWzd.h
 
 VirtualBox_QT_MOCHDRS.darwin += \
     src/platform/darwin/UIWindowMenuManager.h
@@ -379,17 +360,17 @@ VirtualBox_QT_MOCHDRS.darwin += \
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
 	src/VBoxMediaManagerDlg.cpp \
-	src/globals/UIExtraDataEventHandler.cpp \
-	src/globals/UIActionPool.cpp \
 	src/extensions/QISplitter.cpp \
-	src/selector/UIVMDesktop.cpp \
-	src/settings/UISettingsDialogSpecific.cpp \
-	src/settings/machine/UIMachineSettingsStorage.cpp \
-	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
+	src/globals/UIActionPool.cpp \
+	src/globals/UIExtraDataEventHandler.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineMenuBar.cpp \
+	src/selector/UIVMDesktop.cpp \
+	src/settings/UISettingsDialogSpecific.cpp \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
+	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/wizards/newhd/UINewHDWizard.cpp
 
 VirtualBox_QT_MOCSRCS.darwin += \
@@ -403,26 +384,16 @@ ifdef VBOX_WITH_XPCOM
 endif
 
 VirtualBox_SOURCES = \
-	src/main.cpp \
+	src/UIMediumTypeChangeDialog.cpp \
 	src/VBoxAboutDlg.cpp \
 	src/VBoxGlobalSettings.cpp \
+	src/VBoxLicenseViewer.cpp \
 	src/VBoxMediaManagerDlg.cpp \
-	src/UIMediumTypeChangeDialog.cpp \
 	src/VBoxMedium.cpp \
 	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
 	src/VBoxVMLogViewer.cpp \
-	src/VBoxLicenseViewer.cpp \
-	src/globals/COMDefs.cpp \
-	src/globals/VBoxDefs.cpp \
-	src/globals/VBoxGlobal.cpp \
-	src/globals/UIMessageCenter.cpp \
-	src/globals/UIIconPool.cpp \
-	src/globals/UIMainEventListener.cpp \
-	src/globals/UIExtraDataEventHandler.cpp \
-	src/globals/UIImageTools.cpp \
-	src/globals/UIActionPool.cpp \
 	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
@@ -445,72 +416,23 @@ VirtualBox_SOURCES = \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
 	src/extensions/QIWizard.cpp \
-	src/settings/UISettingsDefs.cpp \
-	src/settings/UISettingsDialog.cpp \
-	src/settings/UISettingsDialogSpecific.cpp \
-	src/settings/UISettingsPage.cpp \
-	src/settings/VBoxSettingsSelector.cpp \
-	src/settings/global/UIGlobalSettingsGeneral.cpp \
-	src/settings/global/UIGlobalSettingsInput.cpp \
-	src/settings/global/UIGlobalSettingsUpdate.cpp \
-	src/settings/global/UIGlobalSettingsLanguage.cpp \
-	src/settings/global/UIGlobalSettingsNetwork.cpp \
-	src/settings/global/UIGlobalSettingsNetworkDetails.cpp \
-	src/settings/global/UIGlobalSettingsExtension.cpp \
-	src/settings/global/UIGlobalSettingsProxy.cpp \
-	src/settings/machine/UIMachineSettingsGeneral.cpp \
-	src/settings/machine/UIMachineSettingsSystem.cpp \
-	src/settings/machine/UIMachineSettingsDisplay.cpp \
-	src/settings/machine/UIMachineSettingsStorage.cpp \
-	src/settings/machine/UIMachineSettingsAudio.cpp \
-	src/settings/machine/UIMachineSettingsNetwork.cpp \
-	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
-	src/settings/machine/UIMachineSettingsSerial.cpp \
-	src/settings/machine/UIMachineSettingsParallel.cpp \
-	src/settings/machine/UIMachineSettingsUSB.cpp \
-	src/settings/machine/UIMachineSettingsUSBFilterDetails.cpp \
-	src/settings/machine/UIMachineSettingsSF.cpp \
-	src/settings/machine/UIMachineSettingsSFDetails.cpp \
-	src/wizards/clonevm/UICloneVMWizard.cpp \
-	src/wizards/newvm/UINewVMWzd.cpp \
-	src/wizards/newhd/UINewHDWizard.cpp \
-	src/wizards/firstrun/UIFirstRunWzd.cpp \
-	src/wizards/exportappliance/UIExportApplianceWzd.cpp \
-	src/wizards/importappliance/UIImportApplianceWzd.cpp \
-	src/widgets/UIBar.cpp \
-	src/widgets/UIBootTable.cpp \
-	src/widgets/UIHotKeyEditor.cpp \
-	src/widgets/UIPopupBox.cpp \
-	src/widgets/UIProgressDialog.cpp \
-	src/widgets/UISpecialControls.cpp \
-	src/widgets/UIToolBar.cpp \
-	src/widgets/UIApplianceEditorWidget.cpp \
-	src/widgets/UIApplianceExportEditorWidget.cpp \
-	src/widgets/UIApplianceImportEditorWidget.cpp \
-	src/widgets/VBoxFilePathSelectorWidget.cpp \
-	src/widgets/VBoxGuestRAMSlider.cpp \
-	src/widgets/UILineTextEdit.cpp \
-	src/widgets/VBoxMediaComboBox.cpp \
-	src/widgets/VBoxMiniToolBar.cpp \
-	src/widgets/VBoxOSTypeSelectorButton.cpp \
-	src/widgets/VBoxOSTypeSelectorWidget.cpp \
-	src/widgets/VBoxWarningPane.cpp \
+	src/globals/COMDefs.cpp \
+	src/globals/UIActionPool.cpp \
+	src/globals/UIExtraDataEventHandler.cpp \
+	src/globals/UIIconPool.cpp \
+	src/globals/UIImageTools.cpp \
+	src/globals/UIMainEventListener.cpp \
+	src/globals/UIMessageCenter.cpp \
+	src/globals/VBoxDefs.cpp \
+	src/globals/VBoxGlobal.cpp \
+	src/main.cpp \
+	src/net/UIDownloader.cpp \
+	src/net/UIDownloaderAdditions.cpp \
+	src/net/UIDownloaderExtensionPack.cpp \
+	src/net/UIDownloaderUserManual.cpp \
 	src/net/UINetworkManager.cpp \
 	src/net/UIUpdateDefs.cpp \
 	src/net/UIUpdateManager.cpp \
-	src/net/UIDownloader.cpp \
-	src/net/UIDownloaderAdditions.cpp \
-	src/net/UIDownloaderUserManual.cpp \
-	src/net/UIDownloaderExtensionPack.cpp \
-	src/selector/UIActionPoolSelector.cpp \
-	src/selector/UISelectorShortcuts.cpp \
-	src/selector/UIVMDesktop.cpp \
-	src/selector/UIVMItem.cpp \
-	src/selector/UIVMListView.cpp \
-	src/selector/UIVMPreviewWindow.cpp \
-	src/selector/UIVirtualBoxEventHandler.cpp \
-	src/selector/VBoxSelectorWnd.cpp \
-	src/selector/VBoxSnapshotsWgt.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
@@ -544,21 +466,80 @@ VirtualBox_SOURCES = \
 	src/runtime/seamless/UIKeyboardHandlerSeamless.cpp \
 	src/runtime/seamless/UIMachineLogicSeamless.cpp \
 	src/runtime/seamless/UIMachineViewSeamless.cpp \
-	src/runtime/seamless/UIMachineWindowSeamless.cpp
+	src/runtime/seamless/UIMachineWindowSeamless.cpp \
+	src/selector/UIActionPoolSelector.cpp \
+	src/selector/UISelectorShortcuts.cpp \
+	src/selector/UIVMDesktop.cpp \
+	src/selector/UIVMItem.cpp \
+	src/selector/UIVMListView.cpp \
+	src/selector/UIVMPreviewWindow.cpp \
+	src/selector/UIVirtualBoxEventHandler.cpp \
+	src/selector/VBoxSelectorWnd.cpp \
+	src/selector/VBoxSnapshotsWgt.cpp \
+	src/settings/UISettingsDefs.cpp \
+	src/settings/UISettingsDialog.cpp \
+	src/settings/UISettingsDialogSpecific.cpp \
+	src/settings/UISettingsPage.cpp \
+	src/settings/VBoxSettingsSelector.cpp \
+	src/settings/global/UIGlobalSettingsExtension.cpp \
+	src/settings/global/UIGlobalSettingsGeneral.cpp \
+	src/settings/global/UIGlobalSettingsInput.cpp \
+	src/settings/global/UIGlobalSettingsLanguage.cpp \
+	src/settings/global/UIGlobalSettingsNetwork.cpp \
+	src/settings/global/UIGlobalSettingsNetworkDetails.cpp \
+	src/settings/global/UIGlobalSettingsProxy.cpp \
+	src/settings/global/UIGlobalSettingsUpdate.cpp \
+	src/settings/machine/UIMachineSettingsAudio.cpp \
+	src/settings/machine/UIMachineSettingsDisplay.cpp \
+	src/settings/machine/UIMachineSettingsGeneral.cpp \
+	src/settings/machine/UIMachineSettingsNetwork.cpp \
+	src/settings/machine/UIMachineSettingsParallel.cpp \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
+	src/settings/machine/UIMachineSettingsSF.cpp \
+	src/settings/machine/UIMachineSettingsSFDetails.cpp \
+	src/settings/machine/UIMachineSettingsSerial.cpp \
+	src/settings/machine/UIMachineSettingsStorage.cpp \
+	src/settings/machine/UIMachineSettingsSystem.cpp \
+	src/settings/machine/UIMachineSettingsUSB.cpp \
+	src/settings/machine/UIMachineSettingsUSBFilterDetails.cpp \
+	src/widgets/UIApplianceEditorWidget.cpp \
+	src/widgets/UIApplianceExportEditorWidget.cpp \
+	src/widgets/UIApplianceImportEditorWidget.cpp \
+	src/widgets/UIBar.cpp \
+	src/widgets/UIBootTable.cpp \
+	src/widgets/UIHotKeyEditor.cpp \
+	src/widgets/UILineTextEdit.cpp \
+	src/widgets/UIPopupBox.cpp \
+	src/widgets/UIProgressDialog.cpp \
+	src/widgets/UISpecialControls.cpp \
+	src/widgets/UIToolBar.cpp \
+	src/widgets/VBoxFilePathSelectorWidget.cpp \
+	src/widgets/VBoxGuestRAMSlider.cpp \
+	src/widgets/VBoxMediaComboBox.cpp \
+	src/widgets/VBoxMiniToolBar.cpp \
+	src/widgets/VBoxOSTypeSelectorButton.cpp \
+	src/widgets/VBoxOSTypeSelectorWidget.cpp \
+	src/widgets/VBoxWarningPane.cpp \
+	src/wizards/clonevm/UICloneVMWizard.cpp \
+	src/wizards/exportappliance/UIExportApplianceWzd.cpp \
+	src/wizards/firstrun/UIFirstRunWzd.cpp \
+	src/wizards/importappliance/UIImportApplianceWzd.cpp \
+	src/wizards/newhd/UINewHDWizard.cpp \
+	src/wizards/newvm/UINewVMWzd.cpp
 
 VirtualBox_SOURCES.win += \
 	src/runtime/UIFrameBufferDirectDraw.cpp
 VirtualBox_SOURCES.darwin += \
-	src/runtime/UIFrameBufferQuartz2D.cpp \
 	src/platform/darwin/UIAbstractDockIconPreview.cpp \
+	src/platform/darwin/UICocoaDockIconPreview.mm \
 	src/platform/darwin/UIWindowMenuManager.cpp \
-	src/platform/darwin/UICocoaDockIconPreview.mm
+	src/runtime/UIFrameBufferQuartz2D.cpp
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
  VirtualBox_SOURCES += \
- 	src/platform/x11/XKeyboard-new.cpp \
+ 	src/platform/x11/UIDesktopServices_x11.cpp \
  	src/platform/x11/VBoxX11Helper.cpp \
- 	src/platform/x11/UIDesktopServices_x11.cpp
+ 	src/platform/x11/XKeyboard-new.cpp
 endif
 
 VirtualBox_SOURCES.win += \
@@ -568,14 +549,14 @@ VirtualBox_SOURCES.win += \
 
 VirtualBox_DEFS.darwin += VBOX_DARWIN_USE_NATIVE_CONTROLS
 VirtualBox_SOURCES.darwin += \
-	src/platform/darwin/DarwinKeyboard.cpp \
 	src/platform/darwin/CocoaEventHelper.mm \
+	src/platform/darwin/DarwinKeyboard.cpp \
 	src/platform/darwin/UICocoaApplication.mm \
-	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
-	src/platform/darwin/VBoxUtils-darwin.cpp \
 	src/platform/darwin/UICocoaSpecialControls.mm \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
-	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm
+	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm \
+	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
+	src/platform/darwin/VBoxUtils-darwin.cpp
 VirtualBox_QT_MOCHDRS.darwin += \
 	src/platform/darwin/UICocoaSpecialControls.h
 
@@ -594,31 +575,32 @@ endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
- 	src/VBoxFBQGL.cpp \
  	src/VBoxFBOverlay.cpp \
+ 	src/VBoxFBQGL.cpp \
  	src/VBoxGLSupportInfo.cpp
 endif
+
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
 VirtualBox_QT_MODULES = Core Gui Network
-
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_QT_MODULES += OpenGL
 endif
 
+# Pull in the ui files
 $(eval VirtualBox_SOURCES += $(FORMS))
 
 # Resource files with some OSE differences (VirtualBoxBrand.qrc is created further down).
-VirtualBox_SOURCES += VirtualBox1.qrc
-VirtualBox1.qrc_RCCFLAGS = -name BASIC1
-VirtualBox_SOURCES += VirtualBox2.qrc
-VirtualBox2.qrc_RCCFLAGS = -name BASIC2
+VirtualBox_SOURCES            += VirtualBox1.qrc
+VirtualBox1.qrc_RCCFLAGS       = -name BASIC1
+VirtualBox_SOURCES            += VirtualBox2.qrc
+VirtualBox2.qrc_RCCFLAGS       = -name BASIC2
 ifeq ($(KBUILD_TARGET),darwin)
- VirtualBox_SOURCES += VirtualBoxMac.qrc
- VirtualBoxMac.qrc_RCCFLAGS = -name MAC
+ VirtualBox_SOURCES           += VirtualBoxMac.qrc
+ VirtualBoxMac.qrc_RCCFLAGS    = -name MAC
 else
  VirtualBox_SOURCES += VirtualBoxOther.qrc
- VirtualBoxOther.qrc_RCCFLAGS = -name OTHER
+ VirtualBoxOther.qrc_RCCFLAGS  = -name OTHER
 endif
 VirtualBox_SOURCES += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
