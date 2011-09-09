@@ -146,7 +146,7 @@ static int vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
         PVSCSIVPDPAGESUPPORTEDPAGES pVpdPages;
 
         rc = vscsiVpdPagePoolAllocNewPage(&pVScsiLunSbc->VpdPagePool, VSCSI_VPD_SUPPORTED_PAGES_NUMBER,
-                                          VSCSI_VPD_SUPPORTED_PAGES_SIZE + cVpdPages - 1, (uint8_t **)&pVpdPages);
+                                          VSCSI_VPD_SUPPORTED_PAGES_SIZE + cVpdPages, (uint8_t **)&pVpdPages);
         if (RT_SUCCESS(rc))
         {
             unsigned idxVpdPage = 0;

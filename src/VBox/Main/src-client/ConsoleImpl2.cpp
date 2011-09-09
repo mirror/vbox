@@ -2951,7 +2951,6 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 InsertConfigInteger(pDrive, "NonRotationalMedium", !!fNonRotational);
             }
         }
-        /** @todo add SCSI/SAS support once the SSD support is there */
 
         Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
         mapMediumAttachments[devicePath] = pMediumAtt;
@@ -2962,6 +2961,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
             InsertConfigString(pLunL0, "Driver", "SCSI");
             PCFGMNODE pL1Cfg = NULL;
             InsertConfigNode(pLunL0, "Config", &pL1Cfg);
+            InsertConfigInteger(pL1Cfg, "NonRotationalMedium", !!fNonRotational);
 
             InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
         }
