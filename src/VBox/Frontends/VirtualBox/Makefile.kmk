@@ -24,20 +24,6 @@ include $(KBUILD_PATH)/subheader.kmk
 VBOX_VIRTUALBOX4_SRC := $(PATH_SUB_CURRENT)
 VBOX_VIRTUALBOX4_OUT_DIR := $(PATH_TARGET)/VirtualBox/misc
 
-# VBOX_WITH_REGISTRATION := 1
-
-# Ask the user to register at Sun. If this setting is disabled the user can
-# still register using the menu if desired.
-# VBOX_WITH_REGISTRATION_REQUEST := 1
-
-# For now this should be disabled in any case
-ifdef VBOX_WITH_REGISTRATION
- VBOX_WITH_REGISTRATION=
-endif
-ifdef VBOX_WITH_REGISTRATION_REQUEST
- VBOX_WITH_REGISTRATION_REQUEST=
-endif
-
 # Show the update notifier dialog during startup. If this setting is disabled
 # the user can still update using the menu if desired.
 ifndef VBOX_OSE
@@ -119,8 +105,6 @@ ifneq ($(KBUILD_TYPE),release)
  VirtualBox_DEFS.win     += VBOX_GUI_USE_DDRAW
 endif
 VirtualBox_DEFS          += \
-	$(if $(VBOX_WITH_REGISTRATION),VBOX_WITH_REGISTRATION) \
-	$(if $(VBOX_WITH_REGISTRATION_REQUEST),VBOX_WITH_REGISTRATION_REQUEST) \
 	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
 	$(if $(VBOX_WITH_ALSA),VBOX_WITH_ALSA) \
 	$(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE) \
@@ -194,11 +178,6 @@ VBOX_GUI_INC_DIRS = \
 	./src/runtime/normal \
 	./src/runtime/scale \
 	./src/runtime/seamless
-
-ifdef VBOX_WITH_REGISTRATION
- VBOX_GUI_INC_DIRS += \
-	./src/wizards/registration
-endif
 
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
@@ -419,19 +398,9 @@ VirtualBox_QT_MOCSRCS.darwin += \
 VirtualBox_QT_MOCSRCS.win += \
 	src/extensions/QIFileDialog.cpp
 
-ifdef VBOX_WITH_REGISTRATION
- VirtualBox_QT_MOCHDRS += \
-	src/wizards/registration/UIRegistrationWzd.h
-endif
-
 ifdef VBOX_WITH_XPCOM
  VirtualBox_QT_MOCSRCS += \
 	src/globals/COMDefs.cpp
-endif
-
-ifdef VBOX_WITH_REGISTRATION
- VirtualBox_QT_MOCSRCS += \
-	src/wizards/registration/UIRegistrationWzd.cpp
 endif
 
 VirtualBox_SOURCES = \
@@ -593,11 +562,6 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
  	src/platform/x11/UIDesktopServices_x11.cpp
 endif
 
-ifdef VBOX_WITH_REGISTRATION
- VirtualBox_SOURCES += \
-	src/wizards/registration/UIRegistrationWzd.cpp
-endif
-
 VirtualBox_SOURCES.win += \
 	src/platform/win/VirtualBox.rc \
 	src/platform/win/UIDesktopServices_win.cpp \
@@ -643,10 +607,6 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_QT_MODULES += OpenGL
 endif
 
-# Import QDesigner UI sources and translations from VBoxUI.pro.
-ifndef VBOX_WITH_REGISTRATION
- FORMS := $(filter-out src/wizards/registration/UIRegistrationWzdPage1.ui,$(FORMS))
-endif
 $(eval VirtualBox_SOURCES += $(FORMS))
 
 # Resource files with some OSE differences (VirtualBoxBrand.qrc is created further down).
@@ -820,8 +780,6 @@ $$(VirtualBox_0_OUTDIR)/include/precomp.h.gch: \
 		'-DHC_ARCH_BITS=32' \
 		'-DGC_ARCH_BITS=64' \
 		'-DVBOX_WITH_XPCOM' \
-		'-DVBOX_WITH_REGISTRATION' \
-		'-DVBOX_WITH_REGISTRATION_REQUEST' \
 		'-DVBOX_WITH_UPDATE_REQUEST' \
 		'-DVBOX_WITH_ALSA' \
 		'-DVBOX_WITH_PULSE' \

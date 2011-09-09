@@ -69,7 +69,6 @@ FORMS = \
     src/wizards/exportappliance/UIExportApplianceWzdPage4.ui \
     src/wizards/importappliance/UIImportApplianceWzdPage1.ui \
     src/wizards/importappliance/UIImportApplianceWzdPage2.ui \
-    src/wizards/registration/UIRegistrationWzdPage1.ui \
     src/widgets/UIApplianceEditorWidget.ui \
     src/selector/VBoxSnapshotsWgt.ui \
     src/runtime/UIVMCloseDialog.ui
