@@ -455,9 +455,11 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
             {
                 m.realIPAddress   = ip;
                 m.realNetworkMask = mask;
-                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(), Bstr(aIPAddress).raw())))
+                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(), 
+                                                       Bstr(aIPAddress).raw())))
                     return E_FAIL;
-                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()).raw(), Bstr(aNetMask).raw())))
+                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()).raw(),
+                                               Bstr(aNetMask).raw())))
                     return E_FAIL;
                 return S_OK;
             }
@@ -501,7 +503,8 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
         {
             m.realIPV6Address = aIPV6Address;
             m.realIPV6PrefixLength = aIPV6MaskPrefixLength;
-            if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", mInterfaceName.raw()).raw(), Bstr(aIPV6Address).raw())))
+            if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", mInterfaceName.raw()).raw(),
+                                           Bstr(aIPV6Address).raw())))
                 return E_FAIL;
             if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPV6NetMask", mInterfaceName.raw()).raw(),
                                            BstrFmt("%u", aIPV6MaskPrefixLength).raw())))
@@ -560,12 +563,14 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
     if (m.IPAddress == 0 && mIfType == HostNetworkInterfaceType_HostOnly)
     {
         Bstr tmpAddr, tmpMask;
-        HRESULT hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(), tmpAddr.asOutParam());
-        hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()).raw(), tmpMask.asOutParam());
-        if (tmpAddr.isEmpty())
+        HRESULT hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()).raw(),
+                                          tmpAddr.asOutParam());
+        if (FAILED(hrc) || tmpAddr.isEmpty())
             tmpAddr = getDefaultIPv4Address(mInterfaceName);
 
-        if (tmpMask.isEmpty())
+        hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()).raw(),
+                                  tmpMask.asOutParam());
+        if (FAILED(hrc) || tmpMask.isEmpty())
             tmpMask = Bstr(VBOXNET_IPV4MASK_DEFAULT);
 
         m.IPAddress = inet_addr(Utf8Str(tmpAddr).c_str());
@@ -575,10 +580,12 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
     if (m.IPV6Address.isEmpty())
     {
         Bstr tmpPrefixLen;
-        HRESULT hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", mInterfaceName.raw()).raw(), m.IPV6Address.asOutParam());
-        if (!m.IPV6Address.isEmpty())
+        HRESULT hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", mInterfaceName.raw()).raw(),
+                                          m.IPV6Address.asOutParam());
+        if (SUCCEEDED(hrc) && !m.IPV6Address.isEmpty())
         {
-            hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPV6PrefixLen", mInterfaceName.raw()).raw(), tmpPrefixLen.asOutParam());
+            hrc = mVBox->GetExtraData(BstrFmt("HostOnly/%ls/IPV6PrefixLen", mInterfaceName.raw()).raw(),
+                                      tmpPrefixLen.asOutParam());
             if (SUCCEEDED(hrc) && !tmpPrefixLen.isEmpty())
                 m.IPV6NetworkMaskPrefixLength = Utf8Str(tmpPrefixLen).toUInt32();
             else

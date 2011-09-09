@@ -1764,6 +1764,7 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
 STDMETHODIMP Medium::COMGETTER(AllowedTypes)(ComSafeArrayOut(MediumType_T, aAllowedTypes))
 {
     CheckComArgOutSafeArrayPointerValid(aAllowedTypes);
+    NOREF(aAllowedTypes); NOREF(aAllowedTypesSize);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
