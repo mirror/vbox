@@ -4003,9 +4003,32 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
 
 #endif /* IN_RING3 */
 
+/*
+ * Note: There are four distinct cases of port I/O handling depending on
+ * which devices (if any) are attached to an IDE channel:
+ *
+ *  1) No device attached. No response to writes or reads (i.e. reads return
+ *     all bits set).
+ *
+ *  2) Both devices attached. Reads and writes are processed normally.
+ *
+ *  3) Device 0 only. If device 0 is selected, normal behavior applies. But
+ *     if Device 1 is selected, writes are still directed to Device 0 (except
+ *     commands are not executed), reads from control/command registers are
+ *     directed to Device 0, but status/alt status reads return 0. If Device 1
+ *     is a PACKET device, all reads return 0. See ATAPI-6 clause 9.16.1 and
+ *     Table 18 in clause 7.1.
+ *
+ *  4) Device 1 only - non-standard(!). Device 1 can't tell if Device 0 is
+ *     present or not and behaves the same. That means if Device 0 is selected,
+ *     Device 1 responds to writes (except commands are not executed) but does
+ *     not respond to reads. If Device 1 selected, normal behavior applies.
+ *     See ATAPI-6 clause 9.16.2 and Table 15 in clause 7.1.
+ */
+
 static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 {
-    Log2(("%s: write addr=%#x val=%#04x\n", __FUNCTION__, addr, val));
+    Log2(("%s: LUN#%d write addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN, addr, val));
     addr &= 7;
     switch (addr)
     {
@@ -4094,7 +4117,7 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             break;
         default:
         case 7: /* command */
-            /* ignore commands to non existant slave */
+            /* ignore commands to non-existent device */
             if (pCtl->iSelectedIf && !pCtl->aIfs[pCtl->iSelectedIf].pDrvBlock)
                 break;
 #ifndef IN_RING3
@@ -4111,9 +4134,33 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 {
     ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
-    uint32_t val;
-    bool fHOB;
+    uint32_t    val;
+    bool        fHOB;
 
+    /* Check if the guest is reading from a non-existent device. */
+    if (!s->pDrvBlock)
+    {
+        if (pCtl->iSelectedIf)  /* Device 1 selected, Device 0 responding for it. */
+        {
+            if (!pCtl->aIfs[0].pDrvBlock)   /* @todo: this case should never get here! */
+            {
+                Log2(("%s: addr=%#x: no device on channel\n", __FUNCTION__, addr));
+                return VERR_IOM_IOPORT_UNUSED;
+            }
+            if (((addr & 7) != 1) && pCtl->aIfs[0].fATAPI) {
+                Log2(("%s: addr=%#x, val=0: LUN#%d not attached/LUN#%d ATAPI\n", __FUNCTION__, addr,
+                                s->iLUN, pCtl->aIfs[0].iLUN));
+                *pu32 = 0;
+                return VINF_SUCCESS;
+            }
+            /* Else handle normally. */
+        }
+        else                    /* Device 0 selected (but not present). */
+        {
+            Log2(("%s: addr=%#x: LUN#%d not attached\n", __FUNCTION__, addr, s->iLUN));
+            return VERR_IOM_IOPORT_UNUSED;
+        }
+    }
     fHOB = !!(s->uATARegDevCtl & (1 << 7));
     switch (addr & 7)
     {
@@ -4132,33 +4179,25 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
                 val = s->uATARegError;
             break;
         case 2: /* sector count */
-            if (!s->pDrvBlock)
-                val = 0;
-            else if (fHOB)
+            if (fHOB)
                 val = s->uATARegNSectorHOB;
             else
                 val = s->uATARegNSector;
             break;
         case 3: /* sector number */
-            if (!s->pDrvBlock)
-                val = 0;
-            else if (fHOB)
+            if (fHOB)
                 val = s->uATARegSectorHOB;
             else
                 val = s->uATARegSector;
             break;
         case 4: /* cylinder low */
-            if (!s->pDrvBlock)
-                val = 0;
-            else if (fHOB)
+            if (fHOB)
                 val = s->uATARegLCylHOB;
             else
                 val = s->uATARegLCyl;
             break;
         case 5: /* cylinder high */
-            if (!s->pDrvBlock)
-                val = 0;
-            else if (fHOB)
+            if (fHOB)
                 val = s->uATARegHCylHOB;
             else
                 val = s->uATARegHCyl;
@@ -4250,7 +4289,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
             break;
         }
     }
-    Log2(("%s: addr=%#x val=%#04x\n", __FUNCTION__, addr, val));
+    Log2(("%s: LUN#%d addr=%#x val=%#04x\n", __FUNCTION__, s->iLUN, addr, val));
     *pu32 = val;
     return VINF_SUCCESS;
 }
