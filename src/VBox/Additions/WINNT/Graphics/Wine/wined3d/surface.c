@@ -3301,7 +3301,7 @@ static inline BOOL fb_copy_to_texture_direct(IWineD3DSurfaceImpl *This, IWineD3D
 
         glCopyTexSubImage2D(This->texture_target, This->texture_level,
                 dst_rect.left /*xoffset */, dst_rect.top /* y offset */,
-                src_rect->left, Src->currentDesc.Height - src_rect->bottom,
+                src_rect->left, src_rect->top,
                 dst_rect.right - dst_rect.left, dst_rect.bottom - dst_rect.top);
     } else {
         UINT yoffset = Src->currentDesc.Height - src_rect->top + dst_rect.top - 1;
