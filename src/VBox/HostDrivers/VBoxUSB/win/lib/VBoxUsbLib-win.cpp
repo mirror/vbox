@@ -1169,7 +1169,7 @@ static VOID CALLBACK usbLibTimerCallback(
     SetEvent(g_VBoxUsbGlobal.hNotifyEvent);
 }
 
-static void usbLibOnDeviceChange()
+static void usbLibOnDeviceChange(void)
 {
     /* we're getting series of events like that especially on device re-attach
      * (i.e. first for device detach and then for device attach)
@@ -1182,30 +1182,26 @@ static void usbLibOnDeviceChange()
         if (!DeleteTimerQueueTimer(g_VBoxUsbGlobal.hTimerQueue, g_VBoxUsbGlobal.hTimer, NULL))
         {
             DWORD winEr = GetLastError();
-            AssertMsg(winEr == ERROR_IO_PENDING, (__FUNCTION__": DeleteTimerQueueTimer failed, winEr (%d)\n", winEr));
+            AssertMsg(winEr == ERROR_IO_PENDING, ("DeleteTimerQueueTimer failed, winEr (%d)\n", winEr));
         }
     }
 
     if (!CreateTimerQueueTimer(&g_VBoxUsbGlobal.hTimer, g_VBoxUsbGlobal.hTimerQueue,
-                                        usbLibTimerCallback,
-                                        NULL,
-                                        500, /* ms*/
-                                        0,
-                                        WT_EXECUTEONLYONCE))
+                               usbLibTimerCallback,
+                               NULL,
+                               500, /* ms*/
+                               0,
+                               WT_EXECUTEONLYONCE))
     {
-            DWORD winEr = GetLastError();
-            AssertMsgFailed(("CreateTimerQueueTimer failed, winEr (%d)\n", winEr));
+        DWORD winEr = GetLastError();
+        AssertMsgFailed(("CreateTimerQueueTimer failed, winEr (%d)\n", winEr));
 
-            /* call it directly */
-            usbLibTimerCallback(NULL, FALSE);
+        /* call it directly */
+        usbLibTimerCallback(NULL, FALSE);
     }
 }
 
-static LRESULT CALLBACK usbLibWndProc(HWND hwnd,
-    UINT uMsg,
-    WPARAM wParam,
-    LPARAM lParam
-)
+static LRESULT CALLBACK usbLibWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
@@ -1230,13 +1226,12 @@ static LRESULT CALLBACK usbLibWndProc(HWND hwnd,
     return DefWindowProc (hwnd, uMsg, wParam, lParam);
 }
 
-static LPCSTR g_VBoxUsbWndClassName = "VBoxUsbLibClass";
-
-static DWORD WINAPI usbLibMsgThreadProc(__in  LPVOID lpParameter)
+static DWORD WINAPI usbLibMsgThreadProc(__in LPVOID lpParameter)
 {
-     HWND                 hwnd = 0;
-     HINSTANCE hInstance = (HINSTANCE)GetModuleHandle (NULL);
-     bool bExit = false;
+    static LPCSTR   s_szVBoxUsbWndClassName = "VBoxUsbLibClass";
+     HWND           hwnd      = 0;
+     HINSTANCE      hInstance = (HINSTANCE)GetModuleHandle(NULL);
+     bool           bExit     = false;
 
      /* Register the Window Class. */
      WNDCLASS wc;
@@ -1249,17 +1244,17 @@ static DWORD WINAPI usbLibMsgThreadProc(__in  LPVOID lpParameter)
      wc.hCursor       = NULL;
      wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
      wc.lpszMenuName  = NULL;
-     wc.lpszClassName = g_VBoxUsbWndClassName;
+     wc.lpszClassName = s_szVBoxUsbWndClassName;
 
      ATOM atomWindowClass = RegisterClass(&wc);
 
      if (atomWindowClass != 0)
      {
          /* Create the window. */
-         g_VBoxUsbGlobal.hWnd = CreateWindowEx (WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-                 g_VBoxUsbWndClassName, g_VBoxUsbWndClassName,
-                                                   WS_POPUPWINDOW,
-                                                  -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
+         g_VBoxUsbGlobal.hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+                                               s_szVBoxUsbWndClassName, s_szVBoxUsbWndClassName,
+                                               WS_POPUPWINDOW,
+                                               -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
          SetEvent(g_VBoxUsbGlobal.hNotifyEvent);
 
          if (g_VBoxUsbGlobal.hWnd)
@@ -1274,15 +1269,17 @@ static DWORD WINAPI usbLibMsgThreadProc(__in  LPVOID lpParameter)
                  DispatchMessage(&msg);
              }
 
-             DestroyWindow (hwnd);
+             DestroyWindow(hwnd);
 
              bExit = true;
          }
 
-         UnregisterClass (g_VBoxUsbWndClassName, hInstance);
+         UnregisterClass(s_szVBoxUsbWndClassName, hInstance);
      }
 
-     if(bExit)
+     /** @todo r=bird: Please explain why the USB library needs
+      *        this exit(0) hack! */
+     if (bExit)
      {
          /* no need any accuracy here, in anyway the DHCP server usually gets terminated with TerminateProcess */
          exit(0);
@@ -1307,20 +1304,20 @@ USBLIB_DECL(int) USBLibInit(void)
 
     g_VBoxUsbGlobal.hMonitor = INVALID_HANDLE_VALUE;
 
-    g_VBoxUsbGlobal.hNotifyEvent = CreateEvent(NULL, /* LPSECURITY_ATTRIBUTES lpEventAttributes */
-                                        FALSE, /* BOOL bManualReset */
+    g_VBoxUsbGlobal.hNotifyEvent = CreateEvent(NULL,  /* LPSECURITY_ATTRIBUTES lpEventAttributes */
+                                               FALSE, /* BOOL bManualReset */
 #ifndef VBOX_USB_USE_DEVICE_NOTIFICATION
-                                        TRUE,  /* BOOL bInitialState */
+                                               TRUE,  /* BOOL bInitialState */
 #else
-                                        FALSE, /* set to false since it will be initially used for notification thread startup sync */
+                                               FALSE, /* set to false since it will be initially used for notification thread startup sync */
 #endif
-                                        NULL /* LPCTSTR lpName */);
+                                               NULL   /* LPCTSTR lpName */);
     if (g_VBoxUsbGlobal.hNotifyEvent)
     {
-        g_VBoxUsbGlobal.hInterruptEvent = CreateEvent(NULL, /* LPSECURITY_ATTRIBUTES lpEventAttributes */
-                                                FALSE, /* BOOL bManualReset */
-                                                FALSE,  /* BOOL bInitialState */
-                                                NULL /* LPCTSTR lpName */);
+        g_VBoxUsbGlobal.hInterruptEvent = CreateEvent(NULL,  /* LPSECURITY_ATTRIBUTES lpEventAttributes */
+                                                      FALSE, /* BOOL bManualReset */
+                                                      FALSE, /* BOOL bInitialState */
+                                                      NULL   /* LPCTSTR lpName */);
         if (g_VBoxUsbGlobal.hInterruptEvent)
         {
             g_VBoxUsbGlobal.hMonitor = CreateFile(USBMON_DEVICE_NAME, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
@@ -1349,23 +1346,31 @@ USBLIB_DECL(int) USBLibInit(void)
 
                 if (DeviceIoControl(g_VBoxUsbGlobal.hMonitor, SUPUSBFLT_IOCTL_GET_VERSION, NULL, 0, &Version, sizeof (Version), &cbReturned, NULL))
                 {
-                    if (Version.u32Major == USBMON_MAJOR_VERSION || Version.u32Minor <= USBMON_MINOR_VERSION)
+                    /** @todo r=bird: Explain why we accept any mismatching major
+                     *        version as long as the minor version is less or equal!
+                     *        It does not make sense to me... */
+                    if (   Version.u32Major == USBMON_MAJOR_VERSION 
+                        || Version.u32Minor <= USBMON_MINOR_VERSION)
                     {
 #ifndef VBOX_USB_USE_DEVICE_NOTIFICATION
                         USBSUP_SET_NOTIFY_EVENT SetEvent = {0};
                         Assert(g_VBoxUsbGlobal.hNotifyEvent);
                         SetEvent.u.hEvent = g_VBoxUsbGlobal.hNotifyEvent;
                         if (DeviceIoControl(g_VBoxUsbGlobal.hMonitor, SUPUSBFLT_IOCTL_SET_NOTIFY_EVENT,
-                                &SetEvent, sizeof (SetEvent),
-                                &SetEvent, sizeof (SetEvent),
-                                &cbReturned, NULL))
+                                            &SetEvent, sizeof(SetEvent),
+                                            &SetEvent, sizeof(SetEvent),
+                                            &cbReturned, NULL))
                         {
                             rc = SetEvent.u.rc;
                             AssertRC(rc);
                             if (RT_SUCCESS(rc))
+                            {
+                                /* 
+                                 * We're DONE!
+                                 */ 
                                 return VINF_SUCCESS;
-                            else
-                                AssertMsgFailed(("SetEvent failed, rc (%d)\n", rc));
+                            }
+                            AssertMsgFailed(("SetEvent failed, rc (%d)\n", rc));
                         }
                         else
                         {
@@ -1385,26 +1390,27 @@ USBLIB_DECL(int) USBLibInit(void)
                               0, /*__in       DWORD dwCreationFlags,*/
                               NULL /*__out_opt  LPDWORD lpThreadId*/
                             );
-
-                            if(g_VBoxUsbGlobal.hThread)
+                            if (g_VBoxUsbGlobal.hThread)
                             {
                                 DWORD dwResult = WaitForSingleObject(g_VBoxUsbGlobal.hNotifyEvent, INFINITE);
                                 Assert(dwResult == WAIT_OBJECT_0);
-
                                 if (g_VBoxUsbGlobal.hWnd)
                                 {
-                                    /* ensure the event is set so the first "wait change" request processes */
+                                    /* 
+                                     * We're DONE!
+                                     *  
+                                     * Juse ensure that the event is set so the 
+                                     * first "wait change" request is processed.
+                                     */
                                     SetEvent(g_VBoxUsbGlobal.hNotifyEvent);
                                     return VINF_SUCCESS;
                                 }
+
                                 dwResult = WaitForSingleObject(g_VBoxUsbGlobal.hThread, INFINITE);
                                 Assert(dwResult == WAIT_OBJECT_0);
                                 BOOL bRc = CloseHandle(g_VBoxUsbGlobal.hThread);
-                                if (!bRc)
-                                {
-                                    DWORD winEr = GetLastError();
-                                    AssertMsgFailed(("CloseHandle for hThread failed winEr(%d)\n", winEr));
-                                }
+                                AssertMsg(bRc, ("CloseHandle for hThread failed winEr(%d)\n", GetLastError()));
+                                g_VBoxUsbGlobal.hThread = INVALID_HANDLE_VALUE;
                             }
                             else
                             {
@@ -1412,6 +1418,9 @@ USBLIB_DECL(int) USBLibInit(void)
                                 AssertMsgFailed(("CreateThread failed, winEr (%d)\n", winEr));
                                 rc = VERR_GENERAL_FAILURE;
                             }
+
+                            DeleteTimerQueueEx(g_VBoxUsbGlobal.hTimerQueue, INVALID_HANDLE_VALUE /* see term */);
+                            g_VBoxUsbGlobal.hTimerQueue = NULL;
                         }
                         else
                         {
@@ -1437,6 +1446,7 @@ USBLIB_DECL(int) USBLibInit(void)
                 }
 
                 CloseHandle(g_VBoxUsbGlobal.hMonitor);
+                g_VBoxUsbGlobal.hMonitor = INVALID_HANDLE_VALUE;
             }
             else
             {
@@ -1448,6 +1458,7 @@ USBLIB_DECL(int) USBLibInit(void)
             }
 
             CloseHandle(g_VBoxUsbGlobal.hInterruptEvent);
+            g_VBoxUsbGlobal.hInterruptEvent = NULL;
         }
         else
         {
@@ -1457,6 +1468,7 @@ USBLIB_DECL(int) USBLibInit(void)
         }
 
         CloseHandle(g_VBoxUsbGlobal.hNotifyEvent);
+        g_VBoxUsbGlobal.hNotifyEvent = NULL;
     }
     else
     {
@@ -1482,15 +1494,14 @@ USBLIB_DECL(int) USBLibTerm(void)
 {
     if (g_VBoxUsbGlobal.hMonitor == INVALID_HANDLE_VALUE)
     {
-#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-        AssertFailed();
-#endif
-        return VINF_ALREADY_INITIALIZED;
+        Assert(g_VBoxUsbGlobal.hInterruptEvent == NULL);
+        Assert(g_VBoxUsbGlobal.hNotifyEvent == NULL);
+        return VINF_SUCCESS;
     }
 
     BOOL bRc;
 #ifdef VBOX_USB_USE_DEVICE_NOTIFICATION
-    bRc= PostMessage(g_VBoxUsbGlobal.hWnd, WM_QUIT, 0, 0);
+    bRc = PostMessage(g_VBoxUsbGlobal.hWnd, WM_QUIT, 0, 0);
     if (!bRc)
     {
         DWORD winEr = GetLastError();
@@ -1502,58 +1513,35 @@ USBLIB_DECL(int) USBLibTerm(void)
         DWORD dwResult = WaitForSingleObject(g_VBoxUsbGlobal.hThread, INFINITE);
         Assert(dwResult == WAIT_OBJECT_0);
         bRc = CloseHandle(g_VBoxUsbGlobal.hThread);
-        if (!bRc)
-        {
-            DWORD winEr = GetLastError();
-            AssertMsgFailed(("CloseHandle for hThread failed winEr(%d)\n", winEr));
-        }
+        AssertMsg(bRc, ("CloseHandle for hThread failed winEr(%d)\n", GetLastError()));
     }
 
     if (g_VBoxUsbGlobal.hTimer)
     {
         bRc = DeleteTimerQueueTimer(g_VBoxUsbGlobal.hTimerQueue, g_VBoxUsbGlobal.hTimer,
-                INVALID_HANDLE_VALUE /* <-- to block until the timer is completed */
-                            );
-        if (!bRc)
-        {
-            DWORD winEr = GetLastError();
-            AssertMsgFailed(("DeleteTimerQueueEx failed winEr(%d)\n", winEr));
-        }
+                                    INVALID_HANDLE_VALUE); /* <-- to block until the timer is completed */
+        AssertMsg(bRc, ("DeleteTimerQueueTimer failed winEr(%d)\n", GetLastError()));
     }
 
     if (g_VBoxUsbGlobal.hTimerQueue)
     {
         bRc = DeleteTimerQueueEx(g_VBoxUsbGlobal.hTimerQueue,
-                INVALID_HANDLE_VALUE /* <-- to block until all timers are completed */
-                );
-        if (!bRc)
-        {
-            DWORD winEr = GetLastError();
-            AssertMsgFailed(("DeleteTimerQueueEx failed winEr(%d)\n", winEr));
-        }
+                                 INVALID_HANDLE_VALUE); /* <-- to block until all timers are completed */
+        AssertMsg(bRc, ("DeleteTimerQueueEx failed winEr(%d)\n", GetLastError()));
     }
-#endif
+#endif /* VBOX_USB_USE_DEVICE_NOTIFICATION */
 
     bRc = CloseHandle(g_VBoxUsbGlobal.hMonitor);
-    if (!bRc)
-    {
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("CloseHandle for hMonitor failed winEr(%d)\n", winEr));
-    }
-
+    AssertMsg(bRc, ("CloseHandle for hMonitor failed winEr(%d)\n", GetLastError()));
+    g_VBoxUsbGlobal.hMonitor = INVALID_HANDLE_VALUE;
+          
     bRc = CloseHandle(g_VBoxUsbGlobal.hInterruptEvent);
-    if (!bRc)
-    {
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("CloseHandle for hInterruptEvent failed winEr(%d)\n", winEr));
-    }
+    AssertMsg(bRc, ("CloseHandle for hInterruptEvent failed lasterr=%u\n", GetLastError()));
+    g_VBoxUsbGlobal.hInterruptEvent = NULL;
 
     bRc = CloseHandle(g_VBoxUsbGlobal.hNotifyEvent);
-    if (!bRc)
-    {
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("CloseHandle for hNotifyEvent failed winEr(%d)\n", winEr));
-    }
+    AssertMsg(bRc, ("CloseHandle for hNotifyEvent failed winEr(%d)\n", GetLastError()));
+    g_VBoxUsbGlobal.hNotifyEvent = NULL;
 
     return VINF_SUCCESS;
 }
