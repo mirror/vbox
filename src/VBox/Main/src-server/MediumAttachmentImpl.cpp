@@ -64,8 +64,8 @@ struct BackupableMediumAttachmentData
 
 struct MediumAttachment::Data
 {
-    Data()
-        : pMachine(NULL),
+    Data(Machine * const aMachine = NULL)
+        : pMachine(aMachine),
           fIsEjected(false)
     { }
 
@@ -161,6 +161,36 @@ HRESULT MediumAttachment::init(Machine *aParent,
                           m->bd->fImplicit ? ":I" : "");
 
     LogFlowThisFunc(("LEAVE - %s\n", getLogName()));
+    return S_OK;
+}
+
+/**
+ *  Initializes the medium attachment object given another guest object
+ *  (a kind of copy constructor). This object makes a private copy of data
+ *  of the original object passed as an argument.
+ */
+HRESULT MediumAttachment::initCopy(Machine *aParent, MediumAttachment *aThat)
+{
+    LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
+
+    ComAssertRet(aParent && aThat, E_INVALIDARG);
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    m = new Data(aParent);
+    /* m->pPeer is left null */
+
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnRC(thatCaller.rc());
+
+    AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
+    m->bd.attachCopy(aThat->m->bd);
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
