@@ -96,7 +96,7 @@ int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
     if (hOut == INVALID_HANDLE_VALUE)
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": CreateFile FAILED to open %s, winEr (%d)\n", pVuDev->szName, winEr));
+        AssertMsgFailed(("CreateFile FAILED to open %s, winEr (%d)\n", pVuDev->szName, winEr));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -108,20 +108,20 @@ int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
     {
         if (!DeviceIoControl(hOut, SUPUSB_IOCTL_GET_VERSION, NULL, 0,&version, sizeof(version),  &cbReturned, NULL))
         {
-            AssertMsgFailed((__FUNCTION__": DeviceIoControl SUPUSB_IOCTL_GET_VERSION failed with LastError=%Rwa\n", GetLastError()));
+            AssertMsgFailed(("DeviceIoControl SUPUSB_IOCTL_GET_VERSION failed with LastError=%Rwa\n", GetLastError()));
             break;
         }
 
         if (version.u32Major != USBDRV_MAJOR_VERSION
                 || version.u32Minor <  USBDRV_MINOR_VERSION)
         {
-            AssertMsgFailed((__FUNCTION__": Invalid version %d:%d vs %d:%d\n", version.u32Major, version.u32Minor, USBDRV_MAJOR_VERSION, USBDRV_MINOR_VERSION));
+            AssertMsgFailed(("Invalid version %d:%d vs %d:%d\n", version.u32Major, version.u32Minor, USBDRV_MAJOR_VERSION, USBDRV_MINOR_VERSION));
             break;
         }
 
         if (!DeviceIoControl(hOut, SUPUSB_IOCTL_IS_OPERATIONAL, NULL, 0, NULL, NULL, &cbReturned, NULL))
         {
-            AssertMsgFailed((__FUNCTION__": DeviceIoControl SUPUSB_IOCTL_IS_OPERATIONAL failed with LastError=%Rwa\n", GetLastError()));
+            AssertMsgFailed(("DeviceIoControl SUPUSB_IOCTL_IS_OPERATIONAL failed with LastError=%Rwa\n", GetLastError()));
             break;
         }
 
@@ -148,7 +148,7 @@ static int usbLibVuDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO hDevInfo, PSP_DE
     PSP_DEVICE_INTERFACE_DETAIL_DATA pIfDetailData = (PSP_DEVICE_INTERFACE_DETAIL_DATA)RTMemAllocZ(cbIfDetailData);
     if (!pIfDetailData)
     {
-        AssertMsgFailed((__FUNCTION__": RTMemAllocZ failed\n"));
+        AssertMsgFailed(("RTMemAllocZ failed\n"));
         return VERR_OUT_OF_RESOURCES;
     }
 
@@ -166,7 +166,7 @@ static int usbLibVuDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO hDevInfo, PSP_DE
                                 &DevInfoData))
         {
             DWORD winEr = GetLastError();
-            AssertMsgFailed((__FUNCTION__": SetupDiGetDeviceInterfaceDetail, cbRequired (%d), was (%d), winEr (%d)\n", cbDbgRequired, cbIfDetailData, winEr));
+            AssertMsgFailed(("SetupDiGetDeviceInterfaceDetail, cbRequired (%d), was (%d), winEr (%d)\n", cbDbgRequired, cbIfDetailData, winEr));
             rc = VERR_GENERAL_FAILURE;
             break;
         }
@@ -180,7 +180,7 @@ static int usbLibVuDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO hDevInfo, PSP_DE
             &cbDbgRequired))
         {
             DWORD winEr = GetLastError();
-            AssertMsgFailed((__FUNCTION__": SetupDiGetDeviceRegistryPropertyA, cbRequired (%d), was (%d), winEr (%d)\n", cbDbgRequired, sizeof (pVuDev->szDriverRegName), winEr));
+            AssertMsgFailed(("SetupDiGetDeviceRegistryPropertyA, cbRequired (%d), was (%d), winEr (%d)\n", cbDbgRequired, sizeof (pVuDev->szDriverRegName), winEr));
             rc = VERR_GENERAL_FAILURE;
             break;
         }
@@ -216,7 +216,7 @@ static int usbLibVuGetDevices(PVBOXUSB_DEV *ppVuDevs, uint32_t *pcVuDevs)
     if (hDevInfo == INVALID_HANDLE_VALUE)
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": SetupDiGetClassDevs, winEr (%d)\n", winEr));
+        AssertMsgFailed(("SetupDiGetClassDevs, winEr (%d)\n", winEr));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -234,7 +234,7 @@ static int usbLibVuGetDevices(PVBOXUSB_DEV *ppVuDevs, uint32_t *pcVuDevs)
             if (winEr == ERROR_NO_MORE_ITEMS)
                 break;
 
-            AssertMsgFailed((__FUNCTION__": SetupDiEnumDeviceInterfaces, winEr (%d), resuming\n", winEr));
+            AssertMsgFailed(("SetupDiEnumDeviceInterfaces, winEr (%d), resuming\n", winEr));
             continue;
         }
 
@@ -242,14 +242,14 @@ static int usbLibVuGetDevices(PVBOXUSB_DEV *ppVuDevs, uint32_t *pcVuDevs)
         PVBOXUSB_DEV pVuDev = (PVBOXUSB_DEV)RTMemAllocZ(sizeof (*pVuDev));
         if (!pVuDev)
         {
-            AssertMsgFailed((__FUNCTION__": RTMemAllocZ failed, resuming\n"));
+            AssertMsgFailed(("RTMemAllocZ failed, resuming\n"));
             continue;
         }
 
         int rc = usbLibVuDevicePopulate(pVuDev, hDevInfo, &IfData);
         if (!RT_SUCCESS(rc))
         {
-            AssertMsgFailed((__FUNCTION__": usbLibVuDevicePopulate failed, rc (%d), resuming\n", rc));
+            AssertMsgFailed(("usbLibVuDevicePopulate failed, rc (%d), resuming\n", rc));
             continue;
         }
 
@@ -355,7 +355,7 @@ static int usbLibDevStrDriverKeyGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
     {
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": DeviceIoControl 1 fail winEr (%d)\n", winEr));
+        AssertMsgFailed(("DeviceIoControl 1 fail winEr (%d)\n", winEr));
 #endif
         return VERR_GENERAL_FAILURE;
     }
@@ -385,7 +385,7 @@ static int usbLibDevStrDriverKeyGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
     else
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": DeviceIoControl 2 fail winEr (%d)\n", winEr));
+        AssertMsgFailed(("DeviceIoControl 2 fail winEr (%d)\n", winEr));
         rc = VERR_GENERAL_FAILURE;
     }
     RTMemFree(pName);
@@ -953,7 +953,7 @@ static int usbLibMonDevicesUpdate(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE pDevs,
             {
                  DWORD winEr = GetLastError();
                  /* ERROR_DEVICE_NOT_CONNECTED -> device was removed just now */
-                 AssertMsgFailed((__FUNCTION__": Monitor DeviceIoControl failed winEr (%d)\n", winEr));
+                 AssertMsgFailed(("Monitor DeviceIoControl failed winEr (%d)\n", winEr));
                  Log(("SUPUSBFLT_IOCTL_GET_DEVICE: DeviceIoControl no longer connected\n"));
                  CloseHandle(hDev);
                  break;
@@ -1038,7 +1038,7 @@ static int usbLibStateWaitChange(PVBOXUSBGLOBALSTATE pGlobal, RTMSINTERVAL cMill
         default:
         {
             DWORD winEr = GetLastError();
-            AssertMsgFailed((__FUNCTION__": WaitForMultipleObjects failed, winEr (%d)\n", winEr));
+            AssertMsgFailed(("WaitForMultipleObjects failed, winEr (%d)\n", winEr));
             return VERR_GENERAL_FAILURE;
         }
     }
@@ -1057,7 +1057,7 @@ static int usbLibInterruptWaitChange(PVBOXUSBGLOBALSTATE pGlobal)
     if (!bRc)
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": SetEvent failed, winEr (%d)\n", winEr));
+        AssertMsgFailed(("SetEvent failed, winEr (%d)\n", winEr));
         return VERR_GENERAL_FAILURE;
     }
     return VINF_SUCCESS;
@@ -1194,7 +1194,7 @@ static void usbLibOnDeviceChange()
                                         WT_EXECUTEONLYONCE))
     {
             DWORD winEr = GetLastError();
-            AssertMsgFailed((__FUNCTION__": CreateTimerQueueTimer failed, winEr (%d)\n", winEr));
+            AssertMsgFailed(("CreateTimerQueueTimer failed, winEr (%d)\n", winEr));
 
             /* call it directly */
             usbLibTimerCallback(NULL, FALSE);
@@ -1365,12 +1365,12 @@ USBLIB_DECL(int) USBLibInit(void)
                             if (RT_SUCCESS(rc))
                                 return VINF_SUCCESS;
                             else
-                                AssertMsgFailed((__FUNCTION__": SetEvent failed, rc (%d)\n", rc));
+                                AssertMsgFailed(("SetEvent failed, rc (%d)\n", rc));
                         }
                         else
                         {
                             DWORD winEr = GetLastError();
-                            AssertMsgFailed((__FUNCTION__": SetEvent Ioctl failed, winEr (%d)\n", winEr));
+                            AssertMsgFailed(("SetEvent Ioctl failed, winEr (%d)\n", winEr));
                             rc = VERR_VERSION_MISMATCH;
                         }
 #else
@@ -1403,20 +1403,20 @@ USBLIB_DECL(int) USBLibInit(void)
                                 if (!bRc)
                                 {
                                     DWORD winEr = GetLastError();
-                                    AssertMsgFailed((__FUNCTION__": CloseHandle for hThread failed winEr(%d)\n", winEr));
+                                    AssertMsgFailed(("CloseHandle for hThread failed winEr(%d)\n", winEr));
                                 }
                             }
                             else
                             {
                                 DWORD winEr = GetLastError();
-                                AssertMsgFailed((__FUNCTION__": CreateThread failed, winEr (%d)\n", winEr));
+                                AssertMsgFailed(("CreateThread failed, winEr (%d)\n", winEr));
                                 rc = VERR_GENERAL_FAILURE;
                             }
                         }
                         else
                         {
                             DWORD winEr = GetLastError();
-                            AssertMsgFailed((__FUNCTION__": CreateTimerQueue failed winEr(%d)\n", winEr));
+                            AssertMsgFailed(("CreateTimerQueue failed winEr(%d)\n", winEr));
                         }
 #endif
                     }
@@ -1432,7 +1432,7 @@ USBLIB_DECL(int) USBLibInit(void)
                 else
                 {
                     DWORD winEr = GetLastError();
-                    AssertMsgFailed((__FUNCTION__": DeviceIoControl failed winEr(%d)\n", winEr));
+                    AssertMsgFailed(("DeviceIoControl failed winEr(%d)\n", winEr));
                     rc = VERR_VERSION_MISMATCH;
                 }
 
@@ -1452,7 +1452,7 @@ USBLIB_DECL(int) USBLibInit(void)
         else
         {
             DWORD winEr = GetLastError();
-            AssertMsgFailed((__FUNCTION__": CreateEvent for InterruptEvent failed winEr(%d)\n", winEr));
+            AssertMsgFailed(("CreateEvent for InterruptEvent failed winEr(%d)\n", winEr));
             rc = VERR_GENERAL_FAILURE;
         }
 
@@ -1461,7 +1461,7 @@ USBLIB_DECL(int) USBLibInit(void)
     else
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": CreateEvent for NotifyEvent failed winEr(%d)\n", winEr));
+        AssertMsgFailed(("CreateEvent for NotifyEvent failed winEr(%d)\n", winEr));
         rc = VERR_GENERAL_FAILURE;
     }
 
@@ -1494,16 +1494,19 @@ USBLIB_DECL(int) USBLibTerm(void)
     if (!bRc)
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": PostMessage for hWnd failed winEr(%d)\n", winEr));
+        AssertMsgFailed(("PostMessage for hWnd failed winEr(%d)\n", winEr));
     }
 
-    DWORD dwResult = WaitForSingleObject(g_VBoxUsbGlobal.hThread, INFINITE);
-    Assert(dwResult == WAIT_OBJECT_0);
-    bRc = CloseHandle(g_VBoxUsbGlobal.hThread);
-    if (!bRc)
+    if (g_VBoxUsbGlobal.hThread != NULL)
     {
-        DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": CloseHandle for hThread failed winEr(%d)\n", winEr));
+        DWORD dwResult = WaitForSingleObject(g_VBoxUsbGlobal.hThread, INFINITE);
+        Assert(dwResult == WAIT_OBJECT_0);
+        bRc = CloseHandle(g_VBoxUsbGlobal.hThread);
+        if (!bRc)
+        {
+            DWORD winEr = GetLastError();
+            AssertMsgFailed(("CloseHandle for hThread failed winEr(%d)\n", winEr));
+        }
     }
 
     if (g_VBoxUsbGlobal.hTimer)
@@ -1514,17 +1517,20 @@ USBLIB_DECL(int) USBLibTerm(void)
         if (!bRc)
         {
             DWORD winEr = GetLastError();
-            AssertMsgFailed((__FUNCTION__": DeleteTimerQueueEx failed winEr(%d)\n", winEr));
+            AssertMsgFailed(("DeleteTimerQueueEx failed winEr(%d)\n", winEr));
         }
     }
 
-    bRc = DeleteTimerQueueEx(g_VBoxUsbGlobal.hTimerQueue,
-            INVALID_HANDLE_VALUE /* <-- to block until all timers are completed */
-            );
-    if (!bRc)
+    if (g_VBoxUsbGlobal.hTimerQueue)
     {
-        DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": DeleteTimerQueueEx failed winEr(%d)\n", winEr));
+        bRc = DeleteTimerQueueEx(g_VBoxUsbGlobal.hTimerQueue,
+                INVALID_HANDLE_VALUE /* <-- to block until all timers are completed */
+                );
+        if (!bRc)
+        {
+            DWORD winEr = GetLastError();
+            AssertMsgFailed(("DeleteTimerQueueEx failed winEr(%d)\n", winEr));
+        }
     }
 #endif
 
@@ -1532,21 +1538,21 @@ USBLIB_DECL(int) USBLibTerm(void)
     if (!bRc)
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": CloseHandle for hMonitor failed winEr(%d)\n", winEr));
+        AssertMsgFailed(("CloseHandle for hMonitor failed winEr(%d)\n", winEr));
     }
 
     bRc = CloseHandle(g_VBoxUsbGlobal.hInterruptEvent);
     if (!bRc)
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": CloseHandle for hInterruptEvent failed winEr(%d)\n", winEr));
+        AssertMsgFailed(("CloseHandle for hInterruptEvent failed winEr(%d)\n", winEr));
     }
 
     bRc = CloseHandle(g_VBoxUsbGlobal.hNotifyEvent);
     if (!bRc)
     {
         DWORD winEr = GetLastError();
-        AssertMsgFailed((__FUNCTION__": CloseHandle for hNotifyEvent failed winEr(%d)\n", winEr));
+        AssertMsgFailed(("CloseHandle for hNotifyEvent failed winEr(%d)\n", winEr));
     }
 
     return VINF_SUCCESS;
