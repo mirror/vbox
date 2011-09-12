@@ -1,7 +1,8 @@
 /* $Id$ */
 /** @file
- * VBox USB R3 Driver Interface library
+ * VBox USB ring-3 Driver Interface library, Windows.
  */
+
 /*
  * Copyright (C) 2011 Oracle Corporation
  *
@@ -13,6 +14,10 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_USBPROXY
 #include <windows.h>
 
@@ -42,7 +47,11 @@
 # include <Dbt.h>
 #endif
 
-typedef struct _USB_INTERFACE_DESCRIPTOR2 {
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+typedef struct _USB_INTERFACE_DESCRIPTOR2 
+{
     UCHAR  bLength;
     UCHAR  bDescriptorType;
     UCHAR  bInterfaceNumber;
@@ -68,8 +77,6 @@ typedef struct VBOXUSBGLOBALSTATE
 #endif
 } VBOXUSBGLOBALSTATE, *PVBOXUSBGLOBALSTATE;
 
-static VBOXUSBGLOBALSTATE g_VBoxUsbGlobal;
-
 typedef struct VBOXUSB_STRING_DR_ENTRY
 {
     struct VBOXUSB_STRING_DR_ENTRY *pNext;
@@ -78,13 +85,22 @@ typedef struct VBOXUSB_STRING_DR_ENTRY
     USB_STRING_DESCRIPTOR StrDr;
 } VBOXUSB_STRING_DR_ENTRY, *PVBOXUSB_STRING_DR_ENTRY;
 
-/* this represents VBoxUsb device instance */
+/** 
+ * This represents VBoxUsb device instance
+ */
 typedef struct VBOXUSB_DEV
 {
     struct VBOXUSB_DEV *pNext;
-    char    szName[512];
-    char    szDriverRegName[512];
+    char                szName[512];
+    char                szDriverRegName[512];
 } VBOXUSB_DEV, *PVBOXUSB_DEV;
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static VBOXUSBGLOBALSTATE g_VBoxUsbGlobal;
+
 
 int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
 {
@@ -1161,10 +1177,7 @@ USBLIB_DECL(int) USBLibRunFilters()
 
 #ifdef VBOX_USB_USE_DEVICE_NOTIFICATION
 
-static VOID CALLBACK usbLibTimerCallback(
-        __in  PVOID lpParameter,
-        __in  BOOLEAN TimerOrWaitFired
-      )
+static VOID CALLBACK usbLibTimerCallback(__in PVOID lpParameter, __in BOOLEAN TimerOrWaitFired)
 {
     SetEvent(g_VBoxUsbGlobal.hNotifyEvent);
 }
@@ -1226,68 +1239,73 @@ static LRESULT CALLBACK usbLibWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
     return DefWindowProc (hwnd, uMsg, wParam, lParam);
 }
 
+/** @todo r=bird: Use an IPRT thread? */
 static DWORD WINAPI usbLibMsgThreadProc(__in LPVOID lpParameter)
 {
     static LPCSTR   s_szVBoxUsbWndClassName = "VBoxUsbLibClass";
-     HWND           hwnd      = 0;
-     HINSTANCE      hInstance = (HINSTANCE)GetModuleHandle(NULL);
-     bool           bExit     = false;
+    const HINSTANCE hInstance               = (HINSTANCE)GetModuleHandle(NULL);
 
-     /* Register the Window Class. */
-     WNDCLASS wc;
-     wc.style         = 0;
-     wc.lpfnWndProc   = usbLibWndProc;
-     wc.cbClsExtra    = 0;
-     wc.cbWndExtra    = sizeof(void *);
-     wc.hInstance     = hInstance;
-     wc.hIcon         = NULL;
-     wc.hCursor       = NULL;
-     wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
-     wc.lpszMenuName  = NULL;
-     wc.lpszClassName = s_szVBoxUsbWndClassName;
+    Assert(g_VBoxUsbGlobal.hWnd == NULL);
+    g_VBoxUsbGlobal.hWnd = NULL;
 
-     ATOM atomWindowClass = RegisterClass(&wc);
+    /* 
+     * Register the Window Class and the hitten window create.
+     */
+    WNDCLASS wc;
+    wc.style         = 0;
+    wc.lpfnWndProc   = usbLibWndProc;
+    wc.cbClsExtra    = 0;
+    wc.cbWndExtra    = sizeof(void *);
+    wc.hInstance     = hInstance;
+    wc.hIcon         = NULL;
+    wc.hCursor       = NULL;
+    wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
+    wc.lpszMenuName  = NULL;
+    wc.lpszClassName = s_szVBoxUsbWndClassName;
+    ATOM atomWindowClass = RegisterClass(&wc);
+    if (atomWindowClass != 0)
+        g_VBoxUsbGlobal.hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+                                              s_szVBoxUsbWndClassName, s_szVBoxUsbWndClassName,
+                                              WS_POPUPWINDOW,
+                                              -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
+    else
+        AssertMsgFailed(("RegisterClass failed, last error %u\n", GetLastError()));
 
-     if (atomWindowClass != 0)
-     {
-         /* Create the window. */
-         g_VBoxUsbGlobal.hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-                                               s_szVBoxUsbWndClassName, s_szVBoxUsbWndClassName,
-                                               WS_POPUPWINDOW,
-                                               -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
-         SetEvent(g_VBoxUsbGlobal.hNotifyEvent);
+    /*
+     * Signal the creator thread.
+     */
+    ASMCompilerBarrier();
+    SetEvent(g_VBoxUsbGlobal.hNotifyEvent);
 
-         if (g_VBoxUsbGlobal.hWnd)
-         {
-             SetWindowPos(hwnd, HWND_TOPMOST, -200, -200, 0, 0,
-                          SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
+    if (g_VBoxUsbGlobal.hWnd)
+    {
+        /* Make sure it's really hidden. */
+        SetWindowPos(g_VBoxUsbGlobal.hWnd, HWND_TOPMOST, -200, -200, 0, 0,
+                     SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
 
-             MSG msg;
-             while (GetMessage(&msg, NULL, 0, 0))
-             {
-                 TranslateMessage(&msg);
-                 DispatchMessage(&msg);
-             }
+        /* 
+         * The message pump.
+         */
+        MSG msg;
+        while (GetMessage(&msg, NULL, 0, 0))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
 
-             DestroyWindow(hwnd);
+        /*
+         * Clean up.
+         */
+        DestroyWindow(g_VBoxUsbGlobal.hWnd);
+    }
 
-             bExit = true;
-         }
+    if (atomWindowClass != NULL)
+        UnregisterClass(s_szVBoxUsbWndClassName, hInstance);
 
-         UnregisterClass(s_szVBoxUsbWndClassName, hInstance);
-     }
-
-     /** @todo r=bird: Please explain why the USB library needs
-      *        this exit(0) hack! */
-     if (bExit)
-     {
-         /* no need any accuracy here, in anyway the DHCP server usually gets terminated with TerminateProcess */
-         exit(0);
-     }
-
-     return 0;
+    return 0;
 }
-#endif
+
+#endif /* VBOX_USB_USE_DEVICE_NOTIFICATION */
 
 /**
  * Initialize the USB library
@@ -1300,10 +1318,12 @@ USBLIB_DECL(int) USBLibInit(void)
 
     Log(("usbproxy: usbLibInit\n"));
 
-    memset(&g_VBoxUsbGlobal, 0, sizeof (g_VBoxUsbGlobal));
-
+    RT_ZERO(g_VBoxUsbGlobal);
     g_VBoxUsbGlobal.hMonitor = INVALID_HANDLE_VALUE;
 
+    /*
+     * Create the notification and interrupt event before opening the device.
+     */
     g_VBoxUsbGlobal.hNotifyEvent = CreateEvent(NULL,  /* LPSECURITY_ATTRIBUTES lpEventAttributes */
                                                FALSE, /* BOOL bManualReset */
 #ifndef VBOX_USB_USE_DEVICE_NOTIFICATION
@@ -1320,16 +1340,29 @@ USBLIB_DECL(int) USBLibInit(void)
                                                       NULL   /* LPCTSTR lpName */);
         if (g_VBoxUsbGlobal.hInterruptEvent)
         {
-            g_VBoxUsbGlobal.hMonitor = CreateFile(USBMON_DEVICE_NAME, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-                                       OPEN_EXISTING, FILE_ATTRIBUTE_SYSTEM, NULL);
+            /*
+             * Open the USB monitor device, starting if needed.
+             */
+            g_VBoxUsbGlobal.hMonitor = CreateFile(USBMON_DEVICE_NAME, 
+                                                  GENERIC_READ | GENERIC_WRITE, 
+                                                  FILE_SHARE_READ | FILE_SHARE_WRITE, 
+                                                  NULL,
+                                                  OPEN_EXISTING, 
+                                                  FILE_ATTRIBUTE_SYSTEM, 
+                                                  NULL);
 
             if (g_VBoxUsbGlobal.hMonitor == INVALID_HANDLE_VALUE)
             {
                 HRESULT hr = VBoxDrvCfgSvcStart(USBMON_SERVICE_NAME_W);
                 if (hr == S_OK)
                 {
-                    g_VBoxUsbGlobal.hMonitor = CreateFile(USBMON_DEVICE_NAME, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                           NULL, OPEN_EXISTING, FILE_ATTRIBUTE_SYSTEM, NULL);
+                    g_VBoxUsbGlobal.hMonitor = CreateFile(USBMON_DEVICE_NAME, 
+                                                          GENERIC_READ | GENERIC_WRITE, 
+                                                          FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                          NULL, 
+                                                          OPEN_EXISTING, 
+                                                          FILE_ATTRIBUTE_SYSTEM, 
+                                                          NULL);
                     if (g_VBoxUsbGlobal.hMonitor == INVALID_HANDLE_VALUE)
                     {
                         DWORD winEr = GetLastError();
@@ -1341,18 +1374,30 @@ USBLIB_DECL(int) USBLibInit(void)
 
             if (g_VBoxUsbGlobal.hMonitor != INVALID_HANDLE_VALUE)
             {
-                USBSUP_VERSION Version = {0};
-                DWORD cbReturned = 0;
-
-                if (DeviceIoControl(g_VBoxUsbGlobal.hMonitor, SUPUSBFLT_IOCTL_GET_VERSION, NULL, 0, &Version, sizeof (Version), &cbReturned, NULL))
+                /*
+                 * Check the USB monitor version. 
+                 *  
+                 * Drivers are backwards compatible within the same major 
+                 * number.  We consider the minor version number this library 
+                 * is compiled with to be the minimum required by the driver.
+                 * This is by reasoning that the library uses the full feature 
+                 * set of the driver it's written for. 
+                 */
+                USBSUP_VERSION  Version = {0};
+                DWORD           cbReturned = 0;
+                if (DeviceIoControl(g_VBoxUsbGlobal.hMonitor, SUPUSBFLT_IOCTL_GET_VERSION, 
+                                    NULL, 0, 
+                                    &Version, sizeof (Version), 
+                                    &cbReturned, NULL))
                 {
-                    /** @todo r=bird: Explain why we accept any mismatching major
-                     *        version as long as the minor version is less or equal!
-                     *        It does not make sense to me... */
                     if (   Version.u32Major == USBMON_MAJOR_VERSION 
-                        || Version.u32Minor <= USBMON_MINOR_VERSION)
+                        && Version.u32Minor >= USBMON_MINOR_VERSION)
                     {
 #ifndef VBOX_USB_USE_DEVICE_NOTIFICATION
+                        /*
+                         * Tell the monitor driver which event object to use 
+                         * for notifications.
+                         */
                         USBSUP_SET_NOTIFY_EVENT SetEvent = {0};
                         Assert(g_VBoxUsbGlobal.hNotifyEvent);
                         SetEvent.u.hEvent = g_VBoxUsbGlobal.hNotifyEvent;
@@ -1362,7 +1407,6 @@ USBLIB_DECL(int) USBLibInit(void)
                                             &cbReturned, NULL))
                         {
                             rc = SetEvent.u.rc;
-                            AssertRC(rc);
                             if (RT_SUCCESS(rc))
                             {
                                 /* 
@@ -1370,7 +1414,8 @@ USBLIB_DECL(int) USBLibInit(void)
                                  */ 
                                 return VINF_SUCCESS;
                             }
-                            AssertMsgFailed(("SetEvent failed, rc (%d)\n", rc));
+
+                            AssertMsgFailed(("SetEvent failed, %Rrc (%d)\n", rc, rc));
                         }
                         else
                         {
@@ -1379,6 +1424,9 @@ USBLIB_DECL(int) USBLibInit(void)
                             rc = VERR_VERSION_MISMATCH;
                         }
 #else
+                        /*
+                         * ??? Please explain this....
+                         */
                         g_VBoxUsbGlobal.hTimerQueue = CreateTimerQueue();
                         if (g_VBoxUsbGlobal.hTimerQueue)
                         {
@@ -1431,7 +1479,8 @@ USBLIB_DECL(int) USBLibInit(void)
                     }
                     else
                     {
-                        LogRel((__FUNCTION__": Monitor driver version mismatch!!\n"));
+                        LogRel((__FUNCTION__": USB Monitor driver version mismatch! driver=%u.%u library=%u.%u\n", 
+                                Version.u32Major, Version.u32Minor, USBMON_MAJOR_VERSION, USBMON_MINOR_VERSION));
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
                         AssertFailed();
 #endif
@@ -1502,11 +1551,7 @@ USBLIB_DECL(int) USBLibTerm(void)
     BOOL bRc;
 #ifdef VBOX_USB_USE_DEVICE_NOTIFICATION
     bRc = PostMessage(g_VBoxUsbGlobal.hWnd, WM_QUIT, 0, 0);
-    if (!bRc)
-    {
-        DWORD winEr = GetLastError();
-        AssertMsgFailed(("PostMessage for hWnd failed winEr(%d)\n", winEr));
-    }
+    AssertMsg(bRc, ("PostMessage for hWnd failed winEr(%d)\n", GetLastError()));
 
     if (g_VBoxUsbGlobal.hThread != NULL)
     {
@@ -1545,3 +1590,4 @@ USBLIB_DECL(int) USBLibTerm(void)
 
     return VINF_SUCCESS;
 }
+
