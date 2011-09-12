@@ -1600,6 +1600,27 @@ static int pgmR3InitPaging(PVM pVM)
                 MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[0]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[1]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[2]), MMPage2Phys(pVM, pVM->pgm.s.apInterPaePDs[3]),
                 MMPage2Phys(pVM, pVM->pgm.s.pInterPaePDPT64)));
 #endif
+
+        /*
+         * Log the host paging mode. It may come in handy.
+         */
+        const char *pszHostMode;
+        switch (pVM->pgm.s.enmHostMode)
+        {
+            case SUPPAGINGMODE_32_BIT:              pszHostMode = "32-bit"; break;
+            case SUPPAGINGMODE_32_BIT_GLOBAL:       pszHostMode = "32-bit+PGE"; break;
+            case SUPPAGINGMODE_PAE:                 pszHostMode = "PAE"; break;
+            case SUPPAGINGMODE_PAE_GLOBAL:          pszHostMode = "PAE+PGE"; break;
+            case SUPPAGINGMODE_PAE_NX:              pszHostMode = "PAE+NXE"; break;
+            case SUPPAGINGMODE_PAE_GLOBAL_NX:       pszHostMode = "PAE+PGE+NXE"; break;
+            case SUPPAGINGMODE_AMD64:               pszHostMode = "AMD64"; break;
+            case SUPPAGINGMODE_AMD64_GLOBAL:        pszHostMode = "AMD64+PGE"; break;
+            case SUPPAGINGMODE_AMD64_NX:            pszHostMode = "AMD64+NX"; break;
+            case SUPPAGINGMODE_AMD64_GLOBAL_NX:     pszHostMode = "AMD64+PGE+NX"; break;
+            default:                                pszHostMode = "???"; break;
+        }
+        LogRel(("Host paging mode: %s\n", pszHostMode));
+
         return VINF_SUCCESS;
     }
 
