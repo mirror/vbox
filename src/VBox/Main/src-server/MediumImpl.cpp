@@ -87,7 +87,7 @@ struct Medium::Data
           size(0),
           readers(0),
           preLockState(MediumState_NotCreated),
-          queryInfoSem(NIL_RTSEMRW),
+          queryInfoSem(LOCKCLASS_MEDIUMQUERY),
           queryInfoRunning(false),
           type(MediumType_Normal),
           devType(DeviceType_HardDisk),
@@ -128,7 +128,7 @@ struct Medium::Data
      * least it is subject to the lock validator, unlike the SemEventMulti
      * which we had here for many years. Catching possible deadlocks is more
      * important than a tiny bit of efficiency. */
-    RTSEMRW queryInfoSem;
+    RWLockHandle queryInfoSem;
     bool queryInfoRunning : 1;
 
     const Utf8Str strFormat;
@@ -890,9 +890,6 @@ HRESULT Medium::FinalConstruct()
                          sizeof(VDINTERFACETCPNET), &m->vdImageIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
-    vrc = RTSemRWCreate(&m->queryInfoSem);
-    AssertRCReturn(vrc, E_FAIL);
-
     return BaseFinalConstruct();
 }
 
@@ -1370,9 +1367,6 @@ void Medium::uninit()
             deparent();
         }
     }
-
-    RTSemRWDestroy(m->queryInfoSem);
-    m->queryInfoSem = NIL_RTSEMRW;
 
     unconst(m->pVirtualBox) = NULL;
 }
@@ -2007,7 +2001,8 @@ STDMETHODIMP Medium::RefreshState(MediumState_T *aState)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* queryInfo() locks this for writing. */
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 alock(&m->pVirtualBox->getMediaTreeLockHandle(),
+                              this->lockHandle() COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -2095,8 +2090,9 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
     while (m->queryInfoRunning)
     {
         alock.leave();
-        RTSemRWRequestRead(m->queryInfoSem, RT_INDEFINITE_WAIT);
-        RTSemRWReleaseRead(m->queryInfoSem);
+        {
+            AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+        }
         alock.enter();
     }
 
@@ -2202,8 +2198,9 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
     while (m->queryInfoRunning)
     {
         alock.leave();
-        RTSemRWRequestRead(m->queryInfoSem, RT_INDEFINITE_WAIT);
-        RTSemRWReleaseRead(m->queryInfoSem);
+        {
+            AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+        }
         alock.enter();
     }
 
@@ -3760,7 +3757,7 @@ HRESULT Medium::saveSettings(settings::Medium &data,
 /**
  * Constructs a medium lock list for this medium. The lock is not taken.
  *
- * @note Locks the medium tree for reading.
+ * @note Caller must lock the medium tree for writing.
  *
  * @param fFailIfInaccessible If true, this fails with an error if a medium is inaccessible. If false,
  *          inaccessible media are silently skipped and not locked (i.e. their state remains "Inaccessible");
@@ -3774,13 +3771,13 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
                                      Medium *pToBeParent,
                                      MediumLockList &mediumLockList)
 {
+    // Medium::queryInfo needs write lock
+    Assert(m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
-
-    /* we access parent medium objects */
-    AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     /* paranoid sanity checking if the medium has a to-be parent medium */
     if (pToBeParent)
@@ -3796,7 +3793,7 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
     ComObjPtr<Medium> pMedium = this;
     while (!pMedium.isNull())
     {
-        // need write lock for RefreshState if medium is inaccessible
+        // need write lock for queryInfo if medium is inaccessible
         AutoWriteLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
 
         /* Accessibility check must be first, otherwise locking interferes
@@ -3805,9 +3802,10 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
         MediumState_T mediumState = pMedium->getState();
         if (mediumState == MediumState_Inaccessible)
         {
-            rc = pMedium->RefreshState(&mediumState);
+            rc = pMedium->queryInfo(false /* fSetImageId */, false /* fSetParentId */);
             if (FAILED(rc)) return rc;
 
+            mediumState = pMedium->getState();
             if (mediumState == MediumState_Inaccessible)
             {
                 // ignore inaccessible ISO media and silently return S_OK,
@@ -5253,9 +5251,9 @@ HRESULT Medium::cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
  * @note This method may block during a system I/O call that checks storage
  *       accessibility.
  *
- * @note Locks medium tree for reading and writing (for new diff media checked
- *       for the first time). Locks mParent for reading. Locks this object for
- *       writing.
+ * @note Caller must hold medium tree for writing.
+ *
+ * @note Locks mParent for reading. Locks this object for writing.
  *
  * @param fSetImageId Whether to reset the UUID contained in the image file to the UUID in the medium instance data (see SetIDs())
  * @param fSetParentId Whether to reset the parent UUID contained in the image file to the parent UUID in the medium instance data (see SetIDs())
@@ -5263,6 +5261,7 @@ HRESULT Medium::cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
  */
 HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
 {
+    Assert(m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   m->state != MediumState_Created
@@ -5284,9 +5283,9 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         while (m->queryInfoRunning)
         {
             alock.leave();
-            vrc = RTSemRWRequestRead(m->queryInfoSem, RT_INDEFINITE_WAIT);
-            RTSemRWReleaseRead(m->queryInfoSem);
-            AssertRC(vrc);
+            {
+                AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+            }
             alock.enter();
         }
 
@@ -5349,8 +5348,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
      * complete. This is unavoidable since the other order causes a lock order
      * violation: here it would be requesting the object lock (at the beginning
      * of the method), then SemRW, and below the other way round. */
-    vrc = RTSemRWRequestWrite(m->queryInfoSem, RT_INDEFINITE_WAIT);
-    AssertRCReturn(vrc, E_FAIL);
+    AutoWriteLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
 
     try
     {
@@ -5582,7 +5580,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
     }
 
     /* unblock anyone waiting for the queryInfo results */
-    RTSemRWReleaseWrite(m->queryInfoSem);
+    qlock.release();
     m->queryInfoRunning = false;
 
     /* Set the proper state according to the result of the check */

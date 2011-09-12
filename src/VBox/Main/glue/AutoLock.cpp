@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -72,10 +72,11 @@ void InitAutoLockSystem()
         { LOCKCLASS_SNAPSHOTOBJECT,     "6-SNAPSHOTOBJECT" },
         { LOCKCLASS_LISTOFMEDIA,        "7-LISTOFMEDIA" },
         { LOCKCLASS_LISTOFOTHEROBJECTS, "8-LISTOFOTHEROBJECTS" },
-        { LOCKCLASS_OTHEROBJECT,        "9-OTHEROBJECT" },
-        { LOCKCLASS_USBLIST,            "10-USBLIST" },
-        { LOCKCLASS_PROGRESSLIST,       "11-PROGRESSLIST" },
-        { LOCKCLASS_OBJECTSTATE,        "12-OBJECTSTATE" }
+        { LOCKCLASS_MEDIUMQUERY,        "9-MEDIUMQUERY" },
+        { LOCKCLASS_OTHEROBJECT,        "10-OTHEROBJECT" },
+        { LOCKCLASS_USBLIST,            "11-USBLIST" },
+        { LOCKCLASS_PROGRESSLIST,       "12-PROGRESSLIST" },
+        { LOCKCLASS_OBJECTSTATE,        "13-OBJECTSTATE" }
     };
 
     RTLOCKVALCLASS hClass;
