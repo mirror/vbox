@@ -855,7 +855,7 @@ RTDECL(int)   RTSemRWCreateEx(PRTSEMRW phRWSem, uint32_t fFlags,
  *
  * @returns iprt status code.
  * @param   hRWSem              Handle to the read/write semaphore.  NIL is
- *                              quitly ignored (VINF_SUCCESS).
+ *                              quietly ignored (VINF_SUCCESS).
  */
 RTDECL(int)   RTSemRWDestroy(RTSEMRW hRWSem);
 
