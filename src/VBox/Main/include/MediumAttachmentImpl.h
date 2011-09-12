@@ -51,6 +51,7 @@ public:
                  bool fTempEject,
                  bool fNonRotational,
                  const Utf8Str &strBandwidthGroup);
+    HRESULT initCopy(Machine *aParent, MediumAttachment *aThat);
     void uninit();
 
     HRESULT FinalConstruct();
