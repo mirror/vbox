@@ -100,11 +100,11 @@ static void vboxDrvCfgPanic()
 
 /* we do not use IPRT Logging because the lib is used in host installer and needs to
  * post its msgs to MSI logger */
-#define Log(_m)     do { vboxDrvCfgLogRegular _m ; } while (0)
-#define LogFlow(_m) do { vboxDrvCfgLogFlow _m ; } while (0)
-#define LogRel(_m)  do { vboxDrvCfgLogRel _m ; } while (0)
-#define AssertFailed() vboxDrvCfgPanic()
-#define Assert(_m) do { \
+#define NonStandardLogCrap(_m)     do { vboxDrvCfgLogRegular _m ; } while (0)
+#define NonStandardLogFlowCrap(_m) do { vboxDrvCfgLogFlow _m ; } while (0)
+#define NonStandardLogRelCrap(_m)  do { vboxDrvCfgLogRel _m ; } while (0)
+#define NonStandardAssertFailed() vboxDrvCfgPanic()
+#define NonStandardAssert(_m) do { \
         if (RT_UNLIKELY(!(_m))) {  vboxDrvCfgPanic(); } \
     } while (0)
 
@@ -167,7 +167,7 @@ HRESULT VBoxDrvCfgStringList::add(LPWSTR pStr)
 
 HRESULT VBoxDrvCfgStringList::resize(int newSize)
 {
-    Assert(newSize >= mSize);
+    NonStandardAssert(newSize >= mSize);
     if (newSize < mSize)
         return E_FAIL;
     LPWSTR* pOld = maList;
@@ -201,7 +201,7 @@ static HRESULT vboxDrvCfgInfQueryContext(HINF hInf, LPCWSTR lpszSection, LPCWSTR
     if (!SetupFindFirstLineW(hInf, lpszSection, lpszKey, pCtx))
     {
         DWORD winEr = GetLastError();
-        LogRel((__FUNCTION__ ": SetupFindFirstLine failed WinEr (%d) for Section(%S), Key(%S)\n", winEr, lpszSection, lpszKey));
+        NonStandardLogRelCrap((__FUNCTION__ ": SetupFindFirstLine failed WinEr (%d) for Section(%S), Key(%S)\n", winEr, lpszSection, lpszKey));
         return HRESULT_FROM_WIN32(winEr);
     }
     return S_OK;
@@ -215,27 +215,27 @@ static HRESULT vboxDrvCfgInfQueryKeyValue(PINFCONTEXT pCtx, DWORD iValue, LPWSTR
     if (!SetupGetStringFieldW(pCtx, iValue, NULL, 0, &cValue))
     {
         winEr = GetLastError();
-//        Assert(winEr == ERROR_INSUFFICIENT_BUFFER);
+//        NonStandardAssert(winEr == ERROR_INSUFFICIENT_BUFFER);
         if (winEr != ERROR_INSUFFICIENT_BUFFER)
         {
-            LogFlow((__FUNCTION__ ": SetupGetStringField failed WinEr (%d) for iValue(%d)\n", winEr, iValue));
+            NonStandardLogFlowCrap((__FUNCTION__ ": SetupGetStringField failed WinEr (%d) for iValue(%d)\n", winEr, iValue));
             return HRESULT_FROM_WIN32(winEr);
         }
     }
 
     LPWSTR lpszValue = (LPWSTR)malloc(cValue * sizeof (lpszValue[0]));
-    Assert(lpszValue);
+    NonStandardAssert(lpszValue);
     if (!lpszValue)
     {
-        LogRel((__FUNCTION__ ": SetCoTaskMemAlloc failed to alloc mem of size (%d), for iValue(%d)\n", cValue * sizeof (lpszValue[0]), winEr, iValue));
+        NonStandardLogRelCrap((__FUNCTION__ ": SetCoTaskMemAlloc failed to alloc mem of size (%d), for iValue(%d)\n", cValue * sizeof (lpszValue[0]), winEr, iValue));
         return E_FAIL;
     }
 
     if (!SetupGetStringFieldW(pCtx, iValue, lpszValue, cValue, &cValue))
     {
         winEr = GetLastError();
-        LogRel((__FUNCTION__ ": SetupGetStringField failed WinEr (%d) for iValue(%d)\n", winEr, iValue));
-        Assert(0);
+        NonStandardLogRelCrap((__FUNCTION__ ": SetupGetStringField failed WinEr (%d) for iValue(%d)\n", winEr, iValue));
+        NonStandardAssert(0);
         free(lpszValue);
         return HRESULT_FROM_WIN32(winEr);
     }
@@ -262,14 +262,14 @@ static HRESULT vboxDrvCfgInfQueryModelsSectionName(HINF hInf, LPWSTR *lppszValue
     HRESULT hr = vboxDrvCfgInfQueryContext(hInf, L"Manufacturer", NULL, &InfCtx);
     if (hr != S_OK)
     {
-        Log((__FUNCTION__ ": vboxDrvCfgInfQueryContext for Manufacturer failed, hr = (0x%x)\n", hr));
+        NonStandardLogCrap((__FUNCTION__ ": vboxDrvCfgInfQueryContext for Manufacturer failed, hr = (0x%x)\n", hr));
         return hr;
     }
 
     hr = vboxDrvCfgInfQueryKeyValue(&InfCtx, 1, &lpszModels, &cModels);
     if (hr != S_OK)
     {
-        LogRel((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue 1 for Manufacturer failed, hr = (0x%x)\n", hr));
+        NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue 1 for Manufacturer failed, hr = (0x%x)\n", hr));
         return hr;
     }
 
@@ -351,7 +351,7 @@ static HRESULT vboxDrvCfgInfQueryFirstPnPId(HINF hInf, LPWSTR *lppszPnPId)
     HRESULT hr = vboxDrvCfgInfQueryModelsSectionName(hInf, &lpszModels, NULL);
     if (hr != S_OK)
     {
-        Log((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue for Manufacturer failed, hr = (0x%x)\n", hr));
+        NonStandardLogCrap((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue for Manufacturer failed, hr = (0x%x)\n", hr));
         return hr;
     }
 
@@ -359,14 +359,14 @@ static HRESULT vboxDrvCfgInfQueryFirstPnPId(HINF hInf, LPWSTR *lppszPnPId)
     hr = vboxDrvCfgInfQueryContext(hInf, lpszModels, NULL, &InfCtx);
     if (hr != S_OK)
     {
-        LogRel((__FUNCTION__ ": vboxDrvCfgInfQueryContext for models (%S) failed, hr = (0x%x)\n", lpszModels, hr));
+        NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgInfQueryContext for models (%S) failed, hr = (0x%x)\n", lpszModels, hr));
     }
     else
     {
         hr = vboxDrvCfgInfQueryKeyValue(&InfCtx, 2, &lpszPnPId, NULL);
         if (hr != S_OK)
         {
-            LogRel((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue for models (%S) failed, hr = (0x%x)\n", lpszModels, hr));
+            NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue for models (%S) failed, hr = (0x%x)\n", lpszModels, hr));
         }
     }
     /* free models string right away */
@@ -400,7 +400,7 @@ static HRESULT vboxDrvCfgInfCopyEx(IN LPCWSTR lpszInfPath, IN DWORD fCopyStyle, 
         HRESULT hr = HRESULT_FROM_WIN32(winEr);
         if (fCopyStyle != SP_COPY_REPLACEONLY || hr != VBOXDRVCFG_S_INFEXISTS)
         {
-            LogRel((__FUNCTION__ ": SetupCopyOEMInf fail winEr (%d)\n", winEr));
+            NonStandardLogRelCrap((__FUNCTION__ ": SetupCopyOEMInf fail winEr (%d)\n", winEr));
         }
         return hr;
     }
@@ -428,8 +428,8 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstall(IN LPCWSTR lpszInfPath, DWORD fF
         if (!SetupUninstallOEMInfW(DstInfName, fFlags, NULL /*__in PVOID Reserved == NULL */))
         {
             DWORD winEr = GetLastError();
-            LogRel((__FUNCTION__ ": SetupUninstallOEMInf failed for file (%S), oem(%S), winEr (%d)\n", lpszInfPath, DstInfName, winEr));
-            Assert(0);
+            NonStandardLogRelCrap((__FUNCTION__ ": SetupUninstallOEMInf failed for file (%S), oem(%S), winEr (%d)\n", lpszInfPath, DstInfName, winEr));
+            NonStandardAssert(0);
             return HRESULT_FROM_WIN32(winEr);
         }
     }
@@ -481,7 +481,7 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
                         {
                             if (!wcsicmp(pHwId, pPnPId))
                             {
-                                Assert(pDrvDetail->InfFileName[0]);
+                                NonStandardAssert(pDrvDetail->InfFileName[0]);
                                 if (pDrvDetail->InfFileName)
                                 {
                                     list.add(pDrvDetail->InfFileName);
@@ -492,8 +492,8 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
                     else
                     {
                         DWORD winEr = GetLastError();
-                        LogRel((__FUNCTION__": SetupDiGetDriverInfoDetail fail winEr (%d), size(%d)", winEr, dwReq));
-//                        Assert(0);
+                        NonStandardLogRelCrap((__FUNCTION__": SetupDiGetDriverInfoDetail fail winEr (%d), size(%d)", winEr, dwReq));
+//                        NonStandardAssert(0);
                     }
 
                 }
@@ -505,7 +505,7 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
                         break;
                     }
 
-                    Assert(0);
+                    NonStandardAssert(0);
                 }
             }
 
@@ -517,7 +517,7 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
         else
         {
             winEr = GetLastError();
-            Assert(0);
+            NonStandardAssert(0);
         }
 
         SetupDiDestroyDeviceInfoList(hDevInfo);
@@ -525,7 +525,7 @@ static HRESULT vboxDrvCfgCollectInfsSetupDi(const GUID * pGuid, LPCWSTR pPnPId, 
     else
     {
         winEr = GetLastError();
-        Assert(0);
+        NonStandardAssert(0);
     }
 
     return HRESULT_FROM_WIN32(winEr);
@@ -537,7 +537,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInit()
     int rc = RTR3InitDll(0);
     if (rc != VINF_SUCCESS)
     {
-        LogRel(("Could not init IPRT!, rc (%d)\n", rc));
+        NonStandardLogRelCrap(("Could not init IPRT!, rc (%d)\n", rc));
         return E_FAIL;
     }
 
@@ -572,7 +572,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllSetupDi(IN const GUID * pGuidC
                 pRel = pInf;
 
             vboxDrvCfgInfEnumerationCallback(pRel, &Context);
-//            LogRel(("inf : %S\n", list.get(i)));
+//            NonStandardLogRelCrap(("inf : %S\n", list.get(i)));
         }
     }
     return hr;
@@ -603,8 +603,8 @@ static HRESULT vboxDrvCfgEnumFiles(LPCWSTR pPattern, PFNVBOXNETCFG_ENUMERATION_C
                 int winEr = GetLastError();
                 if (winEr != ERROR_NO_MORE_FILES)
                 {
-                    LogRel((__FUNCTION__": FindNextFile fail winEr (%d)\n", winEr));
-                    Assert(0);
+                    NonStandardLogRelCrap((__FUNCTION__": FindNextFile fail winEr (%d)\n", winEr));
+                    NonStandardAssert(0);
                     hr = HRESULT_FROM_WIN32(winEr);
                 }
                 break;
@@ -617,8 +617,8 @@ static HRESULT vboxDrvCfgEnumFiles(LPCWSTR pPattern, PFNVBOXNETCFG_ENUMERATION_C
         int winEr = GetLastError();
         if (winEr != ERROR_NO_MORE_FILES)
         {
-            LogRel((__FUNCTION__": FindFirstFile fail winEr (%d)\n", winEr));
-            Assert(0);
+            NonStandardLogRelCrap((__FUNCTION__": FindFirstFile fail winEr (%d)\n", winEr));
+            NonStandardAssert(0);
             hr = HRESULT_FROM_WIN32(winEr);
         }
     }
@@ -630,16 +630,16 @@ static bool vboxDrvCfgInfEnumerationCallback(LPCWSTR lpszFileName, PVOID pCtxt)
 {
     PINFENUM_CONTEXT pContext = (PINFENUM_CONTEXT)pCtxt;
     DWORD winEr;
-//    LogRel(("vboxDrvCfgInfEnumerationCallback: pFileName (%S)\n", pFileName));
+//    NonStandardLogRelCrap(("vboxDrvCfgInfEnumerationCallback: pFileName (%S)\n", pFileName));
 
     HINF hInf = SetupOpenInfFileW(lpszFileName, pContext->InfInfo.lpszClassName, INF_STYLE_WIN4, NULL /*__in PUINT ErrorLine */);
     if (hInf == INVALID_HANDLE_VALUE)
     {
         winEr = GetLastError();
-//        Assert(winEr == ERROR_CLASS_MISMATCH);
+//        NonStandardAssert(winEr == ERROR_CLASS_MISMATCH);
         if (winEr != ERROR_CLASS_MISMATCH)
         {
-            Log((__FUNCTION__ ": SetupOpenInfFileW err winEr (%d)\n", winEr));
+            NonStandardLogCrap((__FUNCTION__ ": SetupOpenInfFileW err winEr (%d)\n", winEr));
         }
 
         return true;
@@ -657,8 +657,8 @@ static bool vboxDrvCfgInfEnumerationCallback(LPCWSTR lpszFileName, PVOID pCtxt)
                         ))
             {
                 winEr = GetLastError();
-                LogRel((__FUNCTION__ ": SetupUninstallOEMInf failed for file (%S), winEr (%d)\n", lpszFileName, winEr));
-                Assert(0);
+                NonStandardLogRelCrap((__FUNCTION__ ": SetupUninstallOEMInf failed for file (%S), winEr (%d)\n", lpszFileName, winEr));
+                NonStandardAssert(0);
                 hr = HRESULT_FROM_WIN32( winEr );
             }
         }
@@ -667,7 +667,7 @@ static bool vboxDrvCfgInfEnumerationCallback(LPCWSTR lpszFileName, PVOID pCtxt)
     }
     else
     {
-        Log((__FUNCTION__ ": vboxDrvCfgInfQueryFirstPnPId failed, hr = (0x%x)\n", hr));
+        NonStandardLogCrap((__FUNCTION__ ": vboxDrvCfgInfQueryFirstPnPId failed, hr = (0x%x)\n", hr));
     }
 
     SetupCloseInfFile(hInf);
@@ -683,7 +683,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(LPCWSTR lpszClassName, LPCWS
             NULL, /*HANDLE hToken*/
             SHGFP_TYPE_CURRENT, /*DWORD dwFlags*/
             InfDirPath);
-    Assert(hr == S_OK);
+    NonStandardAssert(hr == S_OK);
     if (hr == S_OK)
     {
         wcscat(InfDirPath, L"\\inf\\oem*.inf");
@@ -694,19 +694,19 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgInfUninstallAllF(LPCWSTR lpszClassName, LPCWS
         Context.Flags = Flags;
         Context.hr = S_OK;
         hr = vboxDrvCfgEnumFiles(InfDirPath, vboxDrvCfgInfEnumerationCallback, &Context);
-        Assert(hr == S_OK);
+        NonStandardAssert(hr == S_OK);
         if (hr == S_OK)
         {
             hr = Context.hr;
         }
         else
         {
-            LogRel((__FUNCTION__": vboxDrvCfgEnumFiles failed, hr = (0x%x)\n", hr));
+            NonStandardLogRelCrap((__FUNCTION__": vboxDrvCfgEnumFiles failed, hr = (0x%x)\n", hr));
         }
     }
     else
     {
-        LogRel((__FUNCTION__": SHGetFolderPathW failed, hr = (0x%x)\n", hr));
+        NonStandardLogRelCrap((__FUNCTION__": SHGetFolderPathW failed, hr = (0x%x)\n", hr));
     }
 
     return hr;
@@ -727,7 +727,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgSvcStart(LPCWSTR lpszSvcName)
     if (hMgr == NULL)
     {
         DWORD winEr = GetLastError();
-        LogRel((__FUNCTION__": OpenSCManager failed, winEr (%d)\n", winEr));
+        NonStandardLogRelCrap((__FUNCTION__": OpenSCManager failed, winEr (%d)\n", winEr));
         return HRESULT_FROM_WIN32(winEr);
     }
 
@@ -742,20 +742,20 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgSvcStart(LPCWSTR lpszSvcName)
             if (!fRc)
             {
                 DWORD winEr = GetLastError();
-                LogRel((__FUNCTION__": QueryServiceStatus failed winEr (%d)\n", winEr));
+                NonStandardLogRelCrap((__FUNCTION__": QueryServiceStatus failed winEr (%d)\n", winEr));
                 hr = HRESULT_FROM_WIN32(winEr);
                 break;
             }
 
             if (Status.dwCurrentState != SERVICE_RUNNING && Status.dwCurrentState != SERVICE_START_PENDING)
             {
-                LogRel(("Starting service (%S)\n", lpszSvcName));
+                NonStandardLogRelCrap(("Starting service (%S)\n", lpszSvcName));
 
                 fRc = StartService(hSvc, 0, NULL);
                 if (!fRc)
                 {
                     DWORD winEr = GetLastError();
-                    LogRel((__FUNCTION__": StartService failed winEr (%d)\n", winEr));
+                    NonStandardLogRelCrap((__FUNCTION__": StartService failed winEr (%d)\n", winEr));
                     hr = HRESULT_FROM_WIN32(winEr);
                     break;
                 }
@@ -765,7 +765,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgSvcStart(LPCWSTR lpszSvcName)
             if (!fRc)
             {
                 DWORD winEr = GetLastError();
-                LogRel((__FUNCTION__": QueryServiceStatus failed winEr (%d)\n", winEr));
+                NonStandardLogRelCrap((__FUNCTION__": QueryServiceStatus failed winEr (%d)\n", winEr));
                 hr = HRESULT_FROM_WIN32(winEr);
                 break;
             }
@@ -779,7 +779,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgSvcStart(LPCWSTR lpszSvcName)
                     if (!fRc)
                     {
                         DWORD winEr = GetLastError();
-                        LogRel((__FUNCTION__": QueryServiceStatus failed winEr (%d)\n", winEr));
+                        NonStandardLogRelCrap((__FUNCTION__": QueryServiceStatus failed winEr (%d)\n", winEr));
                         hr = HRESULT_FROM_WIN32(winEr);
                         break;
                     }
@@ -790,7 +790,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgSvcStart(LPCWSTR lpszSvcName)
 
             if (hr != S_OK || Status.dwCurrentState != SERVICE_RUNNING)
             {
-                LogRel((__FUNCTION__": Failed to start the service\n"));
+                NonStandardLogRelCrap((__FUNCTION__": Failed to start the service\n"));
                 hr = E_FAIL;
                 break;
             }
@@ -802,7 +802,7 @@ VBOXDRVCFG_DECL(HRESULT) VBoxDrvCfgSvcStart(LPCWSTR lpszSvcName)
     else
     {
         DWORD winEr = GetLastError();
-        LogRel((__FUNCTION__": OpenServiceW failed, winEr (%d)\n", winEr));
+        NonStandardLogRelCrap((__FUNCTION__": OpenServiceW failed, winEr (%d)\n", winEr));
         hr = HRESULT_FROM_WIN32(winEr);
     }
 
