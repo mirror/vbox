@@ -285,7 +285,8 @@ setup()
     setupxorgconf="true"
     # But not to install the configuration file into xorg.conf.d
     doxorgconfd=""
-    # But without the workaround for SUSE 11.1 not doing input auto-detection
+    # Or to install the udev rule to symlink our kernel event device
+    # to a stable device name
     newmouse=""
     # By default we want to use hal/udev/whatever for auto-loading the mouse driver
     automouse="--autoMouse"
@@ -480,16 +481,22 @@ setup()
                 # Delete the hal cache so that it notices our fdi file
                 rm -r /var/cache/hald/fdi-cache 2> /dev/null
             fi
+        # Install a udev rule for symlinking our event device node to
+        # something stable (dev/input/vboxevent)
+        if test -d /etc/udev/rules.d -a -n "$newmouse"
+        then
+            install -o 0 -g 0 -m 0644 "$share_dir/70-xorg-vboxmouse.rules" /etc/udev/rules.d
+            # Create the /dev/input/vboxevent symlink manually straight
+            # after installation
+            device=`find -L /sys/class/input/event* -name vboxguest \
+                -maxdepth 5 2>/dev/null \
+                | sed 's/.*\(event[0-9]*\).*/\1/'`
+            case "$device" in ?*)
+                ln -sf "$device" /dev/input/vboxevent;;
+            esac
+        fi
         if test -n "$doxorgconfd"
         then
-            if test -d /etc/udev/rules.d
-            then
-                install -o 0 -g 0 -m 0644 "$share_dir/70-xorg-vboxmouse.rules" /etc/udev/rules.d
-                # This is normally silent.  I have purposely not redirected
-                # error output as I want to know if something goes wrong,
-                # particularly if the command syntax ever changes.
-                udevadm trigger --action=change --subsystem-match=misc
-            fi
             test -d /usr/share/X11/xorg.conf.d &&
                 install -o 0 -g 0 -m 0644 "$share_dir/50-vboxmouse.conf" /usr/share/X11/xorg.conf.d
             test -d /usr/lib/X11/xorg.conf.d &&
