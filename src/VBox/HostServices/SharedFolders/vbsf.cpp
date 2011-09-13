@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * Shared Folders:
- * VBox Shared Folders.
+ * Shared Folders - VBox Shared Folders.
  */
 
 /*
@@ -31,11 +30,8 @@
 #include <iprt/uni.h>
 #include <iprt/stream.h>
 #ifdef RT_OS_DARWIN
-#include <Carbon/Carbon.h>
+# include <Carbon/Carbon.h>
 #endif
-
-#undef LogFlow
-#define LogFlow Log
 
 #define SHFL_RT_LINK(pClient) ((pClient)->fu32Flags & SHFL_CF_SYMLINKS ? RTPATH_F_ON_LINK : RTPATH_F_FOLLOW_LINK)
 

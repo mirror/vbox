@@ -27,14 +27,8 @@
 #define __VBOXGUESTLOG__H
 
 #ifndef RT_OS_WINDOWS
-
-/* Since I don't know the background for the stuff below, I prefer not to
-   change it.  I don't need it or want it for backdoor logging inside the
-   Linux Guest Additions kernel modules though. */
-/* Update: bird made this the stance on all non-windows platforms. */
-# include <VBox/log.h>
-
-#else  /* RT_OS_LINUX not defined */
+# error "Don't include this file."
+#else  /* RT_OS_WINDOWS */
 /* Save LOG_ENABLED state, because "VBox/rt/log.h"
  * may undefine it for IN_RING0 code.
  */
@@ -59,6 +53,6 @@
 #  undef __LOG_ENABLED_SAVED__
 # endif
 
-#endif  /* RT_OS_LINUX not defined */
+#endif  /* RT_OS_WINDOWS */
 
-#endif /* __VBOXGUESTLOG__H */
+#endif /* !__VBOXGUESTLOG__H */

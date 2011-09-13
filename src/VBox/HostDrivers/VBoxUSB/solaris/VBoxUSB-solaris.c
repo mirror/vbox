@@ -18,6 +18,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_USB_DRV
+#ifdef DEBUG_ramshankar
+# define LOG_INSTANCE       RTLogRelDefaultInstance()
+#endif
 #include <VBox/version.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -90,15 +94,6 @@
 #define VBOXUSB_URB_QUEUE_SIZE                          64
 /** Maximum asynchronous requests per pipe */
 #define VBOXUSB_MAX_PIPE_ASYNC_REQS                     2
-
-#if defined(DEBUG_ramshankar)
-# undef Log
-# define Log            LogRel
-# undef LogFlow
-# define LogFlow        LogRel
-# undef LogFlowFunc
-# define LogFlowFunc    LogRel
-#endif
 
 /** For enabling global symbols while debugging  **/
 #if defined(DEBUG_ramshankar)

@@ -19,6 +19,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP  LOG_GROUP_USB_DRV
+#ifdef DEBUG_ramshankar
+# define LOG_INSTANCE       RTLogRelDefaultInstance()
+#endif
 #include "VBoxUSBFilterMgr.h"
 #include <VBox/usblib-solaris.h>
 #include <VBox/version.h>
@@ -55,15 +58,6 @@
 #define DEVICE_NAME              "vboxusbmon"
 /** The module description as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV          "VirtualBox USBMon"
-
-#if defined(DEBUG_ramshankar)
-# undef LogFlowFunc
-# define LogFlowFunc    LogRel
-# undef Log
-# define Log            LogRel
-# undef LogFlow
-# define LogFlow        LogRel
-#endif
 
 /*******************************************************************************
 *   Internal Functions                                                         *

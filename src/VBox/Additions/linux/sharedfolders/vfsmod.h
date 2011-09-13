@@ -1,10 +1,9 @@
 /** @file
- *
- * vboxsf -- VirtualBox Guest Additions for Linux
+ * vboxsf - VirtualBox Guest Additions for Linux.
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,9 +17,11 @@
 #ifndef VFSMOD_H
 #define VFSMOD_H
 
+#define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include "the-linux-kernel.h"
 #include "version-generated.h"
 #include "product-generated.h"
+#include <VBox/log.h>
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # include <linux/backing-dev.h>
@@ -154,4 +155,5 @@ int sf_get_volume_info(struct super_block *sb,STRUCT_STATFS *stat);
 # define SET_INODE_INFO(i, sf_i) (i)->u.generic_ip = sf_i
 #endif
 
-#endif /* vfsmod.h */
+#endif
+

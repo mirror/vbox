@@ -19,6 +19,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
+#ifdef DEBUG_ramshankar
+# define LOG_INSTANCE       RTLogRelDefaultInstance()
+#endif
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/intnetinline.h>
@@ -83,15 +86,6 @@
 /** The module descriptions as seen in 'modinfo'. */
 #define DEVICE_DESC_DRV                 "VirtualBox NetDrv"
 #define DEVICE_DESC_MOD                 "VirtualBox NetMod"
-
-#if defined(DEBUG_ramshankar)
-# undef LogFlowFunc
-# define LogFlowFunc            LogRel
-# undef Log
-# define Log                    LogRel
-# undef LogFlow
-# define LogFlow                LogRel
-#endif
 
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
 /** Driver properties */

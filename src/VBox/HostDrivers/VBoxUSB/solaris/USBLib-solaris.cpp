@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifdef DEBUG_ramshankar
+# define LOG_INSTANCE       RTLogRelDefaultInstance()
+#endif
 #include <VBox/usblib.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -39,13 +42,6 @@
 # include <limits.h>
 # include <strings.h>
 
-/** -XXX- Remove this hackery eventually */
-#ifdef DEBUG_ramshankar
-# undef Log
-# undef LogFlow
-# define Log        LogRel
-# define LogFlow    LogRel
-#endif
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *

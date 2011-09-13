@@ -19,6 +19,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_ADP_DRV
+#ifdef DEBUG_ramshankar
+# define LOG_INSTANCE       RTLogRelDefaultInstance()
+#endif
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
@@ -53,15 +56,10 @@
 #define DEVICE_DESC_DRV          "VirtualBox NetAdp"
 #define VBOXNETADP_MTU           1500
 
-#if defined(DEBUG_ramshankar)
-# undef LogFlowFunc
-# define LogFlowFunc        LogRel
-# undef Log
-# define Log                LogRel
-# undef LogFlow
-# define LogFlow            LogRel
-#endif
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
 static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
 

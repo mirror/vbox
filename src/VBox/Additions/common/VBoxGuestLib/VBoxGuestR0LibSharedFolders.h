@@ -52,7 +52,7 @@
 # endif
 #endif
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
 /** @todo remove this legacy and use VBox/log.h and/or iprt/log.h. */
 # ifdef DEBUG
 #  define LOG_ENABLED

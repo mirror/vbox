@@ -70,10 +70,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#ifdef DEBUG_ramshankar
-# undef Log
-# define Log LogRel
-#endif
 #define DBGFLOG_NAME           "DBGFCoreWrite"
 
 
