@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox Miniport common utils header
  */

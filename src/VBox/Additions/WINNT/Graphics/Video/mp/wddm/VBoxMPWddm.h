@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * VBox WDDM Miniport driver
  */
@@ -19,6 +18,12 @@
 #ifndef ___VBoxMPWddm_h___
 #define ___VBoxMPWddm_h___
 
+#ifndef DEBUG_misha
+# ifdef Assert
+#  error "VBoxMPWddm.h must be included first."
+# endif
+# define RT_NO_STRICT
+#endif
 #include "common/VBoxMPUtils.h"
 #include "common/VBoxMPDevExt.h"
 
@@ -27,21 +32,6 @@
 RT_C_DECLS_BEGIN
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath);
 RT_C_DECLS_END
-
-#ifndef DEBUG_misha
-# ifdef Assert
-#  undef Assert
-#  define Assert(_a) do{}while(0)
-# endif
-# ifdef AssertBreakpoint
-#  undef AssertBreakpoint
-#  define AssertBreakpoint() do{}while(0)
-# endif
-# ifdef AssertFailed
-#  undef AssertFailed
-#  define AssertFailed() do{}while(0)
-# endif
-#endif
 
 PVOID vboxWddmMemAlloc(IN SIZE_T cbSize);
 PVOID vboxWddmMemAllocZero(IN SIZE_T cbSize);
@@ -88,3 +78,4 @@ DECLINLINE(VOID) vboxWddmAllocationRetain(PVBOXWDDM_ALLOCATION pAllocation)
 #endif
 
 #endif /* #ifndef ___VBoxMPWddm_h___ */
+
