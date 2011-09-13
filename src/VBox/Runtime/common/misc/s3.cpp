@@ -125,7 +125,6 @@ static char* rtS3HostHeader(const char* pszBucket, const char* pszBaseUrl)
 static char* rtS3DateHeader()
 {
     /* Date header entry */
-#if 0  /** @todo r=bird: Use RTTimeNow(), RTTimeExplode() and RTStrPrintf? */
     RTTIMESPEC TimeSpec;
     RTTIME Time;
     RTTimeExplode(&Time, RTTimeNow(&TimeSpec));
@@ -142,11 +141,6 @@ static char* rtS3DateHeader()
                  Time.u8Hour,
                  Time.u8Minute,
                  Time.u8Second);
-#else
-    time_t tt = time(NULL);
-    char* pszDate = (char*)RTMemAlloc(128);
-    strftime(pszDate, 128, "Date: %a, %d %b %Y %H:%M:%S UTC", gmtime(&tt));
-#endif
 
     return pszDate;
 }
