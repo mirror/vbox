@@ -21,10 +21,13 @@
 #include <iprt/thread.h>
 
 #ifdef VBOX_WITH_DBUS
- #include <VBox/dbus.h>
+# include <VBox/dbus.h>
 #endif
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLib.h>
+#ifdef VBOX_OSE
+# include <VBox/version.h>
+#endif
 
 #include "VBoxClient.h"
 
