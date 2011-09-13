@@ -2224,9 +2224,11 @@ Virtual system 0:
     <screen>VBoxManage convertfromraw   &lt;filename&gt; &lt;outputfile&gt;
                             [--format VDI|VMDK|VHD]
                             [--variant Standard,Fixed,Split2G,Stream,ESX]
+                            [--uuid &lt;uuid&gt;]
 VBoxManage convertfromraw   stdin &lt;outputfile&gt; &lt;bytes&gt;
                             [--format VDI|VMDK|VHD]
-                            [--variant Standard,Fixed,Split2G,Stream,ESX]</screen>
+                            [--variant Standard,Fixed,Split2G,Stream,ESX]
+                            [--uuid &lt;uuid&gt;]</screen>
 
     <para>where the parameters mean:<glosslist>
         <glossentry>
@@ -2246,6 +2248,14 @@ VBoxManage convertfromraw   stdin &lt;outputfile&gt; &lt;bytes&gt;
             It is a comma-separated list of variant flags. Not all
             combinations are supported, and specifying inconsistent flags will
             result in an error message.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>uuid</glossterm>
+
+          <glossdef>
+            <para>Allow to specifiy the UUID of the output file.</para>
           </glossdef>
         </glossentry>
       </glosslist> The second form forces VBoxManage to read the content for
