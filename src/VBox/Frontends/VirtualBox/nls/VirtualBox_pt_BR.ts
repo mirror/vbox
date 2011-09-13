@@ -1256,6 +1256,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -6277,6 +6284,36 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Falha ao salvar o arquivo baixado como &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Baixar</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Instalar</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -6321,6 +6358,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>Baixando a imagem de CD dos Adicionais para Convidado do VirtualBox a partir de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6708,6 +6756,18 @@ demorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu d
         <source>Details</source>
         <comment>summary</comment>
         <translation>Detalhes</translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7512,6 +7572,109 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>Select a file to open...</source>
         <translation>Selecione um arquivo para abrir...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>1 dia</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 dias</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 dias</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 dias</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 dias</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 dias</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>1 semana</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 semanas</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 semanas</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>1 mês</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Nunca</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">Tempo para conexão excedido.</translation>
+    </message>
+    <message>
+        <source>Could not locate the latest version list on the server (response: %1).</source>
+        <translation type="obsolete">Não foi possível localizar a lista com as últimas versões no servidor (resposta: %1).</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">Verificar (&amp;k)</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">Fe&amp;char</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">Assistente de Atualização do VirtualBox</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Verificar por atualizações</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
+&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este assistente irá conectar ao site na web do VirtualBox e verificar se uma versão mais recente do VirtualBox está disponível.&lt;/p&gt;
+&lt;p&gt;Utilize o botão &lt;b&gt;Verificar&lt;/b&gt; para verificar se uma nova versão agora ou o botão &lt;b&gt;Cancelar&lt;/b&gt; se você não deseja realizar esta verificação.&lt;/p&gt;
+&lt;p&gt;Você pode executar este assistente a qualquer momento escolhendo a opção &lt;b&gt;Verificar por Atualizações...&lt;/b&gt; no menu de &lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancelar</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Sumário</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Uma nova versão do VirtualBox foi lançada! A versão &lt;b&gt;%1&lt;/b&gt; está disponível em &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Você pode baixá-la diretamente através deste link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Não foi possível obter informações de versão devido ao seguinte erro de rede:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Você já possui a versão mais recente do VirtualBox. Por favor verifique mais tarde.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este assistente irá conectar-se ao site na web do VirtualBox e verificar se uma versão mais recente do VirtualBox está disponível.&lt;/p&gt;&lt;p&gt;Utilize o botão &lt;b&gt;Verificar&lt;/b&gt; para verificar se uma nova versão agora ou o botão &lt;b&gt;Cancelar&lt;/b&gt; se você não deseja realizar esta verificação.&lt;/p&gt;&lt;p&gt;Você pode executar este assistente a qualquer momento escolhendo a opção &lt;b&gt;Verificar por Atualizações...&lt;/b&gt; no menu de &lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -12760,109 +12923,6 @@ qualquer valor.&lt;/qt&gt;</translation>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Nenhum dispositivo suportado está conectado ao PC hospedeiro</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>1 dia</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 dias</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 dias</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 dias</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 dias</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 dias</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>1 semana</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 semanas</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 semanas</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>1 mês</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Nunca</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">Tempo para conexão excedido.</translation>
-    </message>
-    <message>
-        <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="obsolete">Não foi possível localizar a lista com as últimas versões no servidor (resposta: %1).</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>Verificar (&amp;k)</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>Fe&amp;char</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>Assistente de Atualização do VirtualBox</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Verificar por atualizações</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
-&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Este assistente irá conectar ao site na web do VirtualBox e verificar se uma versão mais recente do VirtualBox está disponível.&lt;/p&gt;
-&lt;p&gt;Utilize o botão &lt;b&gt;Verificar&lt;/b&gt; para verificar se uma nova versão agora ou o botão &lt;b&gt;Cancelar&lt;/b&gt; se você não deseja realizar esta verificação.&lt;/p&gt;
-&lt;p&gt;Você pode executar este assistente a qualquer momento escolhendo a opção &lt;b&gt;Verificar por Atualizações...&lt;/b&gt; no menu de &lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancelar</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Sumário</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Uma nova versão do VirtualBox foi lançada! A versão &lt;b&gt;%1&lt;/b&gt; está disponível em &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Você pode baixá-la diretamente através deste link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Não foi possível obter informações de versão devido ao seguinte erro de rede:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Você já possui a versão mais recente do VirtualBox. Por favor verifique mais tarde.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Este assistente irá conectar-se ao site na web do VirtualBox e verificar se uma versão mais recente do VirtualBox está disponível.&lt;/p&gt;&lt;p&gt;Utilize o botão &lt;b&gt;Verificar&lt;/b&gt; para verificar se uma nova versão agora ou o botão &lt;b&gt;Cancelar&lt;/b&gt; se você não deseja realizar esta verificação.&lt;/p&gt;&lt;p&gt;Você pode executar este assistente a qualquer momento escolhendo a opção &lt;b&gt;Verificar por Atualizações...&lt;/b&gt; no menu de &lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

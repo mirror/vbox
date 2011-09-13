@@ -1088,6 +1088,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -4972,6 +4979,36 @@
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Échec de l&apos;enregistrement du fichier téléchargé &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Téléchargement</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Installer</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -5016,6 +5053,17 @@
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>Téléchargement de l&apos;image CD « Additions invité VirtualBox » de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5191,6 +5239,18 @@
         <source>Size</source>
         <comment>summary</comment>
         <translation>Taille</translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5703,6 +5763,93 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>Select a file to open...</source>
         <translation>Choisissez un fichier pour le texte...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>jours</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 jours</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 jours</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 jours</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 jours</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 jours</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>7 jours</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 semaines</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 semaines</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>mois</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Jamais</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">&amp;Rechercher</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">&amp;Fermer</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">Assistant de mise à jour de VirtualBox</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Chercher des mises à jour</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annuler</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Récapitulatif</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Une nouvelle version de VirtualBox est disponible ! La version &lt;b&gt;%1&lt;/b&gt; est disponible sur &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version en cliquant sur le lien suivant : &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Impossible de rechercher des mises à jour à cause de l&apos;erreur réseau suivante :&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Vous utilisez déjà la version la plus récente de VirtualBox.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Cet assistant va se connecter au site Internet de VirtualBox et vérifier si une mise à jour est disponible.&lt;/p&gt;&lt;p&gt;Cliquez sur &lt;b&gt;Rechercher&lt;/b&gt; pour vérifier maintenant ou bien sur &lt;b&gt;Annuler&lt;/b&gt; si vous ne souhaitez pas effectuer la vérification.&lt;/p&gt;&lt;p&gt;Vous pouvez lancer cet assistant à tout moment en choisissant &lt;b&gt;Chercher des mises à jour&lt;/b&gt; dans le menu &lt;b&gt;Aide&lt;/b&gt;</translation>
     </message>
 </context>
 <context>
@@ -8137,93 +8284,6 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Aucun périphérique supporté n&apos;est connecté à l&apos;ordinateur</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>jours</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 jours</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 jours</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 jours</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 jours</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 jours</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>7 jours</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 semaines</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 semaines</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>mois</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Jamais</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>&amp;Rechercher</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>&amp;Fermer</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>Assistant de mise à jour de VirtualBox</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Chercher des mises à jour</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annuler</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Récapitulatif</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible ! La version &lt;b&gt;%1&lt;/b&gt; est disponible sur &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version en cliquant sur le lien suivant : &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossible de rechercher des mises à jour à cause de l&apos;erreur réseau suivante :&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Vous utilisez déjà la version la plus récente de VirtualBox.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Cet assistant va se connecter au site Internet de VirtualBox et vérifier si une mise à jour est disponible.&lt;/p&gt;&lt;p&gt;Cliquez sur &lt;b&gt;Rechercher&lt;/b&gt; pour vérifier maintenant ou bien sur &lt;b&gt;Annuler&lt;/b&gt; si vous ne souhaitez pas effectuer la vérification.&lt;/p&gt;&lt;p&gt;Vous pouvez lancer cet assistant à tout moment en choisissant &lt;b&gt;Chercher des mises à jour&lt;/b&gt; dans le menu &lt;b&gt;Aide&lt;/b&gt;</translation>
     </message>
 </context>
 <context>

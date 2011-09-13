@@ -1210,6 +1210,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -6209,6 +6216,36 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;No s&apos;ha pogut desar el fitxer baixat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Baixa</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Instal·la</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -6253,6 +6290,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>S&apos;està baixant la imatge de CD del VirtualBox Guest Additions des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6633,6 +6681,18 @@ l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation
         <source>Details</source>
         <comment>summary</comment>
         <translation>Detalls</translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7435,6 +7495,109 @@ pas i connectar discos durs més endavant, fent servir el diàleg de configuraci
     <message>
         <source>Select a file to open...</source>
         <translation>Seleccioneu un fitxer per obrir...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>1 dia</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 dies</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 dies</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 dies</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 dies</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 dies</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>1 setmana</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 setmanes</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 setmanes</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>1 mes</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Mai</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">S&apos;ha excedit el temps d&apos;espera de la connexió.</translation>
+    </message>
+    <message>
+        <source>Could not locate the latest version list on the server (response: %1).</source>
+        <translation type="obsolete">No es pot localitzar el formulari de registre al servidor (resposta: %1).</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">Com&amp;prova</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">Tan&amp;ca</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">Auxiliar d&apos;acutliatzació del VirtualBox</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Comprova si hi ha actualitzacions</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
+&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Aquest assistent connectarà amb el lloc web del VirtualBox i comprovarà si hi ha una versió més nova de VirtualBox.&lt;/p&gt;
+&lt;p&gt;Feu servir el botó &lt;b&gt;Comprova&lt;/b&gt; per comprovar ara si hi ha noves versions o &lt;b&gt;Cancel·la&lt;/b&gt; si no voleu comprovar ara si hi ha noves versions.&lt;/p&gt;
+&lt;p&gt;Podeu iniciar aquest assistent en qualsevol moment seleccionant &lt;b&gt;Comprova si hi ha actualitzacions...&lt;/b&gt; al menú d&apos;&lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Resum</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;b&gt;S&apos;ha publicat una nova versió del VirtualBox! La versió &lt;b&gt;%1&lt;/b&gt; és disponible a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Podeu baixar-la directament des d&apos;aquest enllaç: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;No es pot obtenir informació de noves versions degut a un problema amb la xarxa:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Ja teniu instal·lada la darrera versió del VirtualBox. Proveu novament més tard.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Aquest auxiliar connectarà amb el lloc web del VirtualBox i comprovarà si hi ha una versió més nova del VirtualBox.&lt;p&gt;&lt;/p&gt;Feu servir el botó &lt;b&gt;Comprova&lt;/b&gt; per comprovar ara si hi ha noves versions o &lt;b&gt;Cancel·la&lt;/b&gt; si no voleu comprovar ara si hi ha noves versions. Podeu iniciar aquest auxiliar en qualsevol moment seleccionant &lt;b&gt;Comprova si hi ha actualitzacions...&lt;/b&gt; al menú d&apos;&lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -12479,109 +12642,6 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>No hi ha dispositius suportats connectats a l&apos;ordinador amfitrió</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>1 dia</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 dies</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 dies</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 dies</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 dies</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 dies</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>1 setmana</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 setmanes</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 setmanes</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>1 mes</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Mai</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">S&apos;ha excedit el temps d&apos;espera de la connexió.</translation>
-    </message>
-    <message>
-        <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="obsolete">No es pot localitzar el formulari de registre al servidor (resposta: %1).</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>Com&amp;prova</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>Tan&amp;ca</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>Auxiliar d&apos;acutliatzació del VirtualBox</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Comprova si hi ha actualitzacions</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
-&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Aquest assistent connectarà amb el lloc web del VirtualBox i comprovarà si hi ha una versió més nova de VirtualBox.&lt;/p&gt;
-&lt;p&gt;Feu servir el botó &lt;b&gt;Comprova&lt;/b&gt; per comprovar ara si hi ha noves versions o &lt;b&gt;Cancel·la&lt;/b&gt; si no voleu comprovar ara si hi ha noves versions.&lt;/p&gt;
-&lt;p&gt;Podeu iniciar aquest assistent en qualsevol moment seleccionant &lt;b&gt;Comprova si hi ha actualitzacions...&lt;/b&gt; al menú d&apos;&lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancel·la</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Resum</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;b&gt;S&apos;ha publicat una nova versió del VirtualBox! La versió &lt;b&gt;%1&lt;/b&gt; és disponible a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Podeu baixar-la directament des d&apos;aquest enllaç: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot obtenir informació de noves versions degut a un problema amb la xarxa:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Ja teniu instal·lada la darrera versió del VirtualBox. Proveu novament més tard.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Aquest auxiliar connectarà amb el lloc web del VirtualBox i comprovarà si hi ha una versió més nova del VirtualBox.&lt;p&gt;&lt;/p&gt;Feu servir el botó &lt;b&gt;Comprova&lt;/b&gt; per comprovar ara si hi ha noves versions o &lt;b&gt;Cancel·la&lt;/b&gt; si no voleu comprovar ara si hi ha noves versions. Podeu iniciar aquest auxiliar en qualsevol moment seleccionant &lt;b&gt;Comprova si hi ha actualitzacions...&lt;/b&gt; al menú d&apos;&lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

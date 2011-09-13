@@ -1173,6 +1173,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -6033,6 +6040,36 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="unfinished">&lt;p&gt;Selhalo ukládání staženého souboru jako &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Stáhnout</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Instalovat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -6076,6 +6113,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6439,6 +6487,18 @@ jako velikost virtuálního pevného disku.&lt;/p&gt;</translation>
     <message>
         <source>Details</source>
         <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7217,6 +7277,109 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     <message>
         <source>Select a file to open...</source>
         <translation>Vyberte soubor pro načtení...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>den</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 dny</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 dny</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 dny</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 dní</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 dní</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>týden</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 týdny</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 týdny</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>měsíc</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Nikdy</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">Spojení vypršelo.</translation>
+    </message>
+    <message>
+        <source>Could not locate the latest version list on the server (response: %1).</source>
+        <translation type="obsolete">Na serveru nelze nalézt informace o poslední verzi (odpověď: %1).</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">Z&amp;kontrolovat</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">&amp;Zavřít</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">Průvodce aktualizací</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Zkontroluje aktualizace</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
+&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Průvodce se připojí na web VirtualBoxu a pokusí se zjistit, zda je dostupná nová verze aplikace.&lt;/p&gt;
+&lt;p&gt;Použijte tlačítko &lt;b&gt;Zkontrolovat&lt;/b&gt; pro kontrolu nové verze nebo klepněte na tlačítko &lt;b&gt;Zrušit&lt;/b&gt;.
+&lt;p&gt;Tohoto průvodce můžete spustit kdykoliv zvolením &lt;b&gt;Zkontrolovat aktualizace...&lt;/b&gt; z nabídky &lt;b&gt;Nápověda&lt;b/&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Zrušit</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Shrnutí</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Byla vydána nová verze aplikace VirtualBox! Na stránce &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; je verze &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tuto verzi si můžete stáhnout přímo zde: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nelze získat informace o nové verzi z důvodu následující síťové chyby: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Máte nainstalovanou aktuální verzi VirtualBoxu. Prosím proveďte kontrolu verze později.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Průvodce se připojí na web VirtualBoxu a pokusí se zjistit, zda je dostupná nová verze aplikace.&lt;/p&gt;&lt;p&gt;Použijte tlačítko &lt;b&gt;Zkontrolovat&lt;/b&gt; pro kontrolu nové verze nebo klepněte na tlačítko &lt;b&gt;Zrušit&lt;/b&gt;.&lt;p&gt;Tohoto průvodce můžete spustit kdykoliv zvolením &lt;b&gt;Zkontrolovat aktualizace...&lt;/b&gt; z nabídky &lt;b&gt;Nápověda&lt;b/&gt;</translation>
     </message>
 </context>
 <context>
@@ -11832,109 +11995,6 @@ hodnotu.&lt;/qt&gt;</translation>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>K hostitelskému PC není připojeno žádné podporované zařízení</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>den</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 dny</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 dny</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 dny</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 dní</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 dní</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>týden</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 týdny</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 týdny</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>měsíc</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Nikdy</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">Spojení vypršelo.</translation>
-    </message>
-    <message>
-        <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="obsolete">Na serveru nelze nalézt informace o poslední verzi (odpověď: %1).</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>Z&amp;kontrolovat</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>&amp;Zavřít</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>Průvodce aktualizací</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Zkontroluje aktualizace</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
-&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Průvodce se připojí na web VirtualBoxu a pokusí se zjistit, zda je dostupná nová verze aplikace.&lt;/p&gt;
-&lt;p&gt;Použijte tlačítko &lt;b&gt;Zkontrolovat&lt;/b&gt; pro kontrolu nové verze nebo klepněte na tlačítko &lt;b&gt;Zrušit&lt;/b&gt;.
-&lt;p&gt;Tohoto průvodce můžete spustit kdykoliv zvolením &lt;b&gt;Zkontrolovat aktualizace...&lt;/b&gt; z nabídky &lt;b&gt;Nápověda&lt;b/&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Zrušit</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Shrnutí</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Byla vydána nová verze aplikace VirtualBox! Na stránce &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; je verze &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tuto verzi si můžete stáhnout přímo zde: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze získat informace o nové verzi z důvodu následující síťové chyby: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Máte nainstalovanou aktuální verzi VirtualBoxu. Prosím proveďte kontrolu verze později.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Průvodce se připojí na web VirtualBoxu a pokusí se zjistit, zda je dostupná nová verze aplikace.&lt;/p&gt;&lt;p&gt;Použijte tlačítko &lt;b&gt;Zkontrolovat&lt;/b&gt; pro kontrolu nové verze nebo klepněte na tlačítko &lt;b&gt;Zrušit&lt;/b&gt;.&lt;p&gt;Tohoto průvodce můžete spustit kdykoliv zvolením &lt;b&gt;Zkontrolovat aktualizace...&lt;/b&gt; z nabídky &lt;b&gt;Nápověda&lt;b/&gt;</translation>
     </message>
 </context>
 <context>

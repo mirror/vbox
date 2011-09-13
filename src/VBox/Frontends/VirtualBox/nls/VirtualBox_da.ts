@@ -1137,6 +1137,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -5578,6 +5585,36 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Kunne ikke gemme den hentede fil som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Hent</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Installér</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -5622,6 +5659,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>Henter CD-aftrykket med VirtualBox Gæstetilføjelser fra &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5887,6 +5935,18 @@ p, li { white-space: pre-wrap; }
         <source>Details</source>
         <comment>summary</comment>
         <translation>Detaljer</translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6577,6 +6637,93 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Select a file to open...</source>
         <translation>Vælg filen, der skal åbnes...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>1 dag</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 dage</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 dage</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 dage</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 dage</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 dage</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>1 uge</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 uger</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 uger</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>1 måned</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Aldrig</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">&amp;Søg</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">Luk</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">VirtualBox opdateringsguide</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Søg efter opdateringer</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Annullér</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Oversigt</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Der er frigivet en ny version af VirtualBox! Version &lt;b&gt;%1&lt;/b&gt; er tilgængelig fra &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Du kan hente den nye version her:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Kunne ikke søge efter opdateringer på grund af netværksfejlen:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Du har allerede den nyeste version af VirtualBox. Søg efter opdateringer igen en anden dag.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Denne guide vil forbinde sig til VirtualBox&apos; hjemmeside for at søge efter en opdateret udgave af VirtualBox.&lt;/p&gt;&lt;p&gt;Klik på &lt;b&gt;Søg&lt;/b&gt; for at søge efter opdateringer eller &lt;b&gt;Annullér&lt;/b&gt; hvis du vil afbryde.&lt;/p&gt;&lt;p&gt;Du kan starte denne guide når som helst ved at vælge &lt;b&gt;Søg efter opdateringer...&lt;/b&gt; fra menuen &lt;b&gt;Hjælp&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -9834,93 +9981,6 @@ p, li { white-space: pre-wrap; }
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Ingen understøttede enheder forbundet til værtsmaskinen</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>1 dag</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 dage</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 dage</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 dage</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 dage</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 dage</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>1 uge</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 uger</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 uger</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>1 måned</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Aldrig</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>&amp;Søg</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>Luk</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>VirtualBox opdateringsguide</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Søg efter opdateringer</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annullér</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Oversigt</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Der er frigivet en ny version af VirtualBox! Version &lt;b&gt;%1&lt;/b&gt; er tilgængelig fra &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Du kan hente den nye version her:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kunne ikke søge efter opdateringer på grund af netværksfejlen:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Du har allerede den nyeste version af VirtualBox. Søg efter opdateringer igen en anden dag.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Denne guide vil forbinde sig til VirtualBox&apos; hjemmeside for at søge efter en opdateret udgave af VirtualBox.&lt;/p&gt;&lt;p&gt;Klik på &lt;b&gt;Søg&lt;/b&gt; for at søge efter opdateringer eller &lt;b&gt;Annullér&lt;/b&gt; hvis du vil afbryde.&lt;/p&gt;&lt;p&gt;Du kan starte denne guide når som helst ved at vælge &lt;b&gt;Søg efter opdateringer...&lt;/b&gt; fra menuen &lt;b&gt;Hjælp&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
