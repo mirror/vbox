@@ -125,9 +125,28 @@ static char* rtS3HostHeader(const char* pszBucket, const char* pszBaseUrl)
 static char* rtS3DateHeader()
 {
     /* Date header entry */
+#if 0  /** @todo r=bird: Use RTTimeNow(), RTTimeExplode() and RTStrPrintf? */
+    RTTIMESPEC TimeSpec;
+    RTTIME Time;
+    RTTimeExplode(&Time, RTTimeNow(&TimeSpec));
+
+    static const char s_apszDayNms[7][4] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+    static const char s_apszMonthNms[1+12][4] =
+    { "???", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    char *pszDate;
+    RTStrAPrintf(&pszDate, "Date: %s, %02u %s %04d %02u:%02u:%02u UTC",
+                 s_apszDayNms[Time.u8WeekDay],
+                 Time.u8MonthDay,
+                 s_apszMonthNms[Time.u8Month],
+                 Time.i32Year,
+                 Time.u8Hour,
+                 Time.u8Minute,
+                 Time.u8Second);
+#else
     time_t tt = time(NULL);
     char* pszDate = (char*)RTMemAlloc(128);
     strftime(pszDate, 128, "Date: %a, %d %b %Y %H:%M:%S UTC", gmtime(&tt));
+#endif
 
     return pszDate;
 }
