@@ -193,11 +193,11 @@
     </message>
     <message>
         <source>Copy all errors to the clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Копирати све грешке у остави</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Копирај</translation>
+        <translation>Копирај</translation>
     </message>
 </context>
 <context>
@@ -639,7 +639,7 @@
     </message>
     <message>
         <source>Linked Base for %1 and %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Линкована база за %1 и %2</translation>
     </message>
 </context>
 <context>
@@ -670,7 +670,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ако унето, нова MAC адреса ће бити постављена свим картицама.</translation>
     </message>
 </context>
 <context>
@@ -709,54 +709,54 @@
     </message>
     <message>
         <source>Full Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Цео клон</translation>
     </message>
     <message>
         <source>Linked Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Линкован клон</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Одабрати тип клона.&lt;/p&gt;&lt;p&gt;Ако изаберете &lt;b&gt;Цео клон&lt;/b&gt; додатна копија (и вируалне слике) оригиналне машине ће бити креирана. Ако одаберете &lt;b&gt;Линкован клон&lt;/b&gt;, нова машина ће бити креирана, али виртуалне слике ће показивати на слике оригиналне машине.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Нова слика у изворној машини ће бити креирана ако одаберете &lt;b&gt;Линкован клон&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished">Актуелни статус машине</translation>
+        <translation>Актуелни статус машине</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished">Статус актуелне машине и деце</translation>
+        <translation>Статус актуелне машине и деце</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished">Сви статуси</translation>
+        <translation>Сви статуси</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished">Подешавање клонирања</translation>
+        <translation>Подешавање клонирања</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished">Одаберите шта треба да се клонира.</translation>
+        <translation>Одаберите шта треба да се клонира.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished">Ако одаберете &lt;b&gt;Актуелни статус машине&lt;/b&gt;, само ће актуелни статус да буде клониран.</translation>
+        <translation>Ако одаберете &lt;b&gt;Актуелни статус машине&lt;/b&gt;, само ће актуелни статус да буде клониран.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished">Ако одаберете &lt;b&gt;Статус актуелне машине и деце&lt;/b&gt; клонирано је актуелни статус машине и статус снимака деце.</translation>
+        <translation>Ако одаберете &lt;b&gt;Статус актуелне машине и деце&lt;/b&gt; клонирано је актуелни статус машине и статус снимака деце.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished">Ако одаберете &lt;b&gt;Сви статуси&lt;/b&gt;,актуелна машина и све слике су клониране.</translation>
+        <translation>Ако одаберете &lt;b&gt;Сви статуси&lt;/b&gt;,актуелна машина и све слике су клониране.</translation>
     </message>
 </context>
 <context>
@@ -2194,23 +2194,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished">Леви шифт</translation>
+        <translation>Леви шифт</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished">Десни шифт</translation>
+        <translation>Десни шифт</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished">Леви Ctrl</translation>
+        <translation>Леви Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished">Десни Ctrl</translation>
+        <translation>Десни Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished">Леви Alt</translation>
+        <translation>Леви Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -4160,7 +4160,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>поставили сте ICH9 чипсет овој машини. Неће лепо радити док се не упали IO-APIC способност. То ће аутоматско да се уради када прихватите подешавања преко дугмета У реду.</translation>
     </message>
 </context>
 <context>
@@ -5653,11 +5653,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не могу да нађен снимак &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Неуспешно сачувавање датотеке као &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неуспешно сачувавање датотеке као &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5698,11 +5698,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished"></translation>
+        <translation>Зауставити преузимање &apos;додатка госта&apos;</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Преузимање &apos;додатка госта&apos; од &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>

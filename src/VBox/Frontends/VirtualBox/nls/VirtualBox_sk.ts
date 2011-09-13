@@ -109,7 +109,7 @@
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ovládač Linuxového jadra pre VirtualBox (vboxdrv) buď nie je načítaný alebo je problém s právami na /dev/vboxdrv. Prosím, preinštalujte modul jadra spustením&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;ako užívateľ root. Užívatelia Ubuntu, Fedory alebo Mandrivy by mali najprv nainštalovať balíček DKMS. Tento balíček sleduje zmeny Linuxového jadra a prekompiluje modul jadra vboxdrv, ak je to potrebné.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
@@ -137,7 +137,7 @@
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Moduly jadra VirtualBoxu nekorešpondujú s touto verziou VirtualBoxu. Inštalácia VirtualBoxu pravdepodobne nebola úspešná. Spustenie&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;by to malo napraviť. Uistite sa, že nemiešate OSE verziu a PUEL verziu VirtualBoxu.</translation>
     </message>
     <message>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
@@ -230,11 +230,11 @@
     </message>
     <message>
         <source>Copy all errors to the clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Skopírovať všetky chyby do schránky</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Skopírovať</translation>
     </message>
 </context>
 <context>
@@ -296,7 +296,7 @@
     </message>
     <message>
         <source>Auto-resize &amp;Guest Display</source>
-        <translation type="unfinished">Automatická zmena veľkosti &amp;hosťovskej obrazovky</translation>
+        <translation>Automatická zmena veľkosti &amp;obrazovky hosťa</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
@@ -487,52 +487,52 @@
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Povoliť vzdialené pripojenie k desktopu (RDP) tohto stroja</translation>
     </message>
     <message>
         <source>Enable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>Povoliť &amp;logovanie...</translation>
     </message>
     <message>
         <source>Switch to &amp;Fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>P&amp;repnúť na celú obrazovku</translation>
     </message>
     <message>
         <source>Switch between normal and fullscreen mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Prepnúť medzi normálnym zobrazením a celou obrazovkou</translation>
     </message>
     <message>
         <source>Switch to Seam&amp;less Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Prepnúť do &amp;bezošvého režimu</translation>
     </message>
     <message>
         <source>Switch between normal and seamless desktop integration mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Prepínať medzi normálnym zobrazením a režimom bezošvej integrácie desktopu</translation>
     </message>
     <message>
         <source>Switch to &amp;Scale Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Prepnúť do rež&amp;imu škálovania</translation>
     </message>
     <message>
         <source>Switch between normal and scale mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Prepnúť medzi normálnym režimom a režimom škálovania</translation>
     </message>
     <message>
         <source>Enable R&amp;emote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Po&amp;voliť vzdialené zobrazenie</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation type="unfinished">&amp;Nastavenia...</translation>
+        <translation>&amp;Nastavenia...</translation>
     </message>
     <message>
         <source>Manage the virtual machine settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Riadiť nastavenia virtuálneho stroja</translation>
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation type="unfinished"></translation>
+        <translation>I&amp;nformácie o sedení...</translation>
     </message>
 </context>
 <context>
@@ -653,37 +653,37 @@
     </message>
     <message>
         <source>Hard Disk Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ovládač pevného disku (SAS)</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keď je zaškrtnuté, všetkým nakonfigurovaným sieťovým kartám bude priradená unikátna MAC adresa.</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Reinicializovať MAC adresu všetkých sieťových kariet</translation>
     </message>
 </context>
 <context>
     <name>UIApplianceImportEditorWidget</name>
     <message>
         <source>Importing Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Importujem appliance...</translation>
     </message>
     <message>
         <source>Reading Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Čítam appliance...</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizard</name>
     <message>
         <source>Clone a virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Klonovať virtuálny stroj</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Klonovať</translation>
     </message>
     <message>
         <source>Linked Base for %1 and %2</source>
@@ -694,46 +694,46 @@
     <name>UICloneVMWizardPage1</name>
     <message>
         <source>&lt;p&gt;This wizard will help you to create a clone of your virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tento sprievodca vám pomôže pri klonovaní virtuálenho stroja.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine:&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Zadajte prosím meno nového virtuálneho stroja:&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Reinitialize the MAC address of all network cards</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Reinicializovať MAC adresu všetkých sieťových kariet</translation>
     </message>
     <message>
         <source>Welcome to the virtual machine clone wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Vitajte v sprievodcovi klonovania virtuálneho stroja</translation>
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 klonovať</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keď je zaškrtnuté, všetkým nakonfigurovaným sieťovým kartám bude priradená unikátna MAC adresa.</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage2</name>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurácia klonovania</translation>
     </message>
     <message>
         <source>Full Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Plný klon</translation>
     </message>
     <message>
         <source>Linked Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Prepojený klon</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vyberte, prosím, typ klonu.&lt;/p&gt;&lt;p&gt;Ak vyberiete &lt;p&gt;Plný klon&lt;/b&gt; bude vytvorená presná kópia pôvodného virtuálneho stroja (vrátane všetkých obrazov virtuálnych diskov). Ak vyberiete &lt;b&gt;Prepojený klon&lt;/b&gt;, bude vytvorený nový virtuálny stroj, ale obrazy virtuálnych diskov budú odkazovať na pôvodný virtuálny stroj.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
@@ -744,50 +744,50 @@
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktuálny stav stroja</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktuálny stav stroja a všetkých jeho potomkov</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished"></translation>
+        <translation>Všetky stavy</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurácia klonovania</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prosím, vyberte ktoré časti virtuálneho stroja majú byť naklonované.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak vyberiete &lt;b&gt;Aktuálny stav stroja&lt;/b&gt;, bude naklonovaný len aktuálny stav virtuálneho stroja.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak vyberiete &lt;b&gt;Aktuálny stav stroja a všetkých jeho potomkov&lt;/b&gt;, bude naklonovaný aktuálny stav virtuálneho stroja a akékoľvek stavy snímkov jeho potomkov.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak vyberiete &lt;b&gt;Všetky stavy&lt;/b&gt;, bude naklonovaný aktuálny stav virtuálneho stroja a všetky jeho snímky.</translation>
     </message>
 </context>
 <context>
     <name>UIDescriptionPagePrivate</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation type="unfinished">Bez popisu. Stlačte tlačidlo Upraviť a pridajte ho.</translation>
+        <translation>Bez popisu. Stlačte tlačidlo Upraviť a pridajte ho.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation type="unfinished">Upraviť</translation>
+        <translation>Upraviť</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation type="unfinished">Upraviť (Ctrl+E)</translation>
+        <translation>Upraviť (Ctrl+E)</translation>
     </message>
 </context>
 <context>
@@ -795,270 +795,270 @@
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation type="unfinished">Názov</translation>
+        <translation>Názov</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation type="unfinished">Typ OS</translation>
+        <translation>Typ OS</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished">Základná pamäť</translation>
+        <translation>Základná pamäť</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Procesory</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation type="unfinished">Poradie bootovania</translation>
+        <translation>Poradie bootovania</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation type="unfinished">ACPI</translation>
+        <translation>ACPI</translation>
     </message>
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished">IO APIC</translation>
+        <translation>IO APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished">VT-x/AMD-V</translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation type="unfinished">Priamy prístup k hardware</translation>
+        <translation>Priamy prístup k hardware</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished">PAE/NX</translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Akcelerácia</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation type="unfinished">Videopamäť</translation>
+        <translation>Videopamäť</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Obrazovky</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>2D video</translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details report</comment>
-        <translation type="unfinished">3D</translation>
+        <translation>3D</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Port pre RDS (Remote Display Server)</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Server Vzdialenej plochy (RDP)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnuté</translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation type="unfinished">(CD/DVD)</translation>
+        <translation>(CD/DVD)</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details report (Storage)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nepripojený</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">Zariadenie hostiteľa</translation>
+        <translation>Ovládač hostiteľa</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">Radič</translation>
+        <translation>Radič</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnutý</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Karta použítá v sieťovom moste, %1</translation>
+        <translation>Karta použitá v sieťovom moste, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Interná sieť, &apos;%1&apos;</translation>
+        <translation>Interná sieť, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Karta pre sieť iba medzi hostiteľom a hosťom, &apos;%1&apos;</translation>
+        <translation>Karta pre sieť iba medzi hostiteľom a hosťom, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished">Adaptér %1</translation>
+        <translation>Adaptér %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnutá</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnuté</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnuté</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">Filtre zariadení</translation>
+        <translation>Filtre zariadení</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished">%1 (%2 aktívnych)</translation>
+        <translation>%1 (%2 aktívnych)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnuté</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished">Zdieľané priečinky</translation>
+        <translation>Zdieľané priečinky</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (shared folders)</comment>
-        <translation type="unfinished">Žiadne</translation>
+        <translation>Žiadne</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (description)</comment>
-        <translation type="unfinished">Žiadne</translation>
+        <translation>Žiadne</translation>
     </message>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation type="unfinished">Vybraný virtuálny stroj nie je &lt;i&gt;dostupný&lt;/i&gt;. Prosím, prečítajte si chybovú hlášku nižšie a stlačte tlačidlo &lt;b&gt;Obnoviť&lt;/b&gt;, ak chcete znovu spustiť kontrolu dostupnosti:</translation>
+        <translation>Vybraný virtuálny stroj je &lt;i&gt;nedostupný&lt;/i&gt;. Prosím, prečítajte si chybovú hlášku zobrazenú nižšie a stlačte tlačidlo &lt;b&gt;Obnoviť&lt;/b&gt;, ak chcete znovu spustiť kontrolu dostupnosti:</translation>
     </message>
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation type="unfinished">Všeobecné</translation>
+        <translation>Všeobecné</translation>
     </message>
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished">Systém</translation>
+        <translation>Systém</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Náhľad</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished">Displej</translation>
+        <translation>Displej</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>details report</comment>
-        <translation type="unfinished">Úložisko</translation>
+        <translation>Úložisko</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>details report</comment>
-        <translation type="unfinished">Audio</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sieť</translation>
+        <translation>Sieť</translation>
     </message>
     <message>
         <source>Serial Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Sériové porty</translation>
+        <translation>Sériové porty</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation type="unfinished">Paralelné porty</translation>
+        <translation>Paralelné porty</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation type="unfinished">Zdieľané priečinky</translation>
+        <translation>Zdieľané priečinky</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>details report</comment>
-        <translation type="unfinished">Popis</translation>
+        <translation>Popis</translation>
     </message>
     <message>
         <source>Execution Cap</source>
@@ -1068,7 +1068,7 @@
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
@@ -1242,7 +1242,7 @@
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportovať</translation>
     </message>
 </context>
 <context>
@@ -1268,19 +1268,19 @@
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished">Zadajte, prosím, cieľ pre export OVF. Môžete si vybrať medzi lokálnym súborovým systémom, nahraním OVF na Sun Cloud alebo použitím služby S3 pre ukladanie.</translation>
+        <translation>Zadajte, prosím, cieľ pre export OVF. Môžete si vybrať medzi lokálnym súborovým systémom, nahraním OVF do služby Sun Cloud alebo použitím služby S3 pre ukladanie.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished">&amp;Miestny súborový systém </translation>
+        <translation>&amp;Miestny súborový systém </translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished">Sun &amp;Cloud</translation>
+        <translation>Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished">&amp;Jednoduchý systém na ukladanie (S3)</translation>
+        <translation>&amp;Jednoduchý systém na ukladanie (S3)</translation>
     </message>
 </context>
 <context>
@@ -1307,55 +1307,55 @@
     </message>
     <message>
         <source>&amp;Username:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Meno používateľa:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished">&amp;Heslo:</translation>
+        <translation>&amp;Heslo:</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hostiteľ:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished">&amp;Sektor:</translation>
+        <translation>&amp;Sektor:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation type="unfinished">&amp;Súbor:</translation>
+        <translation>&amp;Súbor:</translation>
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished">Uložiť v staršom formáte OVF 0.9 kvôli kompatibilite so staršími virtualizačnými produktami.</translation>
+        <translation>Uložiť v staršom formáte OVF 0.9 kvôli kompatibilite so staršími virtualizačnými produktami.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished">&amp;Uložiť vo formáte OVF 0.9</translation>
+        <translation>&amp;Uložiť vo formáte OVF 0.9</translation>
     </message>
     <message>
         <source>Create a Manifest file for automatic data integrity checks on import.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vytvoriť súbor manifest pre automatickú kontrolu integrity pri importe.</translation>
     </message>
     <message>
         <source>Write &amp;Manifest file</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapísať súbor &amp;manifest</translation>
     </message>
     <message>
         <source>Appliance</source>
-        <translation type="unfinished">Appliance</translation>
+        <translation>Appliance</translation>
     </message>
     <message>
         <source>Select a file to export into</source>
-        <translation type="unfinished">Vyberte súbor pre export</translation>
+        <translation>Vyberte súbor pre export</translation>
     </message>
     <message>
         <source>Open Virtualization Format Archive (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Open Virtualization Format Archive (%1)</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
-        <translation type="unfinished">Formát Open Virtualization Format (%1)</translation>
+        <translation>Formát Open Virtualization Format (%1)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF/OVA to. If you use an &lt;i&gt;ova&lt;/i&gt; file name extension, then all the files will be combined into one Open Virtualization Format Archive. If you use an &lt;i&gt;ovf&lt;/i&gt; extension, several files will be written separately. Other extensions are not allowed.</source>
@@ -1567,7 +1567,7 @@
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished">Spustiť</translation>
+        <translation>Spustiť</translation>
     </message>
 </context>
 <context>
@@ -1645,43 +1645,43 @@
     <name>UIGlobalSettingsExtension</name>
     <message>
         <source>&amp;Extension Packages:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Balíčky s rozšíreniami:</translation>
     </message>
     <message>
         <source>Lists all installed packages.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazí všetky nainštalované balíčky.</translation>
     </message>
     <message>
         <source>Active</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktívne</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Názov</translation>
+        <translation>Názov</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation type="unfinished">Verzia</translation>
+        <translation>Verzia</translation>
     </message>
     <message>
         <source>Add package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridať balíček</translation>
     </message>
     <message>
         <source>Remove package</source>
-        <translation type="unfinished"></translation>
+        <translation>Odstrániť balíček</translation>
     </message>
     <message>
         <source>Select an extension package file</source>
-        <translation type="unfinished"></translation>
+        <translation>Vyberte balíček s rozšíreniami</translation>
     </message>
     <message>
         <source>Extension package files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Súbory balíčkov s rozšíreniami (%1)</translation>
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozšírenia</translation>
     </message>
 </context>
 <context>
@@ -1732,42 +1732,42 @@
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Automaticky zobraziť spodnú lištu a menu v režime na celú obrazovku</translation>
     </message>
     <message>
         <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keď je zaškrtnuté, šetriš obrazovky hostiteľa bude vypnutý vždy, ak beží virtuálny stroj.</translation>
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
-        <translation type="unfinished"></translation>
+        <translation>Vypnúť š&amp;etrič obrazovky hostiteľa</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation type="unfinished">Hostiteľský &amp;kláves:</translation>
+        <translation>Hostiteľský &amp;kláves:</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazí kláves, ktorý sa používa ako Hostiteľský kláves v okne VS. Aktivujte pole a stlačte nový Hostiteľský kláves. Všimnite si, že alfanumerické znaky, klávesy na pohyb kurzora a na úpravu sa nedajú použiť ako Hostiteľské klávesy.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak je voľba zaškrtnutá, klávesnica bude automaticky zachytená pri aktivácii okna virtuálneho stroja. Keď je klávesnica zachytená, všetky klávesy (vrátane systémových ako je Alt-Tab) sú presmerované do virtuálneho stroja.</translation>
     </message>
     <message>
         <source>&amp;Auto Capture Keyboard</source>
-        <translation type="unfinished">&amp;Automaticky zachytávať klávesnicu</translation>
+        <translation>&amp;Automaticky zachytávať klávesnicu</translation>
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation type="unfinished"></translation>
+        <translation>Resetovať klávesovú kombináciu hostiteľa</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Resetuje klávesovú kombináciu používanú ako hostiteľskú kombináciu v okne virtuálneho stroja.</translation>
     </message>
 </context>
 <context>
@@ -1971,7 +1971,7 @@
     </message>
     <message>
         <source>Networking</source>
-        <translation type="unfinished"></translation>
+        <translation>Sieť</translation>
     </message>
 </context>
 <context>
@@ -2054,70 +2054,70 @@
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation>&amp;Spodná hranica pre adresu:</translation>
+        <translation>&amp;Spodná hranica pre adresy:</translation>
     </message>
     <message>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazí spodnú hranicu pre adresy obsluhované DHCP serverom v sieti, ktoré sú priradené pre tento adaptér v sieti hostiteľa.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation>&amp;Horná hranica pre adresu:</translation>
+        <translation>&amp;Horná hranica pre adresy:</translation>
     </message>
     <message>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazí hornú hranicu pre adresy obsluhované DHCP serverom v sieti, ktoré sú priradené pre tento adaptér v sieti hostiteľa.</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalSettingsProxy</name>
     <message>
         <source>When checked, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keď je voľba zaškrtnutá, VirtualBox použije zadané nastavenia proxy pre úlohy ako napríklad sťahovanie Hosťovských doplnkov alebo kontrolu aktualizácii.</translation>
     </message>
     <message>
         <source>&amp;Enable proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Povoliť proxy</translation>
     </message>
     <message>
         <source>Ho&amp;st:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hostiteľ:</translation>
     </message>
     <message>
         <source>Changes the proxy host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmení hostiteľa proxy.</translation>
     </message>
     <message>
         <source>&amp;Port:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Port:</translation>
     </message>
     <message>
         <source>Changes the proxy port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmení port proxy.</translation>
     </message>
     <message>
         <source>When checked the authentication supplied will be used with the proxy server.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keď je zaškrtnuté, pre proxy server sa použijú nastavenia autentizácie.</translation>
     </message>
     <message>
         <source>&amp;Use authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>Použiť &amp;autentizáciu</translation>
     </message>
     <message>
         <source>User &amp;name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Meno používateľa:</translation>
     </message>
     <message>
         <source>Changes the user name used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmení meno používateľa pre autentizáciu.</translation>
     </message>
     <message>
         <source>Pass&amp;word:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Heslo:</translation>
     </message>
     <message>
         <source>Changes the password used for authentication.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmení heslo použíte pre autentizáciu.</translation>
     </message>
 </context>
 <context>
@@ -2175,7 +2175,7 @@
     <name>UIHelpButton</name>
     <message>
         <source>&amp;Help</source>
-        <translation type="unfinished">&amp;Pomocník</translation>
+        <translation>&amp;Pomocník</translation>
     </message>
 </context>
 <context>
@@ -2190,23 +2190,23 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished">ľavý shift</translation>
+        <translation>Ľavý shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished">pravý shift</translation>
+        <translation>Pravý shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished">ľavý ctrl</translation>
+        <translation>Ľavý ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished">pravý ctrl</translation>
+        <translation>Pravý ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished">ľavý alt</translation>
+        <translation>Ľavý alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -2358,7 +2358,7 @@
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished">Žiadne</translation>
+        <translation>Žiadne</translation>
     </message>
 </context>
 <context>
@@ -2393,7 +2393,7 @@
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importovať</translation>
     </message>
 </context>
 <context>
@@ -2555,7 +2555,7 @@
     </message>
     <message>
         <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;hr&gt;Vzdialený desktopový server (RDS) počúva na porte %1</translation>
     </message>
     <message>
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
@@ -2744,15 +2744,15 @@
     </message>
     <message>
         <source>Mo&amp;nitor Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>P&amp;očet monitorov:</translation>
     </message>
     <message>
         <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Určuje počet virtuálnych monitorov poskytnutých virtuálnemu stroju.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Specifies whether multiple simultaneous connections to the VM are permitted.</source>
@@ -2760,15 +2760,15 @@
     </message>
     <message>
         <source>&amp;Allow Multiple Connections</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Povoliť viacnásobné spojenia</translation>
     </message>
     <message>
         <source>you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>povolili ste 3D akceleráciu pre operačný systém, ktorý používa WDDM ovládač videa. Pre maximálny výkon nastavte veľkosť VRAM hosťa aspoň na hodnotu &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation type="unfinished">povolili ste 2D akceleráciu videa. Pretože 2D akcelerácia videa je podporovaná iba pre hosťovské systémy s Windows, táto vlastnosť bude vypnutá.</translation>
+        <translation>povolili ste 2D akceleráciu videa. Pretože 2D akcelerácia videa je podporovaná iba pre hosťovské systémy s Windows, táto vlastnosť bude vypnutá.</translation>
     </message>
 </context>
 <context>
@@ -2934,7 +2934,7 @@
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keď je zaškrtnuté, znamená to, že tento virtuálny sieťový adaptér je pripojený k virtuálnemu stroju.</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
@@ -2962,7 +2962,7 @@
     </message>
     <message>
         <source>Generates a new random MAC address.</source>
-        <translation type="unfinished">Vygeneruje novú náhodnú MAC adresu.</translation>
+        <translation>Vygeneruje novú náhodnú MAC adresu.</translation>
     </message>
     <message>
         <source>&amp;Generate</source>
@@ -3008,15 +3008,15 @@
     </message>
     <message>
         <source>Adapter &amp;Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Typ adaptéra:</translation>
     </message>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>nie je vybraný žiaden sieťový adaptér v moste (bridge)</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation type="unfinished"></translation>
+        <translation>nie je zadaný názov pre sieť</translation>
     </message>
     <message>
         <source>no host-only network adapter is selected</source>
@@ -3025,15 +3025,15 @@
     <message>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nevybraný</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">&amp;Názov:</translation>
+        <translation>&amp;Názov:</translation>
     </message>
     <message>
         <source>A&amp;dvanced</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Pokročilé</translation>
     </message>
     <message>
         <source>Shows or hides additional network adapter options.</source>
@@ -3041,7 +3041,7 @@
     </message>
     <message>
         <source>&amp;Mac Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mac adresa:</translation>
     </message>
     <message>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
@@ -3049,7 +3049,7 @@
     </message>
     <message>
         <source>&amp;Cable connected</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kábel pripojený</translation>
     </message>
     <message>
         <source>Opens dialog to manage port forwarding rules.</source>
@@ -3057,11 +3057,11 @@
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished"></translation>
+        <translation>P&amp;resmerovanie portov</translation>
     </message>
     <message>
         <source>&amp;Promiscuous Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Promiskuitný režim:</translation>
     </message>
     <message>
         <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
@@ -3069,7 +3069,7 @@
     </message>
     <message>
         <source>Generic Properties:</source>
-        <translation type="unfinished"></translation>
+        <translation>Všeobecné vlastnosti:</translation>
     </message>
     <message>
         <source>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
@@ -3123,19 +3123,19 @@
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
-        <translation type="unfinished">Port %1</translation>
+        <translation>Port %1</translation>
     </message>
     <message>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="unfinished">Keď je zašrktnuté, povolí virtuálnemu stroju používať vybraný paralelný port.</translation>
+        <translation>Keď je zašrktnuté, povolí virtuálnemu stroju používať vybraný paralelný port.</translation>
     </message>
     <message>
         <source>&amp;Enable Parallel Port</source>
-        <translation type="unfinished">&amp;Povoliť paralelný port</translation>
+        <translation>&amp;Povoliť paralelný port</translation>
     </message>
     <message>
         <source>Port &amp;Number:</source>
-        <translation type="unfinished">Čí&amp;slo portu:</translation>
+        <translation>Čí&amp;slo portu:</translation>
     </message>
     <message>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
@@ -3143,19 +3143,19 @@
     </message>
     <message>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished">&amp;IRQ:</translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
-        <translation type="unfinished">I/O Po&amp;rt:</translation>
+        <translation>I/O Po&amp;rt:</translation>
     </message>
     <message>
         <source>Port &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ces&amp;ta k portu:</translation>
     </message>
     <message>
         <source>Displays the host parallel device name.</source>
-        <translation type="unfinished">Zobrazí názov paralelného zariadenia hostiteľa.</translation>
+        <translation>Zobrazí názov paralelného zariadenia hostiteľa.</translation>
     </message>
     <message>
         <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
@@ -3244,7 +3244,7 @@
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Zobrazí všetky zdieľané priečinky dostupné pre tento počítať. Použite &apos;net use x: \\vboxsrv\share&apos; pre prístup k zdieľanému priečinku s názvom &lt;i&gt;share&lt;/i&gt; pre operačný systém na báze DOSu alebo &apos;mount -t vboxsf share mount_point&apos; pre prístup k priečinku z operačného systému Linux. Táto vlastnosť vyžaduje inštaláciu Hosťovských doplnkov.</translation>
+        <translation>Zobrazí všetky zdieľané priečinky dostupné pre tento počítač. Použite &apos;net use x: \\vboxsrv\share&apos; pre prístup k zdieľanému priečinku s názvom &lt;i&gt;share&lt;/i&gt; pre operačný systém na báze DOSu alebo &apos;mount -t vboxsf share mount_point&apos; pre prístup k priečinku z operačného systému Linux. Táto vlastnosť vyžaduje inštaláciu Hosťovských doplnkov.</translation>
     </message>
     <message>
         <source>Name</source>
@@ -3280,11 +3280,11 @@
     </message>
     <message>
         <source>Auto-Mount</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatické pripojenie</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished">Áno</translation>
+        <translation>Áno</translation>
     </message>
 </context>
 <context>
@@ -3327,15 +3327,15 @@
     </message>
     <message>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keď je zaškrtnuté, hosťovský operačný systém sa pokúsi automaticky pripojiť zdieľaný priečinok počas štartu.</translation>
     </message>
     <message>
         <source>&amp;Auto-mount</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Automatické pripojenie</translation>
     </message>
     <message>
         <source>If checked, this shared folder will be permanent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keď je zaškrtnuté, zdieľaný priečinok bude permanentným.</translation>
     </message>
 </context>
 <context>
@@ -3379,11 +3379,11 @@
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
-        <translation type="unfinished">Ak je zaškrtnuté, rúra uvedená v poli &lt;b&gt;Cesta portu&lt;/b&gt; bude vytvorená virtuálnym strojom pri spustení. Inak sa virtuálny počítač pokúsi použiť existujúcu rúru.</translation>
+        <translation>Ak je zaškrtnuté, rúra uvedená v poli &lt;b&gt;Cesta k portu&lt;/b&gt; bude vytvorená virtuálnym strojom pri spustení. Inak virtuálny stroj bude predpokladať, že rúra existuje a pokúsi sa ju použiť.</translation>
     </message>
     <message>
         <source>&amp;Create Pipe</source>
-        <translation type="unfinished">&amp;Vytvoriť rúru (pipe)</translation>
+        <translation>&amp;Vytvoriť rúru (pipe)</translation>
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
@@ -5216,8 +5216,6 @@
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation type="unfinished">
             <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -6384,7 +6382,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <name>UISession</name>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Inštalovať</translation>
     </message>
 </context>
 <context>
@@ -6395,109 +6393,109 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation type="unfinished">Na strane &lt;b&gt;%1&lt;/b&gt;, %2</translation>
+        <translation>Na strane &lt;b&gt;%1&lt;/b&gt;, %2</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
-        <translation type="unfinished"></translation>
+        <translation>Zistené neplatné nastavenia</translation>
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation type="unfinished">Zistené neoptimálne nastavenia</translation>
+        <translation>Zistené neoptimálne nastavenia</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">Nastavenia</translation>
+        <translation>Nastavenia</translation>
     </message>
 </context>
 <context>
     <name>UISettingsDialogGlobal</name>
     <message>
         <source>General</source>
-        <translation type="unfinished">Všeobecné</translation>
+        <translation>Všeobecné</translation>
     </message>
     <message>
         <source>Input</source>
-        <translation type="unfinished">Vstup</translation>
+        <translation>Vstup</translation>
     </message>
     <message>
         <source>Update</source>
-        <translation type="unfinished">Aktualizácia</translation>
+        <translation>Aktualizácia</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished">Jazyk</translation>
+        <translation>Jazyk</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Sieť</translation>
+        <translation>Sieť</translation>
     </message>
     <message>
         <source>Extensions</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozšírenia</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished">VirtualBox - %1</translation>
+        <translation>VirtualBox - %1</translation>
     </message>
     <message>
         <source>Proxy</source>
-        <translation type="unfinished"></translation>
+        <translation>Proxy</translation>
     </message>
 </context>
 <context>
     <name>UISettingsDialogMachine</name>
     <message>
         <source>General</source>
-        <translation type="unfinished">Všeobecné</translation>
+        <translation>Všeobecné</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished">Systém</translation>
+        <translation>Systém</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished">Displej</translation>
+        <translation>Displej</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="unfinished">Úložisko</translation>
+        <translation>Úložisko</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation type="unfinished">Audio</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">Sieť</translation>
+        <translation>Sieť</translation>
     </message>
     <message>
         <source>Ports</source>
-        <translation type="unfinished">Porty</translation>
+        <translation>Porty</translation>
     </message>
     <message>
         <source>Serial Ports</source>
-        <translation type="unfinished">Sériové porty</translation>
+        <translation>Sériové porty</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
-        <translation type="unfinished">Paralelné porty</translation>
+        <translation>Paralelné porty</translation>
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
-        <translation type="unfinished">Zdieľané priečinky</translation>
+        <translation>Zdieľané priečinky</translation>
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation type="unfinished">%1 - %2</translation>
+        <translation>%1 - %2</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
@@ -6531,11 +6529,11 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
-        <translation type="unfinished">Zatvoriť Virtuálny stroj</translation>
+        <translation>Zatvoriť Virtuálny stroj</translation>
     </message>
     <message>
         <source>You want to:</source>
-        <translation type="unfinished">Chcete:</translation>
+        <translation>Chcete:</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
@@ -6543,15 +6541,15 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>&amp;Save the machine state</source>
-        <translation type="unfinished">&amp;Uložiť stav virtuálneho stroja</translation>
+        <translation>&amp;Uložiť stav virtuálneho stroja</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Pošle ACPI udalosť stlačenie zapínacieho tlačidla virtuálnemu počítaču.&lt;/p&gt;&lt;p&gt;Za bežných okolností hosťovaný operačný systém, ktorý beží vnútri virtuálneho počítača, deteguje túto udalosť a vykoná korektnú ukončovaciu procedúru. Toto je odporúčaný spôsob vypínania, pretože všetky aplikácia bežiace vnútri dostanú šancu uložiť svoje dáta a stav.&lt;/p&gt;&lt;p&gt;Ak počítač neodpovedá na túto akciu, potom je buď zle nakonfigurovaný alebo vôbec nerozumie ACPI udalosti stlačenia zapínacieho tlačidla. V tomto prípade by ste mali zvoliť akciu &lt;b&gt;Vypnúť počítač&lt;/b&gt; pre zastavenie počítača.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Pošle ACPI udalosť stlačenie zapínacieho tlačidla virtuálnemu počítaču.&lt;/p&gt;&lt;p&gt;Za bežných okolností operačný systém hosťa, ktorý beží vnútri virtuálneho počítača, deteguje túto udalosť a vykoná korektnú ukončovaciu procedúru. Toto je odporúčaný spôsob vypínania, pretože všetky aplikácie bežiace vnútri dostanú šancu uložiť svoje dáta a stav.&lt;/p&gt;&lt;p&gt;Ak počítač neodpovedá na túto akciu, potom je buď zle nakonfigurovaný alebo vôbec nerozumie ACPI udalosti stlačenia zapínacieho tlačidla. V tomto prípade by ste mali zvoliť akciu &lt;b&gt;Vypnúť počítač&lt;/b&gt; pre zastavenie počítača.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished">&amp;Pošle signál na vypnutie</translation>
+        <translation>&amp;Pošle signál na vypnutie</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
@@ -6559,11 +6557,11 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>&amp;Power off the machine</source>
-        <translation type="unfinished">&amp;Vypnúť virtuálny stroj</translation>
+        <translation>&amp;Vypnúť virtuálny stroj</translation>
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation type="unfinished">Obnoviť stav stroja uložený v aktuálnej snímke</translation>
+        <translation>Obnoviť stav stroja uložený v aktuálnej snímke</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
@@ -6571,18 +6569,18 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
-        <translation type="unfinished">&amp;Obnoviť aktuálnu snímku &apos;%1&apos;</translation>
+        <translation>&amp;Obnoviť aktuálnu snímku &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
     <name>UIVMDesktop</name>
     <message>
         <source>&amp;Details</source>
-        <translation type="unfinished">&amp;Podrobnosti</translation>
+        <translation>&amp;Podrobnosti</translation>
     </message>
     <message>
         <source>&amp;Snapshots</source>
-        <translation type="unfinished">&amp;Snímky</translation>
+        <translation>&amp;Snímky</translation>
     </message>
 </context>
 <context>
@@ -6638,31 +6636,31 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     <name>UIVMPreviewWindow</name>
     <message>
         <source>Update Disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualizácie vypnuté</translation>
     </message>
     <message>
         <source>Every 0.5 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Každých 0.5 s</translation>
     </message>
     <message>
         <source>Every 1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Každú sekundu</translation>
     </message>
     <message>
         <source>Every 2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Každé 2 s</translation>
     </message>
     <message>
         <source>Every 5 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Každých 5 s</translation>
     </message>
     <message>
         <source>Every 10 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Každých 10 s</translation>
     </message>
     <message>
         <source>No Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Bez náhľadu</translation>
     </message>
 </context>
 <context>
@@ -8048,7 +8046,7 @@ verzia %1</translation>
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation>Bežiaci</translation>
+        <translation>Beží</translation>
     </message>
     <message>
         <source>Paused</source>
@@ -8734,7 +8732,7 @@ verzia %1</translation>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation>Karta použítá v sieťovom moste, %1</translation>
+        <translation>Karta použitá v sieťovom moste, %1</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
@@ -8744,17 +8742,17 @@ verzia %1</translation>
     <message>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Server (82545EM)</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adaptér v moste (bridge)</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Adaptér len pre hostiteľa</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
@@ -8799,22 +8797,22 @@ verzia %1</translation>
     <message>
         <source>Raw File</source>
         <comment>PortMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>Surový (raw) súbor</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Povolená</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnutá</translation>
     </message>
     <message>
         <source>2D Video Acceleration</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>2D akcelerácia videa</translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -8829,17 +8827,17 @@ verzia %1</translation>
     <message>
         <source>Teleported</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Teleportovaný</translation>
     </message>
     <message>
         <source>Guru Meditation</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Meditácia guru</translation>
     </message>
     <message>
         <source>Teleporting</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Teleportujem</translation>
     </message>
     <message>
         <source>Taking Live Snapshot</source>
@@ -8849,7 +8847,7 @@ verzia %1</translation>
     <message>
         <source>Teleporting Paused VM</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Teleportujúci sa pozastavený virtuálny stroj</translation>
     </message>
     <message>
         <source>Restoring Snapshot</source>
@@ -9044,123 +9042,123 @@ verzia %1</translation>
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Obrazovky</translation>
     </message>
     <message>
         <source>SAS</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SAS</translation>
     </message>
     <message>
         <source>LsiLogic SAS</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>LsiLogic SAS</translation>
     </message>
     <message>
         <source>B</source>
         <comment>size suffix Bytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>B</translation>
     </message>
     <message>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>KB</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation>Povolené</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnuté</translation>
     </message>
     <message>
         <source>Nested Paging</source>
-        <translation type="unfinished">Priamy prístup k hardware</translation>
+        <translation>Priamy prístup k hardware</translation>
     </message>
     <message>
         <source>Shareable</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zdielateľný</translation>
     </message>
     <message>
         <source>Unknown device</source>
         <comment>USB device details</comment>
-        <translation type="unfinished"></translation>
+        <translation>Neznáme zariadenie</translation>
     </message>
     <message>
         <source>SAS Port %1</source>
         <comment>New Storage UI : Slot Name</comment>
-        <translation type="unfinished"></translation>
+        <translation>SAS Port %1</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Port pre RDS (Remote Display Server)</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vzdialený desktop (RDS)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vypnutý</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Vyberte súbor s virtuálnym pevným diskom</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation type="unfinished">pevný disk</translation>
+        <translation>pevný disk</translation>
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Vyberte súbor s virtuálnym CD/DVD diskom</translation>
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Vyberte súbor s virtuálnym diskom diskety</translation>
     </message>
     <message>
         <source>floppy disk</source>
-        <translation type="unfinished"></translation>
+        <translation>disketa</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Všetky %1 obrazy (%2)</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished">Všetky súbory (*)</translation>
+        <translation>Všetky súbory (*)</translation>
     </message>
     <message>
         <source>Fault Tolerant Syncing</source>
@@ -9170,71 +9168,71 @@ verzia %1</translation>
     <message>
         <source>Unlocked</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Odomknuté</translation>
     </message>
     <message>
         <source>Locked</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Uzamknuté</translation>
     </message>
     <message>
         <source>Unlocking</source>
         <comment>SessionState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Odomykám</translation>
     </message>
     <message>
         <source>Null</source>
         <comment>AuthType</comment>
-        <translation type="unfinished">žiadna</translation>
+        <translation>Null</translation>
     </message>
     <message>
         <source>External</source>
         <comment>AuthType</comment>
-        <translation type="unfinished">externý</translation>
+        <translation>Externá</translation>
     </message>
     <message>
         <source>Guest</source>
         <comment>AuthType</comment>
-        <translation type="unfinished">hosť</translation>
+        <translation>Hosť</translation>
     </message>
     <message>
         <source>Intel HD Audio</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel HD Audio</translation>
     </message>
     <message>
         <source>UDP</source>
         <comment>NATProtocolType</comment>
-        <translation type="unfinished"></translation>
+        <translation>UDP</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>NATProtocolType</comment>
-        <translation type="unfinished"></translation>
+        <translation>TCP</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>ChipsetType</comment>
-        <translation type="unfinished">PIIX3</translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>ICH9</source>
         <comment>ChipsetType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH9</translation>
     </message>
     <message>
         <source>and</source>
-        <translation type="unfinished"></translation>
+        <translation>a</translation>
     </message>
     <message>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>Readonly</source>
         <comment>DiskType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Iba na čítanie</translation>
     </message>
     <message>
         <source>Multi-attach</source>
@@ -9243,11 +9241,11 @@ verzia %1</translation>
     </message>
     <message>
         <source>Dynamically allocated storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Dynamicky expandujúce úložisko</translation>
     </message>
     <message>
         <source>Fixed size storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Úložisko s pevnou veľkosťou</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
@@ -9265,7 +9263,7 @@ verzia %1</translation>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
@@ -9290,11 +9288,11 @@ verzia %1</translation>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Povoliť všetky</translation>
     </message>
     <message>
         <source>Adapter %1</source>
-        <translation type="unfinished">Adaptér %1</translation>
+        <translation>Adaptér %1</translation>
     </message>
 </context>
 <context>
@@ -9967,59 +9965,59 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
     <message>
         <source>CD/DVD-ROM disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Disk CD/DVD-ROM</translation>
     </message>
     <message>
         <source>hard disk</source>
-        <translation type="unfinished">pevný disk</translation>
+        <translation>pevný disk</translation>
     </message>
     <message>
         <source>floppy disk</source>
-        <translation type="unfinished"></translation>
+        <translation>disketa</translation>
     </message>
     <message>
         <source>All %1 images (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Všetky %1 obrazy (%2)</translation>
     </message>
     <message>
         <source>Type:</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ:</translation>
     </message>
     <message>
         <source>Location:</source>
-        <translation type="unfinished">Umiestnenie:</translation>
+        <translation>Umiestnenie:</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished"></translation>
+        <translation>Formát:</translation>
     </message>
     <message>
         <source>Storage details:</source>
-        <translation type="unfinished"></translation>
+        <translation>Detaily o úložisku:</translation>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pripojený k:</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Kopírovať...</translation>
     </message>
     <message>
         <source>&amp;Modify...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zmeniť...</translation>
     </message>
     <message>
         <source>Copy an existing medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopírovať existujúce médium</translation>
     </message>
     <message>
         <source>Modify the attributes of the selected medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmeniť atribúty vybraného média</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zavrieť</translation>
     </message>
 </context>
 <context>
@@ -10038,7 +10036,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
     <message>
         <source>Minimize Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimalizovať okno</translation>
     </message>
 </context>
 <context>
@@ -10324,7 +10322,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished">Zahodiť</translation>
+        <translation>Zahodiť</translation>
     </message>
     <message>
         <source>Discard the saved state of the selected virtual machine</source>
@@ -11053,8 +11051,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -11311,7 +11307,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
     <message>
         <source>Data Transmitted</source>
-        <translation>Prenesená dáta</translation>
+        <translation>Prenesené dáta</translation>
     </message>
     <message>
         <source>Data Received</source>

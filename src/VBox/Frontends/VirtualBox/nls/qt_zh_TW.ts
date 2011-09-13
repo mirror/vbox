@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
 <TS version="2.0" language="zh_TW">
 <context>
@@ -79,13 +79,13 @@
     <message>
         <source>Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.
           Some video features have been disabled.</source>
-        <translation>警告: 您似乎沒有安裝封裝 gstreamer0.10-plugins-good 。
+        <translation>警告: 您似乎沒有安裝 gstreamer0.10-plugins-good 套件。
           某些視訊功能已停用。</translation>
     </message>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
-        <translation>警告: 您沒有安裝基礎 GStreamer 外掛。
+        <translation>警告: 您似乎沒有安裝基礎 GStreamer 外掛。
           所有音訊與視訊支援已停用</translation>
     </message>
 </context>
@@ -117,7 +117,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Could not locate media source.</source>
-        <translation>無法找到媒體來源。</translation>
+        <translation>找不到媒體來源。</translation>
     </message>
     <message>
         <source>Could not open audio device. The device is already in use.</source>
@@ -125,7 +125,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Could not decode media source.</source>
-        <translation>無法偵測解碼媒體來源。</translation>
+        <translation>無法解碼媒體來源。</translation>
     </message>
 </context>
 <context>
@@ -147,7 +147,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Ambiguous %1 not handled</source>
-        <translation>不明確 %1 不處理</translation>
+        <translation>不明確的 %1 不處理</translation>
     </message>
 </context>
 <context>
@@ -249,7 +249,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Detail View</source>
-        <translation>詳細資料檢視</translation>
+        <translation>詳細檢視</translation>
     </message>
     <message>
         <source>Preview File Info</source>
@@ -305,7 +305,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>Save As</source>
-        <translation>儲存為</translation>
+        <translation>另存新檔</translation>
     </message>
     <message>
         <source>&amp;Open</source>
@@ -570,7 +570,7 @@ to
     </message>
     <message>
         <source>Puts a minimized back to normal</source>
-        <translation>將最小化放回正常</translation>
+        <translation>將最小化恢復標準</translation>
     </message>
     <message>
         <source>Moves the window out of the way</source>
@@ -578,7 +578,7 @@ to
     </message>
     <message>
         <source>Puts a maximized window back to normal</source>
-        <translation>將最大化的視窗放回正常</translation>
+        <translation>將最大化的視窗恢復標準</translation>
     </message>
     <message>
         <source>Makes the window full screen</source>
@@ -1162,7 +1162,7 @@ Please verify the correct file name was given.</source>
     </message>
     <message>
         <source>Detail View</source>
-        <translation>詳細資料檢視</translation>
+        <translation>詳細檢視</translation>
     </message>
     <message>
         <source>Files of type:</source>
@@ -1196,7 +1196,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Save As</source>
-        <translation>儲存為</translation>
+        <translation>另存新檔</translation>
     </message>
     <message>
         <source>Drive</source>
@@ -1216,7 +1216,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Show </source>
-        <translation>顯示</translation>
+        <translation>顯示 </translation>
     </message>
     <message>
         <source>Forward</source>
@@ -1507,7 +1507,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Sample</source>
-        <translation>簡單</translation>
+        <translation>範例</translation>
     </message>
     <message>
         <source>Wr&amp;iting System</source>
@@ -1649,11 +1649,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Request aborted</source>
-        <translation>已中止要求</translation>
+        <translation>請求已中止</translation>
     </message>
     <message>
         <source>No server set to connect to</source>
-        <translation>沒有伺服器設定連接到</translation>
+        <translation>沒有設定要連接的伺服器</translation>
     </message>
     <message>
         <source>Wrong content length</source>
@@ -1709,7 +1709,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Proxy authentication required</source>
-        <translation>不支援 Proxy 驗證</translation>
+        <translation>Proxy 驗證要求</translation>
     </message>
     <message>
         <source>Authentication required</source>
@@ -1729,7 +1729,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Data corrupted</source>
-        <translation>資料損毀</translation>
+        <translation>資料已損毀</translation>
     </message>
     <message>
         <source>Unknown protocol specified</source>
@@ -1872,11 +1872,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>XIM input method</source>
-        <translation>XIM 輸入方法</translation>
+        <translation>XIM 輸入法</translation>
     </message>
     <message>
         <source>Windows input method</source>
-        <translation>Windows 輸入方法</translation>
+        <translation>Windows 輸入法</translation>
     </message>
     <message>
         <source>Mac OS X input method</source>
@@ -2031,7 +2031,7 @@ Do you want to delete it anyway?</source>
     <name>QMYSQLDriver</name>
     <message>
         <source>Unable to open database &apos;</source>
-        <translation>無法開啟資料庫</translation>
+        <translation>無法開啟資料庫 &apos;</translation>
     </message>
     <message>
         <source>Unable to connect</source>
@@ -2267,7 +2267,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Protocol type not supported</source>
-        <translation>不支援協定類型</translation>
+        <translation>協定類型不支援</translation>
     </message>
     <message>
         <source>Invalid socket descriptor</source>
@@ -2389,11 +2389,11 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Error while downloading %1: %2</source>
-        <translation>在下載 %1 時錯誤: %2</translation>
+        <translation>下載 %1 時錯誤: %2</translation>
     </message>
     <message>
         <source>Error while uploading %1: %2</source>
-        <translation>在上傳 %1 時錯誤: %2</translation>
+        <translation>上傳 %1 時錯誤: %2</translation>
     </message>
 </context>
 <context>
@@ -2404,7 +2404,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
-        <translation>協議 &quot;%1&quot; 未知</translation>
+        <translation>協定 &quot;%1&quot; 未知</translation>
     </message>
 </context>
 <context>
@@ -2567,7 +2567,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Protocol error: packet of size 0 received</source>
-        <translation>協議錯誤: 收到大小 0 的封包</translation>
+        <translation>協定錯誤: 收到大小 0 的封包</translation>
     </message>
 </context>
 <context>
@@ -3044,7 +3044,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Color Mode</source>
-        <translation>色彩模式</translation>
+        <translation>彩色模式</translation>
     </message>
     <message>
         <source>Color</source>
@@ -3508,7 +3508,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Volume Up</source>
-        <translation>增加音量</translation>
+        <translation>提高音量</translation>
     </message>
     <message>
         <source>Bass Boost</source>
@@ -3847,7 +3847,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Error while reading: %1</source>
-        <translation>讀取時的錯誤: %1</translation>
+        <translation>讀取時錯誤: %1</translation>
     </message>
     <message>
         <source>Error during SSL handshake: %1</source>
@@ -4041,11 +4041,11 @@ Please choose a different file name.</source>
     <name>QWebFrame</name>
     <message>
         <source>Request cancelled</source>
-        <translation>取消要求</translation>
+        <translation>請求已取消</translation>
     </message>
     <message>
         <source>Request blocked</source>
-        <translation>封鎖要求</translation>
+        <translation>請求已封鎖</translation>
     </message>
     <message>
         <source>Cannot show URL</source>
@@ -4088,7 +4088,7 @@ Please choose a different file name.</source>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
         <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation>這是可搜尋的索引。 輸入搜尋關鍵字:</translation>
+        <translation>這是可搜尋的索引。 輸入搜尋關鍵字: </translation>
     </message>
     <message>
         <source>Choose File</source>
@@ -4193,7 +4193,7 @@ Please choose a different file name.</source>
     <message>
         <source>Look Up In Dictionary</source>
         <comment>Look Up in Dictionary context menu item</comment>
-        <translation>翻閱字典</translation>
+        <translation>查詢字典</translation>
     </message>
     <message>
         <source>Open Link</source>
@@ -4341,7 +4341,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Commit</source>
-        <translation>註解</translation>
+        <translation>認可</translation>
     </message>
     <message>
         <source>Done</source>
@@ -4475,7 +4475,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>version expected while reading the XML declaration</source>
-        <translation>預期讀取 XML 宣告時的版本</translation>
+        <translation>在讀取 XML 宣告時預期的版本</translation>
     </message>
     <message>
         <source>wrong value for standalone declaration</source>
@@ -4495,7 +4495,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>letter is expected</source>
-        <translation>字母預計</translation>
+        <translation>預期字母</translation>
     </message>
     <message>
         <source>error occurred while parsing comment</source>
@@ -4546,7 +4546,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Sequence &apos;]]&gt;&apos; not allowed in content.</source>
-        <translation>內容中不允許序列 &amp;apos;]]&amp;gt;&amp;apos; 。</translation>
+        <translation>內容中不允許序列 &apos;]]&gt;&apos;。</translation>
     </message>
     <message>
         <source>Namespace prefix &apos;%1&apos; not declared</source>
@@ -4594,7 +4594,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Expected </source>
-        <translation>預期的</translation>
+        <translation>預期的 </translation>
     </message>
     <message>
         <source>, but got &apos;</source>
@@ -4602,7 +4602,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Unexpected &apos;</source>
-        <translation>未預期 &apos;</translation>
+        <translation>未預期的 &apos;</translation>
     </message>
     <message>
         <source>Expected character data.</source>
@@ -4697,7 +4697,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Day %1 is outside the range %2..%3.</source>
-        <translation>天 %1 超出範圍 %2..%3 。</translation>
+        <translation>天 %1 超出 %2..%3 範圍。</translation>
     </message>
     <message>
         <source>Month %1 is outside the range %2..%3.</source>
@@ -4709,15 +4709,15 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation>對於月 %2 天 %1 是無效的。</translation>
+        <translation>%2 月的 %1 天無效。</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation>時間 24:%1:%2。%3 無效。 小時是 24，但分鐘、 秒和毫秒不是全部 0;</translation>
+        <translation>時間 24:%1:%2。 %3 無效。 小時是 24，但分鐘、 秒和毫秒非全為 0;</translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation>時間 %1:%2:%3.%4 無效。</translation>
+        <translation>時間 %1:%2:%3。 %4 無效。</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
@@ -4733,7 +4733,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
-        <translation>沒有運算元在整數除法, %1, 可以是 %2。</translation>
+        <translation>沒有運算元在整數除法, %1，可以是 %2。</translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
@@ -4765,11 +4765,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation>不允許類型 %1 的值除以 %2 (不是數字) 。</translation>
+        <translation>不允許類型 %1 的值除以 %2 (不是數字)。</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
-        <translation>不允許類型 %1 的值除以 %2 或 %3 (加上或減去零) 。</translation>
+        <translation>不允許類型 %1 的值除以 %2 或 %3 (加上或減去零)。</translation>
     </message>
     <message>
         <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
@@ -4801,7 +4801,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Operator %1 cannot be used on type %2.</source>
-        <translation>%1 運算子不能使用在類型 %2。</translation>
+        <translation>%1 運算子不能用在類型 %2。</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
@@ -5061,11 +5061,11 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Module imports must occur before function, variable, and option declarations.</source>
-        <translation>模組導入必須出現在函數、 變數和選項的聲明。</translation>
+        <translation>模組匯入必須出現在函數、 變數和選項聲明之前。</translation>
     </message>
     <message>
         <source>It is not possible to redeclare prefix %1.</source>
-        <translation>不能 redeclare 首碼 %1。</translation>
+        <translation>無法重新宣告字首 %1。</translation>
     </message>
     <message>
         <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
@@ -5185,7 +5185,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
-        <translation>%1 是一個複雜類型。 轉換為複雜類型是不可能的。 然而，能轉換為原子類型如 %2 。</translation>
+        <translation>%1 是一個複雜類型。 轉換為複雜類型是不可能的。 然而，能轉換為原子類型如 %2。</translation>
     </message>
     <message>
         <source>%1 is not an atomic type. Casting is only possible to atomic types.</source>
@@ -5229,7 +5229,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation>提昇 %1 為 %2 可能造成遺失精確度。</translation>
+        <translation>提昇 %1 為 %2 可能造成精確度遺失。</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>

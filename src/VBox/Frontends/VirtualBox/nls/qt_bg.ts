@@ -105,7 +105,7 @@ have libgstreamer-plugins-base installed.</source>
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
             <numerusform>Липсва необходим кодек. Нужно е да инсталирате следния кодек, за да изпълните това съдържание: %0</numerusform>
-            <numerusform>Липсва необходим кодек. Нужно е да инсталирате следните кодеци, за да изпълните това съдържание: %0</numerusform>
+            <numerusform>Липсват необходими кодеци. Нужно е да инсталирате следните кодеци, за да изпълните това съдържание: %0</numerusform>
         </translation>
     </message>
     <message>
