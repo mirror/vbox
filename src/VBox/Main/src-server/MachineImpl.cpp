@@ -3418,8 +3418,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
-    AutoMultiWriteLock2 alock(mParent->host()->lockHandle(),
-                              this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 alock(mParent->host(), this COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock treeLock(&mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
@@ -9299,7 +9298,8 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 alock(this->lockHandle(),
+                              &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     /* must be in a protective state because we leave the lock below */
     AssertReturn(   mData->mMachineState == MachineState_Saving
@@ -9441,14 +9441,14 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                 AssertComRCThrowRC(rc);
             }
 
-            /* leave the lock before the potentially lengthy operation */
-            alock.leave();
+            /* leave the locks before the potentially lengthy operation */
+            alock.release();
             rc = pMedium->createDiffStorage(diff, MediumVariant_Standard,
                                             pMediumLockList,
                                             NULL /* aProgress */,
                                             true /* aWait */,
                                             pllRegistriesThatNeedSaving);
-            alock.enter();
+            alock.acquire();
             if (FAILED(rc)) throw rc;
 
             rc = lockedMediaMap->Unlock();
@@ -11480,7 +11480,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
 
     /* Creating a Progress object requires the VirtualBox lock, and
      * thus locking it here is required by the lock order rules. */
-    AutoMultiWriteLock2 alock(mParent->lockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     if (control == mData->mSession.mDirectControl)
     {
