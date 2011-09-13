@@ -506,7 +506,7 @@ public:
                 Bstr bstrId, bstrMessage;
                 pRTEEv->COMGETTER(Id)(bstrId.asOutParam());
                 pRTEEv->COMGETTER(Message)(bstrMessage.asOutParam());
-                RTPrintf("\n%s: ** %lS **\n%lS\n%s\n", pszType, bstrId.raw(), bstrMessage.raw(),
+                RTPrintf("\n%s: ** %ls **\n%ls\n%s\n", pszType, bstrId.raw(), bstrMessage.raw(),
                          fPaused ? "The VM was paused. Continue with HostKey + P after you solved the problem.\n" : "");
                 break;
             }
@@ -664,7 +664,7 @@ static void PrintError(const char *pszName, CBSTR pwszDescr, CBSTR pwszComponent
     char  pszBuffer[1024];
     com::ErrorInfo info;
 
-    RTStrPrintf(pszBuffer, sizeof(pszBuffer), "%lS", pwszDescr);
+    RTStrPrintf(pszBuffer, sizeof(pszBuffer), "%ls", pwszDescr);
 
     RTPrintf("\n%s! Error info:\n", pszName);
     if (   (pszFile = strstr(pszBuffer, "At '"))
@@ -679,7 +679,7 @@ static void PrintError(const char *pszName, CBSTR pwszDescr, CBSTR pwszComponent
         RTPrintf("%s\n", pszBuffer);
 
     if (pwszComponent)
-        RTPrintf("(component %lS).\n", pwszComponent);
+        RTPrintf("(component %ls).\n", pwszComponent);
 
     RTPrintf("\n");
 }

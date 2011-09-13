@@ -1185,7 +1185,7 @@ int main(int argc, char *argv[])
             ComPtr<IHostNetworkInterface> networkInterface = hostNetworkInterfaces[0];
             Bstr interfaceName;
             networkInterface->COMGETTER(Name)(interfaceName.asOutParam());
-            RTPrintf("Found %d network interfaces, testing with %lS...\n", hostNetworkInterfaces.size(), interfaceName.raw());
+            RTPrintf("Found %d network interfaces, testing with %ls...\n", hostNetworkInterfaces.size(), interfaceName.raw());
             Guid interfaceGuid;
             networkInterface->COMGETTER(Id)(interfaceGuid.asOutParam());
             // Find the interface by its name
@@ -1195,7 +1195,7 @@ int main(int argc, char *argv[])
             Guid interfaceGuid2;
             networkInterface->COMGETTER(Id)(interfaceGuid2.asOutParam());
             if (interfaceGuid2 != interfaceGuid)
-                RTPrintf("Failed to retrieve an interface by name %lS.\n", interfaceName.raw());
+                RTPrintf("Failed to retrieve an interface by name %ls.\n", interfaceName.raw());
             // Find the interface by its guid
             networkInterface.setNull();
             CHECK_ERROR_BREAK(host,
@@ -1203,7 +1203,7 @@ int main(int argc, char *argv[])
             Bstr interfaceName2;
             networkInterface->COMGETTER(Name)(interfaceName2.asOutParam());
             if (interfaceName != interfaceName2)
-                RTPrintf("Failed to retrieve an interface by GUID %lS.\n", Bstr(interfaceGuid.toString()).raw());
+                RTPrintf("Failed to retrieve an interface by GUID %ls.\n", Bstr(interfaceGuid.toString()).raw());
         }
         else
         {
@@ -1413,7 +1413,7 @@ int main(int argc, char *argv[])
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                    RTPrintf("Error: failed to import appliance. Error message: %lS\n", info.getText().raw());
+                    RTPrintf("Error: failed to import appliance. Error message: %ls\n", info.getText().raw());
                 else
                     RTPrintf("Error: failed to import appliance. No error message available!\n");
             }else

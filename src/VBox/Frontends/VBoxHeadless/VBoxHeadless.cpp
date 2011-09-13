@@ -1198,7 +1198,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
                 {
-                    RTPrintf("Error: failed to start machine. Error message: %lS\n", info.getText().raw());
+                    RTPrintf("Error: failed to start machine. Error message: %ls\n", info.getText().raw());
                 }
                 else
                 {
