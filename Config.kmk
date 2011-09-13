@@ -2533,7 +2533,7 @@ if1of ($(KBUILD_TARGET), linux)
  ifneq ($(VBOX_LINUX_SRC),)
   ifeq ($(origin VBOX_LINUX_INCS),undefined)
    export VBOX_LINUX_INCS := $(VBOX_LINUX_SRC)/include
-   # XXX hack alert! support splitted Linux kernels (make O=<build directory>)
+   # XXX hack alert! support split Linux kernels (make O=<build directory>)
    # XXX put this crap elsewhere
    kernelpath := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
    ifeq ($(kernelpath),)

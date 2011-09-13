@@ -875,10 +875,10 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         {
             Log(("SharedFolders host service: svcCall: SHFL_FN_MAP_FOLDER\n"));
             if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
-                Log(("SharedFolders host service: request to map folder '%S'\n",
+                Log(("SharedFolders host service: request to map folder '%s'\n",
                      ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.utf8));
             else
-                Log(("SharedFolders host service: request to map folder '%lS'\n",
+                Log(("SharedFolders host service: request to map folder '%ls'\n",
                      ((PSHFLSTRING)paParms[0].u.pointer.addr)->String.ucs2));
 
             /* Verify parameter count and types. */

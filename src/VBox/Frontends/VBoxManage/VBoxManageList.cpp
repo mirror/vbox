@@ -699,7 +699,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                     USHORT bcdRevision;
                     CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), 1);
 
-                    RTPrintf("UUID:               %S\n"
+                    RTPrintf("UUID:               %s\n"
                              "VendorId:           %#06x (%04X)\n"
                              "ProductId:          %#06x (%04X)\n"
                              "Revision:           %u.%u (%02u%02u)\n",

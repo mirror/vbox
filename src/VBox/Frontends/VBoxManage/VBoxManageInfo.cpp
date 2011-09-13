@@ -1724,7 +1724,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), rc);
 
                         if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBRemoteUUID%zu=\"%S\"\n"
+                            RTPrintf("USBRemoteUUID%zu=\"%s\"\n"
                                      "USBRemoteVendorId%zu=\"%#06x\"\n"
                                      "USBRemoteProductId%zu=\"%#06x\"\n"
                                      "USBRemoteRevision%zu=\"%#04x%02x\"\n",
@@ -1733,7 +1733,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                                      index + 1, usProductId,
                                      index + 1, bcdRevision >> 8, bcdRevision & 0xff);
                         else
-                            RTPrintf("UUID:               %S\n"
+                            RTPrintf("UUID:               %s\n"
                                      "VendorId:           %#06x (%04X)\n"
                                      "ProductId:          %#06x (%04X)\n"
                                      "Revision:           %u.%u (%02u%02u)\n",
@@ -1813,7 +1813,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), rc);
 
                         if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("USBAttachedUUID%zu=\"%S\"\n"
+                            RTPrintf("USBAttachedUUID%zu=\"%s\"\n"
                                      "USBAttachedVendorId%zu=\"%#06x\"\n"
                                      "USBAttachedProductId%zu=\"%#06x\"\n"
                                      "USBAttachedRevision%zu=\"%#04x%02x\"\n",
@@ -1822,7 +1822,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                                      index + 1, usProductId,
                                      index + 1, bcdRevision >> 8, bcdRevision & 0xff);
                         else
-                            RTPrintf("UUID:               %S\n"
+                            RTPrintf("UUID:               %s\n"
                                      "VendorId:           %#06x (%04X)\n"
                                      "ProductId:          %#06x (%04X)\n"
                                      "Revision:           %u.%u (%02u%02u)\n",
