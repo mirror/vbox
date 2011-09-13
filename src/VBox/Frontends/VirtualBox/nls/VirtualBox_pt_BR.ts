@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0">
+<TS version="2.0" language="pt_BR">
 <context>
     <name>@@@</name>
     <message>
@@ -234,11 +234,11 @@
     </message>
     <message>
         <source>Copy all errors to the clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Copiar todos os erros para a área de transferência</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Copiar</translation>
+        <translation>Copiar</translation>
     </message>
 </context>
 <context>
@@ -748,7 +748,8 @@
     </message>
     <message>
         <source>Linked Base for %1 and %2</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Decidi deixar o termo &quot;linkada&quot; por ser mais fácil de assimilar</translatorcomment>
+        <translation>Base Linkada para %1 e %2</translation>
     </message>
 </context>
 <context>
@@ -779,7 +780,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando selecionado, define um endereço MAC único para todas as placas de rede configuradas.</translation>
     </message>
 </context>
 <context>
@@ -818,54 +819,55 @@
     </message>
     <message>
         <source>Full Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Clone Completo</translation>
     </message>
     <message>
         <source>Linked Clone</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>Decidi deixar o termo &quot;linkado&quot; por ser mais comum no meio</translatorcomment>
+        <translation>Clone Linkado</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Selecione o tipo de clone.&lt;/p&gt;&lt;p&gt;Se você escolher &lt;b&gt;Clone Completo&lt;/b&gt;, uma cópia exata da VM original (incluindo todas as imagens de discos virtuais) será criada. Se você selecionar &lt;b&gt;Clone Linkado&lt;/b&gt;, uma nova VM será criada, mas as imagens de discos virtuais irão apontar para as imagens de discos da VM original.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that a new snapshot within the source VM is created in case you select &lt;b&gt;Linked Clone&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Atenção: um novo snapshot será criado na VM original caso você selecione &lt;b&gt;Clone Linkado&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished">Estado atual da máquina</translation>
+        <translation>Estado atual da máquina</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished">Estado atual da máquina e todos os estados-filhos</translation>
+        <translation>Estado atual da máquina e todos os estados-filhos</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished">Todos os estados</translation>
+        <translation>Todos os estados</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished">Configuração de Clonagem</translation>
+        <translation>Configuração de Clonagem</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished">Escolha quais partes da máquina virtual deverão ser clonadas.</translation>
+        <translation>Escolha quais partes da máquina virtual deverão ser clonadas.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished">Se você selecionar &lt;b&gt;estado atual da máquina&lt;/b&gt;, apenas o estado atual da máquina virtual será clonado.</translation>
+        <translation>Se você selecionar &lt;b&gt;estado atual da máquina&lt;/b&gt;, apenas o estado atual da máquina virtual será clonado.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished">Se você selecionar &lt;b&gt;Estado atual da máquina e de todos os estados-filho&lt;/b&gt;, o estado atual da máquina virtual e todos os estados de snapshots serão clonados.</translation>
+        <translation>Se você selecionar &lt;b&gt;Estado atual da máquina e de todos os estados-filho&lt;/b&gt;, o estado atual da máquina virtual e todos os estados de snapshots serão clonados.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished">Se você selecionar &lt;b&gt;Todos os estados&lt;/b&gt;, o estado atual da máquina e todos os snapshots serão clonados.</translation>
+        <translation>Se você selecionar &lt;b&gt;Todos os estados&lt;/b&gt;, o estado atual da máquina e todos os snapshots serão clonados.</translation>
     </message>
 </context>
 <context>
@@ -2398,23 +2400,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished">Shift Esquerdo</translation>
+        <translation>Shift Esquerdo</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished">Shift Direito</translation>
+        <translation>Shift Direito</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished">Ctrl Esquerdo</translation>
+        <translation>Ctrl Esquerdo</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished">Ctrl Direito</translation>
+        <translation>Ctrl Direito</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished">Alt Esquerdo</translation>
+        <translation>Alt Esquerdo</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -4323,7 +4325,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished">Quando selecionado, evita a desmontagem da mídia quando o sistema convidado solicitar a ejeção.</translation>
+        <translation>Quando selecionado, evita a desmontagem da mídia quando o sistema convidado solicitar a ejeção.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
@@ -4331,7 +4333,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked the guest system will see the virtual disk as a solid state device.</source>
-        <translation type="unfinished">Quando selecionado, define a mídia como de estado sólido (SSD).</translation>
+        <translation>Quando selecionado, define a mídia como sendo de estado sólido (SSD).</translation>
     </message>
     <message>
         <source>&amp;Solid-state drive</source>
@@ -4373,7 +4375,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished">Seleciona a quantidade de portas da controladora SATA escolhida na Árvore de Armazenamento. Este valor não pode ser menor que o número máximo de portas utilizadas + 1.</translation>
+        <translation>Seleciona a quantidade de portas da controladora SATA escolhida na Árvore de Armazenamento. Este valor não pode ser menor que o número máximo de portas utilizadas + 1.</translation>
     </message>
 </context>
 <context>
@@ -4559,7 +4561,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation type="unfinished">Define o tipo de chipset usado por esta VM.</translation>
+        <translation>Define o tipo de chipset usado por esta VM. Atenção: a emulação do chipset ICH9 é experimental e não é recomendado o seu uso, exceto em sistemas Convidades que o exigem (como o Mac OS X, por exemplo).</translation>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -4593,7 +4595,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>você definiu o tipo de chipset desta VM como ICH9. Este chipset não funcionará corretamente a menos que o recurso de IO APIC também esteja habilitado. Isto será feito automaticamente assim que clicar no botão OK.</translation>
     </message>
 </context>
 <context>
@@ -6073,10 +6075,9 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
-        <translation type="unfinished">
-            <numerusform>&lt;p&gt;As máquinas virtuais &lt;b&gt;%1&lt;/b&gt; possuem estado de execução salvo. &lt;/p&gt;&lt;p&gt;Se você continuar, o estado atual de execução destas máquinas será descartado. As máquinas existentes não serão afetadas.&lt;/p&gt;
-        
-        </numerusform>
+        <translation>
+            <numerusform>&lt;p&gt;As máquinas virtuais &lt;b&gt;%1&lt;/b&gt; possuem estado de execução salvo. &lt;/p&gt;&lt;p&gt;Se você continuar, o estado atual de execução destas máquinas será descartado. As máquinas existentes não serão afetadas.&lt;/p&gt;</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -6222,7 +6223,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine that you are changing has been started. Only certain settings can be changed while a machine is running. All other changes will be lost if you close this window now.</source>
-        <translation type="unfinished">O estado da máquina virtual que você está editando foi alterado. Apenas as configurações que são editáveis em tempo de execução serão salvas quando clicar em OK. Todas as outras mudanças serão perdidas.</translation>
+        <translation>O estado da máquina virtual que você está editando foi alterado. Apenas as configurações que são editáveis em tempo de execução serão salvas quando clicar em OK. Todas as outras mudanças serão perdidas.</translation>
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6270,11 +6271,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível encontrar um snapshot com o nome &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Falha ao salvar o arquivo baixado como &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Falha ao salvar o arquivo baixado como &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6315,11 +6316,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancelar o download da imagem de CD dos Adicionais para Convidado do VirtualBox</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Baixando a imagem de CD dos Adicionais para Convidado do VirtualBox a partir de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -6676,7 +6677,7 @@ demorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu d
     </message>
     <message>
         <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished">Pressione o botão &lt;b&gt;Selecionar&lt;/b&gt; para selecionar a localização do arquivo que irá armazenar os dados do disco virtual, ou digite o nome de um arquivo no campo.</translation>
+        <translation>Informe o nome do arquivo em disco que conterá o disco virtual no campo abaixo ou clique no ícone da pasta para selecionar uma localização diferente para o arquivo.</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 (%2 B)&lt;/nobr&gt;</source>
@@ -7179,11 +7180,11 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Start-up &amp;Disk</source>
-        <translation type="unfinished">&amp;Disco Rígido de Boot</translation>
+        <translation>&amp;Disco de Boot</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Selecione uma imagem de disco rígido virtual para ser utilizada como disco rígido de boot da máquina virtual. Você pode criar um novo disco rígido virtual ou selecionar uma imagem existente pressionando o botão correspondente.&lt;/p&gt;&lt;p&gt;Se você precisa de uma configuração mais complexa de discos rígidos, você pode pular este passo e conectar os discos rígidos posteriormente utilizando o diálogo de Configurações da VM.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Caso deseje, você poderá escolher um disco de inicialização para a nova máquina. Você pode selecionar uma imagem de disco rígido virtual da lista ou selecionar outro local utilizando o ícone de pasta.&lt;/p&gt;&lt;p&gt;Caso necessite de uma configuração de discos virtuais mais complexa, você pode pular este passo e fazer as mudanças manualmente na configuração da máquina virtual assim que o processo de criação for completado.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -7191,7 +7192,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">O tamanho recomendado para o disco rígido de boot é de &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>O tamanho recomendado para o disco rígido de boot é de &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -7227,7 +7228,7 @@ utilizando o diálogo de Configurações da MV.&lt;/p&gt;</translation>
     <message>
         <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished">Disco Rígido de Boot</translation>
+        <translation>Disco de Boot</translation>
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
@@ -10228,50 +10229,44 @@ Versão %1</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation type="unfinished">
-            <numerusform>%n ano(s)
-        
-        </numerusform>
+        <translation>
+            <numerusform>%n ano(s)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation type="unfinished">
-            <numerusform>%n mes(es)
-        
-        </numerusform>
+        <translation>
+            <numerusform>%n mes(es)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation type="unfinished">
-            <numerusform>%n dia(s)
-        
-        </numerusform>
+        <translation>
+            <numerusform>%n dia(s)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation type="unfinished">
-            <numerusform>%n hora(s)
-        
-        </numerusform>
+        <translation>
+            <numerusform>%n hora(s)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation type="unfinished">
-            <numerusform>%n minuto(s)
-        
-        </numerusform>
+        <translation>
+            <numerusform>%n minuto(s)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation type="unfinished">
-            <numerusform>%n segundo(s)
-        
-        </numerusform>
+        <translation>
+            <numerusform>%n segundo(s)</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -12573,10 +12568,9 @@ para acessá-lo de um sistema operacional Linux. Este recurso requer a instalaç
     </message>
     <message numerus="yes">
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
-        <translation type="unfinished">
-            <numerusform>Aviso: Você está criando um snapshot de uma máquina em execução que possui %n imagens imutáveis associadas a ela. Enquanto você estiver trabalhando a partir deste snapshot, as imagens imutáveis não serão reestabelecidas para evitar perda de dados.
-        
-        </numerusform>
+        <translation>
+            <numerusform>Aviso: Você está criando um snapshot de uma máquina em execução que possui %n imagens imutáveis associadas a ela. Enquanto você estiver trabalhando a partir deste snapshot, as imagens imutáveis não serão reestabelecidas para evitar perda de dados.</numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
