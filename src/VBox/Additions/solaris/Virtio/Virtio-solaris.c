@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox Guest Additions: Virtio Driver for Solaris.
+ * VirtualBox Guest Additions - Virtio Driver for Solaris.
  */
 
 /*
@@ -27,20 +27,15 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifdef DEBUG_ramshankar
+# define LOG_INSTANCE       RTLogRelDefaultInstance()
+#endif
 #include "Virtio-solaris.h"
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <VBox/log.h>
 
-#if defined(DEBUG_ramshankar)
-# undef LogFlowFunc
-# define LogFlowFunc        LogRel
-# undef Log
-# define Log                LogRel
-# undef LogFlow
-# define LogFlow            LogRel
-#endif
 
 /**
  * Virtio Attach routine that should be called from all Virtio drivers' attach

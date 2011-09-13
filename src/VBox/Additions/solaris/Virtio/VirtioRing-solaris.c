@@ -27,6 +27,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifdef DEBUG_ramshankar
+# define LOG_INSTANCE       RTLogRelDefaultInstance()
+#endif
 #include "Virtio-solaris.h"
 
 #include <iprt/asm.h>
@@ -36,15 +39,6 @@
 #include <iprt/log.h>
 
 #include <sys/cmn_err.h>
-
-#if defined(DEBUG_ramshankar)
-# undef LogFlowFunc
-# define LogFlowFunc        LogRel
-# undef Log
-# define Log                LogRel
-# undef LogFlow
-# define LogFlow            LogRel
-#endif
 
 /**
  * Returns the size of the ring in bytes given the number of elements and

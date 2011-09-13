@@ -225,6 +225,8 @@ typedef enum LOGGROUP
     LOG_GROUP_GVMM,
     /** HGCM group */
     LOG_GROUP_HGCM,
+    /** HGSMI group */
+    LOG_GROUP_HGSMI,
     /** HWACCM group. */
     LOG_GROUP_HWACCM,
     /** IEM group. */
@@ -469,6 +471,7 @@ typedef enum LOGGROUP
     "GUI",          \
     "GVMM",         \
     "HGCM",         \
+    "HGSMI",        \
     "HWACCM",       \
     "IEM",          \
     "IOM",          \

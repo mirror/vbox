@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox Guest Additions: Virtio Driver for Solaris, PCI Hypervisor Interface.
+ * VirtualBox Guest Additions - Virtio Driver for Solaris, PCI Hypervisor Interface.
  */
 
 /*
@@ -27,6 +27,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifdef DEBUG_ramshankar
+# define LOG_INSTANCE       RTLogRelDefaultInstance()
+#endif
 #include "VirtioPci-solaris.h"
 
 #include <iprt/asm.h>
@@ -56,15 +59,6 @@
 
 #define VIRTIO_PCI_RING_ALIGN               PAGE_SIZE
 #define VIRTIO_PCI_QUEUE_ADDR_SHIFT         PAGE_SHIFT
-
-#if defined(DEBUG_ramshankar)
-# undef LogFlowFunc
-# define LogFlowFunc        LogRel
-# undef Log
-# define Log                LogRel
-# undef LogFlow
-# define LogFlow            LogRel
-#endif
 
 /**
  * virtio_pci_t: Private data per device instance.

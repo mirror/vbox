@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox Host Guest Shared Memory Interface (HGSMI).
- * HGSMI functions common for both host and guest.
+ * VBox Host Guest Shared Memory Interface (HGSMI) - Functions common to both host and guest.
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,16 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_DISABLED /* Maybe we can enabled it all the time now? */
+#define LOG_GROUP LOG_GROUP_HGSMI
 #include <iprt/heap.h>
 #include <iprt/string.h>
 
 #include <VBox/HGSMI/HGSMI.h>
-
-//#define LOG_GROUP LOG_GROUP_HGSMI
-//#include <VBox/log.h>
-#define Log(f) do{}while(0)
-#define LogFlowFunc(f) do{}while(0)
-#define LogFunc(f) do{}while(0)
+#include <VBox/log.h>
 
 
 /* Channel flags. */
