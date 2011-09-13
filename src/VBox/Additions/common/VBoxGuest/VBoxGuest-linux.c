@@ -51,15 +51,9 @@
 #define DEVICE_NAME             "vboxguest"
 /** The device name for the device node open to everyone.. */
 #define DEVICE_NAME_USER        "vboxuser"
+/** The name of the PCI driver */
+#define DRIVER_NAME             DEVICE_NAME
 
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
-# define PCI_DEV_GET(v,d,p)     pci_get_device(v,d,p)
-# define PCI_DEV_PUT(x)         pci_dev_put(x)
-#else
-# define PCI_DEV_GET(v,d,p)     pci_find_device(v,d,p)
-# define PCI_DEV_PUT(x)         do {} while(0)
-#endif
 
 /* 2.4.x compatibility macros that may or may not be defined. */
 #ifndef IRQ_RETVAL
@@ -71,6 +65,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static void vboxguestLinuxTermPci(struct pci_dev *pPciDev);
 static int  vboxguestLinuxModInit(void);
 static void vboxguestLinuxModExit(void);
 static int  vboxguestLinuxOpen(struct inode *pInode, struct file *pFilp);
@@ -93,7 +88,7 @@ static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, lof
  */
 static VBOXGUESTDEVEXT          g_DevExt;
 /** The PCI device. */
-static struct pci_dev          *g_pPciDev;
+static struct pci_dev          *g_pPciDev = NULL;
 /** The base of the I/O port range. */
 static RTIOPORT                 g_IOPortBase;
 /** The base of the MMIO range. */
@@ -243,66 +238,58 @@ static int vboxguestLinuxConvertToNegErrno(int rc)
  *
  * @returns 0 on success, negated errno on failure.
  */
-static int __init vboxguestLinuxInitPci(void)
+static int vboxguestLinuxProbePci(struct pci_dev *pPciDev,
+                                  const struct pci_device_id *id)
 {
-    struct pci_dev *pPciDev;
     int             rc;
 
-    pPciDev = PCI_DEV_GET(VMMDEV_VENDORID, VMMDEV_DEVICEID, NULL);
-    if (pPciDev)
+    NOREF(id);
+    AssertReturn(!g_pPciDev, -EINVAL);
+    rc = pci_enable_device(pPciDev);
+    if (rc >= 0)
     {
-        rc = pci_enable_device(pPciDev);
-        if (rc >= 0)
+        /* I/O Ports are mandatory, the MMIO bit is not. */
+        g_IOPortBase = pci_resource_start(pPciDev, 0);
+        if (g_IOPortBase != 0)
         {
-            /* I/O Ports are mandatory, the MMIO bit is not. */
-            g_IOPortBase = pci_resource_start(pPciDev, 0);
-            if (g_IOPortBase != 0)
+            /*
+             * Map the register address space.
+             */
+            g_MMIOPhysAddr = pci_resource_start(pPciDev, 1);
+            g_cbMMIO       = pci_resource_len(pPciDev, 1);
+            if (request_mem_region(g_MMIOPhysAddr, g_cbMMIO, DEVICE_NAME) != NULL)
             {
-                /*
-                 * Map the register address space.
-                 */
-                g_MMIOPhysAddr = pci_resource_start(pPciDev, 1);
-                g_cbMMIO       = pci_resource_len(pPciDev, 1);
-                if (request_mem_region(g_MMIOPhysAddr, g_cbMMIO, DEVICE_NAME) != NULL)
+                g_pvMMIOBase = ioremap(g_MMIOPhysAddr, g_cbMMIO);
+                if (g_pvMMIOBase)
                 {
-                    g_pvMMIOBase = ioremap(g_MMIOPhysAddr, g_cbMMIO);
-                    if (g_pvMMIOBase)
-                    {
-                        /** @todo why aren't we requesting ownership of the I/O ports as well? */
-                        g_pPciDev = pPciDev;
-                        return 0;
-                    }
+                    /** @todo why aren't we requesting ownership of the I/O ports as well? */
+                    g_pPciDev = pPciDev;
+                    return 0;
+                }
 
-                    /* failure cleanup path */
-                    LogRel((DEVICE_NAME ": ioremap failed; MMIO Addr=%RHp cb=%#x\n", g_MMIOPhysAddr, g_cbMMIO));
-                    rc = -ENOMEM;
-                    release_mem_region(g_MMIOPhysAddr, g_cbMMIO);
-                }
-                else
-                {
-                    LogRel((DEVICE_NAME ": failed to obtain adapter memory\n"));
-                    rc = -EBUSY;
-                }
-                g_MMIOPhysAddr = NIL_RTHCPHYS;
-                g_cbMMIO       = 0;
-                g_IOPortBase   = 0;
+                /* failure cleanup path */
+                LogRel((DEVICE_NAME ": ioremap failed; MMIO Addr=%RHp cb=%#x\n", g_MMIOPhysAddr, g_cbMMIO));
+                rc = -ENOMEM;
+                release_mem_region(g_MMIOPhysAddr, g_cbMMIO);
             }
             else
             {
-                LogRel((DEVICE_NAME ": did not find expected hardware resources\n"));
-                rc = -ENXIO;
+                LogRel((DEVICE_NAME ": failed to obtain adapter memory\n"));
+                rc = -EBUSY;
             }
-            pci_disable_device(pPciDev);
+            g_MMIOPhysAddr = NIL_RTHCPHYS;
+            g_cbMMIO       = 0;
+            g_IOPortBase   = 0;
         }
         else
-            LogRel((DEVICE_NAME ": could not enable device: %d\n", rc));
-        PCI_DEV_PUT(pPciDev);
+        {
+            LogRel((DEVICE_NAME ": did not find expected hardware resources\n"));
+            rc = -ENXIO;
+        }
+        pci_disable_device(pPciDev);
     }
     else
-    {
-        printk(KERN_ERR DEVICE_NAME ": VirtualBox Guest PCI device not found.\n");
-        rc = -ENODEV;
-    }
+        LogRel((DEVICE_NAME ": could not enable device: %d\n", rc));
     return rc;
 }
 
@@ -310,9 +297,8 @@ static int __init vboxguestLinuxInitPci(void)
 /**
  * Clean up the usage of the PCI device.
  */
-static void vboxguestLinuxTermPci(void)
+static void vboxguestLinuxTermPci(struct pci_dev *pPciDev)
 {
-    struct pci_dev *pPciDev = g_pPciDev;
     g_pPciDev = NULL;
     if (pPciDev)
     {
@@ -326,6 +312,16 @@ static void vboxguestLinuxTermPci(void)
         pci_disable_device(pPciDev);
     }
 }
+
+
+/** Structure for registering the PCI driver. */
+static struct pci_driver  g_PciDriver =
+{
+    name:           DRIVER_NAME,
+    id_table:       g_VBoxGuestPciId,
+    probe:          vboxguestLinuxProbePci,
+    remove:         vboxguestLinuxTermPci
+};
 
 
 /**
@@ -452,8 +448,15 @@ static int __init vboxguestLinuxCreateInputDevice(void)
                                             + VBOX_VERSION_BUILD;  /** @todo */
     g_pInputDevice->open                  = vboxguestOpenInputDevice;
     g_pInputDevice->close                 = vboxguestCloseInputDevice;
-    /** @todo parent (PCI?) device in device model view. */
-    /* g_pInputDevice->dev.parent = */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 2)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
+    g_pInputDevice->dev->dev              = &g_pPciDev->dev;
+# elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22)
+    g_pInputDevice->cdev.dev              = &g_pPciDev->dev;
+# else
+    g_pInputDevice->dev.parent            = &g_pPciDev->dev;
+#endif
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
     {
         int rc = input_register_device(g_pInputDevice);
@@ -612,8 +615,8 @@ static int __init vboxguestLinuxModInit(void)
     /*
      * Locate and initialize the PCI device.
      */
-    rc = vboxguestLinuxInitPci();
-    if (rc >= 0)
+    rc = pci_register_driver(&g_PciDriver);
+    if (rc >= 0 && g_pPciDev)
     {
         /*
          * Register the interrupt service routine for it.
@@ -690,7 +693,12 @@ static int __init vboxguestLinuxModInit(void)
             }
             vboxguestLinuxTermISR();
         }
-        vboxguestLinuxTermPci();
+        pci_unregister_driver(&g_PciDriver);
+    }
+    else
+    {
+        LogRel((DEVICE_NAME ": PCI device registration failed (pci_register_device returned %d)\n", rc));
+        rc = -EINVAL;
     }
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
     RTLogDestroy(RTLogSetDefaultInstance(NULL));
@@ -712,7 +720,7 @@ static void __exit vboxguestLinuxModExit(void)
     VBoxGuestCloseSession(&g_DevExt, g_pKernelSession);
     VBoxGuestDeleteDevExt(&g_DevExt);
     vboxguestLinuxTermISR();
-    vboxguestLinuxTermPci();
+    pci_unregister_driver(&g_PciDriver);
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
     RTLogDestroy(RTLogSetDefaultInstance(NULL));
     RTR0Term();
